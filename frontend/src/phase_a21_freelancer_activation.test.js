@@ -14,12 +14,14 @@ function read(...parts) {
 describe("Phase A2.1 freelancer trial Bid grant UI", () => {
   it("status block shows granted Bids, remaining allowance, and apply-ready", () => {
     const src = read("components/freelancer/FreelancerActivationTrialStatusBlock.jsx");
+    const ar = JSON.parse(read("locales/ar/activation.json"));
     assert.match(src, /trial-bids-granted/);
-    assert.match(src, /Trial bids granted/);
-    assert.match(src, /عروض التجربة الممنوحة/);
+    assert.match(src, /activation\.trial\.bidsGranted/);
+    assert.match(ar.trial.bidsGranted, /عروض التجربة الممنوحة/);
     assert.match(src, /trial-apply-allowance/);
     assert.match(src, /trial-apply-ready/);
     assert.match(src, /trial-activate-error/);
+    assert.match(src, /activation\.trial\.applyReady/);
     assert.doesNotMatch(src, /subscription purchase/i);
     assert.doesNotMatch(src, /19 JOD/);
     assert.doesNotMatch(src, /earned balance/i);

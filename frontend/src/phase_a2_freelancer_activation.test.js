@@ -14,12 +14,19 @@ function read(...parts) {
 describe("Phase A2 freelancer activation trial UI", () => {
   it("status block shows active counts and Silver CTA placeholder", () => {
     const src = read("components/freelancer/FreelancerActivationTrialStatusBlock.jsx");
-    assert.match(src, /Trial bids/);
-    assert.match(src, /عروض التجربة/);
-    assert.match(src, /Today/);
-    assert.match(src, /المقبول/);
+    const ar = JSON.parse(read("locales/ar/activation.json"));
+    assert.match(src, /activation\.trial\.bidsUsed/);
+    assert.match(ar.trial.bidsUsed, /عروض التجربة/);
+    assert.match(src, /activation\.trial\.dailyUsage/);
+    assert.match(ar.trial.dailyUsage, /اليوم/);
+    assert.match(src, /activation\.trial\.acceptedWork/);
+    assert.match(ar.trial.acceptedWork, /المقبول/);
     assert.match(src, /silver-cta-placeholder/);
-    assert.match(src, /انتهت تجربة العمل\. للمتابعة، انتقل إلى Silver\./);
+    assert.match(src, /activation\.trial\.expiredCta/);
+    assert.equal(
+      ar.trial.expiredCta,
+      "انتهت تجربة العمل. للمتابعة، انتقل إلى Silver.",
+    );
     assert.doesNotMatch(src, /earned balance/i);
     assert.doesNotMatch(src, /password/i);
   });

@@ -9,6 +9,9 @@ const srcRoot = path.dirname(fileURLToPath(import.meta.url));
 function read(...parts) {
   return fs.readFileSync(path.join(srcRoot, ...parts), "utf8");
 }
+function readArticlesAr() {
+  return JSON.parse(read("locales/ar/articles.json"));
+}
 
 describe("Super Admin unified المقالات hub", () => {
   it("sidebar shows المقالات directly below بيت المونة", () => {
@@ -40,20 +43,30 @@ describe("Super Admin unified المقالات hub", () => {
 
   it("hub renders four Arabic tabs and overview KPIs", () => {
     const hub = read("pages/dashboard/SuperAdminArticlesHubPage.jsx");
+    const ar = readArticlesAr();
     assert.doesNotMatch(hub, /DashboardPageHeader/);
     assert.doesNotMatch(hub, /title="المقالات"/);
-    assert.match(hub, /إدارة مقالات المستقلين، المخزون، التمويل، والتوزيع من مكان واحد/);
+    assert.match(hub, /hub\.subtitle/);
+    assert.match(ar.hub.subtitle, /إدارة مقالات المستقلين، المخزون، التمويل، والتوزيع من مكان واحد/);
     assert.match(hub, /articles-hub-tabs/);
-    assert.match(hub, /نظرة عامة/);
-    assert.match(hub, /المقالات المنزلة/);
-    assert.match(hub, /مخزون المقالات/);
-    assert.match(hub, /صندوق التمويل/);
+    assert.match(hub, /hub\.tabs\.overview/);
+    assert.match(ar.hub.tabs.overview, /نظرة عامة/);
+    assert.match(hub, /hub\.tabs\.released/);
+    assert.match(ar.hub.tabs.released, /المقالات المنزلة/);
+    assert.match(hub, /hub\.tabs\.inventory/);
+    assert.match(ar.hub.tabs.inventory, /مخزون المقالات/);
+    assert.match(hub, /hub\.tabs\.funding/);
+    assert.match(ar.hub.tabs.funding, /صندوق التمويل/);
     assert.match(hub, /articles-hub-kpis/);
-    assert.match(hub, /رصيد الصندوق/);
-    assert.match(hub, /مقالات في المخزون/);
-    assert.match(hub, /إجراءات سريعة/);
+    assert.match(hub, /hub\.kpi\.fundBalance/);
+    assert.match(ar.hub.kpi.fundBalance, /رصيد الصندوق/);
+    assert.match(hub, /hub\.kpi\.inventoryCount/);
+    assert.match(ar.hub.kpi.inventoryCount, /مقالات في المخزون/);
+    assert.match(hub, /hub\.quick\.title/);
+    assert.match(ar.hub.quick.title, /إجراءات سريعة/);
     assert.match(hub, /articles-hub-quick-actions/);
-    assert.match(hub, /متابعة المقالات/);
+    assert.match(hub, /hub\.quick\.trackArticles/);
+    assert.match(ar.hub.quick.trackArticles, /متابعة المقالات/);
     assert.doesNotMatch(hub, />Overview<|>Released Articles<|>Funding</);
   });
 
@@ -75,11 +88,15 @@ describe("Super Admin unified المقالات hub", () => {
   it("uses single default article-operations setup without campaign selection", () => {
     const hub = read("pages/dashboard/SuperAdminArticlesHubPage.jsx");
     const api = read("services/api.js");
+    const ar = readArticlesAr();
     assert.match(hub, /ensureSuperAdminArticleOperationsSetupRequest/);
     assert.match(hub, /articles-setup-init/);
-    assert.match(hub, /تهيئة إعداد المقالات/);
-    assert.match(hub, /إعداد المقالات/);
-    assert.match(hub, /سيتم استخدام إعداد واحد لإدارة الصندوق/);
+    assert.match(hub, /hub\.setup\.init/);
+    assert.match(ar.hub.setup.init, /تهيئة إعداد المقالات/);
+    assert.match(hub, /hub\.setup\.title/);
+    assert.match(ar.hub.setup.title, /إعداد المقالات/);
+    assert.match(hub, /hub\.setup\.helper/);
+    assert.match(ar.hub.setup.helper, /سيتم استخدام إعداد واحد لإدارة الصندوق/);
     assert.match(api, /article-operations\/setup/);
     assert.match(api, /article-operations\/plan-allocations/);
     assert.match(hub, /listSuperAdminActivationPlanAllocationsRequest\(null\)/);
@@ -90,6 +107,7 @@ describe("Super Admin unified المقالات hub", () => {
 
   it("released / inventory / funding panels reuse safe APIs", () => {
     const hub = read("pages/dashboard/SuperAdminArticlesHubPage.jsx");
+    const ar = readArticlesAr();
     assert.match(hub, /listSuperAdminActivationLiveArticlesRequest/);
     assert.match(hub, /MarketplaceArticleApplicationsPanel/);
     assert.match(hub, /listSuperAdminActivationArticleInventoryRequest/);
@@ -97,11 +115,15 @@ describe("Super Admin unified المقالات hub", () => {
     assert.match(hub, /articles-fund-hero/);
     assert.match(hub, /articles-publish-mode/);
     assert.match(hub, /articles-manual-publish-modal/);
-    assert.match(hub, /تلقائي/);
-    assert.match(hub, /يدوي/);
-    assert.match(hub, /نشر يدوي/);
-    assert.match(hub, /إضافة رصيد/);
-    assert.match(hub, /خصم رصيد/);
+    assert.match(hub, /publishMode\.auto|hub\.funding/);
+    assert.match(ar.publishMode.auto, /تلقائي/);
+    assert.match(ar.publishMode.manual, /يدوي/);
+    assert.match(hub, /hub\.quick\.manualPublish/);
+    assert.match(ar.hub.quick.manualPublish, /نشر يدوي/);
+    assert.match(hub, /hub\.quick\.addBalance/);
+    assert.match(ar.hub.quick.addBalance, /إضافة رصيد/);
+    assert.match(hub, /hub\.quick\.withdrawBalance/);
+    assert.match(ar.hub.quick.withdrawBalance, /خصم رصيد/);
   });
 
   it("legacy routes redirect into articles hub", () => {
@@ -113,29 +135,41 @@ describe("Super Admin unified المقالات hub", () => {
 
   it("activation page is no longer the primary article ops entry", () => {
     const page = read("pages/dashboard/SuperAdminFreelancerActivationPage.jsx");
+    const ar = JSON.parse(read("locales/ar/activation.json"));
     assert.doesNotMatch(page, /FreelancerActivationArticleOpsPanel/);
     assert.match(page, /\/dashboard\/super-admin\/articles/);
-    assert.match(page, /فتح المقالات/);
+    assert.match(page, /activation\.page\.openArticles/);
+    assert.match(ar.page.openArticles, /فتح المقالات/);
   });
 
   it("release interval options render and auto release is supported", () => {
     const hub = read("pages/dashboard/SuperAdminArticlesHubPage.jsx");
+    const ar = readArticlesAr();
     assert.match(hub, /articles-release-interval/);
-    assert.match(hub, /يوميًا/);
-    assert.match(hub, /يوم بعد يوم/);
-    assert.match(hub, /كل 3 أيام/);
+    assert.match(hub, /releaseInterval\.daily/);
+    assert.match(ar.releaseInterval.daily, /يوميًا/);
+    assert.match(hub, /releaseInterval\.everyOtherDay/);
+    assert.match(ar.releaseInterval.everyOtherDay, /يوم بعد يوم/);
+    assert.match(hub, /releaseInterval\.every3Days/);
+    assert.match(ar.releaseInterval.every3Days, /كل 3 أيام/);
     assert.match(hub, /articles-auto-release-supported/);
-    assert.match(hub, /تشغيل إنزال مقالات المخزون/);
+    assert.match(hub, /hub\.funding\.runRelease/);
+    assert.match(ar.hub.funding.runRelease, /تشغيل إنزال مقالات المخزون/);
     assert.match(hub, /releaseIntervalDays/);
-    assert.match(hub, /معاينة إنزال مخزون المقالات/);
+    assert.match(hub, /hub\.funding\.previewRelease/);
+    assert.match(ar.hub.funding.previewRelease, /معاينة إنزال مخزون المقالات/);
     assert.match(hub, /articles-not-release-day-msg/);
-    assert.match(hub, /ليس يوم إنزال حسب الجدولة الحالية/);
+    assert.match(hub, /hub\.funding\.notReleaseDay/);
+    assert.match(ar.hub.funding.notReleaseDay, /ليس يوم إنزال حسب الجدولة الحالية/);
   });
 
   it("inventory archive appears instead of unsafe delete", () => {
     const hub = read("pages/dashboard/SuperAdminArticlesHubPage.jsx");
-    assert.match(hub, /أرشفة/);
-    assert.match(hub, /لن يظهر هذا المقال في المخزون الجاهز/);
+    const ar = readArticlesAr();
+    assert.match(hub, /hub\.inventory\.archive/);
+    assert.match(ar.hub.inventory.archive, /أرشفة/);
+    assert.match(hub, /hub\.inventory\.archiveConfirm/);
+    assert.match(ar.hub.inventory.archiveConfirm, /لن يظهر هذا المقال في المخزون الجاهز/);
     assert.match(hub, /status:\s*"archived"/);
     assert.doesNotMatch(hub, />حذف</);
     assert.doesNotMatch(hub, /deleteSuperAdminActivationArticleInventory/);
@@ -143,20 +177,24 @@ describe("Super Admin unified المقالات hub", () => {
 
   it("inventory tab shows single OZ02 marketplace form; legacy activation UI gated off", () => {
     const hub = read("pages/dashboard/SuperAdminArticlesHubPage.jsx");
+    const ar = readArticlesAr();
     assert.match(hub, /articles-hub-panel-inventory/);
     assert.match(hub, /articles-marketplace-create-panel/);
     assert.match(hub, /MarketplaceArticlesAdminPanel inventoryHub/);
     assert.doesNotMatch(hub, /showCreateArticles/);
-    assert.match(hub, /مخزون المقالات/);
+    assert.match(hub, /hub\.tabs\.inventory/);
+    assert.match(ar.hub.tabs.inventory, /مخزون المقالات/);
+    assert.match(hub, /hub\.inventory\.helper/);
     assert.match(
-      hub,
+      ar.hub.inventory.helper,
       /أضف المقالات التي ستتاح للمستقلين، مع ربطها بصنف بلدازو ومتطلبات الخطة/,
     );
     assert.match(hub, /SHOW_LEGACY_ACTIVATION_INVENTORY_UI\s*=\s*false/);
     assert.match(hub, /SHOW_LEGACY_ACTIVATION_INVENTORY_UI\s*\?\s*\(/);
     assert.match(hub, /articles-inventory-add-form/);
-    assert.match(hub, /مخزون التفعيل/);
+    assert.match(hub, /hub\.inventory\.legacyTitle/);
+    assert.match(ar.hub.inventory.legacyTitle, /مخزون التفعيل/);
     assert.match(hub, /draftMarketplaceInventory/);
-    assert.match(hub, /تشغيل إنزال مقالات المخزون/);
+    assert.match(hub, /hub\.funding\.runRelease/);
   });
 });

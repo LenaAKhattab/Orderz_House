@@ -62,7 +62,9 @@ describe("Phase A4.3 Super Admin activation ranking UI", () => {
     assert.match(panel, /isActivationFairRankingApplied\(fairRanking\)/);
     const dialog = read("admin/marketplaceArticles/FairSelectionOverrideDialog.jsx");
     assert.match(dialog, /activationOverride/);
-    assert.match(dialog, /يمكن المتابعة/);
+    assert.match(dialog, /fairOverride\.activationNote/);
+    const ar = JSON.parse(read("locales/ar/articles.json"));
+    assert.match(ar.fairOverride.activationNote, /يمكن المتابعة/);
   });
 
   it("freelancer UI does not show ranking details", () => {

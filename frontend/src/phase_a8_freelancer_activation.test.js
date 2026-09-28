@@ -16,6 +16,7 @@ function read(...parts) {
 describe("Phase A8 Work Inventory Reserve admin UI", () => {
   it("admin page renders Work Inventory Reserve section with totals and internal note", () => {
     const page = read("pages/dashboard/SuperAdminFreelancerActivationPage.jsx");
+    const ar = JSON.parse(read("locales/ar/activation.json"));
     assert.match(page, /admin-work-inventory-reserve/);
     assert.match(page, /admin-wir-status/);
     assert.match(page, /admin-wir-totals/);
@@ -23,14 +24,15 @@ describe("Phase A8 Work Inventory Reserve admin UI", () => {
     assert.match(page, /admin-wir-settings-form/);
     assert.match(page, /getSuperAdminWorkInventoryReserveRequest/);
     assert.match(page, /updateSuperAdminFreelancerActivationSettingsRequest/);
+    assert.match(page, /activation\.page\.wirNote/);
     assert.match(
-      page,
+      ar.page.wirNote,
       /هذا سجل داخلي لتخصيص جزء من الاشتراكات لتمويل فرص العمل المستقبلية، ولا يمثل رصيدًا قابلًا/,
     );
-    assert.match(page, /Total allocated/);
-    assert.match(page, /Reserve\{/);
-    assert.match(page, /"enabled"/);
-    assert.match(page, /"disabled"/);
+    assert.match(page, /activation\.page\.wirTotals/);
+    assert.match(page, /activation\.page\.wirStatus/);
+    assert.match(page, /workInventoryEnabled/);
+    assert.match(page, /activation\.page\.wirEnable/);
   });
 
   it("API helper exposes work-inventory-reserve GET and settings PATCH", () => {
@@ -50,10 +52,15 @@ describe("Phase A8 Work Inventory Reserve admin UI", () => {
       FINANCIAL_CARD_LABELS_AR.workInventoryReserveActiveJod,
       "احتياطي مخزون العمل (نشط)",
     );
+    const ar = JSON.parse(read("locales/ar/activation.json"));
+    assert.equal(
+      ar.kpi.financial.workInventoryReserveAllocatedJod,
+      FINANCIAL_CARD_LABELS_AR.workInventoryReserveAllocatedJod,
+    );
     const dash = read("components/admin/FreelancerActivationKpiDashboard.jsx");
     assert.match(dash, /activation-kpi-dashboard/);
     assert.match(dash, /activation-kpi-financial-cards/);
-    assert.match(dash, /FINANCIAL_CARD_LABELS_AR/);
+    assert.match(dash, /activation\.kpi\.financial\.\$\{key\}/);
     const page = read("pages/dashboard/SuperAdminFreelancerActivationPage.jsx");
     assert.match(page, /FreelancerActivationKpiDashboard/);
   });

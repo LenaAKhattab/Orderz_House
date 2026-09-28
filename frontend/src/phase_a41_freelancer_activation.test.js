@@ -23,9 +23,9 @@ describe("Phase A4.1 Super Admin article attachment UI", () => {
     assert.match(form, /activation-wave-select/);
     const card = read("admin/marketplaceArticles/MarketplaceArticleCard.jsx");
     assert.match(card, /activation-attachment-badge/);
-    const page = read("pages/dashboard/SuperAdminMarketplaceArticlesPage.jsx");
-    assert.match(page, /listSuperAdminActivationCampaignsRequest/);
-    assert.match(page, /activationCampaigns/);
+    const panel = read("components/admin/MarketplaceArticlesAdminPanel.jsx");
+    assert.match(panel, /listSuperAdminActivationCampaignsRequest/);
+    assert.match(panel, /activationCampaigns/);
   });
 
   it("payload includes optional activation ids without requiring them", () => {
@@ -50,8 +50,10 @@ describe("Phase A4.1 Super Admin article attachment UI", () => {
 describe("Phase A4.1 emergency stop and freelancer apply copy", () => {
   it("campaign page explains emergency stop blocks applications and assignment", () => {
     const src = read("pages/dashboard/SuperAdminFreelancerActivationPage.jsx");
+    const ar = JSON.parse(read("locales/ar/activation.json"));
     assert.match(src, /emergency-stop-copy/);
-    assert.match(src, /blocks new applications and assignment/);
+    assert.match(src, /activation\.page\.emergencyStopCopy/);
+    assert.match(ar.page.emergencyStopCopy, /يمنع التقديمات الجديدة والإسناد/);
     assert.match(src, /linked-articles-count/);
     assert.doesNotMatch(src, /internal budget/);
   });
