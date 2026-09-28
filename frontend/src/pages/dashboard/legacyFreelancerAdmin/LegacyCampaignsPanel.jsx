@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "../../../i18n/LanguageProvider";
 import { useNavigate } from "react-router-dom";
 import {
   createLegacyFreelancerInviteRequest,
@@ -43,16 +44,12 @@ const EMPTY_FORM = {
   institutionId: "",
 };
 
-const CAMPAIGN_STATUS = {
-  active: { label: "نشط", tone: "success" },
-  inactive: { label: "متوقف", tone: "neutral" },
-  archived: { label: "مؤرشف", tone: "warning" },
-};
-
-function campaignStatus(row) {
-  if (row?.isArchived || row?.archivedAt) return CAMPAIGN_STATUS.archived;
-  if (row?.isActive) return CAMPAIGN_STATUS.active;
-  return CAMPAIGN_STATUS.inactive;
+function campaignStatus(row, t) {
+  if (row?.isArchived || row?.archivedAt) {
+    return { label: t("legacy.common.archived"), tone: "warning" };
+  }
+  if (row?.isActive) return { label: t("legacy.common.active"), tone: "success" };
+  return { label: t("legacy.common.stopped"), tone: "neutral" };
 }
 
 /**
@@ -64,7 +61,8 @@ export default function LegacyCampaignsPanel({
   showFieldConfig = true,
   embedMode = false,
 }) {
-  const navigate = useNavigate();
+  const { t } = useTranslation();
+const navigate = useNavigate();
   const { pushToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState([]);
@@ -89,7 +87,7 @@ export default function LegacyCampaignsPanel({
       const res = await listLegacyFreelancerInvitesRequest();
       setRows(Array.isArray(res?.data) ? res.data : []);
     } catch (err) {
-      pushToast({ type: "error", message: getSafeApiErrorMessage(err, "تعذر تحميل الحملات") });
+      pushToast({ type: "error", message: getSafeApiErrorMessage(err, t("legacy.toast.loadCampaignsFailed")) });
     } finally {
       setLoading(false);
     }
@@ -117,7 +115,7 @@ export default function LegacyCampaignsPanel({
         const res = await getLegacyFreelancerInviteFieldsRequest(campaignId);
         setFieldConfig(res?.data || null);
       } catch (err) {
-        pushToast({ type: "error", message: getSafeApiErrorMessage(err, "تعذر تحميل حقول التسجيل") });
+        pushToast({ type: "error", message: getSafeApiErrorMessage(err, t("legacy.toast.loadFieldsFailed")) });
       }
     },
     [pushToast],
@@ -149,7 +147,7 @@ export default function LegacyCampaignsPanel({
       const hit = institutions.find((i) => String(i.id) === String(row.institutionId));
       return hit?.name || `#${row.institutionId}`;
     }
-    return "بدون مؤسسة";
+    return t("legacy.common.noInstitution");
   };
 
   const openManage = (row) => {
@@ -176,7 +174,7 @@ export default function LegacyCampaignsPanel({
       const created = res?.data;
       setForm(EMPTY_FORM);
       setShowCreate(false);
-      pushToast({ type: "success", message: "تم إنشاء رابط الدعوة المشترك" });
+      pushToast({ type: "success", message: t("legacy.toast.inviteCreated") });
       await load();
       if (created?.id) {
         onSelectedCampaignIdChange?.(String(created.id));
@@ -185,7 +183,7 @@ export default function LegacyCampaignsPanel({
         }
       }
     } catch (err) {
-      pushToast({ type: "error", message: getSafeApiErrorMessage(err, "تعذر إنشاء الحملة") });
+      pushToast({ type: "error", message: getSafeApiErrorMessage(err, t("legacy.toast.createCampaignFailed")) });
     } finally {
       setCreating(false);
     }
@@ -197,10 +195,13 @@ export default function LegacyCampaignsPanel({
     setBusyId(row.id);
     try {
       await updateLegacyFreelancerInviteRequest(row.id, { isActive: !row.isActive });
-      pushToast({ type: "success", message: row.isActive ? "تم إيقاف الحملة" : "تم تفعيل الحملة" });
+      pushToast({
+        type: "success",
+        message: row.isActive ? t("legacy.toast.campaignPaused") : t("legacy.toast.campaignActivated"),
+      });
       await load();
     } catch (err) {
-      pushToast({ type: "error", message: getSafeApiErrorMessage(err, "تعذر التحديث") });
+      pushToast({ type: "error", message: getSafeApiErrorMessage(err, t("legacy.toast.updateFailed")) });
     } finally {
       setBusyId(null);
     }
@@ -210,18 +211,18 @@ export default function LegacyCampaignsPanel({
     e?.stopPropagation?.();
     const ok = window.confirm(
       row.usedCount > 0
-        ? `الحملة «${row.name}» تحتوي مسجّلين. سيتم أرشفتها وإيقاف الرابط مع الاحتفاظ بالسجلات. هل تريد المتابعة؟`
-        : `حذف الحملة «${row.name}» نهائياً؟ هذا الإجراء للحملات غير المستخدمة فقط.`,
+        ? t("legacy.campaigns.confirmArchiveUsed", { name: row.name })
+        : t("legacy.campaigns.confirmDeleteUnused", { name: row.name }),
     );
     if (!ok) return;
     setBusyId(row.id);
     try {
       const res = await deleteLegacyFreelancerInviteRequest(row.id);
-      pushToast({ type: "success", message: res?.message || res?.data?.message || "تم تنفيذ الإجراء" });
+      pushToast({ type: "success", message: res?.message || res?.data?.message || t("legacy.toast.actionDone") });
       if (selectedId === String(row.id)) onSelectedCampaignIdChange?.(null);
       await load();
     } catch (err) {
-      pushToast({ type: "error", message: getSafeApiErrorMessage(err, "تعذر حذف/أرشفة الحملة") });
+      pushToast({ type: "error", message: getSafeApiErrorMessage(err, t("legacy.toast.deleteArchiveFailed")) });
     } finally {
       setBusyId(null);
     }
@@ -229,16 +230,16 @@ export default function LegacyCampaignsPanel({
 
   const onRegenerate = async (row, e) => {
     e?.stopPropagation?.();
-    const ok = window.confirm("إعادة توليد الرمز تُبطل الرابط السابق. المتابعة؟");
+    const ok = window.confirm(t("legacy.campaigns.confirmRegenerate"));
     if (!ok) return;
     setBusyId(row.id);
     try {
       const res = await regenerateLegacyFreelancerInviteTokenRequest(row.id);
-      pushToast({ type: "success", message: "تم إعادة توليد الرمز" });
+      pushToast({ type: "success", message: t("legacy.toast.regenerateSuccess") });
       await load();
       if (res?.data) setLinkModalCampaign(res.data);
     } catch (err) {
-      pushToast({ type: "error", message: getSafeApiErrorMessage(err, "تعذر إعادة التوليد") });
+      pushToast({ type: "error", message: getSafeApiErrorMessage(err, t("legacy.toast.regenerateFailed")) });
     } finally {
       setBusyId(null);
     }
@@ -267,9 +268,9 @@ export default function LegacyCampaignsPanel({
       }));
       const res = await putLegacyFreelancerInviteFieldsRequest(selectedId, payload);
       setFieldConfig(res?.data || null);
-      pushToast({ type: "success", message: "تم حفظ بيانات التسجيل المطلوبة" });
+      pushToast({ type: "success", message: t("legacy.toast.fieldsSaved") });
     } catch (err) {
-      pushToast({ type: "error", message: getSafeApiErrorMessage(err, "تعذر حفظ الحقول") });
+      pushToast({ type: "error", message: getSafeApiErrorMessage(err, t("legacy.toast.saveFieldsFailed")) });
     } finally {
       setFieldsBusy(false);
     }
@@ -281,27 +282,27 @@ export default function LegacyCampaignsPanel({
     try {
       const res = await restoreLegacyFreelancerInviteFieldsRequest(selectedId);
       setFieldConfig(res?.data || null);
-      pushToast({ type: "success", message: "تمت استعادة الإعداد الافتراضي" });
+      pushToast({ type: "success", message: t("legacy.toast.restoreSuccess") });
     } catch (err) {
-      pushToast({ type: "error", message: getSafeApiErrorMessage(err, "تعذر الاستعادة") });
+      pushToast({ type: "error", message: getSafeApiErrorMessage(err, t("legacy.toast.restoreFailed")) });
     } finally {
       setFieldsBusy(false);
     }
   };
 
-  if (loading) return <DashboardLoadingState label="جاري تحميل الحملات…" />;
+  if (loading) return <DashboardLoadingState label={t("legacy.campaigns.loading")} />;
 
   // Embed mode: registration field config for a selected campaign (top-level tab).
   if (embedMode) {
     return (
       <div className="oh-legacy-admin__stack">
-        <DashboardSection title="اختر حملة" description="إعداد حقول التسجيل مرتبط بحملة واحدة.">
+        <DashboardSection title={t("legacy.campaigns.chooseCampaignEmpty")} description={t("legacy.campaigns.chooseCampaignDesc")}>
           <select
             className="oh-legacy-admin__select"
             value={selectedId || ""}
             onChange={(e) => onSelectedCampaignIdChange?.(e.target.value || null)}
           >
-            <option value="">— اختر حملة —</option>
+            <option value="">{t("legacy.common.selectCampaign")}</option>
             {rows.map((r) => (
               <option key={r.id} value={r.id}>
                 {r.name} ({r.slug})
@@ -311,28 +312,28 @@ export default function LegacyCampaignsPanel({
         </DashboardSection>
         {selected && showFieldConfig ? (
           <DashboardSection
-            title={`بيانات التسجيل — ${selected.name}`}
+            title={t("legacy.campaigns.registrationData", { name: selected.name })}
             actions={
               <div className="oh-legacy-admin__actions">
                 <Button type="button" variant="secondary" disabled={fieldsBusy} onClick={restoreFields}>
-                  استعادة الافتراضي
+                  {t("legacy.common.restoreDefault")}
                 </Button>
                 <Button type="button" disabled={fieldsBusy} onClick={saveFields}>
-                  {fieldsBusy ? "جاري الحفظ…" : "حفظ الحقول"}
+                  {fieldsBusy ? t("legacy.common.saving") : t("legacy.common.saveFields")}
                 </Button>
               </div>
             }
           >
             {fieldConfig?.fields?.length ? (
               <div className="oh-sa-users-table-wrap">
-                <DashboardTable caption="حقول التسجيل">
+                <DashboardTable caption={t("legacy.campaigns.registrationFieldsCaption")}>
                   <thead>
                     <tr>
-                      <th scope="col">الحقل</th>
-                      <th scope="col">النوع</th>
-                      <th scope="col">إظهار</th>
-                      <th scope="col">إلزامي</th>
-                      <th scope="col">الترتيب</th>
+                      <th scope="col">{t("legacy.common.field")}</th>
+                      <th scope="col">{t("legacy.common.type")}</th>
+                      <th scope="col">{t("legacy.common.show")}</th>
+                      <th scope="col">{t("legacy.common.required")}</th>
+                      <th scope="col">{t("legacy.common.order")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -347,7 +348,7 @@ export default function LegacyCampaignsPanel({
                         <td>
                           <span dir="ltr" className="oh-legacy-admin__muted">
                             {f.type}
-                            {f.controlLocked ? " (ثابت)" : ""}
+                            {f.controlLocked ? ` (${t("legacy.common.fixed")})` : ""}
                           </span>
                         </td>
                         <td>
@@ -382,7 +383,7 @@ export default function LegacyCampaignsPanel({
                 </DashboardTable>
               </div>
             ) : (
-              <DashboardEmptyState title="لا توجد حقول" description="اختر حملة أو أنشئ حملة أولاً." />
+              <DashboardEmptyState title={t("legacy.campaigns.noFields")} description={t("legacy.campaigns.noFieldsDesc")} />
             )}
           </DashboardSection>
         ) : null}
@@ -393,18 +394,18 @@ export default function LegacyCampaignsPanel({
   return (
     <div className="oh-legacy-admin__stack">
       <DashboardSection
-        title="حملات الدعوة"
-        description="كل حملة لها مساحة إدارة مستقلة للمسجّلين والإعدادات. المسجّلون عبر رابط مشترك يُدارون داخل حملتهم فقط."
+        title={t("legacy.campaigns.title")}
+        description={t("legacy.campaigns.description")}
         actions={
           <Button type="button" onClick={() => setShowCreate((v) => !v)}>
-            {showCreate ? "إخفاء النموذج" : "إنشاء حملة"}
+            {showCreate ? t("legacy.common.hideForm") : t("legacy.common.createCampaign")}
           </Button>
         }
       >
         <div className="oh-legacy-campaigns__toolbar">
           <input
             className="oh-legacy-admin__input"
-            placeholder="بحث بالاسم أو الـ slug…"
+            placeholder={t("legacy.campaigns.searchPlaceholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -413,18 +414,18 @@ export default function LegacyCampaignsPanel({
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
-            <option value="">كل الحالات</option>
-            <option value="active">نشط</option>
-            <option value="inactive">متوقف</option>
-            <option value="archived">مؤرشف</option>
+            <option value="">{t("legacy.common.allStatuses")}</option>
+            <option value="active">{t("legacy.center.stats.active")}</option>
+            <option value="inactive">{t("legacy.common.stopped")}</option>
+            <option value="archived">{t("legacy.common.archived")}</option>
           </select>
           <select
             className="oh-legacy-admin__select"
             value={institutionFilter}
             onChange={(e) => setInstitutionFilter(e.target.value)}
           >
-            <option value="">كل المؤسسات</option>
-            <option value="none">بدون مؤسسة</option>
+            <option value="">{t("legacy.common.allInstitutions")}</option>
+            <option value="none">{t("legacy.common.noInstitution")}</option>
             {institutions.map((i) => (
               <option key={i.id} value={String(i.id)}>
                 {i.name}
@@ -437,7 +438,7 @@ export default function LegacyCampaignsPanel({
           <form className="oh-legacy-campaigns__create" onSubmit={onCreate}>
             <div className="oh-legacy-campaigns__create-grid">
               <label>
-                اسم الحملة
+                {t("legacy.common.campaignName")}
                 <input
                   className="oh-legacy-admin__input"
                   required
@@ -450,13 +451,13 @@ export default function LegacyCampaignsPanel({
                 <input
                   className="oh-legacy-admin__input"
                   dir="ltr"
-                  placeholder="auto من الاسم"
+                  placeholder={t("legacy.common.autoFromName")}
                   value={form.slug}
                   onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value }))}
                 />
               </label>
               <label>
-                المقاعد
+                {t("legacy.common.seats")}
                 <input
                   className="oh-legacy-admin__input"
                   type="number"
@@ -467,7 +468,7 @@ export default function LegacyCampaignsPanel({
                 />
               </label>
               <label>
-                الانتهاء
+                {t("legacy.common.expiry")}
                 <input
                   className="oh-legacy-admin__input"
                   type="datetime-local"
@@ -477,7 +478,7 @@ export default function LegacyCampaignsPanel({
                 />
               </label>
               <label>
-                مستوى الثقة
+                {t("legacy.common.trustLevel")}
                 <select
                   className="oh-legacy-admin__select"
                   value={form.defaultTrustLevel}
@@ -488,7 +489,7 @@ export default function LegacyCampaignsPanel({
                 </select>
               </label>
               <label>
-                التصنيف الافتراضي
+                {t("legacy.common.defaultCategory")}
                 <select
                   className="oh-legacy-admin__select"
                   value={form.defaultCategoryId}
@@ -503,13 +504,13 @@ export default function LegacyCampaignsPanel({
                 </select>
               </label>
               <label>
-                المؤسسة
+                {t("legacy.common.institution")}
                 <select
                   className="oh-legacy-admin__select"
                   value={form.institutionId}
                   onChange={(e) => setForm((f) => ({ ...f, institutionId: e.target.value }))}
                 >
-                  <option value="">بدون مؤسسة</option>
+                  <option value="">{t("legacy.common.noInstitution")}</option>
                   {institutions.map((i) => (
                     <option key={i.id} value={String(i.id)}>
                       {i.name}
@@ -520,7 +521,7 @@ export default function LegacyCampaignsPanel({
             </div>
             <div className="oh-legacy-admin__actions" style={{ marginTop: "0.75rem" }}>
               <Button type="submit" disabled={creating}>
-                {creating ? "جاري الإنشاء…" : "إنشاء الحملة"}
+                {creating ? t("legacy.common.creating") : t("legacy.common.createCampaign")}
               </Button>
             </div>
           </form>
@@ -528,13 +529,13 @@ export default function LegacyCampaignsPanel({
 
         {filteredRows.length === 0 ? (
           <DashboardEmptyState
-            title="لا توجد حملات"
-            description={rows.length ? "لا نتائج مطابقة للفلاتر." : "أنشئ أول حملة دعوة مشتركة."}
+            title={t("legacy.campaigns.emptyTitle")}
+            description={rows.length ? t("legacy.campaigns.emptyFiltered") : t("legacy.campaigns.emptyFirst")}
           />
         ) : (
           <div className="oh-legacy-campaigns__grid">
             {filteredRows.map((row) => {
-              const st = campaignStatus(row);
+              const st = campaignStatus(row, t);
               const busy = busyId === row.id;
               return (
                 <article
@@ -562,25 +563,25 @@ export default function LegacyCampaignsPanel({
 
                   <dl className="oh-legacy-campaign-card__meta">
                     <div>
-                      <dt>المؤسسة</dt>
+                      <dt>{t("legacy.common.institution")}</dt>
                       <dd>{resolveInstitutionLabel(row)}</dd>
                     </div>
                     <div>
-                      <dt>المقاعد</dt>
+                      <dt>{t("legacy.common.seats")}</dt>
                       <dd>
                         {row.usedCount ?? 0} / {row.maxRedemptions ?? "—"}
                       </dd>
                     </div>
                     <div>
-                      <dt>الانتهاء</dt>
+                      <dt>{t("legacy.common.expiryLabel")}</dt>
                       <dd>{formatDate(row.expiresAt)}</dd>
                     </div>
                     <div>
-                      <dt>زيارات الرابط</dt>
+                      <dt>{t("legacy.campaigns.cardLinkViews")}</dt>
                       <dd>{Number(row.linkViewCount || 0).toLocaleString("en-US")}</dd>
                     </div>
                     <div>
-                      <dt>تسجيلات ناجحة</dt>
+                      <dt>{t("legacy.campaigns.cardRegistrations")}</dt>
                       <dd>{Number(row.usedCount || 0).toLocaleString("en-US")}</dd>
                     </div>
                   </dl>
@@ -591,14 +592,14 @@ export default function LegacyCampaignsPanel({
                     onKeyDown={(e) => e.stopPropagation()}
                   >
                     <Button type="button" onClick={() => openManage(row)}>
-                      إدارة
+                      {t("legacy.common.manage")}
                     </Button>
                     <Button
                       type="button"
                       variant="secondary"
                       onClick={() => setLinkModalCampaign(row)}
                     >
-                      عرض الرابط
+                      {t("legacy.common.viewLink")}
                     </Button>
                     <Button
                       type="button"
@@ -606,7 +607,7 @@ export default function LegacyCampaignsPanel({
                       disabled={busy || row.isArchived}
                       onClick={(e) => onToggleActive(row, e)}
                     >
-                      {row.isActive ? "إيقاف" : "تفعيل"}
+                      {row.isActive ? t("legacy.common.disable") : t("legacy.common.enable")}
                     </Button>
                     <Button
                       type="button"
@@ -614,16 +615,16 @@ export default function LegacyCampaignsPanel({
                       disabled={busy}
                       onClick={(e) => onRegenerate(row, e)}
                     >
-                      إعادة توليد
+                      {t("legacy.common.regenerate")}
                     </Button>
                     <Button
                       type="button"
                       variant="secondary"
                       disabled={busy}
                       onClick={(e) => onDelete(row, e)}
-                      aria-label="حذف أو أرشفة"
+                      aria-label={t("legacy.common.deleteOrArchive")}
                     >
-                      حذف
+                      {t("legacy.common.delete")}
                     </Button>
                   </div>
                 </article>

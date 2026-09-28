@@ -4,6 +4,7 @@ import {
   dialCodeOptions,
   phonePlaceholderForDial,
 } from "../../utils/legacyPhone";
+import { useTranslation } from "../../i18n/LanguageProvider";
 import "./LegacyPhoneInput.css";
 
 /**
@@ -22,6 +23,7 @@ export default function LegacyPhoneInput({
   className = "",
   "aria-labelledby": ariaLabelledBy,
 }) {
+  const { t } = useTranslation();
   const autoId = useId();
   const baseId = id || `legacy-phone-${autoId}`;
   const ccId = `${baseId}-cc`;
@@ -30,6 +32,8 @@ export default function LegacyPhoneInput({
   const selected = options.find((o) => o.value === countryCode) || options.find((o) => o.value === DEFAULT_DIAL_CODE);
   const placeholder = phonePlaceholderForDial(countryCode || DEFAULT_DIAL_CODE);
   const variantClass = variant === "admin" ? "oh-legacy-phone--admin" : "";
+  const dialLabel = t("legacy.common.countryDialCode");
+  const localLabel = t("legacy.common.localPhone");
 
   return (
     <div
@@ -39,14 +43,14 @@ export default function LegacyPhoneInput({
       aria-labelledby={ariaLabelledBy}
     >
       <label className="oh-legacy-phone__cc-wrap" htmlFor={ccId}>
-        <span className="oh-legacy-phone__sr">مفتاح الدولة</span>
+        <span className="oh-legacy-phone__sr">{dialLabel}</span>
         <select
           id={ccId}
           className="oh-legacy-phone__cc"
           value={selected?.value || DEFAULT_DIAL_CODE}
           required={required}
           disabled={disabled}
-          aria-label="مفتاح الدولة"
+          aria-label={dialLabel}
           data-testid="legacy-phone-country"
           onChange={(e) => onCountryCodeChange?.(e.target.value)}
         >
@@ -58,7 +62,7 @@ export default function LegacyPhoneInput({
         </select>
       </label>
       <label className="oh-legacy-phone__number-wrap" htmlFor={numId}>
-        <span className="oh-legacy-phone__sr">رقم الهاتف المحلي</span>
+        <span className="oh-legacy-phone__sr">{localLabel}</span>
         <input
           id={numId}
           className="oh-legacy-phone__number"

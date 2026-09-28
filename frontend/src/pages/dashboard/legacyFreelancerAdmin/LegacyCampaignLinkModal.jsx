@@ -2,15 +2,14 @@ import { useEffect, useState } from "react";
 import Button from "../../../components/ui/Button";
 import { useToast } from "../../../components/ui/toastContext";
 import { getSafeApiErrorMessage } from "../../../utils/apiErrorMessage";
+import { useTranslation } from "../../../i18n/LanguageProvider";
 import {
   getLegacyFreelancerInviteLinkRequest,
   regenerateLegacyFreelancerInviteTokenRequest,
 } from "../../../services/api";
 
-/**
- * Modal: عرض / نسخ رابط الدعوة المشترك للحملة.
- */
 export default function LegacyCampaignLinkModal({ campaign, onClose, onRegenerated }) {
+  const { t } = useTranslation();
   const { pushToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -26,7 +25,7 @@ export default function LegacyCampaignLinkModal({ campaign, onClose, onRegenerat
         if (!cancelled) setPayload(res?.data || null);
       } catch (err) {
         if (!cancelled) {
-          pushToast({ type: "error", message: getSafeApiErrorMessage(err, "تعذر جلب الرابط") });
+          pushToast({ type: "error", message: getSafeApiErrorMessage(err, t("legacy.toast.fetchLinkFailed")) });
           onClose?.();
         }
       } finally {
@@ -36,23 +35,21 @@ export default function LegacyCampaignLinkModal({ campaign, onClose, onRegenerat
     return () => {
       cancelled = true;
     };
-  }, [campaign?.id, onClose, pushToast]);
+  }, [campaign?.id, onClose, pushToast, t]);
 
   const copy = async () => {
     if (!payload?.joinUrl) return;
     try {
       await navigator.clipboard.writeText(payload.joinUrl);
-      pushToast({ type: "success", message: "تم نسخ الرابط" });
+      pushToast({ type: "success", message: t("legacy.toast.linkCopied") });
     } catch {
-      pushToast({ type: "error", message: "تعذر النسخ — انسخ الرابط يدوياً" });
+      pushToast({ type: "error", message: t("legacy.toast.copyFailed") });
     }
   };
 
   const regenerate = async () => {
     if (!campaign?.id || busy) return;
-    const ok = window.confirm(
-      "إعادة توليد الرمز تُبطل الرابط السابق فوراً. هل تريد المتابعة؟",
-    );
+    const ok = window.confirm(t("legacy.campaigns.confirmRegenerateImmediate"));
     if (!ok) return;
     setBusy(true);
     try {
@@ -61,36 +58,36 @@ export default function LegacyCampaignLinkModal({ campaign, onClose, onRegenerat
       setPayload({
         recoverable: Boolean(joinUrl),
         joinUrl,
-        message: joinUrl
-          ? null
-          : "تم إعادة التوليد لكن تعذر استرجاع الرابط — انسخه من الاستجابة إن ظهر.",
+        message: joinUrl ? null : t("legacy.campaigns.regeneratePartial"),
       });
-      pushToast({ type: "success", message: "تم إعادة توليد الرابط — الرابط السابق باطل" });
+      pushToast({ type: "success", message: t("legacy.toast.linkRegenerated") });
       onRegenerated?.(res?.data);
     } catch (err) {
-      pushToast({ type: "error", message: getSafeApiErrorMessage(err, "تعذر إعادة التوليد") });
+      pushToast({ type: "error", message: getSafeApiErrorMessage(err, t("legacy.toast.regenerateFailed")) });
     } finally {
       setBusy(false);
     }
   };
 
+  const titleName = campaign?.name || t("legacy.common.inviteLinkFallbackName");
+
   return (
     <div className="oh-legacy-link-modal" role="dialog" aria-modal="true" aria-labelledby="legacy-link-modal-title">
-      <button type="button" className="oh-legacy-link-modal__backdrop" aria-label="إغلاق" onClick={onClose} />
+      <button type="button" className="oh-legacy-link-modal__backdrop" aria-label={t("legacy.common.close")} onClick={onClose} />
       <div className="oh-legacy-link-modal__panel">
         <header className="oh-legacy-link-modal__head">
-          <h3 id="legacy-link-modal-title">رابط الدعوة — {campaign?.name || "الحملة"}</h3>
-          <button type="button" className="oh-legacy-link-modal__close" onClick={onClose} aria-label="إغلاق">
+          <h3 id="legacy-link-modal-title">{t("legacy.common.inviteLinkTitle", { name: titleName })}</h3>
+          <button type="button" className="oh-legacy-link-modal__close" onClick={onClose} aria-label={t("legacy.common.close")}>
             ×
           </button>
         </header>
 
         {loading ? (
-          <p className="oh-legacy-link-modal__hint">جاري تحميل الرابط…</p>
+          <p className="oh-legacy-link-modal__hint">{t("legacy.common.loadingLink")}</p>
         ) : payload?.recoverable && payload?.joinUrl ? (
           <div className="oh-legacy-link-modal__body">
             <label className="oh-legacy-link-modal__label" htmlFor="legacy-invite-url">
-              الرابط الكامل
+              {t("legacy.common.fullLink")}
             </label>
             <div className="oh-legacy-link-modal__url-row">
               <input
@@ -101,7 +98,7 @@ export default function LegacyCampaignLinkModal({ campaign, onClose, onRegenerat
                 value={payload.joinUrl}
               />
               <Button type="button" onClick={copy}>
-                نسخ
+                {t("legacy.common.copy")}
               </Button>
             </div>
             <div className="oh-legacy-admin__actions" style={{ marginTop: "0.85rem" }}>
@@ -110,21 +107,20 @@ export default function LegacyCampaignLinkModal({ campaign, onClose, onRegenerat
                 variant="secondary"
                 onClick={() => window.open(payload.joinUrl, "_blank", "noopener,noreferrer")}
               >
-                فتح الرابط
+                {t("legacy.common.openLink")}
               </Button>
               <Button type="button" variant="secondary" disabled={busy} onClick={regenerate}>
-                إعادة توليد token
+                {t("legacy.common.tokenRegenerate")}
               </Button>
             </div>
           </div>
         ) : (
           <div className="oh-legacy-link-modal__body">
             <p className="oh-legacy-link-modal__warn">
-              {payload?.message ||
-                "لا يمكن عرض الرابط الحالي لهذه الحملة لأنه أُنشئ قبل دعم استرجاع الرابط. يمكنك إعادة توليد الرابط مرة واحدة لتفعيل العرض والنسخ مستقبلاً."}
+              {payload?.message || t("legacy.campaigns.linkNotRecoverable")}
             </p>
             <Button type="button" disabled={busy} onClick={regenerate}>
-              إعادة توليد الرابط الآن
+              {t("legacy.common.regenerateLinkNow")}
             </Button>
           </div>
         )}

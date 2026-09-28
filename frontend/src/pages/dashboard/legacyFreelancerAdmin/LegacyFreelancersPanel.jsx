@@ -32,21 +32,15 @@ import {
   categoriesLabel,
   PACKAGE_DURATION_OPTIONS,
   LegacyIdentityImage,
+  getDetailTabs,
 } from "./legacyAdminShared";
+import { useTranslation } from "../../../i18n/LanguageProvider";
 import { LEGACY_WORK_FIELDS, WORK_FIELDS_REQUIRED_MESSAGE } from "../../../constants/legacyFreelancerWorkFields";
 import LegacyPhoneInput from "../../../components/legacy/LegacyPhoneInput";
 import LegacySmartSuggestField from "../../../components/legacy/LegacySmartSuggestField";
 import LegacySearchableSelect from "../../../components/legacy/LegacySearchableSelect";
 import { listJordanCityOptions, CITY_OTHER_VALUE, CITY_OTHER_LABEL_AR } from "../../../constants/jordanCities";
 import { DEFAULT_DIAL_CODE, toPhonePayload } from "../../../utils/legacyPhone";
-
-const DETAIL_TABS = [
-  { id: "profile", label: "البيانات" },
-  { id: "identity", label: "الهوية" },
-  { id: "docs", label: "الأوراق والعقود" },
-  { id: "package", label: "الباقة" },
-  { id: "money", label: "المبالغ المستلمة" },
-];
 
 const EMPTY_CREATE = {
   firstName: "",
@@ -85,7 +79,8 @@ export default function LegacyFreelancersPanel({
   campaignId = null,
   hideManualCreate = false,
 }) {
-  const { pushToast } = useToast();
+  const { t } = useTranslation();
+const { pushToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [items, setItems] = useState([]);
@@ -140,8 +135,8 @@ export default function LegacyFreelancersPanel({
       setTotalPages(Number(data.totalPages) || 1);
       setSelectedIds(new Set());
     } catch (err) {
-      setLoadError(getSafeApiErrorMessage(err, "تعذر تحميل الفريلانسرز"));
-      pushToast({ type: "error", message: getSafeApiErrorMessage(err, "تعذر تحميل الفريلانسرز") });
+      setLoadError(getSafeApiErrorMessage(err, t("legacy.toast.loadFreelancersFailed")));
+      pushToast({ type: "error", message: getSafeApiErrorMessage(err, t("legacy.toast.loadFreelancersFailed")) });
     } finally {
       setLoading(false);
     }
@@ -182,7 +177,7 @@ export default function LegacyFreelancersPanel({
         const res = await getLegacyFreelancerRequest(userId);
         setDetail(res?.data || null);
       } catch (err) {
-        pushToast({ type: "error", message: getSafeApiErrorMessage(err, "تعذر تحميل التفاصيل") });
+        pushToast({ type: "error", message: getSafeApiErrorMessage(err, t("legacy.toast.loadDetailFailed")) });
         setDetail(null);
       } finally {
         setDetailLoading(false);
@@ -286,7 +281,7 @@ export default function LegacyFreelancersPanel({
       }
 
       await createLegacyFreelancerRequest(payload);
-      pushToast({ type: "success", message: "تم إضافة الفريلانسر القديم" });
+      pushToast({ type: "success", message: t("legacy.toast.freelancerAdded") });
       setShowCreate(false);
       setCreateForm(EMPTY_CREATE);
       setIdFrontFile(null);
@@ -294,7 +289,7 @@ export default function LegacyFreelancersPanel({
       await load();
       onListChanged?.();
     } catch (err) {
-      pushToast({ type: "error", message: getSafeApiErrorMessage(err, "تعذر إضافة الفريلانسر") });
+      pushToast({ type: "error", message: getSafeApiErrorMessage(err, t("legacy.toast.addFreelancerFailed")) });
     } finally {
       setCreating(false);
     }
@@ -309,12 +304,12 @@ export default function LegacyFreelancersPanel({
         planId: Number(bulkPlanId),
         durationMonths: Number(bulkDuration),
       });
-      pushToast({ type: "success", message: `تم إسناد الباقة لـ ${selectedCount} فريلانسر` });
+      pushToast({ type: "success", message: t("legacy.toast.bulkAssignSuccess", { count: selectedCount }) });
       setShowBulk(false);
       await load();
       onListChanged?.();
     } catch (err) {
-      pushToast({ type: "error", message: getSafeApiErrorMessage(err, "تعذر الإسناد الجماعي") });
+      pushToast({ type: "error", message: getSafeApiErrorMessage(err, t("legacy.toast.bulkAssignFailed")) });
     } finally {
       setBulkBusy(false);
     }
@@ -330,7 +325,9 @@ export default function LegacyFreelancersPanel({
             ? Number(p.monthlyPriceJod)
             : null;
         const label =
-          price != null ? `${name}${price > 0 ? ` — ${price} د.أ` : " — مجاني"}` : name;
+          price != null
+            ? `${name}${price > 0 ? ` — ${price}${t("legacy.common.planJodSuffix")}` : t("legacy.common.planFreeSuffix")}`
+            : name;
         return {
           id: String(p.planId || p.id),
           label,
@@ -342,30 +339,30 @@ export default function LegacyFreelancersPanel({
   return (
     <>
       <DashboardSection
-        title="إدارة الفريلانسرز"
-        description={loading ? "جارٍ التحميل…" : `${total} نتيجة`}
+        title={t("legacy.common.manageFreelancers")}
+        description={loading ? t("legacy.common.loading") : t("legacy.common.resultsCount", { count: total })}
         actions={
           <Button type="button" variant="secondary" onClick={load} disabled={loading}>
-            تحديث
+            {t("legacy.common.refresh")}
           </Button>
         }
       >
         <form className="oh-legacy-admin__toolbar" onSubmit={applyFilters}>
           <label className="oh-sa-users-field oh-legacy-admin__toolbar-search">
-            <span>بحث</span>
+            <span>{t("legacy.common.search")}</span>
             <input
               value={draftFilters.q}
               onChange={(e) => setDraftFilters((s) => ({ ...s, q: e.target.value }))}
-              placeholder="اسم، بريد، هاتف، رقم عضوية…"
+              placeholder={t("legacy.filters.searchPlaceholder")}
             />
           </label>
           <label className="oh-sa-users-field oh-legacy-admin__toolbar-field">
-            <span>الباقة</span>
+            <span>{t("legacy.detailTabs.package")}</span>
             <select
               value={draftFilters.planId}
               onChange={(e) => setDraftFilters((s) => ({ ...s, planId: e.target.value }))}
             >
-              <option value="">الكل</option>
+              <option value="">{t("legacy.common.all")}</option>
               {planOptions.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.label}
@@ -374,45 +371,45 @@ export default function LegacyFreelancersPanel({
             </select>
           </label>
           <label className="oh-sa-users-field oh-legacy-admin__toolbar-field">
-            <span>الهوية</span>
+            <span>{t("legacy.join.identitySection")}</span>
             <select
               value={draftFilters.identityComplete}
               onChange={(e) => setDraftFilters((s) => ({ ...s, identityComplete: e.target.value }))}
             >
-              <option value="">الكل</option>
-              <option value="true">مكتملة</option>
-              <option value="false">غير مكتملة</option>
+              <option value="">{t("legacy.common.all")}</option>
+              <option value="true">{t("legacy.common.complete")}</option>
+              <option value="false">{t("legacy.common.incomplete")}</option>
             </select>
           </label>
           <label className="oh-sa-users-field oh-legacy-admin__toolbar-field">
-            <span>طريقة الدخول</span>
+            <span>{t("legacy.common.entryMethod")}</span>
             <select
               value={draftFilters.entryMethod}
               onChange={(e) => setDraftFilters((s) => ({ ...s, entryMethod: e.target.value }))}
             >
-              <option value="">الكل</option>
-              <option value="SHARED_INVITE">دعوة مشتركة</option>
-              <option value="ADMIN_MANUAL">إضافة يدوية</option>
+              <option value="">{t("legacy.common.all")}</option>
+              <option value="SHARED_INVITE">{t("legacy.entryMethod.sharedInvite")}</option>
+              <option value="ADMIN_MANUAL">{t("legacy.entryMethod.adminManual")}</option>
             </select>
           </label>
           <label className="oh-sa-users-field oh-legacy-admin__toolbar-field">
-            <span>حالة الحساب</span>
+            <span>{t("legacy.common.accountStatus")}</span>
             <select
               value={draftFilters.isActive}
               onChange={(e) => setDraftFilters((s) => ({ ...s, isActive: e.target.value }))}
             >
-              <option value="">الكل</option>
-              <option value="true">نشط</option>
-              <option value="false">غير نشط</option>
+              <option value="">{t("legacy.common.all")}</option>
+              <option value="true">{t("legacy.center.stats.active")}</option>
+              <option value="false">{t("legacy.common.inactive")}</option>
             </select>
           </label>
           <label className="oh-sa-users-field oh-legacy-admin__toolbar-field">
-            <span>مجال العمل</span>
+            <span>{t("legacy.join.workFieldSection")}</span>
             <select
               value={draftFilters.workField}
               onChange={(e) => setDraftFilters((s) => ({ ...s, workField: e.target.value }))}
             >
-              <option value="">الكل</option>
+              <option value="">{t("legacy.common.all")}</option>
               {LEGACY_WORK_FIELDS.map((wf) => (
                 <option key={wf.key} value={wf.key}>
                   {wf.labelAr}
@@ -421,21 +418,21 @@ export default function LegacyFreelancersPanel({
             </select>
           </label>
           <div className="oh-legacy-admin__toolbar-actions">
-            <Button type="submit">تطبيق</Button>
+            <Button type="submit">{t("legacy.common.apply")}</Button>
             <Button type="button" variant="secondary" onClick={resetFilters}>
-              إعادة ضبط
+              {t("legacy.common.reset")}
             </Button>
           </div>
         </form>
 
         {selectedCount > 0 ? (
-          <div className="oh-sa-users-bulk" role="region" aria-label="إجراءات جماعية" style={{ marginBottom: "0.85rem" }}>
-            <span className="oh-sa-users-bulk__count">محدّد: {selectedCount}</span>
+          <div className="oh-sa-users-bulk" role="region" aria-label={t("legacy.common.bulkActions")} style={{ marginBottom: "0.85rem" }}>
+            <span className="oh-sa-users-bulk__count">{t("legacy.common.selectedCount", { count: selectedCount })}</span>
             <Button type="button" onClick={() => setShowBulk(true)}>
-              إسناد باقة
+              {t("legacy.common.assignPackage")}
             </Button>
             <Button type="button" variant="secondary" onClick={() => setSelectedIds(new Set())}>
-              إلغاء التحديد
+              {t("legacy.common.clearSelection")}
             </Button>
           </div>
         ) : null}
@@ -447,19 +444,19 @@ export default function LegacyFreelancersPanel({
             message={loadError}
             actions={
               <Button type="button" variant="secondary" onClick={load}>
-                إعادة المحاولة
+                {t("legacy.common.retry")}
               </Button>
             }
           />
         ) : items.length === 0 ? (
           <DashboardEmptyState
-            title="لا يوجد فريلانسرز"
-            description="أضف يدوياً أو عبر حملات الدعوة المشتركة."
+            title={t("legacy.common.noFreelancers")}
+            description={t("legacy.common.noFreelancersDesc")}
           />
         ) : (
           <>
             <div className="oh-sa-users-table-wrap">
-              <DashboardTable caption="قائمة الفريلانسرز القدامى">
+              <DashboardTable caption={t("legacy.common.freelancersListCaption")}>
                 <thead>
                   <tr>
                     <th scope="col">
@@ -467,20 +464,20 @@ export default function LegacyFreelancersPanel({
                         type="checkbox"
                         checked={allVisibleSelected}
                         onChange={toggleAll}
-                        aria-label="تحديد الكل"
+                        aria-label={t("legacy.common.selectAll")}
                       />
                     </th>
-                    <th scope="col">رقم العضوية</th>
-                    <th scope="col">الاسم</th>
-                    <th scope="col">مجال العمل</th>
-                    <th scope="col">التواصل</th>
-                    <th scope="col">طريقة الدخول</th>
-                    <th scope="col">الباقة</th>
-                    <th scope="col">الهوية</th>
-                    <th scope="col">الأوراق</th>
-                    <th scope="col">مبالغ تاريخية</th>
-                    <th scope="col">الحالة</th>
-                    <th scope="col">إجراءات</th>
+                    <th scope="col">{t("legacy.common.membershipId")}</th>
+                    <th scope="col">{t("legacy.common.fullName")}</th>
+                    <th scope="col">{t("legacy.join.workFieldSection")}</th>
+                    <th scope="col">{t("legacy.common.contact")}</th>
+                    <th scope="col">{t("legacy.common.entryMethod")}</th>
+                    <th scope="col">{t("legacy.detailTabs.package")}</th>
+                    <th scope="col">{t("legacy.join.identitySection")}</th>
+                    <th scope="col">{t("legacy.common.documents")}</th>
+                    <th scope="col">{t("legacy.common.historicalAmounts")}</th>
+                    <th scope="col">{t("legacy.common.status")}</th>
+                    <th scope="col">{t("legacy.common.actions")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -491,7 +488,7 @@ export default function LegacyFreelancersPanel({
                           type="checkbox"
                           checked={selectedIds.has(row.id)}
                           onChange={() => toggleOne(row.id)}
-                          aria-label={`تحديد ${row.fullName}`}
+                          aria-label={t("legacy.common.selectRow", { name: row.fullName })}
                         />
                       </td>
                       <td>
@@ -507,7 +504,7 @@ export default function LegacyFreelancersPanel({
                       </td>
                       <td>
                         {row.workFields?.isEmpty || !(row.workFields?.labels || []).length ? (
-                          <span className="oh-legacy-admin__muted">غير محدد</span>
+                          <span className="oh-legacy-admin__muted">{t("legacy.common.notSet")}</span>
                         ) : (
                           <div className="oh-legacy-work-chips">
                             {(row.workFields?.labels || []).map((lbl) => (
@@ -528,7 +525,7 @@ export default function LegacyFreelancersPanel({
                         <StatusBadge
                           tone={row.legacyEntryMethod === "ADMIN_MANUAL" ? "admin_assigned" : "neutral"}
                         >
-                          {entryMethodLabel(row.legacyEntryMethod)}
+                          {entryMethodLabel(row.legacyEntryMethod, t)}
                         </StatusBadge>
                       </td>
                       <td>
@@ -539,14 +536,14 @@ export default function LegacyFreelancersPanel({
                       </td>
                       <td>
                         <StatusBadge tone={row.identity?.complete ? "success" : "warning"}>
-                          {identityStatusLabel(row.identity)}
+                          {identityStatusLabel(row.identity, t)}
                         </StatusBadge>
                       </td>
                       <td>{row.signedDocuments?.count ?? 0}</td>
                       <td>{formatMoney(row.historicalMoney?.total, row.historicalMoney?.currency)}</td>
                       <td>
                         <StatusBadge tone={row.isActive ? "success" : "danger"}>
-                          {row.isActive ? "نشط" : "غير نشط"}
+                          {row.isActive ? t("legacy.common.active") : t("legacy.common.inactive")}
                         </StatusBadge>
                       </td>
                       <td>
@@ -559,7 +556,7 @@ export default function LegacyFreelancersPanel({
                               setDetailUserId(row.id);
                             }}
                           >
-                            عرض / إدارة
+                            {t("legacy.common.viewManage")}
                           </Button>
                         </div>
                       </td>
@@ -570,7 +567,7 @@ export default function LegacyFreelancersPanel({
             </div>
             <div className="oh-legacy-admin__pager">
               <p className="oh-legacy-admin__pager-meta">
-                صفحة {page} من {totalPages}
+                {t("legacy.common.pageOf", { page, total: totalPages })}
               </p>
               <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} isLoading={loading} />
             </div>
@@ -580,24 +577,24 @@ export default function LegacyFreelancersPanel({
 
       {showCreate ? (
         <div className="oh-sa-users-modal" role="dialog" aria-modal="true" aria-labelledby="oh-legacy-create-title">
-          <button type="button" className="oh-sa-users-modal__backdrop" aria-label="إغلاق" onClick={() => setShowCreate(false)} />
+          <button type="button" className="oh-sa-users-modal__backdrop" aria-label={t("legacy.common.close")} onClick={() => setShowCreate(false)} />
           <div className="oh-sa-users-modal__panel" style={{ width: "min(720px, 100%)", maxHeight: "min(92vh, 900px)" }}>
             <header className="oh-sa-users-modal__header">
-              <h2 id="oh-legacy-create-title">إضافة فريلانسر قديم</h2>
-              <button type="button" className="oh-sa-users-modal__close" onClick={() => setShowCreate(false)} aria-label="إغلاق">
+              <h2 id="oh-legacy-create-title">{t("legacy.common.addLegacyModalTitle")}</h2>
+              <button type="button" className="oh-sa-users-modal__close" onClick={() => setShowCreate(false)} aria-label={t("legacy.common.close")}>
                 ×
               </button>
             </header>
             <form className="oh-sa-users-modal__body" onSubmit={onCreate}>
               <div className="oh-legacy-admin__form-grid oh-legacy-admin__form-grid--2">
                 {[
-                  ["firstName", "الاسم الأول *", true],
-                  ["fatherName", "اسم الأب *", true],
-                  ["familyName", "اسم العائلة *", true],
-                  ["nationalId", "الرقم الوطني *", true, true],
-                ].map(([key, label, required, ltr]) => (
+                  ["firstName", "legacy.common.firstName", true],
+                  ["fatherName", "legacy.common.fatherName", true],
+                  ["familyName", "legacy.common.familyName", true],
+                  ["nationalId", "legacy.common.nationalId", true, true],
+                ].map(([key, labelKey, required, ltr]) => (
                   <label key={key} className="oh-sa-users-field">
-                    <span>{label}</span>
+                    <span>{t(labelKey)}</span>
                     <input
                       required={required}
                       dir={ltr ? "ltr" : undefined}
@@ -607,7 +604,7 @@ export default function LegacyFreelancersPanel({
                   </label>
                 ))}
                 <div className="oh-sa-users-field">
-                  <span id="oh-legacy-create-phone-label">رقم الهاتف *</span>
+                  <span id="oh-legacy-create-phone-label">{t("legacy.common.phoneRequired")}</span>
                   <LegacyPhoneInput
                     id="oh-legacy-create-phone"
                     variant="admin"
@@ -620,7 +617,7 @@ export default function LegacyFreelancersPanel({
                   />
                 </div>
                 <label className="oh-sa-users-field oh-legacy-admin__form-span">
-                  <span>البريد الإلكتروني *</span>
+                  <span>{t("legacy.common.emailRequired")}</span>
                   <input
                     required
                     type="email"
@@ -630,7 +627,7 @@ export default function LegacyFreelancersPanel({
                   />
                 </label>
                 <div className="oh-sa-users-field oh-legacy-admin__form-span">
-                  <span>مجال العمل *</span>
+                  <span>{t("legacy.common.workField")} *</span>
                   <div className="oh-legacy-admin__doc-checks" style={{ marginTop: "0.4rem" }}>
                     {LEGACY_WORK_FIELDS.map((wf) => {
                       const checked = createForm.workFields.includes(wf.key);
@@ -655,7 +652,7 @@ export default function LegacyFreelancersPanel({
                   </div>
                 </div>
                 <label className="oh-sa-users-field">
-                  <span>المدينة</span>
+                  <span>{t("legacy.common.city")}</span>
                   <LegacySearchableSelect
                     className="oh-legacy-smart--admin"
                     value={createForm.city}
@@ -664,11 +661,11 @@ export default function LegacyFreelancersPanel({
                     allowOther
                     otherValue={CITY_OTHER_VALUE}
                     otherLabel={CITY_OTHER_LABEL_AR}
-                    otherInputLabel="اكتب اسم المدينة"
+                    otherInputLabel={t("legacy.common.writeCityName")}
                   />
                 </label>
                 <label className="oh-sa-users-field">
-                  <span>مكان الإقامة</span>
+                  <span>{t("legacy.common.residence")}</span>
                   <LegacySmartSuggestField
                     fieldKey="residence_area"
                     className="oh-legacy-smart--admin"
@@ -677,7 +674,7 @@ export default function LegacyFreelancersPanel({
                   />
                 </label>
                 <label className="oh-sa-users-field">
-                  <span>التخصص</span>
+                  <span>{t("legacy.common.specialization")}</span>
                   <LegacySmartSuggestField
                     fieldKey="specialization"
                     className="oh-legacy-smart--admin"
@@ -686,7 +683,7 @@ export default function LegacyFreelancersPanel({
                   />
                 </label>
                 <label className="oh-sa-users-field">
-                  <span>الجنسية</span>
+                  <span>{t("legacy.common.nationality")}</span>
                   <LegacySmartSuggestField
                     fieldKey="nationality"
                     className="oh-legacy-smart--admin"
@@ -695,12 +692,12 @@ export default function LegacyFreelancersPanel({
                   />
                 </label>
                 <label className="oh-sa-users-field oh-legacy-admin__form-span">
-                  <span>ربط بمؤسسة (اختياري)</span>
+                  <span>{t("legacy.common.optionalInstitution")}</span>
                   <select
                     value={createForm.institutionId}
                     onChange={(e) => setCreateForm((f) => ({ ...f, institutionId: e.target.value }))}
                   >
-                    <option value="">— بدون —</option>
+                    <option value="">{t("legacy.common.none")}</option>
                     {institutions.map((i) => (
                       <option key={i.id} value={i.id}>
                         {i.name}
@@ -709,12 +706,12 @@ export default function LegacyFreelancersPanel({
                   </select>
                 </label>
                 <label className="oh-sa-users-field">
-                  <span>الباقة (اختياري)</span>
+                  <span>{t("legacy.common.optionalPackage")}</span>
                   <select
                     value={createForm.planId}
                     onChange={(e) => setCreateForm((f) => ({ ...f, planId: e.target.value }))}
                   >
-                    <option value="">— افتراضي —</option>
+                    <option value="">{t("legacy.common.defaultPlan")}</option>
                     {planOptions.map((p) => (
                       <option key={p.id} value={p.id}>
                         {p.label}
@@ -723,12 +720,12 @@ export default function LegacyFreelancersPanel({
                   </select>
                 </label>
                 <label className="oh-sa-users-field">
-                  <span>مدة الباقة (أشهر)</span>
+                  <span>{t("legacy.common.durationMonthsPackage")}</span>
                   <select
                     value={createForm.durationMonths}
                     onChange={(e) => setCreateForm((f) => ({ ...f, durationMonths: e.target.value }))}
                   >
-                    <option value="">— بدون مدة محددة —</option>
+                    <option value="">{t("legacy.common.noDuration")}</option>
                     {PACKAGE_DURATION_OPTIONS.map((m) => (
                       <option key={m} value={m}>
                         {m}
@@ -737,7 +734,7 @@ export default function LegacyFreelancersPanel({
                   </select>
                 </label>
                 <label className="oh-sa-users-field">
-                  <span>مبلغ تاريخي (اختياري)</span>
+                  <span>{t("legacy.common.optionalHistorical")}</span>
                   <input
                     type="number"
                     min={0}
@@ -749,9 +746,9 @@ export default function LegacyFreelancersPanel({
                 </label>
                 <div className="oh-legacy-admin__form-span">
                   <p className="oh-sa-users-muted" style={{ marginBottom: "0.5rem", fontWeight: 800 }}>
-                    الأوراق والعقود الموقعة
+                    {t("legacy.common.signedDocsTitle")}
                     <span className="oh-legacy-admin__muted" style={{ display: "block", fontWeight: 400 }}>
-                      تُدار بواسطة الإدارة فقط
+                      {t("legacy.common.adminOnly")}
                     </span>
                   </p>
                   <div className="oh-legacy-admin__form-grid">
@@ -779,20 +776,20 @@ export default function LegacyFreelancersPanel({
                   </div>
                 </div>
                 <label className="oh-sa-users-field">
-                  <span>صورة الهوية (أمام)</span>
+                  <span>{t("legacy.common.idFront")}</span>
                   <input type="file" accept="image/*" onChange={(e) => setIdFrontFile(e.target.files?.[0] || null)} />
                 </label>
                 <label className="oh-sa-users-field">
-                  <span>صورة الهوية (خلف)</span>
+                  <span>{t("legacy.common.idBack")}</span>
                   <input type="file" accept="image/*" onChange={(e) => setIdBackFile(e.target.files?.[0] || null)} />
                 </label>
               </div>
               <div className="oh-sa-users-modal__footer">
                 <Button type="button" variant="secondary" onClick={() => setShowCreate(false)}>
-                  إلغاء
+                  {t("legacy.common.cancel")}
                 </Button>
                 <Button type="submit" disabled={creating}>
-                  {creating ? "جاري الحفظ…" : "حفظ"}
+                  {creating ? t("legacy.common.saving") : t("legacy.common.save")}
                 </Button>
               </div>
             </form>
@@ -802,22 +799,22 @@ export default function LegacyFreelancersPanel({
 
       {showBulk ? (
         <div className="oh-sa-users-modal" role="dialog" aria-modal="true" aria-labelledby="oh-legacy-bulk-title">
-          <button type="button" className="oh-sa-users-modal__backdrop" aria-label="إغلاق" onClick={() => setShowBulk(false)} />
+          <button type="button" className="oh-sa-users-modal__backdrop" aria-label={t("legacy.common.close")} onClick={() => setShowBulk(false)} />
           <div className="oh-sa-users-modal__panel">
             <header className="oh-sa-users-modal__header">
-              <h2 id="oh-legacy-bulk-title">إسناد باقة</h2>
-              <button type="button" className="oh-sa-users-modal__close" onClick={() => setShowBulk(false)} aria-label="إغلاق">
+              <h2 id="oh-legacy-bulk-title">{t("legacy.common.bulkAssignTitle")}</h2>
+              <button type="button" className="oh-sa-users-modal__close" onClick={() => setShowBulk(false)} aria-label={t("legacy.common.close")}>
                 ×
               </button>
             </header>
             <div className="oh-sa-users-modal__body">
               <p className="oh-sa-users-modal__desc">
-                سيتم إسناد الباقة لـ <strong>{selectedCount}</strong> فريلانسر محدد.
+                {t("legacy.common.bulkAssignDesc", { count: selectedCount })}
               </p>
               <label className="oh-sa-users-field">
-                <span>الباقة</span>
+                <span>{t("legacy.detailTabs.package")}</span>
                 <select value={bulkPlanId} onChange={(e) => setBulkPlanId(e.target.value)}>
-                  <option value="">— اختر —</option>
+                  <option value="">{t("legacy.common.select")}</option>
                   {planOptions.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.label}
@@ -826,7 +823,7 @@ export default function LegacyFreelancersPanel({
                 </select>
               </label>
               <label className="oh-sa-users-field">
-                <span>المدة (أشهر)</span>
+                <span>{t("legacy.common.durationMonths")}</span>
                 <select value={bulkDuration} onChange={(e) => setBulkDuration(e.target.value)}>
                   {PACKAGE_DURATION_OPTIONS.map((m) => (
                     <option key={m} value={m}>
@@ -837,10 +834,10 @@ export default function LegacyFreelancersPanel({
               </label>
               <div className="oh-sa-users-modal__footer">
                 <Button type="button" variant="secondary" onClick={() => setShowBulk(false)}>
-                  إلغاء
+                  {t("legacy.common.cancel")}
                 </Button>
                 <Button type="button" disabled={bulkBusy || !bulkPlanId} onClick={onBulkAssign}>
-                  {bulkBusy ? "جاري الإسناد…" : "تأكيد"}
+                  {bulkBusy ? t("legacy.common.assigning") : t("legacy.common.confirm")}
                 </Button>
               </div>
             </div>
@@ -886,6 +883,8 @@ function LegacyFreelancerDetailDrawer({
   onIdentityReplaced,
   pushToast,
 }) {
+  const { t } = useTranslation();
+  const detailTabs = useMemo(() => getDetailTabs(t), [t]);
   const [pkgPlanId, setPkgPlanId] = useState("");
   const [pkgDuration, setPkgDuration] = useState("3");
   const [pkgBusy, setPkgBusy] = useState(false);
@@ -911,10 +910,10 @@ function LegacyFreelancerDetailDrawer({
         planId: Number(pkgPlanId),
         durationMonths: Number(pkgDuration),
       });
-      pushToast({ type: "success", message: "تم إسناد الباقة" });
+      pushToast({ type: "success", message: t("legacy.toast.assignPackageSuccess") });
       await onRefresh();
     } catch (err) {
-      pushToast({ type: "error", message: getSafeApiErrorMessage(err, "تعذر إسناد الباقة") });
+      pushToast({ type: "error", message: getSafeApiErrorMessage(err, t("legacy.toast.assignPackageFailed")) });
     } finally {
       setPkgBusy(false);
     }
@@ -932,10 +931,10 @@ function LegacyFreelancerDetailDrawer({
       });
       setMoneyAmount("");
       setMoneyNote("");
-      pushToast({ type: "success", message: "تم تسجيل المبلغ التاريخي" });
+      pushToast({ type: "success", message: t("legacy.toast.historicalRecorded") });
       await onRefresh();
     } catch (err) {
-      pushToast({ type: "error", message: getSafeApiErrorMessage(err, "تعذر تسجيل المبلغ") });
+      pushToast({ type: "error", message: getSafeApiErrorMessage(err, t("legacy.toast.historicalFailed")) });
     } finally {
       setMoneyBusy(false);
     }
@@ -943,13 +942,13 @@ function LegacyFreelancerDetailDrawer({
 
   const voidMoney = async (id) => {
     if (!detail?.id) return;
-    const reason = window.prompt("سبب الإلغاء (اختياري):") || undefined;
+    const reason = window.prompt(t("legacy.common.voidReasonPrompt")) || undefined;
     try {
       await voidLegacyFreelancerHistoricalMoneyRequest(detail.id, id, { voidReason: reason });
-      pushToast({ type: "success", message: "تم إلغاء السجل" });
+      pushToast({ type: "success", message: t("legacy.toast.voidSuccess") });
       await onRefresh();
     } catch (err) {
-      pushToast({ type: "error", message: getSafeApiErrorMessage(err, "تعذر الإلغاء") });
+      pushToast({ type: "error", message: getSafeApiErrorMessage(err, t("legacy.toast.voidFailed")) });
     }
   };
 
@@ -964,7 +963,7 @@ function LegacyFreelancerDetailDrawer({
       }
       await onRefresh();
     } catch (err) {
-      pushToast({ type: "error", message: getSafeApiErrorMessage(err, "تعذر تحديث المستند") });
+      pushToast({ type: "error", message: getSafeApiErrorMessage(err, t("legacy.toast.docUpdateFailed")) });
     } finally {
       setDocBusyId(null);
     }
@@ -975,11 +974,11 @@ function LegacyFreelancerDetailDrawer({
     setIdBusySide(side);
     try {
       await replaceLegacyFreelancerIdentityRequest(detail.id, side, file);
-      pushToast({ type: "success", message: "تم استبدال صورة الهوية" });
+      pushToast({ type: "success", message: t("legacy.toast.identityReplaced") });
       onIdentityReplaced();
       await onRefresh();
     } catch (err) {
-      pushToast({ type: "error", message: getSafeApiErrorMessage(err, "تعذر رفع الصورة") });
+      pushToast({ type: "error", message: getSafeApiErrorMessage(err, t("legacy.toast.uploadFailed")) });
     } finally {
       setIdBusySide(null);
     }
@@ -990,31 +989,31 @@ function LegacyFreelancerDetailDrawer({
 
   return (
     <div className="oh-sa-users-drawer" role="dialog" aria-modal="true" aria-labelledby="oh-legacy-drawer-title">
-      <button type="button" className="oh-sa-users-drawer__backdrop" aria-label="إغلاق" onClick={onClose} />
+      <button type="button" className="oh-sa-users-drawer__backdrop" aria-label={t("legacy.common.close")} onClick={onClose} />
       <aside className="oh-sa-users-drawer__panel">
         <header className="oh-sa-users-drawer__header">
           <div>
-            <h2 id="oh-legacy-drawer-title">{detail?.fullName || "تفاصيل الفريلانسر"}</h2>
+            <h2 id="oh-legacy-drawer-title">{detail?.fullName || t("legacy.common.freelancerDetails")}</h2>
             <p className="oh-sa-users-drawer__sub">
               <span className="oh-legacy-admin__member-id">{detail?.freelancerMemberIdMasked || "—"}</span>
             </p>
           </div>
-          <button type="button" className="oh-sa-users-drawer__close" onClick={onClose} aria-label="إغلاق">
+          <button type="button" className="oh-sa-users-drawer__close" onClick={onClose} aria-label={t("legacy.common.close")}>
             ×
           </button>
         </header>
 
-        <nav className="oh-sa-users-tabs" role="tablist" aria-label="أقسام التفاصيل">
-          {DETAIL_TABS.map((t) => (
+        <nav className="oh-sa-users-tabs" role="tablist" aria-label={t("legacy.common.detailSections")}>
+          {detailTabs.map((tab) => (
             <button
-              key={t.id}
+              key={tab.id}
               type="button"
               role="tab"
-              aria-selected={detailTab === t.id}
-              className={`oh-sa-users-tabs__btn${detailTab === t.id ? " is-active" : ""}`}
-              onClick={() => setDetailTab(t.id)}
+              aria-selected={detailTab === tab.id}
+              className={`oh-sa-users-tabs__btn${detailTab === tab.id ? " is-active" : ""}`}
+              onClick={() => setDetailTab(tab.id)}
             >
-              {t.label}
+              {tab.label}
             </button>
           ))}
         </nav>
@@ -1025,26 +1024,26 @@ function LegacyFreelancerDetailDrawer({
           ) : detailTab === "profile" ? (
             <dl className="oh-sa-users-kv">
               <div>
-                <span>الاسم</span>
+                <span>{t("legacy.common.fullName")}</span>
                 <strong>{detail.fullName}</strong>
               </div>
               <div>
-                <span>رقم العضوية</span>
+                <span>{t("legacy.common.membershipId")}</span>
                 <strong className="oh-legacy-admin__member-id">{detail.freelancerMemberIdMasked || "—"}</strong>
               </div>
               <div>
-                <span>البريد</span>
+                <span>{t("legacy.common.email")}</span>
                 <strong dir="ltr">{detail.email || "—"}</strong>
               </div>
               <div>
-                <span>الهاتف</span>
+                <span>{t("legacy.common.phone")}</span>
                 <strong dir="ltr">{detail.phone || "—"}</strong>
               </div>
               <div>
-                <span>مجال العمل</span>
+                <span>{t("legacy.join.workFieldSection")}</span>
                 <strong>
                   {detail.workFields?.isEmpty || !(detail.workFields?.labels || []).length ? (
-                    "غير محدد"
+                    t("legacy.common.unspecified")
                   ) : (
                     <span className="oh-legacy-work-chips">
                       {detail.workFields.labels.map((lbl) => (
@@ -1057,7 +1056,7 @@ function LegacyFreelancerDetailDrawer({
                 </strong>
               </div>
               <div>
-                <span>المهارات والبرامج</span>
+                <span>{t("legacy.common.skillsPrograms")}</span>
                 <strong>
                   {!(detail.detailedSkills || []).length ? (
                     "—"
@@ -1073,29 +1072,29 @@ function LegacyFreelancerDetailDrawer({
                 </strong>
               </div>
               <div>
-                <span>طريقة الدخول</span>
+                <span>{t("legacy.common.entryMethod")}</span>
                 <strong>
                   <StatusBadge
                     tone={detail.legacyEntryMethod === "ADMIN_MANUAL" ? "admin_assigned" : "neutral"}
                   >
-                    {entryMethodLabel(detail.legacyEntryMethod)}
+                    {entryMethodLabel(detail.legacyEntryMethod, t)}
                   </StatusBadge>
                 </strong>
               </div>
               <div>
-                <span>الحالة</span>
+                <span>{t("legacy.common.status")}</span>
                 <strong>
                   <StatusBadge tone={detail.isActive ? "success" : "danger"}>
-                    {detail.isActive ? "نشط" : "غير نشط"}
+                    {detail.isActive ? t("legacy.common.active") : t("legacy.common.inactive")}
                   </StatusBadge>
                 </strong>
               </div>
               <div>
-                <span>الباقة الحالية</span>
+                <span>{t("legacy.common.currentPackage")}</span>
                 <strong>{detail.plan?.title || detail.plan?.name || "—"}</strong>
               </div>
               <div>
-                <span>انتهاء الباقة</span>
+                <span>{t("legacy.common.packageExpiry")}</span>
                 <strong>{formatDate(detail.plan?.expiresAt)}</strong>
               </div>
             </dl>
@@ -1105,14 +1104,14 @@ function LegacyFreelancerDetailDrawer({
                 <LegacyIdentityImage
                   userId={detail.id}
                   side="front"
-                  label="صورة الهوية الأمامية"
+                  label={t("legacy.common.idFrontFull")}
                   refreshKey={identityRefresh}
                 />
               ) : (
-                <p className="oh-sa-users-muted">لا توجد صورة أمامية محفوظة.</p>
+                <p className="oh-sa-users-muted">{t("legacy.common.noFrontSaved")}</p>
               )}
               <label className="oh-sa-users-field">
-                <span>استبدال الأمامية</span>
+                <span>{t("legacy.common.replaceFront")}</span>
                 <input
                   type="file"
                   accept="image/*"
@@ -1128,14 +1127,14 @@ function LegacyFreelancerDetailDrawer({
                 <LegacyIdentityImage
                   userId={detail.id}
                   side="back"
-                  label="صورة الهوية الخلفية"
+                  label={t("legacy.common.idBackFull")}
                   refreshKey={identityRefresh}
                 />
               ) : (
-                <p className="oh-sa-users-muted">لا توجد صورة خلفية محفوظة.</p>
+                <p className="oh-sa-users-muted">{t("legacy.common.noBackSaved")}</p>
               )}
               <label className="oh-sa-users-field">
-                <span>استبدال الخلفية</span>
+                <span>{t("legacy.common.replaceBack")}</span>
                 <input
                   type="file"
                   accept="image/*"
@@ -1151,10 +1150,10 @@ function LegacyFreelancerDetailDrawer({
           ) : detailTab === "docs" ? (
             <div className="oh-sa-users-stack">
               <p className="oh-sa-users-muted" style={{ margin: 0 }}>
-                الأوراق والعقود الموقعة — تُدار بواسطة الإدارة فقط. التغييرات تُسجَّل في سجل التدقيق.
+                {t("legacy.common.docsSignedAdminNote")}
               </p>
               {docTypes.length === 0 ? (
-                <DashboardEmptyState title="لا أنواع مستندات" />
+                <DashboardEmptyState title={t("legacy.campaigns.noDocTypesDetail")} />
               ) : (
                 docTypes.map((t) => {
                   const active = activeSignedIds.has(String(t.id));
@@ -1162,7 +1161,7 @@ function LegacyFreelancerDetailDrawer({
                     <label key={t.id} className="oh-legacy-admin__doc-card" style={{ cursor: "pointer" }}>
                       <div className="oh-legacy-admin__meta">
                         <strong>{t.labelAr}</strong>
-                        <span>{active ? "موقّع / مؤكد" : "غير مؤكد"}</span>
+                        <span>{active ? t("legacy.common.signedConfirmed") : t("legacy.common.unsigned")}</span>
                       </div>
                       <input
                         type="checkbox"
@@ -1178,15 +1177,15 @@ function LegacyFreelancerDetailDrawer({
           ) : detailTab === "package" ? (
             <div className="oh-sa-users-stack">
               <div className="oh-legacy-admin__notice oh-legacy-admin__notice--info">
-                الحالية: <strong>{detail.plan?.title || detail.plan?.name || "—"}</strong>
+                {t("legacy.common.currentPlanLine", { name: detail.plan?.title || detail.plan?.name || "—" })}
                 <br />
-                الانتهاء: {formatDate(detail.plan?.expiresAt)}
+                {t("legacy.common.expiryLine", { date: formatDate(detail.plan?.expiresAt) })}
               </div>
               <div className="oh-legacy-admin__form-grid">
                 <label className="oh-sa-users-field">
-                  <span>باقة جديدة</span>
+                  <span>{t("legacy.common.newPackage")}</span>
                   <select value={pkgPlanId} onChange={(e) => setPkgPlanId(e.target.value)}>
-                    <option value="">— اختر —</option>
+                    <option value="">{t("legacy.common.select")}</option>
                     {planOptions.map((p) => (
                       <option key={p.id} value={p.id}>
                         {p.label}
@@ -1195,7 +1194,7 @@ function LegacyFreelancerDetailDrawer({
                   </select>
                 </label>
                 <label className="oh-sa-users-field">
-                  <span>المدة (أشهر)</span>
+                  <span>{t("legacy.common.durationMonths")}</span>
                   <select value={pkgDuration} onChange={(e) => setPkgDuration(e.target.value)}>
                     {PACKAGE_DURATION_OPTIONS.map((m) => (
                       <option key={m} value={m}>
@@ -1206,11 +1205,11 @@ function LegacyFreelancerDetailDrawer({
                 </label>
               </div>
               <Button type="button" disabled={pkgBusy || !pkgPlanId} onClick={assignPackage}>
-                {pkgBusy ? "جاري الإسناد…" : "إسناد الباقة"}
+                {pkgBusy ? t("legacy.common.assigning") : t("legacy.common.assignPackageAction")}
               </Button>
-              <h4 style={{ margin: "0.5rem 0 0", fontSize: "0.9rem" }}>سجل الإسنادات</h4>
+              <h4 style={{ margin: "0.5rem 0 0", fontSize: "0.9rem" }}>{t("legacy.common.assignmentHistory")}</h4>
               {(detail.packageHistory || []).length === 0 ? (
-                <p className="oh-sa-users-muted">لا سجل بعد.</p>
+                <p className="oh-sa-users-muted">{t("legacy.common.noHistoryYet")}</p>
               ) : (
                 <ul className="oh-sa-users-stack" style={{ listStyle: "none", padding: 0, margin: 0 }}>
                   {(detail.packageHistory || []).map((h) => (
@@ -1218,7 +1217,8 @@ function LegacyFreelancerDetailDrawer({
                       <div className="oh-legacy-admin__meta">
                         <strong>{h.planTitle || h.planName || h.planId}</strong>
                         <span>
-                          {formatDate(h.startsAt)} → {formatDate(h.expiresAt)} · {h.durationMonths || "—"} شهر ·{" "}
+                          {formatDate(h.startsAt)} → {formatDate(h.expiresAt)} · {h.durationMonths || "—"}{" "}
+                          {t("legacy.common.months")} ·{" "}
                           {h.status}
                         </span>
                       </div>
@@ -1230,17 +1230,17 @@ function LegacyFreelancerDetailDrawer({
           ) : (
             <div className="oh-sa-users-stack">
               <p className="oh-legacy-admin__notice">
-                هذه المبالغ تاريخية/إدارية فقط — لا تؤثر على رصيد المحفظة أو المدفوعات.
+                {t("legacy.common.historicalMoneyNotice")}
               </p>
               <p style={{ margin: 0 }}>
-                الإجمالي النشط:{" "}
+                {t("legacy.common.activeTotal")}:{" "}
                 <strong>
                   {formatMoney(detail.historicalMoney?.total, detail.historicalMoney?.currency || "JOD")}
                 </strong>
               </p>
               <form className="oh-legacy-admin__form-grid" onSubmit={addMoney}>
                 <label className="oh-sa-users-field">
-                  <span>المبلغ</span>
+                  <span>{t("legacy.common.amount")}</span>
                   <input
                     required
                     type="number"
@@ -1252,12 +1252,12 @@ function LegacyFreelancerDetailDrawer({
                   />
                 </label>
                 <label className="oh-sa-users-field">
-                  <span>ملاحظة</span>
+                  <span>{t("legacy.common.note")}</span>
                   <input value={moneyNote} onChange={(e) => setMoneyNote(e.target.value)} />
                 </label>
                 <div className="oh-sa-users-filters__actions">
                   <Button type="submit" disabled={moneyBusy}>
-                    إضافة
+                    {t("legacy.common.add")}
                   </Button>
                 </div>
               </form>
@@ -1276,10 +1276,10 @@ function LegacyFreelancerDetailDrawer({
                     </div>
                     {!r.isVoided ? (
                       <Button type="button" variant="secondary" onClick={() => voidMoney(r.id)}>
-                        إلغاء
+                        {t("legacy.common.cancel")}
                       </Button>
                     ) : (
-                      <span className="oh-sa-users-muted">ملغى</span>
+                      <span className="oh-sa-users-muted">{t("legacy.common.voided")}</span>
                     )}
                   </li>
                 ))}

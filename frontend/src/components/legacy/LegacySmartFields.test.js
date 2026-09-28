@@ -53,7 +53,7 @@ describe("component source safety", () => {
   it("join page wires smart fields and city other label", () => {
     const join = read("pages/LegacyFreelancerJoinPage.jsx");
     assert.match(join, /LegacySmartSuggestField/);
-    assert.match(join, /اكتب اسم المدينة/);
+    assert.match(join, /legacy\.common\.writeCityName/);
     assert.match(join, /LegacySearchableSelect/);
     assert.doesNotMatch(join, /هل أنت طالب جامعي/);
   });

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "../../../i18n/LanguageProvider";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   Eye,
@@ -37,18 +38,12 @@ import {
   adminListInstitutionsRequest,
   listLegacyDocumentTypesRequest,
 } from "../../../services/api";
-import { formatDate } from "./legacyAdminShared";
+import { formatDate, getWorkspaceTabs } from "./legacyAdminShared";
 import LegacyFreelancersPanel from "./LegacyFreelancersPanel";
 import LegacyCampaignLinkModal from "./LegacyCampaignLinkModal";
 import "./legacyAdminCenter.css";
 
 const LIST_PATH = "/dashboard/legacy-freelancers";
-const WORKSPACE_TABS = [
-  { id: "overview", label: "نظرة عامة" },
-  { id: "registrants", label: "المسجلون" },
-  { id: "settings", label: "إعدادات الحملة" },
-  { id: "documents", label: "الأوراق ومتطلبات التسجيل" },
-];
 
 function InsightCard({ label, value, hint, icon: Icon, tone = "default" }) {
   return (
@@ -79,14 +74,16 @@ function toLocalDatetimeValue(iso) {
 }
 
 export default function LegacyCampaignWorkspacePage() {
+  const { t } = useTranslation();
   const { campaignId } = useParams();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { hasPermission } = useAuth();
   const canManage = Boolean(hasPermission?.(LEGACY_FREELANCERS_MANAGE_PERMISSION));
   const { pushToast } = useToast();
+  const workspaceTabs = useMemo(() => getWorkspaceTabs(t), [t]);
 
-  const tab = WORKSPACE_TABS.some((t) => t.id === searchParams.get("tab"))
+  const tab = workspaceTabs.some((wt) => wt.id === searchParams.get("tab"))
     ? searchParams.get("tab")
     : "overview";
 
@@ -136,7 +133,7 @@ export default function LegacyCampaignWorkspacePage() {
         });
       }
     } catch (err) {
-      pushToast({ type: "error", message: getSafeApiErrorMessage(err, "تعذر تحميل مساحة الحملة") });
+      pushToast({ type: "error", message: getSafeApiErrorMessage(err, t("legacy.toast.workspaceLoadFailed")) });
       setWorkspace(null);
     } finally {
       setLoading(false);
@@ -171,20 +168,23 @@ export default function LegacyCampaignWorkspacePage() {
 
   const statusBadge = useMemo(() => {
     if (!campaign) return null;
-    if (campaign.isArchived) return <StatusBadge tone="warning">مؤرشف</StatusBadge>;
-    if (campaign.isActive) return <StatusBadge tone="success">نشط</StatusBadge>;
-    return <StatusBadge tone="neutral">متوقف</StatusBadge>;
-  }, [campaign]);
+    if (campaign.isArchived) return <StatusBadge tone="warning">{t("legacy.common.archived")}</StatusBadge>;
+    if (campaign.isActive) return <StatusBadge tone="success">{t("legacy.center.stats.active")}</StatusBadge>;
+    return <StatusBadge tone="neutral">{t("legacy.common.stopped")}</StatusBadge>;
+  }, [campaign, t]);
 
   const onToggleActive = async () => {
     if (!campaign || busy) return;
     setBusy(true);
     try {
       await updateLegacyFreelancerInviteRequest(campaign.id, { isActive: !campaign.isActive });
-      pushToast({ type: "success", message: campaign.isActive ? "تم إيقاف الحملة" : "تم تفعيل الحملة" });
+      pushToast({
+        type: "success",
+        message: campaign.isActive ? t("legacy.toast.campaignPaused") : t("legacy.toast.campaignActivated"),
+      });
       await load();
     } catch (err) {
-      pushToast({ type: "error", message: getSafeApiErrorMessage(err, "تعذر التحديث") });
+      pushToast({ type: "error", message: getSafeApiErrorMessage(err, t("legacy.toast.updateFailed")) });
     } finally {
       setBusy(false);
     }
@@ -194,21 +194,21 @@ export default function LegacyCampaignWorkspacePage() {
     if (!campaign || busy) return;
     const ok = window.confirm(
       campaign.usedCount > 0
-        ? "سيتم أرشفة الحملة وإيقاف الرابط مع الاحتفاظ بسجلات المسجّلين. المتابعة؟"
-        : "حذف الحملة غير المستخدمة نهائياً؟",
+        ? t("legacy.campaigns.confirmArchiveShort")
+        : t("legacy.campaigns.confirmDeleteUnusedShort"),
     );
     if (!ok) return;
     setBusy(true);
     try {
       const res = await deleteLegacyFreelancerInviteRequest(campaign.id);
-      pushToast({ type: "success", message: res?.message || res?.data?.message || "تم" });
+      pushToast({ type: "success", message: res?.message || res?.data?.message || t("legacy.common.done") });
       if (res?.data?.mode === "deleted") {
         navigate(LIST_PATH);
       } else {
         await load();
       }
     } catch (err) {
-      pushToast({ type: "error", message: getSafeApiErrorMessage(err, "تعذر الحذف/الأرشفة") });
+      pushToast({ type: "error", message: getSafeApiErrorMessage(err, t("legacy.toast.deleteArchiveFailed")) });
     } finally {
       setBusy(false);
     }
@@ -216,16 +216,16 @@ export default function LegacyCampaignWorkspacePage() {
 
   const onRegenerate = async () => {
     if (!campaign || busy) return;
-    const ok = window.confirm("إعادة توليد الرمز تُبطل الرابط السابق. المتابعة؟");
+    const ok = window.confirm(t("legacy.campaigns.confirmRegenerate"));
     if (!ok) return;
     setBusy(true);
     try {
       await regenerateLegacyFreelancerInviteTokenRequest(campaign.id);
-      pushToast({ type: "success", message: "تم إعادة توليد الرمز" });
+      pushToast({ type: "success", message: t("legacy.toast.regenerateSuccess") });
       await load();
       setLinkOpen(true);
     } catch (err) {
-      pushToast({ type: "error", message: getSafeApiErrorMessage(err, "تعذر إعادة التوليد") });
+      pushToast({ type: "error", message: getSafeApiErrorMessage(err, t("legacy.toast.regenerateFailed")) });
     } finally {
       setBusy(false);
     }
@@ -252,10 +252,10 @@ export default function LegacyCampaignWorkspacePage() {
         requireIdBack: Boolean(settingsForm.requireIdBack),
         institutionId: settingsForm.institutionId ? Number(settingsForm.institutionId) : null,
       });
-      pushToast({ type: "success", message: "تم حفظ إعدادات الحملة" });
+      pushToast({ type: "success", message: t("legacy.toast.settingsSaved") });
       await load();
     } catch (err) {
-      pushToast({ type: "error", message: getSafeApiErrorMessage(err, "تعذر حفظ الإعدادات") });
+      pushToast({ type: "error", message: getSafeApiErrorMessage(err, t("legacy.toast.saveSettingsFailed")) });
     } finally {
       setBusy(false);
     }
@@ -274,9 +274,9 @@ export default function LegacyCampaignWorkspacePage() {
       }));
       const res = await putLegacyFreelancerInviteFieldsRequest(campaignId, payload);
       setFieldConfig(res?.data || null);
-      pushToast({ type: "success", message: "تم حفظ حقول التسجيل" });
+      pushToast({ type: "success", message: t("legacy.toast.registrationFieldsSaved") });
     } catch (err) {
-      pushToast({ type: "error", message: getSafeApiErrorMessage(err, "تعذر حفظ الحقول") });
+      pushToast({ type: "error", message: getSafeApiErrorMessage(err, t("legacy.toast.saveFieldsFailed")) });
     } finally {
       setFieldsBusy(false);
     }
@@ -294,9 +294,9 @@ export default function LegacyCampaignWorkspacePage() {
       }));
       const res = await putLegacyCampaignDocumentRequirementsRequest(campaignId, payload);
       setDocReqs(Array.isArray(res?.data) ? res.data : []);
-      pushToast({ type: "success", message: "تم حفظ متطلبات الأوراق" });
+      pushToast({ type: "success", message: t("legacy.toast.docsRequirementsSaved") });
     } catch (err) {
-      pushToast({ type: "error", message: getSafeApiErrorMessage(err, "تعذر حفظ الأوراق") });
+      pushToast({ type: "error", message: getSafeApiErrorMessage(err, t("legacy.toast.saveDocsFailed")) });
     } finally {
       setDocsBusy(false);
     }
@@ -305,7 +305,7 @@ export default function LegacyCampaignWorkspacePage() {
   if (!canManage) {
     return (
       <DashboardShell>
-        <DashboardEmptyState title="غير مصرح" description="تحتاج صلاحية إدارة الفريلانسرز القدامى." />
+        <DashboardEmptyState title={t("legacy.common.unauthorized")} description={t("legacy.center.unauthorizedDesc")} />
       </DashboardShell>
     );
   }
@@ -313,7 +313,7 @@ export default function LegacyCampaignWorkspacePage() {
   if (loading) {
     return (
       <DashboardShell>
-        <DashboardLoadingState label="جاري تحميل مساحة الحملة…" />
+        <DashboardLoadingState label={t("legacy.campaigns.workspaceLoading")} />
       </DashboardShell>
     );
   }
@@ -322,11 +322,11 @@ export default function LegacyCampaignWorkspacePage() {
     return (
       <DashboardShell>
         <DashboardEmptyState
-          title="الحملة غير موجودة"
-          description="تحقق من المعرف أو ارجع لقائمة الحملات."
+          title={t("legacy.campaigns.notFoundTitle")}
+          description={t("legacy.campaigns.notFoundDesc")}
           actions={
             <Link to={LIST_PATH} className="dash-ui-btn">
-              العودة للحملات
+              {t("legacy.common.backToCampaigns")}
             </Link>
           }
         />
@@ -338,7 +338,7 @@ export default function LegacyCampaignWorkspacePage() {
     <DashboardShell>
       <div className="oh-legacy-admin oh-legacy-campaign-workspace">
         <DashboardPageHeader
-          eyebrow="حملات الدعوة"
+          eyebrow={t("legacy.campaigns.eyebrow")}
           title={campaign.name}
           breadcrumbs={superAdminBreadcrumbs("dashboard.breadcrumbs.legacyFreelancerInvites")}
           description={
@@ -349,53 +349,53 @@ export default function LegacyCampaignWorkspacePage() {
           actions={
             <div className="oh-legacy-admin__actions">
               <Button type="button" variant="secondary" onClick={() => navigate(LIST_PATH)}>
-                كل الحملات
+                {t("legacy.common.allCampaigns")}
               </Button>
               <Button type="button" variant="secondary" onClick={() => setLinkOpen(true)}>
-                عرض الرابط
+                {t("legacy.common.viewLink")}
               </Button>
               <Button type="button" variant="secondary" disabled={busy || campaign.isArchived} onClick={onToggleActive}>
-                {campaign.isActive ? "إيقاف" : "تفعيل"}
+                {campaign.isActive ? t("legacy.common.disable") : t("legacy.common.enable")}
               </Button>
               <Button type="button" variant="secondary" disabled={busy} onClick={onRegenerate}>
-                إعادة توليد
+                {t("legacy.common.regenerate")}
               </Button>
               <Button type="button" variant="secondary" disabled={busy} onClick={onDelete}>
-                حذف / أرشفة
+                {t("legacy.common.deleteArchive")}
               </Button>
             </div>
           }
         />
 
         <div className="oh-legacy-admin__stats oh-legacy-admin__stats--workspace">
-          <InsightCard label="زيارات الرابط" value={stats?.linkViews} hint="فتحات ناجحة للمعاينة" icon={Eye} />
+          <InsightCard label={t("legacy.campaigns.cardLinkViews")} value={stats?.linkViews} hint={t("legacy.common.linkViewsHint")} icon={Eye} />
           <InsightCard
-            label="تسجيلات ناجحة"
+            label={t("legacy.campaigns.cardRegistrations")}
             value={stats?.successfulRegistrations}
-            hint="مستخدمون فعليون"
+            hint={t("legacy.common.successfulRegHint")}
             icon={Users}
             tone="info"
           />
-          <InsightCard label="مقاعد مستخدمة" value={stats?.usedSeats} icon={Armchair} />
-          <InsightCard label="مقاعد متبقية" value={stats?.remainingSeats} icon={ArrowRightLeft} />
-          <InsightCard label="مسجّلون نشطون" value={stats?.activeRegistrants} icon={UserCheck} tone="success" />
+          <InsightCard label={t("legacy.common.usedSeats")} value={stats?.usedSeats} icon={Armchair} />
+          <InsightCard label={t("legacy.common.remainingSeats")} value={stats?.remainingSeats} icon={ArrowRightLeft} />
+          <InsightCard label={t("legacy.common.activeRegistrants")} value={stats?.activeRegistrants} icon={UserCheck} tone="success" />
           <InsightCard
-            label="هوية غير مكتملة"
+            label={t("legacy.center.stats.pendingIdentity")}
             value={stats?.identityIncompleteCount}
             icon={IdCard}
             tone="warning"
           />
-          <InsightCard label="باقات نشطة" value={stats?.packagesAssignedCount} icon={Package} tone="info" />
+          <InsightCard label={t("legacy.common.activePackages")} value={stats?.packagesAssignedCount} icon={Package} tone="info" />
           <InsightCard
-            label="مبالغ تاريخية (JOD)"
+            label={t("legacy.common.historicalMoneyJod")}
             value={stats?.historicalMoneyTotal}
             icon={Coins}
           />
         </div>
 
         <div className="oh-legacy-admin__tabs">
-          <DashboardTabs aria-label="أقسام مساحة الحملة">
-            {WORKSPACE_TABS.map((t) => (
+          <DashboardTabs aria-label={t("legacy.campaigns.workspaceTabsAria")}>
+            {workspaceTabs.map((t) => (
               <DashboardTab key={t.id} selected={tab === t.id} onSelect={() => setTab(t.id)}>
                 {t.label}
               </DashboardTab>
@@ -404,10 +404,10 @@ export default function LegacyCampaignWorkspacePage() {
         </div>
 
         {tab === "overview" ? (
-          <DashboardSection title="ملخص الحملة">
+          <DashboardSection title={t("legacy.common.campaignSummary")}>
             <dl className="oh-legacy-campaign-summary">
               <div>
-                <dt>الاسم</dt>
+                <dt>{t("legacy.common.fullName")}</dt>
                 <dd>{campaign.name}</dd>
               </div>
               <div>
@@ -415,67 +415,67 @@ export default function LegacyCampaignWorkspacePage() {
                 <dd dir="ltr">{campaign.slug}</dd>
               </div>
               <div>
-                <dt>الحالة</dt>
+                <dt>{t("legacy.common.status")}</dt>
                 <dd>{statusBadge}</dd>
               </div>
               <div>
-                <dt>المؤسسة</dt>
-                <dd>{campaign.institutionName || "بدون مؤسسة"}</dd>
+                <dt>{t("legacy.common.institution")}</dt>
+                <dd>{campaign.institutionName || t("legacy.common.noInstitution")}</dd>
               </div>
               <div>
-                <dt>الحد الأقصى للمقاعد</dt>
+                <dt>{t("legacy.common.maxSeats")}</dt>
                 <dd>{campaign.maxRedemptions}</dd>
               </div>
               <div>
-                <dt>الانتهاء</dt>
+                <dt>{t("legacy.common.expiryLabel")}</dt>
                 <dd>{formatDate(campaign.expiresAt)}</dd>
               </div>
               <div>
-                <dt>تاريخ الإنشاء</dt>
+                <dt>{t("legacy.common.createdAt")}</dt>
                 <dd>{formatDate(campaign.createdAt)}</dd>
               </div>
               <div>
-                <dt>أنشئت بواسطة (admin id)</dt>
+                <dt>{t("legacy.common.createdByAdmin")}</dt>
                 <dd>{campaign.createdByAdminId || "—"}</dd>
               </div>
               <div>
-                <dt>مستوى الثقة الافتراضي</dt>
+                <dt>{t("legacy.common.defaultTrust")}</dt>
                 <dd>{campaign.defaultTrustLevel || "—"}</dd>
               </div>
               <div>
-                <dt>الباقة الافتراضية</dt>
+                <dt>{t("legacy.common.defaultPlanCode")}</dt>
                 <dd>{campaign.defaultPlanCode || "—"}</dd>
               </div>
               <div>
-                <dt>ملاحظات</dt>
+                <dt>{t("legacy.common.notes")}</dt>
                 <dd>{campaign.notes || "—"}</dd>
               </div>
               <div>
-                <dt>استرجاع الرابط</dt>
-                <dd>{campaign.hasRecoverableInviteLink ? "متاح" : "يتطلب إعادة توليد"}</dd>
+                <dt>{t("legacy.common.linkRecovery")}</dt>
+                <dd>{campaign.hasRecoverableInviteLink ? t("legacy.common.available") : t("legacy.common.requiresRegenerate")}</dd>
               </div>
             </dl>
             <p className="oh-legacy-admin__muted" style={{ marginTop: "0.75rem" }}>
-              زيارات الرابط = إجمالي فتحات المعاينة العامة الناجحة (ليست زواراً فريدين).
+              {t("legacy.common.linkViewsFootnote")}
             </p>
           </DashboardSection>
         ) : null}
 
         {tab === "registrants" ? (
           <DashboardSection
-            title="مسجّلو هذه الحملة فقط"
-            description="المصدر: users.legacy_invite_campaign_id — لا يُخلط مع مسجّلي حملات أخرى."
+            title={t("legacy.common.campaignRegistrantsOnly")}
+            description={t("legacy.common.campaignRegistrantsSource")}
           >
             <LegacyFreelancersPanel campaignId={campaign.id} hideManualCreate />
           </DashboardSection>
         ) : null}
 
         {tab === "settings" && settingsForm ? (
-          <DashboardSection title="إعدادات الحملة">
+          <DashboardSection title={t("legacy.common.campaignSettings")}>
             <form className="oh-legacy-campaigns__create" onSubmit={saveSettings}>
               <div className="oh-legacy-campaigns__create-grid">
                 <label>
-                  الاسم
+                  {t("legacy.common.name")}
                   <input
                     className="oh-legacy-admin__input"
                     required
@@ -494,7 +494,7 @@ export default function LegacyCampaignWorkspacePage() {
                   />
                 </label>
                 <label>
-                  المقاعد
+                  {t("legacy.common.seats")}
                   <input
                     className="oh-legacy-admin__input"
                     type="number"
@@ -505,7 +505,7 @@ export default function LegacyCampaignWorkspacePage() {
                   />
                 </label>
                 <label>
-                  الانتهاء
+                  {t("legacy.common.expiry")}
                   <input
                     className="oh-legacy-admin__input"
                     type="datetime-local"
@@ -515,7 +515,7 @@ export default function LegacyCampaignWorkspacePage() {
                   />
                 </label>
                 <label>
-                  مستوى الثقة
+                  {t("legacy.common.trustLevel")}
                   <select
                     className="oh-legacy-admin__select"
                     value={settingsForm.defaultTrustLevel}
@@ -526,7 +526,7 @@ export default function LegacyCampaignWorkspacePage() {
                   </select>
                 </label>
                 <label>
-                  التصنيف
+                  {t("legacy.common.category")}
                   <select
                     className="oh-legacy-admin__select"
                     value={settingsForm.defaultCategoryId}
@@ -541,13 +541,13 @@ export default function LegacyCampaignWorkspacePage() {
                   </select>
                 </label>
                 <label>
-                  المؤسسة
+                  {t("legacy.common.institution")}
                   <select
                     className="oh-legacy-admin__select"
                     value={settingsForm.institutionId}
                     onChange={(e) => setSettingsForm((f) => ({ ...f, institutionId: e.target.value }))}
                   >
-                    <option value="">بدون مؤسسة</option>
+                    <option value="">{t("legacy.common.noInstitution")}</option>
                     {institutions.map((i) => (
                       <option key={i.id} value={String(i.id)}>
                         {i.name}
@@ -561,7 +561,7 @@ export default function LegacyCampaignWorkspacePage() {
                     checked={Boolean(settingsForm.isActive)}
                     onChange={(e) => setSettingsForm((f) => ({ ...f, isActive: e.target.checked }))}
                   />
-                  نشطة
+                  {t("legacy.common.activeFeminine")}
                 </label>
                 <label className="oh-legacy-admin__check">
                   <input
@@ -569,7 +569,7 @@ export default function LegacyCampaignWorkspacePage() {
                     checked={Boolean(settingsForm.requireIdFront)}
                     onChange={(e) => setSettingsForm((f) => ({ ...f, requireIdFront: e.target.checked }))}
                   />
-                  هوية أمامية مطلوبة
+                  {t("legacy.common.requireIdFront")}
                 </label>
                 <label className="oh-legacy-admin__check">
                   <input
@@ -577,11 +577,11 @@ export default function LegacyCampaignWorkspacePage() {
                     checked={Boolean(settingsForm.requireIdBack)}
                     onChange={(e) => setSettingsForm((f) => ({ ...f, requireIdBack: e.target.checked }))}
                   />
-                  هوية خلفية مطلوبة
+                  {t("legacy.common.requireIdBack")}
                 </label>
               </div>
               <label style={{ display: "block", marginTop: "0.75rem" }}>
-                ملاحظات
+                {t("legacy.common.notes")}
                 <textarea
                   className="oh-legacy-admin__input"
                   rows={3}
@@ -591,13 +591,13 @@ export default function LegacyCampaignWorkspacePage() {
               </label>
               <div className="oh-legacy-admin__actions" style={{ marginTop: "0.85rem" }}>
                 <Button type="submit" disabled={busy}>
-                  {busy ? "جاري الحفظ…" : "حفظ الإعدادات"}
+                  {busy ? t("legacy.common.saving") : t("legacy.common.saveSettings")}
                 </Button>
               </div>
             </form>
 
             <div style={{ marginTop: "1.25rem" }}>
-              <h4 className="oh-legacy-campaign-card__title">حقول التسجيل</h4>
+              <h4 className="oh-legacy-campaign-card__title">{t("legacy.campaigns.registrationFieldsCaption")}</h4>
               <div className="oh-legacy-admin__actions" style={{ marginBottom: "0.5rem" }}>
                 <Button
                   type="button"
@@ -608,21 +608,21 @@ export default function LegacyCampaignWorkspacePage() {
                     try {
                       const res = await restoreLegacyFreelancerInviteFieldsRequest(campaignId);
                       setFieldConfig(res?.data || null);
-                      pushToast({ type: "success", message: "تمت استعادة الافتراضي" });
+                      pushToast({ type: "success", message: t("legacy.toast.restoreSuccess") });
                     } catch (err) {
                       pushToast({
                         type: "error",
-                        message: getSafeApiErrorMessage(err, "تعذر الاستعادة"),
+                        message: getSafeApiErrorMessage(err, t("legacy.toast.restoreFailed")),
                       });
                     } finally {
                       setFieldsBusy(false);
                     }
                   }}
                 >
-                  استعادة الافتراضي
+                  {t("legacy.common.restoreDefault")}
                 </Button>
                 <Button type="button" disabled={fieldsBusy} onClick={saveFields}>
-                  حفظ الحقول
+                  {t("legacy.common.saveFields")}
                 </Button>
               </div>
               {(fieldConfig?.fields || []).map((f) => (
@@ -631,7 +631,7 @@ export default function LegacyCampaignWorkspacePage() {
                     {f.labelAr}
                     <span className="oh-legacy-admin__muted" style={{ display: "block", fontWeight: 400 }} dir="ltr">
                       {f.fieldKey} · {f.type}
-                      {f.controlLocked ? " · ثابت" : ""}
+                      {f.controlLocked ? ` · ${t("legacy.common.fixed")}` : ""}
                     </span>
                   </strong>
                   <label>
@@ -647,7 +647,7 @@ export default function LegacyCampaignWorkspacePage() {
                         }))
                       }
                     />{" "}
-                    إظهار
+                    {t("legacy.common.show")}
                   </label>
                   <label>
                     <input
@@ -663,7 +663,7 @@ export default function LegacyCampaignWorkspacePage() {
                         }))
                       }
                     />{" "}
-                    إلزامي
+                    {t("legacy.common.required")}
                   </label>
                 </div>
               ))}
@@ -673,16 +673,16 @@ export default function LegacyCampaignWorkspacePage() {
 
         {tab === "documents" ? (
           <DashboardSection
-            title="أوراق يجب على الإدارة التحقق منها"
-            description="قائمة تحقق إدارية لهذه الحملة. لا تُطلب من الفريلانسر أثناء التسجيل العام."
+            title={t("legacy.campaigns.docsAdminTitle")}
+            description={t("legacy.campaigns.docsAdminDescWorkspace")}
             actions={
               <Button type="button" disabled={docsBusy} onClick={saveDocs}>
-                {docsBusy ? "جاري الحفظ…" : "حفظ المتطلبات"}
+                {docsBusy ? t("legacy.common.saving") : t("legacy.common.saveRequirements")}
               </Button>
             }
           >
             {docReqs.length === 0 ? (
-              <DashboardEmptyState title="لا متطلبات" description="لا توجد أنواع أوراق مربوطة بعد." />
+              <DashboardEmptyState title={t("legacy.campaigns.noRequirements")} description={t("legacy.campaigns.noRequirementsDesc")} />
             ) : (
               <ul className="oh-legacy-admin__doc-list">
                 {docReqs.map((r) => (
@@ -702,7 +702,7 @@ export default function LegacyCampaignWorkspacePage() {
                           )
                         }
                       />{" "}
-                      مفعّل في قائمة التحقق
+                      {t("legacy.common.enabledInChecklist")}
                     </label>
                     <label>
                       <input
@@ -719,7 +719,7 @@ export default function LegacyCampaignWorkspacePage() {
                           )
                         }
                       />{" "}
-                      يجب على الإدارة التحقق
+                      {t("legacy.common.adminMustVerify")}
                     </label>
                   </li>
                 ))}

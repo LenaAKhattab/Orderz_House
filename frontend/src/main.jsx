@@ -4,6 +4,7 @@ import "./index.css";
 import "./styles/typography.css";
 import "./styles/legacy-application.css";
 import App from "./App";
+import "./i18n/legacyResources";
 import { LanguageProvider } from "./i18n/LanguageProvider";
 import ChunkLoadErrorBoundary from "./components/layout/ChunkLoadErrorBoundary";
 import {
