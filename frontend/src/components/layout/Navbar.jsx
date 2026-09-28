@@ -22,7 +22,7 @@ import "../../styles/publicChrome.css";
 const NotificationsBell = lazy(() => import("../notifications/NotificationsBell"));
 
 /** Language switcher remains in codebase; hidden from public nav for now. */
-const SHOW_NAV_LANGUAGE_SWITCHER = false;
+const SHOW_NAV_LANGUAGE_SWITCHER = true;
 
 const publicExploreItems = [
   { labelKey: "nav.about", to: "/about" },

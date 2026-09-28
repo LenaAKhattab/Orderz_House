@@ -20,9 +20,14 @@ import enAbout from "../locales/en/about.json";
 import enOrders from "../locales/en/orders.json";
 import enAccountDeletion from "../locales/en/accountDeletion.json";
 
-export const DEFAULT_LOCALE = "ar";
-export const SUPPORTED_LOCALES = ["ar", "en"];
-export const LOCALE_STORAGE_KEY = "oh_locale";
+export {
+  DEFAULT_LOCALE,
+  SUPPORTED_LOCALES,
+  LOCALE_STORAGE_KEY,
+  LEGACY_LOCALE_STORAGE_KEY,
+  isSupportedLocale,
+  getLocaleDirection,
+} from "./localePreference.js";
 
 /** @type {Record<string, Record<string, object>>} */
 export const resources = {
@@ -51,14 +56,6 @@ export const resources = {
     accountDeletion: enAccountDeletion,
   },
 };
-
-export function isSupportedLocale(value) {
-  return SUPPORTED_LOCALES.includes(String(value || "").trim());
-}
-
-export function getLocaleDirection(locale) {
-  return locale === "en" ? "ltr" : "rtl";
-}
 
 /** Merge extra namespaces into the shared resources object (used by dashboard layout chunk). */
 export function mergeLocaleNamespaces(extra) {

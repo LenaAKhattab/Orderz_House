@@ -2,11 +2,13 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { flushSync } from "react-dom";
 import {
   DEFAULT_LOCALE,
+  LEGACY_LOCALE_STORAGE_KEY,
   LOCALE_STORAGE_KEY,
   getLocaleDirection,
   isSupportedLocale,
   resources,
 } from "./resources";
+import { readStoredLocale } from "./localePreference";
 import { createTranslator } from "./resolveTranslation";
 import { waitForPaint } from "./waitForPaint";
 
@@ -24,16 +26,6 @@ const LOCALE_SWITCH_SAFETY_MS = 3000;
  * }>} */
 const LanguageContext = createContext(null);
 
-function readStoredLocale() {
-  try {
-    const stored = localStorage.getItem(LOCALE_STORAGE_KEY);
-    if (isSupportedLocale(stored)) return stored;
-  } catch {
-    /* ignore */
-  }
-  return DEFAULT_LOCALE;
-}
-
 function applyDocumentLocale(locale) {
   const dir = getLocaleDirection(locale);
   document.documentElement.lang = locale;
@@ -44,6 +36,7 @@ function applyDocumentLocale(locale) {
 function persistLocale(locale) {
   try {
     localStorage.setItem(LOCALE_STORAGE_KEY, locale);
+    localStorage.setItem(LEGACY_LOCALE_STORAGE_KEY, locale);
   } catch {
     /* ignore */
   }
