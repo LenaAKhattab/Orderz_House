@@ -35,7 +35,7 @@ export function extractYoutubePlaylistId(input) {
 
 /**
  * @param {string} sourceUrl
- * @returns {{ ok: boolean, error?: string, sourceType?: 'playlist'|'video', sourceLabel?: string, expectedLessonCount?: number|null }}
+ * @returns {{ ok: boolean, errorKey?: string, sourceType?: 'playlist'|'video', sourceLabelKey?: string, expectedLessonCount?: number|null }}
  */
 export function isHttpUrl(value) {
   const v = String(value || "").trim();
@@ -45,14 +45,14 @@ export function isHttpUrl(value) {
 export function analyzeYoutubeSourceUrl(sourceUrl) {
   const trimmed = String(sourceUrl || "").trim();
   if (!trimmed) {
-    return { ok: false, error: "أدخل رابط يوتيوب أولاً." };
+    return { ok: false, errorKey: "courses.youtube.enterUrlFirst" };
   }
   const playlistId = extractYoutubePlaylistId(trimmed);
   if (playlistId) {
     return {
       ok: true,
       sourceType: "playlist",
-      sourceLabel: "قائمة تشغيل يوتيوب",
+      sourceLabelKey: "courses.youtube.playlistLabel",
       expectedLessonCount: null,
     };
   }
@@ -61,12 +61,12 @@ export function analyzeYoutubeSourceUrl(sourceUrl) {
     return {
       ok: true,
       sourceType: "video",
-      sourceLabel: "فيديو يوتيوب",
+      sourceLabelKey: "courses.youtube.videoLabel",
       expectedLessonCount: 1,
     };
   }
   return {
     ok: false,
-    error: "رابط يوتيوب غير صالح. استخدم رابط فيديو أو قائمة تشغيل.",
+    errorKey: "courses.youtube.invalidUrl",
   };
 }

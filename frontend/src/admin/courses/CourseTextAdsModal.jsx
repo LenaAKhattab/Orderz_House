@@ -9,6 +9,8 @@ import { useToast } from "../../components/ui/toastContext";
 import DashboardModal from "../../components/dashboard/DashboardModal";
 import { invalidateCourseSideTextAdCache } from "../../components/dashboard/courses/CourseSideTextAd";
 import DashboardLoadingState from "../../components/dashboard/DashboardLoadingState";
+import "../../i18n/coursesResources";
+import { useTranslation } from "../../i18n/LanguageProvider";
 
 const EMPTY_FORM = {
   enabled: false,
@@ -38,23 +40,31 @@ function mapAdToForm(ad) {
   };
 }
 
-function placementLabel(value) {
+function placementLabel(value, t) {
   const map = {
-    courses_list: "صفحة الدورات الرئيسية",
-    all_course_details: "صفحات تفاصيل الدورات",
-    both: "كلاهما",
-    specific_course: "دورة محددة",
+    courses_list: t("courses.textAds.placementCoursesList"),
+    all_course_details: t("courses.textAds.placementAllDetails"),
+    both: t("courses.textAds.placementBoth"),
+    specific_course: t("courses.textAds.placementSpecific"),
   };
   return map[value] || value;
 }
 
-function speedLabel(value) {
-  const map = { slow: "بطيء", normal: "عادي", fast: "سريع" };
+function speedLabel(value, t) {
+  const map = {
+    slow: t("courses.textAds.speedSlow"),
+    normal: t("courses.textAds.speedNormal"),
+    fast: t("courses.textAds.speedFast"),
+  };
   return map[value] || value;
 }
 
-function textColorLabel(value) {
-  const map = { blue: "أزرق", black: "أسود", red: "أحمر" };
+function textColorLabel(value, t) {
+  const map = {
+    blue: t("courses.textAds.colorBlueDefault"),
+    black: t("courses.textAds.colorBlack"),
+    red: t("courses.textAds.colorRed"),
+  };
   return map[value] || map.blue;
 }
 
@@ -72,39 +82,39 @@ function formToPayload(form) {
   };
 }
 
-function CourseTextAdFormFields({ form, fieldErrors, onPatch, courses }) {
+function CourseTextAdFormFields({ form, fieldErrors, onPatch, courses, t }) {
   return (
     <div className="oh-course-text-ads-modal__form">
       <label className="oh-course-text-ads-modal__toggle">
         <input type="checkbox" checked={form.enabled} onChange={(e) => onPatch("enabled", e.target.checked)} />
-        <span>تفعيل الإعلان</span>
+        <span>{t("courses.textAds.enableAd")}</span>
       </label>
 
       <label className="oh-course-text-ads-modal__field">
-        <span>النص بالعربية</span>
+        <span>{t("courses.textAds.textAr")}</span>
         <textarea rows={3} maxLength={200} value={form.textAr} onChange={(e) => onPatch("textAr", e.target.value)} />
         {fieldErrors.textAr ? <span className="oh-course-text-ads-modal__error">{fieldErrors.textAr}</span> : null}
       </label>
 
       <label className="oh-course-text-ads-modal__field">
-        <span>النص بالإنجليزية (اختياري)</span>
+        <span>{t("courses.textAds.textEn")}</span>
         <textarea rows={3} maxLength={200} value={form.textEn} onChange={(e) => onPatch("textEn", e.target.value)} />
         {fieldErrors.textEn ? <span className="oh-course-text-ads-modal__error">{fieldErrors.textEn}</span> : null}
       </label>
 
       <label className="oh-course-text-ads-modal__field">
-        <span>رابط (اختياري)</span>
+        <span>{t("courses.textAds.urlOptional")}</span>
         <input type="url" value={form.url} onChange={(e) => onPatch("url", e.target.value)} dir="ltr" />
         {fieldErrors.url ? <span className="oh-course-text-ads-modal__error">{fieldErrors.url}</span> : null}
       </label>
 
       <label className="oh-course-text-ads-modal__field">
-        <span>الصفحة المستهدفة</span>
+        <span>{t("courses.textAds.targetPage")}</span>
         <select value={form.placement} onChange={(e) => onPatch("placement", e.target.value)}>
-          <option value="courses_list">صفحة الدورات الرئيسية</option>
-          <option value="all_course_details">صفحات تفاصيل الدورات</option>
-          <option value="both">كلاهما</option>
-          <option value="specific_course">دورة محددة</option>
+          <option value="courses_list">{t("courses.textAds.placementCoursesList")}</option>
+          <option value="all_course_details">{t("courses.textAds.placementAllDetails")}</option>
+          <option value="both">{t("courses.textAds.placementBoth")}</option>
+          <option value="specific_course">{t("courses.textAds.placementSpecific")}</option>
         </select>
         {fieldErrors.placement ? (
           <span className="oh-course-text-ads-modal__error">{fieldErrors.placement}</span>
@@ -113,12 +123,12 @@ function CourseTextAdFormFields({ form, fieldErrors, onPatch, courses }) {
 
       {form.placement === "specific_course" ? (
         <label className="oh-course-text-ads-modal__field">
-          <span>الدورة</span>
+          <span>{t("courses.textAds.course")}</span>
           <select value={form.courseId} onChange={(e) => onPatch("courseId", e.target.value)}>
-            <option value="">اختر دورة…</option>
+            <option value="">{t("courses.textAds.chooseCourse")}</option>
             {courses.map((c) => (
               <option key={c.id} value={String(c.id)}>
-                {c.title || `دورة #${c.id}`}
+                {c.title || t("courses.textAds.courseNumber", { id: c.id })}
               </option>
             ))}
           </select>
@@ -129,11 +139,11 @@ function CourseTextAdFormFields({ form, fieldErrors, onPatch, courses }) {
       ) : null}
 
       <label className="oh-course-text-ads-modal__field">
-        <span>لون النص</span>
+        <span>{t("courses.textAds.textColor")}</span>
         <select value={form.textColor} onChange={(e) => onPatch("textColor", e.target.value)}>
-          <option value="blue">أزرق (افتراضي)</option>
-          <option value="black">أسود</option>
-          <option value="red">أحمر</option>
+          <option value="blue">{t("courses.textAds.colorBlueDefault")}</option>
+          <option value="black">{t("courses.textAds.colorBlack")}</option>
+          <option value="red">{t("courses.textAds.colorRed")}</option>
         </select>
         {fieldErrors.textColor ? (
           <span className="oh-course-text-ads-modal__error">{fieldErrors.textColor}</span>
@@ -141,11 +151,11 @@ function CourseTextAdFormFields({ form, fieldErrors, onPatch, courses }) {
       </label>
 
       <label className="oh-course-text-ads-modal__field">
-        <span>سرعة الحركة</span>
+        <span>{t("courses.textAds.speed")}</span>
         <select value={form.speed} onChange={(e) => onPatch("speed", e.target.value)}>
-          <option value="slow">بطيء</option>
-          <option value="normal">عادي</option>
-          <option value="fast">سريع</option>
+          <option value="slow">{t("courses.textAds.speedSlow")}</option>
+          <option value="normal">{t("courses.textAds.speedNormal")}</option>
+          <option value="fast">{t("courses.textAds.speedFast")}</option>
         </select>
       </label>
     </div>
@@ -156,6 +166,7 @@ function CourseTextAdFormFields({ form, fieldErrors, onPatch, courses }) {
  * @param {{ open: boolean, onClose: () => void, courses: Array<{ id: number|string, title?: string }> }} props
  */
 export default function CourseTextAdsModal({ open, onClose, courses = [] }) {
+  const { t } = useTranslation();
   const toast = useToast();
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState(TAB_CURRENT);
@@ -178,7 +189,7 @@ export default function CourseTextAdsModal({ open, onClose, courses = [] }) {
       const res = await adminListCourseTextAdsRequest();
       setAds(res?.data?.ads || []);
     } catch (err) {
-      toast.error(err?.response?.data?.message || "تعذر تحميل إعلانات الدورات.");
+      toast.error(err?.response?.data?.message || t("courses.textAds.loadError"));
     } finally {
       setLoading(false);
     }
@@ -227,14 +238,14 @@ export default function CourseTextAdsModal({ open, onClose, courses = [] }) {
     setEditFieldErrors({});
     try {
       await adminUpdateCourseTextAdRequest(adId, formToPayload(editForm));
-      toast.success("تم تحديث إعلان الدورات.");
+      toast.success(t("courses.textAds.updated"));
       invalidateCourseSideTextAdCache();
       setExpandedEditId(null);
       await load();
     } catch (err) {
       const errs = err?.response?.data?.fieldErrors;
       if (errs && typeof errs === "object") setEditFieldErrors(errs);
-      toast.error(err?.response?.data?.message || "تعذر حفظ التعديلات.");
+      toast.error(err?.response?.data?.message || t("courses.textAds.saveError"));
     } finally {
       setSavingEditId(null);
     }
@@ -244,30 +255,30 @@ export default function CourseTextAdsModal({ open, onClose, courses = [] }) {
     setTogglingId(ad.id);
     try {
       await adminUpdateCourseTextAdRequest(ad.id, { enabled: !ad.enabled });
-      toast.success(ad.enabled ? "تم تعطيل الإعلان." : "تم تفعيل الإعلان.");
+      toast.success(ad.enabled ? t("courses.textAds.disabled") : t("courses.textAds.enabled"));
       invalidateCourseSideTextAdCache();
       if (expandedEditId === ad.id) {
         setEditForm((prev) => ({ ...prev, enabled: !ad.enabled }));
       }
       await load();
     } catch (err) {
-      toast.error(err?.response?.data?.message || "تعذر تحديث حالة الإعلان.");
+      toast.error(err?.response?.data?.message || t("courses.textAds.toggleError"));
     } finally {
       setTogglingId(null);
     }
   };
 
   const deleteAd = async (adId) => {
-    if (!window.confirm("حذف هذا الإعلان؟")) return;
+    if (!window.confirm(t("courses.textAds.deleteConfirm"))) return;
     setDeletingId(adId);
     try {
       await adminDeleteCourseTextAdRequest(adId);
-      toast.success("تم حذف الإعلان.");
+      toast.success(t("courses.textAds.deleted"));
       invalidateCourseSideTextAdCache();
       if (expandedEditId === adId) cancelInlineEdit();
       await load();
     } catch (err) {
-      toast.error(err?.response?.data?.message || "تعذر حذف الإعلان.");
+      toast.error(err?.response?.data?.message || t("courses.textAds.deleteError"));
     } finally {
       setDeletingId(null);
     }
@@ -278,7 +289,7 @@ export default function CourseTextAdsModal({ open, onClose, courses = [] }) {
     setCreateFieldErrors({});
     try {
       await adminCreateCourseTextAdRequest(formToPayload(createForm));
-      toast.success("تم إنشاء إعلان الدورات.");
+      toast.success(t("courses.textAds.created"));
       invalidateCourseSideTextAdCache();
       setCreateForm({ ...EMPTY_FORM });
       await load();
@@ -286,7 +297,7 @@ export default function CourseTextAdsModal({ open, onClose, courses = [] }) {
     } catch (err) {
       const errs = err?.response?.data?.fieldErrors;
       if (errs && typeof errs === "object") setCreateFieldErrors(errs);
-      toast.error(err?.response?.data?.message || "تعذر إنشاء الإعلان.");
+      toast.error(err?.response?.data?.message || t("courses.textAds.createError"));
     } finally {
       setSavingCreate(false);
     }
@@ -304,23 +315,23 @@ export default function CourseTextAdsModal({ open, onClose, courses = [] }) {
     if (ad.courseTitle) return ad.courseTitle;
     if (ad.courseId == null) return null;
     const match = courses.find((c) => String(c.id) === String(ad.courseId));
-    return match?.title || `دورة #${ad.courseId}`;
+    return match?.title || t("courses.textAds.courseNumber", { id: ad.courseId });
   };
 
   return (
     <DashboardModal
       open={open}
-      title="إدارة إعلان الدورات"
-      ariaLabel="إدارة إعلان الدورات المتحرك"
+      title={t("courses.textAds.title")}
+      ariaLabel={t("courses.textAds.ariaLabel")}
       onClose={onClose}
       footer={
         <button type="button" className="btn btn-secondary" onClick={onClose} disabled={busy}>
-          إغلاق
+          {t("courses.common.close")}
         </button>
       }
       className="oh-course-text-ads-modal"
     >
-      <div className="oh-course-text-ads-modal__tabs" role="tablist" aria-label="أقسام إعلان الدورات">
+      <div className="oh-course-text-ads-modal__tabs" role="tablist" aria-label={t("courses.textAds.tabsAria")}>
         <button
           type="button"
           role="tab"
@@ -330,7 +341,7 @@ export default function CourseTextAdsModal({ open, onClose, courses = [] }) {
           className={`oh-course-text-ads-modal__tab${activeTab === TAB_CURRENT ? " is-active" : ""}`}
           onClick={() => setActiveTab(TAB_CURRENT)}
         >
-          الإعلانات الحالية
+          {t("courses.textAds.tabCurrent")}
         </button>
         <button
           type="button"
@@ -341,12 +352,12 @@ export default function CourseTextAdsModal({ open, onClose, courses = [] }) {
           className={`oh-course-text-ads-modal__tab${activeTab === TAB_NEW ? " is-active" : ""}`}
           onClick={() => setActiveTab(TAB_NEW)}
         >
-          إعلان جديد
+          {t("courses.textAds.tabNew")}
         </button>
       </div>
 
       {loading ? (
-        <DashboardLoadingState label="جارٍ التحميل…" />
+        <DashboardLoadingState label={t("courses.textAds.loading")} />
       ) : (
         <div className="oh-course-text-ads-modal__body">
           {activeTab === TAB_CURRENT ? (
@@ -358,7 +369,7 @@ export default function CourseTextAdsModal({ open, onClose, courses = [] }) {
             >
               {ads.length === 0 ? (
                 <div className="oh-course-text-ads-modal__empty-state">
-                  <p>لا توجد إعلانات حالياً.</p>
+                  <p>{t("courses.textAds.empty")}</p>
                   <button
                     type="button"
                     className="btn btn-primary"
@@ -368,7 +379,7 @@ export default function CourseTextAdsModal({ open, onClose, courses = [] }) {
                       setActiveTab(TAB_NEW);
                     }}
                   >
-                    إنشاء أول إعلان
+                    {t("courses.textAds.createFirst")}
                   </button>
                 </div>
               ) : (
@@ -384,12 +395,12 @@ export default function CourseTextAdsModal({ open, onClose, courses = [] }) {
                       >
                         <div className="oh-course-text-ads-modal__card-head">
                           <p className="oh-course-text-ads-modal__card-text">
-                            {ad.textAr || ad.textEn || "بدون نص"}
+                            {ad.textAr || ad.textEn || t("courses.textAds.noText")}
                           </p>
                           <ul className="oh-course-text-ads-modal__card-meta">
                             <li>
                               <span className="oh-course-text-ads-modal__chip">
-                                {placementLabel(ad.placement)}
+                                {placementLabel(ad.placement, t)}
                               </span>
                             </li>
                             <li>
@@ -398,15 +409,15 @@ export default function CourseTextAdsModal({ open, onClose, courses = [] }) {
                                   ad.enabled ? "on" : "off"
                                 }`}
                               >
-                                {ad.enabled ? "مفعّل" : "معطّل"}
+                                {ad.enabled ? t("courses.textAds.enabledChip") : t("courses.textAds.disabledChip")}
                               </span>
                             </li>
                             <li>
-                              <span className="oh-course-text-ads-modal__chip">{speedLabel(ad.speed)}</span>
+                              <span className="oh-course-text-ads-modal__chip">{speedLabel(ad.speed, t)}</span>
                             </li>
                             <li>
                               <span className="oh-course-text-ads-modal__chip">
-                                {textColorLabel(ad.textColor)}
+                                {textColorLabel(ad.textColor, t)}
                               </span>
                             </li>
                             {ad.placement === "specific_course" ? (
@@ -427,7 +438,7 @@ export default function CourseTextAdsModal({ open, onClose, courses = [] }) {
                               disabled={isBusy}
                               onClick={() => startInlineEdit(ad)}
                             >
-                              تعديل
+                              {t("courses.textAds.edit")}
                             </button>
                             <button
                               type="button"
@@ -436,10 +447,10 @@ export default function CourseTextAdsModal({ open, onClose, courses = [] }) {
                               onClick={() => void toggleEnabled(ad)}
                             >
                               {togglingId === ad.id
-                                ? "جارٍ…"
+                                ? t("courses.textAds.working")
                                 : ad.enabled
-                                  ? "تعطيل"
-                                  : "تفعيل"}
+                                  ? t("courses.textAds.disable")
+                                  : t("courses.textAds.enable")}
                             </button>
                             <button
                               type="button"
@@ -447,17 +458,18 @@ export default function CourseTextAdsModal({ open, onClose, courses = [] }) {
                               disabled={isBusy}
                               onClick={() => void deleteAd(ad.id)}
                             >
-                              {deletingId === ad.id ? "جارٍ الحذف…" : "حذف"}
+                              {deletingId === ad.id ? t("courses.textAds.deleting") : t("courses.textAds.delete")}
                             </button>
                           </div>
                         ) : (
                           <div className="oh-course-text-ads-modal__card-edit">
-                            <p className="oh-course-text-ads-modal__card-edit-label">تعديل الإعلان</p>
+                            <p className="oh-course-text-ads-modal__card-edit-label">{t("courses.textAds.editAd")}</p>
                             <CourseTextAdFormFields
                               form={editForm}
                               fieldErrors={editFieldErrors}
                               onPatch={patchEdit}
                               courses={courses}
+                              t={t}
                             />
                             <div className="oh-course-text-ads-modal__form-actions">
                               <button
@@ -466,7 +478,7 @@ export default function CourseTextAdsModal({ open, onClose, courses = [] }) {
                                 disabled={savingEditId === ad.id}
                                 onClick={cancelInlineEdit}
                               >
-                                إلغاء التعديل
+                                {t("courses.textAds.cancelEdit")}
                               </button>
                               <button
                                 type="button"
@@ -474,7 +486,7 @@ export default function CourseTextAdsModal({ open, onClose, courses = [] }) {
                                 disabled={savingEditId === ad.id}
                                 onClick={() => void saveInlineEdit(ad.id)}
                               >
-                                {savingEditId === ad.id ? "جارٍ الحفظ…" : "حفظ التعديلات"}
+                                {savingEditId === ad.id ? t("courses.textAds.saving") : t("courses.textAds.saveEdits")}
                               </button>
                             </div>
                           </div>
@@ -497,10 +509,11 @@ export default function CourseTextAdsModal({ open, onClose, courses = [] }) {
                 fieldErrors={createFieldErrors}
                 onPatch={patchCreate}
                 courses={courses}
+                              t={t}
               />
               <div className="oh-course-text-ads-modal__form-actions">
                 <button type="button" className="btn btn-secondary" disabled={savingCreate} onClick={cancelCreate}>
-                  إلغاء
+                  {t("courses.common.cancel")}
                 </button>
                 <button
                   type="button"
@@ -508,7 +521,7 @@ export default function CourseTextAdsModal({ open, onClose, courses = [] }) {
                   disabled={savingCreate}
                   onClick={() => void saveCreate()}
                 >
-                  {savingCreate ? "جارٍ الحفظ…" : "حفظ الإعلان"}
+                  {savingCreate ? t("courses.textAds.saving") : t("courses.textAds.saveAd")}
                 </button>
               </div>
             </div>

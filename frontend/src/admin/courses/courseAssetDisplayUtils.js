@@ -1,8 +1,9 @@
 import { extractYoutubePlaylistId, extractYoutubeVideoId } from "./youtubeSourceUtils";
 
-export function fileNameFromUrl(url) {
+export function fileNameFromUrl(url, t) {
   const raw = String(url || "").trim();
-  if (!raw) return "ملف مرفق";
+  const fallback = t ? t("courses.assets.attachedFile") : "courses.assets.attachedFile";
+  if (!raw) return fallback;
   try {
     const path = decodeURIComponent(new URL(raw).pathname);
     const name = path.split("/").filter(Boolean).pop() || "";
@@ -11,7 +12,7 @@ export function fileNameFromUrl(url) {
     /* ignore */
   }
   const tail = raw.split("/").pop()?.split("?")[0];
-  return tail && tail.length < 120 ? tail : "ملف مرفق";
+  return tail && tail.length < 120 ? tail : fallback;
 }
 
 /** True when the storage/CDN segment is not meaningful to show students (IDs, timestamps, etc.). */
@@ -27,10 +28,6 @@ export function isTechnicalStorageFileName(name) {
   return false;
 }
 
-export const COURSE_TEST_FILE_STUDENT_TITLE = "ملف الاختبار";
-export const COURSE_PROMPT_FILE_STUDENT_TITLE = "ملف تعليمات / Prompt التقييم";
-export const COURSE_MODEL_ANSWER_FILE_STUDENT_TITLE = "ملف الإجابة النموذجية";
-
 /** Fixed download names for student-facing course files (never expose storage keys). */
 export function getStudentCourseFileDownloadName(fileKind) {
   if (fileKind === "prompt") return "course-prompt.pdf";
@@ -40,21 +37,23 @@ export function getStudentCourseFileDownloadName(fileKind) {
   return "course-test.pdf";
 }
 
-export function resolveStudentCourseFileDisplay({ url, fileKind, updatedAt = null }) {
+export function resolveStudentCourseFileDisplay({ url, fileKind, updatedAt = null, t, locale = "ar" }) {
   const kind =
     fileKind === "prompt" ? "prompt" : fileKind === "model-answer" ? "model-answer" : "test";
-  const title =
+  const titleKey =
     kind === "prompt"
-      ? COURSE_PROMPT_FILE_STUDENT_TITLE
+      ? "courses.assets.promptFileTitle"
       : kind === "model-answer"
-        ? COURSE_MODEL_ANSWER_FILE_STUDENT_TITLE
-        : COURSE_TEST_FILE_STUDENT_TITLE;
-  const rawName = fileNameFromUrl(url);
-  const dateLabel = formatAssetDate(updatedAt);
+        ? "courses.assets.modelAnswerTitle"
+        : "courses.assets.testFileTitle";
+  const title = t ? t(titleKey) : titleKey;
+  const rawName = fileNameFromUrl(url, t);
+  const dateLabel = formatAssetDate(updatedAt, locale);
   return {
     title,
     typeLabel: "PDF",
-    updatedLabel: dateLabel ? `آخر تحديث: ${dateLabel}` : null,
+    updatedLabel:
+      dateLabel && t ? t("courses.assets.lastUpdated", { date: dateLabel }) : dateLabel ? `lastUpdated:${dateLabel}` : null,
     downloadName: getStudentCourseFileDownloadName(kind),
     showRawName: Boolean(url) && !isTechnicalStorageFileName(rawName),
     rawName: isTechnicalStorageFileName(rawName) ? null : rawName,
@@ -86,20 +85,26 @@ export function isYoutubeUrl(url) {
   return Boolean(extractYoutubeVideoId(url) || extractYoutubePlaylistId(url));
 }
 
-export function formatFileSize(bytes) {
+export function formatFileSize(bytes, t) {
   const n = Number(bytes);
   if (!Number.isFinite(n) || n < 0) return null;
-  if (n < 1024) return `${n} بايت`;
-  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} ك.ب`;
-  return `${(n / (1024 * 1024)).toFixed(1)} م.ب`;
+  if (!t) {
+    if (n < 1024) return `${n}`;
+    if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)}`;
+    return `${(n / (1024 * 1024)).toFixed(1)}`;
+  }
+  if (n < 1024) return t("courses.assets.bytes", { n });
+  if (n < 1024 * 1024) return t("courses.assets.kilobytes", { n: (n / 1024).toFixed(1) });
+  return t("courses.assets.megabytes", { n: (n / (1024 * 1024)).toFixed(1) });
 }
 
-export function formatAssetDate(iso) {
+export function formatAssetDate(iso, locale = "ar") {
   if (!iso) return null;
   try {
     const d = new Date(iso);
     if (Number.isNaN(d.getTime())) return null;
-    return d.toLocaleString("ar-JO-u-nu-latn", { dateStyle: "medium", timeStyle: "short" });
+    const loc = locale === "en" ? "en-JO-u-nu-latn" : "ar-JO-u-nu-latn";
+    return d.toLocaleString(loc, { dateStyle: "medium", timeStyle: "short" });
   } catch {
     return null;
   }
@@ -140,17 +145,17 @@ const COURSE_UPLOAD_MAX_BYTES = 5 * 1024 * 1024;
 
 export function validateCourseUploadFile(file) {
   if (!file) {
-    return { ok: false, message: "لم يتم اختيار ملف." };
+    return { ok: false, messageKey: "courses.assets.noFileSelected" };
   }
   const mt = String(file.type || "").toLowerCase();
   if (mt !== "application/pdf") {
     return {
       ok: false,
-      message: "تعذر رفع الملف. تأكد أن الملف PDF وحاول مرة أخرى.",
+      messageKey: "courses.errors.fileUpload",
     };
   }
   if (file.size > COURSE_UPLOAD_MAX_BYTES) {
-    return { ok: false, message: "حجم الملف يجب ألا يتجاوز 5 ميجابايت." };
+    return { ok: false, messageKey: "courses.assets.fileTooLarge" };
   }
   return { ok: true };
 }

@@ -22,7 +22,7 @@ export function sumExamQuestionMaxMarks(questions) {
 
 export function validateExamQuestionsMaxMarksTotal(questions) {
   const rows = Array.isArray(questions) ? questions : [];
-  if (!rows.length) return { ok: true, total: 0, message: null };
+  if (!rows.length) return { ok: true, total: 0, messageKey: null };
 
   const total = sumExamQuestionMaxMarks(rows);
   for (const q of rows) {
@@ -31,7 +31,7 @@ export function validateExamQuestionsMaxMarksTotal(questions) {
       return {
         ok: false,
         total,
-        message: "العلامة القصوى لكل سؤال يجب أن تكون بين 1 و 100.",
+        messageKey: "courses.exam.maxMarkRange",
       };
     }
   }
@@ -40,11 +40,11 @@ export function validateExamQuestionsMaxMarksTotal(questions) {
     return {
       ok: false,
       total,
-      message: "يجب أن يكون مجموع العلامات القصوى لجميع الأسئلة مساوياً لـ 100",
+      messageKey: "courses.exam.marksMustEqual100",
     };
   }
 
-  return { ok: true, total, message: null };
+  return { ok: true, total, messageKey: null };
 }
 
 export function parseExamQuestions(raw) {
@@ -112,23 +112,23 @@ export function validateClientExamMarks(marks, examQuestions) {
     maxTotal += Number(q.maxMark) || DEFAULT_LEGACY_MAX_MARK;
     const raw = marks[i];
     if (raw === "" || raw == null) {
-      fieldErrors[key] = "الدرجة مطلوبة.";
+      fieldErrors[key] = "courses.exam.markRequired";
       ok = false;
       continue;
     }
     const n = Number(raw);
     if (!Number.isFinite(n)) {
-      fieldErrors[key] = "أدخل رقماً صالحاً.";
+      fieldErrors[key] = "courses.exam.markInvalidNumber";
       ok = false;
       continue;
     }
     if (n < 0) {
-      fieldErrors[key] = "لا يمكن أن تكون الدرجة سالبة.";
+      fieldErrors[key] = "courses.exam.markNegative";
       ok = false;
       continue;
     }
     if (n > q.maxMark) {
-      fieldErrors[key] = `الدرجة يجب ألا تتجاوز ${q.maxMark}.`;
+      fieldErrors[key] = { key: "courses.exam.markExceedsMax", values: { max: q.maxMark } };
       ok = false;
       continue;
     }

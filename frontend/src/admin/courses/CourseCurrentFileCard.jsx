@@ -9,16 +9,14 @@ import {
 } from "./courseAssetDisplayUtils";
 import { downloadAdminCourseFile, openPdfPreviewTab, viewAdminCourseFile } from "../../services/api";
 import { useToast } from "../../components/ui/toastContext";
-
-const LEGACY_USER_MESSAGE = "هذا الملف يحتاج إلى إعادة رفع من الإدارة.";
-const OPEN_FAILED_TOAST = "تعذر فتح الملف. يرجى إبلاغ الإدارة لإعادة رفعه.";
+import { useTranslation } from "../../i18n/LanguageProvider";
 
 /**
  * Saved file preview — view, download, replace (replace triggers hidden input via ref).
  */
 export default function CourseCurrentFileCard({
   fileUrl,
-  title = "الملف الحالي",
+  title,
   updatedAt = null,
   pendingFile = null,
   uploading = false,
@@ -29,29 +27,31 @@ export default function CourseCurrentFileCard({
   fileKind = null,
   showUploadedStatus = false,
 }) {
+  const { t, locale } = useTranslation();
   const toast = useToast();
   const [fileAction, setFileAction] = useState(null);
   const trimmed = String(fileUrl || "").trim();
   const hasSaved = Boolean(trimmed);
   const hasPending = Boolean(pendingFile?.name);
   const useProxy = Boolean(courseId && fileKind);
+  const resolvedTitle = title ?? t("courses.assets.currentFile");
 
   if (!hasSaved && !hasPending) return null;
 
-  const dateLabel = formatAssetDate(updatedAt);
-  const savedName = hasSaved ? fileNameFromUrl(trimmed) : null;
+  const dateLabel = formatAssetDate(updatedAt, locale);
+  const savedName = hasSaved ? fileNameFromUrl(trimmed, t) : null;
   const legacyBroken = hasSaved && isLegacyBrokenCloudinaryPdfUrl(trimmed);
   const downloadName = savedName ? courseFileDownloadName(savedName) : undefined;
-  const pendingSize = pendingFile?.size != null ? formatFileSize(pendingFile.size) : null;
+  const pendingSize = pendingFile?.size != null ? formatFileSize(pendingFile.size, t) : null;
 
   const runFileAction = async (mode, previewWindow = null) => {
     if (legacyBroken) {
-      toast.error(LEGACY_USER_MESSAGE);
+      toast.error(t("courses.assets.legacyNeedsReupload"));
       return;
     }
     if (fileAction) return;
     if (!useProxy) {
-      toast.error("احفظ الدورة أولاً ثم جرّب فتح الملف من هنا.");
+      toast.error(t("courses.assets.saveCourseFirst"));
       return;
     }
     setFileAction(mode);
@@ -69,25 +69,27 @@ export default function CourseCurrentFileCard({
           /* ignore */
         }
       }
-      toast.error(err?.message || OPEN_FAILED_TOAST);
+      toast.error(err?.message || t("courses.assets.openFileFailed"));
     } finally {
       setFileAction(null);
     }
   };
 
   return (
-    <div className={`oh-course-asset oh-course-asset--file ${className}`.trim()} role="region" aria-label={title}>
+    <div className={`oh-course-asset oh-course-asset--file ${className}`.trim()} role="region" aria-label={resolvedTitle}>
       <div className="oh-course-asset__head">
-        <span className="oh-course-asset__title">{title}</span>
-        {dateLabel && hasSaved ? <span className="oh-course-asset__meta">آخر تحديث: {dateLabel}</span> : null}
+        <span className="oh-course-asset__title">{resolvedTitle}</span>
+        {dateLabel && hasSaved ? (
+          <span className="oh-course-asset__meta">{t("courses.assets.lastUpdated", { date: dateLabel })}</span>
+        ) : null}
       </div>
 
       {hasSaved ? (
         <>
           {legacyBroken ? (
             <p className="oh-course-asset__legacy-warn" role="alert">
-              <span className="oh-course-asset__legacy-badge">يحتاج إعادة رفع الملف</span>
-              الرابط المحفوظ قديم ولا يمكن فتحه. استخدم «استبدال الملف» وارفع PDF من جديد.
+              <span className="oh-course-asset__legacy-badge">{t("courses.assets.needsReuploadBadge")}</span>
+              {t("courses.assets.legacyLinkWarn")}
             </p>
           ) : null}
 
@@ -98,7 +100,7 @@ export default function CourseCurrentFileCard({
             <div className="oh-course-asset__copy">
               <span className="oh-course-asset__filename">{savedName}</span>
               {showUploadedStatus ? (
-                <span className="oh-course-asset__status">الملف الحالي مرفوع</span>
+                <span className="oh-course-asset__status">{t("courses.assets.fileUploaded")}</span>
               ) : null}
             </div>
           </div>
@@ -113,7 +115,7 @@ export default function CourseCurrentFileCard({
               }}
             >
               {fileAction === "view" ? <Loader2 size={16} className="fcd-btn__spinner" aria-hidden /> : null}
-              عرض الملف
+              {t("courses.assets.viewFile")}
             </button>
             <button
               type="button"
@@ -122,16 +124,16 @@ export default function CourseCurrentFileCard({
               onClick={() => void runFileAction("download")}
             >
               {fileAction === "download" ? <Loader2 size={16} className="fcd-btn__spinner" aria-hidden /> : null}
-              تنزيل الملف
+              {t("courses.assets.downloadFile")}
             </button>
             {onReplace ? (
               <button type="button" className="btn btn-secondary oh-course-asset__btn" onClick={onReplace} disabled={uploading}>
-                استبدال الملف
+                {t("courses.assets.replaceFile")}
               </button>
             ) : null}
             {onRemove ? (
               <button type="button" className="btn btn-danger oh-course-asset__btn" onClick={onRemove} disabled={uploading}>
-                إزالة الملف
+                {t("courses.assets.removeFile")}
               </button>
             ) : null}
           </div>
@@ -144,10 +146,10 @@ export default function CourseCurrentFileCard({
             <li>✓ {pendingFile.name}</li>
             {pendingSize ? <li>✓ {pendingSize}</li> : null}
           </ul>
-          {uploading ? <span className="oh-course-asset__meta">جارٍ الرفع…</span> : null}
+          {uploading ? <span className="oh-course-asset__meta">{t("courses.assets.uploading")}</span> : null}
           {pendingFile.onClear && !uploading ? (
             <button type="button" className="oh-course-asset__clear-pending" onClick={pendingFile.onClear}>
-              إلغاء الاختيار
+              {t("courses.assets.clearSelection")}
             </button>
           ) : null}
         </div>

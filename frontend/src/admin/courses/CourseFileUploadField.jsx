@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import CourseCurrentFileCard from "./CourseCurrentFileCard";
 import { validateCourseUploadFile } from "./courseAssetDisplayUtils";
+import { useTranslation } from "../../i18n/LanguageProvider";
 
 const DEFAULT_ACCEPT = ".pdf,application/pdf";
 
@@ -20,16 +21,18 @@ export default function CourseFileUploadField({
   helpWhenCreate = null,
   isEdit = true,
   allowPickBeforeSave = false,
-  pickButtonLabel = "اختيار ملف",
+  pickButtonLabel,
   courseId = null,
   fileKind = null,
   onRemove = null,
   showUploadedStatus = false,
 }) {
+  const { t } = useTranslation();
   const inputId = useId();
   const inputRef = useRef(null);
   const [localPick, setLocalPick] = useState(null);
   const wasUploadingRef = useRef(false);
+  const resolvedPickLabel = pickButtonLabel ?? t("courses.assets.pickFile");
 
   useEffect(() => {
     if (wasUploadingRef.current && !uploading) {
@@ -76,7 +79,7 @@ export default function CourseFileUploadField({
               if (!f) return;
               const check = validateCourseUploadFile(f);
               if (!check.ok) {
-                onValidationError?.(check.message);
+                onValidationError?.(t(check.messageKey));
                 e.target.value = "";
                 return;
               }
@@ -87,7 +90,7 @@ export default function CourseFileUploadField({
           />
           {showPickButton ? (
             <button type="button" className="btn btn-secondary oh-course-upload-field__pick" disabled={disabled || uploading} onClick={triggerPick}>
-              {uploading ? "جارٍ الرفع…" : pickButtonLabel}
+              {uploading ? t("courses.assets.uploading") : resolvedPickLabel}
             </button>
           ) : null}
         </>

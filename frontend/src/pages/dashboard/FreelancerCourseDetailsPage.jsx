@@ -45,6 +45,7 @@ import {
 import LinkifiedText from "../../components/ui/LinkifiedText";
 import { useToast } from "../../components/ui/toastContext";
 import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/coursesResources";
 import DashboardHubPage from "../../components/dashboard/hub/DashboardHubPage";
 import CourseDetailsPageSkeleton from "../../components/dashboard/courses/CourseDetailsPageSkeleton";
 import CourseSideTextAd from "../../components/dashboard/courses/CourseSideTextAd";
@@ -61,6 +62,13 @@ import "./freelancerCourseDetails.css";
 const FINAL_TEST_STEP_ID = "final-test";
 const MAX_RESPONSE_CHARS = 15000;
 const CD = "freelancerDashboard.courseDetails";
+
+function formatCourseExamFieldError(err, t) {
+  if (!err) return "";
+  if (typeof err === "object" && err?.key) return t(err.key, err.values ?? {});
+  if (typeof err === "string" && err.startsWith("courses.")) return t(err);
+  return String(err);
+}
 
 function preventNumberInputScroll(e) {
   e.currentTarget.blur();
@@ -971,11 +979,18 @@ function FinalTestPanel({
   const testLegacy = testLink ? isLegacyBrokenCloudinaryPdfUrl(testLink) : false;
   const promptLegacy = promptFileLink ? isLegacyBrokenCloudinaryPdfUrl(promptFileLink) : false;
   const modelAnswerLegacy = modelAnswerFileLink ? isLegacyBrokenCloudinaryPdfUrl(modelAnswerFileLink) : false;
-  const testFileDisplay = resolveStudentCourseFileDisplay({ url: testLink, fileKind: "test" });
-  const promptFileDisplay = resolveStudentCourseFileDisplay({ url: promptFileLink, fileKind: "prompt" });
+  const testFileDisplay = resolveStudentCourseFileDisplay({ url: testLink, fileKind: "test", t, locale });
+  const promptFileDisplay = resolveStudentCourseFileDisplay({
+    url: promptFileLink,
+    fileKind: "prompt",
+    t,
+    locale,
+  });
   const modelAnswerFileDisplay = resolveStudentCourseFileDisplay({
     url: modelAnswerFileLink,
     fileKind: "model-answer",
+    t,
+    locale,
   });
   const testDownloadName = testLink ? getStudentCourseFileDownloadName("test") : undefined;
   const promptDownloadName = promptFileLink ? getStudentCourseFileDownloadName("prompt") : undefined;
@@ -1388,7 +1403,7 @@ function FinalTestPanel({
                       </div>
                       {err ? (
                         <span id={`${key}-err`} className="fcd-final__mark-error" role="alert">
-                          {err}
+                          {formatCourseExamFieldError(err, t)}
                         </span>
                       ) : null}
                     </label>
