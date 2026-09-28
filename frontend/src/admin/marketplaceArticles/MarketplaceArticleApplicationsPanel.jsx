@@ -12,6 +12,7 @@ import {
   getAdminArticleBildazoPublishPreviewRequest,
 } from "../../services/api";
 import FairSelectionOverrideDialog from "./FairSelectionOverrideDialog";
+import { useArticlesT } from "./useArticlesT";
 import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
 import {
   canSelectArticleApplicant,
@@ -34,8 +35,8 @@ import {
   isActivationFairRankingApplied,
 } from "../../constants/freelancerActivationFairDistribution";
 
-function ActivationFairBadges({ activationFairness, isEn }) {
-  const badges = activationFairBadges(activationFairness, { isEn });
+function ActivationFairBadges({ activationFairness, locale }) {
+  const badges = activationFairBadges(activationFairness, { isEn: locale === "en" });
   if (!badges.length) return null;
   return (
     <div data-testid="activation-fair-badges" style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
@@ -57,7 +58,7 @@ function ActivationFairBadges({ activationFairness, isEn }) {
   );
 }
 
-function BildazoPublishPreviewBlock({ applicationId, attachedPreview, isEn }) {
+function BildazoPublishPreviewBlock({ applicationId, attachedPreview, t, locale }) {
   const [preview, setPreview] = useState(attachedPreview || null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -78,7 +79,7 @@ function BildazoPublishPreviewBlock({ applicationId, attachedPreview, isEn }) {
       })
       .catch((err) => {
         if (cancelled) return;
-        setError(getSafeApiErrorMessage(err) || (isEn ? "Preview unavailable." : "تعذر تحميل المعاينة."));
+        setError(getSafeApiErrorMessage(err) || t("applications.previewUnavailable"));
         setPreview(null);
       })
       .finally(() => {
@@ -87,12 +88,12 @@ function BildazoPublishPreviewBlock({ applicationId, attachedPreview, isEn }) {
     return () => {
       cancelled = true;
     };
-  }, [applicationId, attachedPreview, isEn]);
+  }, [applicationId, attachedPreview, t]);
 
   if (loading) {
     return (
       <p style={{ margin: 0, fontSize: "0.85rem" }}>
-        {isEn ? "Loading publish preview…" : "جارٍ تحميل معاينة النشر…"}
+        {t("applications.previewLoading")}
       </p>
     );
   }
@@ -109,25 +110,25 @@ function BildazoPublishPreviewBlock({ applicationId, attachedPreview, isEn }) {
 
   return (
     <div data-testid="admin-bildazo-publish-preview" style={{ fontSize: "0.88rem", display: "grid", gap: 6 }}>
-      <strong>{isEn ? "Bildazo publish preview" : "معاينة حمولة نشر بلدازو"}</strong>
+      <strong>{t("applications.bildazoPreviewTitle")}</strong>
       {!authorLinked ? (
         <p data-testid="admin-bildazo-author-warning" style={{ margin: 0, color: "#b42318", fontWeight: 700 }}>
-          {meta.authorBlockMessage || BILDAZO_AUTHOR_NOT_LINKED_AR}
+          {meta.authorBlockMessage || t("applications.authorNotLinked")}
         </p>
       ) : null}
       <div>
-        {isEn ? "Words" : "الكلمات"}: {meta.wordCount ?? "—"} / {meta.requiredWords ?? "—"}
+        {t("common.words")}: {meta.wordCount ?? "—"} / {meta.requiredWords ?? "—"}
         {" · "}
-        {isEn ? "References" : "المراجع"}: {meta.referencesCount ?? "—"} / {meta.requiredReferences ?? "—"}
+        {t("common.references")}: {meta.referencesCount ?? "—"} / {meta.requiredReferences ?? "—"}
       </div>
       <div>
-        {isEn ? "Writing source" : "طريقة الكتابة"}:{" "}
-        {ARTICLE_WRITING_SOURCE_LABELS_AR[payload.writingSource] || payload.writingSource || "—"}
+        {t("common.writingSource")}:{" "}
+        {t(`writingSources.${payload.writingSource}`) || payload.writingSource || "—"}
         {" · "}
-        {isEn ? "Mode" : "النمط"}: {writingModeLabelAr(meta.writingMode)}
+        {t("common.mode")}: {writingModeLabelAr(meta.writingMode)}
       </div>
       <div>
-        {isEn ? "Category" : "الصنف"}: {meta.categoryName || "—"}
+        {t("common.category")}: {meta.categoryName || "—"}
         {meta.categorySlug ? ` · ${meta.categorySlug}` : ""}
         {payload.categoryId ? ` · id ${payload.categoryId}` : ""}
       </div>
@@ -152,10 +153,10 @@ function BildazoPublishPreviewBlock({ applicationId, attachedPreview, isEn }) {
 
 export default function MarketplaceArticleApplicationsPanel({
   articleId,
-  isEn = false,
   onToast,
   onRelisted,
 }) {
+  const { t, locale } = useArticlesT();
   const [applications, setApplications] = useState([]);
   const [bidCollection, setBidCollection] = useState(null);
   const [fairRanking, setFairRanking] = useState(null);
@@ -180,13 +181,13 @@ export default function MarketplaceArticleApplicationsPanel({
     } catch (err) {
       setError(
         getSafeApiErrorMessage(err) ||
-          (isEn ? "Failed to load applications." : "تعذر تحميل الطلبات."),
+          t("applications.loadError"),
       );
       setApplications([]);
     } finally {
       setLoading(false);
     }
-  }, [articleId, isEn]);
+  }, [articleId, t]);
 
   useEffect(() => {
     void refresh();
@@ -212,31 +213,31 @@ export default function MarketplaceArticleApplicationsPanel({
         );
         onToast?.({
           type: "success",
-          message: isEn ? "Applicant selected." : "تم اختيار المتقدم.",
+          message: t("applications.selectSuccess"),
         });
       } else if (action === "finalize") {
         await finalizeAdminArticleApplicationRequest(applicationId);
         onToast?.({
           type: "success",
-          message: isEn ? "Article approved." : "تم اعتماد المقال.",
+          message: t("applications.approveSuccess"),
         });
       } else if (action === "retry-publish") {
         await retryAdminArticleBildazoPublishRequest(applicationId);
         onToast?.({
           type: "success",
-          message: isEn ? "Bildazo publish retried." : "تمت إعادة محاولة النشر على Bildazo.",
+          message: t("applications.retryPublishSuccess"),
         });
       } else if (action === "request-revision") {
         await requestAdminArticleRevisionRequest(applicationId, {});
         onToast?.({
           type: "success",
-          message: isEn ? "Revision requested." : "تم طلب التعديل.",
+          message: t("applications.revisionSuccess"),
         });
       } else {
         await rejectAdminArticleApplicationRequest(applicationId);
         onToast?.({
           type: "success",
-          message: isEn ? "Application rejected." : "تم رفض الطلب.",
+          message: t("applications.rejectSuccess"),
         });
       }
       await refresh();
@@ -244,9 +245,9 @@ export default function MarketplaceArticleApplicationsPanel({
       onToast?.({
         type: "error",
         message:
-          activationAssignmentErrorMessage(err, { isEn }) ||
+          activationAssignmentErrorMessage(err, { isEn: locale === "en" }) ||
           getSafeApiErrorMessage(err) ||
-          (isEn ? "Action failed." : "فشل الإجراء."),
+          t("applications.actionFailed"),
       });
     } finally {
       setBusyId(null);
@@ -260,14 +261,14 @@ export default function MarketplaceArticleApplicationsPanel({
       await relistAdminMarketplaceArticleBidCollectionRequest(articleId);
       onToast?.({
         type: "success",
-        message: isEn ? "A new bid-collection round is open." : "تم فتح جولة مناقصات جديدة.",
+        message: t("applications.relistSuccess"),
       });
       await refresh();
       await onRelisted?.();
     } catch (err) {
       onToast?.({
         type: "error",
-        message: getSafeApiErrorMessage(err) || (isEn ? "Relist failed." : "تعذر إعادة طرح المناقصة."),
+        message: getSafeApiErrorMessage(err) || t("applications.relistFailed"),
       });
     } finally {
       setRelisting(false);
@@ -279,23 +280,21 @@ export default function MarketplaceArticleApplicationsPanel({
   return (
     <section style={{ marginTop: 16, paddingTop: 12, borderTop: "1px solid rgba(0,0,0,0.08)" }}>
       <h4 style={{ margin: "0 0 8px" }}>
-        {isEn ? "Applications" : "طلبات التقديم"}
+        {t("applications.title")}
         {!loading ? ` (${applications.length})` : ""}
       </h4>
-      {formatArticleBidCollectionLabel(bidCollection, { isEn }) ? (
+      {formatArticleBidCollectionLabel(bidCollection, { locale }) ? (
         <p style={{ margin: "0 0 8px", fontWeight: 600 }}>
-          {formatArticleBidCollectionLabel(bidCollection, { isEn })}
+          {formatArticleBidCollectionLabel(bidCollection, { locale })}
         </p>
       ) : null}
       {canRelistBidCollection(bidCollection) ? (
         <div data-testid="article-relist-bid-collection" style={{ margin: "0 0 12px" }}>
           <p style={{ margin: "0 0 8px", fontSize: "0.92rem" }}>
-            {isEn
-              ? "A new round will open with the same article data. Previous applicants will not count toward the new round. The required bid count stays the same."
-              : "سيتم فتح جولة جديدة بنفس بيانات المقال، ولن يتم احتساب المتقدمين السابقين ضمن الجولة الجديدة. سيبقى الحد الأدنى للمناقصات كما هو."}
+            {t("applications.relistHint")}
           </p>
           <Button type="button" onClick={relist} disabled={relisting}>
-            {isEn ? "Relist auction" : "إعادة طرح المناقصة"}
+            {t("applications.relistAuction")}
           </Button>
         </div>
       ) : null}
@@ -310,41 +309,39 @@ export default function MarketplaceArticleApplicationsPanel({
         }}
       >
         <h5 style={{ margin: "0 0 8px" }}>
-          {isEn ? "Automatic assignment (A9.3)" : "الإسناد التلقائي (A9.3)"}
+          {t("applications.autoAssignTitle")}
         </h5>
         <p data-testid="activation-auto-assign-status" style={{ margin: "0 0 8px" }}>
-          {isEn ? "Status" : "الحالة"}:{" "}
+          {t("common.status")}:{" "}
           <strong>
             {autoAssignment?.autoAssignedBadge
-              ? isEn
-                ? "auto-assigned"
-                : "تم الإسناد تلقائيًا"
+              ? t("applications.autoAssignedStatus")
               : autoAssignment?.readiness?.status ||
                 autoAssignment?.run?.status ||
-                (isEn ? "disabled / unknown" : "معطّل / غير معروف")}
+                t("applications.disabledUnknown")}
           </strong>
         </p>
         {autoAssignment?.run?.skipReason || autoAssignment?.run?.errorCode ? (
           <p data-testid="activation-auto-assign-skip-reason" style={{ margin: "0 0 8px", fontSize: "0.9rem" }}>
-            {isEn ? "Reason" : "السبب"}:{" "}
+            {t("applications.reason")}:{" "}
             {autoAssignment.run.skipReason || autoAssignment.run.errorCode}
           </p>
         ) : null}
         {autoAssignment?.autoAssignedBadge ? (
           <p data-testid="activation-auto-assigned-badge" style={{ margin: "0 0 8px", fontWeight: 700 }}>
-            {isEn ? "Assigned automatically" : "تم الإسناد تلقائيًا"}
+            {t("applications.autoAssigned")}
           </p>
         ) : null}
         {(autoAssignment?.candidates || []).length > 0 ? (
           <div data-testid="activation-auto-assign-fairness-summary" style={{ marginBottom: 8 }}>
             <p style={{ margin: "0 0 6px", fontSize: "0.9rem" }}>
-              {isEn ? "Admin fairness summary (weights)" : "ملخص العدالة للمشرف (الأوزان)"}
+              {t("applications.fairSummary")}
             </p>
             <ul style={{ margin: 0, paddingInlineStart: 18, fontSize: "0.85rem" }}>
               {autoAssignment.candidates.slice(0, 12).map((c) => (
                 <li key={c.id || c.applicationId}>
                   #{c.candidateRank || "—"} app {c.applicationId} · weight {c.weight}
-                  {c.selected ? (isEn ? " · selected" : " · مختار") : ""}
+                  {c.selected ? t("applications.selected") : ""}
                   {Array.isArray(c.reasonTags) && c.reasonTags.length
                     ? ` · ${c.reasonTags.join(", ")}`
                     : ""}
@@ -366,7 +363,7 @@ export default function MarketplaceArticleApplicationsPanel({
                 await runAdminArticleAutoAssignmentRequest(articleId);
                 onToast?.({
                   type: "success",
-                  message: isEn ? "Auto-assignment run finished." : "اكتمل تشغيل التوزيع التلقائي.",
+                  message: t("applications.autoAssignDone"),
                 });
                 await refresh();
               } catch (err) {
@@ -374,14 +371,14 @@ export default function MarketplaceArticleApplicationsPanel({
                   type: "error",
                   message:
                     getSafeApiErrorMessage(err) ||
-                    (isEn ? "Auto-assignment failed." : "فشل التوزيع التلقائي."),
+                    t("applications.autoAssignFailed"),
                 });
               } finally {
                 setAutoAssignBusy(false);
               }
             }}
           >
-            {isEn ? "Run auto assignment now" : "تشغيل التوزيع التلقائي الآن"}
+            {t("applications.runAutoAssign")}
           </Button>
         ) : null}
       </section>
@@ -395,22 +392,18 @@ export default function MarketplaceArticleApplicationsPanel({
         }}
       >
         <h5 style={{ margin: "0 0 8px" }}>
-          {isEn ? "Fair distribution ranking" : "ترتيب التوزيع العادل"}
+          {t("applications.fairRankingTitle")}
         </h5>
         {!isFairRankingEligible(fairRanking) ? (
           <p style={{ margin: 0, opacity: 0.8 }}>
-            {fairRanking?.messageAr && !isEn
+            {locale === "ar" && fairRanking?.messageAr
               ? fairRanking.messageAr
-              : isEn
-                ? fairRanking?.messageEn || "Fair ranking appears after the required applicant count is reached."
-                : ARTICLE_FAIR_RANKING_PENDING_AR}
+              : fairRanking?.messageEn || t("applications.fairRankingPending")}
           </p>
         ) : (
           <>
             <p style={{ margin: "0 0 10px", fontSize: "0.92rem" }}>
-              {isEn
-                ? "This ranking is advisory and based on fair-distribution rules. Assignment still requires Super Admin confirmation."
-                : ARTICLE_FAIR_RANKING_DISCLAIMER_AR}
+              {t("applications.fairRankingDisclaimer")}
             </p>
             <ol style={{ margin: 0, paddingInlineStart: 20, display: "grid", gap: 8 }}>
               {(fairRanking.candidates || []).map((c) => (
@@ -418,18 +411,18 @@ export default function MarketplaceArticleApplicationsPanel({
                   <strong>
                     #{c.rank} {c.freelancerName || c.freelancerUserId}
                     {String(c.applicationId) === String(fairRanking.recommendedApplicationId)
-                      ? isEn
-                        ? " (recommended)"
-                        : " (المرشح الأول)"
+                      ? t("applications.recommended")
                       : ""}
                   </strong>
                   <div style={{ fontSize: "0.88rem", opacity: 0.85 }}>
-                    {isEn ? "Status" : "الحالة"}: {c.status}
+                    {t("common.status")}: {c.status}
                     {c.submittedAt ? ` · ${new Date(c.submittedAt).toLocaleString()}` : ""}
-                    {c.rankingReason ? ` · ${isEn ? c.rankingReasonEn || c.rankingReason : c.rankingReason}` : ""}
+                    {c.rankingReason
+                      ? ` · ${locale === "en" ? c.rankingReasonEn || c.rankingReason : c.rankingReason}`
+                      : ""}
                   </div>
                   {isActivationFairRankingApplied(fairRanking) ? (
-                    <ActivationFairBadges activationFairness={c.activationFairness} isEn={isEn} />
+                    <ActivationFairBadges activationFairness={c.activationFairness} locale={locale} />
                   ) : null}
                 </li>
               ))}
@@ -437,11 +430,11 @@ export default function MarketplaceArticleApplicationsPanel({
           </>
         )}
       </section>
-      {loading ? <p style={{ opacity: 0.75 }}>{isEn ? "Loading…" : "جارٍ التحميل…"}</p> : null}
+      {loading ? <p style={{ opacity: 0.75 }}>{t("common.loading")}</p> : null}
       {error ? <p style={{ color: "#b00020" }}>{error}</p> : null}
       {!loading && !error && applications.length === 0 ? (
         <p style={{ opacity: 0.75, margin: 0 }}>
-          {isEn ? "No applications yet." : "لا توجد طلبات بعد."}
+          {t("applications.noApplications")}
         </p>
       ) : null}
       <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 10 }}>
@@ -471,106 +464,98 @@ export default function MarketplaceArticleApplicationsPanel({
                     data-testid="activation-auto-assigned-app-badge"
                     style={{ marginInlineStart: 8, fontWeight: 700, fontSize: "0.85rem" }}
                   >
-                    {isEn ? "Auto-assigned" : "تم الإسناد تلقائيًا"}
+                    {t("applications.autoAssigned")}
                   </span>
                 ) : null}
               </div>
               {isActivationFairRankingApplied(fairRanking) ? (
                 <ActivationFairBadges
                   activationFairness={findFairRankingCandidate(app.id, fairRanking)?.activationFairness}
-                  isEn={isEn}
+                  locale={locale}
                 />
               ) : null}
               {isActivationFairRankingApplied(fairRanking) &&
               app.status === "pending" &&
               !isRecommendedArticleApplicant(app.id, fairRanking) ? (
                 <div data-testid="activation-fair-override-note" style={{ fontSize: "0.82rem", opacity: 0.75 }}>
-                  {isEn
-                    ? "Selecting this applicant overrides the preferred activation candidate."
-                    : "اختيار هذا المتقدم يتجاوز المرشح المفضل للتفعيل."}
+                  {t("applications.overrideNote")}
                 </div>
               ) : null}
               <div style={{ fontSize: "0.9rem" }}>
-                {isEn ? "Status" : "الحالة"}: <strong>{app.status}</strong>
+                {t("common.status")}: <strong>{app.status}</strong>
                 {" · "}
-                {isEn ? "Access snapshot" : "لقطة الوصول"}: {app.membershipArticleAccessLevelSnapshot}
+                {t("applications.accessSnapshot")}: {app.membershipArticleAccessLevelSnapshot}
                 {" · "}
-                {isEn ? "Article level" : "مستوى المقال"}: {app.articleLevelSnapshot}
+                {t("applications.articleLevel")}: {app.articleLevelSnapshot}
               </div>
               {(app.bildazoCategoryIdSnapshot ||
                 app.bildazoCategoryNameSnapshot ||
                 app.writingModeSnapshot ||
                 app.requiredWordCountSnapshot != null) && (
                 <div data-testid="admin-application-bildazo-snapshots" style={{ fontSize: "0.85rem", opacity: 0.9 }}>
-                  {isEn ? "Bildazo category" : "صنف بلدازو"}: {app.bildazoCategoryNameSnapshot || "—"}
+                  {t("common.bildazoCategory")}: {app.bildazoCategoryNameSnapshot || "—"}
                   {app.bildazoCategorySlugSnapshot ? ` · ${app.bildazoCategorySlugSnapshot}` : ""}
                   {app.bildazoCategoryIdSnapshot ? ` · id ${app.bildazoCategoryIdSnapshot}` : ""}
                   {" · "}
-                  {isEn ? "Writing mode" : "نمط الكتابة"}: {writingModeLabelAr(app.writingModeSnapshot)}
+                  {t("common.writingMode")}: {writingModeLabelAr(app.writingModeSnapshot)}
                   {" · "}
-                  {isEn ? "Words/refs" : "كلمات/مراجع"}: {app.requiredWordCountSnapshot ?? "—"} /{" "}
+                  {t("applications.wordsRefs")}: {app.requiredWordCountSnapshot ?? "—"} /{" "}
                   {app.requiredReferencesCountSnapshot ?? 0}
                 </div>
               )}
               {app.bidEconomics ? (
                 <div style={{ fontSize: "0.85rem", opacity: 0.9 }}>
-                  {isEn ? "Bid economics" : "اقتصاد العرض"}:{" "}
+                  {t("applications.bidEconomics")}:{" "}
                   {app.bidEconomics.chargeStatus === "charged"
-                    ? isEn
-                      ? "charged · 1 Bid"
-                      : "مخصوم · عرض واحد"
+                    ? t("applications.charged")
                     : app.bidEconomics.chargeStatus}
                   {app.bidEconomics.refundStatus === "refunded"
-                    ? isEn
-                      ? ` · refunded${app.bidEconomics.refundMode ? ` (${app.bidEconomics.refundMode})` : ""}`
-                      : ` · مسترد${app.bidEconomics.refundMode ? ` (${app.bidEconomics.refundMode})` : ""}`
+                    ? `${t("applications.refunded")}${app.bidEconomics.refundMode ? ` (${app.bidEconomics.refundMode})` : ""}`
                     : ""}
                 </div>
               ) : null}
               {app.proposalMessage ? (
                 <p style={{ margin: 0, fontSize: "0.9rem", opacity: 0.85 }}>
-                  {isEn ? "Proposal:" : "رسالة العرض:"} {app.proposalMessage}
+                  {t("applications.proposal")} {app.proposalMessage}
                 </p>
               ) : null}
               {app.articleSubmission ? (
                 <div data-testid="admin-final-article-status" style={{ fontSize: "0.9rem" }}>
-                  <strong>{isEn ? "Final manuscript" : "المقال النهائي"}:</strong>{" "}
+                  <strong>{t("applications.finalManuscript")}:</strong>{" "}
                   {app.articleSubmission.status}
                   {app.articleSubmission.title ? ` · ${app.articleSubmission.title}` : ""}
                   <div style={{ fontSize: "0.82rem", opacity: 0.9 }}>
-                    {isEn ? "Words" : "الكلمات"}: {app.articleSubmission.wordCount ?? "—"}
+                    {t("common.words")}: {app.articleSubmission.wordCount ?? "—"}
                     {" · "}
-                    {isEn ? "References" : "المراجع"}: {app.articleSubmission.referencesCount ?? "—"}
+                    {t("common.references")}: {app.articleSubmission.referencesCount ?? "—"}
                     {" · "}
-                    {isEn ? "Writing source" : "طريقة الكتابة"}:{" "}
-                    {ARTICLE_WRITING_SOURCE_LABELS_AR[app.articleSubmission.writingSource] ||
+                    {t("common.writingSource")}:{" "}
+                    {t(`writingSources.${app.articleSubmission.writingSource}`) ||
                       app.articleSubmission.writingSource ||
                       "—"}
                   </div>
                   <div data-testid="admin-submission-terms" style={{ fontSize: "0.82rem", opacity: 0.85 }}>
-                    {formatManuscriptTermsAdmin(app.articleSubmission, { isEn })}
+                    {formatManuscriptTermsAdmin(app.articleSubmission, { isEn: locale === "en" })}
                   </div>
                 </div>
               ) : app.status === "selected" || app.status === "assigned" ? (
                 <p data-testid="admin-final-article-missing" style={{ margin: 0, fontSize: "0.9rem" }}>
-                  {isEn
-                    ? "Waiting for the freelancer’s final article."
-                    : "بانتظار تسليم المقال النهائي من المستقل."}
+                  {t("applications.waitingFinal")}
                 </p>
               ) : null}
               {app.bildazoPublish ? (
                 <div data-testid="admin-bildazo-publish-status" style={{ fontSize: "0.9rem" }}>
-                  {adminBildazoPublishCopy(app.bildazoPublish, isEn)}
+                  {adminBildazoPublishCopy(app.bildazoPublish, locale === "en")}
                   {publishStatus === "needs_manual_review" ? (
                     <span data-testid="admin-bildazo-needs-manual-review">
                       {" · "}
-                      {isEn ? "Needs manual review" : "يحتاج مراجعة يدوية"}
+                      {t("applications.needsManualReview")}
                     </span>
                   ) : null}
                   {publishStatus === "failed" ? (
                     <span data-testid="admin-bildazo-publish-failed" style={{ color: "#b42318" }}>
                       {" · "}
-                      {isEn ? "Publish failed" : "فشل النشر"}
+                      {t("applications.publishFailed")}
                     </span>
                   ) : null}
                   {app.bildazoPublish.articleUrl ? (
@@ -587,7 +572,8 @@ export default function MarketplaceArticleApplicationsPanel({
                 <BildazoPublishPreviewBlock
                   applicationId={app.id}
                   attachedPreview={app.bildazoPublishPreview || null}
-                  isEn={isEn}
+                  t={t}
+                  locale={locale}
                 />
               ) : null}
               {app.status === "pending" ? (
@@ -597,7 +583,7 @@ export default function MarketplaceArticleApplicationsPanel({
                     disabled={busyId === app.id || !canSelectArticleApplicant(bidCollection)}
                     onClick={() => act(app.id, "select")}
                   >
-                    {isEn ? "Select" : "اختيار"}
+                    {t("applications.select")}
                   </Button>
                   <Button
                     type="button"
@@ -605,21 +591,19 @@ export default function MarketplaceArticleApplicationsPanel({
                     disabled={busyId === app.id}
                     onClick={() => act(app.id, "reject")}
                   >
-                    {isEn ? "Reject" : "رفض"}
+                    {t("applications.reject")}
                   </Button>
                 </div>
               ) : null}
               {app.status === "selected" || app.status === "assigned" ? (
                 <p style={{ margin: 0, fontSize: "0.9rem", opacity: 0.8 }}>
-                  {isEn
-                    ? "Approve is available after the final article is submitted."
-                    : "الاعتماد متاح بعد تسليم المقال النهائي."}
+                  {t("applications.approveAfterSubmit")}
                 </p>
               ) : null}
               {app.articleSubmission?.status === "submitted" ? (
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                   <Button type="button" disabled={busyId === app.id} onClick={() => act(app.id, "finalize")}>
-                    {isEn ? "Approve article" : "اعتماد المقال"}
+                    {t("applications.approveArticle")}
                   </Button>
                   <Button
                     type="button"
@@ -627,7 +611,7 @@ export default function MarketplaceArticleApplicationsPanel({
                     disabled={busyId === app.id}
                     onClick={() => act(app.id, "request-revision")}
                   >
-                    {isEn ? "Request revision" : "طلب تعديل"}
+                    {t("applications.requestRevision")}
                   </Button>
                 </div>
               ) : null}
@@ -639,7 +623,7 @@ export default function MarketplaceArticleApplicationsPanel({
                     disabled={busyId === app.id}
                     onClick={() => act(app.id, "retry-publish")}
                   >
-                    {isEn ? "Retry Bildazo publish" : "إعادة نشر Bildazo"}
+                    {t("applications.retryBildazo")}
                   </Button>
                 </div>
               ) : null}
@@ -649,7 +633,6 @@ export default function MarketplaceArticleApplicationsPanel({
       </ul>
       <FairSelectionOverrideDialog
         open={Boolean(overrideTargetId)}
-        isEn={isEn}
         submitting={Boolean(busyId)}
         activationOverride={isActivationFairRankingApplied(fairRanking)}
         onCancel={() => setOverrideTargetId(null)}

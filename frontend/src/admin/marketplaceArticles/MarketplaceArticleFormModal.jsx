@@ -3,10 +3,9 @@ import Button from "../../components/ui/Button";
 import {
   ARTICLE_STATUSES,
   ARTICLE_WRITING_MODES,
-  ARTICLE_WRITING_MODE_LABELS_AR,
   ARTICLE_TARGET_PLAN_OPTIONS,
   articleToMarketplaceFormState,
-  formatDerivedPlanRequirementsSummaryAr,
+  formatDerivedPlanRequirementsSummary,
   getInitialMarketplaceArticleFormState,
   normalizeMarketplaceArticlePayload,
   validateMarketplaceArticleForm,
@@ -14,22 +13,26 @@ import {
   ARTICLE_BID_COLLECTION_DURATION_PRESETS,
   ARTICLE_BID_COLLECTION_DURATION_DEFAULT_HOURS,
   ARTICLE_INVENTORY_REQUIRED_BID_COUNT_DEFAULT,
-  ARTICLE_OZ05_REFUND_RECYCLE_HINT_AR,
-  ARTICLE_MIN_REQUIRED_BIDS_ACK_AR,
-  ARTICLE_MIN_REQUIRED_BIDS_WARNING_AR,
-  BILDAZO_CATEGORIES_LOAD_ERROR_AR,
   attachableActivationCampaigns,
   attachableActivationWaves,
 } from "./marketplaceArticleFormUtils";
+import { useArticlesT } from "./useArticlesT";
+
+const BID_DURATION_I18N_KEY = {
+  24: "bidDuration.h24",
+  48: "bidDuration.h48",
+  72: "bidDuration.h72",
+  168: "bidDuration.h168",
+};
 
 function BildazoCategorySearchSelect({
   categories = [],
   value,
   disabled,
-  isEn,
   loading,
   error,
   onSelect,
+  t,
 }) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
@@ -69,7 +72,7 @@ function BildazoCategorySearchSelect({
       <input
         type="search"
         value={query}
-        placeholder={isEn ? "Search Bildazo category…" : "ابحث عن صنف بلدازو…"}
+        placeholder={t("form.bildazoSearch")}
         disabled={disabled || loading}
         onChange={(e) => {
           setQuery(e.target.value);
@@ -83,9 +86,9 @@ function BildazoCategorySearchSelect({
         autoComplete="off"
       />
       {loading ? (
-        <span className="oh-mmp-form__hint">{isEn ? "Loading categories…" : "جارٍ تحميل الأصناف…"}</span>
+        <span className="oh-mmp-form__hint">{t("form.bildazoLoading")}</span>
       ) : null}
-      {error ? <span className="oh-mmp-form__error">{error || BILDAZO_CATEGORIES_LOAD_ERROR_AR}</span> : null}
+      {error ? <span className="oh-mmp-form__error">{error || t("form.bildazoLoadError")}</span> : null}
       {selected ? (
         <p className="oh-mmp-form__hint" style={{ margin: 0 }} data-testid="bildazo-category-selected">
           {selected.nameAr || selected.nameEn || selected.slug}
@@ -95,7 +98,7 @@ function BildazoCategorySearchSelect({
       {open && !loading && !disabled ? (
         <ul className="oh-mmp-bildazo-cat__list" role="listbox">
           {filtered.length === 0 ? (
-            <li className="oh-mmp-bildazo-cat__empty">{isEn ? "No matches" : "لا نتائج"}</li>
+            <li className="oh-mmp-bildazo-cat__empty">{t("form.bildazoNoMatches")}</li>
           ) : (
             filtered.map((c) => (
               <li key={c.id}>
@@ -134,7 +137,6 @@ export default function MarketplaceArticleFormModal({
   activationCampaigns = [],
   packageRequirements = null,
   inventorySimplified = false,
-  isEn = false,
   submitting = false,
   titleOverride = null,
   submitLabel = null,
@@ -143,6 +145,7 @@ export default function MarketplaceArticleFormModal({
   onSubmit,
   onCategoryChange,
 }) {
+  const { t, locale } = useArticlesT();
   const isCreate = mode === "create";
   const isInline = variant === "inline";
   const [form, setForm] = useState(getInitialMarketplaceArticleFormState);
@@ -173,8 +176,8 @@ export default function MarketplaceArticleFormModal({
   }, [open, isCreate, initialArticle, inventorySimplified]);
 
   const derivedSummary = useMemo(
-    () => formatDerivedPlanRequirementsSummaryAr(form.targetPlanCode, packageRequirements),
-    [form.targetPlanCode, packageRequirements],
+    () => formatDerivedPlanRequirementsSummary(form.targetPlanCode, packageRequirements, locale),
+    [form.targetPlanCode, packageRequirements, locale],
   );
 
   if (!open) return null;
@@ -189,7 +192,7 @@ export default function MarketplaceArticleFormModal({
         inventorySimplified: Boolean(inventorySimplified),
         allowFlexibleBidCount: Boolean(inventorySimplified || form.allowFlexibleBidCount),
       },
-      { packageRequirements },
+      { packageRequirements, locale },
     );
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) return;
@@ -208,18 +211,13 @@ export default function MarketplaceArticleFormModal({
   };
 
   const heading =
-    titleOverride ||
-    (isCreate ? (isEn ? "Add Article" : "إضافة مقال") : isEn ? "Edit Article" : "تعديل مقال");
-  const saveLabel = submitting
-    ? isEn
-      ? "Saving…"
-      : "جارٍ الحفظ…"
-    : submitLabel || (isEn ? "Save" : "حفظ");
+    titleOverride || (isCreate ? t("form.addTitle") : t("form.editTitle"));
+  const saveLabel = submitting ? t("common.saving") : submitLabel || t("common.save");
 
   const formBody = (
         <form className="oh-mmp-form" onSubmit={handleSubmit} data-testid="marketplace-article-form">
           <label>
-            {isEn ? "Title" : "العنوان"} *
+            {t("form.title")} *
             <input
               value={form.title}
               onChange={(e) => setField("title", e.target.value)}
@@ -231,7 +229,7 @@ export default function MarketplaceArticleFormModal({
           </label>
 
           <label>
-            {isEn ? "Description / instructions" : "الوصف / التعليمات"}
+            {t("form.description")}
             <textarea
               rows={4}
               value={form.description}
@@ -242,12 +240,12 @@ export default function MarketplaceArticleFormModal({
           </label>
 
           <label>
-            {isEn ? "Bildazo category" : "صنف بلدازو"} *
+            {t("common.bildazoCategory")} *
             <BildazoCategorySearchSelect
               categories={bildazoCategories}
               value={form.bildazoCategoryId}
               disabled={submitting}
-              isEn={isEn}
+              t={t}
               loading={categoriesLoading}
               error={categoriesError}
               onSelect={(c) => {
@@ -266,17 +264,17 @@ export default function MarketplaceArticleFormModal({
           </label>
 
           <label>
-            {isEn ? "Writing mode" : "نمط الكتابة"} *
+            {t("form.writingMode")} *
             <select
               value={form.writingMode || ""}
               onChange={(e) => setField("writingMode", e.target.value)}
               disabled={submitting}
               data-testid="article-form-writing-mode"
             >
-              <option value="">{isEn ? "— Select —" : "— اختر —"}</option>
+              <option value="">{t("common.select")}</option>
               {ARTICLE_WRITING_MODES.map((mode) => (
                 <option key={mode} value={mode}>
-                  {isEn ? mode : ARTICLE_WRITING_MODE_LABELS_AR[mode]}
+                  {t(`writingModes.${mode}`)}
                 </option>
               ))}
             </select>
@@ -284,17 +282,17 @@ export default function MarketplaceArticleFormModal({
           </label>
 
                     <label>
-            {isEn ? "Target plan" : "الخطة المستهدفة"} *
+            {t("form.targetPlan")} *
             <select
               value={form.targetPlanCode || ""}
               onChange={(e) => setField("targetPlanCode", e.target.value)}
               disabled={submitting}
               data-testid="article-form-target-plan"
             >
-              <option value="">{isEn ? "— Select —" : "— اختر —"}</option>
+              <option value="">{t("common.select")}</option>
               {ARTICLE_TARGET_PLAN_OPTIONS.map((o) => (
                 <option key={o.value} value={o.value}>
-                  {o.labelAr}
+                  {t(`planLabels.${o.value}`)}
                 </option>
               ))}
             </select>
@@ -316,7 +314,7 @@ export default function MarketplaceArticleFormModal({
           {inventorySimplified ? (
             <div className="oh-mmp-form__inventory-bid-settings" data-testid="article-form-oz05-bid-settings">
               <label>
-                {isEn ? "Minimum applicants" : "الحد الأدنى من المتقدمين"} *
+                {t("form.minApplicants")} *
                 <input
                   type="number"
                   min={1}
@@ -333,15 +331,13 @@ export default function MarketplaceArticleFormModal({
                   <span className="oh-mmp-form__hint" style={{ display: "block" }}>
                     {form.requiredBidCount
                       ? null
-                      : isEn
-                        ? "Default"
-                        : "افتراضي"}
+                      : t("common.default")}
                   </span>
                 )}
               </label>
 
               <label>
-                {isEn ? "Application collection duration" : "مدة استقبال التقديمات"} *
+                {t("form.bidCollectionDuration")} *
                 <select
                   value={
                     form.bidCollectionDurationHours || ARTICLE_BID_COLLECTION_DURATION_DEFAULT_HOURS
@@ -352,7 +348,9 @@ export default function MarketplaceArticleFormModal({
                 >
                   {ARTICLE_BID_COLLECTION_DURATION_PRESETS.map((p) => (
                     <option key={p.hours} value={p.hours}>
-                      {isEn ? `${p.hours} hours` : p.labelAr}
+                      {BID_DURATION_I18N_KEY[p.hours]
+                        ? t(BID_DURATION_I18N_KEY[p.hours])
+                        : t("bidDuration.hours", { hours: p.hours })}
                     </option>
                   ))}
                 </select>
@@ -366,7 +364,7 @@ export default function MarketplaceArticleFormModal({
                 data-testid="article-form-oz05-refund-hint"
                 style={{ margin: 0, lineHeight: 1.55 }}
               >
-                {ARTICLE_OZ05_REFUND_RECYCLE_HINT_AR}
+                {t("form.oz05RefundHint")}
               </p>
             </div>
           ) : null}
@@ -375,7 +373,7 @@ export default function MarketplaceArticleFormModal({
             <>
 <div className="oh-mmp-form__row">
             <label>
-              {isEn ? "Status" : "الحالة"}
+              {t("form.status")}
               <select
                 value={form.status}
                 onChange={(e) => setField("status", e.target.value)}
@@ -389,7 +387,7 @@ export default function MarketplaceArticleFormModal({
               </select>
             </label>
             <label>
-              {isEn ? "Category" : "التصنيف"}
+              {t("form.category")}
               <select
                 value={form.categoryId}
                 onChange={(e) => {
@@ -400,7 +398,7 @@ export default function MarketplaceArticleFormModal({
                 }}
                 disabled={submitting}
               >
-                <option value="">{isEn ? "— Optional —" : "— اختياري —"}</option>
+                <option value="">{t("common.optional")}</option>
                 {categories.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name}
@@ -411,13 +409,13 @@ export default function MarketplaceArticleFormModal({
           </div>
 
           <label>
-            {isEn ? "Subcategory" : "التصنيف الفرعي"}
+            {t("form.subcategory")}
             <select
               value={form.subcategoryId}
               onChange={(e) => setField("subcategoryId", e.target.value)}
               disabled={submitting || !form.categoryId}
             >
-              <option value="">{isEn ? "— Optional —" : "— اختياري —"}</option>
+              <option value="">{t("common.optional")}</option>
               {subcategories.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name}
@@ -427,7 +425,7 @@ export default function MarketplaceArticleFormModal({
           </label>
 
           <label>
-            {isEn ? "Minimum required applicants" : "الحد الأدنى للمتقدمين / المناقصات"} *
+            {t("form.minRequiredBids")} *
             <select
               value={form.requiredBidCount}
               onChange={(e) => setField("requiredBidCount", Number(e.target.value))}
@@ -445,7 +443,7 @@ export default function MarketplaceArticleFormModal({
           </label>
 
           <label>
-            {isEn ? "Application deadline (optional)" : "موعد إغلاق التقديم (اختياري)"}
+            {t("form.applicationDeadline")}
             <input
               type="datetime-local"
               value={form.applicationDeadlineAt || ""}
@@ -456,7 +454,7 @@ export default function MarketplaceArticleFormModal({
 
           <div className="oh-mmp-form__row">
             <label>
-              {isEn ? "Activation campaign (optional)" : "حملة التفعيل (اختياري)"}
+              {t("form.activationCampaign")}
               <select
                 data-testid="activation-campaign-select"
                 value={form.activationCampaignId || ""}
@@ -466,7 +464,7 @@ export default function MarketplaceArticleFormModal({
                 }}
                 disabled={submitting}
               >
-                <option value="">{isEn ? "— Not attached —" : "— غير مرتبط —"}</option>
+                <option value="">{t("common.notAttached")}</option>
                 {attachableActivationCampaigns(activationCampaigns, form.activationCampaignId).map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name} ({c.status})
@@ -475,14 +473,14 @@ export default function MarketplaceArticleFormModal({
               </select>
             </label>
             <label>
-              {isEn ? "Activation wave (optional)" : "موجة التفعيل (اختياري)"}
+              {t("form.activationWave")}
               <select
                 data-testid="activation-wave-select"
                 value={form.activationWaveId || ""}
                 onChange={(e) => setField("activationWaveId", e.target.value)}
                 disabled={submitting || !form.activationCampaignId}
               >
-                <option value="">{isEn ? "— Optional —" : "— اختياري —"}</option>
+                <option value="">{t("common.optional")}</option>
                 {attachableActivationWaves(
                   activationCampaigns,
                   form.activationCampaignId,
@@ -497,7 +495,7 @@ export default function MarketplaceArticleFormModal({
           </div>
 
           <p className="oh-mmp-form__hint" style={{ margin: 0, lineHeight: 1.5 }}>
-            {ARTICLE_MIN_REQUIRED_BIDS_WARNING_AR}
+            {t("form.minBidsWarning")}
           </p>
           <label className="oh-mmp-form__check oh-mmp-form__check--block">
             <input
@@ -506,7 +504,7 @@ export default function MarketplaceArticleFormModal({
               onChange={(e) => setField("minRequiredBidsAcknowledged", e.target.checked)}
               disabled={submitting}
             />
-            {ARTICLE_MIN_REQUIRED_BIDS_ACK_AR}
+            {t("form.minBidsAck")}
           </label>
           {errors.minRequiredBidsAcknowledged ? (
             <span className="oh-mmp-form__error">{errors.minRequiredBidsAcknowledged}</span>
@@ -519,7 +517,7 @@ export default function MarketplaceArticleFormModal({
               onChange={(e) => setField("isFakeOrTraining", e.target.checked)}
               disabled={submitting}
             />
-            {isEn ? "Fake / training Article" : "مقال تدريب / وهمي"}
+            {t("form.fakeTraining")}
           </label>
 
                       </>
@@ -528,11 +526,11 @@ export default function MarketplaceArticleFormModal({
           <div className="oh-mmp-form__actions">
             {hideCancel ? null : (
               <Button type="button" variant="secondary" onClick={onClose} disabled={submitting}>
-                {isEn ? "Cancel" : "إلغاء"}
+                {t("common.cancel")}
               </Button>
             )}
             <Button type="submit" disabled={submitting} data-testid="article-form-submit">
-              {submitting ? (isEn ? "Saving…" : "جارٍ الحفظ…") : saveLabel}
+              {saveLabel}
             </Button>
           </div>
         </form>

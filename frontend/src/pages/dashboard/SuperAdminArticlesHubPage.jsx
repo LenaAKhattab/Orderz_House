@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useArticlesT } from "../../admin/marketplaceArticles/useArticlesT";
 import DashboardShell from "../../components/dashboard/DashboardShell";
 import DashboardLoadingState from "../../components/dashboard/DashboardLoadingState";
 import MarketplaceArticleApplicationsPanel from "../../admin/marketplaceArticles/MarketplaceArticleApplicationsPanel";
@@ -30,61 +31,49 @@ import {
 import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
 import "./super-admin-articles-hub.css";
 
-const TABS = [
-  { id: "overview", label: "نظرة عامة" },
-  { id: "released", label: "المقالات المنزلة" },
-  { id: "inventory", label: "مخزون المقالات" },
-  { id: "funding", label: "صندوق التمويل" },
-];
-
 /** Legacy activation inventory UI (title + plan only). Compatibility only — not the OZ03 source of truth. */
 const SHOW_LEGACY_ACTIVATION_INVENTORY_UI = false;
 
-const OZ03_EMPTY_INVENTORY_AR = "لا توجد مقالات جاهزة للإنزال في مخزون المقالات.";
-const OZ03_INSUFFICIENT_FUND_AR = "رصيد صندوق التمويل غير كافٍ لإنزال المقالات المطلوبة.";
-
-const RELEASE_INTERVAL_PRESETS = [
-  { value: 1, label: "يوميًا" },
-  { value: 2, label: "يوم بعد يوم" },
-  { value: 3, label: "كل 3 أيام" },
-];
-
-function inventoryStatusAr(status) {
-  switch (String(status || "").toLowerCase()) {
-    case "draft":
-      return "مسودة";
-    case "ready":
-      return "جاهز";
-    case "released":
-      return "منزّل";
-    case "archived":
-      return "مؤرشف";
-    default:
-      return status || "—";
+function inventoryStatusLabel(status, t) {
+  const key = String(status || "").toLowerCase();
+  if (["draft", "ready", "released", "archived"].includes(key)) {
+    return t(`inventoryStatus.${key}`);
   }
+  return status || "—";
 }
 
-function intervalLabelAr(days) {
+function intervalLabel(days, t) {
   const n = Number(days) || 1;
-  if (n === 1) return "يوميًا";
-  if (n === 2) return "يوم بعد يوم";
-  if (n === 3) return "كل 3 أيام";
-  return `كل ${n} أيام`;
+  if (n === 1) return t("releaseInterval.daily");
+  if (n === 2) return t("releaseInterval.everyOtherDay");
+  if (n === 3) return t("releaseInterval.every3Days");
+  return t("releaseInterval.everyNDays", { n });
 }
 
-function liveStatusChips(item) {
+function liveStatusChips(item, t) {
   const chips = [];
-  if (item.autoAssignStatus === "waiting_for_bidders") chips.push({ t: "بانتظار المتقدمين", c: "amber" });
-  else if (item.autoAssignStatus === "ready") chips.push({ t: "جاهزة للتوزيع", c: "blue" });
-  else if (item.autoAssignStatus === "completed" || item.selectedBySystem) chips.push({ t: "تم الإسناد", c: "teal" });
+  if (item.autoAssignStatus === "waiting_for_bidders") {
+    chips.push({ t: t("liveStatus.waitingForBidders"), c: "amber" });
+  } else if (item.autoAssignStatus === "ready") {
+    chips.push({ t: t("liveStatus.readyForAssignment"), c: "blue" });
+  } else if (item.autoAssignStatus === "completed" || item.selectedBySystem) {
+    chips.push({ t: t("liveStatus.assigned"), c: "teal" });
+  }
   if (item.reviewStatus === "under_review" || item.reviewStatus === "pending_review") {
-    chips.push({ t: "بانتظار المراجعة", c: "rose" });
+    chips.push({ t: t("liveStatus.underReview"), c: "rose" });
   }
-  if (item.reviewStatus === "revision_requested") chips.push({ t: "طُلب تعديل", c: "amber" });
+  if (item.reviewStatus === "revision_requested") {
+    chips.push({ t: t("liveStatus.revisionRequested"), c: "amber" });
+  }
   if (item.reviewStatus === "approved" || item.bildazoPublishStatus === "published") {
-    chips.push({ t: "مكتمل / منشور", c: "green" });
+    chips.push({ t: t("liveStatus.completedPublished"), c: "green" });
   }
-  if (item.selectedFreelancerDisplayName) chips.push({ t: `الفائز: ${item.selectedFreelancerDisplayName}`, c: "violet" });
+  if (item.selectedFreelancerDisplayName) {
+    chips.push({
+      t: t("liveStatus.winner", { name: item.selectedFreelancerDisplayName }),
+      c: "violet",
+    });
+  }
   return chips;
 }
 
@@ -95,6 +84,7 @@ function ManualPublishModal({
   onClose,
   onPublish,
 }) {
+  const { t } = useArticlesT();
   const [selected, setSelected] = useState(() => new Set());
   const [planTierCode, setPlanTierCode] = useState("starter");
   const [form, setForm] = useState(() => defaultSplitForTier("starter"));
@@ -123,12 +113,10 @@ function ManualPublishModal({
   return (
     <div className="oh-articles-hub__modal-backdrop" data-testid="articles-manual-publish-modal">
       <div className="oh-articles-hub__modal" role="dialog" aria-modal="true">
-        <h3>نشر يدوي من مخزون المقالات</h3>
-        <p className="oh-articles-hub__helper">
-          اختر مقالات مسودة من مخزون المقالات ثم أكّد الإنزال (نفس الصف يتحول إلى منشور).
-        </p>
+        <h3>{t("hub.manualModal.title")}</h3>
+        <p className="oh-articles-hub__helper">{t("hub.manualModal.helper")}</p>
         <label>
-          الخطة المستهدفة (للعرض)
+          {t("hub.manualModal.targetPlanDisplay")}
           <select
             value={planTierCode}
             onChange={(e) => {
@@ -147,7 +135,7 @@ function ManualPublishModal({
         <div className="oh-articles-hub__grid" style={{ marginTop: 10 }}>
           {readyItems.length === 0 ? (
             <div className="oh-articles-hub__empty" data-testid="articles-release-empty-inventory">
-              {OZ03_EMPTY_INVENTORY_AR}
+              {t("hub.emptyInventory")}
             </div>
           ) : (
             readyItems.map((item) => (
@@ -168,7 +156,7 @@ function ManualPublishModal({
                   <strong>{item.title}</strong>
                   <br />
                   <small>
-                    {item.activationPlanTierCode || item.planTierCode || "—"} · مسودة ·{" "}
+                    {item.activationPlanTierCode || item.planTierCode || "—"} · {t("hub.manualModal.draftStatus")} ·{" "}
                     {item.articleValueJod != null ? `${item.articleValueJod} JOD` : ""}
                   </small>
                 </span>
@@ -178,28 +166,28 @@ function ManualPublishModal({
         </div>
         <div className="oh-articles-hub__grid" style={{ marginTop: 12 }}>
           <label>
-            قيمة المقال
+            {t("hub.manualModal.articleValue")}
             <input
               value={form.totalArticleValueJod}
               onChange={(e) => setForm({ ...form, totalArticleValueJod: e.target.value })}
             />
           </label>
           <label>
-            حصة المستقل
+            {t("hub.manualModal.freelancerShare")}
             <input
               value={form.freelancerShareJod}
               onChange={(e) => setForm({ ...form, freelancerShareJod: e.target.value })}
             />
           </label>
           <label>
-            حصة التدقيق
+            {t("hub.manualModal.reviewerShare")}
             <input
               value={form.reviewerShareJod}
               onChange={(e) => setForm({ ...form, reviewerShareJod: e.target.value })}
             />
           </label>
           <label>
-            حصة المنصة
+            {t("hub.manualModal.platformShare")}
             <input
               value={form.companyShareJod}
               onChange={(e) => setForm({ ...form, companyShareJod: e.target.value })}
@@ -207,14 +195,16 @@ function ManualPublishModal({
           </label>
         </div>
         <div className="oh-articles-hub__card" style={{ marginTop: 12 }}>
-          <div>عدد المقالات المختارة: {count}</div>
-          <div>القيمة الإجمالية: {total} JOD</div>
-          <div>الخصم المتوقع من الصندوق: {total} JOD</div>
-          {!sharesOk ? <div style={{ color: "#be123c" }}>يجب أن يساوي مجموع الحصص قيمة المقال.</div> : null}
+          <div>{t("hub.manualModal.selectedCount", { count })}</div>
+          <div>{t("hub.manualModal.totalValue", { total })}</div>
+          <div>{t("hub.manualModal.expectedDeduction", { total })}</div>
+          {!sharesOk ? (
+            <div style={{ color: "#be123c" }}>{t("hub.manualModal.sharesMustEqual")}</div>
+          ) : null}
         </div>
         <div className="oh-articles-hub__actions" style={{ marginTop: 12 }}>
           <button type="button" onClick={onClose} disabled={busy}>
-            إلغاء
+            {t("common.cancel")}
           </button>
           <button
             type="button"
@@ -228,7 +218,7 @@ function ManualPublishModal({
               })
             }
           >
-            تأكيد النشر
+            {t("hub.manualModal.confirmPublish")}
           </button>
         </div>
       </div>
@@ -237,6 +227,7 @@ function ManualPublishModal({
 }
 
 function FundAmountModal({ mode, open, busy, onClose, onSubmit }) {
+  const { t } = useArticlesT();
   const [amount, setAmount] = useState(mode === "deposit" ? "10.000" : "1.000");
   useEffect(() => {
     if (open) setAmount(mode === "deposit" ? "10.000" : "1.000");
@@ -245,17 +236,17 @@ function FundAmountModal({ mode, open, busy, onClose, onSubmit }) {
   return (
     <div className="oh-articles-hub__modal-backdrop" data-testid={`articles-fund-${mode}-modal`}>
       <div className="oh-articles-hub__modal">
-        <h3>{mode === "deposit" ? "إضافة رصيد" : "خصم رصيد"}</h3>
+        <h3>{mode === "deposit" ? t("hub.fundModal.depositTitle") : t("hub.fundModal.withdrawTitle")}</h3>
         <label>
-          المبلغ (دينار)
+          {t("hub.fundModal.amountLabel")}
           <input value={amount} onChange={(e) => setAmount(e.target.value)} />
         </label>
         <div className="oh-articles-hub__actions" style={{ marginTop: 12 }}>
           <button type="button" onClick={onClose} disabled={busy}>
-            إلغاء
+            {t("common.cancel")}
           </button>
           <button type="button" className="primary" disabled={busy} onClick={() => onSubmit(amount)}>
-            تأكيد
+            {t("common.confirm")}
           </button>
         </div>
       </div>
@@ -264,10 +255,28 @@ function FundAmountModal({ mode, open, busy, onClose, onSubmit }) {
 }
 
 export default function SuperAdminArticlesHubPage() {
+  const { t, locale } = useArticlesT();
   const { push } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
   const tabFromUrl = searchParams.get("tab") || "overview";
-  const activeTab = TABS.some((t) => t.id === tabFromUrl) ? tabFromUrl : "overview";
+  const TABS = useMemo(
+    () => [
+      { id: "overview", label: t("hub.tabs.overview") },
+      { id: "released", label: t("hub.tabs.released") },
+      { id: "inventory", label: t("hub.tabs.inventory") },
+      { id: "funding", label: t("hub.tabs.funding") },
+    ],
+    [t],
+  );
+  const RELEASE_INTERVAL_PRESETS = useMemo(
+    () => [
+      { value: 1, label: t("releaseInterval.daily") },
+      { value: 2, label: t("releaseInterval.everyOtherDay") },
+      { value: 3, label: t("releaseInterval.every3Days") },
+    ],
+    [t],
+  );
+  const activeTab = TABS.some((tab) => tab.id === tabFromUrl) ? tabFromUrl : "overview";
 
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -368,7 +377,7 @@ export default function SuperAdminArticlesHubPage() {
         else setCustomInterval("");
       }
     } catch (err) {
-      setError(getSafeApiErrorMessage(err) || "تعذر تحميل صفحة المقالات.");
+      setError(getSafeApiErrorMessage(err) || t("hub.loadError"));
       setSetupReady(false);
       setNeedsInit(true);
     } finally {
@@ -401,26 +410,30 @@ export default function SuperAdminArticlesHubPage() {
   }, [releaseIntervalDays, customInterval]);
 
   const kpis = [
-    { key: "fund", label: "رصيد الصندوق", value: fund?.currentBalanceJod != null ? `${fund.currentBalanceJod} JOD` : "—" },
-    { key: "inv", label: "مقالات في المخزون", value: inventoryReady },
+    {
+      key: "fund",
+      label: t("hub.kpi.fundBalance"),
+      value: fund?.currentBalanceJod != null ? `${fund.currentBalanceJod} JOD` : "—",
+    },
+    { key: "inv", label: t("hub.kpi.inventoryCount"), value: inventoryReady },
     {
       key: "live",
-      label: "مقالات منزلة",
+      label: t("hub.kpi.released"),
       value: liveSummary?.totalReleased ?? publishedMarketplaceCount ?? liveItems.length ?? "—",
     },
-    { key: "wait", label: "بانتظار المتقدمين", value: liveSummary?.waitingForBidders ?? "—" },
-    { key: "review", label: "بانتظار المراجعة", value: liveSummary?.underReview ?? "—" },
-    { key: "done", label: "مكتملة", value: liveSummary?.accepted ?? liveSummary?.published ?? "—" },
+    { key: "wait", label: t("hub.kpi.waitingApplicants"), value: liveSummary?.waitingForBidders ?? "—" },
+    { key: "review", label: t("hub.kpi.awaitingReview"), value: liveSummary?.underReview ?? "—" },
+    { key: "done", label: t("hub.kpi.completed"), value: liveSummary?.accepted ?? liveSummary?.published ?? "—" },
   ];
 
   async function onEnsureSetup() {
     setBusy(true);
     try {
       await ensureSuperAdminArticleOperationsSetupRequest();
-      push({ type: "success", message: "تم تهيئة إعداد المقالات." });
+      push({ type: "success", message: t("hub.setup.initSuccess") });
       await load();
     } catch (err) {
-      push({ type: "error", message: getSafeApiErrorMessage(err) || "تعذر تهيئة إعداد المقالات." });
+      push({ type: "error", message: getSafeApiErrorMessage(err) || t("hub.setup.initError") });
     } finally {
       setBusy(false);
     }
@@ -442,10 +455,13 @@ export default function SuperAdminArticlesHubPage() {
         });
       }
       setFundModal(null);
-      push({ type: "success", message: fundModal === "deposit" ? "تمت إضافة الرصيد." : "تم خصم الرصيد." });
+      push({
+        type: "success",
+        message: fundModal === "deposit" ? t("hub.fundModal.depositSuccess") : t("hub.fundModal.withdrawSuccess"),
+      });
       await load();
     } catch (err) {
-      push({ type: "error", message: getSafeApiErrorMessage(err) || "تعذر تحديث الصندوق." });
+      push({ type: "error", message: getSafeApiErrorMessage(err) || t("hub.fundModal.updateError") });
     } finally {
       setBusy(false);
     }
@@ -461,7 +477,7 @@ export default function SuperAdminArticlesHubPage() {
         allocForm.reviewerShareJod,
       )
     ) {
-      push({ type: "error", message: "يجب أن يساوي مجموع الحصص قيمة المقال." });
+      push({ type: "error", message: t("hub.funding.sharesError") });
       return;
     }
     setBusy(true);
@@ -472,26 +488,26 @@ export default function SuperAdminArticlesHubPage() {
         recycleWhenInventoryEmpty: recycleMode,
         releaseIntervalDays: effectiveIntervalDays,
       });
-      push({ type: "success", message: "تم حفظ توزيع الخطة." });
+      push({ type: "success", message: t("hub.funding.saveAllocSuccess") });
       await load();
     } catch (err) {
-      push({ type: "error", message: getSafeApiErrorMessage(err) || "تعذر حفظ التوزيع." });
+      push({ type: "error", message: getSafeApiErrorMessage(err) || t("hub.funding.saveAllocError") });
     } finally {
       setBusy(false);
     }
   }
 
   async function onArchiveInventory(item) {
-    if (!window.confirm("لن يظهر هذا المقال في المخزون الجاهز، ويمكن الاحتفاظ بسجله.")) {
+    if (!window.confirm(t("hub.inventory.archiveConfirm"))) {
       return;
     }
     setBusy(true);
     try {
       await patchSuperAdminActivationArticleInventoryRequest(item.id, { status: "archived" });
-      push({ type: "success", message: "تمت أرشفة المقال وإخفاؤه من المخزون الجاهز." });
+      push({ type: "success", message: t("hub.inventory.archiveSuccess") });
       await load();
     } catch (err) {
-      push({ type: "error", message: getSafeApiErrorMessage(err) || "تعذر أرشفة المقال." });
+      push({ type: "error", message: getSafeApiErrorMessage(err) || t("hub.inventory.archiveError") });
     } finally {
       setBusy(false);
     }
@@ -509,7 +525,7 @@ export default function SuperAdminArticlesHubPage() {
         push({ type: "error", message: data.messageAr });
       }
     } catch (err) {
-      push({ type: "error", message: getSafeApiErrorMessage(err) || "تعذر معاينة الإنزال." });
+      push({ type: "error", message: getSafeApiErrorMessage(err) || t("hub.funding.autoRunError") });
     } finally {
       setBusy(false);
     }
@@ -526,10 +542,10 @@ export default function SuperAdminArticlesHubPage() {
         minimumBiddersPerArticle: 10,
       });
       setInvForm({ title: "", planTierCode: "starter", status: "ready" });
-      push({ type: "success", message: "تمت إضافة المقال للمخزون." });
+      push({ type: "success", message: t("hub.funding.addInventorySuccess") });
       await load();
     } catch (err) {
-      push({ type: "error", message: getSafeApiErrorMessage(err) || "تعذر الإضافة للمخزون." });
+      push({ type: "error", message: getSafeApiErrorMessage(err) || t("hub.funding.addInventoryError") });
     } finally {
       setBusy(false);
     }
@@ -539,22 +555,22 @@ export default function SuperAdminArticlesHubPage() {
     setBusy(true);
     try {
       if (!ids?.length) {
-        push({ type: "error", message: OZ03_EMPTY_INVENTORY_AR });
+        push({ type: "error", message: t("hub.emptyInventory") });
         return;
       }
       await releaseMarketplaceArticleDraftBatchRequest({ ids });
       setManualOpen(false);
-      push({ type: "success", message: "تم إنزال المقالات من المخزون." });
+      push({ type: "success", message: t("hub.funding.manualPublishSuccess") });
       setTab("released");
       await load();
     } catch (err) {
-      const msg = getSafeApiErrorMessage(err) || "تعذر النشر اليدوي.";
+      const msg = getSafeApiErrorMessage(err) || t("hub.funding.manualPublishError");
       const insufficient =
         err?.response?.data?.code === "ACTIVATION_ARTICLE_FUND_INSUFFICIENT" ||
-        /غير كاف/i.test(msg);
+        /insufficient|غير كاف/i.test(msg);
       push({
         type: "error",
-        message: insufficient ? OZ03_INSUFFICIENT_FUND_AR : msg,
+        message: insufficient ? t("hub.insufficientFund") : msg,
       });
     } finally {
       setBusy(false);
@@ -576,17 +592,17 @@ export default function SuperAdminArticlesHubPage() {
           message: data.messageAr,
         });
       } else {
-        push({ type: "success", message: "تم تشغيل إنزال مقالات المخزون." });
+        push({ type: "success", message: t("hub.funding.autoRunSuccess") });
       }
       await load();
     } catch (err) {
-      const msg = getSafeApiErrorMessage(err) || "تعذر تشغيل الإنزال.";
+      const msg = getSafeApiErrorMessage(err) || t("hub.funding.autoRunError");
       const insufficient =
         err?.response?.data?.code === "ACTIVATION_ARTICLE_FUND_INSUFFICIENT" ||
-        /غير كاف/i.test(msg);
+        /insufficient|غير كاف/i.test(msg);
       push({
         type: "error",
-        message: insufficient ? OZ03_INSUFFICIENT_FUND_AR : msg,
+        message: insufficient ? t("hub.insufficientFund") : msg,
       });
     } finally {
       setBusy(false);
@@ -594,14 +610,14 @@ export default function SuperAdminArticlesHubPage() {
   }
 
   const opsDisabled = !setupReady;
-  const opsTitle = opsDisabled ? "يلزم تهيئة إعداد المقالات أولًا" : undefined;
+  const opsTitle = opsDisabled ? t("hub.setup.opsDisabledTitle") : undefined;
 
 
   return (
     <DashboardShell>
       <div className="oh-articles-hub" data-testid="super-admin-articles-hub">
         <p className="oh-articles-hub__subtitle" data-testid="articles-hub-subtitle">
-          إدارة مقالات المستقلين، المخزون، التمويل، والتوزيع من مكان واحد.
+          {t("hub.subtitle")}
         </p>
 
         <div className="oh-articles-hub__kpis" data-testid="articles-hub-kpis">
@@ -634,10 +650,8 @@ export default function SuperAdminArticlesHubPage() {
 
         {!loading && !error && needsInit ? (
           <div className="oh-articles-hub__card" data-testid="articles-setup-init" style={{ marginBottom: 14 }}>
-            <h3 className="oh-articles-hub__section-title">إعداد المقالات</h3>
-            <p className="oh-articles-hub__helper">
-              سيتم استخدام إعداد واحد لإدارة الصندوق، المخزون، التوزيع، وإنزال المقالات.
-            </p>
+            <h3 className="oh-articles-hub__section-title">{t("hub.setup.title")}</h3>
+            <p className="oh-articles-hub__helper">{t("hub.setup.helper")}</p>
             <div className="oh-articles-hub__actions">
               <button
                 type="button"
@@ -646,7 +660,7 @@ export default function SuperAdminArticlesHubPage() {
                 data-testid="articles-setup-init-btn"
                 onClick={() => void onEnsureSetup()}
               >
-                تهيئة إعداد المقالات
+                {t("hub.setup.init")}
               </button>
             </div>
           </div>
@@ -654,31 +668,31 @@ export default function SuperAdminArticlesHubPage() {
 
         {!loading && !error && activeTab === "overview" ? (
           <div data-testid="articles-hub-panel-overview">
-            <h3 className="oh-articles-hub__section-title">إجراءات سريعة</h3>
+            <h3 className="oh-articles-hub__section-title">{t("hub.quick.title")}</h3>
             <div className="oh-articles-hub__quick" data-testid="articles-hub-quick-actions">
               <button type="button" className="oh-articles-hub__quick-btn" disabled={opsDisabled} title={opsTitle} onClick={() => setTab("inventory")}>
-                إضافة مقال
-                <span>إلى المخزون أو القائمة</span>
+                {t("hub.quick.addArticle")}
+                <span>{t("hub.quick.addArticleHint")}</span>
               </button>
               <button type="button" className="oh-articles-hub__quick-btn" disabled={opsDisabled} title={opsTitle} onClick={() => setManualOpen(true)}>
-                نشر يدوي
-                <span>اختيار من المخزون</span>
+                {t("hub.quick.manualPublish")}
+                <span>{t("hub.quick.manualPublishHint")}</span>
               </button>
               <button type="button" className="oh-articles-hub__quick-btn" disabled={opsDisabled} title={opsTitle} onClick={() => setFundModal("deposit")}>
-                إضافة رصيد
-                <span>تمويل الصندوق</span>
+                {t("hub.quick.addBalance")}
+                <span>{t("hub.quick.addBalanceHint")}</span>
               </button>
               <button type="button" className="oh-articles-hub__quick-btn" disabled={opsDisabled} title={opsTitle} onClick={() => setFundModal("withdraw")}>
-                خصم رصيد
-                <span>سحب من الصندوق</span>
+                {t("hub.quick.withdrawBalance")}
+                <span>{t("hub.quick.withdrawBalanceHint")}</span>
               </button>
               <button type="button" className="oh-articles-hub__quick-btn" disabled={opsDisabled} title={opsTitle} onClick={() => setTab("inventory")}>
-                فتح المخزون
-                <span>إدارة الجاهز للنشر</span>
+                {t("hub.quick.openInventory")}
+                <span>{t("hub.quick.openInventoryHint")}</span>
               </button>
               <button type="button" className="oh-articles-hub__quick-btn" disabled={opsDisabled} title={opsTitle} onClick={() => setTab("released")}>
-                متابعة المقالات
-                <span>منزلة ومتقدمون</span>
+                {t("hub.quick.trackArticles")}
+                <span>{t("hub.quick.trackArticlesHint")}</span>
               </button>
             </div>
           </div>
@@ -686,21 +700,28 @@ export default function SuperAdminArticlesHubPage() {
 
         {!loading && !error && activeTab === "released" ? (
           <div data-testid="articles-hub-panel-released" className="oh-articles-hub__grid">
-            <p className="oh-articles-hub__helper">المقالات الظاهرة للمستقلين حاليًا — مع المتقدمين والمراجعة.</p>
+            <p className="oh-articles-hub__helper">{t("hub.released.helper")}</p>
             {liveItems.length === 0 ? (
-              <div className="oh-articles-hub__empty">لا توجد مقالات منزلة حاليًا.</div>
+              <div className="oh-articles-hub__empty">{t("hub.released.empty")}</div>
             ) : (
               liveItems.map((item) => (
                 <div key={item.articleId} className="oh-articles-hub__card" data-testid={`articles-released-row-${item.articleId}`}>
                   <h4 className="oh-articles-hub__card-title">{item.title}</h4>
                   <div className="oh-articles-hub__meta">
                     <span className="oh-articles-hub__chip oh-articles-hub__chip--blue">{item.planTierCode || "—"}</span>
-                    <span className="oh-articles-hub__chip">القيمة {item.totalArticleValueJod ?? "—"} JOD</span>
-                    <span className="oh-articles-hub__chip">حصة المستقل {item.freelancerShareJod ?? "—"} JOD</span>
-                    <span className="oh-articles-hub__chip oh-articles-hub__chip--teal">
-                      متقدمون {item.currentApplicationsCount ?? 0} / {item.requiredBidders ?? "—"}
+                    <span className="oh-articles-hub__chip">
+                      {t("hub.released.value", { amount: item.totalArticleValueJod ?? "—" })}
                     </span>
-                    {liveStatusChips(item).map((c) => (
+                    <span className="oh-articles-hub__chip">
+                      {t("hub.released.freelancerShare", { amount: item.freelancerShareJod ?? "—" })}
+                    </span>
+                    <span className="oh-articles-hub__chip oh-articles-hub__chip--teal">
+                      {t("hub.released.applicantsCount", {
+                        current: item.currentApplicationsCount ?? 0,
+                        required: item.requiredBidders ?? "—",
+                      })}
+                    </span>
+                    {liveStatusChips(item, t).map((c) => (
                       <span key={c.t} className={`oh-articles-hub__chip oh-articles-hub__chip--${c.c}`}>
                         {c.t}
                       </span>
@@ -714,15 +735,16 @@ export default function SuperAdminArticlesHubPage() {
                         setExpandedArticleId((prev) => (prev === item.articleId ? null : item.articleId))
                       }
                     >
-                      {expandedArticleId === item.articleId ? "إخفاء المتقدمين" : "عرض المتقدمين"}
+                      {expandedArticleId === item.articleId
+                        ? t("hub.released.hideApplicants")
+                        : t("hub.released.showApplicants")}
                     </button>
-                    <a href={`#article-${item.articleId}`}>التفاصيل</a>
+                    <a href={`#article-${item.articleId}`}>{t("common.details")}</a>
                   </div>
                   {expandedArticleId === item.articleId ? (
                     <div className="oh-articles-hub__applicants" data-testid="articles-released-applicants">
                       <MarketplaceArticleApplicationsPanel
                         articleId={item.articleId}
-                        isEn={false}
                         onToast={push}
                         onRelisted={load}
                       />
@@ -738,10 +760,10 @@ export default function SuperAdminArticlesHubPage() {
           <div data-testid="articles-hub-panel-inventory">
             <div className="oh-articles-hub__card" style={{ marginBottom: 16 }}>
               <h2 className="oh-articles-hub__section-title" style={{ marginTop: 0 }}>
-                مخزون المقالات
+                {t("hub.inventory.title")}
               </h2>
               <p style={{ marginTop: 0, opacity: 0.9, maxWidth: "42rem" }}>
-                أضف المقالات التي ستتاح للمستقلين، مع ربطها بصنف بلدازو ومتطلبات الخطة.
+                {t("hub.inventory.helper")}
               </p>
               <div data-testid="articles-marketplace-create-panel">
                 <MarketplaceArticlesAdminPanel inventoryHub />
@@ -752,7 +774,7 @@ export default function SuperAdminArticlesHubPage() {
               <>
                 <div className="oh-articles-hub__actions" style={{ marginBottom: 10 }}>
                   <input
-                    placeholder="بحث في مخزون التفعيل"
+                    placeholder={t("hub.inventory.legacySearchPlaceholder")}
                     value={invSearch}
                     onChange={(e) => setInvSearch(e.target.value)}
                     data-testid="articles-inventory-search"
@@ -764,13 +786,11 @@ export default function SuperAdminArticlesHubPage() {
                   data-testid="articles-inventory-add-form"
                   style={{ marginBottom: 12 }}
                 >
-                  <h3 className="oh-articles-hub__section-title">مخزون التفعيل (تجريبي / خطة)</h3>
-                  <p style={{ marginTop: 0, opacity: 0.85 }}>
-                    عناصر تفعيل المستقلين المنفصلة عن مخزون مقالات السوق أعلاه.
-                  </p>
+                  <h3 className="oh-articles-hub__section-title">{t("hub.inventory.legacyTitle")}</h3>
+                  <p style={{ marginTop: 0, opacity: 0.85 }}>{t("hub.inventory.legacyHelper")}</p>
                   <div className="oh-articles-hub__grid">
                     <label>
-                      العنوان
+                      {t("hub.inventory.titleLabel")}
                       <input
                         required
                         value={invForm.title}
@@ -778,7 +798,7 @@ export default function SuperAdminArticlesHubPage() {
                       />
                     </label>
                     <label>
-                      الخطة المستهدفة
+                      {t("hub.inventory.targetPlan")}
                       <select
                         value={invForm.planTierCode}
                         onChange={(e) => setInvForm({ ...invForm, planTierCode: e.target.value })}
@@ -793,13 +813,13 @@ export default function SuperAdminArticlesHubPage() {
                   </div>
                   <div className="oh-articles-hub__actions">
                     <button type="submit" className="primary" disabled={busy || opsDisabled} title={opsTitle}>
-                      حفظ في مخزون التفعيل
+                      {t("hub.inventory.saveLegacy")}
                     </button>
                   </div>
                 </form>
                 <div className="oh-articles-hub__grid">
                   {filteredInventory.length === 0 ? (
-                    <div className="oh-articles-hub__empty">لا توجد عناصر في مخزون التفعيل.</div>
+                    <div className="oh-articles-hub__empty">{t("hub.inventory.legacyEmpty")}</div>
                   ) : (
                     filteredInventory.map((item) => (
                       <div
@@ -809,13 +829,17 @@ export default function SuperAdminArticlesHubPage() {
                       >
                         <h4 className="oh-articles-hub__card-title">{item.title}</h4>
                         <div className="oh-articles-hub__meta">
-                          <span className="oh-articles-hub__chip">{inventoryStatusAr(item.status)}</span>
+                          <span className="oh-articles-hub__chip">{inventoryStatusLabel(item.status, t)}</span>
                           <span className="oh-articles-hub__chip oh-articles-hub__chip--blue">
                             {item.planTierCode}
                           </span>
-                          <span className="oh-articles-hub__chip">مرات النشر: {item.releasedCount ?? 0}</span>
                           <span className="oh-articles-hub__chip">
-                            {item.releaseStrategy === "reusable" ? "قابل لإعادة الاستخدام" : "مرة واحدة"}
+                            {t("hub.inventory.releaseCount", { count: item.releasedCount ?? 0 })}
+                          </span>
+                          <span className="oh-articles-hub__chip">
+                            {item.releaseStrategy === "reusable"
+                              ? t("hub.inventory.reusable")
+                              : t("hub.inventory.oneTime")}
                           </span>
                         </div>
                         <div className="oh-articles-hub__actions">
@@ -829,7 +853,7 @@ export default function SuperAdminArticlesHubPage() {
                                 }).then(load)
                               }
                             >
-                              تجهيز
+                              {t("hub.inventory.prepare")}
                             </button>
                           ) : null}
                           {item.status === "ready" || item.status === "released" ? (
@@ -841,7 +865,7 @@ export default function SuperAdminArticlesHubPage() {
                                 void releaseSuperAdminActivationArticleInventoryRequest(item.id).then(load)
                               }
                             >
-                              نشر يدوي
+                              {t("hub.quick.manualPublish")}
                             </button>
                           ) : null}
                           {item.status !== "archived" ? (
@@ -850,9 +874,9 @@ export default function SuperAdminArticlesHubPage() {
                               disabled={busy}
                               data-testid={`articles-inventory-archive-${item.id}`}
                               onClick={() => void onArchiveInventory(item)}
-                              title="إخفاء من المخزون"
+                              title={t("hub.inventory.archiveTitle")}
                             >
-                              أرشفة
+                              {t("hub.inventory.archive")}
                             </button>
                           ) : null}
                         </div>
@@ -871,19 +895,19 @@ export default function SuperAdminArticlesHubPage() {
               <button
                 type="button"
                 className="oh-articles-hub__fund-btn oh-articles-hub__fund-btn--minus"
-                aria-label="خصم رصيد"
+                aria-label={t("hub.funding.withdrawBalanceAria")}
                 onClick={() => setFundModal("withdraw")}
               >
                 −
               </button>
               <div className="oh-articles-hub__fund-amount">
-                <span>الرصيد الحالي</span>
+                <span>{t("hub.funding.currentBalance")}</span>
                 <strong>{fund?.currentBalanceJod ?? "0.000"} JOD</strong>
               </div>
               <button
                 type="button"
                 className="oh-articles-hub__fund-btn oh-articles-hub__fund-btn--plus"
-                aria-label="إضافة رصيد"
+                aria-label={t("hub.funding.addBalanceAria")}
                 onClick={() => setFundModal("deposit")}
               >
                 +
@@ -893,25 +917,27 @@ export default function SuperAdminArticlesHubPage() {
             {(fund?.recentEntries || []).length > 0 ? (
               <div className="oh-articles-hub__card" style={{ marginBottom: 12 }} data-testid="articles-fund-ledger">
                 <h3 className="oh-articles-hub__section-title" style={{ marginTop: 0 }}>
-                  آخر عمليات الصندوق
+                  {t("hub.funding.recentLedger")}
                 </h3>
                 <ul className="oh-articles-hub__fund-ledger" style={{ margin: 0, paddingInlineStart: "1.2rem" }}>
                   {(fund.recentEntries || []).slice(0, 12).map((e) => {
                     const metaReason = String(e?.metadata?.reason || "");
                     const reason = String(e?.reason || "");
                     const refundLabel =
-                      metaReason === "minimum_not_met_refund" || reason.includes("عدم اكتمال")
-                        ? "إرجاع تمويل بسبب عدم اكتمال عدد المتقدمين"
+                      metaReason === "minimum_not_met_refund" ||
+                      reason.includes("عدم اكتمال") ||
+                      reason.includes("minimum")
+                        ? t("fundEntry.refundMinNotMet")
                         : reason || null;
                     const typeLabel =
                       e.entryType === "daily_allocation_released"
-                        ? "إرجاع تمويل مقال"
+                        ? t("fundEntry.refundArticle")
                         : e.entryType === "daily_allocation"
-                          ? "خصم إنزال مقال"
+                          ? t("fundEntry.deductRelease")
                           : e.entryType === "fund_deposit"
-                            ? "إيداع"
+                            ? t("fundEntry.deposit")
                             : e.entryType === "fund_withdrawal"
-                              ? "سحب"
+                              ? t("fundEntry.withdraw")
                               : e.entryType || "—";
                     return (
                       <li key={e.id} data-testid={`articles-fund-entry-${e.id}`}>
@@ -926,31 +952,30 @@ export default function SuperAdminArticlesHubPage() {
               </div>
             ) : null}
 
-            <h3 className="oh-articles-hub__section-title">وضع النشر</h3>
+            <h3 className="oh-articles-hub__section-title">{t("hub.funding.publishModeTitle")}</h3>
             <div className="oh-articles-hub__segment" data-testid="articles-publish-mode">
               <button
                 type="button"
                 className={publishMode === "auto" ? "active" : ""}
                 onClick={() => setPublishMode("auto")}
               >
-                تلقائي
+                {t("publishMode.auto")}
               </button>
               <button
                 type="button"
                 className={publishMode === "manual" ? "active" : ""}
                 onClick={() => setPublishMode("manual")}
               >
-                يدوي
+                {t("publishMode.manual")}
               </button>
             </div>
             {publishMode === "auto" ? (
               <div className="oh-articles-hub__card" style={{ marginBottom: 12 }} data-testid="articles-auto-release-card">
                 <p className="oh-articles-hub__helper" data-testid="articles-auto-release-supported">
-                  تشغيل إنزال مقالات المخزون (marketplace_articles المسودات): يوميًا، يوم بعد يوم، كل 3 أيام، أو كل N أيام (حتى 30).
-                  التشغيل اليدوي من هنا يتجاوز جدول الأيام. لا يوجد cron تلقائي في هذه المرحلة — المعاينة و«تشغيل إنزال مقالات المخزون» فقط.
+                  {t("hub.funding.autoReleaseHelper")}
                 </p>
                 <label data-testid="articles-release-interval">
-                  تكرار الإنزال التلقائي
+                  {t("hub.funding.releaseIntervalLabel")}
                   <select
                     value={[1, 2, 3].includes(releaseIntervalDays) ? String(releaseIntervalDays) : "custom"}
                     onChange={(e) => {
@@ -969,12 +994,12 @@ export default function SuperAdminArticlesHubPage() {
                         {p.label}
                       </option>
                     ))}
-                    <option value="custom">كل N أيام…</option>
+                    <option value="custom">{t("releaseInterval.customEveryN")}</option>
                   </select>
                 </label>
                 {![1, 2, 3].includes(releaseIntervalDays) || customInterval !== "" ? (
                   <label>
-                    عدد الأيام (1–30)
+                    {t("hub.funding.daysCount")}
                     <input
                       type="number"
                       min={1}
@@ -989,27 +1014,29 @@ export default function SuperAdminArticlesHubPage() {
                     />
                   </label>
                 ) : null}
-                <p className="oh-articles-hub__helper">الجدولة الحالية: {intervalLabelAr(effectiveIntervalDays)}. احفظ التوزيع لتطبيق الفترة.</p>
+                <p className="oh-articles-hub__helper">
+                  {t("hub.funding.currentSchedule", { label: intervalLabel(effectiveIntervalDays, t) })}
+                </p>
                 <label>
-                  عند نفاد المخزون
+                  {t("hub.funding.whenInventoryEmpty")}
                   <select value={recycleMode ? "recycle" : "stop"} onChange={(e) => setRecycleMode(e.target.value === "recycle")}>
-                    <option value="recycle">إعادة من البداية</option>
-                    <option value="stop">التوقف</option>
+                    <option value="recycle">{t("hub.funding.recycle")}</option>
+                    <option value="stop">{t("hub.funding.stop")}</option>
                   </select>
                 </label>
                 <div className="oh-articles-hub__actions">
                   <button type="button" disabled={busy || opsDisabled} title={opsTitle} onClick={() => void onPreviewRelease()} data-testid="articles-release-preview-btn">
-                    معاينة إنزال مخزون المقالات
+                    {t("hub.funding.previewRelease")}
                   </button>
                   <button
                     type="button"
                     className="primary"
                     disabled={busy || opsDisabled}
                     onClick={() => void onRunAutoRelease()}
-                    title={opsDisabled ? opsTitle : "يعمل بغض النظر عن يوم الجدولة"}
+                    title={opsDisabled ? opsTitle : t("hub.funding.runReleaseTitle")}
                     data-testid="articles-release-run-btn"
                   >
-                    تشغيل إنزال مقالات المخزون
+                    {t("hub.funding.runRelease")}
                   </button>
                 </div>
                 {releasePreview ? (
@@ -1018,21 +1045,23 @@ export default function SuperAdminArticlesHubPage() {
                       <div key={p.allocationId || p.planTierCode}>
                         {p.planTierCode}:{" "}
                         {p.skipReason === "not_release_day"
-                          ? p.messageAr || "ليس يوم إنزال حسب الجدولة الحالية."
+                          ? (locale === "ar" ? p.messageAr : p.messageEn) || t("hub.funding.notReleaseDay")
                           : p.skipReason === "inventory_empty"
-                            ? p.messageAr || OZ03_EMPTY_INVENTORY_AR
+                            ? (locale === "ar" ? p.messageAr : p.messageEn) || t("hub.emptyInventory")
                             : p.skipReason === "insufficient_fund"
-                              ? p.messageAr || OZ03_INSUFFICIENT_FUND_AR
+                              ? (locale === "ar" ? p.messageAr : p.messageEn) || t("hub.insufficientFund")
                               : p.skipped
-                                ? `متجاوَز (${p.skipReason || "—"})`
-                                : `مخطط ${p.plannedCount || 0} مقال`}
+                                ? t("hub.funding.skipped", { reason: p.skipReason || "—" })
+                                : t("hub.funding.planned", { count: p.plannedCount || 0 })}
                       </div>
                     ))}
                     {releasePreview.messageAr ? (
-                      <strong data-testid="articles-release-preview-msg">{releasePreview.messageAr}</strong>
+                      <strong data-testid="articles-release-preview-msg">
+                        {locale === "ar" ? releasePreview.messageAr : releasePreview.messageEn || releasePreview.messageAr}
+                      </strong>
                     ) : null}
                     {(releasePreview.plans || releasePreview.allocations || []).some((p) => p.skipReason === "not_release_day") ? (
-                      <strong data-testid="articles-not-release-day-msg">ليس يوم إنزال حسب الجدولة الحالية.</strong>
+                      <strong data-testid="articles-not-release-day-msg">{t("hub.funding.notReleaseDay")}</strong>
                     ) : null}
                   </div>
                 ) : null}
@@ -1040,27 +1069,27 @@ export default function SuperAdminArticlesHubPage() {
             ) : (
               <div className="oh-articles-hub__actions" style={{ marginBottom: 12 }}>
                 <button type="button" className="primary" disabled={opsDisabled} title={opsTitle} onClick={() => setManualOpen(true)}>
-                  تشغيل إنزال مقالات المخزون (يدوي)
+                  {t("hub.funding.manualRun")}
                 </button>
               </div>
             )}
 
-            <h3 className="oh-articles-hub__section-title">أساس التوزيع</h3>
+            <h3 className="oh-articles-hub__section-title">{t("hub.funding.distBasisTitle")}</h3>
             <div className="oh-articles-hub__segment" data-testid="articles-dist-basis">
               <button type="button" className={distBasis === "amount" ? "active" : ""} onClick={() => setDistBasis("amount")}>
-                بالمبلغ (دينار)
+                {t("hub.funding.byAmount")}
               </button>
               <button type="button" className={distBasis === "count" ? "active" : ""} onClick={() => setDistBasis("count")}>
-                بعدد المقالات
+                {t("hub.funding.byCount")}
               </button>
             </div>
 
-            <h3 className="oh-articles-hub__section-title">توزيع الخطط</h3>
-            <p className="oh-articles-hub__helper">حدّد قيمة المقال والحصص لكل خطة. يجب أن يساوي مجموع الحصص قيمة المقال.</p>
+            <h3 className="oh-articles-hub__section-title">{t("hub.funding.planAllocTitle")}</h3>
+            <p className="oh-articles-hub__helper">{t("hub.funding.planAllocHelper")}</p>
             <form onSubmit={onSaveAllocation} className="oh-articles-hub__card" data-testid="articles-alloc-form">
               <div className="oh-articles-hub__grid">
                 <label>
-                  الخطة
+                  {t("hub.funding.plan")}
                   <select
                     value={allocForm.planTierCode}
                     onChange={(e) => {
@@ -1076,28 +1105,28 @@ export default function SuperAdminArticlesHubPage() {
                   </select>
                 </label>
                 <label>
-                  قيمة المقال
+                  {t("hub.manualModal.articleValue")}
                   <input
                     value={allocForm.totalArticleValueJod}
                     onChange={(e) => setAllocForm({ ...allocForm, totalArticleValueJod: e.target.value })}
                   />
                 </label>
                 <label>
-                  حصة المستقل
+                  {t("hub.manualModal.freelancerShare")}
                   <input
                     value={allocForm.freelancerShareJod}
                     onChange={(e) => setAllocForm({ ...allocForm, freelancerShareJod: e.target.value })}
                   />
                 </label>
                 <label>
-                  حصة التدقيق
+                  {t("hub.manualModal.reviewerShare")}
                   <input
                     value={allocForm.reviewerShareJod}
                     onChange={(e) => setAllocForm({ ...allocForm, reviewerShareJod: e.target.value })}
                   />
                 </label>
                 <label>
-                  حصة المنصة
+                  {t("hub.manualModal.platformShare")}
                   <input
                     value={allocForm.companyShareJod}
                     onChange={(e) => setAllocForm({ ...allocForm, companyShareJod: e.target.value })}
@@ -1105,7 +1134,7 @@ export default function SuperAdminArticlesHubPage() {
                 </label>
                 {distBasis === "amount" ? (
                   <label>
-                    الحد اليومي بالدينار
+                    {t("hub.funding.dailyLimitJod")}
                     <input
                       value={allocForm.dailyBudgetJod}
                       onChange={(e) => setAllocForm({ ...allocForm, dailyBudgetJod: e.target.value })}
@@ -1113,7 +1142,7 @@ export default function SuperAdminArticlesHubPage() {
                   </label>
                 ) : (
                   <label>
-                    الحد اليومي بعدد المقالات
+                    {t("hub.funding.dailyLimitCount")}
                     <input
                       type="number"
                       value={allocForm.maxDailyArticles}
@@ -1122,7 +1151,7 @@ export default function SuperAdminArticlesHubPage() {
                   </label>
                 )}
                 <label>
-                  عدد المتقدمين المطلوب
+                  {t("hub.funding.minApplicants")}
                   <input
                     type="number"
                     value={allocForm.minimumBiddersPerArticle}
@@ -1134,7 +1163,7 @@ export default function SuperAdminArticlesHubPage() {
               </div>
               <div className="oh-articles-hub__actions">
                 <button type="submit" className="primary" disabled={busy || opsDisabled} title={opsTitle}>
-                  حفظ التوزيع
+                  {t("hub.funding.saveAlloc")}
                 </button>
               </div>
             </form>
@@ -1143,16 +1172,16 @@ export default function SuperAdminArticlesHubPage() {
               <table>
                 <thead>
                   <tr>
-                    <th>الخطة</th>
-                    <th>قيمة المقال</th>
-                    <th>المستقل</th>
-                    <th>التدقيق</th>
-                    <th>المنصة</th>
-                    <th>حد يومي دينار</th>
-                    <th>حد يومي عدد</th>
-                    <th>متقدمون</th>
-                    <th>وضع النشر</th>
-                    <th>تكرار الإنزال</th>
+                    <th>{t("hub.funding.table.plan")}</th>
+                    <th>{t("hub.funding.table.articleValue")}</th>
+                    <th>{t("hub.funding.table.freelancer")}</th>
+                    <th>{t("hub.funding.table.reviewer")}</th>
+                    <th>{t("hub.funding.table.platform")}</th>
+                    <th>{t("hub.funding.table.dailyJod")}</th>
+                    <th>{t("hub.funding.table.dailyCount")}</th>
+                    <th>{t("hub.funding.table.applicants")}</th>
+                    <th>{t("hub.funding.table.publishMode")}</th>
+                    <th>{t("hub.funding.table.releaseInterval")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1166,15 +1195,15 @@ export default function SuperAdminArticlesHubPage() {
                       <td>{a.dailyBudgetJod ?? "—"}</td>
                       <td>{a.maxDailyArticles ?? "—"}</td>
                       <td>{a.minimumBiddersPerArticle ?? "—"}</td>
-                      <td>{a.releaseMode === "daily_auto" ? "تلقائي" : "يدوي"}</td>
-                      <td>{intervalLabelAr(a.releaseIntervalDays || 1)}</td>
+                      <td>{a.releaseMode === "daily_auto" ? t("publishMode.auto") : t("publishMode.manual")}</td>
+                      <td>{intervalLabel(a.releaseIntervalDays || 1, t)}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
             <p className="oh-articles-hub__helper" style={{ marginTop: 10 }}>
-              ينخفض رصيد الصندوق تلقائيًا عند نشر/إنزال المقالات حسب قيمتها عبر منطق الخادم الحالي — لا تُحسب القيم محليًا.
+              {t("hub.funding.ledgerNote")}
             </p>
           </div>
         ) : null}

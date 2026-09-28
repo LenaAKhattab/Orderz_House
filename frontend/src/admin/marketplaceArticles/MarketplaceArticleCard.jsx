@@ -3,20 +3,20 @@ import Button from "../../components/ui/Button";
 import {
   formatArticleBidCollectionLabel,
   formatActivationAttachmentBadge,
-  writingModeLabelAr,
+  writingModeLabel,
   normalizePackagePlanCode,
-  ARTICLE_PACKAGE_PLAN_LABELS_AR,
   planCodeFromArticleLevel,
 } from "./marketplaceArticleFormUtils";
 import { formatActivationBudgetState } from "../../constants/freelancerActivationCampaign";
+import { useArticlesT } from "./useArticlesT";
 
 export default function MarketplaceArticleCard({
   article,
-  isEn = false,
   onEdit,
   busy = false,
   activationCampaigns = [],
 }) {
+  const { t, locale } = useArticlesT();
   if (!article) return null;
   const value =
     article.articleValueJod != null
@@ -27,20 +27,16 @@ export default function MarketplaceArticleCard({
     planCodeFromArticleLevel(article.articleLevel) ||
     "";
   const planLabel = planCode
-    ? `${planCode}${ARTICLE_PACKAGE_PLAN_LABELS_AR[planCode] ? ` / ${ARTICLE_PACKAGE_PLAN_LABELS_AR[planCode]}` : ""}`
-    : isEn
-      ? "Not set"
-      : "غير محدد";
+    ? `${planCode}${t(`planLabels.${planCode}`) ? ` / ${t(`planLabels.${planCode}`)}` : ""}`
+    : t("common.notSet");
   const bildazoLabel =
     article.bildazoCategoryName ||
     article.bildazoCategoryPath ||
     article.bildazoCategorySlug ||
-    (isEn ? "Not set" : "غير محدد");
+    t("common.notSet");
   const writingLabel = article.writingMode
-    ? writingModeLabelAr(article.writingMode)
-    : isEn
-      ? "Not set"
-      : "غير محدد";
+    ? writingModeLabel(article.writingMode, { locale })
+    : t("common.notSet");
 
   return (
     <article className={`oh-mmp-card${article.status === "published" ? "" : " oh-mmp-card--inactive"}`}>
@@ -48,7 +44,7 @@ export default function MarketplaceArticleCard({
         <div className="oh-mmp-card__titles">
           <h3 className="oh-mmp-card__title">{article.title}</h3>
           <p className="oh-mmp-card__tier" data-testid="article-card-target-plan">
-            {isEn ? `Plan: ${planLabel}` : `الخطة: ${planLabel}`}
+            {t("common.planColon", { label: planLabel })}
           </p>
         </div>
         <div className="oh-mmp-card__badges">
@@ -56,20 +52,22 @@ export default function MarketplaceArticleCard({
             {article.status}
           </StatusBadge>
           {article.isFakeOrTraining ? (
-            <StatusBadge tone="warning">{isEn ? "Training" : "تدريب"}</StatusBadge>
+            <StatusBadge tone="warning">{t("common.training")}</StatusBadge>
           ) : null}
           {article.activationCampaignId ? (
             <span data-testid="activation-attachment-badge">
               <StatusBadge tone="neutral">
-                {formatActivationAttachmentBadge(article, activationCampaigns, { isEn }) ||
-                  (isEn ? "Activation" : "تفعيل")}
+                {formatActivationAttachmentBadge(article, activationCampaigns, { locale }) ||
+                  t("common.activation")}
               </StatusBadge>
             </span>
           ) : null}
           {article.activationCampaignId && article.activationBudgetState ? (
             <span data-testid="activation-budget-state-badge">
               <StatusBadge tone={article.activationBudgetState === "used" ? "success" : "neutral"}>
-                {formatActivationBudgetState(article.activationBudgetState, { isEn })}
+                {formatActivationBudgetState(article.activationBudgetState, {
+                  isEn: locale === "en",
+                })}
               </StatusBadge>
             </span>
           ) : null}
@@ -78,38 +76,36 @@ export default function MarketplaceArticleCard({
 
       <dl className="oh-mmp-card__meta">
         <div>
-          <dt>{isEn ? "Bildazo category" : "صنف بلدازو"}</dt>
+          <dt>{t("card.bildazoCategory")}</dt>
           <dd data-testid="article-card-bildazo-category">{bildazoLabel}</dd>
         </div>
         <div>
-          <dt>{isEn ? "Writing mode" : "نمط الكتابة"}</dt>
+          <dt>{t("card.writingMode")}</dt>
           <dd data-testid="article-card-writing-mode">{writingLabel}</dd>
         </div>
         <div>
-          <dt>{isEn ? "Words" : "الكلمات"}</dt>
+          <dt>{t("card.words")}</dt>
           <dd>{article.requiredWordCount ?? "—"}</dd>
         </div>
         <div>
-          <dt>{isEn ? "References" : "المراجع"}</dt>
+          <dt>{t("card.references")}</dt>
           <dd>{article.requiredReferencesCount ?? 0}</dd>
         </div>
         <div>
-          <dt>{isEn ? "Value" : "القيمة"}</dt>
+          <dt>{t("card.value")}</dt>
           <dd>
-            {value} {isEn ? "JOD" : "د.أ"}
+            {value} {locale === "en" ? t("common.jod") : t("common.jod")}
           </dd>
         </div>
         <div>
-          <dt>{isEn ? "Applicants" : "المتقدمون"}</dt>
+          <dt>{t("card.applicants")}</dt>
           <dd>
             {formatArticleBidCollectionLabel(article.bidCollection, {
-              isEn,
+              locale,
               articleStatus: article.status,
             }) ||
               (article.requiredBidCount
-                ? isEn
-                  ? `Required: ${article.requiredBidCount}`
-                  : `المطلوب: ${article.requiredBidCount}`
+                ? t("common.required", { count: article.requiredBidCount })
                 : "—")}
           </dd>
         </div>
@@ -123,7 +119,7 @@ export default function MarketplaceArticleCard({
 
       <footer className="oh-mmp-card__actions">
         <Button type="button" variant="secondary" disabled={busy} onClick={() => onEdit?.(article)}>
-          {isEn ? "Edit" : "تعديل"}
+          {t("card.edit")}
         </Button>
       </footer>
     </article>

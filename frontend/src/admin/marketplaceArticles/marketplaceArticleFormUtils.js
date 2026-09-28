@@ -1,5 +1,29 @@
 /** Marketplace Article admin form helpers — Phase A2 + min required bids. */
 
+import arArticles from "../../locales/ar/articles.json" with { type: "json" };
+import enArticles from "../../locales/en/articles.json" with { type: "json" };
+
+function articleLocale({ isEn = false, locale } = {}) {
+  if (locale) return locale;
+  return isEn ? "en" : "ar";
+}
+
+function articleT(key, loc = "ar", values) {
+  const bundle = loc === "en" ? enArticles : arArticles;
+  const parts = String(key || "").split(".");
+  let node = bundle;
+  for (const part of parts) {
+    node = node?.[part];
+  }
+  let resolved = typeof node === "string" ? node : key;
+  if (values && typeof resolved === "string") {
+    for (const [k, v] of Object.entries(values)) {
+      resolved = resolved.replaceAll(`{{${k}}}`, String(v));
+    }
+  }
+  return resolved;
+}
+
 export const ARTICLE_LEVELS = [1, 2, 3, 4, 5];
 export const ARTICLE_STATUSES = ["draft", "published", "closed", "cancelled"];
 export const ARTICLE_ALLOWED_REQUIRED_BID_COUNTS = [10, 15, 20, 30];
@@ -16,8 +40,7 @@ export const ARTICLE_BID_COLLECTION_DURATION_PRESETS = Object.freeze([
   { hours: 168, labelAr: "7 أيام" },
 ]);
 export const ARTICLE_BID_COLLECTION_DURATION_DEFAULT_HOURS = 24;
-export const ARTICLE_OZ05_REFUND_RECYCLE_HINT_AR =
-  "إذا لم يصل المقال إلى الحد الأدنى من المتقدمين خلال هذه المدة، سيعود إلى المخزون ويتم إرجاع مبلغ التمويل.";
+export const ARTICLE_OZ05_REFUND_RECYCLE_HINT_AR = articleT("form.oz05RefundHint", "ar");
 
 /** OZ-Articles-Bildazo-02 — writing mode + package plan codes. */
 export const ARTICLE_WRITING_MODES = ["ai", "manual", "either"];
@@ -100,13 +123,28 @@ export function requirementsForPlanCode(planCode, packageRequirements = null) {
   };
 }
 
-export function formatDerivedPlanRequirementsSummaryAr(planCode, packageRequirements = null) {
+export function formatDerivedPlanRequirementsSummary(
+  planCode,
+  packageRequirements = null,
+  locale = "ar",
+) {
   const req = requirementsForPlanCode(planCode, packageRequirements);
   if (!req) {
-    return "سيتم تطبيق متطلبات الخطة تلقائياً عند اختيارها.";
+    return articleT("form.derivedPlanDefault", locale);
   }
-  const label = ARTICLE_PACKAGE_PLAN_LABELS_AR[req.planCode] || req.planCode;
-  return `سيتم تطبيق متطلبات خطة ${label} تلقائياً: ${req.minWords} كلمة و ${req.minReferences} مراجع.`;
+  const label =
+    articleT(`planLabels.${req.planCode}`, locale) ||
+    ARTICLE_PACKAGE_PLAN_LABELS_AR[req.planCode] ||
+    req.planCode;
+  return articleT("form.derivedPlanSummary", locale, {
+    label,
+    words: req.minWords,
+    references: req.minReferences,
+  });
+}
+
+export function formatDerivedPlanRequirementsSummaryAr(planCode, packageRequirements = null) {
+  return formatDerivedPlanRequirementsSummary(planCode, packageRequirements, "ar");
 }
 
 export function planCodeFromArticleLevel(level) {
@@ -118,10 +156,8 @@ export function planCodeFromArticleLevel(level) {
   if (n === 1) return "STARTER";
   return "";
 }
-export const BILDAZO_AUTHOR_NOT_LINKED_AR =
-  "لا يمكن نشر المقال قبل ربط حساب الكاتب في بلدازو.";
-export const BILDAZO_CATEGORIES_LOAD_ERROR_AR =
-  "تعذر تحميل أصناف بلدازو الآن. حاول مجددًا.";
+export const BILDAZO_AUTHOR_NOT_LINKED_AR = articleT("applications.authorNotLinked", "ar");
+export const BILDAZO_CATEGORIES_LOAD_ERROR_AR = articleT("form.bildazoLoadError", "ar");
 
 export function normalizeWritingMode(raw) {
   const s = String(raw || "")
@@ -150,36 +186,49 @@ export function writingSourceSatisfiesMode(writingSource, writingMode) {
   return false;
 }
 
-export function writingModeLabelAr(mode) {
-  return ARTICLE_WRITING_MODE_LABELS_AR[normalizeWritingMode(mode)] || mode || "—";
+export function writingModeLabel(mode, { isEn = false, locale } = {}) {
+  const loc = articleLocale({ isEn, locale });
+  const normalized = normalizeWritingMode(mode);
+  return articleT(`writingModes.${normalized}`, loc) || mode || "—";
 }
 
-export const ARTICLE_MIN_REQUIRED_BIDS_WARNING_AR =
-  "العدد الذي تحدده يمثل الحد الأدنى المطلوب لإتمام المناقصة. إذا انتهت مدة الطلب دون الوصول إلى هذا العدد، فلن يتم إسناد الطلب لأي Freelancer، وسيتم إرجاع المناقصات المستخدمة للمتقدمين، ثم إعادة الطلب لك وإعادة طرحه مرة أخرى.";
+export function writingModeLabelAr(mode) {
+  return writingModeLabel(mode, { locale: "ar" });
+}
 
-export const ARTICLE_MIN_REQUIRED_BIDS_ACK_AR =
-  "أقر بأن العدد الذي أحدده يمثل الحد الأدنى المطلوب لإتمام المناقصة. إذا انتهت مدة الطلب دون الوصول إلى هذا العدد، فلن يتم إسناد الطلب لأي Freelancer، وسيتم إرجاع المناقصات المستخدمة للمتقدمين، ثم إعادة طرح الطلب أو إعادته للمراجعة.";
+export const ARTICLE_MIN_REQUIRED_BIDS_WARNING_AR = articleT("form.minBidsWarning", "ar");
+export const ARTICLE_MIN_REQUIRED_BIDS_ACK_AR = articleT("form.minBidsAck", "ar");
 
-export function formatArticleBidProgressLabel(current, required, { isEn = false } = {}) {
+export function formatArticleBidProgressLabel(current, required, { isEn = false, locale } = {}) {
   if (!required) return "";
   const cur = Number(current) || 0;
-  if (isEn) return `${cur} of ${required} required applicants`;
-  return `${cur} من ${required} متقدمين مطلوبين`;
+  const loc = articleLocale({ isEn, locale });
+  return articleT("applications.bidCollection.progress", loc, { current: cur, required });
 }
 
-export const ARTICLE_THRESHOLD_WAITING_ASSIGNMENT_AR = "اكتمل العدد المطلوب — بانتظار الإسناد";
-export const ARTICLE_MINIMUM_NOT_MET_MESSAGE_AR = "لم يكتمل الحد الأدنى للمناقصات";
-export const ARTICLE_THRESHOLD_CLOSED_MESSAGE_AR = "اكتمل العدد المطلوب ولم يعد التقديم متاحًا";
+export const ARTICLE_THRESHOLD_WAITING_ASSIGNMENT_AR = articleT(
+  "applications.bidCollection.thresholdWaiting",
+  "ar",
+);
+export const ARTICLE_MINIMUM_NOT_MET_MESSAGE_AR = articleT("applications.bidCollection.minNotMet", "ar");
+export const ARTICLE_THRESHOLD_CLOSED_MESSAGE_AR = articleT(
+  "applications.bidCollection.thresholdClosed",
+  "ar",
+);
 
-export function formatArticleBidCollectionLabel(bidCollection, { isEn = false, articleStatus = null } = {}) {
+export function formatArticleBidCollectionLabel(
+  bidCollection,
+  { isEn = false, locale, articleStatus = null } = {},
+) {
   if (!bidCollection) return "";
   if (bidCollection.label) return bidCollection.label;
+  const loc = articleLocale({ isEn, locale });
   const required = bidCollection.requiredBidCount ?? bidCollection.required;
   const current = bidCollection.currentBidCount ?? bidCollection.current ?? 0;
   const status = bidCollection.bidCollectionStatus ?? bidCollection.status;
   const outcome = bidCollection.bidCollectionOutcome ?? bidCollection.outcome;
   if (status === "minimum_not_met" || outcome === "minimum_not_met") {
-    return isEn ? "Minimum required bids were not met" : ARTICLE_MINIMUM_NOT_MET_MESSAGE_AR;
+    return articleT("applications.bidCollection.minNotMet", loc);
   }
   if (
     status === "threshold_reached" ||
@@ -190,15 +239,11 @@ export function formatArticleBidCollectionLabel(bidCollection, { isEn = false, a
     bidCollection.thresholdReached
   ) {
     if (articleStatus === "closed" || articleStatus === "cancelled") {
-      return isEn
-        ? "Required count reached; applications are closed."
-        : ARTICLE_THRESHOLD_CLOSED_MESSAGE_AR;
+      return articleT("applications.bidCollection.thresholdClosed", loc);
     }
-    return isEn
-      ? "Required count reached — awaiting assignment"
-      : ARTICLE_THRESHOLD_WAITING_ASSIGNMENT_AR;
+    return articleT("applications.bidCollection.thresholdWaiting", loc);
   }
-  return formatArticleBidProgressLabel(current, required, { isEn });
+  return formatArticleBidProgressLabel(current, required, { locale: loc });
 }
 
 /** True when apply/bid/take must not proceed (threshold, minimum_not_met, or locked). */
@@ -241,13 +286,9 @@ export function canSelectArticleApplicant(bidCollection) {
   );
 }
 
-export const ARTICLE_FAIR_RANKING_DISCLAIMER_AR =
-  "هذا الترتيب إرشادي مبني على قواعد التوزيع العادل، والإسناد ما زال يتطلب تأكيد السوبر أدمن.";
-
-export const ARTICLE_FAIR_RANKING_PENDING_AR = "سيظهر ترتيب التوزيع العادل بعد اكتمال العدد المطلوب.";
-
-export const ARTICLE_FAIR_OVERRIDE_CONFIRM_AR =
-  "هذا المتقدم ليس المرشح الأول حسب التوزيع العادل. هل تريد المتابعة؟";
+export const ARTICLE_FAIR_RANKING_DISCLAIMER_AR = articleT("applications.fairRankingDisclaimer", "ar");
+export const ARTICLE_FAIR_RANKING_PENDING_AR = articleT("applications.fairRankingPending", "ar");
+export const ARTICLE_FAIR_OVERRIDE_CONFIRM_AR = articleT("fairOverride.helper", "ar");
 
 export function isFairRankingEligible(fairRanking) {
   return Boolean(fairRanking?.eligibleForAssignment);
@@ -284,15 +325,19 @@ export function attachableActivationWaves(campaigns = [], campaignId, currentWav
   });
 }
 
-export function formatActivationAttachmentBadge(article, campaigns = [], { isEn = false } = {}) {
+export function formatActivationAttachmentBadge(article, campaigns = [], { isEn = false, locale } = {}) {
   if (!article?.activationCampaignId) return "";
+  const loc = articleLocale({ isEn, locale });
   const campaign = (Array.isArray(campaigns) ? campaigns : []).find(
     (c) => String(c.id) === String(article.activationCampaignId),
   );
   const wave = (campaign?.waves || []).find((w) => String(w.id) === String(article.activationWaveId));
-  const campaignLabel = campaign?.name || (isEn ? `Campaign ${article.activationCampaignId}` : `حملة ${article.activationCampaignId}`);
+  const campaignLabel =
+    campaign?.name ||
+    articleT("form.campaignFallback", loc, { id: article.activationCampaignId });
   if (!article.activationWaveId) return campaignLabel;
-  const waveLabel = wave?.name || (isEn ? `Wave ${article.activationWaveId}` : `موجة ${article.activationWaveId}`);
+  const waveLabel =
+    wave?.name || articleT("form.waveFallback", loc, { id: article.activationWaveId });
   return `${campaignLabel} · ${waveLabel}`;
 }
 
@@ -366,28 +411,28 @@ export function articleToMarketplaceFormState(article) {
   });
 }
 
-export function validateMarketplaceArticleForm(form, { packageRequirements = null } = {}) {
+export function validateMarketplaceArticleForm(form, { packageRequirements = null, locale = "ar" } = {}) {
   const errors = {};
   const title = String(form.title || "").trim();
-  if (!title) errors.title = "العنوان مطلوب.";
-  if (title.length > 240) errors.title = "العنوان طويل جداً.";
+  if (!title) errors.title = articleT("validation.titleRequired", locale);
+  if (title.length > 240) errors.title = articleT("validation.titleTooLong", locale);
   const planCode = normalizePackagePlanCode(form.targetPlanCode);
   if (!planCode) {
-    errors.targetPlanCode = "يجب اختيار الخطة المستهدفة.";
+    errors.targetPlanCode = articleT("validation.targetPlanRequired", locale);
   } else {
     const req = requirementsForPlanCode(planCode, packageRequirements);
     if (!req || !req.minWords) {
-      errors.targetPlanCode = "تعذر قراءة متطلبات هذه الخطة.";
+      errors.targetPlanCode = articleT("validation.targetPlanReadError", locale);
     }
   }
   if (!ARTICLE_STATUSES.includes(String(form.status || ""))) {
-    errors.status = "حالة غير صالحة.";
+    errors.status = articleT("validation.invalidStatus", locale);
   }
   if (!String(form.bildazoCategoryId || "").trim()) {
-    errors.bildazoCategoryId = "يجب اختيار صنف بلدازو.";
+    errors.bildazoCategoryId = articleT("validation.bildazoRequired", locale);
   }
   if (!normalizeWritingMode(form.writingMode)) {
-    errors.writingMode = "يجب اختيار نمط الكتابة.";
+    errors.writingMode = articleT("validation.writingModeRequired", locale);
   }
   const requiredBidCount = Number(form.requiredBidCount);
   const inventoryMode = Boolean(form.inventorySimplified || form.allowFlexibleBidCount);
@@ -397,7 +442,10 @@ export function validateMarketplaceArticleForm(form, { packageRequirements = nul
       requiredBidCount < ARTICLE_INVENTORY_REQUIRED_BID_COUNT_MIN ||
       requiredBidCount > ARTICLE_INVENTORY_REQUIRED_BID_COUNT_MAX
     ) {
-      errors.requiredBidCount = `أدخل عدداً بين ${ARTICLE_INVENTORY_REQUIRED_BID_COUNT_MIN} و ${ARTICLE_INVENTORY_REQUIRED_BID_COUNT_MAX}.`;
+      errors.requiredBidCount = articleT("validation.bidCountRange", locale, {
+        min: ARTICLE_INVENTORY_REQUIRED_BID_COUNT_MIN,
+        max: ARTICLE_INVENTORY_REQUIRED_BID_COUNT_MAX,
+      });
     }
   } else {
     const allowed = Array.isArray(form.allowedRequiredBidCounts)
@@ -405,12 +453,14 @@ export function validateMarketplaceArticleForm(form, { packageRequirements = nul
       : ARTICLE_ALLOWED_REQUIRED_BID_COUNTS;
     const minRequired = Number(form.minRequiredBids) || ARTICLE_MIN_REQUIRED_BIDS;
     if (!Number.isInteger(requiredBidCount) || requiredBidCount < minRequired) {
-      errors.requiredBidCount = `الحد الأدنى للمناقصات هو ${minRequired}.`;
+      errors.requiredBidCount = articleT("validation.minBids", locale, { min: minRequired });
     } else if (!allowed.includes(requiredBidCount)) {
-      errors.requiredBidCount = `اختر أحد القيم: ${allowed.join("، ")}.`;
+      errors.requiredBidCount = articleT("validation.bidCountPick", locale, {
+        values: allowed.join(locale === "ar" ? "، " : ", "),
+      });
     }
     if (!form.minRequiredBidsAcknowledged) {
-      errors.minRequiredBidsAcknowledged = "يجب الإقرار بالتحذير قبل الحفظ.";
+      errors.minRequiredBidsAcknowledged = articleT("validation.ackRequired", locale);
     }
   }
 
@@ -420,7 +470,7 @@ export function validateMarketplaceArticleForm(form, { packageRequirements = nul
     durationHours < 1 ||
     durationHours > 168
   ) {
-    errors.bidCollectionDurationHours = "اختر مدة استقبال التقديمات (1–168 ساعة).";
+    errors.bidCollectionDurationHours = articleT("validation.durationRequired", locale);
   }
   return errors;
 }
@@ -464,17 +514,17 @@ export function normalizeMarketplaceArticlePayload(form, { packageRequirements =
 }
 
 /** Client-side manuscript checks aligned with OZ-02 Arabic API messages. */
-export function validateFreelancerManuscriptForm(form, requirements = {}) {
+export function validateFreelancerManuscriptForm(form, requirements = {}, locale = "ar") {
   const errors = {};
   const title = String(form.title || "").trim();
-  if (!title) errors.title = "عنوان المقال النهائي مطلوب.";
+  if (!title) errors.title = articleT("validation.manuscriptTitleRequired", locale);
   const content = String(form.content || "").trim();
-  if (!content) errors.content = "محتوى المقال النهائي مطلوب.";
+  if (!content) errors.content = articleT("validation.manuscriptContentRequired", locale);
   const requiredWords = Number(requirements.requiredWordCount) || 0;
   if (requiredWords > 0 && content) {
     const wordCount = content.split(/\s+/).filter(Boolean).length;
     if (wordCount < requiredWords) {
-      errors.content = `يجب ألا يقل المقال عن ${requiredWords} كلمة.`;
+      errors.content = articleT("validation.minWords", locale, { count: requiredWords });
     }
   }
   const requiredRefs = Number(requirements.requiredReferencesCount) || 0;
@@ -487,20 +537,20 @@ export function validateFreelancerManuscriptForm(form, requirements = {}) {
           .filter(Boolean).length
       : 0;
     if (refCount < requiredRefs) {
-      errors.referencesText = `يجب إضافة ${requiredRefs} مرجعًا على الأقل.`;
+      errors.referencesText = articleT("validation.minRefs", locale, { count: requiredRefs });
     }
   }
   const writingSource = normalizeWritingSource(form.writingSource);
   if (!writingSource) {
-    errors.writingSource = "يجب تحديد طريقة الكتابة (بشري أو بمساعدة الذكاء الاصطناعي).";
+    errors.writingSource = articleT("validation.writingSourceRequired", locale);
   } else if (
     requirements.writingMode &&
     !writingSourceSatisfiesMode(writingSource, requirements.writingMode)
   ) {
-    errors.writingSource = "طريقة الكتابة لا تطابق متطلبات المقال.";
+    errors.writingSource = articleT("validation.writingSourceMismatch", locale);
   }
   if (!form.termsAccepted) {
-    errors.termsAccepted = "يجب الموافقة على شروط ملكية ونشر المقال قبل التسليم.";
+    errors.termsAccepted = articleT("validation.termsRequired", locale);
   }
   return errors;
 }

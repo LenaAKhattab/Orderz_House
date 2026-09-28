@@ -5,7 +5,7 @@ import DashboardSection from "../../components/dashboard/DashboardSection";
 import DashboardEmptyState from "../../components/dashboard/DashboardEmptyState";
 import DashboardLoadingState from "../../components/dashboard/DashboardLoadingState";
 import DashboardErrorState from "../../components/dashboard/DashboardErrorState";
-import { useTranslation } from "../../i18n/LanguageProvider";
+import { useArticlesT } from "../../admin/marketplaceArticles/useArticlesT";
 import {
   listPublishedMarketplaceArticlesRequest,
   getFreelancerBildazoAuthorLinkRequest,
@@ -26,7 +26,7 @@ import FreelancerBildazoLinkedAccountWidget from "../../components/freelancer/Fr
 import { isBildazoAuthorLinked } from "../../constants/bildazoAuthorTerms";
 
 export default function FreelancerMarketplaceArticlesPage() {
-  const { locale } = useTranslation();
+  const { t, locale } = useArticlesT();
   const isEn = locale === "en";
   const [articles, setArticles] = useState([]);
   const [bildazoLink, setBildazoLink] = useState(null);
@@ -64,7 +64,7 @@ export default function FreelancerMarketplaceArticlesPage() {
     } catch (err) {
       setError(
         getSafeApiErrorMessage(err) ||
-          (isEn ? "Failed to load articles." : "تعذر تحميل المقالات."),
+          t("freelancer.list.loadError"),
       );
       setArticles([]);
     } finally {
@@ -81,12 +81,8 @@ export default function FreelancerMarketplaceArticlesPage() {
   return (
     <DashboardShell>
       <DashboardSection
-        title={isEn ? "Article opportunities" : "فرص المقالات"}
-        description={
-          isEn
-            ? "Mini Article opportunities you can apply to."
-            : "فرص Mini Article المتاحة للتقديم."
-        }
+        title={t("freelancer.list.title")}
+        description={t("freelancer.list.description")}
         actions={
           !loading && linked ? (
             <FreelancerBildazoLinkedAccountWidget
@@ -131,7 +127,7 @@ export default function FreelancerMarketplaceArticlesPage() {
                     getSafeApiErrorMessage(err) ||
                     (isEn
                       ? "Could not grant trial Bids. Try again."
-                      : "تعذر منح عروض التجربة. حاول مرة أخرى."),
+                      : t("freelancer.list.trialError")),
                 );
               } finally {
                 setTrialActivating(false);
@@ -151,19 +147,15 @@ export default function FreelancerMarketplaceArticlesPage() {
         {!loading && error ? <DashboardErrorState message={error} onRetry={refresh} /> : null}
         {!loading && !error && articles.length === 0 ? (
           <DashboardEmptyState
-            title={isEn ? "No article opportunities right now" : "لا توجد فرص مقالات متاحة حاليًا"}
-            description={
-              isEn
-                ? "Mini Article opportunities will appear here when they are published."
-                : "ستظهر هنا فرص Mini Article التي يمكنك التقديم لها عند نشرها."
-            }
+            title={t("freelancer.list.emptyTitle")}
+            description={t("freelancer.list.emptyDescription")}
           />
         ) : null}
         {!loading && !error && articles.length > 0 ? (
           <ul id="article-opportunities" className="m-0 grid list-none gap-3 p-0">
             {articles.map((article) => {
               const progress = formatArticleBidCollectionLabel(article.bidCollection, {
-                isEn,
+                locale,
                 articleStatus: article.status,
               });
               return (
@@ -175,19 +167,17 @@ export default function FreelancerMarketplaceArticlesPage() {
                     <strong className="block text-[0.98rem] font-extrabold">{article.title || "—"}</strong>
                     <div className="mt-2 flex flex-wrap gap-2 text-[0.82rem] font-semibold text-[color:var(--dash-text-secondary,#4b5563)]">
                       <span>
-                        {isEn ? `Level ${article.articleLevel ?? "—"}` : `المستوى ${article.articleLevel ?? "—"}`}
+                        {t("freelancer.list.level", { level: article.articleLevel ?? "—" })}
                       </span>
                       <span aria-hidden="true">·</span>
                       <span>
-                        {isEn
-                          ? `${article.requiredWordCount ?? "—"} words`
-                          : `${article.requiredWordCount ?? "—"} كلمة`}
+                        {t("freelancer.list.wordCount", { count: article.requiredWordCount ?? "—" })}
                       </span>
                       {article.articleValueJod != null ? (
                         <>
                           <span aria-hidden="true">·</span>
                           <span data-testid="article-card-full-value">
-                            {isEn ? "Article value: " : "قيمة المقال: "}
+                            {t("freelancer.list.articleValue")}
                             <JodMoneyDisplay amount={article.articleValueJod} compact />
                           </span>
                         </>

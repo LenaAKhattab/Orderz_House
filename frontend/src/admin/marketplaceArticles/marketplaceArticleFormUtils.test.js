@@ -207,9 +207,9 @@ describe("marketplaceArticleFormUtils", () => {
       path.join(path.dirname(fileURLToPath(import.meta.url)), "MarketplaceArticleApplicationsPanel.jsx"),
       "utf8",
     );
-    assert.match(src, /إعادة طرح المناقصة/);
+    assert.match(src, /applications\.relistAuction/);
     assert.match(src, /canRelistBidCollection/);
-    assert.match(src, /لن يتم احتساب المتقدمين السابقين/);
+    assert.match(src, /applications\.relistHint/);
     assert.match(src, /FairSelectionOverrideDialog/);
     assert.match(src, /overrideReason/);
     assert.match(src, /setOverrideTargetId/);
