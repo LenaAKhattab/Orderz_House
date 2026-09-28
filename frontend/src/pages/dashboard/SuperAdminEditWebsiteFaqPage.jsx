@@ -22,14 +22,18 @@ function FaqFormModal({ mode, open, initial, onClose, onSaved }) {
   const { t } = useTranslation();
   const isEdit = mode === "edit";
   const [question, setQuestion] = useState("");
+  const [questionEn, setQuestionEn] = useState("");
   const [answer, setAnswer] = useState("");
+  const [answerEn, setAnswerEn] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
     if (!open) return;
     setQuestion(initial?.question || "");
+    setQuestionEn(initial?.questionEn || initial?.question_en || "");
     setAnswer(initial?.answer || "");
+    setAnswerEn(initial?.answerEn || initial?.answer_en || "");
     setError("");
   }, [open, initial]);
 
@@ -49,9 +53,19 @@ function FaqFormModal({ mode, open, initial, onClose, onSaved }) {
     setSubmitting(true);
     try {
       if (isEdit) {
-        await updateSuperAdminWebsiteFaqRequest(initial.id, { question: q, answer: a });
+        await updateSuperAdminWebsiteFaqRequest(initial.id, {
+          question: q,
+          answer: a,
+          questionEn: questionEn.trim(),
+          answerEn: answerEn.trim(),
+        });
       } else {
-        await createSuperAdminWebsiteFaqRequest({ question: q, answer: a });
+        await createSuperAdminWebsiteFaqRequest({
+          question: q,
+          answer: a,
+          questionEn: questionEn.trim(),
+          answerEn: answerEn.trim(),
+        });
       }
       onSaved();
       onClose();
@@ -88,8 +102,16 @@ function FaqFormModal({ mode, open, initial, onClose, onSaved }) {
             <textarea value={question} onChange={(e) => setQuestion(e.target.value)} disabled={submitting} rows={3} />
           </label>
           <label>
+            {t("siteEditor.faq.fieldQuestionEn")}
+            <textarea value={questionEn} onChange={(e) => setQuestionEn(e.target.value)} disabled={submitting} rows={3} />
+          </label>
+          <label>
             {t("siteEditor.faq.fieldAnswer")}
             <textarea value={answer} onChange={(e) => setAnswer(e.target.value)} disabled={submitting} rows={5} />
+          </label>
+          <label>
+            {t("siteEditor.faq.fieldAnswerEn")}
+            <textarea value={answerEn} onChange={(e) => setAnswerEn(e.target.value)} disabled={submitting} rows={5} />
           </label>
           {error ? <p className="oh-website-faq-form__error">{error}</p> : null}
           <div className="oh-website-faq-form__actions">

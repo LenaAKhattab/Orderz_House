@@ -12,13 +12,16 @@ async function getPublicPage(req, res, next) {
         page: {
           slug: data.page.slug,
           title: data.page.title,
+          titleEn: data.page.titleEn || null,
           pageType: data.page.pageType,
         },
-        blocks: data.blocks.map(({ id, blockType, title, body, imageUrl, sortOrder }) => ({
+        blocks: data.blocks.map(({ id, blockType, title, body, titleEn, bodyEn, imageUrl, sortOrder }) => ({
           id,
           blockType,
           title,
           body,
+          titleEn: titleEn || null,
+          bodyEn: bodyEn || null,
           imageUrl,
           sortOrder,
         })),

@@ -14,6 +14,8 @@ async function createFaqItem(req, res, next) {
     const item = await websiteFaqService.createFaqItem({
       question: req.body.question,
       answer: req.body.answer,
+      questionEn: req.body.questionEn,
+      answerEn: req.body.answerEn,
     });
     return res.status(201).json({ success: true, data: { item } });
   } catch (err) {
@@ -26,6 +28,8 @@ async function updateFaqItem(req, res, next) {
     const item = await websiteFaqService.updateFaqItem(Number(req.params.id), {
       question: req.body.question,
       answer: req.body.answer,
+      questionEn: req.body.questionEn,
+      answerEn: req.body.answerEn,
     });
     if (!item) {
       return res.status(404).json({ success: false, message: "السؤال غير موجود." });

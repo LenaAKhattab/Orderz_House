@@ -22,12 +22,37 @@ function fallbackPayload(t) {
   };
 }
 
-function resolveDisplayContent(data, t) {
+function containsArabicScript(value) {
+  return /[\u0600-\u06FF]/.test(String(value || ""));
+}
+
+function englishPlatformLabel(value, localeFallback) {
+  const text = String(value || "").trim();
+  if (!text || containsArabicScript(text)) return localeFallback;
+  return text;
+}
+
+function resolveDisplayContent(data, t, locale) {
   const defaultSection = resolvePublicPlansDefaultSection(data?.defaultSection);
+  const localeTabs = {
+    trainingTabLabel: t("plans.categories.training"),
+    workTabLabel: t("plans.categories.membership"),
+  };
   if (!data || data.textsAreCustom !== true) {
     return {
       ...fallbackPayload(t),
+      ...localeTabs,
       defaultSection,
+    };
+  }
+  if (locale === "en") {
+    return {
+      badgeText: englishPlatformLabel(data.badgeText, t("plans.training.hero.eyebrow")),
+      title: englishPlatformLabel(data.title, t("plans.training.hero.title")),
+      description: englishPlatformLabel(data.description, t("plans.training.hero.subtitle")),
+      defaultSection,
+      ...localeTabs,
+      textsAreCustom: true,
     };
   }
   return {
@@ -47,7 +72,7 @@ function resolveDisplayContent(data, t) {
  * Skeleton until first resolve; on failure uses safe configured defaults (no page break).
  */
 export function usePublicPlansContent({ enabled = true } = {}) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const cached = enabled ? getCachedPublicPlansContent() : null;
   const [raw, setRaw] = useState(() => (enabled ? cached : null));
   const [loading, setLoading] = useState(() => Boolean(enabled) && !cached);
@@ -87,7 +112,7 @@ export function usePublicPlansContent({ enabled = true } = {}) {
     };
   }, [enabled]);
 
-  const content = useMemo(() => resolveDisplayContent(raw, t), [raw, t]);
+  const content = useMemo(() => resolveDisplayContent(raw, t, locale), [raw, t, locale]);
 
   return {
     loading: Boolean(enabled) && loading,

@@ -1,5 +1,48 @@
 /** Arabic display names for ISO 3166-1 alpha-2 codes (analysis/dashboard UI). */
 
+const ENGLISH_COUNTRY_NAMES = Object.freeze({
+  JO: "Jordan",
+  SA: "Saudi Arabia",
+  AE: "United Arab Emirates",
+  EG: "Egypt",
+  IQ: "Iraq",
+  LB: "Lebanon",
+  PS: "Palestine",
+  SY: "Syria",
+  KW: "Kuwait",
+  QA: "Qatar",
+  BH: "Bahrain",
+  OM: "Oman",
+  YE: "Yemen",
+  MA: "Morocco",
+  DZ: "Algeria",
+  SD: "Sudan",
+  TN: "Tunisia",
+  LY: "Libya",
+  MR: "Mauritania",
+  SO: "Somalia",
+  US: "United States",
+  GB: "United Kingdom",
+  TR: "Turkey",
+  DE: "Germany",
+  FR: "France",
+  CA: "Canada",
+  AU: "Australia",
+  IN: "India",
+  PK: "Pakistan",
+  BD: "Bangladesh",
+  ID: "Indonesia",
+  MY: "Malaysia",
+  NL: "Netherlands",
+  IT: "Italy",
+  ES: "Spain",
+  SE: "Sweden",
+  CH: "Switzerland",
+  CN: "China",
+  RU: "Russia",
+  BR: "Brazil",
+});
+
 const ARABIC_COUNTRY_NAMES = Object.freeze({
   JO: "الأردن",
   SA: "السعودية",
@@ -51,33 +94,35 @@ function isIsoCountryCode(value) {
  * Resolve a user-facing Arabic country label from API row fields.
  * @param {{ countryCode?: string | null, countryName?: string | null }} row
  */
-export function resolveCountryDisplayName(row) {
+export function resolveCountryDisplayName(row, locale = "ar") {
   const codeRaw = row?.countryCode || (isIsoCountryCode(row?.countryName) ? row.countryName : null);
   const code = codeRaw ? String(codeRaw).trim().toUpperCase() : null;
+  const names = locale === "en" ? ENGLISH_COUNTRY_NAMES : ARABIC_COUNTRY_NAMES;
+  const unspecified = locale === "en" ? "Unspecified" : "غير معروف";
 
-  if (code && ARABIC_COUNTRY_NAMES[code]) {
-    return ARABIC_COUNTRY_NAMES[code];
+  if (code && names[code]) {
+    return names[code];
   }
 
-  const name = String(row?.countryName || "").trim();
-  if (name === "غير معروف" || name === "غير محدد" || name === "UNKNOWN") {
-    return "غير معروف";
+  const name = String(row?.countryName || row?.name || "").trim();
+  if (name === "غير معروف" || name === "غير محدد" || name === "UNKNOWN" || name === "Unspecified") {
+    return unspecified;
   }
   if (name && !isIsoCountryCode(name)) {
     return name;
   }
   if (code) {
-    return ARABIC_COUNTRY_NAMES[code] || code;
+    return names[code] || code;
   }
-  return "غير معروف";
+  return unspecified;
 }
 
 /**
  * @param {Array<{ countryCode?: string | null, countryName?: string | null }>} rows
  */
-export function withResolvedCountryNames(rows) {
+export function withResolvedCountryNames(rows, locale = "ar") {
   return (rows || []).map((row) => ({
     ...row,
-    countryName: resolveCountryDisplayName(row),
+    countryName: resolveCountryDisplayName(row, locale),
   }));
 }

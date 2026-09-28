@@ -94,6 +94,7 @@ function mapCourse(row, { forFreelancer = false } = {}) {
   return {
     id: String(row.id),
     title: row.title,
+    titleEn: row.title_en || null,
     description,
     coverImage: row.cover_image || null,
     youtubeSourceUrl: row.youtube_source_url,
@@ -390,6 +391,10 @@ async function updateCourse({ actorUserId, courseId, patch }) {
       i += 1;
     };
     if (patch.title !== undefined) set("title", String(patch.title || "").trim());
+    if (patch.titleEn !== undefined) {
+      const english = String(patch.titleEn || "").trim();
+      set("title_en", english || null);
+    }
     if (patch.description !== undefined) set("description", patch.description ? String(patch.description).trim() : null);
     if (patch.coverImage !== undefined) set("cover_image", patch.coverImage ? String(patch.coverImage).trim() : null);
     if (patch.youtubeSourceUrl !== undefined) set("youtube_source_url", String(patch.youtubeSourceUrl || "").trim());

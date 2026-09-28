@@ -34,7 +34,7 @@ export default function usePublicWebsitePage(slug) {
           setPage(null);
           setBlocks([]);
         } else {
-          setError("تعذر تحميل الصفحة. حاول مجدداً.");
+          setError("LOAD_FAILED");
         }
       } finally {
         if (!cancelled) setLoading(false);

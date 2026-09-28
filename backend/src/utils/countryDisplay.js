@@ -1,3 +1,20 @@
+const ENGLISH_COUNTRY_NAMES = Object.freeze({
+  JO: "Jordan",
+  SA: "Saudi Arabia",
+  AE: "United Arab Emirates",
+  US: "United States",
+  EG: "Egypt",
+  IQ: "Iraq",
+  LB: "Lebanon",
+  PS: "Palestine",
+  SY: "Syria",
+  KW: "Kuwait",
+  QA: "Qatar",
+  BH: "Bahrain",
+  OM: "Oman",
+  YE: "Yemen",
+});
+
 const ARABIC_COUNTRY_NAMES = Object.freeze({
   JO: "الأردن",
   SA: "السعودية",
@@ -30,11 +47,18 @@ function getLocalizedCountryName(code) {
   return ARABIC_COUNTRY_NAMES[cc] || cc;
 }
 
+function getEnglishCountryName(code) {
+  const cc = normalizeCountryCode(code);
+  if (!cc) return "Unspecified";
+  return ENGLISH_COUNTRY_NAMES[cc] || cc;
+}
+
 function formatCountryRow(code) {
   const cc = normalizeCountryCode(code);
   return {
     countryCode: cc,
     name: getLocalizedCountryName(code),
+    nameEn: getEnglishCountryName(code),
   };
 }
 

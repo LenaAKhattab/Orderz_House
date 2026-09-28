@@ -150,6 +150,14 @@ function normalizeSpecialOffer(raw = {}, { partial = false } = {}) {
     microcopy: asString(merged.microcopy, 240),
     refundExplanationAr,
     whatsappMessageAr: asString(merged.whatsappMessageAr, 500),
+    titleEn: asString(merged.titleEn, 120) || null,
+    subtitleEn: asString(merged.subtitleEn, 400) || null,
+    badgeTextEn: asString(merged.badgeTextEn, 80) || null,
+    ribbonTextEn: asString(merged.ribbonTextEn, 80) || null,
+    ctaLabelEn: asString(merged.ctaLabelEn, 80) || null,
+    microcopyEn: asString(merged.microcopyEn, 240) || null,
+    refundExplanationEn: asString(merged.refundExplanationEn, 2000) || null,
+    whatsappMessageEn: asString(merged.whatsappMessageEn, 500) || null,
     purchaseMode: normalizePurchaseMode(merged.purchaseMode),
     linkedPlanCode,
     linkedMarketplacePlanId: linked,
@@ -241,6 +249,13 @@ function toPublicDto(pkg) {
     subtitle: pkg.subtitle,
     badgeText: pkg.badgeText,
     ribbonText: pkg.ribbonText,
+    titleEn: pkg.titleEn || null,
+    subtitleEn: pkg.subtitleEn || null,
+    badgeTextEn: pkg.badgeTextEn || null,
+    ribbonTextEn: pkg.ribbonTextEn || null,
+    ctaLabelEn: pkg.ctaLabelEn || null,
+    microcopyEn: pkg.microcopyEn || null,
+    refundExplanationEn: pkg.refundExplanationEn || null,
     priceJod: pkg.priceJod,
     originalPriceJod: pkg.originalPriceJod,
     totalOffers: pkg.totalOffers,
@@ -495,7 +510,26 @@ async function upsertSpecialOfferPackage(patch, { updatedByUserId } = {}, settin
         publicCode: "SPECIAL_OFFER_BENEFITS_LOCKED",
       });
     }
-    return currentDto;
+    const englishKeys = [
+      "titleEn",
+      "subtitleEn",
+      "badgeTextEn",
+      "ribbonTextEn",
+      "ctaLabelEn",
+      "microcopyEn",
+      "refundExplanationEn",
+      "whatsappMessageEn",
+    ];
+    const englishChanged = englishKeys.some(
+      (key) => String(next[key] || "") !== String(currentDto[key] || ""),
+    );
+    if (englishChanged) {
+      await persistOffer(store, next, { updatedByUserId });
+    }
+    return toAdminDto(next, currentDto.planSummary, {
+      benefitsLocked: true,
+      purchaseCount: currentDto.purchaseCount,
+    });
   }
 
   const next = normalizeSpecialOffer({

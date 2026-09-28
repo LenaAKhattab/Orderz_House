@@ -13,8 +13,8 @@ function mapPublicFaqItem(item, index) {
     id: item.id,
     question: item.question,
     answer: item.answer,
-    question_en: item.question_en,
-    answer_en: item.answer_en,
+    question_en: item.question_en || item.questionEn || null,
+    answer_en: item.answer_en || item.answerEn || null,
     localeKey: resolveFaqLocaleKey(item, index),
   };
 }

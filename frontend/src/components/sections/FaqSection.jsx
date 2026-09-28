@@ -4,7 +4,7 @@ import { FAQ_SCROLL_THRESHOLD, usePublicFaq } from "../../hooks/usePublicFaq";
 
 import { useTranslation } from "../../i18n/LanguageProvider";
 
-import { getFaqLocalizedText } from "../../lib/i18n/getFaqLocalizedText";
+import { faqTextOrNotice, getFaqLocalizedText } from "../../lib/i18n/getFaqLocalizedText";
 
 import FaqSkeleton from "../skeletons/FaqSkeleton";
 
@@ -24,8 +24,8 @@ function Chevron({ open }) {
 }
 
 function FaqAccordionItem({ item, open, onToggle, locale, t, index, isRtl }) {
-  const question = getFaqLocalizedText(item, "question", locale, t, index);
-  const answer = getFaqLocalizedText(item, "answer", locale, t, index);
+  const question = faqTextOrNotice(getFaqLocalizedText(item, "question", locale, t, index), locale, t);
+  const answer = faqTextOrNotice(getFaqLocalizedText(item, "answer", locale, t, index), locale, t);
   const panelId = `faq-panel-${item.id}`;
   const buttonId = `faq-trigger-${item.id}`;
 

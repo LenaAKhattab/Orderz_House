@@ -25,6 +25,12 @@ import {
 } from "./dashboardMetricScope";
 import { formatAverageCompletionDuration } from "../../../utils/courseLearningDuration";
 import { useTranslation } from "../../../i18n/LanguageProvider";
+import {
+  localizeCanonicalPlanTitle,
+  localizeCategoryName,
+  localizeCountryName,
+  localizeCourseTitle,
+} from "../../../lib/i18n/platformContentLocale";
 import "./registerAnalysisLocale";
 
 function SectionInlineNotice({ children, tone = "warn", className = "" }) {
@@ -86,7 +92,7 @@ function formatPeakHour(hour, t) {
   return t("analysis.time.pm", { hour: h - 12 });
 }
 
-function buildOrderHighlights(orders, t) {
+function buildOrderHighlights(orders, t, locale) {
   if (!orders?.totals) return [];
   const lines = [];
   const peak = orders.timing?.busiestHours?.[0];
@@ -114,27 +120,27 @@ function buildOrderHighlights(orders, t) {
   if (orders.categories?.slowestCategory?.name) {
     lines.push({
       key: "analysis.intelligence.orders.slowestCategory",
-      params: { name: orders.categories.slowestCategory.name },
+      params: { name: localizeCategoryName(orders.categories.slowestCategory, locale) },
     });
   }
   return lines;
 }
 
-function buildSubscriptionHighlights(subscriptions) {
+function buildSubscriptionHighlights(subscriptions, locale) {
   if (!subscriptions?.totals) return [];
   const lines = [];
   const top = subscriptions.byPlan?.[0];
   if (top?.planTitle) {
     lines.push({
       key: "analysis.intelligence.subscriptions.topPlan",
-      params: { plan: top.planTitle, count: formatInt(top.subscribers) },
+      params: { plan: localizeCanonicalPlanTitle(top, locale) || top.planTitle, count: formatInt(top.subscribers) },
     });
   }
   const country = subscriptions.countries?.[0];
   if (country?.name) {
     lines.push({
       key: "analysis.intelligence.subscriptions.topCountry",
-      params: { name: country.name, count: formatInt(country.subscribers) },
+      params: { name: localizeCountryName(country, locale), count: formatInt(country.subscribers) },
     });
   }
   if (Number(subscriptions.totals.pendingActivation) > 0) {
@@ -146,13 +152,13 @@ function buildSubscriptionHighlights(subscriptions) {
   return lines;
 }
 
-function buildCourseHighlights(courses) {
+function buildCourseHighlights(courses, locale) {
   if (!courses?.totals) return [];
   const lines = [];
   if (courses.highlights?.mostJoinedCourse?.title) {
     lines.push({
       key: "analysis.intelligence.courses.mostJoined",
-      params: { title: courses.highlights.mostJoinedCourse.title },
+      params: { title: localizeCourseTitle(courses.highlights.mostJoinedCourse, locale) },
     });
   }
   if (courses.totals.finalExamCompletionRate != null) {
@@ -353,7 +359,7 @@ export default function SuperAdminHomeIntelligenceSections({
         loading={loading}
         intelligence={intelligence}
         onRetry={onRetry}
-        highlights={<SectionHighlights items={buildOrderHighlights(orders, t)} />}
+        highlights={<SectionHighlights items={buildOrderHighlights(orders, t, locale)} />}
       >
         <MiniStatGrid
           loading={loading && !orders && !ordersFailed}
@@ -506,7 +512,7 @@ export default function SuperAdminHomeIntelligenceSections({
         loading={loading}
         intelligence={intelligence}
         onRetry={onRetry}
-        highlights={<SectionHighlights items={buildSubscriptionHighlights(subscriptions)} />}
+        highlights={<SectionHighlights items={buildSubscriptionHighlights(subscriptions, locale)} />}
       >
         <MiniStatGrid
           loading={loading && !subscriptions && !subscriptionsFailed}
@@ -547,7 +553,7 @@ export default function SuperAdminHomeIntelligenceSections({
         loading={loading}
         intelligence={intelligence}
         onRetry={onRetry}
-        highlights={<SectionHighlights items={buildCourseHighlights(courses)} />}
+        highlights={<SectionHighlights items={buildCourseHighlights(courses, locale)} />}
       >
         <MiniStatGrid
           loading={loading && !courses && !coursesFailed}

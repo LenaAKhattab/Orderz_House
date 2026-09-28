@@ -327,12 +327,14 @@ async function getOrdersIntelligence() {
            SELECT
              c.id,
              c.name,
+             c.name_en,
+             c.slug,
              COUNT(*)::int AS total_orders,
              COUNT(*) FILTER (WHERE o.order_status = 'completed')::int AS completed_orders,
              COUNT(*) FILTER (WHERE o.order_status = 'cancelled')::int AS cancelled_orders
            FROM orders o
            LEFT JOIN categories c ON c.id = o.category_id
-           GROUP BY c.id, c.name
+           GROUP BY c.id, c.name, c.name_en, c.slug
          )
          SELECT *
          FROM cat
@@ -409,14 +411,16 @@ async function getOrdersIntelligence() {
         trendByDay: Array.isArray(timed.trend) ? timed.trend : [],
       },
       categories: {
-        mostRequested: topDemand ? { categoryId: topDemand.id, name: topDemand.name, totalOrders: toInt(topDemand.total_orders) } : null,
-        mostCompleted: topCompleted ? { categoryId: topCompleted.id, name: topCompleted.name, completedOrders: toInt(topCompleted.completed_orders) } : null,
-        mostCancelled: topCancelled ? { categoryId: topCancelled.id, name: topCancelled.name, cancelledOrders: toInt(topCancelled.cancelled_orders) } : null,
-        slowestCategory: slowestCategory ? { categoryId: slowestCategory.id, name: slowestCategory.name } : null,
-        fastestCategory: fastestCategory ? { categoryId: fastestCategory.id, name: fastestCategory.name } : null,
+        mostRequested: topDemand ? { categoryId: topDemand.id, name: topDemand.name, nameEn: topDemand.name_en || null, slug: topDemand.slug || null, totalOrders: toInt(topDemand.total_orders) } : null,
+        mostCompleted: topCompleted ? { categoryId: topCompleted.id, name: topCompleted.name, nameEn: topCompleted.name_en || null, slug: topCompleted.slug || null, completedOrders: toInt(topCompleted.completed_orders) } : null,
+        mostCancelled: topCancelled ? { categoryId: topCancelled.id, name: topCancelled.name, nameEn: topCancelled.name_en || null, slug: topCancelled.slug || null, cancelledOrders: toInt(topCancelled.cancelled_orders) } : null,
+        slowestCategory: slowestCategory ? { categoryId: slowestCategory.id, name: slowestCategory.name, nameEn: slowestCategory.name_en || null, slug: slowestCategory.slug || null } : null,
+        fastestCategory: fastestCategory ? { categoryId: fastestCategory.id, name: fastestCategory.name, nameEn: fastestCategory.name_en || null, slug: fastestCategory.slug || null } : null,
         breakdown: top.map((x) => ({
           categoryId: x.id,
           name: x.name,
+          nameEn: x.name_en || null,
+          slug: x.slug || null,
           totalOrders: toInt(x.total_orders),
           completedOrders: toInt(x.completed_orders),
           cancelledOrders: toInt(x.cancelled_orders),
@@ -627,6 +631,8 @@ async function getSubscriptionsIntelligence() {
         `SELECT
            p.id AS plan_id,
            p.title AS plan_title,
+           p.title_en AS plan_title_en,
+           p.name AS plan_name,
            COUNT(fs.id)::int AS subscribers,
            COUNT(fs.id) FILTER (WHERE fs.status = 'active')::int AS active_subscribers,
            COALESCE(SUM(CASE WHEN fs.payment_status = 'paid' THEN p.price_jod ELSE 0 END), 0)::numeric AS revenue_jod
@@ -665,7 +671,7 @@ async function getSubscriptionsIntelligence() {
       ),
       pool.query(
         `SELECT
-          COALESCE(NULLIF(upper(trim(u.billing_country)), ''), 'غير محدد') AS country_code,
+          COALESCE(NULLIF(upper(trim(u.billing_country)), ''), '') AS country_code,
           COUNT(*)::int AS subscribers
          FROM freelancer_subscriptions fs
          JOIN users u ON u.id = fs.freelancer_user_id
@@ -701,6 +707,8 @@ async function getSubscriptionsIntelligence() {
         return {
           planId: x.plan_id,
           planTitle: x.plan_title,
+          planTitleEn: x.plan_title_en || null,
+          planName: x.plan_name || null,
           subscribers: toInt(x.subscribers),
           activeSubscribers: toInt(x.active_subscribers),
           revenueJod: toNum(x.revenue_jod),
@@ -807,6 +815,7 @@ async function getCoursesIntelligence() {
            SELECT
              c.id,
              c.title,
+             c.title_en,
              COUNT(DISTINCT a.freelancer_id)::int AS enrolled,
              COUNT(DISTINCT a.freelancer_id) FILTER (WHERE a.completed_at IS NOT NULL)::int AS completed_students
            FROM courses c
@@ -854,14 +863,15 @@ async function getCoursesIntelligence() {
       topCourses: list.map((x) => ({
         courseId: x.id,
         title: x.title,
+        titleEn: x.title_en || null,
         enrolled: toInt(x.enrolled),
         completedStudents: toInt(x.completed_students),
         completionRate: toNum(x.completion_rate),
       })),
       highlights: {
-        mostJoinedCourse: mostJoined ? { courseId: mostJoined.id, title: mostJoined.title } : null,
-        mostCompletedCourse: mostCompleted ? { courseId: mostCompleted.id, title: mostCompleted.title } : null,
-        lowestCompletionCourse: lowestCompletion ? { courseId: lowestCompletion.id, title: lowestCompletion.title } : null,
+        mostJoinedCourse: mostJoined ? { courseId: mostJoined.id, title: mostJoined.title, titleEn: mostJoined.title_en || null } : null,
+        mostCompletedCourse: mostCompleted ? { courseId: mostCompleted.id, title: mostCompleted.title, titleEn: mostCompleted.title_en || null } : null,
+        lowestCompletionCourse: lowestCompletion ? { courseId: lowestCompletion.id, title: lowestCompletion.title, titleEn: lowestCompletion.title_en || null } : null,
       },
       enrollmentTrendByMonth: enrollmentTrend.rows.map((x) => ({
         monthStart: x.month_start,
@@ -879,6 +889,8 @@ async function getCategoriesIntelligence() {
          SELECT
            c.id,
            c.name,
+           c.name_en,
+           c.slug,
            COUNT(o.id)::int AS total_orders,
            COUNT(*) FILTER (WHERE o.order_status = 'completed')::int AS completed_orders,
            COUNT(*) FILTER (WHERE o.order_status = 'cancelled')::int AS cancelled_orders,
@@ -911,24 +923,28 @@ async function getCategoriesIntelligence() {
         return br - ar;
       });
     return {
-      mostRequested: demandSorted.slice(0, 6).map((x) => ({ categoryId: x.id, name: x.name, totalOrders: toInt(x.total_orders) })),
-      leastRequested: [...demandSorted].reverse().slice(0, 6).map((x) => ({ categoryId: x.id, name: x.name, totalOrders: toInt(x.total_orders) })),
-      highestValue: valueSorted.slice(0, 6).map((x) => ({ categoryId: x.id, name: x.name, averageOrderValueJod: toNum(x.avg_order_value) })),
+      mostRequested: demandSorted.slice(0, 6).map((x) => ({ categoryId: x.id, name: x.name, nameEn: x.name_en || null, slug: x.slug || null, totalOrders: toInt(x.total_orders) })),
+      leastRequested: [...demandSorted].reverse().slice(0, 6).map((x) => ({ categoryId: x.id, name: x.name, nameEn: x.name_en || null, slug: x.slug || null, totalOrders: toInt(x.total_orders) })),
+      highestValue: valueSorted.slice(0, 6).map((x) => ({ categoryId: x.id, name: x.name, nameEn: x.name_en || null, slug: x.slug || null, averageOrderValueJod: toNum(x.avg_order_value) })),
       highestCompletion: [...rows]
         .filter((x) => toInt(x.total_orders) > 0)
         .sort((a, b) => toInt(b.completed_orders) / toInt(b.total_orders) - toInt(a.completed_orders) / toInt(a.total_orders))
         .slice(0, 6)
-        .map((x) => ({ categoryId: x.id, name: x.name })),
-      highestCancellation: cancellationSorted.slice(0, 6).map((x) => ({ categoryId: x.id, name: x.name, cancelledOrders: toInt(x.cancelled_orders) })),
+        .map((x) => ({ categoryId: x.id, name: x.name, nameEn: x.name_en || null, slug: x.slug || null })),
+      highestCancellation: cancellationSorted.slice(0, 6).map((x) => ({ categoryId: x.id, name: x.name, nameEn: x.name_en || null, slug: x.slug || null, cancelledOrders: toInt(x.cancelled_orders) })),
       demandVsSupply: rows.map((x) => ({
         categoryId: x.id,
         name: x.name,
+        nameEn: x.name_en || null,
+        slug: x.slug || null,
         demandOrders: toInt(x.total_orders),
         freelancerSupply: toInt(x.freelancer_supply),
       })),
       potentialShortage: shortage.slice(0, 6).map((x) => ({
         categoryId: x.id,
         name: x.name,
+        nameEn: x.name_en || null,
+        slug: x.slug || null,
         demandOrders: toInt(x.total_orders),
         freelancerSupply: toInt(x.freelancer_supply),
       })),
@@ -1010,13 +1026,14 @@ async function getAttentionIntelligence() {
           SELECT
             c.id,
             c.title,
+            c.title_en,
             COUNT(a.freelancer_id)::int AS enrolled,
             COUNT(a.freelancer_id) FILTER (WHERE a.completed_at IS NOT NULL)::int AS completed
           FROM courses c
           LEFT JOIN course_assignments a ON a.course_id = c.id
           GROUP BY c.id
         )
-        SELECT id, title
+        SELECT id, title, title_en
         FROM course_stats
         WHERE enrolled >= 5 AND COALESCE(100.0 * completed / NULLIF(enrolled,0),0) < 35
         ORDER BY enrolled DESC
@@ -1064,7 +1081,7 @@ async function getAttentionIntelligence() {
     ];
     return {
       alerts,
-      lowPerformingCourses: lowCourses.rows.map((x) => ({ courseId: x.id, title: x.title })),
+      lowPerformingCourses: lowCourses.rows.map((x) => ({ courseId: x.id, title: x.title, titleEn: x.title_en || null })),
       totalAttentionItems: alerts.reduce((sum, x) => sum + toInt(x.count), 0),
     };
   });

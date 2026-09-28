@@ -46,8 +46,11 @@ export default function SuperAdminSitePageEditPage() {
   const [error, setError] = useState("");
   const [page, setPage] = useState(null);
   const [title, setTitle] = useState("");
+  const [titleEn, setTitleEn] = useState("");
   const [menuLabel, setMenuLabel] = useState("");
+  const [menuLabelEn, setMenuLabelEn] = useState("");
   const [content, setContent] = useState("");
+  const [contentEn, setContentEn] = useState("");
   const [metaTitle, setMetaTitle] = useState("");
   const [metaDescription, setMetaDescription] = useState("");
   const [isPublished, setIsPublished] = useState(true);
@@ -63,8 +66,11 @@ export default function SuperAdminSitePageEditPage() {
   const applyPage = useCallback((next) => {
     setPage(next);
     setTitle(next?.title || "");
+    setTitleEn(next?.titleEn || "");
     setMenuLabel(next?.menuLabel || "");
+    setMenuLabelEn(next?.menuLabelEn || "");
     setContent(next?.content || "");
+    setContentEn(next?.contentEn || "");
     setMetaTitle(next?.metaTitle || "");
     setMetaDescription(next?.metaDescription || "");
     setIsPublished(Boolean(next?.isPublished));
@@ -98,8 +104,11 @@ export default function SuperAdminSitePageEditPage() {
     try {
       const res = await updateSuperAdminSitePageRequest(id, {
         title: title.trim(),
+        titleEn: titleEn.trim(),
         menuLabel: menuLabel.trim(),
+        menuLabelEn: menuLabelEn.trim(),
         content,
+        contentEn,
         metaTitle: metaTitle.trim() || null,
         metaDescription: metaDescription.trim() || null,
         isPublished,
@@ -167,6 +176,12 @@ export default function SuperAdminSitePageEditPage() {
                     required
                   />
                 </FormField>
+                <FormField label={t("siteEditor.sitePageEdit.pageTitleEn")}>
+                  <input value={titleEn} onChange={(e) => setTitleEn(e.target.value)} disabled={saving} />
+                </FormField>
+                <FormField label={t("siteEditor.sitePageEdit.menuLabelEn")}>
+                  <input value={menuLabelEn} onChange={(e) => setMenuLabelEn(e.target.value)} disabled={saving} />
+                </FormField>
               </div>
 
               <div className="oh-site-page-form__grid oh-site-page-form__grid--2">
@@ -218,6 +233,18 @@ export default function SuperAdminSitePageEditPage() {
                   className="oh-site-page-form__content"
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
+                  disabled={saving}
+                />
+              </FormField>
+              <FormField
+                label={t("siteEditor.sitePageEdit.contentLabelEn")}
+                hint={t("siteEditor.sitePageEdit.contentHint")}
+                className="oh-site-page-form__field--full"
+              >
+                <textarea
+                  className="oh-site-page-form__content"
+                  value={contentEn}
+                  onChange={(e) => setContentEn(e.target.value)}
                   disabled={saving}
                 />
               </FormField>

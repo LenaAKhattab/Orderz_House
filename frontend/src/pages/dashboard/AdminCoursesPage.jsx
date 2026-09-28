@@ -190,6 +190,7 @@ export default function AdminCoursesPage() {
   const buildCourseMetadataPatch = useCallback((fields) => {
     const patch = {
       title: fields.title,
+      titleEn: fields.titleEn,
       description: fields.description,
       coverImage: fields.coverImage,
       isActive: fields.isActive,
@@ -831,6 +832,7 @@ export default function AdminCoursesPage() {
     try {
       const patch = buildCourseMetadataPatch({
         title: selectedCourse.course.title,
+        titleEn: selectedCourse.course.titleEn || "",
         description: selectedCourse.course.description,
         coverImage: selectedCourse.course.coverImage,
         isActive: selectedCourse.course.isActive,
@@ -1549,6 +1551,14 @@ export default function AdminCoursesPage() {
                             className="oh-admin-courses__input"
                             value={selectedCourse.course.title || ""}
                             onChange={(e) => setSelectedCourse((s) => ({ ...s, course: { ...s.course, title: e.target.value } }))}
+                          />
+                        </label>
+                        <label className="oh-admin-courses__field">
+                          <span>{t("courses.admin.fieldTitleEn")}</span>
+                          <input
+                            className="oh-admin-courses__input"
+                            value={selectedCourse.course.titleEn || ""}
+                            onChange={(e) => setSelectedCourse((s) => ({ ...s, course: { ...s.course, titleEn: e.target.value } }))}
                           />
                         </label>
                         <label className="oh-admin-courses__field">

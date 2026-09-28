@@ -27,6 +27,12 @@ import {
 import { resolveFreelancerWhatsapp } from "../../../admin/subscriptions/subscriptionWhatsApp";
 import SubscriptionWhatsAppModal from "../../../pages/dashboard/SubscriptionWhatsAppModal";
 import { useTranslation } from "../../../i18n/LanguageProvider";
+import {
+  localizeAnalyticsAlertTitle,
+  localizeAnalyticsMetricLabel,
+  localizeCanonicalPlanTitle,
+  localizeCourseTitle,
+} from "../../../lib/i18n/platformContentLocale";
 import "./registerAnalysisLocale";
 import "../../../styles/adminOverviewSoft.css";
 
@@ -315,7 +321,7 @@ function SoftMonthCompare({ metrics, t }) {
             : `${m.changePct > 0 ? "+" : ""}${Number(m.changePct).toFixed(0)}%`;
         return (
           <div key={m.key} className="aos-compare__row">
-            <span className="aos-compare__label">{m.label}</span>
+            <span className="aos-compare__label">{localizeAnalyticsMetricLabel(m, t)}</span>
             <div className="aos-compare__vals">
               <strong className="aos-compare__current">
                 {m.money ? formatMoneyJod(m.current) : formatInt(m.current)}
@@ -563,10 +569,12 @@ export default function SuperAdminProductAnalytics() {
     const rows = Array.isArray(subsIntel?.byPlan) ? subsIntel.byPlan : [];
     return rows.slice(0, 5).map((p) => ({
       id: String(p.planId || p.planTitle),
-      label: p.planTitle || t("analysis.product.planFallback", { id: p.planId }),
+      label:
+        localizeCanonicalPlanTitle(p, locale) ||
+        t("analysis.product.planFallback", { id: p.planId }),
       value: Number(p.activeSubscribers || p.subscribers) || 0,
     }));
-  }, [subsIntel, t]);
+  }, [subsIntel, t, locale]);
 
   const pulseItems = useMemo(() => {
     const items = [];
@@ -574,7 +582,7 @@ export default function SuperAdminProductAnalytics() {
     for (const a of alerts.slice(0, 4)) {
       items.push({
         id: a.key || a.title,
-        title: a.title || t("analysis.product.alertDefault"),
+        title: localizeAnalyticsAlertTitle(a, t) || t("analysis.product.alertDefault"),
         count: a.count,
         to: resolveSuperAdminDashboardHomeLink(a.path),
         tone: "warn",
@@ -906,7 +914,7 @@ export default function SuperAdminProductAnalytics() {
                 <p className="aos-card__desc">
                   {coursesIntel?.highlights?.mostJoinedCourse?.title
                     ? t("analysis.product.coursesMostJoined", {
-                        title: coursesIntel.highlights.mostJoinedCourse.title,
+                        title: localizeCourseTitle(coursesIntel.highlights.mostJoinedCourse, locale),
                       })
                     : t("analysis.product.coursesPathDefault")}
                 </p>

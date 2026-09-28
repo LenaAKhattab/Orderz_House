@@ -43,7 +43,9 @@ function BlockFormModal({ mode, open, initial, onClose, onSaved, slug }) {
   const isEdit = mode === "edit";
   const [blockType, setBlockType] = useState("text");
   const [title, setTitle] = useState("");
+  const [titleEn, setTitleEn] = useState("");
   const [body, setBody] = useState("");
+  const [bodyEn, setBodyEn] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -52,7 +54,9 @@ function BlockFormModal({ mode, open, initial, onClose, onSaved, slug }) {
     if (!open) return;
     setBlockType(initial?.blockType || "text");
     setTitle(initial?.title || "");
+    setTitleEn(initial?.titleEn || "");
     setBody(initial?.body || "");
+    setBodyEn(initial?.bodyEn || "");
     setImageUrl(initial?.imageUrl || "");
     setError("");
   }, [open, initial]);
@@ -71,7 +75,9 @@ function BlockFormModal({ mode, open, initial, onClose, onSaved, slug }) {
     const payload = {
       blockType,
       title: title.trim() || null,
+      titleEn: titleEn.trim() || null,
       body: body.trim() || null,
+      bodyEn: bodyEn.trim() || null,
       imageUrl: imageUrl.trim() || null,
     };
 
@@ -142,16 +148,28 @@ function BlockFormModal({ mode, open, initial, onClose, onSaved, slug }) {
             </select>
           </label>
           {needsTitle ? (
-            <label>
-              {t("siteEditor.howItWorksEditor.fieldTitle")}
-              <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} disabled={submitting} />
-            </label>
+            <>
+              <label>
+                {t("siteEditor.howItWorksEditor.fieldTitle")}
+                <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} disabled={submitting} />
+              </label>
+              <label>
+                {t("siteEditor.howItWorksEditor.fieldTitleEn")}
+                <input type="text" value={titleEn} onChange={(e) => setTitleEn(e.target.value)} disabled={submitting} />
+              </label>
+            </>
           ) : null}
           {needsBody ? (
-            <label>
-              {t("siteEditor.howItWorksEditor.fieldText")}
-              <textarea value={body} onChange={(e) => setBody(e.target.value)} disabled={submitting} rows={5} />
-            </label>
+            <>
+              <label>
+                {t("siteEditor.howItWorksEditor.fieldText")}
+                <textarea value={body} onChange={(e) => setBody(e.target.value)} disabled={submitting} rows={5} />
+              </label>
+              <label>
+                {t("siteEditor.howItWorksEditor.fieldTextEn")}
+                <textarea value={bodyEn} onChange={(e) => setBodyEn(e.target.value)} disabled={submitting} rows={5} />
+              </label>
+            </>
           ) : null}
           {needsImage ? (
             <div className="oh-website-faq-form__field">
@@ -188,6 +206,7 @@ export default function SuperAdminEditWebsiteHowItWorksEditorPage() {
   const [error, setError] = useState("");
   const [busyId, setBusyId] = useState(null);
   const [pageTitle, setPageTitle] = useState("");
+  const [pageTitleEn, setPageTitleEn] = useState("");
   const [savingTitle, setSavingTitle] = useState(false);
   const [modal, setModal] = useState({ open: false, mode: "create", item: null });
 
@@ -205,6 +224,7 @@ export default function SuperAdminEditWebsiteHowItWorksEditorPage() {
       setPage(res?.data?.page || null);
       setBlocks(Array.isArray(res?.data?.blocks) ? res.data.blocks : []);
       setPageTitle(res?.data?.page?.title || "");
+      setPageTitleEn(res?.data?.page?.titleEn || "");
     } catch (err) {
       setError(operationError(err));
       setPage(null);
@@ -226,7 +246,7 @@ export default function SuperAdminEditWebsiteHowItWorksEditorPage() {
     }
     setSavingTitle(true);
     try {
-      await updateSuperAdminWebsitePageRequest(slug, { title: nextTitle });
+      await updateSuperAdminWebsitePageRequest(slug, { title: nextTitle, titleEn: pageTitleEn.trim() });
       await loadPage();
     } catch (err) {
       window.alert(operationError(err));
@@ -304,6 +324,15 @@ export default function SuperAdminEditWebsiteHowItWorksEditorPage() {
               type="text"
               value={pageTitle}
               onChange={(e) => setPageTitle(e.target.value)}
+              disabled={loading || savingTitle}
+            />
+          </label>
+          <label>
+            {t("siteEditor.sitePageEdit.pageTitleEn")}
+            <input
+              type="text"
+              value={pageTitleEn}
+              onChange={(e) => setPageTitleEn(e.target.value)}
               disabled={loading || savingTitle}
             />
           </label>

@@ -12,6 +12,7 @@ import {
   buildSpecialOfferWhatsAppUrl,
   hasSpecialOfferRefundExplanation,
   isSpecialOfferCheckoutSupported,
+  localizedSpecialOfferText,
   SPECIAL_OFFER_PURCHASE_MODE,
 } from "../../constants/specialOfferPackage";
 import SpecialOfferRefundDetailsModal from "./SpecialOfferRefundDetailsModal";
@@ -46,7 +47,7 @@ export default function SpecialOfferPackageCard({
 }) {
   const [refundOpen, setRefundOpen] = useState(false);
   const refundTriggerRef = useRef(null);
-  const { t: tHook } = useTranslation();
+  const { t: tHook, locale } = useTranslation();
   const tr = (key, params) => (t ?? tHook)(key, params);
 
   if (!offer) return null;
@@ -62,7 +63,12 @@ export default function SpecialOfferPackageCard({
     purchaseMode === SPECIAL_OFFER_PURCHASE_MODE.CHECKOUT
       ? tr("plans.specialOffer.cta")
       : tr("plans.specialOffer.ctaWhatsapp");
-  const ctaLabel = offer.ctaLabel || defaultCta;
+  const ctaLabel = localizedSpecialOfferText(offer, "ctaLabel", locale) || defaultCta;
+  const offerTitle = localizedSpecialOfferText(offer, "title", locale) || (locale === "en" ? defaultCta : offer.title);
+  const offerSubtitle = localizedSpecialOfferText(offer, "subtitle", locale);
+  const offerBadge = localizedSpecialOfferText(offer, "badgeText", locale);
+  const offerRibbon = localizedSpecialOfferText(offer, "ribbonText", locale);
+  const offerMicrocopy = localizedSpecialOfferText(offer, "microcopy", locale);
   const jod = tr("plans.currency.jod");
 
   const hasOriginal =
@@ -135,20 +141,20 @@ export default function SpecialOfferPackageCard({
         .join(" ")}
       data-special-offer-card="true"
       data-purchase-mode={purchaseMode}
-      aria-label={offer.title}
+      aria-label={offerTitle}
     >
       <div className="oh-special-offer-card__ribbon" aria-hidden="true">
-        <span>{offer.badgeText || tr("plans.specialOffer.defaultBadge")}</span>
+        <span>{offerBadge || tr("plans.specialOffer.defaultBadge")}</span>
       </div>
 
       <div className="oh-special-offer-card__hero">
         <div className="oh-special-offer-card__limited">
-          {offer.ribbonText || tr("plans.specialOffer.defaultRibbon")}
+          {offerRibbon || tr("plans.specialOffer.defaultRibbon")}
         </div>
 
         <header className="oh-special-offer-card__head">
-          <h2 className="oh-special-offer-card__title">{offer.title}</h2>
-          {offer.subtitle ? <p className="oh-special-offer-card__subtitle">{offer.subtitle}</p> : null}
+          <h2 className="oh-special-offer-card__title">{offerTitle}</h2>
+          {offerSubtitle ? <p className="oh-special-offer-card__subtitle">{offerSubtitle}</p> : null}
         </header>
 
         <div className="oh-special-offer-card__price">
@@ -213,10 +219,10 @@ export default function SpecialOfferPackageCard({
               {ctaContent}
             </a>
           )}
-          {offer.microcopy ? (
+          {(locale === "en" ? offerMicrocopy : offer.microcopy) ? (
             <p className="oh-special-offer-card__microcopy">
               <Check className="oh-special-offer-card__microcopy-icon" aria-hidden size={14} strokeWidth={2.5} />
-              <span>{offer.microcopy}</span>
+              <span>{offerMicrocopy || (locale === "en" ? "" : offer.microcopy)}</span>
             </p>
           ) : null}
           {showRefundDetails ? (

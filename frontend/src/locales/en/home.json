@@ -179,6 +179,7 @@
     "quote": "One platform to request services, compare offers, and track your project through delivery — clearly.",
     "mobilePromoText": "Request services, compare offers, and track your project clearly.",
     "cta": "Get started",
+    "englishUnavailable": "English content is not available for this item yet.",
     "items": {
       "trust": {
         "question": "Is Orders House a trusted platform, and are the services provided recognized?",
@@ -293,13 +294,16 @@
     "empty": "No content to display at the moment.",
     "loading": "Loading…",
     "unavailableTitle": "Page unavailable",
-    "unavailableText": "This page may be hidden or the link is incorrect."
+    "unavailableText": "This page may be hidden or the link is incorrect.",
+    "loadFailed": "The page could not be loaded. Please try again."
   },
   "publicSite": {
     "loading": "Loading page…",
     "unavailableTitle": "Page unavailable",
     "unavailableText": "This page may be unpublished or the link is incorrect.",
     "loadFailedTitle": "Could not load page",
-    "fallbackTitle": "Public page"
+    "loadFailedText": "The page could not be loaded. Please try again.",
+    "fallbackTitle": "Public page",
+    "englishUnavailable": "English content is not available for this page yet."
   }
 }

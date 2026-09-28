@@ -118,6 +118,9 @@
     "sectionAria": "Subscription analysis by plan type",
     "empty": "No plan group data",
     "topPlan": "Top membership plan",
+    "core": "Core membership plans",
+    "pages": "Page plans",
+    "unassigned": "Unassigned",
     "subscribers": "{{count}} subscribers"
   },
   "subsByCountry": {
@@ -179,7 +182,21 @@
     "vsPrevious": "vs previous period",
     "dataScope": "Data scope: {{scope}}",
     "previous": "Previous: {{value}}",
-    "countOf": "{{shown}} of {{total}}"
+    "countOf": "{{shown}} of {{total}}",
+    "comparedToMonthStart": "Compared with the start of the month",
+    "currentOnly": "Current count only — not compared with a previous period",
+    "monthVsPrevious": "This month versus the previous month"
+  },
+  "metrics": {
+    "totalUsers": "Total users",
+    "totalOrders": "Total orders",
+    "ordersThisMonth": "Orders this month",
+    "monthlyRevenue": "Revenue this month",
+    "activeSubscriptions": "Active subscriptions",
+    "totalClients": "Total Clients",
+    "activeFreelancers": "Active Freelancers",
+    "pendingClaims": "Pending claims",
+    "claimsSubmitted": "Claims submitted"
   },
   "charts": {
     "ordersCount": "Orders count",
@@ -534,6 +551,14 @@
     "requiresFollowUp": "Requires follow-up",
     "pendingActivation": "Pending subscription activation",
     "pendingClaims": "Pending financial claims",
+    "alerts": {
+      "pending_activations": "Subscription activation awaiting approval",
+      "pending_or_failed_payments": "Stuck subscription payments",
+      "pending_claims_review": "Financial claims awaiting review",
+      "orders_waiting_too_long": "Orders overdue without action",
+      "inactive_subscribed_freelancers": "Subscribed Freelancers with no activity",
+      "low_performing_courses": "Low-performing courses"
+    },
     "stuckCourses": "Learners stuck above 80%",
     "examComplete": "Exam completion",
     "publishedCourses": "Published courses",
