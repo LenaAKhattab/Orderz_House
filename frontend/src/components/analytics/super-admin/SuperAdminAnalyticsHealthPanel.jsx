@@ -3,6 +3,8 @@ import { getSuperadminAnalyticsHealthRequest } from "../../../services/superAdmi
 import { getAnalyticsDiagnostics, isAnalyticsEnabled, isDevTrackingDisabled } from "../../../services/analytics";
 import StatusBadge from "../../dashboard/StatusBadge";
 import DashboardLoadingState from "../../dashboard/DashboardLoadingState";
+import { useTranslation } from "../../../i18n/LanguageProvider";
+import "./registerAnalysisLocale";
 
 function toneFromOk(ok) {
   if (ok === true) return "active";
@@ -31,15 +33,16 @@ function HealthCard({ title, statusLabel, tone, children }) {
   );
 }
 
-function deriveSummaryChip({ loading, error, health, clientEnabled }) {
-  if (loading) return { tone: "neutral", label: "جاري الفحص…" };
-  if (error) return { tone: "inactive", label: "تعذّر التحميل" };
-  if (health?.degraded) return { tone: "inactive", label: "متدهور" };
-  if (!isAnalyticsEnabled() || !clientEnabled) return { tone: "inactive", label: "تتبع معطّل" };
-  return { tone: "active", label: "سليم" };
+function deriveSummaryChip({ loading, error, health, clientEnabled, t }) {
+  if (loading) return { tone: "neutral", label: t("analysis.health.checking") };
+  if (error) return { tone: "inactive", label: t("analysis.health.loadFailedChip") };
+  if (health?.degraded) return { tone: "inactive", label: t("analysis.health.degraded") };
+  if (!isAnalyticsEnabled() || !clientEnabled) return { tone: "inactive", label: t("analysis.health.trackingOff") };
+  return { tone: "active", label: t("analysis.health.healthy") };
 }
 
 export default function SuperAdminAnalyticsHealthPanel() {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const [loading, setLoading] = useState(true);
   const [health, setHealth] = useState(null);
@@ -54,19 +57,19 @@ export default function SuperAdminAnalyticsHealthPanel() {
       const res = await getSuperadminAnalyticsHealthRequest();
       setHealth(res?.data || null);
     } catch (e) {
-      setError(e?.response?.data?.message || e?.message || "تعذر تحميل حالة التحليلات.");
+      setError(e?.response?.data?.message || e?.message || t("analysis.health.loadError"));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
   const summaryChip = useMemo(
-    () => deriveSummaryChip({ loading, error, health, clientEnabled: isAnalyticsEnabled() }),
-    [loading, error, health],
+    () => deriveSummaryChip({ loading, error, health, clientEnabled: isAnalyticsEnabled(), t }),
+    [loading, error, health, t],
   );
 
   return (
@@ -77,7 +80,7 @@ export default function SuperAdminAnalyticsHealthPanel() {
         aria-expanded={expanded}
         onClick={() => setExpanded((v) => !v)}
       >
-        <span className="sa-analytics-health__accordion-title">تشخيص التتبع المتقدم</span>
+        <span className="sa-analytics-health__accordion-title">{t("analysis.health.title")}</span>
         <span className="sa-analytics-health__accordion-meta">
           <StatusBadge tone={summaryChip.tone}>{summaryChip.label}</StatusBadge>
           <span className="sa-analytics-health__accordion-chevron" aria-hidden>
@@ -88,13 +91,13 @@ export default function SuperAdminAnalyticsHealthPanel() {
 
       {expanded ? (
         <div className="sa-analytics-health__accordion-body">
-          {loading ? <DashboardLoadingState label="جاري فحص PostHog…" /> : null}
+          {loading ? <DashboardLoadingState label={t("analysis.health.loadingPosthog")} /> : null}
 
           {!loading && error ? (
             <div className="sa-analytics-health__error">
               <p>{error}</p>
               <button type="button" className="btn btn-secondary btn-sm" onClick={() => void load()}>
-                إعادة الفحص
+                {t("analysis.health.recheck")}
               </button>
             </div>
           ) : null}
@@ -102,80 +105,127 @@ export default function SuperAdminAnalyticsHealthPanel() {
           {!loading && !error && health ? (
             <>
               <div className="sa-analytics-health__toolbar">
-                <p className="sa-analytics-health__intro">
-                  تشخيص سريع — تتبع PostHog الثانوي ومقارنته بعدّاد المشاهدات المحلي للصفحة الرئيسية.
-                </p>
+                <p className="sa-analytics-health__intro">{t("analysis.health.intro")}</p>
                 <button type="button" className="btn btn-secondary btn-sm" onClick={() => void load()}>
-                  تحديث
+                  {t("analysis.health.refresh")}
                 </button>
               </div>
 
               <div className="sa-analytics-health__grid">
                 <HealthCard
-                  title="تتبع المتصفح"
+                  title={t("analysis.health.browserTracking")}
                   tone={toneFromOk(isAnalyticsEnabled())}
-                  statusLabel={isAnalyticsEnabled() ? "نشط" : "معطّل"}
+                  statusLabel={isAnalyticsEnabled() ? t("analysis.health.active") : t("analysis.health.disabled")}
                 >
                   <ul className="sa-analytics-health__list">
-                    <li>البيئة: {import.meta.env.PROD ? "إنتاج" : "تطوير"}</li>
-                    <li>مفتاح VITE_POSTHOG_KEY: {client.hasKey ? (client.keyValid ? "صالح (phc_)" : "غير صالح") : "ناقص"}</li>
                     <li>
-                      مضيف الاستيعاب: {client.host || "—"}
-                      {client.hostCorrected ? " (تم تصحيحه تلقائياً)" : ""}
+                      {t("analysis.health.envLabel")}:{" "}
+                      {import.meta.env.PROD ? t("analysis.health.envProd") : t("analysis.health.envDev")}
                     </li>
-                    <li>مضيف صالح: {client.ingestionHostValid ? "نعم" : "لا"}</li>
-                    <li>تهيئة PostHog: {client.initialized ? "نعم" : "لا"}</li>
-                    <li>Feature flags: معطّلة (لا تؤثر على الزوار)</li>
-                    <li>آخر pageview من المتصفح: {fmtTime(client.lastPageviewTrackedAt)}</li>
-                    <li>تتبع التطوير: {client.devTrackingEnabled ? "مفعّل" : "معطّل"}</li>
+                    <li>
+                      {t("analysis.health.vitePosthogKey")}:{" "}
+                      {client.hasKey
+                        ? client.keyValid
+                          ? t("analysis.health.validPhc")
+                          : t("analysis.health.invalid")
+                        : t("analysis.health.missing")}
+                    </li>
+                    <li>
+                      {t("analysis.health.ingestionHost")}: {client.host || "—"}
+                      {client.hostCorrected ? t("analysis.health.hostCorrectedSuffix") : ""}
+                    </li>
+                    <li>
+                      {t("analysis.health.ingestionHostValid")}:{" "}
+                      {client.ingestionHostValid ? t("analysis.health.yes") : t("analysis.health.no")}
+                    </li>
+                    <li>
+                      {t("analysis.health.posthogInit")}:{" "}
+                      {client.initialized ? t("analysis.health.yes") : t("analysis.health.no")}
+                    </li>
+                    <li>{t("analysis.health.featureFlagsOff")}</li>
+                    <li>
+                      {t("analysis.health.lastBrowserPageview")}: {fmtTime(client.lastPageviewTrackedAt)}
+                    </li>
+                    <li>
+                      {t("analysis.health.devTracking")}:{" "}
+                      {client.devTrackingEnabled ? t("analysis.health.active") : t("analysis.health.disabled")}
+                    </li>
                     {isDevTrackingDisabled() ? (
-                      <li className="sa-analytics-health__warn">بدون VITE_POSTHOG_ENABLE_IN_DEV=true لن يُرسل PostHog من المتصفح — العدّاد المحلي للبطل يعمل بشكل مستقل.</li>
+                      <li className="sa-analytics-health__warn">{t("analysis.health.devTrackingWarn")}</li>
                     ) : null}
                   </ul>
                 </HealthCard>
 
                 <HealthCard
-                  title="إحصائيات الصفحة الرئيسية (قاعدة البيانات)"
+                  title={t("analysis.health.localStats")}
                   tone={toneFromOk(
                     health?.snapshot?.localPageViewsTotal != null || health?.snapshot?.localActiveUsersLast7Days != null,
                   )}
                   statusLabel={
                     health?.snapshot?.localPageViewsTotal != null || health?.snapshot?.localActiveUsersLast7Days != null
-                      ? "محلي"
-                      : "غير متاح"
+                      ? t("analysis.health.local")
+                      : t("analysis.health.unavailable")
                   }
                 >
                   <ul className="sa-analytics-health__list">
-                    <li>مشاهدات الموقع (محلي): {health?.snapshot?.localPageViewsTotal != null ? health.snapshot.localPageViewsTotal : "—"}</li>
-                    <li>نشطون 7 أيام (محلي): {health?.snapshot?.localActiveUsersLast7Days != null ? health.snapshot.localActiveUsersLast7Days : "—"}</li>
-                    <li>آخر مشاهدة محلية: {fmtTime(health?.snapshot?.localLastPageviewAt)}</li>
+                    <li>
+                      {t("analysis.health.localPageViews")}:{" "}
+                      {health?.snapshot?.localPageViewsTotal != null ? health.snapshot.localPageViewsTotal : "—"}
+                    </li>
+                    <li>
+                      {t("analysis.health.localActive7d")}:{" "}
+                      {health?.snapshot?.localActiveUsersLast7Days != null ? health.snapshot.localActiveUsersLast7Days : "—"}
+                    </li>
+                    <li>
+                      {t("analysis.health.localLastPageview")}: {fmtTime(health?.snapshot?.localLastPageviewAt)}
+                    </li>
                   </ul>
                 </HealthCard>
 
                 <HealthCard
-                  title="PostHog (مرجع · ليس مصدر البطل)"
+                  title={t("analysis.health.posthogRef")}
                   tone={toneFromOk(health?.posthog?.hogqlConfigured && health?.posthog?.hogqlReachable)}
                   statusLabel={
-                    !health?.posthog?.hogqlConfigured ? "غير مُعد" : health?.posthog?.hogqlReachable ? "متصل" : "غير متاح"
+                    !health?.posthog?.hogqlConfigured
+                      ? t("analysis.health.notConfigured")
+                      : health?.posthog?.hogqlReachable
+                        ? t("analysis.health.connected")
+                        : t("analysis.health.unavailable")
                   }
                 >
                   <ul className="sa-analytics-health__list">
-                    <li>آخر $pageview (PostHog): {fmtTime(health?.snapshot?.lastPageviewAt)}</li>
-                    <li>مشاهدات PostHog ($pageview، كل الوقت): {health?.snapshot?.pageViewsAllTime != null ? health.snapshot.pageViewsAllTime : "—"}</li>
-                    <li>uniq(person) PostHog (7 أيام): {health?.snapshot?.activeUsersLast7Days != null ? health.snapshot.activeUsersLast7Days : "—"}</li>
-                    <li>المضيف: {health?.posthog?.host || "—"}</li>
-                    <li>آخر استعلام HogQL ناجح: {fmtTime(health?.lastSuccessfulHogqlAt)}</li>
+                    <li>
+                      {t("analysis.health.posthogLastPageview")}: {fmtTime(health?.snapshot?.lastPageviewAt)}
+                    </li>
+                    <li>
+                      {t("analysis.health.posthogViewsAllTime")}:{" "}
+                      {health?.snapshot?.pageViewsAllTime != null ? health.snapshot.pageViewsAllTime : "—"}
+                    </li>
+                    <li>
+                      {t("analysis.health.posthogUniq7d")}:{" "}
+                      {health?.snapshot?.activeUsersLast7Days != null ? health.snapshot.activeUsersLast7Days : "—"}
+                    </li>
+                    <li>
+                      {t("analysis.health.host")}: {health?.posthog?.host || "—"}
+                    </li>
+                    <li>
+                      {t("analysis.health.lastHogqlOk")}: {fmtTime(health?.lastSuccessfulHogqlAt)}
+                    </li>
                   </ul>
                 </HealthCard>
 
                 <HealthCard
-                  title="حالة النظام"
+                  title={t("analysis.health.systemStatus")}
                   tone={health?.degraded ? "inactive" : "active"}
-                  statusLabel={health?.degraded ? "متدهور" : "سليم"}
+                  statusLabel={health?.degraded ? t("analysis.health.degraded") : t("analysis.health.healthy")}
                 >
                   <ul className="sa-analytics-health__list">
-                    <li>بيئة الخادم: {health?.environment || "—"}</li>
-                    <li>آخر فحص: {fmtTime(health?.queriedAt)}</li>
+                    <li>
+                      {t("analysis.health.serverEnv")}: {health?.environment || "—"}
+                    </li>
+                    <li>
+                      {t("analysis.health.lastCheck")}: {fmtTime(health?.queriedAt)}
+                    </li>
                     {Array.isArray(health?.hints) && health.hints.length
                       ? health.hints.map((h) => (
                           <li key={h} className="sa-analytics-health__warn">

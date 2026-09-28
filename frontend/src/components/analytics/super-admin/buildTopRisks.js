@@ -1,5 +1,4 @@
 import { SA_ROUTES } from "./superAdminHomeDataUtils";
-import { formatInt } from "./superAdminHomeBundleUi";
 /** Severity: 3 urgent, 2 medium, 1 info */
 const SEVERITY = { urgent: 3, medium: 2, info: 1 };
 
@@ -21,9 +20,10 @@ export function buildTopRisks({ intelligence, attention }) {
       id: "stale-orders",
       severity: SEVERITY.urgent,
       icon: "🔴",
-      label: "عاجل",
-      text: `${formatInt(staleOrders)} طلب منصة متأخر أكثر من 72 ساعة`,
-      description: "طلبات منصة مفتوحة منذ أكثر من 72 ساعة دون إغلاق أو تقدم — لا توجد صفحة إدارة مخصصة حالياً",
+      labelKey: "analysis.severity.urgent",
+      textKey: "analysis.risks.staleOrders.text",
+      textParams: { count: staleOrders },
+      descriptionKey: "analysis.risks.staleOrders.description",
     });
   }
 
@@ -33,10 +33,10 @@ export function buildTopRisks({ intelligence, attention }) {
       id: "pending-activation",
       severity: SEVERITY.info,
       icon: "ℹ️",
-      label: "معلومة",
-      text: `${formatInt(pendingActivation)} سجل اشتراك بحالة معلّقة (تاريخي)`,
-      description:
-        "الاشتراكات المدفوعة تُفعّل تلقائياً عبر Stripe؛ لا يلزم موافقة يدوية من الإدارة. استخدم إسناد الباقات عند الحاجة.",
+      labelKey: "analysis.severity.info",
+      textKey: "analysis.risks.pendingActivation.text",
+      textParams: { count: pendingActivation },
+      descriptionKey: "analysis.risks.pendingActivation.description",
       to: SA_ROUTES.subscriptions,
     });
   }
@@ -47,9 +47,10 @@ export function buildTopRisks({ intelligence, attention }) {
       id: "stale-claims",
       severity: SEVERITY.urgent,
       icon: "🔴",
-      label: "عاجل",
-      text: `${formatInt(staleClaims)} مطالبة مالية معلّقة أكثر من 7 أيام`,
-      description: "مطالبات بحالة «معلّقة» منذ أكثر من أسبوع",
+      labelKey: "analysis.severity.urgent",
+      textKey: "analysis.risks.staleClaims.text",
+      textParams: { count: staleClaims },
+      descriptionKey: "analysis.risks.staleClaims.description",
       to: SA_ROUTES.financialClaims,
     });
   }
@@ -60,9 +61,10 @@ export function buildTopRisks({ intelligence, attention }) {
       id: "inactive-freelancers",
       severity: SEVERITY.medium,
       icon: "🟡",
-      label: "متوسط",
-      text: `${formatInt(inactiveSub)} مستقل لديهم اشتراك نشط دون نشاط`,
-      description: "لديهم اشتراك نشط لكن لم ينفّذوا أي طلب خلال 30 يوماً من بداية الاشتراك",
+      labelKey: "analysis.severity.medium",
+      textKey: "analysis.risks.inactiveFreelancers.text",
+      textParams: { count: inactiveSub },
+      descriptionKey: "analysis.risks.inactiveFreelancers.description",
       to: SA_ROUTES.subscriptions,
     });
   }
@@ -73,9 +75,10 @@ export function buildTopRisks({ intelligence, attention }) {
       id: "cat-shortage",
       severity: SEVERITY.medium,
       icon: "🟡",
-      label: "متوسط",
-      text: `فئة «${shortage.name}» تعاني نقصاً في المستقلين`,
-      description: "عدد طلبات المنصة في الفئة أعلى من عدد المستقلين المسجّلين فيها",
+      labelKey: "analysis.severity.medium",
+      textKey: "analysis.risks.catShortage.text",
+      textParams: { name: shortage.name },
+      descriptionKey: "analysis.risks.catShortage.description",
     });
   }
 
@@ -86,11 +89,10 @@ export function buildTopRisks({ intelligence, attention }) {
       id: "low-courses",
       severity: SEVERITY.info,
       icon: "🔵",
-      label: "معلومة",
-      text: title
-        ? `دورة «${title}» بمعدل إكمال منخفض`
-        : `${formatInt(lowCourses.length)} دورة بمعدل إكمال منخفض`,
-      description: "دورات بمعدل إكمال أقل من 35٪ بين 5 مسجّلين فأكثر",
+      labelKey: "analysis.severity.info",
+      textKey: title ? "analysis.risks.lowCourse.text" : "analysis.risks.lowCourses.text",
+      textParams: title ? { title } : { count: lowCourses.length },
+      descriptionKey: title ? "analysis.risks.lowCourse.description" : "analysis.risks.lowCourses.description",
       to: SA_ROUTES.courses,
     });
   } else {
@@ -100,9 +102,10 @@ export function buildTopRisks({ intelligence, attention }) {
         id: "courses-stuck",
         severity: SEVERITY.info,
         icon: "🔵",
-        label: "معلومة",
-        text: `${formatInt(stuck)} متعلّم عالق فوق 80٪ دون إتمام`,
-        description: "تقدّم فوق 80٪ من الدورة دون إتمامها أو اجتياز الاختبار",
+        labelKey: "analysis.severity.info",
+        textKey: "analysis.risks.coursesStuck.text",
+        textParams: { count: stuck },
+        descriptionKey: "analysis.risks.coursesStuck.description",
         to: SA_ROUTES.courses,
       });
     }
@@ -114,9 +117,10 @@ export function buildTopRisks({ intelligence, attention }) {
       id: "pending-claims",
       severity: SEVERITY.medium,
       icon: "🟡",
-      label: "متوسط",
-      text: `${formatInt(pendingClaims)} مطالبة بانتظار المراجعة`,
-      description: "مطالبات مالية بحالة «معلّقة» بانتظار قرار الإدارة",
+      labelKey: "analysis.severity.medium",
+      textKey: "analysis.risks.pendingClaims.text",
+      textParams: { count: pendingClaims },
+      descriptionKey: "analysis.risks.pendingClaims.description",
       to: SA_ROUTES.financialClaims,
     });
   }

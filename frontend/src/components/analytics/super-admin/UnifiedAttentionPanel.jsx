@@ -3,14 +3,28 @@ import { NavLink } from "react-router-dom";
 import { resolveSuperAdminDashboardHomeLink } from "./superAdminHomeDataUtils";
 import { formatInt } from "./superAdminHomeBundleUi";
 import { AttentionTypeIcon } from "./attentionIcons";
+import { useTranslation } from "../../../i18n/LanguageProvider";
+import "./registerAnalysisLocale";
 
 const SEVERITY = { urgent: 3, medium: 2, info: 1 };
 
-const GROUPS = [
-  { key: SEVERITY.urgent, title: "عاجل", tone: "urgent", priorityLabel: "عالية" },
-  { key: SEVERITY.medium, title: "متوسط", tone: "medium", priorityLabel: "متوسطة" },
-  { key: SEVERITY.info, title: "معلومة", tone: "info", priorityLabel: "معلومة" },
-];
+function resolveItemText(t, item) {
+  if (item.textKey) {
+    const params = { ...(item.textParams || {}) };
+    if (params.count != null && typeof params.count === "number") params.count = formatInt(params.count);
+    return t(item.textKey, params);
+  }
+  return item.text || "";
+}
+
+function resolveItemDescription(t, item) {
+  if (item.descriptionKey) {
+    const params = { ...(item.descriptionParams || {}) };
+    if (params.count != null && typeof params.count === "number") params.count = formatInt(params.count);
+    return t(item.descriptionKey, params);
+  }
+  return item.description || "";
+}
 
 function resolveDisplayCount(item) {
   if (item.count != null && !Number.isNaN(Number(item.count))) return Number(item.count);
@@ -23,25 +37,37 @@ function resolveDisplayCount(item) {
   return 1;
 }
 
-function countSuffix(count, item) {
+function countSuffix(t, count, item) {
   const id = String(item.id || "");
-  if (id.includes("order") || id.includes("stale-orders")) return count === 1 ? "طلب" : "طلبات";
-  if (id.includes("payment")) return count === 1 ? "مدفوع" : "مدفوعات";
-  if (id.includes("claim")) return count === 1 ? "مطالبة" : "مطالبات";
-  if (id.includes("course")) return count === 1 ? "دورة" : "دورات";
-  if (id.includes("notification")) return count === 1 ? "إشعار" : "إشعارات";
-  if (id.includes("freelancer") || id.includes("activation") || id.includes("subscription")) {
-    return count === 1 ? "مهمة" : "مهام";
+  if (id.includes("order") || id.includes("stale-orders")) {
+    return count === 1 ? t("analysis.attention.suffixOrder") : t("analysis.attention.suffixOrders");
   }
-  return count === 1 ? "عنصر" : "عناصر";
+  if (id.includes("payment")) {
+    return count === 1 ? t("analysis.attention.suffixPayment") : t("analysis.attention.suffixPayments");
+  }
+  if (id.includes("claim")) {
+    return count === 1 ? t("analysis.attention.suffixClaim") : t("analysis.attention.suffixClaims");
+  }
+  if (id.includes("course")) {
+    return count === 1 ? t("analysis.attention.suffixCourse") : t("analysis.attention.suffixCourses");
+  }
+  if (id.includes("notification")) {
+    return count === 1 ? t("analysis.attention.suffixNotification") : t("analysis.attention.suffixNotifications");
+  }
+  if (id.includes("freelancer") || id.includes("activation") || id.includes("subscription")) {
+    return count === 1 ? t("analysis.attention.suffixTask") : t("analysis.attention.suffixTasks");
+  }
+  return count === 1 ? t("analysis.attention.suffixItem") : t("analysis.attention.suffixItems");
 }
 
-function AttentionCard({ item }) {
+function AttentionCard({ item, group }) {
+  const { t } = useTranslation();
   const count = resolveDisplayCount(item);
   const tone = item.severity === SEVERITY.urgent ? "urgent" : item.severity === SEVERITY.medium ? "medium" : "info";
-  const group = GROUPS.find((g) => g.key === item.severity) || GROUPS[1];
-  const suffix = countSuffix(count, item);
+  const suffix = countSuffix(t, count, item);
   const safeTo = resolveSuperAdminDashboardHomeLink(item.to);
+  const title = resolveItemText(t, item);
+  const description = resolveItemDescription(t, item);
 
   const inner = (
     <>
@@ -49,8 +75,8 @@ function AttentionCard({ item }) {
         <AttentionTypeIcon itemId={item.id} className="sa-attention-card__icon" />
       </span>
       <span className="sa-attention-card__body">
-        <span className="sa-attention-card__title">{item.text}</span>
-        {item.description ? <span className="sa-attention-card__desc">{item.description}</span> : null}
+        <span className="sa-attention-card__title">{title}</span>
+        {description ? <span className="sa-attention-card__desc">{description}</span> : null}
       </span>
       <span className="sa-attention-card__aside">
         <span className={`sa-attention-card__priority sa-attention-card__priority--${tone}`}>{group.priorityLabel}</span>
@@ -101,18 +127,24 @@ function AttentionSkeleton() {
 }
 
 function AttentionEmpty() {
+  const { t } = useTranslation();
   return (
     <div className="sa-attention-panel__empty" role="status">
       <span className="sa-attention-panel__empty-icon" aria-hidden>
         ✓
       </span>
-      <p className="sa-attention-panel__empty-title m-0">لا توجد مهام تحتاج إجراء حالياً</p>
-      <p className="sa-attention-panel__empty-desc m-0">كل شيء يبدو مستقراً.</p>
+      <p className="sa-attention-panel__empty-title m-0">{t("analysis.attention.emptyTitle")}</p>
+      <p className="sa-attention-panel__empty-desc m-0">{t("analysis.attention.emptyDesc")}</p>
     </div>
   );
 }
 
-function groupItems(items) {
+function groupItems(items, t) {
+  const groups = [
+    { key: SEVERITY.urgent, title: t("analysis.attention.groupUrgent"), tone: "urgent", priorityLabel: t("analysis.attention.priorityHigh") },
+    { key: SEVERITY.medium, title: t("analysis.attention.groupMedium"), tone: "medium", priorityLabel: t("analysis.attention.priorityMedium") },
+    { key: SEVERITY.info, title: t("analysis.attention.groupInfo"), tone: "info", priorityLabel: t("analysis.attention.priorityInfo") },
+  ];
   const buckets = {
     [SEVERITY.urgent]: [],
     [SEVERITY.medium]: [],
@@ -122,15 +154,18 @@ function groupItems(items) {
     const sev = item.severity ?? SEVERITY.medium;
     if (buckets[sev]) buckets[sev].push(item);
   }
-  return GROUPS.map((g) => ({
-    ...g,
-    items: buckets[g.key] || [],
-    total: (buckets[g.key] || []).reduce((sum, it) => sum + resolveDisplayCount(it), 0),
-  })).filter((g) => g.items.length > 0);
+  return groups
+    .map((g) => ({
+      ...g,
+      items: buckets[g.key] || [],
+      total: (buckets[g.key] || []).reduce((sum, it) => sum + resolveDisplayCount(it), 0),
+    }))
+    .filter((g) => g.items.length > 0);
 }
 
 function AttentionGrouped({ items, showFooter = true }) {
-  const grouped = useMemo(() => groupItems(items), [items]);
+  const { t } = useTranslation();
+  const grouped = useMemo(() => groupItems(items, t), [items, t]);
   return (
     <div className="sa-attention-panel sa-attention-panel--stack">
       {grouped.map((group) => (
@@ -142,16 +177,12 @@ function AttentionGrouped({ items, showFooter = true }) {
           </header>
           <ul className="sa-attention-panel__list">
             {group.items.map((item) => (
-              <AttentionCard key={item.id} item={item} />
+              <AttentionCard key={item.id} item={item} group={group} />
             ))}
           </ul>
         </section>
       ))}
-      {showFooter ? (
-        <p className="sa-attention-panel__footer m-0">
-          تعتمد هذه القائمة على بيانات المنصة الحالية ويتم تحديثها تلقائياً.
-        </p>
-      ) : null}
+      {showFooter ? <p className="sa-attention-panel__footer m-0">{t("analysis.attention.footer")}</p> : null}
     </div>
   );
 }
@@ -177,6 +208,7 @@ export function computeAttentionTotalCount(items) {
  * @param {{ total: number; loading?: boolean; compact?: boolean }} props
  */
 export function AttentionSummaryBadge({ total, loading, compact = false }) {
+  const { t } = useTranslation();
   if (loading) {
     return (
       <div
@@ -187,18 +219,21 @@ export function AttentionSummaryBadge({ total, loading, compact = false }) {
   }
   if (compact) {
     return (
-      <span className="sa-attention-summary sa-attention-summary--compact" aria-label={`${formatInt(total)} عنصر`}>
+      <span
+        className="sa-attention-summary sa-attention-summary--compact"
+        aria-label={t("analysis.attention.itemCount", { count: formatInt(total) })}
+      >
         {formatInt(total)}
       </span>
     );
   }
   return (
-    <div className="sa-attention-summary" aria-label={`${formatInt(total)} نقطة تحتاج اهتمامك`}>
+    <div className="sa-attention-summary" aria-label={t("analysis.attention.attentionPoints", { count: formatInt(total) })}>
       <span className="sa-attention-summary__icon" aria-hidden>
         🔔
       </span>
       <div className="sa-attention-summary__copy">
-        <span className="sa-attention-summary__label">تحتاج اهتمامك</span>
+        <span className="sa-attention-summary__label">{t("analysis.attention.needsAttention")}</span>
         <strong className="sa-attention-summary__value">{formatInt(total)}</strong>
       </div>
     </div>

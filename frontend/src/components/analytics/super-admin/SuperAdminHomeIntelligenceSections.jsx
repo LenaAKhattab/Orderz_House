@@ -77,32 +77,45 @@ function IntelligenceSection({
   );
 }
 
-function formatPeakHour(hour) {
+function formatPeakHour(hour, t) {
   if (hour == null || Number.isNaN(Number(hour))) return null;
   const h = ((Number(hour) % 24) + 24) % 24;
-  if (h === 0) return "12 صباحاً";
-  if (h === 12) return "12 ظهراً";
-  if (h < 12) return `${h} صباحاً`;
-  return `${h - 12} مساءً`;
+  if (h === 0) return t("analysis.time.midnight");
+  if (h === 12) return t("analysis.time.noon");
+  if (h < 12) return t("analysis.time.am", { hour: h });
+  return t("analysis.time.pm", { hour: h - 12 });
 }
 
-function buildOrderHighlights(orders) {
+function buildOrderHighlights(orders, t) {
   if (!orders?.totals) return [];
   const lines = [];
   const peak = orders.timing?.busiestHours?.[0];
   if (peak?.hour != null && Number(peak.orders_count ?? peak.ordersCount) > 0) {
-    lines.push(
-      `ذروة الطلب: ${formatPeakHour(peak.hour)} (${formatInt(peak.orders_count ?? peak.ordersCount)} طلب).`,
-    );
+    lines.push({
+      key: "analysis.intelligence.orders.peak",
+      params: {
+        hour: formatPeakHour(peak.hour, t),
+        count: formatInt(peak.orders_count ?? peak.ordersCount),
+      },
+    });
   }
   if (orders.totals.completionRate != null && Number(orders.totals.totalOrders) > 0) {
-    lines.push(`معدل إكمال الطلبات: ${formatInt(orders.totals.completionRate)}٪.`);
+    lines.push({
+      key: "analysis.intelligence.orders.completionRate",
+      params: { rate: formatInt(orders.totals.completionRate) },
+    });
   }
   if (Number(orders.totals.ordersWaitingTooLong) > 0) {
-    lines.push(`${formatInt(orders.totals.ordersWaitingTooLong)} طلب متأخر (+72 ساعة).`);
+    lines.push({
+      key: "analysis.intelligence.orders.overdue",
+      params: { count: formatInt(orders.totals.ordersWaitingTooLong) },
+    });
   }
   if (orders.categories?.slowestCategory?.name) {
-    lines.push(`أبطأ فئة: ${orders.categories.slowestCategory.name}.`);
+    lines.push({
+      key: "analysis.intelligence.orders.slowestCategory",
+      params: { name: orders.categories.slowestCategory.name },
+    });
   }
   return lines;
 }
@@ -111,11 +124,24 @@ function buildSubscriptionHighlights(subscriptions) {
   if (!subscriptions?.totals) return [];
   const lines = [];
   const top = subscriptions.byPlan?.[0];
-  if (top?.planTitle) lines.push(`الباقة الأكثر: «${top.planTitle}» (${formatInt(top.subscribers)}).`);
+  if (top?.planTitle) {
+    lines.push({
+      key: "analysis.intelligence.subscriptions.topPlan",
+      params: { plan: top.planTitle, count: formatInt(top.subscribers) },
+    });
+  }
   const country = subscriptions.countries?.[0];
-  if (country?.name) lines.push(`أعلى دولة: ${country.name} (${formatInt(country.subscribers)}).`);
+  if (country?.name) {
+    lines.push({
+      key: "analysis.intelligence.subscriptions.topCountry",
+      params: { name: country.name, count: formatInt(country.subscribers) },
+    });
+  }
   if (Number(subscriptions.totals.pendingActivation) > 0) {
-    lines.push(`${formatInt(subscriptions.totals.pendingActivation)} بانتظار التفعيل.`);
+    lines.push({
+      key: "analysis.intelligence.subscriptions.pendingCount",
+      params: { count: formatInt(subscriptions.totals.pendingActivation) },
+    });
   }
   return lines;
 }
@@ -124,16 +150,30 @@ function buildCourseHighlights(courses) {
   if (!courses?.totals) return [];
   const lines = [];
   if (courses.highlights?.mostJoinedCourse?.title) {
-    lines.push(`الأكثر انضماماً: ${courses.highlights.mostJoinedCourse.title}.`);
+    lines.push({
+      key: "analysis.intelligence.courses.mostJoined",
+      params: { title: courses.highlights.mostJoinedCourse.title },
+    });
   }
   if (courses.totals.finalExamCompletionRate != null) {
-    lines.push(`إكمال الاختبار النهائي: ${formatInt(courses.totals.finalExamCompletionRate)}٪.`);
+    lines.push({
+      key: "analysis.intelligence.courses.examRate",
+      params: { rate: formatInt(courses.totals.finalExamCompletionRate) },
+    });
   }
   if (Number(courses.totals.stuckAbove80Percent) > 0) {
-    lines.push(`${formatInt(courses.totals.stuckAbove80Percent)} متعلّم عالق فوق 80٪.`);
+    lines.push({
+      key: "analysis.intelligence.courses.stuckLearners",
+      params: { count: formatInt(courses.totals.stuckAbove80Percent) },
+    });
   }
   if (courses.totals.averageLearningDurationSeconds != null) {
-    lines.push(`متوسط مدة إكمال الدروس: ${formatAverageCompletionDuration(courses.totals.averageLearningDurationSeconds)}.`);
+    lines.push({
+      key: "analysis.intelligence.courses.avgDuration",
+      params: {
+        duration: formatAverageCompletionDuration(courses.totals.averageLearningDurationSeconds),
+      },
+    });
   }
   return lines;
 }
@@ -178,7 +218,7 @@ export default function SuperAdminHomeIntelligenceSections({
   const detailSections = (
     <>
       <IntelligenceSection
-        title="مؤشرات المنصة"
+        title={t("analysis.intelligence.platformMetrics.title")}
         sectionKey="summary"
         sectionErrors={sectionErrors}
         loading={loading}
@@ -186,7 +226,9 @@ export default function SuperAdminHomeIntelligenceSections({
         onRetry={onRetry}
         className="sa-section--compact"
       >
-        <p className="sa-section-scope-label help m-0 mb-2">إجماليات المنصة — {resolvedPeriodLabel}</p>
+        <p className="sa-section-scope-label help m-0 mb-2">
+          {t("analysis.intelligence.platformMetrics.scope", { period: resolvedPeriodLabel })}
+        </p>
         <MiniStatGrid
           loading={loading && !summary && !summaryFailed}
           dense
@@ -195,95 +237,95 @@ export default function SuperAdminHomeIntelligenceSections({
             {
               ...fromSection(summaryFailed, summary?.totalUsers),
               key: "users",
-              label: "إجمالي المستخدمين",
+              label: t("analysis.intelligence.summary.totalUsers"),
               scopeLabel: summaryIntelligenceScope("users", period),
             },
             {
               ...fromSection(summaryFailed, summary?.totalClients),
               key: "clients",
-              label: "إجمالي العملاء",
+              label: t("analysis.intelligence.summary.totalClients"),
               scopeLabel: summaryIntelligenceScope("clients", period),
             },
             {
               ...fromSection(summaryFailed, summary?.totalFreelancers),
               key: "freelancers",
-              label: "إجمالي المستقلين",
+              label: t("analysis.intelligence.summary.totalFreelancers"),
               scopeLabel: summaryIntelligenceScope("freelancers", period),
             },
             {
               ...fromSection(summaryFailed, summary?.activeFreelancers),
               key: "activeFree",
-              label: "مستقلون نشطون",
+              label: t("analysis.intelligence.summary.activeFreelancers"),
               scopeLabel: summaryIntelligenceScope("activeFree", period),
             },
             {
               ...fromSection(summaryFailed, summary?.totalOrders),
               key: "orders",
-              label: "إجمالي الطلبات",
+              label: t("analysis.intelligence.summary.totalOrders"),
               scopeLabel: summaryIntelligenceScope("orders", period),
             },
             {
               ...fromSection(summaryFailed, summary?.openOrders),
               key: "open",
-              label: "طلبات مفتوحة",
+              label: t("analysis.intelligence.summary.openOrders"),
               scopeLabel: summaryIntelligenceScope("open", period),
             },
             {
               ...fromSection(summaryFailed, summary?.completedOrders),
               key: "done",
-              label: "طلبات مكتملة",
+              label: t("analysis.intelligence.summary.completedOrders"),
               scopeLabel: summaryIntelligenceScope("done", period),
             },
             {
               ...fromSection(summaryFailed, summary?.cancelledOrders),
               key: "cancel",
-              label: "طلبات ملغاة",
+              label: t("analysis.intelligence.summary.cancelledOrders"),
               scopeLabel: summaryIntelligenceScope("cancel", period),
             },
             {
               ...fromSection(summaryFailed, summary?.activeSubscriptions),
               key: "activeSub",
-              label: "اشتراكات نشطة",
+              label: t("analysis.intelligence.summary.activeSubscriptions"),
               to: SA_ROUTES.subscriptions,
               scopeLabel: summaryIntelligenceScope("activeSub", period),
             },
             {
               ...fromSection(summaryFailed, summary?.pendingSubscriptions),
               key: "pendingSub",
-              label: "اشتراكات معلقة",
+              label: t("analysis.intelligence.summary.pendingSubscriptions"),
               to: SA_ROUTES.subscriptions,
               scopeLabel: summaryIntelligenceScope("pendingSub", period),
             },
             {
               ...fromSection(summaryFailed, summary?.totalRevenueJod, { money: true }),
               key: "revenue",
-              label: "إجمالي إيرادات الطلبات",
+              label: t("analysis.intelligence.summary.orderRevenue"),
               scopeLabel: summaryIntelligenceScope("revenue", period),
             },
             {
               ...fromSection(summaryFailed, summary?.monthlyRevenueJod, { money: true }),
               key: "monthRev",
-              label: "إيرادات الشهر",
+              label: t("analysis.intelligence.summary.monthRevenue"),
               scopeLabel: summaryIntelligenceScope("monthRev", period),
             },
             {
               ...fromSection(summaryFailed, summary?.totalCourses),
               key: "courses",
-              label: "عدد الدورات",
+              label: t("analysis.intelligence.summary.courseCount"),
               to: SA_ROUTES.courses,
               scopeLabel: summaryIntelligenceScope("courses", period),
             },
             {
               ...fromSection(summaryFailed, summary?.enrolledStudents),
               key: "students",
-              label: "الطلاب المسجلون",
+              label: t("analysis.intelligence.summary.enrolledStudents"),
               to: SA_ROUTES.courses,
               scopeLabel: summaryIntelligenceScope("students", period),
             },
             {
               ...fromSection(summaryFailed, summary?.pendingFinancialClaims),
               key: "claims",
-              label: "مطالبات مالية معلقة",
+              label: t("analysis.intelligence.summary.pendingClaims"),
               to: SA_ROUTES.financialClaims,
               scopeLabel: summaryIntelligenceScope("claims", period),
             },
@@ -292,8 +334,8 @@ export default function SuperAdminHomeIntelligenceSections({
       </IntelligenceSection>
 
       <CollapsibleBlock
-        title="اتجاهات تشغيلية"
-        description={`طلبات، اشتراكات، مطالبات مالية، وتسجيلات الدورات${resolvedPeriodLabel ? ` — ${resolvedPeriodLabel}` : ""}.`}
+        title={t("analysis.intelligence.operationalTrends.title")}
+        description={t("analysis.bundle.trendsOperationalDesc", { period: resolvedPeriodLabel ? ` — ${resolvedPeriodLabel}` : "" })}
         defaultOpen={false}
         className="sa-section--compact mb-4"
       >
@@ -305,13 +347,13 @@ export default function SuperAdminHomeIntelligenceSections({
       </CollapsibleBlock>
 
       <IntelligenceSection
-        title="ذكاء الطلبات"
+        title={t("analysis.intelligence.orders.title")}
         sectionKey="orders"
         sectionErrors={sectionErrors}
         loading={loading}
         intelligence={intelligence}
         onRetry={onRetry}
-        highlights={<SectionHighlights items={buildOrderHighlights(orders)} />}
+        highlights={<SectionHighlights items={buildOrderHighlights(orders, t)} />}
       >
         <MiniStatGrid
           loading={loading && !orders && !ordersFailed}
@@ -320,84 +362,88 @@ export default function SuperAdminHomeIntelligenceSections({
             {
               ...fromSection(ordersFailed, orders?.totals?.totalOrders),
               key: "o1",
-              label: "إجمالي الطلبات",
+              label: t("analysis.intelligence.summary.totalOrders"),
               scopeLabel: ordersMetricScope("o1", period),
             },
             {
               ...fromSection(ordersFailed, orders?.totals?.ordersToday),
               key: "o2",
-              label: "طلبات اليوم",
+              label: t("analysis.intelligence.orders.today"),
               scopeLabel: ordersMetricScope("o2", period),
             },
             {
               ...fromSection(ordersFailed, orders?.totals?.ordersThisWeek),
               key: "o3",
-              label: "طلبات الأسبوع",
+              label: t("analysis.intelligence.orders.week"),
               scopeLabel: ordersMetricScope("o3", period),
             },
             {
               ...fromSection(ordersFailed, orders?.totals?.ordersThisMonth),
               key: "o4",
-              label: "طلبات الشهر",
+              label: t("analysis.intelligence.orders.month"),
               scopeLabel: ordersMetricScope("o4", period),
             },
-            { ...fromSection(ordersFailed, orders?.totals?.completedOrders), key: "o5", label: "مكتملة" },
-            { ...fromSection(ordersFailed, orders?.totals?.pendingOrders), key: "o6", label: "معلّقة" },
-            { ...fromSection(ordersFailed, orders?.totals?.cancelledOrders), key: "o7", label: "ملغاة" },
-            { ...fromSection(ordersFailed, orders?.totals?.fixedOrders), key: "o8", label: "ثابتة" },
-            { ...fromSection(ordersFailed, orders?.totals?.biddingOrders), key: "o9", label: "مزايدة" },
+            { ...fromSection(ordersFailed, orders?.totals?.completedOrders), key: "o5", label: t("analysis.intelligence.orders.completed") },
+            { ...fromSection(ordersFailed, orders?.totals?.pendingOrders), key: "o6", label: t("analysis.intelligence.orders.pending") },
+            { ...fromSection(ordersFailed, orders?.totals?.cancelledOrders), key: "o7", label: t("analysis.intelligence.orders.cancelled") },
+            { ...fromSection(ordersFailed, orders?.totals?.fixedOrders), key: "o8", label: t("analysis.intelligence.orders.fixed") },
+            { ...fromSection(ordersFailed, orders?.totals?.biddingOrders), key: "o9", label: t("analysis.intelligence.orders.bidding") },
             {
               ...fromSection(ordersFailed, orders?.totals?.completionRate, { percent: true }),
               key: "o10",
-              label: "معدل الإكمال %",
+              label: t("analysis.intelligence.orders.completionPct"),
             },
             {
               ...fromSection(ordersFailed, orders?.totals?.cancellationRate, { percent: true }),
               key: "o11",
-              label: "معدل الإلغاء %",
+              label: t("analysis.intelligence.orders.cancellationPct"),
             },
             {
               ...fromSection(ordersFailed, orders?.totals?.averageOrderValueJod, { money: true }),
               key: "o12",
-              label: "متوسط قيمة الطلب",
+              label: t("analysis.intelligence.orders.avgValue"),
             },
             {
               ...fromSection(ordersFailed, orders?.totals?.ordersWaitingTooLong),
               key: "o13",
-              label: "طلبات متأخرة",
+              label: t("analysis.intelligence.orders.overdueLabel"),
               scopeLabel: ordersMetricScope("o13", period),
             },
           ]}
         />
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 sa-subgrid-tight">
           <div>
-            <p className="help mb-2">الفئات الأكثر طلباً</p>
-            <TopList rows={orders?.categories?.breakdown || []} valueLabel="عدد الطلبات" valueKey="totalOrders" labelKey="name" />
+            <p className="help mb-2">{t("analysis.intelligence.orders.topCategories")}</p>
+            <TopList rows={orders?.categories?.breakdown || []} valueLabel={t("analysis.intelligence.orders.orderCount")} valueKey="totalOrders" labelKey="name" />
           </div>
           <div>
-            <p className="help mb-2">نطاقات قيمة الطلبات</p>
+            <p className="help mb-2">{t("analysis.intelligence.orders.valueRanges")}</p>
             <TopList
               rows={[
-                { name: "أقل من 50 د.أ", total: orders?.orderValueRanges?.lessThan50 },
-                { name: "50 – 199", total: orders?.orderValueRanges?.from50To199 },
-                { name: "200 – 499", total: orders?.orderValueRanges?.from200To499 },
-                { name: "500+", total: orders?.orderValueRanges?.aboveOrEqual500 },
+                { name: t("analysis.intelligence.orders.rangeUnder50"), total: orders?.orderValueRanges?.lessThan50 },
+                { name: t("analysis.intelligence.orders.range50_199"), total: orders?.orderValueRanges?.from50To199 },
+                { name: t("analysis.intelligence.orders.range200_499"), total: orders?.orderValueRanges?.from200To499 },
+                { name: t("analysis.intelligence.orders.range500plus"), total: orders?.orderValueRanges?.aboveOrEqual500 },
               ].filter((r) => r.total != null)}
-              valueLabel="عدد"
+              valueLabel={t("analysis.intelligence.orders.count")}
               valueKey="total"
               labelKey="name"
             />
           </div>
           <div>
-            <p className="help mb-2">أوقات التنفيذ (متوسط ساعات)</p>
-            <p className="help mb-1">إنشاء → أخذ: {orders?.timing?.avgHoursCreateToTake ?? "—"}</p>
-            <p className="help m-0">أخذ → إكمال: {orders?.timing?.avgHoursTakeToComplete ?? "—"}</p>
+            <p className="help mb-2">{t("analysis.intelligence.orders.timing")}</p>
+            <p className="help mb-1">
+              {t("analysis.intelligence.orders.createToTake")}: {orders?.timing?.avgHoursCreateToTake ?? "—"}
+            </p>
+            <p className="help m-0">
+              {t("analysis.intelligence.orders.takeToComplete")}: {orders?.timing?.avgHoursTakeToComplete ?? "—"}
+            </p>
           </div>
         </div>
       </IntelligenceSection>
 
       <IntelligenceSection
-        title="تحليل العملاء"
+        title={t("analysis.intelligence.clients.title")}
         sectionKey="clients"
         sectionErrors={sectionErrors}
         loading={loading}
@@ -408,24 +454,24 @@ export default function SuperAdminHomeIntelligenceSections({
           loading={loading && !clients && !clientsFailed}
           dense
           items={[
-            { ...fromSection(clientsFailed, clients?.totals?.totalClients), key: "c1", label: "إجمالي العملاء" },
-            { ...fromSection(clientsFailed, clients?.totals?.newClientsThisWeek), key: "c2", label: "جدد هذا الأسبوع" },
-            { ...fromSection(clientsFailed, clients?.totals?.newClientsThisMonth), key: "c3", label: "جدد هذا الشهر" },
-            { ...fromSection(clientsFailed, clients?.totals?.returningClients), key: "c4", label: "عملاء متكررون" },
-            { ...fromSection(clientsFailed, clients?.totals?.inactiveClients), key: "c5", label: "غير نشطين" },
+            { ...fromSection(clientsFailed, clients?.totals?.totalClients), key: "c1", label: t("analysis.intelligence.clients.total") },
+            { ...fromSection(clientsFailed, clients?.totals?.newClientsThisWeek), key: "c2", label: t("analysis.intelligence.clients.newWeek") },
+            { ...fromSection(clientsFailed, clients?.totals?.newClientsThisMonth), key: "c3", label: t("analysis.intelligence.clients.newMonth") },
+            { ...fromSection(clientsFailed, clients?.totals?.returningClients), key: "c4", label: t("analysis.intelligence.clients.returning") },
+            { ...fromSection(clientsFailed, clients?.totals?.inactiveClients), key: "c5", label: t("analysis.intelligence.clients.inactive") },
             {
               ...fromSection(clientsFailed, clients?.totals?.signupToFirstOrderRate, { percent: true }),
               key: "c6",
-              label: "تحويل تسجيل → أول طلب %",
+              label: t("analysis.intelligence.clients.signupConversion"),
             },
           ]}
         />
-        <p className="help mb-2">أعلى العملاء إنفاقاً</p>
-        <TopList rows={clients?.topClients || []} valueLabel="الإنفاق" valueKey="spendJod" labelKey="fullName" money />
+        <p className="help mb-2">{t("analysis.intelligence.clients.topSpenders")}</p>
+        <TopList rows={clients?.topClients || []} valueLabel={t("analysis.intelligence.clients.spend")} valueKey="spendJod" labelKey="fullName" money />
       </IntelligenceSection>
 
       <IntelligenceSection
-        title="تحليل المستقلين"
+        title={t("analysis.intelligence.freelancers.title")}
         sectionKey="freelancers"
         sectionErrors={sectionErrors}
         loading={loading}
@@ -436,25 +482,25 @@ export default function SuperAdminHomeIntelligenceSections({
           loading={loading && !freelancers && !freelancersFailed}
           dense
           items={[
-            { ...fromSection(freelancersFailed, freelancers?.totals?.totalFreelancers), key: "f1", label: "إجمالي المستقلين" },
-            { ...fromSection(freelancersFailed, freelancers?.totals?.activeFreelancers), key: "f2", label: "نشطون" },
-            { ...fromSection(freelancersFailed, freelancers?.totals?.inactiveFreelancers), key: "f3", label: "غير نشطين" },
-            { ...fromSection(freelancersFailed, freelancers?.totals?.subscribedFreelancers), key: "f4", label: "مشتركون", to: SA_ROUTES.subscriptions },
-            { ...fromSection(freelancersFailed, freelancers?.totals?.nonSubscribedFreelancers), key: "f5", label: "بدون اشتراك" },
+            { ...fromSection(freelancersFailed, freelancers?.totals?.totalFreelancers), key: "f1", label: t("analysis.intelligence.freelancers.total") },
+            { ...fromSection(freelancersFailed, freelancers?.totals?.activeFreelancers), key: "f2", label: t("analysis.intelligence.freelancers.active") },
+            { ...fromSection(freelancersFailed, freelancers?.totals?.inactiveFreelancers), key: "f3", label: t("analysis.intelligence.freelancers.inactive") },
+            { ...fromSection(freelancersFailed, freelancers?.totals?.subscribedFreelancers), key: "f4", label: t("analysis.intelligence.freelancers.subscribed"), to: SA_ROUTES.subscriptions },
+            { ...fromSection(freelancersFailed, freelancers?.totals?.nonSubscribedFreelancers), key: "f5", label: t("analysis.intelligence.freelancers.noSubscription") },
             {
               ...fromSection(freelancersFailed, freelancers?.totals?.inactiveAfterSubscription),
               key: "f6",
-              label: "خاملون بعد الاشتراك",
+              label: t("analysis.intelligence.freelancers.inactiveAfterSub"),
               to: SA_ROUTES.subscriptions,
             },
           ]}
         />
-        <p className="help mb-2">أفضل المستقلين أداءً</p>
-        <TopList rows={freelancers?.topPerformers || []} valueLabel="مكتمل" valueKey="completedOrders" labelKey="fullName" />
+        <p className="help mb-2">{t("analysis.intelligence.freelancers.topPerformers")}</p>
+        <TopList rows={freelancers?.topPerformers || []} valueLabel={t("analysis.intelligence.freelancers.completed")} valueKey="completedOrders" labelKey="fullName" />
       </IntelligenceSection>
 
       <IntelligenceSection
-        title="الاشتراكات والمدفوعات"
+        title={t("analysis.intelligence.subscriptions.title")}
         sectionKey="subscriptions"
         sectionErrors={sectionErrors}
         loading={loading}
@@ -469,33 +515,33 @@ export default function SuperAdminHomeIntelligenceSections({
             {
               ...fromSection(subscriptionsFailed, subscriptions?.totals?.activeSubscriptions),
               key: "s1",
-              label: "اشتراكات نشطة",
+              label: t("analysis.intelligence.summary.activeSubscriptions"),
               to: SA_ROUTES.subscriptions,
             },
             {
               ...fromSection(subscriptionsFailed, subscriptions?.totals?.pendingActivation),
               key: "s2",
-              label: "بانتظار التفعيل",
+              label: t("analysis.intelligence.subscriptions.pendingActivation"),
               to: SA_ROUTES.subscriptions,
             },
-            { ...fromSection(subscriptionsFailed, subscriptions?.totals?.pendingPayment), key: "s3", label: "مدفوعات معلقة", to: SA_ROUTES.subscriptions },
-            { ...fromSection(subscriptionsFailed, subscriptions?.totals?.failedPayments), key: "s4", label: "مدفوعات فاشلة", to: SA_ROUTES.subscriptions },
+            { ...fromSection(subscriptionsFailed, subscriptions?.totals?.pendingPayment), key: "s3", label: t("analysis.intelligence.subscriptions.pendingPayment"), to: SA_ROUTES.subscriptions },
+            { ...fromSection(subscriptionsFailed, subscriptions?.totals?.failedPayments), key: "s4", label: t("analysis.intelligence.subscriptions.failedPayment"), to: SA_ROUTES.subscriptions },
           ]}
         />
         <div className="grid gap-3 md:grid-cols-2 sa-subgrid-tight">
           <div>
-            <p className="help mb-2">التوزيع حسب الباقة</p>
-            <TopList rows={subscriptions?.byPlan || []} valueLabel="مشتركون" valueKey="subscribers" labelKey="planTitle" />
+            <p className="help mb-2">{t("analysis.intelligence.subscriptions.byPlan")}</p>
+            <TopList rows={subscriptions?.byPlan || []} valueLabel={t("analysis.intelligence.subscriptions.subscribers")} valueKey="subscribers" labelKey="planTitle" />
           </div>
           <div>
-            <p className="help mb-2">أعلى دول الاشتراك</p>
-            <TopList rows={subscriptions?.countries || []} valueLabel="مشتركون" valueKey="subscribers" labelKey="name" />
+            <p className="help mb-2">{t("analysis.intelligence.subscriptions.topCountries")}</p>
+            <TopList rows={subscriptions?.countries || []} valueLabel={t("analysis.intelligence.subscriptions.subscribers")} valueKey="subscribers" labelKey="name" />
           </div>
         </div>
       </IntelligenceSection>
 
       <IntelligenceSection
-        title="الدورات والتدريب"
+        title={t("analysis.intelligence.courses.title")}
         sectionKey="courses"
         sectionErrors={sectionErrors}
         loading={loading}
@@ -507,21 +553,21 @@ export default function SuperAdminHomeIntelligenceSections({
           loading={loading && !courses && !coursesFailed}
           dense
           items={[
-            { ...fromSection(coursesFailed, courses?.totals?.totalCourses), key: "cr1", label: "إجمالي الدورات", to: SA_ROUTES.courses },
-            { ...fromSection(coursesFailed, courses?.totals?.publishedCourses), key: "cr2", label: "منشورة", to: SA_ROUTES.courses },
-            { ...fromSection(coursesFailed, courses?.totals?.draftCourses), key: "cr3", label: "مسودات", to: SA_ROUTES.courses },
-            { ...fromSection(coursesFailed, courses?.totals?.totalLessons), key: "cr4", label: "دروس", to: SA_ROUTES.courses },
-            { ...fromSection(coursesFailed, courses?.totals?.studentsEnrolled), key: "cr5", label: "طلاب", to: SA_ROUTES.courses },
-            { ...fromSection(coursesFailed, courses?.totals?.stuckAbove80Percent), key: "cr6", label: "عالقون فوق 80%", to: SA_ROUTES.courses },
-            { ...fromSection(coursesFailed, courses?.totals?.finalExamSubmissions), key: "cr7", label: "تسليمات الاختبار" },
+            { ...fromSection(coursesFailed, courses?.totals?.totalCourses), key: "cr1", label: t("analysis.intelligence.courses.total"), to: SA_ROUTES.courses },
+            { ...fromSection(coursesFailed, courses?.totals?.publishedCourses), key: "cr2", label: t("analysis.intelligence.courses.published"), to: SA_ROUTES.courses },
+            { ...fromSection(coursesFailed, courses?.totals?.draftCourses), key: "cr3", label: t("analysis.intelligence.courses.drafts"), to: SA_ROUTES.courses },
+            { ...fromSection(coursesFailed, courses?.totals?.totalLessons), key: "cr4", label: t("analysis.intelligence.courses.lessons"), to: SA_ROUTES.courses },
+            { ...fromSection(coursesFailed, courses?.totals?.studentsEnrolled), key: "cr5", label: t("analysis.intelligence.courses.students"), to: SA_ROUTES.courses },
+            { ...fromSection(coursesFailed, courses?.totals?.stuckAbove80Percent), key: "cr6", label: t("analysis.intelligence.courses.stuck80"), to: SA_ROUTES.courses },
+            { ...fromSection(coursesFailed, courses?.totals?.finalExamSubmissions), key: "cr7", label: t("analysis.intelligence.courses.examSubmissions") },
             {
               ...fromSection(coursesFailed, courses?.totals?.finalExamCompletionRate, { percent: true }),
               key: "cr8",
-              label: "إكمال الاختبار %",
+              label: t("analysis.intelligence.courses.examCompletion"),
             },
             {
               key: "cr9",
-              label: "متوسط مدة التعلّم",
+              label: t("analysis.intelligence.courses.avgLearning"),
               value: coursesFailed
                 ? null
                 : formatAverageCompletionDuration(courses?.totals?.averageLearningDurationSeconds),
@@ -529,11 +575,11 @@ export default function SuperAdminHomeIntelligenceSections({
             },
           ]}
         />
-        <TopList rows={courses?.topCourses || []} valueLabel="مسجلون" valueKey="enrolled" labelKey="title" />
+        <TopList rows={courses?.topCourses || []} valueLabel={t("analysis.intelligence.courses.enrolled")} valueKey="enrolled" labelKey="title" />
       </IntelligenceSection>
 
       <IntelligenceSection
-        title="الفئات والخدمات"
+        title={t("analysis.intelligence.categories.title")}
         sectionKey="categories"
         sectionErrors={sectionErrors}
         loading={loading}
@@ -542,24 +588,24 @@ export default function SuperAdminHomeIntelligenceSections({
       >
         <div className="grid gap-3 md:grid-cols-2 sa-subgrid-tight">
           <div>
-            <p className="help mb-2">الأكثر طلباً</p>
-            <TopList rows={categories?.mostRequested || []} valueLabel="طلب" valueKey="totalOrders" labelKey="name" />
+            <p className="help mb-2">{t("analysis.intelligence.categories.mostRequested")}</p>
+            <TopList rows={categories?.mostRequested || []} valueLabel={t("analysis.intelligence.categories.order")} valueKey="totalOrders" labelKey="name" />
           </div>
           <div>
-            <p className="help mb-2">نقص العرض المحتمل</p>
+            <p className="help mb-2">{t("analysis.intelligence.categories.shortage")}</p>
             <TopList
               rows={categories?.potentialShortage || []}
-              valueLabel="طلب"
+              valueLabel={t("analysis.intelligence.categories.order")}
               valueKey="demandOrders"
               labelKey="name"
-              emptyLabel="لا يوجد نقص واضح"
+              emptyLabel={t("analysis.intelligence.categories.noShortage")}
             />
           </div>
         </div>
       </IntelligenceSection>
 
       <IntelligenceSection
-        title="العمليات المالية"
+        title={t("analysis.intelligence.financial.title")}
         sectionKey="financial"
         sectionErrors={sectionErrors}
         loading={loading}
@@ -573,28 +619,30 @@ export default function SuperAdminHomeIntelligenceSections({
             {
               ...fromSection(financialFailed, financial?.totals?.pendingClaims),
               key: "fi1",
-              label: "معلّقة",
+              label: t("analysis.intelligence.financial.pending"),
               to: SA_ROUTES.financialClaims,
             },
-            { ...fromSection(financialFailed, financial?.totals?.approvedClaims), key: "fi2", label: "معتمدة", to: SA_ROUTES.financialClaims },
-            { ...fromSection(financialFailed, financial?.totals?.paidClaims), key: "fi3", label: "مدفوعة", to: SA_ROUTES.financialClaims },
-            { ...fromSection(financialFailed, financial?.totals?.rejectedClaims), key: "fi4", label: "مرفوضة", to: SA_ROUTES.financialClaims },
-            { ...fromSection(financialFailed, financial?.totals?.totalClaimAmountJod, { money: true }), key: "fi5", label: "إجمالي القيمة" },
-            { ...fromSection(financialFailed, financial?.totals?.averageClaimAmountJod, { money: true }), key: "fi6", label: "متوسط المطالبة" },
+            { ...fromSection(financialFailed, financial?.totals?.approvedClaims), key: "fi2", label: t("analysis.intelligence.financial.approved"), to: SA_ROUTES.financialClaims },
+            { ...fromSection(financialFailed, financial?.totals?.paidClaims), key: "fi3", label: t("analysis.intelligence.financial.paid"), to: SA_ROUTES.financialClaims },
+            { ...fromSection(financialFailed, financial?.totals?.rejectedClaims), key: "fi4", label: t("analysis.intelligence.financial.rejected"), to: SA_ROUTES.financialClaims },
+            { ...fromSection(financialFailed, financial?.totals?.totalClaimAmountJod, { money: true }), key: "fi5", label: t("analysis.intelligence.financial.totalValue") },
+            { ...fromSection(financialFailed, financial?.totals?.averageClaimAmountJod, { money: true }), key: "fi6", label: t("analysis.intelligence.financial.avgClaim") },
             {
               ...fromSection(financialFailed, financial?.totals?.claimsWaitingTooLong),
               key: "fi7",
-              label: "متأخرة (+7 أيام)",
+              label: t("analysis.intelligence.financial.overdue7d"),
               to: SA_ROUTES.financialClaims,
             },
           ]}
         />
       </IntelligenceSection>
 
-      <DashboardSection title="النشاط والنمو" className="sa-section--compact sa-section--muted">
+      <DashboardSection title={t("analysis.intelligence.activity.title")} className="sa-section--compact sa-section--muted">
         <p className="sa-section-scope-label help m-0 mb-2">{t(periodScopeLabel(period))} — PostHog</p>
         {posthogOff ? (
-          <SectionInlineNotice tone="warn">{meta?.posthogError || posthog?.meta?.posthogError || "بيانات PostHog غير متاحة."}</SectionInlineNotice>
+          <SectionInlineNotice tone="warn">
+            {meta?.posthogError || posthog?.meta?.posthogError || t("analysis.bundle.posthogUnavailable")}
+          </SectionInlineNotice>
         ) : null}
         <MiniStatGrid
           loading={posthogLoading && !posthog && !posthogOff}
@@ -603,26 +651,26 @@ export default function SuperAdminHomeIntelligenceSections({
           items={[
             {
               key: "a1",
-              label: "زوار اليوم",
+              label: t("analysis.intelligence.activity.visitorsToday"),
               scopeLabel: SCOPE_LABELS.realtime,
               ...fromSection(posthogOff, posthog?.kpis?.visitorsToday),
             },
             {
               key: "a2",
-              label: "نشطون اليوم",
+              label: t("analysis.intelligence.activity.activeToday"),
               scopeLabel: SCOPE_LABELS.realtime,
               ...fromSection(posthogOff, posthog?.kpis?.activeUsersToday),
             },
             {
               key: "a3",
-              label: "طلبات اليوم (تحليلات)",
+              label: t("analysis.intelligence.activity.ordersTodayAnalytics"),
               scopeLabel: SCOPE_LABELS.today,
               ...fromSection(posthogOff, posthog?.kpis?.ordersToday),
             },
             {
               key: "a4",
-              label: "تسجيلات",
-              scopeLabel: t(periodScopeLabel(period)),
+              label: t("analysis.intelligence.activity.signups"),
+              scopeLabel: periodScopeLabel(period),
               ...fromSection(
                 isPosthogEventUnavailable(posthog, meta, "signup_completed"),
                 posthog?.events?.signup_completed,
@@ -630,8 +678,8 @@ export default function SuperAdminHomeIntelligenceSections({
             },
             {
               key: "a5",
-              label: "تسجيلات دخول",
-              scopeLabel: t(periodScopeLabel(period)),
+              label: t("analysis.intelligence.activity.logins"),
+              scopeLabel: periodScopeLabel(period),
               ...fromSection(
                 isPosthogEventUnavailable(posthog, meta, "user_logged_in"),
                 posthog?.events?.user_logged_in,
@@ -639,8 +687,8 @@ export default function SuperAdminHomeIntelligenceSections({
             },
             {
               key: "a6",
-              label: "اشتراكات مشتراة",
-              scopeLabel: t(periodScopeLabel(period)),
+              label: t("analysis.intelligence.activity.purchasedSubs"),
+              scopeLabel: periodScopeLabel(period),
               ...fromSection(
                 isPosthogEventUnavailable(posthog, meta, "subscription_purchased"),
                 posthog?.events?.subscription_purchased,
@@ -660,20 +708,20 @@ export default function SuperAdminHomeIntelligenceSections({
 
   return (
     <CollapsibleBlock
-      title="تحليلات تفصيلية"
-      description="طلبات، عملاء، اشتراكات، دورات، ومالية."
+      title={t("analysis.bundle.detailAnalytics")}
+      description={t("analysis.bundle.detailAnalyticsDesc")}
       defaultOpen={false}
       className="sa-section--compact sa-section--intel-detail sa-collapsible--premium mb-4"
       onOpenChange={handleDetailOpen}
     >
       {loading && !intelligence?.summary?.data ? (
-        <p className="help m-0 mb-3 text-slate-500">جارٍ تحميل البيانات…</p>
+        <p className="help m-0 mb-3 text-slate-500">{t("analysis.bundle.loadingData")}</p>
       ) : null}
       {intelligenceError && !intelligence?.summary?.data ? (
         <SectionInlineNotice tone="warn">
           {intelligenceError}{" "}
           <button type="button" className="sa-section-notice__btn" onClick={onRetry}>
-            إعادة المحاولة
+            {t("analysis.labels.retry")}
           </button>
         </SectionInlineNotice>
       ) : null}

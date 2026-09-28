@@ -27,25 +27,25 @@ import {
 import { resolveFreelancerWhatsapp } from "../../../admin/subscriptions/subscriptionWhatsApp";
 import SubscriptionWhatsAppModal from "../../../pages/dashboard/SubscriptionWhatsAppModal";
 import { useTranslation } from "../../../i18n/LanguageProvider";
+import "./registerAnalysisLocale";
 import "../../../styles/adminOverviewSoft.css";
 
 const MAX_ROWS = 6;
 const SEARCH_DEBOUNCE_MS = 250;
-const WEEKDAY_AR = ["أحد", "إثنين", "ثلاثاء", "أربعاء", "خميس", "جمعة", "سبت"];
 
-const LIST_TABS = [
-  { id: "all", label: "الكل" },
-  { id: "today", label: "اليوم" },
-  { id: "followup", label: "بحاجة متابعة" },
-];
+const LIST_TAB_KEYS = {
+  all: "analysis.product.tabAll",
+  today: "analysis.product.tabToday",
+  followup: "analysis.product.tabFollowUp",
+};
 
 function isMissing(value) {
   return value === null || value === undefined || Number.isNaN(Number(value));
 }
 
-function formatMetric(value, { money = false, failed = false } = {}) {
-  if (failed) return "غير متاح";
-  if (isMissing(value)) return LABEL_UNAVAILABLE;
+function formatMetric(value, t, { money = false, failed = false } = {}) {
+  if (failed) return t("analysis.labels.unavailable");
+  if (isMissing(value)) return t(LABEL_UNAVAILABLE);
   return money ? formatMoneyJod(value) : formatInt(value);
 }
 
@@ -75,33 +75,37 @@ function initialOf(name) {
   return String(name || "?").trim().slice(0, 1).toUpperCase() || "?";
 }
 
-function buildCopyText(sub) {
-  const lines = [`الاسم: ${formatFreelancerDisplayName(sub)}`];
-  if (sub?.freelancer?.email) lines.push(`البريد: ${sub.freelancer.email}`);
-  if (sub?.freelancer?.phone) lines.push(`الهاتف: ${sub.freelancer.phone}`);
-  if (sub?.freelancer?.whatsapp) lines.push(`واتساب: ${sub.freelancer.whatsapp}`);
+function buildCopyText(sub, t) {
+  const lines = [`${t("analysis.product.copyName")}: ${formatFreelancerDisplayName(sub)}`];
+  if (sub?.freelancer?.email) lines.push(`${t("analysis.product.copyEmail")}: ${sub.freelancer.email}`);
+  if (sub?.freelancer?.phone) lines.push(`${t("analysis.product.copyPhone")}: ${sub.freelancer.phone}`);
+  if (sub?.freelancer?.whatsapp) lines.push(`${t("analysis.product.copyWhatsApp")}: ${sub.freelancer.whatsapp}`);
   const planTitle = resolveSubscriptionPlanTitle(sub);
-  if (planTitle) lines.push(`الباقة: ${planTitle}`);
+  if (planTitle) lines.push(`${t("analysis.product.copyPlan")}: ${planTitle}`);
   const price = formatPlanPriceLabel(sub?.plan);
-  if (price && price !== "—") lines.push(`سعر الباقة: ${price}`);
-  lines.push(`حالة التفعيل: ${activationStatusLabel(sub?.activationStatus)}`);
-  lines.push(`حالة الاشتراك: ${subscriptionStatusLabel(sub?.status)}`);
+  if (price && price !== "—") lines.push(`${t("analysis.product.copyPlanPrice")}: ${price}`);
+  lines.push(`${t("analysis.product.copyActivation")}: ${activationStatusLabel(sub?.activationStatus)}`);
+  lines.push(`${t("analysis.product.copySubscription")}: ${subscriptionStatusLabel(sub?.status)}`);
   return lines.join("\n");
 }
 
-function statusPill(sub) {
+function statusPill(sub, t) {
   if (needsFollowUp(sub)) {
-    return { label: activationStatusLabel(sub?.activationStatus) || "بانتظار التفعيل", tone: "warn" };
+    return {
+      label: activationStatusLabel(sub?.activationStatus) || t("analysis.product.pendingActivationShort"),
+      tone: "warn",
+    };
   }
   const status = String(sub?.status || "").toLowerCase();
-  if (status === "active") return { label: "نشط", tone: "ok" };
+  if (status === "active") return { label: t("analysis.product.statusActive"), tone: "ok" };
   if (status.includes("cancel") || status === "expired") return { label: subscriptionStatusLabel(sub?.status), tone: "muted" };
-  return { label: subscriptionStatusLabel(sub?.status) || "مدفوع", tone: "info" };
+  return { label: subscriptionStatusLabel(sub?.status) || t("analysis.product.statusPaid"), tone: "info" };
 }
 
-function SoftKpiCard({ icon: Icon, label, value, delta, deltaTone = "neutral", loading, failed, money, to }) {
-  const display = formatMetric(value, { money, failed });
-  const muted = display === LABEL_UNAVAILABLE || display === "غير متاح";
+function SoftKpiCard({ icon: Icon, label, value, delta, deltaTone = "neutral", loading, failed, money, to, t }) {
+  const display = formatMetric(value, t, { money, failed });
+  const unavailable = t(LABEL_UNAVAILABLE);
+  const muted = display === unavailable || display === t("analysis.labels.unavailable");
   const body = (
     <>
       <div className="aos-kpi__icon" aria-hidden>
@@ -129,14 +133,14 @@ function SoftKpiCard({ icon: Icon, label, value, delta, deltaTone = "neutral", l
   return <div className="aos-kpi">{body}</div>;
 }
 
-function RevenueBarsChart({ series }) {
+function RevenueBarsChart({ series, t }) {
   const max = Math.max(1, ...series.map((r) => Number(r.revenueJod) || 0));
   if (!series.length) {
-    return <p className="aos-chart__empty">لا تتوفر بيانات إيرادات لهذه الفترة بعد.</p>;
+    return <p className="aos-chart__empty">{t("analysis.product.emptyRevenue")}</p>;
   }
 
   return (
-    <div className="aos-bars" role="img" aria-label="مخطط إيرادات الأيام الأخيرة">
+    <div className="aos-bars" role="img" aria-label={t("analysis.product.chartRevenueAria")}>
       {series.map((row, i) => {
         const value = Number(row.revenueJod) || 0;
         const pct = Math.max(8, Math.round((value / max) * 100));
@@ -159,14 +163,14 @@ function RevenueBarsChart({ series }) {
   );
 }
 
-function WeeklyBarsChart({ days, highlightIndex }) {
+function WeeklyBarsChart({ days, highlightIndex, t }) {
   const max = Math.max(1, ...days.map((d) => Number(d.value) || 0));
   if (!days.length) {
-    return <p className="aos-chart__empty">لا تتوفر بيانات أسبوعية بعد.</p>;
+    return <p className="aos-chart__empty">{t("analysis.product.emptyWeekly")}</p>;
   }
 
   return (
-    <div className="aos-week" role="img" aria-label="المشتركون خلال الأسبوع">
+    <div className="aos-week" role="img" aria-label={t("analysis.product.chartWeekAria")}>
       {days.map((day, i) => {
         const value = Number(day.value) || 0;
         const pct = Math.max(10, Math.round((value / max) * 100));
@@ -184,10 +188,10 @@ function WeeklyBarsChart({ days, highlightIndex }) {
   );
 }
 
-function SoftDonut({ slices }) {
+function SoftDonut({ slices, t }) {
   const total = slices.reduce((s, x) => s + (Number(x.value) || 0), 0);
   if (total <= 0) {
-    return <p className="aos-chart__empty">لا تتوفر بيانات للتوزيع بعد.</p>;
+    return <p className="aos-chart__empty">{t("analysis.product.emptyDistribution")}</p>;
   }
 
   let cursor = 0;
@@ -217,8 +221,8 @@ function SoftDonut({ slices }) {
   );
 }
 
-function SoftRings({ items }) {
-  if (!items?.length) return <p className="aos-chart__empty">لا تتوفر بيانات بعد.</p>;
+function SoftRings({ items, t }) {
+  if (!items?.length) return <p className="aos-chart__empty">{t("analysis.product.emptyGeneric")}</p>;
   return (
     <div className="aos-rings">
       {items.map((item) => {
@@ -242,8 +246,8 @@ function SoftRings({ items }) {
   );
 }
 
-function SoftHBars({ rows }) {
-  if (!rows?.length) return <p className="aos-chart__empty">لا تتوفر بيانات باقات بعد.</p>;
+function SoftHBars({ rows, t }) {
+  if (!rows?.length) return <p className="aos-chart__empty">{t("analysis.product.emptyPlans")}</p>;
   const max = Math.max(1, ...rows.map((r) => Number(r.value) || 0));
   return (
     <div className="aos-hbars">
@@ -266,8 +270,8 @@ function SoftHBars({ rows }) {
   );
 }
 
-function SoftPulseList({ items }) {
-  if (!items?.length) return <p className="aos-chart__empty">لا توجد تنبيهات حالياً.</p>;
+function SoftPulseList({ items, t }) {
+  if (!items?.length) return <p className="aos-chart__empty">{t("analysis.product.emptyAlerts")}</p>;
   return (
     <div className="aos-pulse">
       {items.map((item) => {
@@ -299,8 +303,8 @@ function SoftPulseList({ items }) {
   );
 }
 
-function SoftMonthCompare({ metrics }) {
-  if (!metrics?.length) return <p className="aos-chart__empty">لا تتوفر مقارنة شهرية بعد.</p>;
+function SoftMonthCompare({ metrics, t }) {
+  if (!metrics?.length) return <p className="aos-chart__empty">{t("analysis.product.emptyMonthCompare")}</p>;
   return (
     <div className="aos-compare">
       {metrics.map((m) => {
@@ -325,7 +329,7 @@ function SoftMonthCompare({ metrics }) {
   );
 }
 
-function RowActionsMenu({ open, onOpenChange, viewTo, onWhatsApp, onCopy, canWhatsApp }) {
+function RowActionsMenu({ open, onOpenChange, viewTo, onWhatsApp, onCopy, canWhatsApp, t }) {
   const triggerRef = useRef(null);
   const panelRef = useRef(null);
   const [pos, setPos] = useState(null);
@@ -380,7 +384,7 @@ function RowActionsMenu({ open, onOpenChange, viewTo, onWhatsApp, onCopy, canWha
               className="aos-row-menu__item"
               onClick={() => onOpenChange(false)}
             >
-              عرض الاشتراك
+              {t("analysis.product.menuView")}
             </NavLink>
             {canWhatsApp ? (
               <button
@@ -392,7 +396,7 @@ function RowActionsMenu({ open, onOpenChange, viewTo, onWhatsApp, onCopy, canWha
                   onWhatsApp();
                 }}
               >
-                واتساب
+                {t("analysis.product.menuWhatsApp")}
               </button>
             ) : null}
             <button
@@ -404,7 +408,7 @@ function RowActionsMenu({ open, onOpenChange, viewTo, onWhatsApp, onCopy, canWha
                 onCopy();
               }}
             >
-              نسخ البيانات
+              {t("analysis.product.menuCopy")}
             </button>
           </div>,
           document.body,
@@ -417,7 +421,7 @@ function RowActionsMenu({ open, onOpenChange, viewTo, onWhatsApp, onCopy, canWha
         ref={triggerRef}
         type="button"
         className={`aos-row-menu__trigger${open ? " is-open" : ""}`}
-        aria-label="إجراءات الاشتراك"
+        aria-label={t("analysis.product.menuAria")}
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => onOpenChange(!open)}
@@ -430,7 +434,7 @@ function RowActionsMenu({ open, onOpenChange, viewTo, onWhatsApp, onCopy, canWha
 }
 
 export default function SuperAdminProductAnalytics() {
-  const { dir, locale } = useTranslation();
+  const { t, dir, locale } = useTranslation();
   const { openModal: openCreateOrderModal } = useClientCreateOrderModal();
   const {
     data: bundle,
@@ -500,10 +504,16 @@ export default function SuperAdminProductAnalytics() {
       .slice(-7);
   }, [businessData?.revenueByDay]);
 
+  const weekdayFmt = useMemo(
+    () =>
+      new Intl.DateTimeFormat(locale === "ar" ? "ar-JO-u-nu-latn" : "en-US-u-nu-latn", { weekday: "short" }),
+    [locale],
+  );
+
   const weekDays = useMemo(() => {
     const counts = Array.from({ length: 7 }, (_, i) => ({
       key: String(i),
-      label: WEEKDAY_AR[i],
+      label: weekdayFmt.format(new Date(2024, 0, 7 + i)),
       value: 0,
     }));
     for (const sub of paidSubsRecent) {
@@ -514,7 +524,7 @@ export default function SuperAdminProductAnalytics() {
       counts[d.getDay()].value += 1;
     }
     return counts;
-  }, [paidSubsRecent]);
+  }, [paidSubsRecent, weekdayFmt]);
 
   const weekHighlight = useMemo(() => {
     let best = 0;
@@ -531,11 +541,11 @@ export default function SuperAdminProductAnalytics() {
     const freelancers = Number(freelancersValue) || 0;
     const projects = Number(projectsOpen) || 0;
     return [
-      { id: "clients", label: "العملاء", value: clients, color: "#8b7fd4" },
-      { id: "freelancers", label: "المستقلون", value: freelancers, color: "#5bb8ae" },
-      { id: "projects", label: "مشاريع نشطة", value: projects, color: "#93c5fd" },
+      { id: "clients", label: t("analysis.product.distributionClients"), value: clients, color: "#8b7fd4" },
+      { id: "freelancers", label: t("analysis.product.distributionFreelancers"), value: freelancers, color: "#5bb8ae" },
+      { id: "projects", label: t("analysis.product.distributionProjects"), value: projects, color: "#93c5fd" },
     ];
-  }, [clientsValue, freelancersValue, projectsOpen]);
+  }, [clientsValue, freelancersValue, projectsOpen, t]);
 
   const orderRings = useMemo(() => {
     const completed = Number(ordersIntel?.totals?.completedOrders ?? intelSummary?.completedOrders) || 0;
@@ -543,20 +553,20 @@ export default function SuperAdminProductAnalytics() {
     const cancelled = Number(ordersIntel?.totals?.cancelledOrders ?? intelSummary?.cancelledOrders) || 0;
     const total = Math.max(1, completed + open + cancelled);
     return [
-      { id: "done", label: "مكتملة", value: completed, pct: (completed / total) * 100, color: "#5bb8ae" },
-      { id: "open", label: "مفتوحة", value: open, pct: (open / total) * 100, color: "#8b7fd4" },
-      { id: "cancel", label: "ملغاة", value: cancelled, pct: (cancelled / total) * 100, color: "#f59e0b" },
+      { id: "done", label: t("analysis.product.orderDone"), value: completed, pct: (completed / total) * 100, color: "#5bb8ae" },
+      { id: "open", label: t("analysis.product.orderOpen"), value: open, pct: (open / total) * 100, color: "#8b7fd4" },
+      { id: "cancel", label: t("analysis.product.orderCancel"), value: cancelled, pct: (cancelled / total) * 100, color: "#f59e0b" },
     ];
-  }, [ordersIntel, intelSummary]);
+  }, [ordersIntel, intelSummary, t]);
 
   const topPlans = useMemo(() => {
     const rows = Array.isArray(subsIntel?.byPlan) ? subsIntel.byPlan : [];
     return rows.slice(0, 5).map((p) => ({
       id: String(p.planId || p.planTitle),
-      label: p.planTitle || `باقة #${p.planId}`,
+      label: p.planTitle || t("analysis.product.planFallback", { id: p.planId }),
       value: Number(p.activeSubscribers || p.subscribers) || 0,
     }));
-  }, [subsIntel]);
+  }, [subsIntel, t]);
 
   const pulseItems = useMemo(() => {
     const items = [];
@@ -564,18 +574,18 @@ export default function SuperAdminProductAnalytics() {
     for (const a of alerts.slice(0, 4)) {
       items.push({
         id: a.key || a.title,
-        title: a.title || "تنبيه",
+        title: a.title || t("analysis.product.alertDefault"),
         count: a.count,
         to: resolveSuperAdminDashboardHomeLink(a.path),
         tone: "warn",
-        sub: "يتطلب متابعة",
+        sub: t("analysis.product.requiresFollowUp"),
       });
     }
     const pendingSubs = Number(subsIntel?.totals?.pendingActivation ?? intelSummary?.pendingSubscriptions) || 0;
     if (pendingSubs > 0 && !items.some((x) => String(x.id).includes("pending"))) {
       items.push({
         id: "pending-activation",
-        title: "تفعيل اشتراكات معلّق",
+        title: t("analysis.product.pendingActivation"),
         count: pendingSubs,
         to: SA_ROUTES.subscriptions,
         tone: "warn",
@@ -585,7 +595,7 @@ export default function SuperAdminProductAnalytics() {
     if (claims > 0) {
       items.push({
         id: "claims",
-        title: "مطالبات مالية معلّقة",
+        title: t("analysis.product.pendingClaims"),
         count: claims,
         to: SA_ROUTES.financialClaims,
         tone: "mint",
@@ -595,14 +605,14 @@ export default function SuperAdminProductAnalytics() {
     if (stuck > 0) {
       items.push({
         id: "stuck-courses",
-        title: "متعلمون عالقون فوق 80%",
+        title: t("analysis.product.stuckCourses"),
         count: stuck,
         to: SA_ROUTES.courses,
         tone: null,
       });
     }
     return items.slice(0, 5);
-  }, [attentionData, subsIntel, intelSummary, coursesIntel]);
+  }, [attentionData, subsIntel, intelSummary, coursesIntel, t]);
 
   const monthCompare = useMemo(() => {
     const rows = Array.isArray(executiveMetrics) ? executiveMetrics : [];
@@ -625,27 +635,27 @@ export default function SuperAdminProductAnalytics() {
     return [
       {
         id: "exam",
-        label: "إكمال الاختبار",
+        label: t("analysis.product.examComplete"),
         value: examRate,
         pct: examRate,
         color: "#8b7fd4",
       },
       {
         id: "pub",
-        label: "دورات منشورة",
+        label: t("analysis.product.publishedCourses"),
         value: published,
         pct: totalCourses > 0 ? (published / totalCourses) * 100 : 0,
         color: "#5bb8ae",
       },
       {
         id: "enroll",
-        label: "مسجّلون",
+        label: t("analysis.product.enrolled"),
         value: enrolled,
         pct: freelancers > 0 ? Math.min(100, (enrolled / freelancers) * 100) : 0,
         color: "#93c5fd",
       },
     ];
-  }, [coursesIntel, intelSummary, freelancersValue]);
+  }, [coursesIntel, intelSummary, freelancersValue, t]);
 
   const [listTab, setListTab] = useState("all");
   const [searchOpen, setSearchOpen] = useState(false);
@@ -700,33 +710,36 @@ export default function SuperAdminProductAnalytics() {
     void refresh();
   }, [refresh]);
 
-  const handleCopy = useCallback(async (sub) => {
-    try {
-      await navigator.clipboard?.writeText(buildCopyText(sub));
-    } catch {
-      /* ignore */
-    }
-  }, []);
+  const handleCopy = useCallback(
+    async (sub) => {
+      try {
+        await navigator.clipboard?.writeText(buildCopyText(sub, t));
+      } catch {
+        /* ignore */
+      }
+    },
+    [t],
+  );
 
   return (
     <>
       <div className="aos-page" dir={dir} lang={locale}>
         <header className="aos-dash-head">
           <div className="aos-dash-head__titles">
-            <h1 className="aos-dash-head__title">نظرة عامة</h1>
-            <p className="aos-dash-head__desc">ملخص سريع لحركة المنصة خلال آخر 7 أيام</p>
+            <h1 className="aos-dash-head__title">{t("analysis.product.overviewTitle")}</h1>
+            <p className="aos-dash-head__desc">{t("analysis.product.overviewDesc")}</p>
           </div>
           <div className="aos-dash-head__tools">
             <span className="aos-tool">
               <CalendarRange size={14} strokeWidth={2} aria-hidden />
-              آخر 7 أيام
+              {t("analysis.product.last7Days")}
             </span>
             <button type="button" className="aos-tool aos-tool--btn" onClick={() => openCreateOrderModal()}>
-              إنشاء طلب
+              {t("analysis.product.createOrder")}
             </button>
             <NavLink to={SA_ROUTES.analysis} className="aos-tool aos-tool--btn">
               <Filter size={14} strokeWidth={2} aria-hidden />
-              تحليلات
+              {t("analysis.product.analyticsLink")}
             </NavLink>
             <button
               type="button"
@@ -735,7 +748,7 @@ export default function SuperAdminProductAnalytics() {
               disabled={isInitialLoad}
             >
               <RefreshCw size={14} strokeWidth={2} className={isRefreshing ? "aos-spin" : undefined} aria-hidden />
-              {isRefreshing ? "تحديث…" : "تحديث"}
+              {isRefreshing ? t("analysis.actions.refreshing") : t("analysis.actions.refresh")}
             </button>
           </div>
         </header>
@@ -744,166 +757,181 @@ export default function SuperAdminProductAnalytics() {
           <p className="aos-notice aos-notice--error" role="alert">
             {fastError}{" "}
             <button type="button" className="aos-notice__btn" onClick={handleRefresh}>
-              إعادة المحاولة
+              {t("analysis.labels.retry")}
             </button>
           </p>
         ) : null}
 
         {(intelligenceError || fastError) && bundle ? (
           <p className="aos-notice" role="status">
-            تعذر تحديث بعض البيانات.{" "}
+            {t("analysis.product.partialRefresh")}{" "}
             <button type="button" className="aos-notice__btn" onClick={handleRefresh}>
-              إعادة المحاولة
+              {t("analysis.labels.retry")}
             </button>
           </p>
         ) : null}
 
-        <section className="aos-kpi-grid" aria-label="المؤشرات الرئيسية">
+        <section className="aos-kpi-grid" aria-label={t("analysis.product.kpiAria")}>
           <SoftKpiCard
             icon={Eye}
-            label="الزيارات"
+            label={t("analysis.product.visits")}
             value={visitorsValue}
             loading={visitorsLoading}
             failed={!posthogLoading && isMissing(visitorsValue) && Boolean(bundle)}
-            delta={!isMissing(posthog?.kpis?.activeUsersToday) ? `${formatInt(posthog.kpis.activeUsersToday)} نشط` : null}
+            delta={
+              !isMissing(posthog?.kpis?.activeUsersToday)
+                ? t("analysis.product.activeUsers", { count: formatInt(posthog.kpis.activeUsersToday) })
+                : null
+            }
             deltaTone="up"
+            t={t}
           />
           <SoftKpiCard
             icon={Wallet}
-            label="الإيرادات"
+            label={t("analysis.product.revenue")}
             value={revenueValue}
             money
             loading={revenueLoading}
             failed={(intelFailed || kpiFailed) && isMissing(revenueValue)}
             delta={!isMissing(revenueToday) ? formatMoneyJod(revenueToday) : null}
             deltaTone="up"
+            t={t}
           />
           <SoftKpiCard
             icon={Users}
-            label="المستقلون"
+            label={t("analysis.product.freelancers")}
             value={freelancersValue}
             loading={usersLoading}
             failed={intelFailed && isMissing(freelancersValue)}
-            delta={!isMissing(clientsValue) ? `${formatInt(clientsValue)} عميل` : null}
+            delta={
+              !isMissing(clientsValue) ? t("analysis.product.clientCount", { count: formatInt(clientsValue) }) : null
+            }
             deltaTone="neutral"
             to={SA_ROUTES.users}
+            t={t}
           />
         </section>
 
-        <section className="aos-mid-grid" aria-label="المخططات">
+        <section className="aos-mid-grid" aria-label={t("analysis.product.chartsAria")}>
           <article className="aos-card aos-card--wide">
             <header className="aos-card__head">
               <div>
-                <h2 className="aos-card__title">نظرة الإيرادات</h2>
-                <p className="aos-card__desc">توزيع الإيراد اليومي خلال الأسبوع</p>
+                <h2 className="aos-card__title">{t("analysis.product.revenueView")}</h2>
+                <p className="aos-card__desc">{t("analysis.product.revenueViewDesc")}</p>
               </div>
-              <span className="aos-chip">إيرادات</span>
+              <span className="aos-chip">{t("analysis.product.revenueChip")}</span>
             </header>
-            {chartLoading ? <p className="aos-chart__empty">جارٍ تحميل المخطط…</p> : <RevenueBarsChart series={revenueSeries} />}
+            {chartLoading ? (
+              <p className="aos-chart__empty">{t("analysis.product.loadingChart")}</p>
+            ) : (
+              <RevenueBarsChart series={revenueSeries} t={t} />
+            )}
           </article>
 
           <article className="aos-card">
             <header className="aos-card__head">
               <div>
-                <h2 className="aos-card__title">المشتركون</h2>
-                <p className="aos-card__desc">حسب يوم الأسبوع</p>
+                <h2 className="aos-card__title">{t("analysis.product.subscribers")}</h2>
+                <p className="aos-card__desc">{t("analysis.product.subscribersDesc")}</p>
               </div>
               <strong className="aos-card__metric">{formatInt(weekTotal)}</strong>
             </header>
             {paidSubsLoading && !weekTotal ? (
-              <p className="aos-chart__empty">جارٍ التحميل…</p>
+              <p className="aos-chart__empty">{t("analysis.loading.generic")}</p>
             ) : (
-              <WeeklyBarsChart days={weekDays} highlightIndex={weekHighlight} />
+              <WeeklyBarsChart days={weekDays} highlightIndex={weekHighlight} t={t} />
             )}
           </article>
         </section>
 
-        <section className="aos-insight-grid" aria-label="تحليلات المنصة">
+        <section className="aos-insight-grid" aria-label={t("analysis.product.platformAria")}>
           <article className="aos-card">
             <header className="aos-card__head">
               <div>
-                <h2 className="aos-card__title">حالة الطلبات</h2>
-                <p className="aos-card__desc">نسب المكتمل والمفتوح والملغى</p>
+                <h2 className="aos-card__title">{t("analysis.product.orderStatus")}</h2>
+                <p className="aos-card__desc">{t("analysis.product.orderStatusDesc")}</p>
               </div>
             </header>
             {intelligenceLoading && !ordersIntel && !intelSummary ? (
-              <p className="aos-chart__empty">جارٍ التحميل…</p>
+              <p className="aos-chart__empty">{t("analysis.loading.generic")}</p>
             ) : (
-              <SoftRings items={orderRings} />
+              <SoftRings items={orderRings} t={t} />
             )}
           </article>
 
           <article className="aos-card">
             <header className="aos-card__head">
               <div>
-                <h2 className="aos-card__title">أشهر الباقات</h2>
-                <p className="aos-card__desc">المشتركون النشطون حسب الباقة</p>
+                <h2 className="aos-card__title">{t("analysis.product.topPlans")}</h2>
+                <p className="aos-card__desc">{t("analysis.product.topPlansDesc")}</p>
               </div>
             </header>
             {intelligenceLoading && !subsIntel ? (
-              <p className="aos-chart__empty">جارٍ التحميل…</p>
+              <p className="aos-chart__empty">{t("analysis.loading.generic")}</p>
             ) : (
-              <SoftHBars rows={topPlans} />
+              <SoftHBars rows={topPlans} t={t} />
             )}
           </article>
 
           <article className="aos-card">
             <header className="aos-card__head">
               <div>
-                <h2 className="aos-card__title">نبض المتابعة</h2>
-                <p className="aos-card__desc">تنبيهات تحتاج تدخلاً الآن</p>
+                <h2 className="aos-card__title">{t("analysis.product.followUpPulse")}</h2>
+                <p className="aos-card__desc">{t("analysis.product.followUpPulseDesc")}</p>
               </div>
             </header>
-            <SoftPulseList items={pulseItems} />
+            <SoftPulseList items={pulseItems} t={t} />
           </article>
         </section>
 
-        <section className="aos-extra-grid" aria-label="مقارنات إضافية">
+        <section className="aos-extra-grid" aria-label={t("analysis.product.extraAria")}>
           <article className="aos-card">
             <header className="aos-card__head">
               <div>
-                <h2 className="aos-card__title">مقارنة الشهر</h2>
-                <p className="aos-card__desc">التغيّر منذ بداية الشهر / مقابل الشهر السابق</p>
+                <h2 className="aos-card__title">{t("analysis.product.monthCompare")}</h2>
+                <p className="aos-card__desc">{t("analysis.product.monthCompareDesc")}</p>
               </div>
             </header>
             {executiveLoading && !monthCompare.length ? (
-              <p className="aos-chart__empty">جارٍ التحميل…</p>
+              <p className="aos-chart__empty">{t("analysis.loading.generic")}</p>
             ) : (
-              <SoftMonthCompare metrics={monthCompare} />
+              <SoftMonthCompare metrics={monthCompare} t={t} />
             )}
           </article>
 
           <article className="aos-card">
             <header className="aos-card__head">
               <div>
-                <h2 className="aos-card__title">مسار الدورات</h2>
+                <h2 className="aos-card__title">{t("analysis.product.coursesPath")}</h2>
                 <p className="aos-card__desc">
                   {coursesIntel?.highlights?.mostJoinedCourse?.title
-                    ? `الأكثر انضماماً: ${coursesIntel.highlights.mostJoinedCourse.title}`
-                    : "إكمال الاختبار والنشر والتسجيل"}
+                    ? t("analysis.product.coursesMostJoined", {
+                        title: coursesIntel.highlights.mostJoinedCourse.title,
+                      })
+                    : t("analysis.product.coursesPathDefault")}
                 </p>
               </div>
             </header>
             {intelligenceLoading && !coursesIntel ? (
-              <p className="aos-chart__empty">جارٍ التحميل…</p>
+              <p className="aos-chart__empty">{t("analysis.loading.generic")}</p>
             ) : (
-              <SoftRings items={courseRings} />
+              <SoftRings items={courseRings} t={t} />
             )}
           </article>
         </section>
 
-        <section className="aos-bot-grid" aria-label="التوزيع والقائمة">
+        <section className="aos-bot-grid" aria-label={t("analysis.product.listAria")}>
           <article className="aos-card">
             <header className="aos-card__head">
               <div>
-                <h2 className="aos-card__title">توزيع النشاط</h2>
-                <p className="aos-card__desc">عملاء، مستقلون، ومشاريع نشطة</p>
+                <h2 className="aos-card__title">{t("analysis.product.distribution")}</h2>
+                <p className="aos-card__desc">{t("analysis.product.distributionDesc")}</p>
               </div>
             </header>
             {usersLoading && projectsOpen === 0 ? (
-              <p className="aos-chart__empty">جارٍ التحميل…</p>
+              <p className="aos-chart__empty">{t("analysis.loading.generic")}</p>
             ) : (
-              <SoftDonut slices={distributionSlices} />
+              <SoftDonut slices={distributionSlices} t={t} />
             )}
           </article>
 
@@ -912,17 +940,20 @@ export default function SuperAdminProductAnalytics() {
               <div className="aos-list-head__top">
                 <div>
                   <h2 id="aos-list-title" className="aos-list-head__title">
-                    الاشتراكات المدفوعة
+                    {t("analysis.product.paidSubs")}
                   </h2>
                   <p className="aos-list-head__desc">
                     {paidSubsLoading
-                      ? "جارٍ التحميل…"
-                      : `${formatInt(filteredSubs.length)} من أصل ${formatInt(paidSubsRecent.length)}`}
+                      ? t("analysis.loading.generic")
+                      : t("analysis.labels.countOf", {
+                          shown: formatInt(filteredSubs.length),
+                          total: formatInt(paidSubsRecent.length),
+                        })}
                   </p>
                 </div>
                 <div className="aos-list-head__actions">
                   <NavLink to={SA_ROUTES.subscriptions} className="aos-see-all">
-                    عرض الكل
+                    {t("analysis.product.seeAll")}
                   </NavLink>
                   <div className={`aos-search${searchOpen ? " is-open" : ""}`}>
                     {searchOpen ? (
@@ -939,13 +970,13 @@ export default function SuperAdminProductAnalytics() {
                               setSearchInput("");
                             }
                           }}
-                          placeholder="بحث بالاسم أو البريد"
-                          aria-label="بحث في الاشتراكات"
+                          placeholder={t("analysis.product.searchPlaceholder")}
+                          aria-label={t("analysis.product.searchAria")}
                         />
                         <button
                           type="button"
                           className="aos-search__clear"
-                          aria-label="إغلاق البحث"
+                          aria-label={t("analysis.product.closeSearch")}
                           onClick={() => {
                             setSearchOpen(false);
                             setSearchInput("");
@@ -958,7 +989,7 @@ export default function SuperAdminProductAnalytics() {
                       <button
                         type="button"
                         className="aos-search__btn"
-                        aria-label="بحث"
+                        aria-label={t("analysis.product.search")}
                         onClick={() => setSearchOpen(true)}
                       >
                         <Search size={18} strokeWidth={2} aria-hidden />
@@ -968,20 +999,20 @@ export default function SuperAdminProductAnalytics() {
                 </div>
               </div>
 
-              <div className="aos-tabs" role="tablist" aria-label="تصفية الاشتراكات">
-                {LIST_TABS.map((tab) => {
-                  const count = tabCounts[tab.id];
-                  const active = listTab === tab.id;
+              <div className="aos-tabs" role="tablist" aria-label={t("analysis.product.filterTabsAria")}>
+                {Object.keys(LIST_TAB_KEYS).map((tabId) => {
+                  const count = tabCounts[tabId];
+                  const active = listTab === tabId;
                   return (
                     <button
-                      key={tab.id}
+                      key={tabId}
                       type="button"
                       role="tab"
                       aria-selected={active}
                       className={`aos-tab${active ? " is-active" : ""}`}
-                      onClick={() => setListTab(tab.id)}
+                      onClick={() => setListTab(tabId)}
                     >
-                      <span>{tab.label}</span>
+                      <span>{t(LIST_TAB_KEYS[tabId])}</span>
                       {count > 0 ? <span className="aos-tab__badge">{formatInt(count)}</span> : null}
                     </button>
                   );
@@ -990,20 +1021,20 @@ export default function SuperAdminProductAnalytics() {
             </header>
 
             {paidSubsFailed ? (
-              <p className="aos-empty">تعذر تحميل الاشتراكات المدفوعة.</p>
+              <p className="aos-empty">{t("analysis.product.loadSubsFailed")}</p>
             ) : paidSubsLoading ? (
-              <p className="aos-empty">جارٍ تحميل الاشتراكات…</p>
+              <p className="aos-empty">{t("analysis.product.loadingSubs")}</p>
             ) : filteredSubs.length === 0 ? (
-              <p className="aos-empty">لا توجد اشتراكات مطابقة حالياً.</p>
+              <p className="aos-empty">{t("analysis.product.noMatchingSubs")}</p>
             ) : (
               <div className="aos-table-wrap">
                 <table className="aos-table">
                   <thead>
                     <tr>
-                      <th>المستقل</th>
-                      <th className="aos-col--plan">الباقة</th>
-                      <th className="aos-col--status">الحالة</th>
-                      <th>إجراءات</th>
+                      <th>{t("analysis.product.colFreelancer")}</th>
+                      <th className="aos-col--plan">{t("analysis.product.colPlan")}</th>
+                      <th className="aos-col--status">{t("analysis.product.colStatus")}</th>
+                      <th>{t("analysis.product.colActions")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1012,7 +1043,7 @@ export default function SuperAdminProductAnalytics() {
                       const name = formatFreelancerDisplayName(sub);
                       const email = sub?.freelancer?.email || "—";
                       const plan = resolveSubscriptionPlanTitle(sub) || "—";
-                      const pill = statusPill(sub);
+                      const pill = statusPill(sub, t);
                       const wa = resolveFreelancerWhatsapp(sub);
                       const viewTo = `${SA_ROUTES.subscriptions}?search=${encodeURIComponent(sub?.id ?? "")}`;
                       return (
@@ -1047,6 +1078,7 @@ export default function SuperAdminProductAnalytics() {
                               canWhatsApp={Boolean(wa.normalized)}
                               onWhatsApp={() => setWhatsAppSub(sub)}
                               onCopy={() => handleCopy(sub)}
+                              t={t}
                             />
                           </td>
                         </tr>
