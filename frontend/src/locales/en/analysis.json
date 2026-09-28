@@ -1,0 +1,141 @@
+{
+  "page": {
+    "title": "Analytics",
+    "subtitle": "Analytical view of user and subscription distribution by country and membership plan"
+  },
+  "range": {
+    "all": "All periods",
+    "today": "Today",
+    "7d": "Last 7 days",
+    "30d": "Last 30 days",
+    "this_month": "This month",
+    "last_month": "Last month",
+    "90d": "Last 90 days",
+    "custom": "Custom",
+    "ariaLabel": "Period"
+  },
+  "dateFilter": {
+    "ariaLabel": "Time period filter",
+    "title": "Period filter",
+    "desc": "Trend and comparison range",
+    "currentLabel": "Period:",
+    "activityLimitNote": " (activity: 30 days)",
+    "from": "From",
+    "to": "To"
+  },
+  "periodBanner": {
+    "basedOn": "Showing data for:",
+    "activityLimited": " — some activity trends are limited to 30 days."
+  },
+  "filter": {
+    "currentSubscriptionsOnly": "Current subscriptions only"
+  },
+  "actions": {
+    "refresh": "Refresh",
+    "refreshing": "Refreshing…",
+    "retry": "Retry"
+  },
+  "errors": {
+    "loadAnalysis": "Could not load analytics data."
+  },
+  "loading": {
+    "stats": "Loading statistics…",
+    "generic": "Loading…"
+  },
+  "chart": {
+    "emptyInsufficient": "Not enough data to display the chart."
+  },
+  "summary": {
+    "title": "Quick summary",
+    "desc": "Key metrics at a glance — {{range}}"
+  },
+  "kpi": {
+    "totalUsers": "Total users",
+    "clientsAndFreelancers": "Clients and Freelancers",
+    "topCountry": "Top country",
+    "usersCount": "{{count}} users",
+    "totalCurrentSubscriptions": "Total current subscriptions",
+    "paidSubscriptions": "Paid subscriptions",
+    "adminAssigned": "Admin assignment",
+    "paidRevenueTotal": "Total paid subscription value",
+    "paid": "Paid",
+    "adminAssignedShort": "Admin assigned",
+    "adminAssignedHint": "Subscriptions assigned by admin",
+    "freeNotRequired": "Free / no payment required",
+    "pendingCompanyActivation": "Pending company activation",
+    "assignedNotStarted": "Not started yet",
+    "active": "Active",
+    "inactiveCancelled": "Expired / cancelled",
+    "totalSubscriptions": "Total subscriptions",
+    "free": "Free",
+    "paidValue": "Paid value"
+  },
+  "usersByCountry": {
+    "sectionAria": "User analysis by country",
+    "topCountriesTitle": "Top countries (users)",
+    "topCountriesDesc": "Client and Freelancer distribution",
+    "topEight": "Top 8",
+    "tableTitle": "User analysis by country",
+    "tableDesc": "By country registered on the account",
+    "knownCountry": "Known country",
+    "unknownCountry": "Unknown country",
+    "totalClientsFreelancers": "Total Clients and Freelancers",
+    "empty": "No user data",
+    "colCountry": "Country",
+    "colTotalUsers": "Total users",
+    "colClients": "Clients",
+    "colFreelancers": "Freelancers",
+    "colShare": "Share"
+  },
+  "freelancerSubscriptions": {
+    "title": "Freelancer subscription analysis",
+    "desc": "By payment and activation status"
+  },
+  "byPlan": {
+    "title": "Subscriptions by membership plan",
+    "desc": "Sorted by current subscriber count",
+    "empty": "No subscriptions on membership plans",
+    "colPlan": "Membership Plan",
+    "colPrice": "Price",
+    "colDuration": "Duration",
+    "colTotal": "Total",
+    "colPaid": "Paid",
+    "colAdmin": "Assigned",
+    "colFree": "Free",
+    "colActive": "Active",
+    "colPendingActivation": "Pending activation",
+    "colNotStarted": "Not started",
+    "colPaidValue": "Paid value",
+    "activationFeesNote": "Includes historical activation fees when applicable",
+    "durationDays": "{{count}} days",
+    "pillPaid": "{{count}} paid",
+    "pillAdmin": "{{count}} assigned",
+    "pillFree": "{{count}} free",
+    "revenuePlan": "{{amount}} plan",
+    "revenueActivation": "{{amount}} activation"
+  },
+  "planGroup": {
+    "sectionAria": "Subscription analysis by plan type",
+    "empty": "No plan group data",
+    "topPlan": "Top membership plan",
+    "subscribers": "{{count}} subscribers"
+  },
+  "subsByCountry": {
+    "sectionAria": "Countries with most subscriptions",
+    "topCountriesTitle": "Top countries (subscriptions)",
+    "topCountriesDesc": "Subscription distribution by Freelancer country",
+    "tableTitle": "Countries with most subscriptions",
+    "tableDesc": "Paid, assigned, and top plan per country",
+    "empty": "No subscription data by country",
+    "colCountry": "Country",
+    "colSubscriptions": "Subscriptions",
+    "colPaid": "Paid",
+    "colAdmin": "Admin assigned",
+    "colTopPlan": "Top plan",
+    "colPaidValue": "Paid value"
+  },
+  "sharePercent": "{{value}}%",
+  "home": {
+    "defaultPeriod": "Selected period"
+  }
+}

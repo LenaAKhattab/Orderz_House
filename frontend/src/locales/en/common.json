@@ -2,7 +2,18 @@
   "brand": "OrderzHouse",
   "brandWordmark": "OrderzHouse",
   "titles": {
-    "users": "Users"
+    "users": "Users",
+    "institutions": "Institutions",
+    "legacy": "Legacy Freelancer Management Center",
+    "analysis": "Analytics",
+    "financialCenter": "Financial Center",
+    "claims": "Financial Claims",
+    "settlements": "Settlements",
+    "courses": "Courses",
+    "articles": "Articles",
+    "orders": "Orders",
+    "subscriptions": "Subscriptions",
+    "plans": "Plans"
   },
   "language": {
     "ar": "العربية",

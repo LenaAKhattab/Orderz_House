@@ -2,7 +2,18 @@
   "brand": "أوردرز هاوس",
   "brandWordmark": "أوردرز هاوس",
   "titles": {
-    "users": "المستخدمون"
+    "users": "المستخدمون",
+    "institutions": "المؤسسات",
+    "legacy": "مركز إدارة الفريلانسر القدامى",
+    "analysis": "التحليلات",
+    "financialCenter": "المركز المالي",
+    "claims": "المطالبات المالية",
+    "settlements": "التسويات",
+    "courses": "الدورات",
+    "articles": "المقالات",
+    "orders": "الطلبات",
+    "subscriptions": "الاشتراكات",
+    "plans": "الباقات"
   },
   "language": {
     "ar": "العربية",

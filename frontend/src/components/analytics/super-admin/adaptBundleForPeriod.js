@@ -116,6 +116,6 @@ export function adaptBundleForPeriod(bundle, period) {
     },
     periodMetrics,
     chartPack,
-    periodLabel: period.label,
+    periodLabelKey: period.labelKey,
   };
 }

@@ -34,8 +34,8 @@ export const INSIGHT_SOURCES = {
 };
 
 export function periodScopeLabel(period) {
-  if (!period?.label) return SCOPE_LABELS.last_7_days;
-  return period.label;
+  if (period?.labelKey) return period.labelKey;
+  return "analysis.range.7d";
 }
 
 export function periodBannerText(period) {

@@ -24,6 +24,8 @@ import {
   periodScopeLabel,
 } from "./dashboardMetricScope";
 import { formatAverageCompletionDuration } from "../../../utils/courseLearningDuration";
+import { useTranslation } from "../../../i18n/LanguageProvider";
+import "./registerAnalysisLocale";
 
 function SectionInlineNotice({ children, tone = "warn", className = "" }) {
   return (
@@ -150,6 +152,9 @@ export default function SuperAdminHomeIntelligenceSections({
   period,
   periodLabel,
 }) {
+  const { t } = useTranslation();
+  const resolvedPeriodLabel =
+    periodLabel || (period?.labelKey ? t(period.labelKey) : t("analysis.home.defaultPeriod"));
   const summary = intelligence?.summary?.data;
   const orders = intelligence?.orders?.data;
   const clients = intelligence?.clients?.data;
@@ -158,7 +163,7 @@ export default function SuperAdminHomeIntelligenceSections({
   const courses = intelligence?.courses?.data;
   const categories = intelligence?.categories?.data;
   const financial = intelligence?.financial?.data;
-  const operationalCharts = buildOperationalCharts(intelligence, periodLabel);
+  const operationalCharts = buildOperationalCharts(intelligence, resolvedPeriodLabel);
 
   const summaryFailed = sectionFailed(sectionErrors, "summary");
   const ordersFailed = sectionFailed(sectionErrors, "orders");
@@ -181,7 +186,7 @@ export default function SuperAdminHomeIntelligenceSections({
         onRetry={onRetry}
         className="sa-section--compact"
       >
-        <p className="sa-section-scope-label help m-0 mb-2">إجماليات المنصة — {periodLabel || "الفترة المحددة"}</p>
+        <p className="sa-section-scope-label help m-0 mb-2">إجماليات المنصة — {resolvedPeriodLabel}</p>
         <MiniStatGrid
           loading={loading && !summary && !summaryFailed}
           dense
@@ -288,14 +293,14 @@ export default function SuperAdminHomeIntelligenceSections({
 
       <CollapsibleBlock
         title="اتجاهات تشغيلية"
-        description={`طلبات، اشتراكات، مطالبات مالية، وتسجيلات الدورات${periodLabel ? ` — ${periodLabel}` : ""}.`}
+        description={`طلبات، اشتراكات، مطالبات مالية، وتسجيلات الدورات${resolvedPeriodLabel ? ` — ${resolvedPeriodLabel}` : ""}.`}
         defaultOpen={false}
         className="sa-section--compact mb-4"
       >
         <IntelligenceTrendCharts
           charts={operationalCharts}
           loading={loading && !orders && !ordersFailed}
-          periodLabel={periodLabel}
+          periodLabel={resolvedPeriodLabel}
         />
       </CollapsibleBlock>
 
@@ -587,7 +592,7 @@ export default function SuperAdminHomeIntelligenceSections({
       </IntelligenceSection>
 
       <DashboardSection title="النشاط والنمو" className="sa-section--compact sa-section--muted">
-        <p className="sa-section-scope-label help m-0 mb-2">{periodScopeLabel(period)} — PostHog</p>
+        <p className="sa-section-scope-label help m-0 mb-2">{t(periodScopeLabel(period))} — PostHog</p>
         {posthogOff ? (
           <SectionInlineNotice tone="warn">{meta?.posthogError || posthog?.meta?.posthogError || "بيانات PostHog غير متاحة."}</SectionInlineNotice>
         ) : null}
@@ -617,7 +622,7 @@ export default function SuperAdminHomeIntelligenceSections({
             {
               key: "a4",
               label: "تسجيلات",
-              scopeLabel: periodScopeLabel(period),
+              scopeLabel: t(periodScopeLabel(period)),
               ...fromSection(
                 isPosthogEventUnavailable(posthog, meta, "signup_completed"),
                 posthog?.events?.signup_completed,
@@ -626,7 +631,7 @@ export default function SuperAdminHomeIntelligenceSections({
             {
               key: "a5",
               label: "تسجيلات دخول",
-              scopeLabel: periodScopeLabel(period),
+              scopeLabel: t(periodScopeLabel(period)),
               ...fromSection(
                 isPosthogEventUnavailable(posthog, meta, "user_logged_in"),
                 posthog?.events?.user_logged_in,
@@ -635,7 +640,7 @@ export default function SuperAdminHomeIntelligenceSections({
             {
               key: "a6",
               label: "اشتراكات مشتراة",
-              scopeLabel: periodScopeLabel(period),
+              scopeLabel: t(periodScopeLabel(period)),
               ...fromSection(
                 isPosthogEventUnavailable(posthog, meta, "subscription_purchased"),
                 posthog?.events?.subscription_purchased,

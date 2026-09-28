@@ -12,7 +12,9 @@ import {
 import DashboardStatCard, { DashboardStatCardSkeleton } from "../../dashboard/DashboardStatCard";
 import DashboardChartCard from "../../dashboard/DashboardChartCard";
 import DashboardEmptyState from "../../dashboard/DashboardEmptyState";
+import { useTranslation } from "../../../i18n/LanguageProvider";
 import { resolveSuperAdminDashboardHomeLink } from "./superAdminHomeDataUtils";
+import "./registerAnalysisLocale";
 
 export const LABEL_UNAVAILABLE = "غير متاح";
 export const LABEL_LOAD_FAILED = "تعذر تحميل البيانات";
@@ -170,12 +172,13 @@ export function MetricScopeLabel({ children, className = "" }) {
 }
 
 export function PeriodAwarenessBanner({ period }) {
-  if (!period?.label) return null;
+  const { t } = useTranslation();
+  if (!period?.labelKey) return null;
   return (
     <p className="sa-period-banner m-0" role="status">
-      يتم عرض البيانات بناءً على: <strong>{period.label}</strong>
+      {t("analysis.periodBanner.basedOn")} <strong>{t(period.labelKey)}</strong>
       {period.posthogLimited ? (
-        <span className="sa-period-banner__note"> — بعض اتجاهات النشاط محدودة بـ 30 يوماً.</span>
+        <span className="sa-period-banner__note">{t("analysis.periodBanner.activityLimited")}</span>
       ) : null}
     </p>
   );

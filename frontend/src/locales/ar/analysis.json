@@ -1,0 +1,141 @@
+{
+  "page": {
+    "title": "التحليلات",
+    "subtitle": "نظرة تحليلية على توزيع المستخدمين والاشتراكات حسب الدولة والباقة"
+  },
+  "range": {
+    "all": "كل الفترات",
+    "today": "اليوم",
+    "7d": "آخر 7 أيام",
+    "30d": "آخر 30 يوماً",
+    "this_month": "هذا الشهر",
+    "last_month": "الشهر الماضي",
+    "90d": "آخر 90 يوماً",
+    "custom": "مخصص",
+    "ariaLabel": "الفترة"
+  },
+  "dateFilter": {
+    "ariaLabel": "فلتر الفترة الزمنية",
+    "title": "فلتر الفترة",
+    "desc": "نطاق الاتجاهات والمقارنات",
+    "currentLabel": "الفترة:",
+    "activityLimitNote": " (نشاط: 30 يوماً)",
+    "from": "من",
+    "to": "إلى"
+  },
+  "periodBanner": {
+    "basedOn": "يتم عرض البيانات بناءً على:",
+    "activityLimited": " — بعض اتجاهات النشاط محدودة بـ 30 يوماً."
+  },
+  "filter": {
+    "currentSubscriptionsOnly": "الاشتراكات الحالية فقط"
+  },
+  "actions": {
+    "refresh": "تحديث",
+    "refreshing": "تحديث…",
+    "retry": "إعادة المحاولة"
+  },
+  "errors": {
+    "loadAnalysis": "تعذر تحميل بيانات التحليل."
+  },
+  "loading": {
+    "stats": "جارٍ تحميل الإحصائيات…",
+    "generic": "جارٍ التحميل…"
+  },
+  "chart": {
+    "emptyInsufficient": "لا توجد بيانات كافية لعرض المخطط."
+  },
+  "summary": {
+    "title": "ملخص سريع",
+    "desc": "أهم المؤشرات في لمحة — {{range}}"
+  },
+  "kpi": {
+    "totalUsers": "إجمالي المستخدمين",
+    "clientsAndFreelancers": "عملاء ومستقلون",
+    "topCountry": "أكثر دولة",
+    "usersCount": "{{count}} مستخدم",
+    "totalCurrentSubscriptions": "إجمالي الاشتراكات الحالية",
+    "paidSubscriptions": "الاشتراكات المدفوعة",
+    "adminAssigned": "الإسناد الإداري",
+    "paidRevenueTotal": "إجمالي قيمة الاشتراكات المدفوعة",
+    "paid": "مدفوعة",
+    "adminAssignedShort": "إسناد إداري",
+    "adminAssignedHint": "اشتراكات تم إسنادها من الإدارة",
+    "freeNotRequired": "مجانية / لا تتطلب دفعاً",
+    "pendingCompanyActivation": "بانتظار تفعيل الشركة",
+    "assignedNotStarted": "لم تبدأ بعد",
+    "active": "نشطة",
+    "inactiveCancelled": "منتهية / ملغاة",
+    "totalSubscriptions": "إجمالي الاشتراكات",
+    "free": "مجانية",
+    "paidValue": "قيمة مدفوعة"
+  },
+  "usersByCountry": {
+    "sectionAria": "تحليل المستخدمين حسب الدولة",
+    "topCountriesTitle": "أعلى الدول (مستخدمون)",
+    "topCountriesDesc": "توزيع العملاء والمستقلين",
+    "topEight": "أعلى 8",
+    "tableTitle": "تحليل المستخدمين حسب الدولة",
+    "tableDesc": "حسب الدولة المسجّلة في الحساب",
+    "knownCountry": "بدولة معروفة",
+    "unknownCountry": "دولة غير معروفة",
+    "totalClientsFreelancers": "إجمالي العملاء والمستقلين",
+    "empty": "لا توجد بيانات مستخدمين",
+    "colCountry": "الدولة",
+    "colTotalUsers": "إجمالي المستخدمين",
+    "colClients": "العملاء",
+    "colFreelancers": "المستقلون",
+    "colShare": "النسبة"
+  },
+  "freelancerSubscriptions": {
+    "title": "تحليل اشتراكات المستقلين",
+    "desc": "حسب حالة الدفع والتفعيل"
+  },
+  "byPlan": {
+    "title": "الاشتراكات حسب الباقة",
+    "desc": "مرتبة حسب عدد المشتركين الحاليين",
+    "empty": "لا توجد اشتراكات على الباقات",
+    "colPlan": "الباقة",
+    "colPrice": "السعر",
+    "colDuration": "المدة",
+    "colTotal": "الإجمالي",
+    "colPaid": "مدفوعة",
+    "colAdmin": "إسناد",
+    "colFree": "مجانية",
+    "colActive": "نشطة",
+    "colPendingActivation": "بانتظار التفعيل",
+    "colNotStarted": "لم تبدأ",
+    "colPaidValue": "قيمة مدفوعة",
+    "activationFeesNote": "يشمل رسوم التفعيل التاريخية عند وجودها",
+    "durationDays": "{{count}} يوم",
+    "pillPaid": "{{count}} مدفوع",
+    "pillAdmin": "{{count}} إسناد",
+    "pillFree": "{{count}} مجاني",
+    "revenuePlan": "{{amount}} باقة",
+    "revenueActivation": "{{amount}} تفعيل"
+  },
+  "planGroup": {
+    "sectionAria": "تحليل الاشتراكات حسب نوع الباقة",
+    "empty": "لا توجد بيانات مجموعات باقات",
+    "topPlan": "أشهر باقة",
+    "subscribers": "{{count}} مشترك"
+  },
+  "subsByCountry": {
+    "sectionAria": "الدول الأكثر اشتراكاً",
+    "topCountriesTitle": "أعلى الدول (اشتراكات)",
+    "topCountriesDesc": "توزيع الاشتراكات حسب دولة المستقل",
+    "tableTitle": "الدول الأكثر اشتراكاً",
+    "tableDesc": "مدفوع، إسناد، وأشهر باقة لكل دولة",
+    "empty": "لا توجد بيانات اشتراكات حسب الدولة",
+    "colCountry": "الدولة",
+    "colSubscriptions": "الاشتراكات",
+    "colPaid": "مدفوعة",
+    "colAdmin": "إسناد إداري",
+    "colTopPlan": "أشهر باقة",
+    "colPaidValue": "قيمة مدفوعة"
+  },
+  "sharePercent": "{{value}}٪",
+  "home": {
+    "defaultPeriod": "الفترة المحددة"
+  }
+}
