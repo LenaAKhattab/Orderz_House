@@ -953,7 +953,9 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
     <div className="oh-orders-toolbar-neu__controls">
       {sortControl}
       {planFilterButton}
-      {isFreelancer ? <OpportunityHelpTrigger conditionKey="mini_bid_intro" label="كيف تعمل هذه الفرصة؟" /> : null}
+      {isFreelancer ? (
+        <OpportunityHelpTrigger conditionKey="mini_bid_intro" label={t("orders.marketplace.miniBidHelpLabel")} />
+      ) : null}
       {showUpdatingBadge ? <OpenOrdersUpdatingBadge /> : null}
     </div>
   );

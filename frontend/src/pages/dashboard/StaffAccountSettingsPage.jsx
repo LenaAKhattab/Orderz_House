@@ -16,6 +16,8 @@ import DashboardLoadingState from "../../components/dashboard/DashboardLoadingSt
 import DashboardEmptyState from "../../components/dashboard/DashboardEmptyState";
 import BrowserNotificationSettings from "../../components/notifications/BrowserNotificationSettings";
 import { breadcrumbHomeCrumb } from "../../components/dashboard/dashboardBreadcrumbs";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/opsAdminResources";
 import "./shared/account-pages.css";
 
 const PHONE_RE = /^\+[1-9]\d{7,14}$/;
@@ -23,6 +25,7 @@ const PHONE_RE = /^\+[1-9]\d{7,14}$/;
 export default function StaffAccountSettingsPage({ heroKicker, heroTitle, heroLead }) {
   const { refreshUser, user: authUser } = useAuth();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -55,11 +58,11 @@ export default function StaffAccountSettingsPage({ heroKicker, heroTitle, heroLe
         setNotif(mergeNotificationPrefs(u.notificationPreferences));
       }
     } catch (e) {
-      setError(e?.response?.data?.message || e?.message || "تعذّر التحميل.");
+      setError(e?.response?.data?.message || e?.message || t("opsAdmin.staffAccount.loadFailed"));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     load();
@@ -68,15 +71,15 @@ export default function StaffAccountSettingsPage({ heroKicker, heroTitle, heroLe
   const validate = () => {
     const full = [firstName, fatherName, familyName].join(" ").trim();
     if (full.length < 2) {
-      toast.error("الاسم الكامل يجب أن يكون حرفين على الأقل.");
+      toast.error(t("opsAdmin.staffAccount.errNameMin"));
       return false;
     }
     if (!PHONE_RE.test(String(phone || "").trim())) {
-      toast.error("رقم الجوال يجب أن يكون بالصيغة الدولية.");
+      toast.error(t("opsAdmin.staffAccount.errPhoneIntl"));
       return false;
     }
     if (!PHONE_RE.test(String(whatsApp || "").trim())) {
-      toast.error("رقم واتساب يجب أن يكون بالصيغة الدولية.");
+      toast.error(t("opsAdmin.staffAccount.errWhatsAppIntl"));
       return false;
     }
     return true;
@@ -95,9 +98,9 @@ export default function StaffAccountSettingsPage({ heroKicker, heroTitle, heroLe
         notificationPreferences: notif,
       });
       await refreshUser();
-      toast.success("تم حفظ الإعدادات.");
+      toast.success(t("opsAdmin.staffAccount.savedSettings"));
     } catch (e) {
-      toast.error(e?.response?.data?.message || e?.message || "تعذّر الحفظ.");
+      toast.error(e?.response?.data?.message || e?.message || t("opsAdmin.staffAccount.saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -105,7 +108,7 @@ export default function StaffAccountSettingsPage({ heroKicker, heroTitle, heroLe
 
   const handleSavePassword = async () => {
     if (newPassword !== confirmPassword) {
-      toast.error("كلمتا المرور غير متطابقتين.");
+      toast.error(t("opsAdmin.staffAccount.errPasswordMismatch"));
       return;
     }
     setPwSaving(true);
@@ -114,9 +117,9 @@ export default function StaffAccountSettingsPage({ heroKicker, heroTitle, heroLe
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
-      toast.success("تم تحديث كلمة المرور.");
+      toast.success(t("opsAdmin.staffAccount.passwordUpdated"));
     } catch (e) {
-      toast.error(e?.response?.data?.message || e?.message || "تعذّر تغيير كلمة المرور.");
+      toast.error(e?.response?.data?.message || e?.message || t("opsAdmin.staffAccount.passwordChangeFailed"));
     } finally {
       setPwSaving(false);
     }
@@ -127,7 +130,7 @@ export default function StaffAccountSettingsPage({ heroKicker, heroTitle, heroLe
     e.target.value = "";
     if (!file) return;
     if (file.size > 2 * 1024 * 1024) {
-      toast.error("حجم الصورة كبير جداً.");
+      toast.error(t("opsAdmin.staffAccount.errImageLarge"));
       return;
     }
     setAvatarBusy(true);
@@ -135,9 +138,9 @@ export default function StaffAccountSettingsPage({ heroKicker, heroTitle, heroLe
       await patchProfileAvatarRequest(file);
       await refreshUser();
       await load();
-      toast.success("تم تحديث الصورة.");
+      toast.success(t("opsAdmin.staffAccount.avatarUpdated"));
     } catch (err) {
-      toast.error(err?.response?.data?.message || err?.message || "فشل الرفع.");
+      toast.error(err?.response?.data?.message || err?.message || t("opsAdmin.staffAccount.uploadFailed"));
     } finally {
       setAvatarBusy(false);
     }
@@ -149,9 +152,9 @@ export default function StaffAccountSettingsPage({ heroKicker, heroTitle, heroLe
       await deleteProfileAvatarRequest();
       await refreshUser();
       await load();
-      toast.success("تمت إزالة الصورة.");
+      toast.success(t("opsAdmin.staffAccount.avatarRemoved"));
     } catch (err) {
-      toast.error(err?.response?.data?.message || err?.message || "تعذّر الإزالة.");
+      toast.error(err?.response?.data?.message || err?.message || t("opsAdmin.staffAccount.removeFailed"));
     } finally {
       setAvatarBusy(false);
     }
@@ -160,7 +163,7 @@ export default function StaffAccountSettingsPage({ heroKicker, heroTitle, heroLe
   if (loading) {
     return (
       <DashboardShell className="oh-account-page oh-account-page--staff">
-        <DashboardLoadingState label="جاري تحميل الإعدادات…" rows={5} />
+        <DashboardLoadingState label={t("opsAdmin.staffAccount.loadingLabel")} rows={5} />
       </DashboardShell>
     );
   }
@@ -169,11 +172,11 @@ export default function StaffAccountSettingsPage({ heroKicker, heroTitle, heroLe
     return (
       <DashboardShell className="oh-account-page oh-account-page--staff">
         <DashboardEmptyState
-          title="تعذّر التحميل"
+          title={t("opsAdmin.staffAccount.loadErrorTitle")}
           description={error}
           actions={
             <button type="button" className="btn btn-primary" onClick={load}>
-              إعادة المحاولة
+              {t("opsAdmin.common.retry")}
             </button>
           }
         />
@@ -189,63 +192,61 @@ export default function StaffAccountSettingsPage({ heroKicker, heroTitle, heroLe
         description={heroLead}
         breadcrumbs={[
           breadcrumbHomeCrumb(authUser),
-          { label: "إعدادات الحساب" },
+          { label: t("opsAdmin.staffAccount.breadcrumb") },
         ]}
       />
 
-      <DashboardSection title="الصورة">
+      <DashboardSection title={t("opsAdmin.staffAccount.sectionPhoto")}>
         <div className="oh-account-avatar-row">
           <label className="btn btn-secondary" style={{ cursor: avatarBusy ? "wait" : "pointer" }}>
-            {avatarBusy ? "جاري…" : "رفع صورة"}
+            {avatarBusy ? t("opsAdmin.staffAccount.uploading") : t("opsAdmin.staffAccount.uploadPhoto")}
             <input type="file" accept="image/jpeg,image/png,image/webp" hidden disabled={avatarBusy} onChange={onAvatarPick} />
           </label>
           <button type="button" className="btn btn-secondary" disabled={avatarBusy} onClick={onAvatarClear}>
-            إزالة الصورة
+            {t("opsAdmin.staffAccount.removePhoto")}
           </button>
         </div>
       </DashboardSection>
 
-      <DashboardSection title="البيانات الأساسية">
+      <DashboardSection title={t("opsAdmin.staffAccount.sectionProfile")}>
         <div className="oh-account-form-grid oh-account-form-grid--2">
           <div>
-            <label className="oh-account-label">الاسم الأول</label>
+            <label className="oh-account-label">{t("opsAdmin.staffAccount.firstName")}</label>
             <input className="oh-account-input" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
           </div>
           <div>
-            <label className="oh-account-label">اسم الأب</label>
+            <label className="oh-account-label">{t("opsAdmin.staffAccount.fatherName")}</label>
             <input className="oh-account-input" value={fatherName} onChange={(e) => setFatherName(e.target.value)} />
           </div>
           <div>
-            <label className="oh-account-label">العائلة</label>
+            <label className="oh-account-label">{t("opsAdmin.staffAccount.familyName")}</label>
             <input className="oh-account-input" value={familyName} onChange={(e) => setFamilyName(e.target.value)} />
           </div>
           <div>
-            <label className="oh-account-label">البريد</label>
+            <label className="oh-account-label">{t("opsAdmin.staffAccount.email")}</label>
             <input className="oh-account-input" disabled readOnly value={authUser?.email || ""} />
           </div>
           <div>
-            <label className="oh-account-label">الجوال</label>
+            <label className="oh-account-label">{t("opsAdmin.staffAccount.phone")}</label>
             <input className="oh-account-input" dir="ltr" value={phone} onChange={(e) => setPhone(e.target.value)} />
           </div>
           <div>
-            <label className="oh-account-label">واتساب</label>
+            <label className="oh-account-label">{t("opsAdmin.staffAccount.whatsapp")}</label>
             <input className="oh-account-input" dir="ltr" value={whatsApp} onChange={(e) => setWhatsApp(e.target.value)} />
           </div>
         </div>
-        <p className="oh-account-value oh-account-page__hint">
-          البريد للعرض فقط؛ لتغييره يجب توفر آلية منفصلة من الدعم أو النظام لاحقاً.
-        </p>
+        <p className="oh-account-value oh-account-page__hint">{t("opsAdmin.staffAccount.emailReadonlyHint")}</p>
         <div className="oh-account-actions">
           <button type="button" className="btn btn-primary" disabled={saving} onClick={handleSave}>
-            {saving ? "جاري الحفظ…" : "حفظ"}
+            {saving ? t("opsAdmin.staffAccount.savingProfile") : t("opsAdmin.common.save")}
           </button>
         </div>
       </DashboardSection>
 
-      <DashboardSection title="الأمان">
+      <DashboardSection title={t("opsAdmin.staffAccount.sectionSecurity")}>
         <div className="oh-account-form-grid">
           <div>
-            <label className="oh-account-label">كلمة المرور الحالية</label>
+            <label className="oh-account-label">{t("opsAdmin.staffAccount.currentPassword")}</label>
             <input
               type="password"
               className="oh-account-input"
@@ -257,7 +258,7 @@ export default function StaffAccountSettingsPage({ heroKicker, heroTitle, heroLe
           </div>
           <div className="oh-account-form-grid oh-account-form-grid--2">
             <div>
-              <label className="oh-account-label">كلمة المرور الجديدة</label>
+              <label className="oh-account-label">{t("opsAdmin.staffAccount.newPassword")}</label>
               <input
                 type="password"
                 className="oh-account-input"
@@ -268,7 +269,7 @@ export default function StaffAccountSettingsPage({ heroKicker, heroTitle, heroLe
               />
             </div>
             <div>
-              <label className="oh-account-label">تأكيد</label>
+              <label className="oh-account-label">{t("opsAdmin.staffAccount.confirmPassword")}</label>
               <input
                 type="password"
                 className="oh-account-input"
@@ -282,17 +283,17 @@ export default function StaffAccountSettingsPage({ heroKicker, heroTitle, heroLe
         </div>
         <div className="oh-account-actions">
           <button type="button" className="btn btn-primary" disabled={pwSaving} onClick={handleSavePassword}>
-            {pwSaving ? "جاري التحديث…" : "تحديث كلمة المرور"}
+            {pwSaving ? t("opsAdmin.staffAccount.updatingPassword") : t("opsAdmin.staffAccount.updatePassword")}
           </button>
         </div>
       </DashboardSection>
 
       <BrowserNotificationSettings />
 
-      <DashboardSection title="تفضيلات الإشعارات">
+      <DashboardSection title={t("opsAdmin.staffAccount.sectionNotifPrefs")}>
         {[
-          ["general", "إشعارات عامة"],
-          ["orders", "إشعارات الطلبات والأنشطة"],
+          ["general", t("opsAdmin.staffAccount.notifGeneral")],
+          ["orders", t("opsAdmin.staffAccount.notifOrders")],
         ].map(([key, label]) => (
           <div key={key} className="oh-account-toggle">
             <span className="oh-account-value oh-account-toggle__label">{label}</span>
@@ -304,10 +305,10 @@ export default function StaffAccountSettingsPage({ heroKicker, heroTitle, heroLe
             />
           </div>
         ))}
-        <p className="oh-account-empty oh-account-page__notif-note">تخزين التفضيلات في قاعدة البيانات؛ التطبيق الفعلي على قنوات الإشعار يعتمد على إعدادات الخادم.</p>
+        <p className="oh-account-empty oh-account-page__notif-note">{t("opsAdmin.staffAccount.notifDbHint")}</p>
         <div className="oh-account-actions">
           <button type="button" className="btn btn-primary" disabled={saving} onClick={handleSave}>
-            {saving ? "جاري الحفظ…" : "حفظ التفضيلات"}
+            {saving ? t("opsAdmin.staffAccount.savingProfile") : t("opsAdmin.staffAccount.savePrefs")}
           </button>
         </div>
       </DashboardSection>

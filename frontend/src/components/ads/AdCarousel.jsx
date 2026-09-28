@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "../../i18n/LanguageProvider";
 import AdCtas from "./AdCtas";
 import AdSponsoredLabel from "./AdSponsoredLabel";
 import AdTextBlocks from "./AdTextBlocks";
@@ -13,6 +14,8 @@ import { linkTargetRel, primaryHref, truncateText } from "./adUtils";
  * @param {boolean} [p.compact]
  */
 export default function AdCarousel({ ad, className = "", onTrackClick, compact }) {
+  const { t } = useTranslation();
+  const pa = "home.promoAds";
   const slides = useMemo(() => (Array.isArray(ad.images) ? ad.images.filter(Boolean) : []), [ad.images]);
   const [idx, setIdx] = useState(0);
   const href = primaryHref(ad);
@@ -52,14 +55,14 @@ export default function AdCarousel({ ad, className = "", onTrackClick, compact }
             imgClassName={`oh-ad-card__img h-full w-full ${slide.objectFit === "contain" ? "object-contain" : "object-cover"}`}
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center bg-slate-100 text-slate-400">بدون صور</div>
+          <div className="flex h-full w-full items-center justify-center bg-slate-100 text-slate-400">{t(`${pa}.noImages`)}</div>
         )}
         {slides.length > 1 ? (
           <>
             <button
               type="button"
               className="absolute start-2 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-lg shadow-md ring-1 ring-slate-200/80 transition hover:bg-white"
-              aria-label="السابق"
+              aria-label={t(`${pa}.previous`)}
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -71,7 +74,7 @@ export default function AdCarousel({ ad, className = "", onTrackClick, compact }
             <button
               type="button"
               className="absolute end-2 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-lg shadow-md ring-1 ring-slate-200/80 transition hover:bg-white"
-              aria-label="التالي"
+              aria-label={t(`${pa}.next`)}
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -102,7 +105,7 @@ export default function AdCarousel({ ad, className = "", onTrackClick, compact }
                 key={s.id || i}
                 type="button"
                 className={`h-2 rounded-full transition-all ${i === idx ? "w-6 bg-[#2f3b65]" : "w-2 bg-slate-300"}`}
-                aria-label={`شريحة ${i + 1}`}
+                aria-label={t(`${pa}.slideN`, { n: i + 1 })}
                 aria-current={i === idx}
                 onClick={(e) => {
                   e.preventDefault();

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "../../i18n/LanguageProvider";
 import { postOnboardingEventRequest } from "../../services/api";
 
 const CTA_CLASS =
@@ -9,6 +10,8 @@ const LINK_CLASS =
 const MUTED_CLASS = "mb-[0.2rem] text-[0.68rem] font-bold text-[var(--dash-text-secondary,#5a6378)]";
 
 export default function FreelancerOnboardingPanel({ payload }) {
+  const { t } = useTranslation();
+  const op = "freelancerDashboard.onboardingPanel";
   const viewedRef = useRef(false);
   const item = payload?.currentItem;
   const show = Boolean(payload?.showPanel && item);
@@ -52,15 +55,15 @@ export default function FreelancerOnboardingPanel({ payload }) {
       <div className="flex flex-wrap items-center gap-2">
         {item.ctaLabel ? (
           <Link to={ctaTo} className={CTA_CLASS} onClick={onCta}>
-            {compact && item.conditionKey === "training_incomplete" ? "أكمل الآن" : item.ctaLabel}
+            {compact && item.conditionKey === "training_incomplete" ? t(`${op}.completeNow`) : item.ctaLabel}
           </Link>
         ) : null}
         <Link to="/dashboard/freelancer/getting-started" className={LINK_CLASS}>
-          مركز البداية
+          {t(`${op}.gettingStarted`)}
         </Link>
         {item.isDismissible ? (
           <button type="button" className={LINK_CLASS} onClick={onDismiss}>
-            تذكير لاحقًا
+            {t(`${op}.remindLater`)}
           </button>
         ) : null}
       </div>

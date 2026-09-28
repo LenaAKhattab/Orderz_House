@@ -19,7 +19,7 @@ function pickLocalized({ locale, ar, en }) {
 export default function PopupAdModal({ ad, onClose }) {
   const ref = useRef(null);
   const syncingRef = useRef(false);
-  const { locale } = useTranslation();
+  const { locale, t } = useTranslation();
 
   useEffect(() => {
     const d = ref.current;
@@ -93,7 +93,7 @@ export default function PopupAdModal({ ad, onClose }) {
             data-popup-ad-close
             className="oh-popup-ad-modal__close"
             onClick={() => ref.current?.close()}
-            aria-label="إغلاق الإعلان"
+            aria-label={t("home.promoAds.closeAd")}
           >
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
               <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" />

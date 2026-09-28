@@ -9,6 +9,8 @@ import {
 } from "../../constants/bildazoAuthorTerms";
 import { submitFreelancerBildazoAuthorLinkRequest } from "../../services/api";
 import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/articlesResources";
 import FreelancerBildazoAuthorLinkForm from "./FreelancerBildazoAuthorLinkForm";
 import "./bildazo-author-gate.css";
 
@@ -17,6 +19,7 @@ export default function FreelancerBildazoAuthorGateCard({
   onUpdated,
   isEn = false,
 }) {
+  const { t, dir } = useTranslation();
   const { user } = useAuth();
   const [flow, setFlow] = useState(
     link?.linkFlow === BILDAZO_AUTHOR_LINK_FLOWS.EXISTING_ACCOUNT
@@ -71,13 +74,13 @@ export default function FreelancerBildazoAuthorGateCard({
 
   const pendingCopy =
     link?.status === "pending_new_account"
-      ? "جاري إنشاء حساب الكاتب في Bildazo. إذا لم يكتمل الربط يمكنك إعادة الإرسال."
+      ? t("articles.bildazoGate.pendingNew")
       : link?.status === "needs_manual_review"
-        ? "يحتاج طلب الربط إلى مراجعة من الإدارة."
+        ? t("articles.bildazoGate.pendingReview")
         : link?.status === "failed"
-          ? bildazoLinkFailureMessage(link, isEn)
+          ? bildazoLinkFailureMessage(link, isEn, t)
           : pending
-            ? "تم حفظ طلب الربط. أعد المحاولة إذا لم يظهر الحساب مرتبطًا."
+            ? t("articles.bildazoGate.pendingSaved")
             : null;
 
   const pendingTestId =
@@ -94,7 +97,7 @@ export default function FreelancerBildazoAuthorGateCard({
       flow === BILDAZO_AUTHOR_LINK_FLOWS.NEW_ACCOUNT
         ? { fullName, phoneE164, countryIso, dateOfBirth, password, passwordConfirm }
         : { existingBildazoEmail: existingEmail, password: existingPassword };
-    const validation = validateBildazoAuthorLinkForm({ flow, payload, termsChecked });
+    const validation = validateBildazoAuthorLinkForm({ flow, payload, termsChecked, t });
     if (validation) {
       setError(validation);
       return;
@@ -124,7 +127,7 @@ export default function FreelancerBildazoAuthorGateCard({
       setPasswordConfirm("");
       setExistingPassword("");
       if (!isBildazoAuthorLinked(next)) {
-        const failedMsg = bildazoLinkFailureMessage(next, isEn);
+        const failedMsg = bildazoLinkFailureMessage(next, isEn, t);
         if (failedMsg) setError(failedMsg);
       }
       onUpdated?.(next);
@@ -136,8 +139,8 @@ export default function FreelancerBildazoAuthorGateCard({
       const genericAuth = /invalid email or password|تعذر التحقق/i.test(String(raw || ""));
       setError(
         genericAuth
-          ? "تعذر التحقق من حساب Bildazo. تأكد من البريد وكلمة المرور."
-          : raw || (isEn ? "Could not complete the Bildazo link." : "تعذر إكمال ربط Bildazo."),
+          ? t("articles.bildazoGate.authFailed")
+          : raw || t("articles.bildazoGate.completeFailed"),
       );
     } finally {
       setBusy(false);
@@ -147,15 +150,15 @@ export default function FreelancerBildazoAuthorGateCard({
   const informational = link?.gateEnabled === false;
 
   return (
-    <div className="bz-gate" dir="rtl">
+    <div className="bz-gate" dir={dir}>
       <div className="bz-gate__brand">
         <img className="bz-gate__logo" src="/brand/bildazo-logo.png" alt="Bildazo" data-testid="bildazo-logo" />
       </div>
-      <h2 className="bz-gate__title">حساب الكاتب في Bildazo</h2>
+      <h2 className="bz-gate__title">{t("articles.bildazoGate.title")}</h2>
       <p className="bz-gate__subtitle">
         {informational
-          ? "اربط حساب الكاتب الآن لتنشر مقالاتك لاحقًا على Bildazo بسهولة وباسمك."
-          : "اربط حساب الكاتب في Bildazo لتقديم مقالات Mini Article باسمك مباشرة بعد القبول."}
+          ? t("articles.bildazoGate.subtitleInfo")
+          : t("articles.bildazoGate.subtitleApply")}
       </p>
 
       {pendingCopy ? (

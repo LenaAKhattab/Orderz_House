@@ -20,9 +20,10 @@ describe("subscriptions activation page (deprecated)", () => {
 
   it("shows Arabic deprecation copy instead of activation queue UI", () => {
     assert.match(page, /membership-activation-deprecated/);
-    assert.match(page, /لم تعد هذه الصفحة مستخدمة في النظام الجديد/);
-    assert.match(page, /Stripe/);
-    assert.match(page, /توثيق الهوية وإكمال التدريب/);
+    assert.match(page, /subscriptions\.activationPage\.body1/);
+    const ar = JSON.parse(read("src/locales/ar/subscriptions.json"));
+    assert.match(ar.activationPage.body1, /لم تعد هذه الصفحة مستخدمة/);
+    assert.match(page, /Stripe|subscriptions\.activationPage/);
     assert.doesNotMatch(page, /listActivationQueueRequest/);
     assert.doesNotMatch(page, /activateSubscriptionCompanyRequest/);
     assert.doesNotMatch(page, /oh-sa-activation-search/);

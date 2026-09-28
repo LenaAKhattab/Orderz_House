@@ -15,6 +15,7 @@ import BrowserNotificationSettings from "../../components/notifications/BrowserN
 import PreferredDisplayCurrencySettings from "../../components/money/PreferredDisplayCurrencySettings";
 import { breadcrumbHomeCrumb } from "../../components/dashboard/dashboardBreadcrumbs";
 import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/clientAreaResources";
 import "../../styles/dashboardHub.css";
 import "./shared/account-pages.css";
 
@@ -22,7 +23,8 @@ const PHONE_RE = /^\+[1-9]\d{7,14}$/;
 
 export default function ClientSettingsPage() {
   const { refreshUser, user } = useAuth();
-  const { dir } = useTranslation();
+  const { dir, t } = useTranslation();
+  const s = "clientArea.settings";
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -66,11 +68,11 @@ export default function ClientSettingsPage() {
         setNotif(mergeNotificationPrefs(u.notificationPreferences));
       }
     } catch (e) {
-      setError(e?.response?.data?.message || e?.message || "تعذّر التحميل.");
+      setError(e?.response?.data?.message || e?.message || t(`${s}.loadError`));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     load();
@@ -79,20 +81,20 @@ export default function ClientSettingsPage() {
   const validate = () => {
     const full = [firstName, fatherName, familyName].join(" ").trim();
     if (full.length < 2) {
-      toast.error("الاسم الكامل يجب أن يكون حرفين على الأقل.");
+      toast.error(t(`${s}.validation.fullNameMin`));
       return false;
     }
     if (!PHONE_RE.test(String(phone || "").trim())) {
-      toast.error("رقم الجوال يجب أن يكون بالصيغة الدولية.");
+      toast.error(t(`${s}.validation.phoneE164`));
       return false;
     }
     if (!PHONE_RE.test(String(whatsApp || "").trim())) {
-      toast.error("رقم واتساب يجب أن يكون بالصيغة الدولية.");
+      toast.error(t(`${s}.validation.whatsappE164`));
       return false;
     }
     const bc = String(billingCountry || "").trim().toUpperCase();
     if (bc && bc.length !== 2) {
-      toast.error("رمز الدولة يجب أن يكون حرفين (مثل JO).");
+      toast.error(t(`${s}.validation.countryIso`));
       return false;
     }
     return true;
@@ -116,9 +118,9 @@ export default function ClientSettingsPage() {
         notificationPreferences: notif,
       });
       await refreshUser();
-      toast.success("تم حفظ الإعدادات.");
+      toast.success(t(`${s}.toast.saved`));
     } catch (e) {
-      toast.error(e?.response?.data?.message || e?.message || "تعذّر الحفظ.");
+      toast.error(e?.response?.data?.message || e?.message || t(`${s}.toast.saveError`));
     } finally {
       setSaving(false);
     }
@@ -126,7 +128,7 @@ export default function ClientSettingsPage() {
 
   const handleSavePassword = async () => {
     if (newPassword !== confirmPassword) {
-      toast.error("كلمتا المرور غير متطابقتين.");
+      toast.error(t(`${s}.toast.passwordMismatch`));
       return;
     }
     setPwSaving(true);
@@ -135,9 +137,9 @@ export default function ClientSettingsPage() {
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
-      toast.success("تم تحديث كلمة المرور.");
+      toast.success(t(`${s}.toast.passwordUpdated`));
     } catch (e) {
-      toast.error(e?.response?.data?.message || e?.message || "تعذّر تغيير كلمة المرور.");
+      toast.error(e?.response?.data?.message || e?.message || t(`${s}.toast.passwordError`));
     } finally {
       setPwSaving(false);
     }
@@ -148,7 +150,7 @@ export default function ClientSettingsPage() {
     e.target.value = "";
     if (!file) return;
     if (file.size > 2 * 1024 * 1024) {
-      toast.error("حجم الصورة كبير جداً.");
+      toast.error(t(`${s}.toast.avatarTooLarge`));
       return;
     }
     setAvatarBusy(true);
@@ -156,9 +158,9 @@ export default function ClientSettingsPage() {
       await patchProfileAvatarRequest(file);
       await refreshUser();
       await load();
-      toast.success("تم تحديث الصورة.");
+      toast.success(t(`${s}.toast.avatarUpdated`));
     } catch (err) {
-      toast.error(err?.response?.data?.message || err?.message || "فشل الرفع.");
+      toast.error(err?.response?.data?.message || err?.message || t(`${s}.toast.avatarUploadError`));
     } finally {
       setAvatarBusy(false);
     }
@@ -170,9 +172,9 @@ export default function ClientSettingsPage() {
       await deleteProfileAvatarRequest();
       await refreshUser();
       await load();
-      toast.success("تمت إزالة الصورة.");
+      toast.success(t(`${s}.toast.avatarRemoved`));
     } catch (err) {
-      toast.error(err?.response?.data?.message || err?.message || "تعذّر الإزالة.");
+      toast.error(err?.response?.data?.message || err?.message || t(`${s}.toast.avatarRemoveError`));
     } finally {
       setAvatarBusy(false);
     }
@@ -197,7 +199,7 @@ export default function ClientSettingsPage() {
               {error}
             </p>
             <button type="button" className="oh-account-btn-primary" style={{ marginTop: 12 }} onClick={load}>
-              إعادة المحاولة
+              {t("clientArea.common.retry")}
             </button>
           </div>
         </div>
@@ -209,75 +211,75 @@ export default function ClientSettingsPage() {
     <DashboardHubPage className="fdash-page--account">
     <div className="oh-account-page" dir={dir}>
       <DashboardPageHeader
-        eyebrow="إعدادات العميل"
-        title="إعدادات الحساب"
-        description="حدّث بياناتك وبيانات الفوترة المعروضة للفريق. لا تُخزَّن بيانات بطاقات الدفع هنا."
+        eyebrow={t(`${s}.eyebrow`)}
+        title={t(`${s}.title`)}
+        description={t(`${s}.description`)}
         breadcrumbs={[
           breadcrumbHomeCrumb(user),
-          { label: "إعدادات الحساب" },
+          { label: t(`${s}.breadcrumb`) },
         ]}
       />
 
       <div className="oh-account-card" style={{ marginBottom: 16 }}>
-        <h2 className="oh-account-card__title">صورة الحساب</h2>
+        <h2 className="oh-account-card__title">{t(`${s}.avatarTitle`)}</h2>
         <div className="oh-account-avatar-row">
           <label className="oh-account-btn-ghost" style={{ cursor: avatarBusy ? "wait" : "pointer" }}>
-            {avatarBusy ? "جاري…" : "رفع صورة"}
+            {avatarBusy ? t("clientArea.common.busy.uploading") : t(`${s}.uploadAvatar`)}
             <input type="file" accept="image/jpeg,image/png,image/webp" hidden disabled={avatarBusy} onChange={onAvatarPick} />
           </label>
           <button type="button" className="oh-account-btn-ghost" disabled={avatarBusy} onClick={onAvatarClear}>
-            إزالة الصورة
+            {t(`${s}.removeAvatar`)}
           </button>
         </div>
       </div>
 
       <div className="oh-account-card" style={{ marginBottom: 16 }}>
-        <h2 className="oh-account-card__title">المعلومات الأساسية</h2>
+        <h2 className="oh-account-card__title">{t(`${s}.basicInfo`)}</h2>
         <div className="oh-account-form-grid oh-account-form-grid--2">
           <div>
-            <label className="oh-account-label">الاسم الأول</label>
+            <label className="oh-account-label">{t(`${s}.firstName`)}</label>
             <input className="oh-account-input" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
           </div>
           <div>
-            <label className="oh-account-label">اسم الأب</label>
+            <label className="oh-account-label">{t(`${s}.fatherName`)}</label>
             <input className="oh-account-input" value={fatherName} onChange={(e) => setFatherName(e.target.value)} />
           </div>
           <div>
-            <label className="oh-account-label">العائلة</label>
+            <label className="oh-account-label">{t(`${s}.familyName`)}</label>
             <input className="oh-account-input" value={familyName} onChange={(e) => setFamilyName(e.target.value)} />
           </div>
           <div>
-            <label className="oh-account-label">اسم الشركة</label>
+            <label className="oh-account-label">{t(`${s}.companyName`)}</label>
             <input className="oh-account-input" value={companyName} onChange={(e) => setCompanyName(e.target.value)} />
           </div>
           <div>
-            <label className="oh-account-label">الجوال (E.164)</label>
+            <label className="oh-account-label">{t(`${s}.phoneE164`)}</label>
             <input className="oh-account-input" dir="ltr" value={phone} onChange={(e) => setPhone(e.target.value)} />
           </div>
           <div>
-            <label className="oh-account-label">واتساب (E.164)</label>
+            <label className="oh-account-label">{t(`${s}.whatsappE164`)}</label>
             <input className="oh-account-input" dir="ltr" value={whatsApp} onChange={(e) => setWhatsApp(e.target.value)} />
           </div>
         </div>
         <div className="oh-account-actions">
           <button type="button" className="oh-account-btn-primary" disabled={saving} onClick={handleSave}>
-            {saving ? "جاري الحفظ…" : "حفظ"}
+            {saving ? t("clientArea.common.busy.saving") : t(`${s}.save`)}
           </button>
         </div>
       </div>
 
       <div className="oh-account-card" style={{ marginBottom: 16 }}>
-        <h2 className="oh-account-card__title">معلومات الفوترة</h2>
+        <h2 className="oh-account-card__title">{t(`${s}.billingTitle`)}</h2>
         <p className="oh-account-value" style={{ marginBottom: 12, fontSize: "0.88rem", color: "#5a6378" }}>
-          معلومات تعريفية للفواتير فقط — لا تُستخدم لمعالجة Stripe مباشرة من هذه الصفحة.
+          {t(`${s}.billingHint`)}
         </p>
         <div className="oh-account-form-grid oh-account-form-grid--2">
           <div>
-            <label className="oh-account-label">اسم الفوترة</label>
+            <label className="oh-account-label">{t(`${s}.billingName`)}</label>
             <input className="oh-account-input" value={billingName} onChange={(e) => setBillingName(e.target.value)} />
           </div>
           <div>
-            <label className="oh-account-label">رمز الدولة (ISO)</label>
+            <label className="oh-account-label">{t(`${s}.countryIso`)}</label>
             <input
               className="oh-account-input"
               dir="ltr"
@@ -288,26 +290,26 @@ export default function ClientSettingsPage() {
             />
           </div>
           <div style={{ gridColumn: "1 / -1" }}>
-            <label className="oh-account-label">المدينة</label>
+            <label className="oh-account-label">{t(`${s}.city`)}</label>
             <input className="oh-account-input" value={billingCity} onChange={(e) => setBillingCity(e.target.value)} />
           </div>
           <div style={{ gridColumn: "1 / -1" }}>
-            <label className="oh-account-label">ملاحظات الفوترة</label>
+            <label className="oh-account-label">{t(`${s}.billingNotes`)}</label>
             <textarea className="oh-account-textarea" style={{ minHeight: 88 }} value={billingNotes} onChange={(e) => setBillingNotes(e.target.value)} />
           </div>
         </div>
         <div className="oh-account-actions">
           <button type="button" className="oh-account-btn-primary" disabled={saving} onClick={handleSave}>
-            {saving ? "جاري الحفظ…" : "حفظ الفوترة"}
+            {saving ? t("clientArea.common.busy.saving") : t(`${s}.saveBilling`)}
           </button>
         </div>
       </div>
 
       <div className="oh-account-card" style={{ marginBottom: 16 }}>
-        <h2 className="oh-account-card__title">الأمان</h2>
+        <h2 className="oh-account-card__title">{t(`${s}.securityTitle`)}</h2>
         <div className="oh-account-form-grid">
           <div>
-            <label className="oh-account-label">كلمة المرور الحالية</label>
+            <label className="oh-account-label">{t(`${s}.currentPassword`)}</label>
             <input
               type="password"
               className="oh-account-input"
@@ -319,7 +321,7 @@ export default function ClientSettingsPage() {
           </div>
           <div className="oh-account-form-grid oh-account-form-grid--2">
             <div>
-              <label className="oh-account-label">كلمة المرور الجديدة</label>
+              <label className="oh-account-label">{t(`${s}.newPassword`)}</label>
               <input
                 type="password"
                 className="oh-account-input"
@@ -330,7 +332,7 @@ export default function ClientSettingsPage() {
               />
             </div>
             <div>
-              <label className="oh-account-label">تأكيد</label>
+              <label className="oh-account-label">{t(`${s}.confirmPassword`)}</label>
               <input
                 type="password"
                 className="oh-account-input"
@@ -344,7 +346,7 @@ export default function ClientSettingsPage() {
         </div>
         <div className="oh-account-actions">
           <button type="button" className="oh-account-btn-primary" disabled={pwSaving} onClick={handleSavePassword}>
-            {pwSaving ? "جاري التحديث…" : "تحديث كلمة المرور"}
+            {pwSaving ? t("clientArea.common.busy.updating") : t(`${s}.updatePassword`)}
           </button>
         </div>
       </div>
@@ -352,17 +354,17 @@ export default function ClientSettingsPage() {
       <BrowserNotificationSettings />
 
       <div className="oh-account-card" style={{ marginBottom: 16 }}>
-        <h2 className="oh-account-card__title">العملة التقريبية المفضلة</h2>
+        <h2 className="oh-account-card__title">{t(`${s}.preferredCurrencyTitle`)}</h2>
         <PreferredDisplayCurrencySettings />
       </div>
 
       <div className="oh-account-card">
-        <h2 className="oh-account-card__title">إعدادات الإشعارات</h2>
+        <h2 className="oh-account-card__title">{t(`${s}.notificationsTitle`)}</h2>
         {[
-          ["orders", "إشعارات الطلبات"],
-          ["payments", "إشعارات الدفع"],
-          ["offers", "إشعارات العروض"],
-          ["delivery", "إشعارات التسليم"],
+          ["orders", t(`${s}.notifOrders`)],
+          ["payments", t(`${s}.notifPayments`)],
+          ["offers", t(`${s}.notifOffers`)],
+          ["delivery", t(`${s}.notifDelivery`)],
         ].map(([key, label]) => (
           <div key={key} className="oh-account-toggle">
             <span className="oh-account-value" style={{ fontWeight: 800 }}>
@@ -378,7 +380,7 @@ export default function ClientSettingsPage() {
         ))}
         <div className="oh-account-actions">
           <button type="button" className="oh-account-btn-primary" disabled={saving} onClick={handleSave}>
-            {saving ? "جاري الحفظ…" : "حفظ الإشعارات"}
+            {saving ? t("clientArea.common.busy.saving") : t(`${s}.saveNotifications`)}
           </button>
         </div>
       </div>

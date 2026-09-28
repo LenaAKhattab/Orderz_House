@@ -6,6 +6,7 @@ import DashboardShell from "../../components/dashboard/DashboardShell";
 import DashboardSection from "../../components/dashboard/DashboardSection";
 import DashboardLoadingState from "../../components/dashboard/DashboardLoadingState";
 import DashboardErrorState from "../../components/dashboard/DashboardErrorState";
+import { useArticlesT } from "../../admin/marketplaceArticles/useArticlesT";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import { useToast } from "../../components/ui/toastContext";
 import {
@@ -18,11 +19,10 @@ import { freelancerTrialApplyErrorMessage } from "../../constants/freelancerActi
 import { JodMoneyDisplay } from "../../components/money/JodMoneyDisplay";
 import {
   ARTICLE_WRITING_SOURCES,
-  ARTICLE_WRITING_SOURCE_LABELS_AR,
   formatArticleBidCollectionLabel,
   isBidCollectionClosedForApply,
   validateFreelancerManuscriptForm,
-  writingModeLabelAr,
+  writingModeLabel,
 } from "../../admin/marketplaceArticles/marketplaceArticleFormUtils";
 import { shouldBlockArticleApply } from "../../constants/bildazoAuthorTerms";
 import { freelancerBildazoPublishCopy } from "../../constants/bildazoArticlePublish";
@@ -37,64 +37,50 @@ import {
 } from "../../constants/planUpgradeCta";
 import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
 
-function eligibilityMessage(eligibility, isEn) {
+function eligibilityMessage(eligibility, t, locale) {
   if (!eligibility) return null;
   if (eligibility.eligible) {
-    return isEn
-      ? "Your membership access level allows you to apply to this article."
-      : "مستوى عضويتك يسمح بالتقدّم لهذا المقال.";
+    return t("freelancer.detail.eligibility.allowed");
   }
   if (eligibility.reason === "ARTICLE_ACCESS_LEVEL_INSUFFICIENT") {
-    return isEn
-      ? `Your Article access level (${eligibility.membershipArticleAccessLevel}) is below this article’s level (${eligibility.articleLevel}).`
-      : `مستوى وصولك للمقالات (${eligibility.membershipArticleAccessLevel}) أقل من مستوى هذا المقال (${eligibility.articleLevel}).`;
+    return t("freelancer.detail.eligibility.levelLow", {
+      access: eligibility.membershipArticleAccessLevel,
+      level: eligibility.articleLevel,
+    });
   }
   if (eligibility.reason === "ARTICLE_NO_USABLE_MEMBERSHIP") {
-    return isEn
-      ? "You need a usable Marketplace Membership to apply."
-      : "تحتاج عضوية سوق فعالة للتقدّم.";
+    return t("freelancer.detail.eligibility.needMembership");
   }
   if (eligibility.reason === "INSUFFICIENT_BID_CREDITS") {
-    return isEn
-      ? "You need at least 1 Bid to apply."
-      : "تحتاج عرضاً واحداً على الأقل للتقديم.";
+    return t("freelancer.detail.eligibility.needBid");
   }
   if (eligibility.reason === "ARTICLE_BID_ECONOMY_DISABLED") {
-    return isEn
-      ? "Article applications are temporarily unavailable."
-      : "تقديم المقالات غير متاح مؤقتاً.";
+    return t("freelancer.detail.eligibility.temporarilyUnavailable");
   }
   if (eligibility.reason === "ARTICLE_BID_COLLECTION_THRESHOLD_REACHED") {
-    return isEn
-      ? "The required number of applicants has been reached."
-      : "اكتمل العدد المطلوب لهذه المناقصة ولم يعد التقديم متاحًا.";
+    return t("freelancer.detail.eligibility.thresholdClosed");
   }
   if (eligibility.reason === "ARTICLE_BID_COLLECTION_MINIMUM_NOT_MET") {
-    return isEn
-      ? "This article did not reach the required number of applicants."
-      : "لم يكتمل الحد الأدنى للمناقصات";
+    return t("freelancer.detail.eligibility.minNotMet");
   }
   if (eligibility.reason === "BILDAZO_AUTHOR_LINK_REQUIRED") {
-    return isEn
-      ? "Create or link your Bildazo writer account before applying to articles."
-      : "يرجى إنشاء أو ربط حساب الكاتب في Bildazo قبل التقديم على المقالات.";
+    return t("freelancer.detail.eligibility.authorRequired");
   }
   const trialMsg = freelancerTrialApplyErrorMessage(
     { publicCode: eligibility.reason },
-    { isEn },
+    { isEn: locale === "en" },
   );
   if (trialMsg) return trialMsg;
   if (eligibility.reason === "ARTICLE_BID_COLLECTION_DEADLINE_PASSED") {
-    return isEn
-      ? "The application deadline has passed."
-      : "انتهت مدة جمع المناقصات لهذا المقال.";
+    return t("freelancer.detail.eligibility.collectionEnded");
   }
-  return isEn ? "This article is not open for applications." : "هذا المقال غير مفتوح للتقديم.";
+  return t("freelancer.detail.eligibility.notOpen");
 }
 
 export default function FreelancerMarketplaceArticleDetailPage() {
   const { id } = useParams();
-  const { locale, t } = useTranslation();
+  const { t: tDash } = useTranslation();
+  const { locale, t } = useArticlesT();
   const isEn = locale === "en";
   const { push } = useToast();
 
@@ -138,13 +124,13 @@ export default function FreelancerMarketplaceArticleDetailPage() {
       }
     } catch (err) {
       setError(
-        getSafeApiErrorMessage(err) || (isEn ? "Failed to load article." : "تعذر تحميل المقال."),
+        getSafeApiErrorMessage(err) || t("freelancer.detail.loadError"),
       );
       setArticle(null);
     } finally {
       setLoading(false);
     }
-  }, [id, isEn]);
+  }, [id, t]);
 
   useEffect(() => {
     void refresh();
@@ -168,7 +154,7 @@ export default function FreelancerMarketplaceArticleDetailPage() {
       }
       push({
         type: "success",
-        message: isEn ? "Application submitted." : "تم تقديم الطلب.",
+        message: t("freelancer.detail.applySuccess"),
       });
       await refresh();
     } catch (err) {
@@ -177,7 +163,7 @@ export default function FreelancerMarketplaceArticleDetailPage() {
         message:
           freelancerTrialApplyErrorMessage(err, { isEn }) ||
           getSafeApiErrorMessage(err) ||
-          (isEn ? "Could not apply." : "تعذر تقديم الطلب."),
+          t("freelancer.detail.applyError"),
       });
       await refresh();
     } finally {
@@ -194,14 +180,14 @@ export default function FreelancerMarketplaceArticleDetailPage() {
       await withdrawFreelancerArticleApplicationRequest(application.id);
       push({
         type: "success",
-        message: isEn ? "Application withdrawn." : "تم سحب الطلب.",
+        message: t("freelancer.detail.withdrawSuccess"),
       });
       await refresh();
     } catch (err) {
       push({
         type: "error",
         message:
-          getSafeApiErrorMessage(err) || (isEn ? "Could not withdraw." : "تعذر سحب الطلب."),
+          getSafeApiErrorMessage(err) || t("freelancer.detail.withdrawError"),
       });
     } finally {
       busyRef.current = false;
@@ -244,6 +230,7 @@ export default function FreelancerMarketplaceArticleDetailPage() {
         requiredReferencesCount: displayRequiredRefs,
         writingMode: displayWritingMode,
       },
+      locale,
     );
     setManuscriptErrors(nextErrors);
     if (Object.keys(nextErrors).length) return;
@@ -259,14 +246,14 @@ export default function FreelancerMarketplaceArticleDetailPage() {
       });
       push({
         type: "success",
-        message: isEn ? "Final article submitted." : "تم تسليم المقال النهائي.",
+        message: t("freelancer.detail.submitSuccess"),
       });
       await refresh();
     } catch (err) {
       push({
         type: "error",
         message:
-          getSafeApiErrorMessage(err) || (isEn ? "Could not submit article." : "تعذر تسليم المقال."),
+          getSafeApiErrorMessage(err) || t("freelancer.detail.submitError"),
       });
     } finally {
       busyRef.current = false;
@@ -277,14 +264,14 @@ export default function FreelancerMarketplaceArticleDetailPage() {
   return (
     <DashboardShell>
       <DashboardPageHeader
-        title={article?.title || t("dashboard.nav.freelancer.articles")}
+        title={article?.title || tDash("dashboard.nav.freelancer.articles")}
         breadcrumbs={[
           { labelKey: "dashboard.breadcrumbs.home", href: "/dashboard/freelancer" },
           {
-            label: t("dashboard.nav.freelancer.articles"),
+            label: tDash("dashboard.nav.freelancer.articles"),
             href: "/dashboard/freelancer/articles",
           },
-          { label: article?.title || (isEn ? "Article" : "مقال") },
+          { label: article?.title || t("freelancer.detail.article") },
         ]}
       />
       <DashboardSection>
@@ -293,7 +280,7 @@ export default function FreelancerMarketplaceArticleDetailPage() {
             to="/dashboard/freelancer/articles"
             className="font-bold text-[color:var(--dash-primary,#2f3b65)] no-underline"
           >
-            {isEn ? "← Back" : "→ رجوع"}
+            {t("freelancer.detail.back")}
           </Link>
         </p>
         {loading ? <DashboardLoadingState /> : null}
@@ -314,7 +301,7 @@ export default function FreelancerMarketplaceArticleDetailPage() {
             >
               <div>
                 <dt className="text-[0.8rem] font-bold text-[color:var(--dash-text-muted,#667085)]">
-                  {isEn ? "Total article value" : "إجمالي قيمة المقال"}
+                  {t("freelancer.detail.totalValue")}
                 </dt>
                 <dd className="mt-1 font-extrabold" data-testid="article-detail-total-value">
                   {(article.totalArticleValueJod ?? article.articleValueJod) != null ? (
@@ -330,7 +317,7 @@ export default function FreelancerMarketplaceArticleDetailPage() {
               {article.freelancerShareJod != null ? (
                 <div>
                   <dt className="text-[0.8rem] font-bold text-[color:var(--dash-text-muted,#667085)]">
-                    {isEn ? "Your net after split" : "صافي مستحقاتك بعد التوزيع"}
+                    {t("freelancer.detail.netAfterSplit")}
                   </dt>
                   <dd className="mt-1 font-extrabold" data-testid="article-detail-freelancer-share">
                     <JodMoneyDisplay amount={article.freelancerShareJod} compact />
@@ -340,7 +327,7 @@ export default function FreelancerMarketplaceArticleDetailPage() {
               {article.reviewerShareJod != null ? (
                 <div>
                   <dt className="text-[0.8rem] font-bold text-[color:var(--dash-text-muted,#667085)]">
-                    {isEn ? "Reviewer share" : "حصة التدقيق"}
+                    {t("freelancer.detail.reviewerShare")}
                   </dt>
                   <dd className="mt-1 font-extrabold" data-testid="article-detail-reviewer-share">
                     <JodMoneyDisplay amount={article.reviewerShareJod} compact />
@@ -350,7 +337,7 @@ export default function FreelancerMarketplaceArticleDetailPage() {
               {article.companyShareJod != null ? (
                 <div>
                   <dt className="text-[0.8rem] font-bold text-[color:var(--dash-text-muted,#667085)]">
-                    {isEn ? "Platform share" : "حصة المنصة"}
+                    {t("freelancer.detail.platformShare")}
                   </dt>
                   <dd className="mt-1 font-extrabold" data-testid="article-detail-company-share">
                     <JodMoneyDisplay amount={article.companyShareJod} compact />
@@ -359,13 +346,13 @@ export default function FreelancerMarketplaceArticleDetailPage() {
               ) : null}
               <div>
                 <dt className="text-[0.8rem] font-bold text-[color:var(--dash-text-muted,#667085)]">
-                  {isEn ? "Article level" : "مستوى المقال"}
+                  {t("freelancer.detail.articleLevel")}
                 </dt>
                 <dd className="mt-1 font-extrabold">{article.articleLevel ?? "—"}</dd>
               </div>
               <div>
                 <dt className="text-[0.8rem] font-bold text-[color:var(--dash-text-muted,#667085)]">
-                  {isEn ? "Required words" : "عدد الكلمات"}
+                  {t("freelancer.detail.requiredWords")}
                 </dt>
                 <dd className="mt-1 font-extrabold" data-testid="article-detail-required-words">
                   {displayRequiredWords ?? "—"}
@@ -373,7 +360,7 @@ export default function FreelancerMarketplaceArticleDetailPage() {
               </div>
               <div>
                 <dt className="text-[0.8rem] font-bold text-[color:var(--dash-text-muted,#667085)]">
-                  {isEn ? "Required references" : "عدد المراجع"}
+                  {t("freelancer.detail.requiredRefs")}
                 </dt>
                 <dd className="mt-1 font-extrabold" data-testid="article-detail-required-refs">
                   {displayRequiredRefs ?? 0}
@@ -381,26 +368,26 @@ export default function FreelancerMarketplaceArticleDetailPage() {
               </div>
               <div>
                 <dt className="text-[0.8rem] font-bold text-[color:var(--dash-text-muted,#667085)]">
-                  {isEn ? "Writing mode" : "نمط الكتابة"}
+                  {t("freelancer.detail.writingMode")}
                 </dt>
                 <dd className="mt-1 font-extrabold" data-testid="article-detail-writing-mode">
-                  {writingModeLabelAr(displayWritingMode)}
+                  {writingModeLabel(displayWritingMode, { locale })}
                 </dd>
               </div>
               <div>
                 <dt className="text-[0.8rem] font-bold text-[color:var(--dash-text-muted,#667085)]">
-                  {isEn ? "Applicants" : "المتقدمون"}
+                  {t("freelancer.detail.applicants")}
                 </dt>
                 <dd className="mt-1 font-extrabold">
                   {formatArticleBidCollectionLabel(article.bidCollection || eligibility?.bidCollection, {
-                    isEn,
+                    locale,
                     articleStatus: article.status,
                   }) || "—"}
                 </dd>
               </div>
               <div>
                 <dt className="text-[0.8rem] font-bold text-[color:var(--dash-text-muted,#667085)]">
-                  {isEn ? "Bildazo category" : "صنف بلدازو"}
+                  {t("freelancer.detail.bildazoCategory")}
                 </dt>
                 <dd className="mt-1 font-extrabold" data-testid="article-detail-bildazo-category">
                   {displayCategoryName || "—"}
@@ -408,19 +395,19 @@ export default function FreelancerMarketplaceArticleDetailPage() {
               </div>
               <div>
                 <dt className="text-[0.8rem] font-bold text-[color:var(--dash-text-muted,#667085)]">
-                  {isEn ? "Category" : "التصنيف"}
+                  {t("freelancer.detail.category")}
                 </dt>
                 <dd className="mt-1 font-extrabold">{article.category?.name || "—"}</dd>
               </div>
               <div>
                 <dt className="text-[0.8rem] font-bold text-[color:var(--dash-text-muted,#667085)]">
-                  {isEn ? "Subcategory" : "الفرعي"}
+                  {t("freelancer.detail.subcategory")}
                 </dt>
                 <dd className="mt-1 font-extrabold">{article.subcategory?.name || "—"}</dd>
               </div>
             </dl>
 
-            <p className="m-0 text-[0.95rem]">{eligibilityMessage(eligibility, isEn)}</p>
+            <p className="m-0 text-[0.95rem]">{eligibilityMessage(eligibility, t, locale)}</p>
 
             {shouldShowArticlePlanUpgradeCta(eligibility) ? (
               <PlanUpgradeRequiredCta
@@ -431,12 +418,10 @@ export default function FreelancerMarketplaceArticleDetailPage() {
               />
             ) : null}
 
-            <p className="m-0 text-[0.95rem]">
-              {isEn ? "Application cost: 1 Bid" : "تكلفة التقديم: عرض واحد"}
-            </p>
+            <p className="m-0 text-[0.95rem]">{t("freelancer.detail.applyCost")}</p>
             {eligibility?.availableBids != null ? (
               <p className="m-0 text-[0.95rem]">
-                {isEn ? "Available Bids:" : "العروض المتاحة:"}{" "}
+                {t("freelancer.detail.availableBids")}{" "}
                 <strong>{eligibility.availableBids}</strong>
               </p>
             ) : null}
@@ -444,20 +429,14 @@ export default function FreelancerMarketplaceArticleDetailPage() {
             {application ? (
               <div>
                 <p className="mb-2 mt-0">
-                  {isEn ? "Your application status:" : "حالة طلبك:"}{" "}
+                  {t("freelancer.detail.yourStatus")}{" "}
                   <strong>
                     {application.status === "pending"
-                      ? isEn
-                        ? "Pending"
-                        : "قيد المراجعة"
+                      ? t("freelancer.detail.pending")
                       : application.status === "accepted" || application.status === "approved"
-                        ? isEn
-                          ? "Accepted"
-                          : "مقبول"
+                        ? t("freelancer.detail.accepted")
                         : application.status === "withdrawn"
-                          ? isEn
-                            ? "Withdrawn"
-                            : "مسحوب"
+                          ? t("freelancer.detail.withdrawn")
                           : application.status || "—"}
                   </strong>
                 </p>
@@ -480,29 +459,21 @@ export default function FreelancerMarketplaceArticleDetailPage() {
                 {application.status === "pending" ? (
                   <>
                     <p className="mb-2 mt-0 text-[0.9rem] text-[color:var(--dash-text-secondary,#4b5563)]">
-                      {isEn
-                        ? "Editing your proposal does not cost another Bid. Withdrawal does not refund your Bid."
-                        : "تعديل الرسالة لا يستهلك عرضاً إضافياً. سحب الطلب لا يسترد العرض."}
+                      {t("freelancer.detail.editMessageHint")}
                     </p>
                     <Button type="button" variant="secondary" disabled={busy} onClick={handleWithdraw}>
-                      {isEn ? "Withdraw" : "سحب الطلب"}
+                      {t("freelancer.detail.withdraw")}
                     </Button>
                   </>
                 ) : null}
                 {manuscript ? (
                   <p className="mb-2 mt-0" data-testid="freelancer-final-article-status">
                     {manuscript.status === "submitted"
-                      ? isEn
-                        ? "Final article submitted for review."
-                        : "تم تسليم المقال النهائي للمراجعة."
+                      ? t("freelancer.detail.finalSubmitted")
                       : manuscript.status === "revision_requested"
-                        ? isEn
-                          ? "Admin requested a revision."
-                          : "طلبت الإدارة تعديلاً على المقال."
+                        ? t("freelancer.detail.revisionRequested")
                         : manuscript.status === "approved"
-                          ? isEn
-                            ? "Final article approved."
-                            : "تم اعتماد المقال النهائي."
+                          ? t("freelancer.detail.finalApproved")
                           : manuscript.status}
                   </p>
                 ) : null}
@@ -512,7 +483,7 @@ export default function FreelancerMarketplaceArticleDetailPage() {
                 {showManuscriptForm ? (
                   <div className="grid gap-2" data-testid="freelancer-final-article-form">
                     <label className="grid gap-1.5">
-                      <span>{isEn ? "Final article title" : "عنوان المقال النهائي"}</span>
+                      <span>{t("freelancer.detail.finalTitle")}</span>
                       <input
                         className="w-full rounded-[10px] border border-[color:var(--dash-border,#c9d0da)] p-2.5 font-inherit"
                         value={manuscriptTitle}
@@ -526,7 +497,7 @@ export default function FreelancerMarketplaceArticleDetailPage() {
                       ) : null}
                     </label>
                     <label className="grid gap-1.5">
-                      <span>{isEn ? "Final article content" : "محتوى المقال النهائي"}</span>
+                      <span>{t("freelancer.detail.finalContent")}</span>
                       <textarea
                         className="w-full rounded-[10px] border border-[color:var(--dash-border,#c9d0da)] p-2.5 font-inherit"
                         rows={10}
@@ -541,7 +512,7 @@ export default function FreelancerMarketplaceArticleDetailPage() {
                       ) : null}
                     </label>
                     <label className="grid gap-1.5">
-                      <span>{isEn ? "References (one per line)" : "المراجع (مرجع في كل سطر)"}</span>
+                      <span>{t("freelancer.detail.referencesLines")}</span>
                       <textarea
                         className="w-full rounded-[10px] border border-[color:var(--dash-border,#c9d0da)] p-2.5 font-inherit"
                         rows={4}
@@ -557,17 +528,17 @@ export default function FreelancerMarketplaceArticleDetailPage() {
                       ) : null}
                     </label>
                     <label className="grid gap-1.5">
-                      <span>{isEn ? "Writing method" : "طريقة الكتابة"}</span>
+                      <span>{t("freelancer.detail.writingMethod")}</span>
                       <select
                         className="w-full rounded-[10px] border border-[color:var(--dash-border,#c9d0da)] p-2.5 font-inherit"
                         value={writingSource}
                         onChange={(e) => setWritingSource(e.target.value)}
                         data-testid="manuscript-writing-source"
                       >
-                        <option value="">{isEn ? "— Select —" : "— اختر —"}</option>
+                        <option value="">{t("common.select")}</option>
                         {ARTICLE_WRITING_SOURCES.map((src) => (
                           <option key={src} value={src}>
-                            {isEn ? src : ARTICLE_WRITING_SOURCE_LABELS_AR[src]}
+                            {t(`writingSources.${src}`)}
                           </option>
                         ))}
                       </select>
@@ -593,7 +564,7 @@ export default function FreelancerMarketplaceArticleDetailPage() {
                       </span>
                     ) : null}
                     <Button type="button" disabled={busy || !termsAccepted} onClick={handleSubmitManuscript}>
-                      {isEn ? "Submit final article" : "تسليم المقال النهائي"}
+                      {t("freelancer.detail.submitFinal")}
                     </Button>
                   </div>
                 ) : null}
@@ -606,7 +577,7 @@ export default function FreelancerMarketplaceArticleDetailPage() {
             !isBidCollectionClosedForApply(article.bidCollection || eligibility?.bidCollection) ? (
               <div className="grid gap-2">
                 <label className="grid gap-1.5">
-                  <span>{isEn ? "Proposal message (optional)" : "رسالة العرض (اختياري)"}</span>
+                  <span>{t("freelancer.detail.proposalOptional")}</span>
                   <textarea
                     className="w-full rounded-[10px] border border-[color:var(--dash-border,#c9d0da)] p-2.5 font-inherit"
                     rows={4}
@@ -624,11 +595,11 @@ export default function FreelancerMarketplaceArticleDetailPage() {
                   }
                   onClick={handleApply}
                 >
-                  {isEn ? "Apply" : "تقدّم"}
+                  {t("freelancer.detail.apply")}
                 </Button>
                 {eligibility?.canAffordBid === false ? (
                   <p className="m-0 text-[0.9rem] text-[color:var(--dash-danger,#c03535)]">
-                    {isEn ? "Insufficient Bids to apply." : "رصيد العروض غير كافٍ للتقديم."}
+                    {t("freelancer.detail.insufficientBids")}
                   </p>
                 ) : null}
               </div>
@@ -639,13 +610,13 @@ export default function FreelancerMarketplaceArticleDetailPage() {
                   to="/dashboard/freelancer/articles"
                   className="font-bold text-[color:var(--dash-primary,#2f3b65)]"
                 >
-                  إكمال طلب ربط حساب الكاتب في Bildazo
+                  {t("freelancer.detail.completeBildazoLink")}
                 </Link>
               </p>
             ) : null}
             {!application && !eligibility?.eligible && eligibility?.reason === "INSUFFICIENT_BID_CREDITS" ? (
               <p className="m-0 text-[0.9rem] text-[color:var(--dash-danger,#c03535)]">
-                {isEn ? "Insufficient Bids to apply." : "رصيد العروض غير كافٍ للتقديم."}
+                {t("freelancer.detail.insufficientBids")}
               </p>
             ) : null}
           </div>

@@ -3,6 +3,7 @@ import { useToast } from "../../ui/toastContext";
 import { downloadOrderFileForRole, viewOrderFileForRole } from "../../../services/api";
 import { useTranslation } from "../../../i18n/LanguageProvider";
 import { getFileAccessLoginToast } from "../../../utils/guestPoolLoginToast";
+import "../../../i18n/ordersAdminResources";
 
 /** @typedef {"client"|"freelancer"|"admin"} OrderFileAccessScope */
 
@@ -17,8 +18,8 @@ function DocIcon() {
   );
 }
 
-function displayOrderFileName(f) {
-  const raw = String(f?.originalName || "").trim() || "ملف";
+function displayOrderFileName(f, defaultName) {
+  const raw = String(f?.originalName || "").trim() || defaultName;
   try {
     const bytes = new Uint8Array(raw.length);
     for (let i = 0; i < raw.length; i += 1) bytes[i] = raw.charCodeAt(i) & 0xff;
@@ -43,6 +44,8 @@ export default function FileList({ files, emptyText, orderId = null, fileAccess 
   const [busyId, setBusyId] = useState(null);
   const [busyAction, setBusyAction] = useState(null);
 
+  const defaultFileName = t("ordersAdmin.orderDetails.files.defaultFileName");
+
   const canUseApi = Boolean(orderId && fileAccess && String(orderId).trim() && String(fileAccess).trim());
 
   const toastApiError = useCallback(
@@ -52,15 +55,23 @@ export default function FileList({ files, emptyText, orderId = null, fileAccess 
       if (e?.response?.data instanceof Blob) {
         msg =
           msg ||
-          (status === 403 ? "غير مصرح بعرض هذا الملف." : status === 404 ? "الملف غير موجود." : null);
+          (status === 403
+            ? t("ordersAdmin.orderDetails.files.unauthorized")
+            : status === 404
+              ? t("ordersAdmin.orderDetails.files.notFound")
+              : null);
       }
       if (status === 401) {
         push(getFileAccessLoginToast(t));
         return;
       }
-      if (status === 403) msg = msg || "غير مصرح بعرض هذا الملف.";
-      if (status === 404) msg = msg || "الملف غير موجود.";
-      push({ type: "error", title, message: msg || "تعذّرت العملية." });
+      if (status === 403) msg = msg || t("ordersAdmin.orderDetails.files.unauthorized");
+      if (status === 404) msg = msg || t("ordersAdmin.orderDetails.files.notFound");
+      push({
+        type: "error",
+        title,
+        message: msg || t("ordersAdmin.orderDetails.files.genericError"),
+      });
     },
     [push, t],
   );
@@ -71,16 +82,20 @@ export default function FileList({ files, emptyText, orderId = null, fileAccess 
       setBusyId(f.id);
       setBusyAction("view");
       try {
-        await viewOrderFileForRole(orderId, f.id, displayOrderFileName(f), fileAccess);
-        push({ type: "success", title: "تم الفتح", message: "تم فتح الملف في تبويب جديد." });
+        await viewOrderFileForRole(orderId, f.id, displayOrderFileName(f, defaultFileName), fileAccess);
+        push({
+          type: "success",
+          title: t("ordersAdmin.orderDetails.files.openSuccessTitle"),
+          message: t("ordersAdmin.orderDetails.files.openSuccessMessage"),
+        });
       } catch (e) {
-        toastApiError(e, "تعذّر عرض الملف");
+        toastApiError(e, t("ordersAdmin.orderDetails.files.openErrorTitle"));
       } finally {
         setBusyId(null);
         setBusyAction(null);
       }
     },
-    [canUseApi, fileAccess, orderId, push, toastApiError],
+    [canUseApi, defaultFileName, fileAccess, orderId, push, t, toastApiError],
   );
 
   const runDownload = useCallback(
@@ -89,16 +104,21 @@ export default function FileList({ files, emptyText, orderId = null, fileAccess 
       setBusyId(f.id);
       setBusyAction("download");
       try {
-        await downloadOrderFileForRole(orderId, f.id, displayOrderFileName(f), fileAccess);
-        push({ type: "success", title: "بدأ التنزيل", message: displayOrderFileName(f) });
+        const name = displayOrderFileName(f, defaultFileName);
+        await downloadOrderFileForRole(orderId, f.id, name, fileAccess);
+        push({
+          type: "success",
+          title: t("ordersAdmin.orderDetails.files.downloadSuccessTitle"),
+          message: name,
+        });
       } catch (e) {
-        toastApiError(e, "تعذّر التنزيل");
+        toastApiError(e, t("ordersAdmin.orderDetails.files.downloadErrorTitle"));
       } finally {
         setBusyId(null);
         setBusyAction(null);
       }
     },
-    [canUseApi, fileAccess, orderId, push, toastApiError],
+    [canUseApi, defaultFileName, fileAccess, orderId, push, t, toastApiError],
   );
 
   if (!Array.isArray(files) || !files.length) {
@@ -108,10 +128,16 @@ export default function FileList({ files, emptyText, orderId = null, fileAccess 
   return (
     <ul className="od-file-list">
       {files.map((f) => {
-        const name = displayOrderFileName(f);
+        const name = displayOrderFileName(f, defaultFileName);
         const loading = busyId === f.id;
-        const viewLabel = loading && busyAction === "view" ? "جارٍ الفتح…" : "عرض";
-        const dlLabel = loading && busyAction === "download" ? "جارٍ التنزيل…" : "تحميل";
+        const viewLabel =
+          loading && busyAction === "view"
+            ? t("ordersAdmin.orderDetails.files.opening")
+            : t("ordersAdmin.orderDetails.files.view");
+        const dlLabel =
+          loading && busyAction === "download"
+            ? t("ordersAdmin.orderDetails.files.downloading")
+            : t("ordersAdmin.orderDetails.files.download");
         return (
           <li key={f.id} className="od-file-list__item">
             <span className="od-file-list__icon">
@@ -136,7 +162,7 @@ export default function FileList({ files, emptyText, orderId = null, fileAccess 
               </span>
             ) : (
               <span className="od-file-list__actions od-muted" style={{ fontSize: 13 }}>
-                سجّل الدخول بصلاحية مناسبة لعرض الملفات بأمان
+                {t("ordersAdmin.orderDetails.files.loginHint")}
               </span>
             )}
           </li>

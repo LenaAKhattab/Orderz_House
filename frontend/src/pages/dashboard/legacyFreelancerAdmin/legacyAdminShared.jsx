@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "../../../i18n/LanguageProvider";
+import { formatLocaleDate } from "../../../i18n/formatLocale";
+import { readStoredLocale } from "../../../i18n/localePreference";
 import { fetchLegacyFreelancerIdentityBlob } from "../../../services/api";
 
-export function formatDate(value) {
-  if (!value) return "—";
-  const d = new Date(value);
-  if (!Number.isFinite(d.getTime())) return "—";
-  return new Intl.DateTimeFormat("ar-JO-u-nu-latn", { dateStyle: "medium", timeStyle: "short" }).format(d);
+export function formatDate(value, locale = readStoredLocale()) {
+  return formatLocaleDate(value, locale);
 }
 
 export function formatMoney(amount, currency = "JOD") {
@@ -14,42 +14,65 @@ export function formatMoney(amount, currency = "JOD") {
   return `${n.toLocaleString("en-JO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`;
 }
 
-export function entryMethodLabel(method) {
-  if (method === "ADMIN_MANUAL") return "إضافة يدوية";
-  if (method === "SHARED_INVITE") return "دعوة مشتركة";
+export function entryMethodLabel(method, t) {
+  if (method === "ADMIN_MANUAL") return t("legacy.entryMethod.adminManual");
+  if (method === "SHARED_INVITE") return t("legacy.entryMethod.sharedInvite");
   return method || "—";
 }
 
-export function identityStatusLabel(identity) {
-  if (!identity) return "غير مكتملة";
-  if (identity.complete) return "مكتملة";
-  if (identity.frontOk || identity.backOk) return "جزئية";
-  return "غير مكتملة";
+export function identityStatusLabel(identity, t) {
+  if (!identity) return t("legacy.common.incomplete");
+  if (identity.complete) return t("legacy.common.complete");
+  if (identity.frontOk || identity.backOk) return t("legacy.common.partial");
+  return t("legacy.common.incomplete");
 }
 
-export function categoriesLabel(categories) {
-  if (Array.isArray(categories) && categories.length) return categories.join("، ");
+export function categoriesLabel(categories, locale = readStoredLocale()) {
+  const joiner = locale === "en" ? ", " : "، ";
+  if (Array.isArray(categories) && categories.length) return categories.join(joiner);
   if (typeof categories === "string" && categories.trim()) return categories;
   return "—";
 }
 
 export const PACKAGE_DURATION_OPTIONS = [1, 2, 3, 4, 6, 12];
 
-export const CENTER_TABS = [
-  { id: "freelancers", label: "الفريلانسرز القدامى" },
-  { id: "campaigns", label: "حملات الدعوة" },
-  { id: "documents", label: "الأوراق والعقود" },
-  { id: "registration", label: "إعدادات التسجيل" },
-];
+export function getCenterTabs(t) {
+  return [
+    { id: "freelancers", label: t("legacy.center.tabs.freelancers") },
+    { id: "campaigns", label: t("legacy.center.tabs.campaigns") },
+    { id: "documents", label: t("legacy.center.tabs.documents") },
+    { id: "registration", label: t("legacy.center.tabs.registration") },
+  ];
+}
 
-function identityImageErrorMessage(err) {
+export function getDetailTabs(t) {
+  return [
+    { id: "profile", label: t("legacy.detailTabs.profile") },
+    { id: "identity", label: t("legacy.detailTabs.identity") },
+    { id: "docs", label: t("legacy.detailTabs.docs") },
+    { id: "package", label: t("legacy.detailTabs.package") },
+    { id: "money", label: t("legacy.detailTabs.money") },
+  ];
+}
+
+export function getWorkspaceTabs(t) {
+  return [
+    { id: "overview", label: t("legacy.common.overview") },
+    { id: "registrants", label: t("legacy.common.registrants") },
+    { id: "settings", label: t("legacy.common.campaignSettings") },
+    { id: "documents", label: t("legacy.common.docsAndRegistration") },
+  ];
+}
+
+function identityImageErrorMessage(err, t) {
   const fromApi = err?.response?.data?.message || err?.message;
   if (fromApi && typeof fromApi === "string") return fromApi;
-  return "تعذر تحميل صورة الهوية الآن. حاول مرة أخرى.";
+  return t("legacy.toast.identityImageFailed");
 }
 
 /** Blob-fetch identity preview (same pattern as activation KYC images). */
 export function LegacyIdentityImage({ userId, side, label, refreshKey = 0 }) {
+  const { t } = useTranslation();
   const [src, setSrc] = useState("");
   const [err, setErr] = useState("");
 
@@ -76,7 +99,7 @@ export function LegacyIdentityImage({ userId, side, label, refreshKey = 0 }) {
         if (!active || e?.code === "ERR_CANCELED" || e?.name === "CanceledError" || e?.name === "AbortError") {
           return;
         }
-        setErr(identityImageErrorMessage(e));
+        setErr(identityImageErrorMessage(e, t));
       }
     })();
     return () => {
@@ -84,7 +107,7 @@ export function LegacyIdentityImage({ userId, side, label, refreshKey = 0 }) {
       controller.abort();
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [userId, side, refreshKey]);
+  }, [userId, side, refreshKey, t]);
 
   return (
     <div className="mb-4">
@@ -97,7 +120,7 @@ export function LegacyIdentityImage({ userId, side, label, refreshKey = 0 }) {
           className="max-h-[360px] max-w-full rounded-lg border border-slate-200"
         />
       ) : !err ? (
-        <p className="text-sm text-slate-500">جارٍ التحميل…</p>
+        <p className="text-sm text-slate-500">{t("legacy.common.loadingShort")}</p>
       ) : null}
     </div>
   );

@@ -5,6 +5,8 @@ import {
   syncExamQuestionsToCount,
   validateExamQuestionsMaxMarksTotal,
 } from "../../utils/courseExamQuestions";
+import "../../i18n/coursesResources";
+import { useTranslation } from "../../i18n/LanguageProvider";
 
 function preventNumberInputScroll(e) {
   e.currentTarget.blur();
@@ -17,6 +19,7 @@ export default function ExamQuestionsEditor({
   onExamQuestionsChange,
   disabled = false,
 }) {
+  const { t } = useTranslation();
   const listId = useId();
   const totalId = useId();
 
@@ -51,7 +54,7 @@ export default function ExamQuestionsEditor({
   return (
     <div className="oh-admin-courses__exam-questions">
       <label className="oh-admin-courses__field">
-        <span>عدد أسئلة الاختبار</span>
+        <span>{t("courses.exam.questionCountLabel")}</span>
         <input
           className="oh-admin-courses__input"
           type="number"
@@ -61,36 +64,34 @@ export default function ExamQuestionsEditor({
           value={questionCount ?? ""}
           onChange={(e) => applyCountChange(e.target.value)}
           onWheel={preventNumberInputScroll}
-          placeholder="مثال: 5"
+          placeholder={t("courses.exam.countPlaceholder")}
         />
-        <span className="oh-admin-courses__field-hint">
-          أدخل العدد يدوياً. تبدأ العلامة القصوى لكل سؤال من 0 حتى تُوزَّع بمجموع 100.
-        </span>
+        <span className="oh-admin-courses__field-hint">{t("courses.exam.countHint")}</span>
       </label>
 
       {hasCount ? (
         <div className="oh-admin-courses__exam-question-list" aria-labelledby={listId}>
           <h4 id={listId} className="oh-admin-courses__exam-block-title">
-            أسئلة الاختبار ({rows.length})
+            {t("courses.exam.questionsTitle", { count: rows.length })}
           </h4>
           {rows.map((q, idx) => (
             <div key={`exam-q-${q.number}`} className="oh-admin-courses__exam-question-row">
               <div className="oh-admin-courses__exam-question-row-head">
-                <strong>رقم السؤال {q.number}</strong>
+                <strong>{t("courses.exam.questionNumber", { num: q.number })}</strong>
               </div>
               <label className="oh-admin-courses__field">
-                <span>نص السؤال (اختياري)</span>
+                <span>{t("courses.exam.questionTextOptional")}</span>
                 <textarea
                   className="oh-admin-courses__textarea oh-admin-courses__textarea--sm"
                   rows={2}
                   disabled={disabled}
                   value={q.text ?? ""}
-                  placeholder={`مثال: اشرح مفهوم ... (السؤال ${q.number})`}
+                  placeholder={t("courses.exam.questionPlaceholder", { num: q.number })}
                   onChange={(e) => updateRow(idx, { text: e.target.value })}
                 />
               </label>
               <label className="oh-admin-courses__field oh-admin-courses__field--inline">
-                <span>العلامة القصوى</span>
+                <span>{t("courses.exam.maxMark")}</span>
                 <select
                   className="oh-admin-courses__input oh-admin-courses__input--narrow oh-admin-courses__select"
                   disabled={disabled}
@@ -113,20 +114,20 @@ export default function ExamQuestionsEditor({
             role="status"
             aria-live="polite"
           >
-            <span>مجموع العلامات القصوى: {marksTotal}</span>
+            <span>{t("courses.exam.marksTotal", { total: marksTotal })}</span>
             <span className="oh-admin-courses__exam-marks-total-target">/ {EXAM_MAX_MARKS_TOTAL}</span>
             {!marksValidation.ok ? (
-              <span className="oh-admin-courses__exam-marks-total-badge">غير صالح</span>
+              <span className="oh-admin-courses__exam-marks-total-badge">{t("courses.exam.invalid")}</span>
             ) : (
               <span className="oh-admin-courses__exam-marks-total-badge oh-admin-courses__exam-marks-total-badge--ok">
-                صالح
+                {t("courses.exam.valid")}
               </span>
             )}
           </div>
 
-          {!marksValidation.ok && marksValidation.message ? (
+          {!marksValidation.ok && marksValidation.messageKey ? (
             <p className="oh-admin-courses__exam-marks-error" role="alert">
-              {marksValidation.message}
+              {t(marksValidation.messageKey)}
             </p>
           ) : null}
         </div>

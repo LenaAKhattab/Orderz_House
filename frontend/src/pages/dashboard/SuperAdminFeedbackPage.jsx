@@ -11,6 +11,7 @@ import StatusBadge from "../../components/dashboard/StatusBadge";
 import Pagination from "../../components/common/Pagination";
 import { adminBreadcrumbs, superAdminBreadcrumbs } from "../../components/dashboard/dashboardBreadcrumbs";
 import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/opsAdminResources";
 import { useToast } from "../../components/ui/toastContext";
 import { listSuperAdminFeedbackCategoriesRequest, listSuperAdminFeedbackRequest } from "../../services/api";
 import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
@@ -288,7 +289,7 @@ export default function SuperAdminFeedbackPage() {
       <DashboardSection title={t("dashboard.feedback.tableTitle")}>
         {refreshing ? (
           <p className="mb-2 text-sm text-slate-500" data-testid="admin-list-refreshing">
-            جاري التحديث...
+            {t("opsAdmin.common.listRefreshing")}
           </p>
         ) : null}
         {refreshError ? (

@@ -30,7 +30,7 @@ export default function DashboardModal({
   closeDisabled = false,
   triggerRef = null,
 }) {
-  const { dir } = useTranslation();
+  const { dir, t } = useTranslation();
   const titleId = useId();
   const subtitleId = useId();
   const panelRef = useRef(null);
@@ -93,7 +93,7 @@ export default function DashboardModal({
 
   if (!open) return null;
 
-  const closeLabel = "إغلاق";
+  const closeLabel = t("dashboard.ui.close");
 
   return (
     <div

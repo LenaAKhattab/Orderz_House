@@ -5,9 +5,9 @@ import { resolveSuperAdminAttentionLink, resolveSuperAdminDashboardHomeLink } fr
 const SEVERITY = { urgent: 3, medium: 2, info: 1 };
 
 const SEVERITY_META = {
-  [SEVERITY.urgent]: { icon: "🔴", label: "عاجل" },
-  [SEVERITY.medium]: { icon: "🟡", label: "متوسط" },
-  [SEVERITY.info]: { icon: "🔵", label: "معلومة" },
+  [SEVERITY.urgent]: { icon: "🔴", labelKey: "analysis.severity.urgent" },
+  [SEVERITY.medium]: { icon: "🟡", labelKey: "analysis.severity.medium" },
+  [SEVERITY.info]: { icon: "🔵", labelKey: "analysis.severity.info" },
 };
 
 /** Alert keys already represented by a Top Risk id */
@@ -57,9 +57,10 @@ export function buildUnifiedAttention({ intelligence, attention }) {
       id: `alert-${alert.key}`,
       severity,
       icon: meta.icon,
-      label: meta.label,
+      labelKey: meta.labelKey,
       text: alert.title,
-      description: `${formatInt(count)} بانتظار المتابعة`,
+      descriptionKey: "analysis.attention.pendingFollowUp",
+      descriptionParams: { count: formatInt(count) },
       to: resolveSuperAdminAttentionLink(alert.path, alert.key),
       count,
     });

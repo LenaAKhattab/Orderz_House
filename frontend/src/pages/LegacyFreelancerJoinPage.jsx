@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "../i18n/LanguageProvider";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import AuthFormCard from "../components/auth/AuthFormCard";
 import AuthLayout from "../components/auth/AuthLayout";
@@ -20,7 +21,6 @@ import LegacySearchableSelect from "../components/legacy/LegacySearchableSelect"
 import { toPhonePayload } from "../utils/legacyPhone";
 import {
   LEGACY_WORK_FIELDS,
-  WORK_FIELDS_REQUIRED_MESSAGE,
 } from "../constants/legacyFreelancerWorkFields";
 import { EDUCATION_OTHER_VALUE } from "../constants/legacyEducationOptions";
 import { CITY_OTHER_VALUE, CITY_OTHER_LABEL_AR } from "../constants/jordanCities";
@@ -40,6 +40,7 @@ function conditionActive(rule, answers) {
 }
 
 function EducationSelectField({ field, value, onChange }) {
+  const { t } = useTranslation();
   const options = (field.options || []).filter((o) => o.value !== EDUCATION_OTHER_VALUE);
   const known = options.some((o) => o.value === value);
   const [otherMode, setOtherMode] = useState(() => Boolean(value && !known));
@@ -67,20 +68,20 @@ function EducationSelectField({ field, value, onChange }) {
           onChange(v);
         }}
       >
-        <option value="">— اختر —</option>
+        <option value="">{t("legacy.common.select")}</option>
         {options.map((o) => (
           <option key={o.value} value={o.value}>
             {o.label}
           </option>
         ))}
-        <option value={EDUCATION_OTHER_VALUE}>أخرى</option>
+        <option value={EDUCATION_OTHER_VALUE}>{t("legacy.common.other")}</option>
       </select>
       {otherMode ? (
         <input
           className={fieldInput}
           type="text"
           required={field.required}
-          placeholder="اكتب المؤهل العلمي"
+          placeholder={t("legacy.common.writeEducation")}
           value={value ?? ""}
           onChange={(e) => onChange(e.target.value)}
         />
@@ -90,6 +91,7 @@ function EducationSelectField({ field, value, onChange }) {
 }
 
 function CitySelectField({ field, value, onChange }) {
+  const { t } = useTranslation();
   const [extra, setExtra] = useState([]);
 
   useEffect(() => {
@@ -126,12 +128,13 @@ function CitySelectField({ field, value, onChange }) {
       allowOther
       otherValue={field.otherValue || CITY_OTHER_VALUE}
       otherLabel={field.otherLabel || CITY_OTHER_LABEL_AR}
-      otherInputLabel="اكتب اسم المدينة"
+      otherInputLabel={t("legacy.common.writeCityName")}
     />
   );
 }
 
 function FieldInput({ field, value, onChange }) {
+  const { t } = useTranslation();
   const common = { className: fieldInput, id: `lf-${field.key}` };
   if (field.type === "textarea") {
     return (
@@ -185,7 +188,7 @@ function FieldInput({ field, value, onChange }) {
         value={value ?? ""}
         onChange={(e) => onChange(e.target.value)}
       >
-        <option value="">— اختر —</option>
+        <option value="">{t("legacy.common.select")}</option>
         {(field.options || []).map((o) => (
           <option key={o.value} value={o.value}>
             {o.label}
@@ -202,9 +205,9 @@ function FieldInput({ field, value, onChange }) {
         value={value === true ? "yes" : value === false ? "no" : ""}
         onChange={(e) => onChange(e.target.value === "yes" ? true : e.target.value === "no" ? false : "")}
       >
-        <option value="">— اختر —</option>
-        <option value="yes">نعم</option>
-        <option value="no">لا</option>
+        <option value="">{t("legacy.common.select")}</option>
+        <option value="yes">{t("legacy.common.yes")}</option>
+        <option value="no">{t("legacy.common.no")}</option>
       </select>
     );
   }
@@ -235,6 +238,7 @@ function FieldInput({ field, value, onChange }) {
 }
 
 export default function LegacyFreelancerJoinPage() {
+  const { t } = useTranslation();
   const { campaignSlug } = useParams();
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token") || "";
@@ -267,7 +271,7 @@ export default function LegacyFreelancerJoinPage() {
       setLoadingPreview(true);
       setPreviewError("");
       try {
-        if (!token) throw new Error("رابط الدعوة غير مكتمل.");
+        if (!token) throw new Error(t("legacy.join.errors.inviteIncomplete"));
         const res = await previewLegacyFreelancerInviteRequest(campaignSlug, token);
         if (!cancelled) {
           setPreview(res?.data || null);
@@ -278,7 +282,7 @@ export default function LegacyFreelancerJoinPage() {
         }
       } catch (err) {
         if (!cancelled) {
-          setPreviewError(getAuthApiErrorMessage(err, "تم إيقاف رابط الدعوة."));
+          setPreviewError(getAuthApiErrorMessage(err, t("legacy.join.errors.inviteStopped")));
           setPreview(null);
         }
       } finally {
@@ -344,23 +348,23 @@ export default function LegacyFreelancerJoinPage() {
     setFormError("");
     setSuccess("");
     if (password !== passwordConfirm) {
-      setFormError("تأكيد كلمة المرور غير مطابق.");
+      setFormError(t("legacy.join.errors.passwordMismatch"));
       return;
     }
     if (!termsAccepted || !privacyAccepted) {
-      setFormError("يجب الموافقة على الشروط والأحكام وسياسة الخصوصية.");
+      setFormError(t("legacy.join.errors.legalRequired"));
       return;
     }
     if (!workFields.length) {
-      setFormError(WORK_FIELDS_REQUIRED_MESSAGE);
+      setFormError(t("legacy.join.errors.workFieldsRequired"));
       return;
     }
     if (preview?.requireIdFront && !idFrontFile) {
-      setFormError("صورة الهوية الأمامية مطلوبة.");
+      setFormError(t("legacy.join.errors.idFrontRequired"));
       return;
     }
     if (preview?.requireIdBack && !idBackFile) {
-      setFormError("صورة الهوية الخلفية مطلوبة.");
+      setFormError(t("legacy.join.errors.idBackRequired"));
       return;
     }
     setSubmitting(true);
@@ -415,12 +419,12 @@ export default function LegacyFreelancerJoinPage() {
       }
 
       const res = await legacyFreelancerRegisterRequest(payload);
-      setSuccess(res?.message || "تم إنشاء حسابك كفريلانسر معتمد سابقًا.");
+      setSuccess(res?.message || t("legacy.join.successDefault"));
       await refreshUser();
       const path = dashPath?.() || getDashboardPath("freelancer");
       setTimeout(() => navigate(path || "/dashboard/freelancer"), 600);
     } catch (err) {
-      setFormError(getAuthApiErrorMessage(err, "تعذر إكمال التسجيل."));
+      setFormError(getAuthApiErrorMessage(err, t("legacy.join.errors.registerFailed")));
     } finally {
       setSubmitting(false);
     }
@@ -433,14 +437,14 @@ export default function LegacyFreelancerJoinPage() {
   return (
     <AuthLayout visualContent={visualContent}>
       <AuthFormCard
-        title="تسجيل فريلانسر معتمد سابقًا"
-        subtitle="هذا الرابط مخصص للفريلانسرز الذين تم اعتمادهم سابقًا من قبل الشركة. أكمل البيانات المطلوبة لإنشاء حسابك."
+        title={t("legacy.join.title")}
+        subtitle={t("legacy.join.subtitle")}
       >
         <div className="oh-legacy-instructions-mobile">
           <LegacyRegistrationInstructions variant="form" />
         </div>
         {loadingPreview ? (
-          <p className={tw.authHelperText}>جاري التحقق من الرابط…</p>
+          <p className={tw.authHelperText}>{t("legacy.join.verifyingLink")}</p>
         ) : previewError ? (
           <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">{previewError}</div>
         ) : (
@@ -488,8 +492,8 @@ export default function LegacyFreelancerJoinPage() {
               ))}
 
               <fieldset className="rounded-xl border border-slate-200 p-3">
-                <legend className="px-1 text-sm font-semibold text-slate-800">مجال العمل</legend>
-                <p className="mt-1 text-xs text-slate-500">اختر مجال أو مجالات العمل التي تمارسها.</p>
+                <legend className="px-1 text-sm font-semibold text-slate-800">{t("legacy.join.workFieldSection")}</legend>
+                <p className="mt-1 text-xs text-slate-500">{t("legacy.join.workFieldHint")}</p>
                 <div className="mt-2 flex flex-col gap-2">
                   {LEGACY_WORK_FIELDS.map((wf) => {
                     const checked = workFields.includes(wf.key);
@@ -509,11 +513,11 @@ export default function LegacyFreelancerJoinPage() {
 
               {preview?.requireIdFront || preview?.requireIdBack ? (
                 <fieldset className="rounded-xl border border-slate-200 p-3">
-                  <legend className="px-1 text-sm font-semibold text-slate-800">الهوية</legend>
+                  <legend className="px-1 text-sm font-semibold text-slate-800">{t("legacy.join.identitySection")}</legend>
                   <div className="mt-2 flex flex-col gap-3">
                     {preview?.requireIdFront ? (
                       <label className={fieldLabel}>
-                        صورة الهوية (أمام) *
+                        {t("legacy.join.idFrontRequired")}
                         <input
                           className={fieldInput}
                           type="file"
@@ -525,7 +529,7 @@ export default function LegacyFreelancerJoinPage() {
                     ) : null}
                     {preview?.requireIdBack ? (
                       <label className={fieldLabel}>
-                        صورة الهوية (خلف) *
+                        {t("legacy.join.idBackRequired")}
                         <input
                           className={fieldInput}
                           type="file"
@@ -540,10 +544,10 @@ export default function LegacyFreelancerJoinPage() {
               ) : null}
 
               <fieldset className="rounded-xl border border-slate-200 p-3">
-                <legend className="px-1 text-sm font-semibold text-slate-800">حساب الدخول</legend>
+                <legend className="px-1 text-sm font-semibold text-slate-800">{t("legacy.join.loginSection")}</legend>
                 <div className="mt-2 flex flex-col gap-3">
                   <label className={fieldLabel}>
-                    البريد الإلكتروني *
+                    {t("legacy.common.emailRequired")}
                     <input
                       className={fieldInput}
                       type="email"
@@ -555,7 +559,7 @@ export default function LegacyFreelancerJoinPage() {
                   </label>
                   <div className={tw.authField}>
                     <span className={fieldLabel} id="lf-phone-label">
-                      رقم الهاتف *
+                      {t("legacy.common.phoneRequired")}
                     </span>
                     <LegacyPhoneInput
                       id="lf-account-phone"
@@ -568,7 +572,7 @@ export default function LegacyFreelancerJoinPage() {
                     />
                   </div>
                   <label className={fieldLabel}>
-                    الدولة
+                    {t("legacy.common.country")}
                     <select className={fieldInput} value={country} onChange={(e) => setCountry(e.target.value)}>
                       {ARAB_COUNTRIES.map((c) => (
                         <option key={c.code} value={c.code}>
@@ -578,7 +582,7 @@ export default function LegacyFreelancerJoinPage() {
                     </select>
                   </label>
                   <label className={fieldLabel}>
-                    كلمة المرور *
+                    {t("legacy.common.password")} *
                     <input
                       className={fieldInput}
                       type="password"
@@ -589,7 +593,7 @@ export default function LegacyFreelancerJoinPage() {
                     />
                   </label>
                   <label className={fieldLabel}>
-                    تأكيد كلمة المرور *
+                    {t("legacy.common.passwordConfirm")} *
                     <input
                       className={fieldInput}
                       type="password"
@@ -606,9 +610,9 @@ export default function LegacyFreelancerJoinPage() {
                       onChange={(e) => setTermsAccepted(e.target.checked)}
                     />
                     <span>
-                      أوافق على{" "}
+                      {t("legacy.common.agreeTerms")}{" "}
                       <Link className={tw.authSubtleLink} to="/terms-conditions" target="_blank">
-                        الشروط والأحكام
+                        {t("legacy.common.termsLink")}
                       </Link>
                     </span>
                   </label>
@@ -619,9 +623,9 @@ export default function LegacyFreelancerJoinPage() {
                       onChange={(e) => setPrivacyAccepted(e.target.checked)}
                     />
                     <span>
-                      أوافق على{" "}
+                      {t("legacy.common.agreePrivacy")}{" "}
                       <Link className={tw.authSubtleLink} to="/privacy-policy" target="_blank">
-                        سياسة الخصوصية
+                        {t("legacy.common.privacyLink")}
                       </Link>
                     </span>
                   </label>
@@ -629,7 +633,7 @@ export default function LegacyFreelancerJoinPage() {
               </fieldset>
 
               <Button type="submit" disabled={submitting} className="mt-2 w-full">
-                {submitting ? "جاري التسجيل…" : "إكمال التسجيل"}
+                {submitting ? t("legacy.common.registering") : t("legacy.common.completeRegistration")}
               </Button>
             </form>
           </>

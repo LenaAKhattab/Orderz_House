@@ -1,3 +1,4 @@
+import { useTranslation } from "../../../i18n/LanguageProvider";
 import OrderDetailsNeuIcon from "./OrderDetailsNeuIcon";
 
 /**
@@ -6,11 +7,13 @@ import OrderDetailsNeuIcon from "./OrderDetailsNeuIcon";
  * @param {{ label: string, value: string, dir?: string, icon?: string }} [props.primaryBlock]
  * @param {string} [props.title]
  */
-export default function OrderSummaryCard({ title = "ملخص الطلب", primaryBlock, rows = [] }) {
+export default function OrderSummaryCard({ title, primaryBlock, rows = [] }) {
+  const { t } = useTranslation();
+  const resolvedTitle = title ?? t("orders.details.summaryTitle");
   return (
-    <div className="od-summary od-summary--card" aria-label={title}>
+    <div className="od-summary od-summary--card" aria-label={resolvedTitle}>
       <div className="od-summary__surface">
-        <h2 className="od-summary__title">{title}</h2>
+        <h2 className="od-summary__title">{resolvedTitle}</h2>
         {primaryBlock ? (
           <div className="od-summary__primary">
             <div className="od-summary__row-line">

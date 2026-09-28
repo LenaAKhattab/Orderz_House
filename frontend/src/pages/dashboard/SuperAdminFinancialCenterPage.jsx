@@ -1,3 +1,4 @@
+import "../../i18n/financeResources";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, Trash2 } from "lucide-react";
@@ -80,11 +81,11 @@ function FcTdEllipsis({ children, className = "", dir }) {
 
 function rowStatusBadge(status, t) {
   const map = {
-    draft: ["fc-badge--draft", t("dashboard.financialCenter.draft")],
-    approved: ["fc-badge--approved", t("dashboard.financialCenter.readyForPayment")],
-    unpaid: ["fc-badge--unpaid", t("dashboard.financialCenter.unpaid")],
-    paid: ["fc-badge--paid", t("dashboard.financialCenter.paid")],
-    cancelled: ["fc-badge--cancelled", t("dashboard.financialCenter.cancelled")],
+    draft: ["fc-badge--draft", t("finance.financialCenter.draft")],
+    approved: ["fc-badge--approved", t("finance.financialCenter.readyForPayment")],
+    unpaid: ["fc-badge--unpaid", t("finance.financialCenter.unpaid")],
+    paid: ["fc-badge--paid", t("finance.financialCenter.paid")],
+    cancelled: ["fc-badge--cancelled", t("finance.financialCenter.cancelled")],
   };
   const [cls, label] = map[status] || ["fc-badge--draft", status];
   return <span className={`fc-badge ${cls}`}>{label}</span>;
@@ -104,26 +105,26 @@ function isRowReadyForPayment(status) {
 
 function receivedBadge(status, t) {
   const map = {
-    received: ["fc-badge--received", t("dashboard.financialCenter.received")],
-    not_received: ["fc-badge--not_received", t("dashboard.financialCenter.notReceived")],
-    partially_received: ["fc-badge--partially_received", t("dashboard.financialCenter.partiallyReceived")],
+    received: ["fc-badge--received", t("finance.financialCenter.received")],
+    not_received: ["fc-badge--not_received", t("finance.financialCenter.notReceived")],
+    partially_received: ["fc-badge--partially_received", t("finance.financialCenter.partiallyReceived")],
   };
   const [cls, label] = map[status] || ["fc-badge--not_received", status];
   return <span className={`fc-badge ${cls}`}>{label}</span>;
 }
 
 function sourceLabel(type, t) {
-  if (type === "manual") return t("dashboard.financialCenter.sourceManual");
-  if (type === "subscription_payment") return t("dashboard.financialCenter.sourceSubscriptions");
-  if (type === "order_payment") return t("dashboard.financialCenter.sourceOrders");
+  if (type === "manual") return t("finance.financialCenter.sourceManual");
+  if (type === "subscription_payment") return t("finance.financialCenter.sourceSubscriptions");
+  if (type === "order_payment") return t("finance.financialCenter.sourceOrders");
   return type;
 }
 
 function accountStatusBadge(status, t) {
   const map = {
-    none: ["fc-badge--inactive", t("dashboard.financialCenter.accountNone")],
-    active: ["fc-badge--active", t("dashboard.financialCenter.accountActive")],
-    suspended: ["fc-badge--cancelled", t("dashboard.financialCenter.accountSuspended")],
+    none: ["fc-badge--inactive", t("finance.financialCenter.accountNone")],
+    active: ["fc-badge--active", t("finance.financialCenter.accountActive")],
+    suspended: ["fc-badge--cancelled", t("finance.financialCenter.accountSuspended")],
   };
   const [cls, label] = map[status] || ["fc-badge--inactive", status];
   return <span className={`fc-badge ${cls}`}>{label}</span>;
@@ -187,9 +188,9 @@ function AllocationShareSummary({ shareTotal, t }) {
     return (
       <div className="fc-allocation-summary fc-allocation-summary--err" role="status">
         <span className="fc-allocation-summary__main">
-          {t("dashboard.financialCenter.shareTotalLabel")}: <strong>{total}%</strong>
+          {t("finance.financialCenter.shareTotalLabel")}: <strong>{total}%</strong>
         </span>
-        <span className="fc-allocation-summary__sub">{t("dashboard.financialCenter.shareError")}</span>
+        <span className="fc-allocation-summary__sub">{t("finance.financialCenter.shareError")}</span>
       </div>
     );
   }
@@ -197,8 +198,8 @@ function AllocationShareSummary({ shareTotal, t }) {
   if (shareTotal === 100) {
     return (
       <div className="fc-allocation-summary fc-allocation-summary--ok" role="status">
-        <span className="fc-allocation-summary__main">{t("dashboard.financialCenter.shareComplete", { percent: 100 })}</span>
-        <span className="fc-allocation-summary__sub">{t("dashboard.financialCenter.shareSuccess")}</span>
+        <span className="fc-allocation-summary__main">{t("finance.financialCenter.shareComplete", { percent: 100 })}</span>
+        <span className="fc-allocation-summary__sub">{t("finance.financialCenter.shareSuccess")}</span>
       </div>
     );
   }
@@ -208,9 +209,9 @@ function AllocationShareSummary({ shareTotal, t }) {
     return (
       <div className="fc-allocation-summary fc-allocation-summary--warn" role="status">
         <span className="fc-allocation-summary__main">
-          {t("dashboard.financialCenter.shareTotalWithRemaining", { total, remaining })}
+          {t("finance.financialCenter.shareTotalWithRemaining", { total, remaining })}
         </span>
-        <span className="fc-allocation-summary__sub">{t("dashboard.financialCenter.shareWarning")}</span>
+        <span className="fc-allocation-summary__sub">{t("finance.financialCenter.shareWarning")}</span>
       </div>
     );
   }
@@ -218,7 +219,7 @@ function AllocationShareSummary({ shareTotal, t }) {
   return (
     <div className="fc-allocation-summary fc-allocation-summary--neutral" role="status">
       <span className="fc-allocation-summary__main">
-        {t("dashboard.financialCenter.shareTotal")}: <strong>{total}%</strong>
+        {t("finance.financialCenter.shareTotal")}: <strong>{total}%</strong>
       </span>
     </div>
   );
@@ -228,7 +229,7 @@ function AllocationAddButton({ onClick, t }) {
   return (
     <button type="button" className="btn btn-secondary btn-sm fc-allocation-add-btn" onClick={onClick}>
       <Plus size={14} strokeWidth={2.25} aria-hidden />
-      {t("dashboard.financialCenter.addEmployee")}
+      {t("finance.financialCenter.addEmployee")}
     </button>
   );
 }
@@ -270,7 +271,7 @@ export default function SuperAdminFinancialCenterPage() {
   const [receivedForm, setReceivedForm] = useState(() => emptyReceivedForm(null));
   const [actionBusy, setActionBusy] = useState(false);
 
-  const currency = t("dashboard.financialCenter.currency");
+  const currency = t("finance.financialCenter.currency");
 
   const months = useMemo(() => monthOptions(18), []);
   const preview = useMemo(() => computeBonusPreview(bonusForm), [bonusForm]);
@@ -288,7 +289,7 @@ export default function SuperAdminFinancialCenterPage() {
       setSummary(sumRes?.data?.summary || null);
       setDepartments(deptRes?.data?.departments || []);
     } catch (e) {
-      push(e?.response?.data?.message || e?.message || t("dashboard.financialCenter.loadError"), "error");
+      push(e?.response?.data?.message || e?.message || t("finance.financialCenter.loadError"), "error");
     } finally {
       setSummaryLoading(false);
     }
@@ -307,7 +308,7 @@ export default function SuperAdminFinancialCenterPage() {
       setPeople(peopleRes?.data?.people || []);
       setPeopleTotal(peopleRes?.data?.total ?? 0);
     } catch (e) {
-      push(e?.response?.data?.message || e?.message || t("dashboard.financialCenter.loadError"), "error");
+      push(e?.response?.data?.message || e?.message || t("finance.financialCenter.loadError"), "error");
     } finally {
       setPeopleLoading(false);
     }
@@ -329,7 +330,7 @@ export default function SuperAdminFinancialCenterPage() {
       setRows(rowsRes?.data?.rows || []);
       setBonusRowsTotal(rowsRes?.data?.total ?? 0);
     } catch (e) {
-      push(e?.response?.data?.message || e?.message || t("dashboard.financialCenter.loadError"), "error");
+      push(e?.response?.data?.message || e?.message || t("finance.financialCenter.loadError"), "error");
     } finally {
       setRowsLoading(false);
     }
@@ -427,21 +428,21 @@ export default function SuperAdminFinancialCenterPage() {
 
   const validatePersonForm = () => {
     if (!String(personForm.fullName || "").trim()) {
-      push(t("dashboard.financialCenter.fullNameRequired"), "error");
+      push(t("finance.financialCenter.fullNameRequired"), "error");
       return false;
     }
     if (personModal === "create" && personForm.createLoginAccount) {
       const email = String(personForm.loginEmail || personForm.email || "").trim();
       if (!email) {
-        push(t("dashboard.financialCenter.loginEmailRequired"), "error");
+        push(t("finance.financialCenter.loginEmailRequired"), "error");
         return false;
       }
       if (!personForm.password || personForm.password.length < 8) {
-        push(t("dashboard.financialCenter.passwordMinLength"), "error");
+        push(t("finance.financialCenter.passwordMinLength"), "error");
         return false;
       }
       if (personForm.password !== personForm.confirmPassword) {
-        push(t("dashboard.financialCenter.passwordMismatch"), "error");
+        push(t("finance.financialCenter.passwordMismatch"), "error");
         return false;
       }
     }
@@ -471,15 +472,15 @@ export default function SuperAdminFinancialCenterPage() {
           payload.password = personForm.password;
         }
         await createFinancialCenterPersonRequest(payload);
-        push(t("dashboard.financialCenter.personAdded"), "success");
+        push(t("finance.financialCenter.personAdded"), "success");
       } else {
         await updateFinancialCenterPersonRequest(personModal, payload);
-        push(t("dashboard.financialCenter.personUpdated"), "success");
+        push(t("finance.financialCenter.personUpdated"), "success");
       }
       setPersonModal(null);
       await reloadAll();
     } catch (e) {
-      push(e?.response?.data?.message || t("dashboard.financialCenter.personSaveError"), "error");
+      push(e?.response?.data?.message || t("finance.financialCenter.personSaveError"), "error");
     } finally {
       setActionBusy(false);
     }
@@ -498,15 +499,15 @@ export default function SuperAdminFinancialCenterPage() {
     if (!accountModal) return;
     const email = String(accountForm.loginEmail || "").trim();
     if (!email) {
-      push(t("dashboard.financialCenter.emailRequired"), "error");
+      push(t("finance.financialCenter.emailRequired"), "error");
       return;
     }
     if (!accountForm.password || accountForm.password.length < 8) {
-      push(t("dashboard.financialCenter.passwordMinLength"), "error");
+      push(t("finance.financialCenter.passwordMinLength"), "error");
       return;
     }
     if (accountForm.password !== accountForm.confirmPassword) {
-      push(t("dashboard.financialCenter.passwordMismatch"), "error");
+      push(t("finance.financialCenter.passwordMismatch"), "error");
       return;
     }
     setActionBusy(true);
@@ -515,11 +516,11 @@ export default function SuperAdminFinancialCenterPage() {
         loginEmail: email,
         password: accountForm.password,
       });
-      push(t("dashboard.financialCenter.accountCreatedOk"), "success");
+      push(t("finance.financialCenter.accountCreatedOk"), "success");
       setAccountModal(null);
       await reloadAll();
     } catch (e) {
-      push(e?.response?.data?.message || t("dashboard.financialCenter.accountCreateError"), "error");
+      push(e?.response?.data?.message || t("finance.financialCenter.accountCreateError"), "error");
     } finally {
       setActionBusy(false);
     }
@@ -527,15 +528,15 @@ export default function SuperAdminFinancialCenterPage() {
 
   const toggleAccountStatus = async (person, suspend) => {
     if (actionBusy) return;
-    if (suspend && !window.confirm(t("dashboard.financialCenter.confirmSuspendAccount"))) return;
+    if (suspend && !window.confirm(t("finance.financialCenter.confirmSuspendAccount"))) return;
     setActionBusy(true);
     try {
       const fn = suspend ? suspendFinancialCenterPersonAccountRequest : activateFinancialCenterPersonAccountRequest;
       await fn(person.id);
-      push(suspend ? t("dashboard.financialCenter.accountSuspendedOk") : t("dashboard.financialCenter.accountActivatedOk"), "success");
+      push(suspend ? t("finance.financialCenter.accountSuspendedOk") : t("finance.financialCenter.accountActivatedOk"), "success");
       await reloadAll();
     } catch (e) {
-      push(e?.response?.data?.message || t("dashboard.financialCenter.accountUpdateError"), "error");
+      push(e?.response?.data?.message || t("finance.financialCenter.accountUpdateError"), "error");
     } finally {
       setActionBusy(false);
     }
@@ -575,7 +576,7 @@ export default function SuperAdminFinancialCenterPage() {
       });
       setBonusModal(r.id);
     } catch (e) {
-      push(e?.response?.data?.message || t("dashboard.financialCenter.loadRowError"), "error");
+      push(e?.response?.data?.message || t("finance.financialCenter.loadRowError"), "error");
     } finally {
       setActionBusy(false);
     }
@@ -605,11 +606,11 @@ export default function SuperAdminFinancialCenterPage() {
   const saveBonus = async () => {
     if (actionBusy) return;
     if (preview.shareTotal > 100) {
-      push(t("dashboard.financialCenter.shareError"), "error");
+      push(t("finance.financialCenter.shareError"), "error");
       return;
     }
     if (preview.grossAmount <= 0) {
-      push(t("dashboard.financialCenter.grossAmountRequired"), "error");
+      push(t("finance.financialCenter.grossAmountRequired"), "error");
       return;
     }
     setActionBusy(true);
@@ -617,15 +618,15 @@ export default function SuperAdminFinancialCenterPage() {
       const payload = buildBonusPayload();
       if (bonusModal === "create") {
         await createFinancialCenterBonusRowRequest(payload);
-        push(t("dashboard.financialCenter.bonusCreated"), "success");
+        push(t("finance.financialCenter.bonusCreated"), "success");
       } else {
         await updateFinancialCenterBonusRowRequest(bonusModal, payload);
-        push(t("dashboard.financialCenter.bonusUpdated"), "success");
+        push(t("finance.financialCenter.bonusUpdated"), "success");
       }
       setBonusModal(null);
       await reloadAll();
     } catch (e) {
-      push(e?.response?.data?.message || t("dashboard.financialCenter.saveBonusError"), "error");
+      push(e?.response?.data?.message || t("finance.financialCenter.saveBonusError"), "error");
     } finally {
       setActionBusy(false);
     }
@@ -642,7 +643,7 @@ export default function SuperAdminFinancialCenterPage() {
         setDetailRow(res?.data?.row || null);
       }
     } catch (e) {
-      push(e?.response?.data?.message || t("dashboard.financialCenter.actionFailed"), "error");
+      push(e?.response?.data?.message || t("finance.financialCenter.actionFailed"), "error");
     } finally {
       setActionBusy(false);
     }
@@ -691,11 +692,11 @@ export default function SuperAdminFinancialCenterPage() {
     if (receivedForm.receivedStatus === "partially_received") {
       const amount = Number(receivedForm.receivedAmount);
       if (!Number.isFinite(amount) || amount <= 0) {
-        push(t("dashboard.financialCenter.receivedAmountPartialRequired"), "error");
+        push(t("finance.financialCenter.receivedAmountPartialRequired"), "error");
         return false;
       }
       if (amount >= gross) {
-        push(t("dashboard.financialCenter.grossAmountRequired"), "error");
+        push(t("finance.financialCenter.grossAmountRequired"), "error");
         return false;
       }
     }
@@ -722,13 +723,13 @@ export default function SuperAdminFinancialCenterPage() {
         receivedAt: receivedForm.receivedAt ? new Date(receivedForm.receivedAt).toISOString() : undefined,
         receivedNote: receivedForm.receivedNote || null,
       });
-      push(t("dashboard.financialCenter.receivedUpdatedOk"), "success");
+      push(t("finance.financialCenter.receivedUpdatedOk"), "success");
       await reloadAll();
       const res = await getFinancialCenterBonusRowRequest(detailRow.id);
       setDetailRow(res?.data?.row || null);
       setReceivedModal(false);
     } catch (e) {
-      push(e?.response?.data?.message || t("dashboard.financialCenter.actionFailed"), "error");
+      push(e?.response?.data?.message || t("finance.financialCenter.actionFailed"), "error");
     } finally {
       setActionBusy(false);
     }
@@ -740,15 +741,15 @@ export default function SuperAdminFinancialCenterPage() {
     <DashboardShell className="fc-financial-center">
       <DashboardPageHeader
         eyebrow={t("dashboard.nav.superAdmin.panelTitle")}
-        title={t("dashboard.financialCenter.title")}
-        description={t("dashboard.financialCenter.description")}
+        title={t("finance.financialCenter.title")}
+        description={t("finance.financialCenter.description")}
         actions={
           <>
             <button type="button" className="btn btn-secondary" onClick={openCreatePerson}>
-              {t("dashboard.financialCenter.addPerson")}
+              {t("finance.financialCenter.addPerson")}
             </button>
             <button type="button" className="btn btn-primary" onClick={openCreateBonus}>
-              {t("dashboard.financialCenter.createBonusRow")}
+              {t("finance.financialCenter.createBonusRow")}
             </button>
           </>
         }
@@ -757,7 +758,7 @@ export default function SuperAdminFinancialCenterPage() {
       <div className="fc-page">
         <div className="fc-filters fc-filters--month">
           <label>
-            {t("dashboard.financialCenter.month")}:{" "}
+            {t("finance.financialCenter.month")}:{" "}
             <FinancialCenterScrollSelect
               value={monthFilter}
               onChange={(value) => {
@@ -774,33 +775,33 @@ export default function SuperAdminFinancialCenterPage() {
         ) : (
           <div className="fc-summary-grid">
             <div className="fc-summary-card">
-              <span className="fc-summary-card__label">{t("dashboard.financialCenter.activePeople")}</span>
+              <span className="fc-summary-card__label">{t("finance.financialCenter.activePeople")}</span>
               <strong className="fc-summary-card__value">{summary?.activePeople ?? 0}</strong>
             </div>
             <div className="fc-summary-card">
-              <span className="fc-summary-card__label">{t("dashboard.financialCenter.totalBonusMonth")}</span>
+              <span className="fc-summary-card__label">{t("finance.financialCenter.totalBonusMonth")}</span>
               <strong className="fc-summary-card__value">{formatMoney(summary?.totalBonusMonth, currency)}</strong>
             </div>
             <div className="fc-summary-card">
-              <span className="fc-summary-card__label">{t("dashboard.financialCenter.totalPaidMonth")}</span>
+              <span className="fc-summary-card__label">{t("finance.financialCenter.totalPaidMonth")}</span>
               <strong className="fc-summary-card__value">{formatMoney(summary?.totalPaidMonth, currency)}</strong>
             </div>
             <div className="fc-summary-card">
-              <span className="fc-summary-card__label">{t("dashboard.financialCenter.totalUnpaid")}</span>
+              <span className="fc-summary-card__label">{t("finance.financialCenter.totalUnpaid")}</span>
               <strong className="fc-summary-card__value">{formatMoney(summary?.totalUnpaid, currency)}</strong>
             </div>
             <div className="fc-summary-card">
-              <span className="fc-summary-card__label">{t("dashboard.financialCenter.unreceivedRows")}</span>
+              <span className="fc-summary-card__label">{t("finance.financialCenter.unreceivedRows")}</span>
               <strong className="fc-summary-card__value">{summary?.unreceivedRows ?? 0}</strong>
             </div>
           </div>
         )}
 
-        <DashboardSection title={t("dashboard.financialCenter.people")}>
+        <DashboardSection title={t("finance.financialCenter.people")}>
           <div className="fc-filters fc-filters--people">
             <input
               type="search"
-              placeholder={t("dashboard.financialCenter.search")}
+              placeholder={t("finance.financialCenter.search")}
               value={peopleQ}
               onChange={(e) => {
                 setPeopleQ(e.target.value);
@@ -814,17 +815,17 @@ export default function SuperAdminFinancialCenterPage() {
                 setPeoplePage(1);
               }}
             >
-              <option value="">{t("dashboard.financialCenter.allStatuses")}</option>
-              <option value="active">{t("dashboard.financialCenter.active")}</option>
-              <option value="inactive">{t("dashboard.financialCenter.inactive")}</option>
+              <option value="">{t("finance.financialCenter.allStatuses")}</option>
+              <option value="active">{t("finance.financialCenter.active")}</option>
+              <option value="inactive">{t("finance.financialCenter.inactive")}</option>
             </select>
           </div>
           {!people.length && !peopleLoading ? (
             <DashboardEmptyState
               title={
                 peopleHasFilters
-                  ? t("dashboard.financialCenter.pagination.noMatchingResults")
-                  : t("dashboard.financialCenter.noPeople")
+                  ? t("finance.financialCenter.pagination.noMatchingResults")
+                  : t("finance.financialCenter.noPeople")
               }
             />
           ) : (
@@ -846,17 +847,17 @@ export default function SuperAdminFinancialCenterPage() {
                 </colgroup>
                 <thead>
                   <tr>
-                    <th>{t("dashboard.financialCenter.colName")}</th>
-                    <th>{t("dashboard.financialCenter.colDepartment")}</th>
-                    <th>{t("dashboard.financialCenter.colPhone")}</th>
-                    <th>{t("dashboard.financialCenter.colEmail")}</th>
-                    <th>{t("dashboard.financialCenter.employeeStatus")}</th>
-                    <th>{t("dashboard.financialCenter.colLoginAccount")}</th>
-                    <th>{t("dashboard.financialCenter.colTotalBonus")}</th>
-                    <th>{t("dashboard.financialCenter.colPaid")}</th>
-                    <th>{t("dashboard.financialCenter.colUnpaid")}</th>
-                    <th>{t("dashboard.financialCenter.colLastActivity")}</th>
-                    <th>{t("dashboard.financialCenter.actions")}</th>
+                    <th>{t("finance.financialCenter.colName")}</th>
+                    <th>{t("finance.financialCenter.colDepartment")}</th>
+                    <th>{t("finance.financialCenter.colPhone")}</th>
+                    <th>{t("finance.financialCenter.colEmail")}</th>
+                    <th>{t("finance.financialCenter.employeeStatus")}</th>
+                    <th>{t("finance.financialCenter.colLoginAccount")}</th>
+                    <th>{t("finance.financialCenter.colTotalBonus")}</th>
+                    <th>{t("finance.financialCenter.colPaid")}</th>
+                    <th>{t("finance.financialCenter.colUnpaid")}</th>
+                    <th>{t("finance.financialCenter.colLastActivity")}</th>
+                    <th>{t("finance.financialCenter.actions")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -877,8 +878,8 @@ export default function SuperAdminFinancialCenterPage() {
                       <td className="fc-col-compact">
                         <span className={`fc-badge fc-badge--${p.status === "active" ? "active" : "inactive"}`}>
                           {p.status === "active"
-                            ? t("dashboard.financialCenter.active")
-                            : t("dashboard.financialCenter.inactive")}
+                            ? t("finance.financialCenter.active")
+                            : t("finance.financialCenter.inactive")}
                         </span>
                       </td>
                       <td className="fc-col-compact">{accountStatusBadge(p.accountStatus, t)}</td>
@@ -888,34 +889,34 @@ export default function SuperAdminFinancialCenterPage() {
                       <td className="fc-col-compact">{formatDate(p.lastBonusAt)}</td>
                       <td className="fc-col-actions">
                         <FinancialCenterRowActions
-                          label={t("dashboard.financialCenter.actions")}
+                          label={t("finance.financialCenter.actions")}
                           items={[
                             {
                               key: "view",
-                              label: t("dashboard.financialCenter.viewDetails"),
+                              label: t("finance.financialCenter.viewDetails"),
                               onClick: () => navigate(FC_EMPLOYEE_PATH(p.id)),
                             },
                             {
                               key: "edit",
-                              label: t("dashboard.financialCenter.edit"),
+                              label: t("finance.financialCenter.edit"),
                               onClick: () => openEditPerson(p),
                             },
                             {
                               key: "create-account",
-                              label: t("dashboard.financialCenter.createLoginAccount"),
+                              label: t("finance.financialCenter.createLoginAccount"),
                               onClick: () => openAccountModal(p),
                               hidden: p.accountStatus !== "none",
                             },
                             {
                               key: "suspend",
-                              label: t("dashboard.financialCenter.suspendAccount"),
+                              label: t("finance.financialCenter.suspendAccount"),
                               onClick: () => toggleAccountStatus(p, true),
                               hidden: p.accountStatus !== "active",
                               disabled: actionBusy,
                             },
                             {
                               key: "activate",
-                              label: t("dashboard.financialCenter.activateAccount"),
+                              label: t("finance.financialCenter.activateAccount"),
                               onClick: () => toggleAccountStatus(p, false),
                               hidden: p.accountStatus !== "suspended",
                               disabled: actionBusy,
@@ -938,11 +939,11 @@ export default function SuperAdminFinancialCenterPage() {
           )}
         </DashboardSection>
 
-        <DashboardSection title={t("dashboard.financialCenter.bonusRows")}>
+        <DashboardSection title={t("finance.financialCenter.bonusRows")}>
           <div className="fc-filters fc-filters--rows">
             <input
               type="search"
-              placeholder={t("dashboard.financialCenter.search")}
+              placeholder={t("finance.financialCenter.search")}
               value={rowsQ}
               onChange={(e) => {
                 setRowsQ(e.target.value);
@@ -956,11 +957,11 @@ export default function SuperAdminFinancialCenterPage() {
                 setBonusRowsPage(1);
               }}
             >
-              <option value="">{t("dashboard.financialCenter.status")}</option>
-              <option value="draft">{t("dashboard.financialCenter.draft")}</option>
-              <option value="unpaid">{t("dashboard.financialCenter.unpaid")}</option>
-              <option value="paid">{t("dashboard.financialCenter.paid")}</option>
-              <option value="cancelled">{t("dashboard.financialCenter.cancelled")}</option>
+              <option value="">{t("finance.financialCenter.status")}</option>
+              <option value="draft">{t("finance.financialCenter.draft")}</option>
+              <option value="unpaid">{t("finance.financialCenter.unpaid")}</option>
+              <option value="paid">{t("finance.financialCenter.paid")}</option>
+              <option value="cancelled">{t("finance.financialCenter.cancelled")}</option>
             </select>
             <select
               value={rowsSource}
@@ -969,10 +970,10 @@ export default function SuperAdminFinancialCenterPage() {
                 setBonusRowsPage(1);
               }}
             >
-              <option value="">{t("dashboard.financialCenter.sourceType")}</option>
-              <option value="manual">{t("dashboard.financialCenter.sourceManual")}</option>
-              <option value="subscription_payment">{t("dashboard.financialCenter.sourceSubscriptions")}</option>
-              <option value="order_payment">{t("dashboard.financialCenter.sourceOrders")}</option>
+              <option value="">{t("finance.financialCenter.sourceType")}</option>
+              <option value="manual">{t("finance.financialCenter.sourceManual")}</option>
+              <option value="subscription_payment">{t("finance.financialCenter.sourceSubscriptions")}</option>
+              <option value="order_payment">{t("finance.financialCenter.sourceOrders")}</option>
             </select>
             <select
               value={rowsReceived}
@@ -981,18 +982,18 @@ export default function SuperAdminFinancialCenterPage() {
                 setBonusRowsPage(1);
               }}
             >
-              <option value="">{t("dashboard.financialCenter.receivedStatus")}</option>
-              <option value="received">{t("dashboard.financialCenter.received")}</option>
-              <option value="not_received">{t("dashboard.financialCenter.notReceived")}</option>
-              <option value="partially_received">{t("dashboard.financialCenter.partiallyReceived")}</option>
+              <option value="">{t("finance.financialCenter.receivedStatus")}</option>
+              <option value="received">{t("finance.financialCenter.received")}</option>
+              <option value="not_received">{t("finance.financialCenter.notReceived")}</option>
+              <option value="partially_received">{t("finance.financialCenter.partiallyReceived")}</option>
             </select>
           </div>
           {!rows.length && !rowsLoading ? (
             <DashboardEmptyState
               title={
                 rowsHasFilters
-                  ? t("dashboard.financialCenter.pagination.noMatchingResults")
-                  : t("dashboard.financialCenter.noRows")
+                  ? t("finance.financialCenter.pagination.noMatchingResults")
+                  : t("finance.financialCenter.noRows")
               }
             />
           ) : (
@@ -1014,17 +1015,17 @@ export default function SuperAdminFinancialCenterPage() {
                 </colgroup>
                 <thead>
                   <tr>
-                    <th>{t("dashboard.financialCenter.month")}</th>
-                    <th>{t("dashboard.financialCenter.colTitle")}</th>
-                    <th>{t("dashboard.financialCenter.sourceType")}</th>
-                    <th>{t("dashboard.financialCenter.grossAmount")}</th>
-                    <th>{t("dashboard.financialCenter.stripeFee")}</th>
-                    <th>{t("dashboard.financialCenter.netAfterStripe")}</th>
-                    <th>{t("dashboard.financialCenter.bonusPoolAmount")}</th>
-                    <th>{t("dashboard.financialCenter.colBeneficiaries")}</th>
-                    <th>{t("dashboard.financialCenter.receivedStatus")}</th>
-                    <th>{t("dashboard.financialCenter.status")}</th>
-                    <th>{t("dashboard.financialCenter.actions")}</th>
+                    <th>{t("finance.financialCenter.month")}</th>
+                    <th>{t("finance.financialCenter.colTitle")}</th>
+                    <th>{t("finance.financialCenter.sourceType")}</th>
+                    <th>{t("finance.financialCenter.grossAmount")}</th>
+                    <th>{t("finance.financialCenter.stripeFee")}</th>
+                    <th>{t("finance.financialCenter.netAfterStripe")}</th>
+                    <th>{t("finance.financialCenter.bonusPoolAmount")}</th>
+                    <th>{t("finance.financialCenter.colBeneficiaries")}</th>
+                    <th>{t("finance.financialCenter.receivedStatus")}</th>
+                    <th>{t("finance.financialCenter.status")}</th>
+                    <th>{t("finance.financialCenter.actions")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1042,11 +1043,11 @@ export default function SuperAdminFinancialCenterPage() {
                       <td className="fc-col-compact">{rowStatusBadge(r.status, t)}</td>
                       <td className="fc-col-actions">
                         <FinancialCenterRowActions
-                          label={t("dashboard.financialCenter.actions")}
+                          label={t("finance.financialCenter.actions")}
                           items={[
                             {
                               key: "view",
-                              label: t("dashboard.financialCenter.viewDetails"),
+                              label: t("finance.financialCenter.viewDetails"),
                               onClick: async () => {
                                 const res = await getFinancialCenterBonusRowRequest(r.id);
                                 setDetailRow(res?.data?.row || null);
@@ -1054,28 +1055,28 @@ export default function SuperAdminFinancialCenterPage() {
                             },
                             {
                               key: "edit",
-                              label: t("dashboard.financialCenter.edit"),
+                              label: t("finance.financialCenter.edit"),
                               onClick: () => openEditBonus(r),
                               hidden: r.status === "paid" || r.status === "cancelled",
                             },
                             {
                               key: "received",
-                              label: t("dashboard.financialCenter.markReceived"),
+                              label: t("finance.financialCenter.markReceived"),
                               onClick: () =>
                                 rowAction(
                                   () => markFinancialCenterBonusRowReceivedRequest(r.id, { receivedStatus: "received" }),
-                                  t("dashboard.financialCenter.receivedOk"),
+                                  t("finance.financialCenter.receivedOk"),
                                 ),
                               hidden: r.receivedStatus === "received" || r.status === "cancelled",
                               disabled: actionBusy,
                             },
                             {
                               key: "cancel",
-                              label: t("dashboard.financialCenter.cancel"),
+                              label: t("finance.financialCenter.cancel"),
                               onClick: () =>
                                 rowAction(
                                   () => cancelFinancialCenterBonusRowRequest(r.id),
-                                  t("dashboard.financialCenter.cancelledOk"),
+                                  t("finance.financialCenter.cancelledOk"),
                                 ),
                               hidden: r.status === "cancelled" || r.status === "paid",
                               disabled: actionBusy,
@@ -1102,29 +1103,29 @@ export default function SuperAdminFinancialCenterPage() {
       <DashboardModal
         open={Boolean(personModal)}
         className="fc-modal"
-        title={personModal === "create" ? t("dashboard.financialCenter.addPerson") : t("dashboard.financialCenter.editPerson")}
+        title={personModal === "create" ? t("finance.financialCenter.addPerson") : t("finance.financialCenter.editPerson")}
         onClose={() => setPersonModal(null)}
         footer={
           <>
             <button type="button" className="btn btn-secondary" onClick={() => setPersonModal(null)}>
-              {t("dashboard.financialCenter.close")}
+              {t("finance.financialCenter.close")}
             </button>
             <button type="button" className="btn btn-primary" disabled={actionBusy} onClick={savePerson}>
-              {t("dashboard.financialCenter.save")}
+              {t("finance.financialCenter.save")}
             </button>
           </>
         }
       >
         <div className="dash-ui-modal__form" dir="rtl">
-          <DashboardFieldGroup label={`${t("dashboard.financialCenter.colName")} *`}>
+          <DashboardFieldGroup label={`${t("finance.financialCenter.colName")} *`}>
             <input
               className="input"
-              placeholder={t("dashboard.financialCenter.placeholderFullName")}
+              placeholder={t("finance.financialCenter.placeholderFullName")}
               value={personForm.fullName}
               onChange={(e) => setPersonForm((f) => ({ ...f, fullName: e.target.value }))}
             />
           </DashboardFieldGroup>
-          <DashboardFieldGroup label={t("dashboard.financialCenter.colEmail")}>
+          <DashboardFieldGroup label={t("finance.financialCenter.colEmail")}>
             <input
               className="input"
               type="email"
@@ -1134,7 +1135,7 @@ export default function SuperAdminFinancialCenterPage() {
               onChange={(e) => setPersonForm((f) => ({ ...f, email: e.target.value }))}
             />
           </DashboardFieldGroup>
-          <DashboardFieldGroup label={t("dashboard.financialCenter.colPhone")}>
+          <DashboardFieldGroup label={t("finance.financialCenter.colPhone")}>
             <input
               className="input"
               placeholder="+962..."
@@ -1143,15 +1144,15 @@ export default function SuperAdminFinancialCenterPage() {
               onChange={(e) => setPersonForm((f) => ({ ...f, phone: e.target.value }))}
             />
           </DashboardFieldGroup>
-          <DashboardFieldGroup label={t("dashboard.financialCenter.colJobTitle")}>
+          <DashboardFieldGroup label={t("finance.financialCenter.colJobTitle")}>
             <input
               className="input"
-              placeholder={t("dashboard.financialCenter.placeholderJobTitle")}
+              placeholder={t("finance.financialCenter.placeholderJobTitle")}
               value={personForm.jobTitle}
               onChange={(e) => setPersonForm((f) => ({ ...f, jobTitle: e.target.value }))}
             />
           </DashboardFieldGroup>
-          <DashboardFieldGroup label={t("dashboard.financialCenter.colDepartment")}>
+          <DashboardFieldGroup label={t("finance.financialCenter.colDepartment")}>
             <FinancialDepartmentCombobox
               value={personForm.departmentId}
               onChange={(departmentId) => setPersonForm((f) => ({ ...f, departmentId }))}
@@ -1160,40 +1161,40 @@ export default function SuperAdminFinancialCenterPage() {
               disabled={actionBusy}
             />
           </DashboardFieldGroup>
-          <DashboardFieldGroup label={t("dashboard.financialCenter.colPaymentMethod")}>
+          <DashboardFieldGroup label={t("finance.financialCenter.colPaymentMethod")}>
             <input
               className="input"
-              placeholder={t("dashboard.financialCenter.placeholderPaymentMethod")}
+              placeholder={t("finance.financialCenter.placeholderPaymentMethod")}
               value={personForm.paymentMethod}
               onChange={(e) => setPersonForm((f) => ({ ...f, paymentMethod: e.target.value }))}
             />
           </DashboardFieldGroup>
-          <DashboardFieldGroup label={t("dashboard.financialCenter.colPaymentDetails")}>
+          <DashboardFieldGroup label={t("finance.financialCenter.colPaymentDetails")}>
             <textarea
               className="input textarea"
               rows={2}
-              placeholder={t("dashboard.financialCenter.placeholderPaymentDetails")}
+              placeholder={t("finance.financialCenter.placeholderPaymentDetails")}
               value={personForm.paymentDetails}
               onChange={(e) => setPersonForm((f) => ({ ...f, paymentDetails: e.target.value }))}
             />
           </DashboardFieldGroup>
-          <DashboardFieldGroup label={t("dashboard.financialCenter.colNotes")}>
+          <DashboardFieldGroup label={t("finance.financialCenter.colNotes")}>
             <textarea
               className="input textarea"
               rows={2}
-              placeholder={t("dashboard.financialCenter.placeholderNotes")}
+              placeholder={t("finance.financialCenter.placeholderNotes")}
               value={personForm.notes}
               onChange={(e) => setPersonForm((f) => ({ ...f, notes: e.target.value }))}
             />
           </DashboardFieldGroup>
-          <DashboardFieldGroup label={t("dashboard.financialCenter.status")}>
+          <DashboardFieldGroup label={t("finance.financialCenter.status")}>
             <select
               className="input"
               value={personForm.status}
               onChange={(e) => setPersonForm((f) => ({ ...f, status: e.target.value }))}
             >
-              <option value="active">{t("dashboard.financialCenter.active")}</option>
-              <option value="inactive">{t("dashboard.financialCenter.inactive")}</option>
+              <option value="active">{t("finance.financialCenter.active")}</option>
+              <option value="inactive">{t("finance.financialCenter.inactive")}</option>
             </select>
           </DashboardFieldGroup>
           {personModal === "create" ? (
@@ -1210,11 +1211,11 @@ export default function SuperAdminFinancialCenterPage() {
                     }))
                   }
                 />
-                {t("dashboard.financialCenter.createLoginAccountLabel")}
+                {t("finance.financialCenter.createLoginAccountLabel")}
               </label>
               {personForm.createLoginAccount ? (
                 <>
-                  <DashboardFieldGroup label={t("dashboard.financialCenter.loginEmail")}>
+                  <DashboardFieldGroup label={t("finance.financialCenter.loginEmail")}>
                     <input
                       className="input"
                       type="email"
@@ -1224,21 +1225,21 @@ export default function SuperAdminFinancialCenterPage() {
                       onChange={(e) => setPersonForm((f) => ({ ...f, loginEmail: e.target.value }))}
                     />
                   </DashboardFieldGroup>
-                  <DashboardFieldGroup label={t("dashboard.financialCenter.password")}>
+                  <DashboardFieldGroup label={t("finance.financialCenter.password")}>
                     <input
                       className="input"
                       type="password"
-                      placeholder={t("dashboard.financialCenter.placeholderPasswordMin")}
+                      placeholder={t("finance.financialCenter.placeholderPasswordMin")}
                       dir="ltr"
                       value={personForm.password}
                       onChange={(e) => setPersonForm((f) => ({ ...f, password: e.target.value }))}
                     />
                   </DashboardFieldGroup>
-                  <DashboardFieldGroup label={t("dashboard.financialCenter.confirmPassword")}>
+                  <DashboardFieldGroup label={t("finance.financialCenter.confirmPassword")}>
                     <input
                       className="input"
                       type="password"
-                      placeholder={t("dashboard.financialCenter.placeholderConfirmPassword")}
+                      placeholder={t("finance.financialCenter.placeholderConfirmPassword")}
                       dir="ltr"
                       value={personForm.confirmPassword}
                       onChange={(e) => setPersonForm((f) => ({ ...f, confirmPassword: e.target.value }))}
@@ -1254,10 +1255,10 @@ export default function SuperAdminFinancialCenterPage() {
               className="btn btn-secondary"
               disabled={actionBusy}
               onClick={() =>
-                rowAction(() => deactivateFinancialCenterPersonRequest(personModal), t("dashboard.financialCenter.deactivatedOk"))
+                rowAction(() => deactivateFinancialCenterPersonRequest(personModal), t("finance.financialCenter.deactivatedOk"))
               }
             >
-              {t("dashboard.financialCenter.deactivateEmployee")}
+              {t("finance.financialCenter.deactivateEmployee")}
             </button>
           ) : null}
         </div>
@@ -1265,30 +1266,30 @@ export default function SuperAdminFinancialCenterPage() {
 
       <DashboardModal
         open={Boolean(bonusModal)}
-        title={bonusModal === "create" ? t("dashboard.financialCenter.createBonusRow") : t("dashboard.financialCenter.editBonusRow")}
+        title={bonusModal === "create" ? t("finance.financialCenter.createBonusRow") : t("finance.financialCenter.editBonusRow")}
         onClose={() => setBonusModal(null)}
         className="fc-modal fc-modal--wide fc-modal--bonus"
         footer={
           <>
             <button type="button" className="btn btn-secondary" onClick={() => setBonusModal(null)}>
-              {t("dashboard.financialCenter.close")}
+              {t("finance.financialCenter.close")}
             </button>
             <button type="button" className="btn btn-primary" disabled={actionBusy || preview.shareTotal > 100} onClick={saveBonus}>
-              {t("dashboard.financialCenter.save")}
+              {t("finance.financialCenter.save")}
             </button>
           </>
         }
       >
         <div className="dash-ui-modal__form" dir="rtl">
-          <DashboardFieldGroup label={`${t("dashboard.financialCenter.colTitle")} *`}>
+          <DashboardFieldGroup label={`${t("finance.financialCenter.colTitle")} *`}>
             <input
               className="input"
-              placeholder={t("dashboard.financialCenter.placeholderBonusTitle")}
+              placeholder={t("finance.financialCenter.placeholderBonusTitle")}
               value={bonusForm.title}
               onChange={(e) => setBonusForm((f) => ({ ...f, title: e.target.value }))}
             />
           </DashboardFieldGroup>
-          <DashboardFieldGroup label={t("dashboard.financialCenter.month")}>
+          <DashboardFieldGroup label={t("finance.financialCenter.month")}>
             <FinancialCenterScrollSelect
               className="fc-scroll-select--input"
               value={bonusForm.monthKey}
@@ -1296,7 +1297,7 @@ export default function SuperAdminFinancialCenterPage() {
               options={months}
             />
           </DashboardFieldGroup>
-          <DashboardFieldGroup label={t("dashboard.financialCenter.sourceType")}>
+          <DashboardFieldGroup label={t("finance.financialCenter.sourceType")}>
             <select
               className="input"
               value={bonusForm.sourceType}
@@ -1310,14 +1311,14 @@ export default function SuperAdminFinancialCenterPage() {
                 }))
               }
             >
-              <option value="manual">{t("dashboard.financialCenter.sourceManual")}</option>
-              <option value="subscription_payment">{t("dashboard.financialCenter.sourceSubscriptions")}</option>
-              <option value="order_payment">{t("dashboard.financialCenter.sourceOrders")}</option>
+              <option value="manual">{t("finance.financialCenter.sourceManual")}</option>
+              <option value="subscription_payment">{t("finance.financialCenter.sourceSubscriptions")}</option>
+              <option value="order_payment">{t("finance.financialCenter.sourceOrders")}</option>
             </select>
           </DashboardFieldGroup>
 
           {bonusForm.sourceType === "manual" ? (
-            <DashboardFieldGroup label={t("dashboard.financialCenter.grossAmount")}>
+            <DashboardFieldGroup label={t("finance.financialCenter.grossAmount")}>
               <input
                 className="input"
                 type="number"
@@ -1333,7 +1334,7 @@ export default function SuperAdminFinancialCenterPage() {
               <input
                 className="input"
                 type="search"
-                placeholder={t("dashboard.financialCenter.search")}
+                placeholder={t("finance.financialCenter.search")}
                 value={sourceQ}
                 onChange={(e) => setSourceQ(e.target.value)}
               />
@@ -1361,12 +1362,12 @@ export default function SuperAdminFinancialCenterPage() {
               checked={bonusForm.stripeDeductionEnabled}
               onChange={(e) => setBonusForm((f) => ({ ...f, stripeDeductionEnabled: e.target.checked }))}
             />
-            {t("dashboard.financialCenter.stripeQuestion")}
+            {t("finance.financialCenter.stripeQuestion")}
           </label>
           {bonusForm.stripeDeductionEnabled ? (
             <div className="grid gap-2 sm:grid-cols-2">
               <label>
-                {t("dashboard.financialCenter.stripePercentage")}
+                {t("finance.financialCenter.stripePercentage")}
                 <input
                   className="input"
                   type="number"
@@ -1376,7 +1377,7 @@ export default function SuperAdminFinancialCenterPage() {
                 />
               </label>
               <label>
-                {t("dashboard.financialCenter.stripeFixedFee")}
+                {t("finance.financialCenter.stripeFixedFee")}
                 <input
                   className="input"
                   type="number"
@@ -1389,7 +1390,7 @@ export default function SuperAdminFinancialCenterPage() {
           ) : null}
 
           <label>
-            {t("dashboard.financialCenter.bonusPercentage")}
+            {t("finance.financialCenter.bonusPercentage")}
             <input
               className="input"
               type="number"
@@ -1403,39 +1404,39 @@ export default function SuperAdminFinancialCenterPage() {
 
           <div className="fc-preview-box">
             <div className="fc-preview-row">
-              <span>{t("dashboard.financialCenter.grossAmount")}</span>
+              <span>{t("finance.financialCenter.grossAmount")}</span>
               <strong>{formatMoney(preview.grossAmount, currency)}</strong>
             </div>
             <div className="fc-preview-row">
-              <span>{t("dashboard.financialCenter.stripeFee")}</span>
+              <span>{t("finance.financialCenter.stripeFee")}</span>
               <strong>{formatMoney(preview.stripeFeeAmount, currency)}</strong>
             </div>
             <div className="fc-preview-row">
-              <span>{t("dashboard.financialCenter.netAfterStripe")}</span>
+              <span>{t("finance.financialCenter.netAfterStripe")}</span>
               <strong>{formatMoney(preview.netAmountAfterStripe, currency)}</strong>
             </div>
             <div className="fc-preview-row">
-              <span>{t("dashboard.financialCenter.bonusPoolAmount")}</span>
+              <span>{t("finance.financialCenter.bonusPoolAmount")}</span>
               <strong>{formatMoney(preview.bonusPoolAmount, currency)}</strong>
             </div>
           </div>
 
           <div className="fc-allocation-block">
             <div className="fc-section__head">
-              <strong className="fc-section__title">{t("dashboard.financialCenter.allocations")}</strong>
+              <strong className="fc-section__title">{t("finance.financialCenter.allocations")}</strong>
             </div>
 
             {(bonusForm.allocations || []).length === 0 ? (
               <div className="fc-allocation-empty">
-                <p className="fc-allocation-empty__text">{t("dashboard.financialCenter.allocationEmpty")}</p>
+                <p className="fc-allocation-empty__text">{t("finance.financialCenter.allocationEmpty")}</p>
                 <AllocationAddButton onClick={addAllocationRow} t={t} />
               </div>
             ) : (
               <>
                 <div className="fc-allocation-list-head" aria-hidden="true">
-                  <span>{t("dashboard.financialCenter.selectEmployee")}</span>
-                  <span>{t("dashboard.financialCenter.colPercentage")}</span>
-                  <span>{t("dashboard.financialCenter.colAmount")}</span>
+                  <span>{t("finance.financialCenter.selectEmployee")}</span>
+                  <span>{t("finance.financialCenter.colPercentage")}</span>
+                  <span>{t("finance.financialCenter.colAmount")}</span>
                   <span />
                 </div>
                 <div className="fc-allocation-list">
@@ -1447,13 +1448,13 @@ export default function SuperAdminFinancialCenterPage() {
                     return (
                       <div key={idx} className="fc-allocation-row">
                         <div className="fc-allocation-row__field fc-allocation-row__person">
-                          <label className="fc-allocation-row__label">{t("dashboard.financialCenter.selectEmployee")}</label>
+                          <label className="fc-allocation-row__label">{t("finance.financialCenter.selectEmployee")}</label>
                           <select
                             className={`input fc-allocation-select${personInvalid ? " fc-allocation-select--invalid" : ""}`}
                             value={a.personId}
                             onChange={(e) => updateAllocation(idx, { personId: e.target.value })}
                           >
-                            <option value="">{t("dashboard.financialCenter.selectEmployee")}</option>
+                            <option value="">{t("finance.financialCenter.selectEmployee")}</option>
                             {allocationPeople.map((p) => (
                               <option key={p.id} value={p.id}>
                                 {p.fullName}
@@ -1461,12 +1462,12 @@ export default function SuperAdminFinancialCenterPage() {
                             ))}
                           </select>
                           {personInvalid ? (
-                            <span className="fc-allocation-row__hint">{t("dashboard.financialCenter.allocationPersonRequired")}</span>
+                            <span className="fc-allocation-row__hint">{t("finance.financialCenter.allocationPersonRequired")}</span>
                           ) : null}
                         </div>
 
                         <div className="fc-allocation-row__field fc-allocation-row__pct">
-                          <label className="fc-allocation-row__label">{t("dashboard.financialCenter.colPercentage")}</label>
+                          <label className="fc-allocation-row__label">{t("finance.financialCenter.colPercentage")}</label>
                           <div className={`fc-allocation-pct-wrap${pctInvalid ? " fc-allocation-pct-wrap--invalid" : ""}`}>
                             <input
                               className="input fc-allocation-pct-input"
@@ -1484,12 +1485,12 @@ export default function SuperAdminFinancialCenterPage() {
                             </span>
                           </div>
                           {pctInvalid ? (
-                            <span className="fc-allocation-row__hint">{t("dashboard.financialCenter.allocationPctRequired")}</span>
+                            <span className="fc-allocation-row__hint">{t("finance.financialCenter.allocationPctRequired")}</span>
                           ) : null}
                         </div>
 
                         <div className="fc-allocation-row__field fc-allocation-row__amount">
-                          <label className="fc-allocation-row__label">{t("dashboard.financialCenter.colAmount")}</label>
+                          <label className="fc-allocation-row__label">{t("finance.financialCenter.colAmount")}</label>
                           <div className="fc-allocation-amount-pill" aria-live="polite">
                             {formatMoney(preview.allocations[idx]?.calculatedAmount, currency)}
                           </div>
@@ -1498,8 +1499,8 @@ export default function SuperAdminFinancialCenterPage() {
                         <button
                           type="button"
                           className="fc-allocation-remove"
-                          title={t("dashboard.financialCenter.removeAllocation")}
-                          aria-label={t("dashboard.financialCenter.removeAllocation")}
+                          title={t("finance.financialCenter.removeAllocation")}
+                          aria-label={t("finance.financialCenter.removeAllocation")}
                           onClick={() => removeAllocation(idx)}
                         >
                           <Trash2 size={15} strokeWidth={2} aria-hidden />
@@ -1523,21 +1524,21 @@ export default function SuperAdminFinancialCenterPage() {
       <DashboardModal
         open={Boolean(accountModal)}
         className="fc-modal"
-        title={t("dashboard.financialCenter.createLoginAccount")}
+        title={t("finance.financialCenter.createLoginAccount")}
         onClose={() => setAccountModal(null)}
         footer={
           <>
             <button type="button" className="btn btn-secondary" onClick={() => setAccountModal(null)}>
-              {t("dashboard.financialCenter.close")}
+              {t("finance.financialCenter.close")}
             </button>
             <button type="button" className="btn btn-primary" disabled={actionBusy} onClick={saveAccount}>
-              {t("dashboard.financialCenter.save")}
+              {t("finance.financialCenter.save")}
             </button>
           </>
         }
       >
         <div className="dash-ui-modal__form" dir="rtl">
-          <DashboardFieldGroup label={t("dashboard.financialCenter.loginEmail")}>
+          <DashboardFieldGroup label={t("finance.financialCenter.loginEmail")}>
             <input
               className="input"
               type="email"
@@ -1547,22 +1548,22 @@ export default function SuperAdminFinancialCenterPage() {
               onChange={(e) => setAccountForm((f) => ({ ...f, loginEmail: e.target.value }))}
             />
           </DashboardFieldGroup>
-          <DashboardFieldGroup label={t("dashboard.financialCenter.password")}>
+          <DashboardFieldGroup label={t("finance.financialCenter.password")}>
             <input
               className="input"
               type="password"
               dir="ltr"
-              placeholder={t("dashboard.financialCenter.placeholderPasswordMin")}
+              placeholder={t("finance.financialCenter.placeholderPasswordMin")}
               value={accountForm.password}
               onChange={(e) => setAccountForm((f) => ({ ...f, password: e.target.value }))}
             />
           </DashboardFieldGroup>
-          <DashboardFieldGroup label={t("dashboard.financialCenter.confirmPassword")}>
+          <DashboardFieldGroup label={t("finance.financialCenter.confirmPassword")}>
             <input
               className="input"
               type="password"
               dir="ltr"
-              placeholder={t("dashboard.financialCenter.placeholderConfirmPassword")}
+              placeholder={t("finance.financialCenter.placeholderConfirmPassword")}
               value={accountForm.confirmPassword}
               onChange={(e) => setAccountForm((f) => ({ ...f, confirmPassword: e.target.value }))}
             />
@@ -1572,14 +1573,14 @@ export default function SuperAdminFinancialCenterPage() {
 
       <DashboardModal
         open={Boolean(detailRow)}
-        title={detailRow?.title || t("dashboard.financialCenter.viewDetails")}
+        title={detailRow?.title || t("finance.financialCenter.viewDetails")}
         onClose={() => setDetailRow(null)}
         className="fc-modal fc-modal--wide"
         footer={
           <div className="flex flex-wrap gap-2">
             {detailRow?.status !== "cancelled" ? (
               <button type="button" className="btn btn-secondary" disabled={actionBusy} onClick={openReceivedModal}>
-                {t("dashboard.financialCenter.updateReceivedStatus")}
+                {t("finance.financialCenter.updateReceivedStatus")}
               </button>
             ) : null}
             {detailRow && isRowReadyForPayment(detailRow.status) ? (
@@ -1590,11 +1591,11 @@ export default function SuperAdminFinancialCenterPage() {
                 onClick={() =>
                   rowAction(
                     () => markFinancialCenterBonusRowPaidRequest(detailRow.id),
-                    t("dashboard.financialCenter.rowPaidOk"),
+                    t("finance.financialCenter.rowPaidOk"),
                   )
                 }
               >
-                {t("dashboard.financialCenter.markPaid")}
+                {t("finance.financialCenter.markPaid")}
               </button>
             ) : null}
           </div>
@@ -1604,19 +1605,19 @@ export default function SuperAdminFinancialCenterPage() {
           <div className="grid gap-3">
             <div className="fc-preview-box">
               <div className="fc-preview-row">
-                <span>{t("dashboard.financialCenter.grossAmount")}</span>
+                <span>{t("finance.financialCenter.grossAmount")}</span>
                 <strong>{formatMoney(detailRow.grossAmount, currency)}</strong>
               </div>
               <div className="fc-preview-row">
-                <span>{t("dashboard.financialCenter.netAfterStripe")}</span>
+                <span>{t("finance.financialCenter.netAfterStripe")}</span>
                 <strong>{formatMoney(detailRow.netAmountAfterStripe, currency)}</strong>
               </div>
               <div className="fc-preview-row">
-                <span>{t("dashboard.financialCenter.bonusPoolAmount")}</span>
+                <span>{t("finance.financialCenter.bonusPoolAmount")}</span>
                 <strong>{formatMoney(detailRow.bonusPoolAmount, currency)}</strong>
               </div>
               <div className="fc-preview-row">
-                <span>{t("dashboard.financialCenter.receivedStatus")}</span>
+                <span>{t("finance.financialCenter.receivedStatus")}</span>
                 {receivedBadge(detailRow.receivedStatus, t)}
               </div>
             </div>
@@ -1631,11 +1632,11 @@ export default function SuperAdminFinancialCenterPage() {
                 </colgroup>
                 <thead>
                   <tr>
-                    <th>{t("dashboard.financialCenter.employee")}</th>
-                    <th>{t("dashboard.financialCenter.colPercentage")}</th>
-                    <th>{t("dashboard.financialCenter.colAmount")}</th>
-                    <th>{t("dashboard.financialCenter.colPayment")}</th>
-                    <th>{t("dashboard.financialCenter.actions")}</th>
+                    <th>{t("finance.financialCenter.employee")}</th>
+                    <th>{t("finance.financialCenter.colPercentage")}</th>
+                    <th>{t("finance.financialCenter.colAmount")}</th>
+                    <th>{t("finance.financialCenter.colPayment")}</th>
+                    <th>{t("finance.financialCenter.actions")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1652,37 +1653,37 @@ export default function SuperAdminFinancialCenterPage() {
                       <td className="fc-col-actions">
                         {canEditAllocations ? (
                           <FinancialCenterRowActions
-                            label={t("dashboard.financialCenter.actions")}
+                            label={t("finance.financialCenter.actions")}
                             items={[
                               {
                                 key: "paid",
-                                label: t("dashboard.financialCenter.markPaid"),
+                                label: t("finance.financialCenter.markPaid"),
                                 onClick: () =>
                                   rowAction(
                                     () => markFinancialCenterAllocationPaidRequest(a.id),
-                                    t("dashboard.financialCenter.allocationPaidOk"),
+                                    t("finance.financialCenter.allocationPaidOk"),
                                   ),
                                 hidden: a.paidStatus !== "unpaid",
                                 disabled: actionBusy,
                               },
                               {
                                 key: "held",
-                                label: t("dashboard.financialCenter.deferPayment"),
+                                label: t("finance.financialCenter.deferPayment"),
                                 onClick: () =>
                                   rowAction(
                                     () => markFinancialCenterAllocationHeldRequest(a.id),
-                                    t("dashboard.financialCenter.allocationHeldOk"),
+                                    t("finance.financialCenter.allocationHeldOk"),
                                   ),
                                 hidden: a.paidStatus !== "unpaid",
                                 disabled: actionBusy,
                               },
                               {
                                 key: "unpaid",
-                                label: t("dashboard.financialCenter.markUnpaid"),
+                                label: t("finance.financialCenter.markUnpaid"),
                                 onClick: () =>
                                   rowAction(
                                     () => markFinancialCenterAllocationUnpaidRequest(a.id),
-                                    t("dashboard.financialCenter.allocationUnpaidOk"),
+                                    t("finance.financialCenter.allocationUnpaidOk"),
                                   ),
                                 hidden: a.paidStatus !== "paid" && a.paidStatus !== "held",
                                 disabled: actionBusy,
@@ -1701,7 +1702,7 @@ export default function SuperAdminFinancialCenterPage() {
             </FinancialCenterTableWrap>
             {detailRow.auditLogs?.length ? (
               <div>
-                <strong>{t("dashboard.financialCenter.auditLog")}</strong>
+                <strong>{t("finance.financialCenter.auditLog")}</strong>
                 <ul className="fc-audit-list">
                   {detailRow.auditLogs.map((log) => (
                     <li key={log.id}>
@@ -1719,21 +1720,21 @@ export default function SuperAdminFinancialCenterPage() {
       <DashboardModal
         open={receivedModal}
         className="fc-modal"
-        title={t("dashboard.financialCenter.updateReceivedStatus")}
+        title={t("finance.financialCenter.updateReceivedStatus")}
         onClose={() => setReceivedModal(false)}
         footer={
           <>
             <button type="button" className="btn btn-secondary" onClick={() => setReceivedModal(false)}>
-              {t("dashboard.financialCenter.close")}
+              {t("finance.financialCenter.close")}
             </button>
             <button type="button" className="btn btn-primary" disabled={actionBusy} onClick={() => void saveReceivedStatus()}>
-              {t("dashboard.financialCenter.save")}
+              {t("finance.financialCenter.save")}
             </button>
           </>
         }
       >
         <div className="dash-ui-modal__form" dir="rtl">
-          <DashboardFieldGroup label={t("dashboard.financialCenter.receivedStatus")}>
+          <DashboardFieldGroup label={t("finance.financialCenter.receivedStatus")}>
             <select
               className="input"
               value={receivedForm.receivedStatus}
@@ -1751,13 +1752,13 @@ export default function SuperAdminFinancialCenterPage() {
                 }));
               }}
             >
-              <option value="not_received">{t("dashboard.financialCenter.notReceived")}</option>
-              <option value="received">{t("dashboard.financialCenter.received")}</option>
-              <option value="partially_received">{t("dashboard.financialCenter.partiallyReceived")}</option>
+              <option value="not_received">{t("finance.financialCenter.notReceived")}</option>
+              <option value="received">{t("finance.financialCenter.received")}</option>
+              <option value="partially_received">{t("finance.financialCenter.partiallyReceived")}</option>
             </select>
           </DashboardFieldGroup>
           {receivedForm.receivedStatus !== "not_received" ? (
-            <DashboardFieldGroup label={t("dashboard.financialCenter.receivedAmount")}>
+            <DashboardFieldGroup label={t("finance.financialCenter.receivedAmount")}>
               <input
                 className="input"
                 type="number"
@@ -1769,7 +1770,7 @@ export default function SuperAdminFinancialCenterPage() {
             </DashboardFieldGroup>
           ) : null}
           {receivedForm.receivedStatus !== "not_received" ? (
-            <DashboardFieldGroup label={t("dashboard.financialCenter.receivedAt")}>
+            <DashboardFieldGroup label={t("finance.financialCenter.receivedAt")}>
               <input
                 className="input"
                 type="datetime-local"
@@ -1778,7 +1779,7 @@ export default function SuperAdminFinancialCenterPage() {
               />
             </DashboardFieldGroup>
           ) : null}
-          <DashboardFieldGroup label={t("dashboard.financialCenter.receivedNote")}>
+          <DashboardFieldGroup label={t("finance.financialCenter.receivedNote")}>
             <textarea
               className="input textarea"
               rows={2}

@@ -14,7 +14,23 @@ function normalizeFaqText(text) {
  * @param {number} [index]
  * @returns {string | null}
  */
-export function resolveFaqLocaleKey(item, index) {
+/**
+ * Locale key only when this exact field still matches the canonical seed.
+ * An edited answer stays admin content even if the question is unchanged.
+ * @param {{ question?: string, answer?: string } | null | undefined} item
+ * @param {"question" | "answer"} field
+ * @returns {string | null}
+ */
+export function canonicalFaqIdForField(item, field) {
+  const raw = field === "answer" ? item?.answer : item?.question;
+  const prop = field === "answer" ? "a" : "q";
+  const normalized = normalizeFaqText(raw);
+  if (!normalized) return null;
+  const match = HOME_FAQ_ITEMS.find((entry) => normalizeFaqText(entry[prop]) === normalized);
+  return match ? match.id : null;
+}
+
+export function resolveFaqLocaleKey(item, _index) {
   if (item?.localeKey) return item.localeKey;
 
   const normalized = normalizeFaqText(item?.question);
@@ -23,9 +39,7 @@ export function resolveFaqLocaleKey(item, index) {
     if (match) return match.id;
   }
 
-  if (typeof index === "number" && index >= 0 && index < HOME_FAQ_ITEMS.length) {
-    return HOME_FAQ_ITEMS[index].id;
-  }
-
+  // Position is not an identity. Admin-edited FAQ rows in website_faq_items
+  // must stay as entered unless the question still matches the canonical seed.
   return null;
 }

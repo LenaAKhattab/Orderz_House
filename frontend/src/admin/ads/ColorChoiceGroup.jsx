@@ -1,19 +1,10 @@
 import { useMemo } from "react";
 import { toPickerHex } from "./adColorPalette";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/adsResources";
 
 /**
- * Visual color selection: swatches + optional clear + native picker under «لون مخصص».
- * Values remain hex strings for the form (same as backend).
- *
- * @param {object} p
- * @param {string} p.label — Arabic field title
- * @param {string} [p.value]
- * @param {(next: string) => void} p.onChange
- * @param {{ label: string, value: string }[]} p.options
- * @param {boolean} [p.allowEmpty]
- * @param {string} [p.emptyLabel]
- * @param {boolean} [p.disabled]
- * @param {boolean} [p.showHex] — show hex code next to current (default true)
+ * Visual color selection: swatches + optional clear + native picker under custom color.
  */
 export default function ColorChoiceGroup({
   label,
@@ -21,20 +12,22 @@ export default function ColorChoiceGroup({
   onChange,
   options,
   allowEmpty = false,
-  emptyLabel = "بدون تحديد",
+  emptyLabel,
   disabled = false,
   showHex = true,
 }) {
+  const { t } = useTranslation();
+  const resolvedEmptyLabel = emptyLabel ?? t("ads.palette.unset");
   const trimmed = (value || "").trim();
   const lower = trimmed.toLowerCase();
   const matched = options.find((o) => o.value.toLowerCase() === lower);
 
   const summaryLabel = useMemo(() => {
-    if (!trimmed && allowEmpty) return emptyLabel;
+    if (!trimmed && allowEmpty) return resolvedEmptyLabel;
     if (matched) return matched.label;
-    if (trimmed) return "لون مخصص";
-    return emptyLabel;
-  }, [trimmed, matched, allowEmpty, emptyLabel]);
+    if (trimmed) return t("ads.palette.customColor");
+    return resolvedEmptyLabel;
+  }, [trimmed, matched, allowEmpty, resolvedEmptyLabel, t]);
 
   const isLightSwatch = (hex) => {
     if (!hex || hex.toLowerCase() === "#ffffff") return true;
@@ -57,7 +50,7 @@ export default function ColorChoiceGroup({
               {showHex ? <code className="oh-admin-color-hex">{trimmed}</code> : null}
             </>
           ) : (
-            <span className="oh-admin-color-field__muted">{emptyLabel}</span>
+            <span className="oh-admin-color-field__muted">{resolvedEmptyLabel}</span>
           )}
         </div>
       </div>
@@ -70,7 +63,7 @@ export default function ColorChoiceGroup({
             disabled={disabled}
             onClick={() => onChange("")}
           >
-            {emptyLabel}
+            {resolvedEmptyLabel}
           </button>
         ) : null}
         {options.map((opt) => {
@@ -93,10 +86,10 @@ export default function ColorChoiceGroup({
       </div>
 
       <details className="oh-admin-color-advanced">
-        <summary className="oh-admin-color-advanced__summary">لون مخصص</summary>
+        <summary className="oh-admin-color-advanced__summary">{t("ads.palette.customColor")}</summary>
         <div className="oh-admin-color-advanced__body">
           <label className="oh-admin-color-picker-wrap">
-            <span className="oh-admin-color-field__muted">منتقي الألوان</span>
+            <span className="oh-admin-color-field__muted">{t("ads.colors.colorPicker")}</span>
             <input
               type="color"
               className="oh-admin-color-native"
@@ -106,9 +99,7 @@ export default function ColorChoiceGroup({
             />
           </label>
           {!matched && trimmed && /^#/i.test(trimmed) ? (
-            <span className="oh-admin-color-field__muted oh-admin-color-field__muted--narrow">
-              يمكنك ضبط اللون بدقة ثم العودة إلى السِلم أعلاه إذا يطابق أحد الخيارات.
-            </span>
+            <span className="oh-admin-color-field__muted oh-admin-color-field__muted--narrow">{t("ads.colors.customColorHint")}</span>
           ) : null}
         </div>
       </details>

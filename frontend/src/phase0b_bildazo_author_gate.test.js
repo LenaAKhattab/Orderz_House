@@ -112,16 +112,16 @@ describe("Freelancer Articles Bildazo gate UI", () => {
   it("new-account tab is a branded compact signup-style form", () => {
     const card = read("components/freelancer/FreelancerBildazoAuthorGateCard.jsx");
     const form = read("components/freelancer/FreelancerBildazoAuthorLinkForm.jsx");
-    assert.match(card, /حساب الكاتب في Bildazo/);
+    assert.match(card, /articles\.bildazoGate\.title/);
     assert.match(card, /bildazo-logo\.png/);
     assert.match(card, /data-testid="bildazo-logo"/);
-    assert.match(form, /البريد الإلكتروني/);
+    assert.match(form, /articles\.bildazoGate\.email/);
     assert.match(form, /readOnly/);
     assert.match(form, /data-testid="bildazo-orderz-email"/);
-    assert.match(form, /BILDAZO_WRITER_ROLE_LABEL_AR/);
+    assert.match(form, /articles\.bildazoGate\.writerRole/);
     assert.match(form, /data-testid="bildazo-new-password"/);
     assert.match(form, /data-testid="bildazo-new-password-confirm"/);
-    assert.match(form, /إنشاء وربط حساب الكاتب/);
+    assert.match(form, /articles\.bildazoGate\.submitNew/);
     assert.doesNotMatch(card, /BILDAZO_ORDERZHOUSE_INTEGRATION_SECRET/);
     assert.doesNotMatch(form, /BILDAZO_ORDERZHOUSE_INTEGRATION_SECRET/);
   });
@@ -130,16 +130,16 @@ describe("Freelancer Articles Bildazo gate UI", () => {
     const form = read("components/freelancer/FreelancerBildazoAuthorLinkForm.jsx");
     assert.match(form, /type=["']password["']/);
     assert.match(form, /data-testid="bildazo-existing-password"/);
-    assert.match(form, /لدي حساب في Bildazo/);
-    assert.match(form, /ربط حساب Bildazo الحالي/);
+    assert.match(form, /articles\.bildazoGate\.tabExisting/);
+    assert.match(form, /articles\.bildazoGate\.submitExisting/);
     assert.doesNotMatch(form, /الرقم العام في Bildazo/);
     assert.doesNotMatch(form, /BILDAZO_ORDERZHOUSE_INTEGRATION_SECRET/);
   });
 
   it("pending and failed states remain on the unlinked gate", () => {
     const card = read("components/freelancer/FreelancerBildazoAuthorGateCard.jsx");
-    assert.match(card, /جاري إنشاء حساب الكاتب في Bildazo/);
-    assert.match(card, /يحتاج طلب الربط إلى مراجعة من الإدارة/);
+    assert.match(card, /articles\.bildazoGate\.pendingNew/);
+    assert.match(card, /articles\.bildazoGate\.pendingReview/);
     const terms = read("constants/bildazoAuthorTerms.js");
     assert.match(terms, /تعذر إكمال الربط مع Bildazo/);
     assert.match(card, /bildazo-pending-state/);
@@ -161,14 +161,14 @@ describe("Freelancer Articles Bildazo gate UI", () => {
     assert.match(list, /!loading && !linked/);
     assert.match(list, /FreelancerBildazoAuthorGateCard/);
     assert.match(widget, /data-testid="bildazo-linked-profile"/);
-    assert.match(widget, /حساب Bildazo مرتبط/);
+    assert.match(widget, /articles\.bildazoGate\.linkedTitle/);
     assert.match(widget, /data-testid="bildazo-public-id"/);
-    assert.match(widget, /المعرّف:/);
+    assert.match(widget, /articles\.bildazoGate\.publicId/);
     assert.match(widget, /data-testid="bildazo-account-menu"/);
     assert.match(widget, /data-testid="bildazo-change-account"/);
     assert.match(widget, /data-testid="bildazo-change-modal"/);
     assert.match(widget, /data-testid="bildazo-change-confirm"/);
-    assert.match(widget, /أفهم أن تغيير حساب Bildazo سيؤثر على المقالات القادمة فقط/);
+    assert.match(widget, /articles\.bildazoGate\.changeConfirm/);
     assert.match(widget, /changeFreelancerBildazoAuthorLinkRequest/);
     assert.doesNotMatch(widget, /تم ربط حساب الكاتب في Bildazo بنجاح/);
     assert.doesNotMatch(card, /type=["']password["']/);
@@ -182,8 +182,8 @@ describe("Freelancer Articles Bildazo gate UI", () => {
     assert.match(widget, /FreelancerBildazoAuthorLinkForm/);
     assert.match(widget, /changeOpen/);
     assert.doesNotMatch(list, /لا توجد مقالات منشورة/);
-    assert.match(list, /لا توجد فرص مقالات متاحة حاليًا/);
-    assert.match(list, /ستظهر هنا فرص Mini Article التي يمكنك التقديم لها عند نشرها/);
+    assert.match(list, /freelancer\.list\.emptyTitle/);
+    assert.match(list, /freelancer\.list\.emptyDescription/);
     assert.match(list, /id="article-opportunities"/);
   });
 
@@ -217,7 +217,7 @@ describe("Freelancer Articles Bildazo gate UI", () => {
     const detail = read("pages/dashboard/FreelancerMarketplaceArticleDetailPage.jsx");
     assert.match(detail, /shouldBlockArticleApply/);
     assert.match(detail, /BILDAZO_AUTHOR_LINK_REQUIRED/);
-    assert.match(detail, /إكمال طلب ربط حساب الكاتب في Bildazo/);
+    assert.match(detail, /freelancer\.detail\.eligibility\.authorRequired/);
   });
 
   it("existing article list still renders beside the gate", () => {

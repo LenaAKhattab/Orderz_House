@@ -1,6 +1,7 @@
 import { useState } from "react";
 import ConfirmDialog from "../../components/dashboard/ConfirmDialog";
 import CourseFileUploadField from "./CourseFileUploadField";
+import { useTranslation } from "../../i18n/LanguageProvider";
 
 /**
  * Single file manager block — upload, view/download/replace/remove, optional advanced URL.
@@ -23,13 +24,15 @@ export default function CourseFileManagerSection({
   onValidationError,
   onRemove,
   allowAdvancedUrl = true,
-  pickButtonLabel = "رفع ملف PDF",
+  pickButtonLabel,
   layerClassName = "z-[1300]",
 }) {
+  const { t } = useTranslation();
   const [removeConfirmOpen, setRemoveConfirmOpen] = useState(false);
   const trimmed = String(value || "").trim();
   const hasFile = Boolean(trimmed) || Boolean(pendingFile?.name);
   const busy = uploading || removing;
+  const resolvedPickLabel = pickButtonLabel ?? t("courses.assets.uploadPdf");
 
   const requestRemove = () => {
     if (disabled || busy || !hasFile) return;
@@ -62,7 +65,7 @@ export default function CourseFileManagerSection({
       </div>
 
       <CourseFileUploadField
-        label={hasFile ? null : pickButtonLabel}
+        label={hasFile ? null : resolvedPickLabel}
         fileUrl={isEdit || !pendingFile ? trimmed : ""}
         updatedAt={updatedAt}
         disabled={disabled}
@@ -72,7 +75,7 @@ export default function CourseFileManagerSection({
         onValidationError={onValidationError}
         isEdit={isEdit}
         allowPickBeforeSave={allowPickBeforeSave}
-        pickButtonLabel={pickButtonLabel}
+        pickButtonLabel={resolvedPickLabel}
         courseId={courseId}
         fileKind={fileKind}
         onRemove={onRemove ? requestRemove : null}
@@ -80,17 +83,15 @@ export default function CourseFileManagerSection({
       />
 
       {!hasFile && !isEdit && allowPickBeforeSave ? (
-        <p className="oh-course-file-manager__empty-hint">يُستخدم هذا الملف ضمن خطوات الاختبار النهائي.</p>
+        <p className="oh-course-file-manager__empty-hint">{t("courses.assets.finalExamHint")}</p>
       ) : null}
 
       {allowAdvancedUrl && onChangeUrl ? (
         <details className="oh-course-file-manager__advanced">
-          <summary>إعدادات متقدمة</summary>
-          <p className="oh-course-file-manager__advanced-hint">
-            إدخال رابط ملف PDF يدوياً (اختياري — للاستخدام المتقدم فقط).
-          </p>
+          <summary>{t("courses.assets.advancedSettings")}</summary>
+          <p className="oh-course-file-manager__advanced-hint">{t("courses.assets.advancedUrlHint")}</p>
           <label className="oh-admin-courses__field oh-course-file-manager__advanced-field">
-            <span>رابط الملف</span>
+            <span>{t("courses.assets.fileUrl")}</span>
             <input
               className="oh-admin-courses__input"
               dir="ltr"
@@ -105,10 +106,10 @@ export default function CourseFileManagerSection({
 
       <ConfirmDialog
         open={removeConfirmOpen}
-        title="تأكيد إزالة الملف"
-        body="سيتم إزالة هذا الملف من بيانات الدورة. لن يظهر للمستقلين بعد الحفظ."
-        cancelLabel="إلغاء"
-        confirmLabel="إزالة الملف"
+        title={t("courses.assets.confirmRemoveFileTitle")}
+        body={t("courses.assets.confirmRemoveFileBody")}
+        cancelLabel={t("courses.common.cancel")}
+        confirmLabel={t("courses.assets.confirmRemoveFile")}
         confirmVariant="danger"
         confirmBusy={removing}
         layerClassName={layerClassName}

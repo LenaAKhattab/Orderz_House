@@ -199,6 +199,24 @@
       "takingOrder": "Accepting…",
       "registered": "Registered",
       "hiddenBudget": "Visible after login"
-    }
+    },
+    "applicationsClosed": "Applications closed",
+    "updatedOpportunity": "Updated opportunity",
+    "miniBidHelpLabel": "How does this opportunity work?"
+  },
+  "poolConfirm": {
+    "title": "Confirm action",
+    "body": "Please read the request details carefully before taking it or submitting a bid.",
+    "confirm": "I'm sure",
+    "cancel": "Cancel"
+  },
+  "opportunityHelp": {
+    "defaultLabel": "What is this?",
+    "close": "Close",
+    "ok": "OK",
+    "miniBidTitle": "What is Mini Bid?",
+    "articleMiniBidTitle": "What is Mini Bid Article?",
+    "miniBidFallback": "Mini Bid is a small or focused work opportunity you can apply to using one of the bids available in your subscription. After you apply, applicants are evaluated; if you are selected, the request moves to your account for delivery.",
+    "articleMiniBidFallback": "Mini Bid Article is an opportunity to write an article to a specific title, terms, word count, and requirements. You use a bid to apply; if selected, you write and submit the article through the platform, then it is reviewed before approval and payment to your account."
   }
 }

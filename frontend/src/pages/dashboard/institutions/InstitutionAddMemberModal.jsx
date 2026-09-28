@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Search, UserPlus, X } from "lucide-react";
 import DashboardModal from "../../../components/dashboard/DashboardModal";
+import "../../../i18n/institutionsResources";
 import { useTranslation } from "../../../i18n/LanguageProvider";
 import { adminSearchUsersForInstitutionRequest } from "../../../services/api";
 import { isAxiosCanceledError } from "../../../utils/apiErrorMessage";
@@ -81,7 +82,7 @@ export default function InstitutionAddMemberModal({
       } catch (e) {
         if (isAxiosCanceledError(e) || cancelled || controller.signal.aborted) return;
         setSearchResults([]);
-        setSearchError(t("dashboard.institutions.searchError"));
+        setSearchError(t("institutions.searchError"));
       } finally {
         if (!cancelled && !controller.signal.aborted) setSearching(false);
       }
@@ -112,8 +113,8 @@ export default function InstitutionAddMemberModal({
   return (
     <DashboardModal
       open={open}
-      title={t("dashboard.institutions.addMemberModalTitle")}
-      subtitle={t("dashboard.institutions.addMemberModalSubtitle")}
+      title={t("institutions.addMemberModalTitle")}
+      subtitle={t("institutions.addMemberModalSubtitle")}
       onClose={requestClose}
       closeDisabled={busy}
       triggerRef={triggerRef}
@@ -121,13 +122,13 @@ export default function InstitutionAddMemberModal({
       panelClassName="max-w-[min(620px,92vw)]"
       footer={
         <button type="button" className="btn btn-secondary" onClick={requestClose} disabled={busy}>
-          {t("dashboard.institutions.cancel")}
+          {t("institutions.cancel")}
         </button>
       }
     >
       <div className="oh-inst-add-member grid gap-3">
         <label className="grid gap-1.5">
-          <span className="text-[0.78rem] font-bold text-slate-600">{t("dashboard.institutions.searchUsers")}</span>
+          <span className="text-[0.78rem] font-bold text-slate-600">{t("institutions.searchUsers")}</span>
           <div className="oh-inst-add-member__search relative flex min-w-0 items-center">
             <Search
               size={16}
@@ -140,8 +141,8 @@ export default function InstitutionAddMemberModal({
               className="input w-full min-w-0 pe-10 ps-9"
               value={searchQ}
               onChange={(e) => setSearchQ(e.target.value)}
-              placeholder={t("dashboard.institutions.searchUsersPlaceholder")}
-              aria-label={t("dashboard.institutions.searchUsers")}
+              placeholder={t("institutions.searchUsersPlaceholder")}
+              aria-label={t("institutions.searchUsers")}
               autoComplete="off"
               disabled={busy}
             />
@@ -150,7 +151,7 @@ export default function InstitutionAddMemberModal({
                 type="button"
                 className="absolute end-2 inline-flex h-8 w-8 items-center justify-center rounded-lg border-0 bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-800"
                 onClick={clearSearch}
-                aria-label={t("dashboard.institutions.clearSearch")}
+                aria-label={t("institutions.clearSearch")}
                 disabled={busy}
               >
                 <X size={16} aria-hidden />
@@ -160,13 +161,13 @@ export default function InstitutionAddMemberModal({
         </label>
 
         {!canSearch && trimmed.length > 0 ? (
-          <p className="m-0 text-sm text-slate-500">{t("dashboard.institutions.searchMinLengthHint")}</p>
+          <p className="m-0 text-sm text-slate-500">{t("institutions.searchMinLengthHint")}</p>
         ) : null}
         {!canSearch && trimmed.length === 0 ? (
-          <p className="m-0 text-sm text-slate-500">{t("dashboard.institutions.searchIdleHint")}</p>
+          <p className="m-0 text-sm text-slate-500">{t("institutions.searchIdleHint")}</p>
         ) : null}
 
-        {searching ? <p className="m-0 text-sm text-slate-600">{t("dashboard.institutions.searching")}</p> : null}
+        {searching ? <p className="m-0 text-sm text-slate-600">{t("institutions.searching")}</p> : null}
 
         {searchError ? (
           <p role="alert" className="m-0 text-sm text-red-700">
@@ -175,7 +176,7 @@ export default function InstitutionAddMemberModal({
         ) : null}
 
         {!searching && !searchError && searchAttempted && searchResults.length === 0 ? (
-          <p className="m-0 text-sm text-slate-600">{t("dashboard.institutions.searchNoResults")}</p>
+          <p className="m-0 text-sm text-slate-600">{t("institutions.searchNoResults")}</p>
         ) : null}
 
         {searchResults.length > 0 ? (
@@ -200,18 +201,18 @@ export default function InstitutionAddMemberModal({
                       ) : null}
                       {isCurrent ? (
                         <span className="rounded-md border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-emerald-800">
-                          {t("dashboard.institutions.currentMemberBadge")}
+                          {t("institutions.currentMemberBadge")}
                         </span>
                       ) : (
                         <span className="rounded-md border border-slate-200 bg-white px-1.5 py-0.5">
-                          {t("dashboard.institutions.notAMemberYet")}
+                          {t("institutions.notAMemberYet")}
                         </span>
                       )}
                     </div>
                   </div>
                   {isCurrent ? (
                     <span className="inline-flex min-h-[2.25rem] items-center rounded-lg border border-emerald-200 bg-emerald-50 px-3 text-sm font-bold text-emerald-900">
-                      {t("dashboard.institutions.currentMemberBadge")}
+                      {t("institutions.currentMemberBadge")}
                     </span>
                   ) : (
                     <button
@@ -220,7 +221,7 @@ export default function InstitutionAddMemberModal({
                       disabled={busy}
                       onClick={() => void onAddMember?.(u)}
                     >
-                      <UserPlus size={16} aria-hidden /> {t("dashboard.institutions.addMemberBtn")}
+                      <UserPlus size={16} aria-hidden /> {t("institutions.addMemberBtn")}
                     </button>
                   )}
                 </li>

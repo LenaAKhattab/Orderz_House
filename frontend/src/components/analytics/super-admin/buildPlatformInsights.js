@@ -1,16 +1,13 @@
-import { formatInt, formatPctChange } from "./superAdminHomeBundleUi";
 import { isPosthogUnavailable } from "./superAdminHomeDataUtils";
 import { INSIGHT_SOURCES } from "./dashboardMetricScope";
 
-function trendInsight(label, changePct, trend, impactBase) {
+function trendInsight(labelKey, changePct, trend, impactBase) {
   if (changePct == null || trend == null || Math.abs(changePct) < 0.5) return null;
-  const pct = formatPctChange(Math.abs(changePct));
-  const text =
-    trend === "up"
-      ? `${label} ارتفعت ${pct} مقارنة بالشهر السابق.`
-      : `${label} انخفضت ${pct} مقارنة بالشهر السابق.`;
+  const pct = Math.abs(changePct);
+  const textKey = trend === "up" ? "analysis.platformInsights.trendUp" : "analysis.platformInsights.trendDown";
   return {
-    text,
+    textKey,
+    textParams: { labelKey, pct },
     impact: impactBase + Math.min(20, Math.abs(changePct)),
     topic: "growth",
   };
@@ -27,15 +24,20 @@ export function buildPlatformInsights({ intelligence, posthog, meta }) {
   const courses = intelligence?.courses?.data;
 
   const revTrend = executive?.find((m) => m.key === "monthlyRevenue" && m.comparable);
-  const revIns = trendInsight("إيرادات الشهر", revTrend?.changePct, revTrend?.trend, 55);
+  const revIns = trendInsight("analysis.platformInsights.monthlyRevenue", revTrend?.changePct, revTrend?.trend, 55);
   if (revIns) candidates.push({ ...revIns, id: "rev-trend" });
 
   const orderMonth = executive?.find((m) => m.key === "ordersThisMonth" && m.comparable);
-  const orderIns = trendInsight("طلبات الشهر", orderMonth?.changePct, orderMonth?.trend, 50);
+  const orderIns = trendInsight("analysis.platformInsights.monthlyOrders", orderMonth?.changePct, orderMonth?.trend, 50);
   if (orderIns) candidates.push({ ...orderIns, id: "orders-month" });
 
   const subTrend = executive?.find((m) => m.key === "activeSubscriptions" && m.comparable);
-  const subIns = trendInsight("الاشتراكات النشطة", subTrend?.changePct, subTrend?.trend, 48);
+  const subIns = trendInsight(
+    "analysis.platformInsights.activeSubscriptions",
+    subTrend?.changePct,
+    subTrend?.trend,
+    48,
+  );
   if (subIns) candidates.push({ ...subIns, id: "sub-trend" });
 
   const shortage = categories?.potentialShortage?.[0];
@@ -44,7 +46,8 @@ export function buildPlatformInsights({ intelligence, posthog, meta }) {
       id: "cat-shortage",
       topic: "supply",
       impact: 65 + Number(shortage.demandOrders),
-      text: `فئة «${shortage.name}»: طلب أعلى من عرض المستقلين — فرصة لتوسيع العرض.`,
+      textKey: "analysis.platformInsights.catShortage",
+      textParams: { name: shortage.name },
     });
   }
 
@@ -54,7 +57,8 @@ export function buildPlatformInsights({ intelligence, posthog, meta }) {
       id: "courses-stuck",
       topic: "courses",
       impact: 30 + stuck,
-      text: `${formatInt(stuck)} متعلّم عالق فوق 80٪ — تحسين مسار الإكمال قد يرفع التحويل.`,
+      textKey: "analysis.platformInsights.coursesStuck",
+      textParams: { count: stuck },
     });
   }
 
@@ -64,7 +68,8 @@ export function buildPlatformInsights({ intelligence, posthog, meta }) {
       id: "top-plan",
       topic: "growth",
       impact: 25 + Number(topPlan.subscribers),
-      text: `«${topPlan.planTitle}» الأكثر اشتراكاً (${formatInt(topPlan.subscribers)} مشترك).`,
+      textKey: "analysis.platformInsights.topPlan",
+      textParams: { plan: topPlan.planTitle, count: topPlan.subscribers },
     });
   }
 
@@ -73,7 +78,7 @@ export function buildPlatformInsights({ intelligence, posthog, meta }) {
       id: "posthog-off",
       topic: "meta",
       impact: 10,
-      text: "بيانات النشاط (PostHog) غير متاحة — الأرقام أدناه من قاعدة البيانات.",
+      textKey: "analysis.platformInsights.posthogOff",
     });
   }
 
@@ -86,9 +91,10 @@ export function buildPlatformInsights({ intelligence, posthog, meta }) {
       return true;
     })
     .slice(0, 5)
-    .map(({ id, text, topic }) => ({
+    .map(({ id, textKey, textParams, topic }) => ({
       id,
-      text,
-      source: INSIGHT_SOURCES[topic] || INSIGHT_SOURCES.growth,
+      textKey,
+      textParams,
+      sourceKey: INSIGHT_SOURCES[topic] || INSIGHT_SOURCES.growth,
     }));
 }

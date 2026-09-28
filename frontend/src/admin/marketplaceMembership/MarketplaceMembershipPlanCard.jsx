@@ -1,6 +1,8 @@
 import StatusBadge from "../../components/dashboard/StatusBadge";
 import Button from "../../components/ui/Button";
 import { Trash2 } from "lucide-react";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/planAdminResources";
 import { formatMarketplaceAccessLabel, formatMarketplacePriceLabel } from "./marketplacePlanFormUtils";
 
 /**
@@ -8,7 +10,7 @@ import { formatMarketplaceAccessLabel, formatMarketplacePriceLabel } from "./mar
  */
 export default function MarketplaceMembershipPlanCard({
   plan,
-  isEn = false,
+  isEn: isEnProp = false,
   reordering = false,
   canMoveUp = false,
   canMoveDown = false,
@@ -18,11 +20,13 @@ export default function MarketplaceMembershipPlanCard({
   onMove,
   busy = false,
 }) {
+  const { t, locale } = useTranslation();
+  const isEn = isEnProp || locale === "en";
   if (!plan) return null;
 
   const title = isEn ? plan.nameEn || plan.nameAr : plan.nameAr || plan.nameEn;
-  const priceLabel = formatMarketplacePriceLabel(plan, isEn);
-  const accessLabel = formatMarketplaceAccessLabel(plan, isEn);
+  const priceLabel = formatMarketplacePriceLabel(plan, isEn, t);
+  const accessLabel = formatMarketplaceAccessLabel(plan, isEn, t);
   const saleOn = Boolean(plan.sale?.enabled);
 
   return (
@@ -36,75 +40,64 @@ export default function MarketplaceMembershipPlanCard({
         </div>
         <div className="oh-mmp-card__badges">
           <StatusBadge tone={plan.isActive ? "success" : "neutral"}>
-            {plan.isActive ? (isEn ? "Active" : "ظاهرة") : isEn ? "Hidden" : "مخفية"}
+            {plan.isActive ? t("planAdmin.marketplace.cardActive") : t("planAdmin.marketplace.cardHidden")}
           </StatusBadge>
           {plan.eliteDirectOrdersEnabled ? (
-            <StatusBadge tone="info">{isEn ? "Elite Direct" : "طلب مباشر"}</StatusBadge>
+            <StatusBadge tone="info">{t("planAdmin.marketplace.eliteDirectBadge")}</StatusBadge>
           ) : null}
           {plan.priorityBidEnabled ? (
             <StatusBadge tone="info">
-              {isEn
-                ? `Priority Uses ×${plan.priorityBidUsesPerCycle ?? 0}`
-                : `مرات الأولوية ×${plan.priorityBidUsesPerCycle ?? 0}`}
+              {t("planAdmin.marketplace.priorityUses", { count: plan.priorityBidUsesPerCycle ?? 0 })}
             </StatusBadge>
           ) : null}
-          {saleOn ? <StatusBadge tone="warning">{isEn ? "Sale" : "تخفيض"}</StatusBadge> : null}
+          {saleOn ? <StatusBadge tone="warning">{t("planAdmin.marketplace.saleBadge")}</StatusBadge> : null}
         </div>
       </header>
 
       <dl className="oh-mmp-card__meta">
         <div>
-          <dt>{isEn ? "Monthly price" : "السعر الشهري"}</dt>
+          <dt>{t("planAdmin.marketplace.monthlyPriceLabel")}</dt>
           <dd>
             {priceLabel}
             {saleOn && plan.sale?.originalPriceJod != null ? (
               <span className="oh-mmp-card__strike">
                 {" "}
-                {plan.sale.originalPriceJod} {isEn ? "JOD" : "د.أ"}
+                {plan.sale.originalPriceJod} {t("planAdmin.common.currencyJod")}
               </span>
             ) : null}
           </dd>
         </div>
         <div>
-          <dt>{isEn ? "Real-order access" : "وصول الطلبات الحقيقية"}</dt>
+          <dt>{t("planAdmin.marketplace.realAccess")}</dt>
           <dd>{accessLabel}</dd>
         </div>
         <div>
-          <dt>{isEn ? "Bids / month" : "العروض / شهر"}</dt>
+          <dt>{t("planAdmin.marketplace.bidsMonth")}</dt>
           <dd>{plan.monthlyBidAllowance ?? 0}</dd>
         </div>
         <div>
-          <dt>{isEn ? "Article access level" : "مستوى الوصول للمقالات"}</dt>
+          <dt>{t("planAdmin.marketplace.articleLevel")}</dt>
           <dd>{plan.articleAccessLevel ?? 1}</dd>
         </div>
         <div style={{ gridColumn: "1 / -1" }}>
-          <dt>{isEn ? "Access meaning" : "معنى الوصول"}</dt>
-          <dd style={{ fontWeight: 400, fontSize: "0.9rem" }}>
-            {isEn
-              ? "Eligible for Article levels up to this level — not free/unlimited applications."
-              : "أهلية لمستويات المقال حتى هذا المستوى — وليس تقديماً مجانياً أو غير محدود."}
-          </dd>
+          <dt>{t("planAdmin.marketplace.accessMeaning")}</dt>
+          <dd style={{ fontWeight: 400, fontSize: "0.9rem" }}>{t("planAdmin.marketplace.accessMeaningHint")}</dd>
         </div>
         <div>
-          <dt>{isEn ? "Priority Uses / cycle" : "مرات الأولوية / دورة"}</dt>
+          <dt>{t("planAdmin.marketplace.priorityCycle")}</dt>
           <dd>
-            {plan.priorityBidEnabled
-              ? plan.priorityBidUsesPerCycle ?? 0
-              : isEn
-                ? "Off"
-                : "معطّل"}
+            {plan.priorityBidEnabled ? plan.priorityBidUsesPerCycle ?? 0 : t("planAdmin.marketplace.disabled")}
           </dd>
         </div>
         <div>
-          <dt>{isEn ? "Cash" : "نقدي"}</dt>
+          <dt>{t("planAdmin.marketplace.cash")}</dt>
           <dd>
             {plan.cashAllowed
-              ? isEn
-                ? `${plan.minimumCashMonths}–${plan.maximumPrepaidMonths} mo`
-                : `${plan.minimumCashMonths}–${plan.maximumPrepaidMonths} شهر`
-              : isEn
-                ? "Not allowed"
-                : "غير مسموح"}
+              ? t("planAdmin.marketplace.cashMonths", {
+                  min: plan.minimumCashMonths,
+                  max: plan.maximumPrepaidMonths,
+                })
+              : t("planAdmin.marketplace.cashNotAllowed")}
           </dd>
         </div>
       </dl>
@@ -116,7 +109,7 @@ export default function MarketplaceMembershipPlanCard({
             variant="secondary"
             disabled={!canMoveUp || reordering || busy}
             onClick={() => onMove?.(plan, "up")}
-            aria-label={isEn ? "Move up" : "تحريك لأعلى"}
+            aria-label={t("planAdmin.card.moveUp")}
           >
             ↑
           </Button>
@@ -125,14 +118,14 @@ export default function MarketplaceMembershipPlanCard({
             variant="secondary"
             disabled={!canMoveDown || reordering || busy}
             onClick={() => onMove?.(plan, "down")}
-            aria-label={isEn ? "Move down" : "تحريك لأسفل"}
+            aria-label={t("planAdmin.card.moveDown")}
           >
             ↓
           </Button>
         </div>
         <div className="oh-mmp-card__primary-actions">
           <Button type="button" variant="secondary" disabled={busy} onClick={() => onEdit?.(plan)}>
-            {isEn ? "Edit" : "تعديل"}
+            {t("planAdmin.card.edit")}
           </Button>
           <Button
             type="button"
@@ -140,7 +133,7 @@ export default function MarketplaceMembershipPlanCard({
             disabled={busy}
             onClick={() => onToggleActive?.(plan, !plan.isActive)}
           >
-            {plan.isActive ? (isEn ? "Hide" : "إخفاء") : isEn ? "Show" : "إظهار"}
+            {plan.isActive ? t("planAdmin.marketplace.hide") : t("planAdmin.marketplace.show")}
           </Button>
           {plan.isActive ? (
             <button
@@ -148,8 +141,8 @@ export default function MarketplaceMembershipPlanCard({
               className="oh-mmp-card__icon-danger"
               disabled={busy}
               onClick={() => onArchive?.(plan)}
-              title={isEn ? "Deactivate package" : "تعطيل الباقة"}
-              aria-label={isEn ? `Deactivate ${title}` : `تعطيل الباقة «${title}»`}
+              title={t("planAdmin.card.deactivate")}
+              aria-label={t("planAdmin.marketplace.deactivateAria", { title })}
               data-testid="marketplace-plan-card-delete"
             >
               <Trash2 size={16} strokeWidth={2} aria-hidden />

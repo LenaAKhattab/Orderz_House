@@ -1,14 +1,19 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
 import { getPostAuthHomePath } from "../constants/dashboardPermissions";
+import { useTranslation } from "../i18n/LanguageProvider";
+import "../i18n/opsAdminResources";
 
 const Unauthorized = ({
-  title = "غير مصرّح",
-  message = "لا يمكنك الوصول إلى هذه الصفحة. إن كنت تعتقد أن هذا خطأ، استخدم حسابًا له الصلاحية أو تواصل مع الدعم.",
+  title,
+  message,
 }) => {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const homeTo = user ? getPostAuthHomePath(user) : "/";
-  const primaryLabel = user ? "العودة للوحة التحكم" : "العودة للرئيسية";
+  const primaryLabel = user ? t("opsAdmin.unauthorized.backDashboard") : t("opsAdmin.unauthorized.backHome");
+  const displayTitle = title ?? t("opsAdmin.unauthorized.defaultTitle");
+  const displayMessage = message ?? t("opsAdmin.unauthorized.defaultMessage");
 
   return (
     <main className="page-content container" style={{ padding: "min(12vh, 120px) 0 48px", textAlign: "center" }}>
@@ -27,10 +32,10 @@ const Unauthorized = ({
         403
       </div>
       <h1 style={{ color: "var(--primary)", marginBottom: "12px", fontSize: "clamp(1.25rem, 3vw, 1.5rem)" }}>
-        {title}
+        {displayTitle}
       </h1>
       <p style={{ color: "var(--text-muted)", marginBottom: "28px", maxWidth: "40ch", marginInline: "auto" }}>
-        {message}
+        {displayMessage}
       </p>
       <div style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap" }}>
         <Link to={homeTo} className="btn btn-primary">
@@ -38,11 +43,11 @@ const Unauthorized = ({
         </Link>
         {user ? (
           <Link to="/" className="btn btn-secondary">
-            الموقع العام
+            {t("opsAdmin.unauthorized.publicSite")}
           </Link>
         ) : (
           <Link to="/login" className="btn btn-secondary">
-            تسجيل الدخول
+            {t("opsAdmin.unauthorized.login")}
           </Link>
         )}
       </div>

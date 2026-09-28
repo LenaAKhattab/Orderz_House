@@ -9,6 +9,7 @@ import DashboardEmptyState from "../../components/dashboard/DashboardEmptyState"
 import DashboardTable from "../../components/dashboard/DashboardTable";
 import DashboardTabs, { DashboardTab } from "../../components/dashboard/DashboardTabs";
 import { superAdminBreadcrumbs } from "../../components/dashboard/dashboardBreadcrumbs";
+import "../../i18n/institutionsResources";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import { useToast } from "../../components/ui/toastContext";
 import {
@@ -30,8 +31,14 @@ function workTypeBadge(workType) {
   return "border-sky-200 bg-sky-50 text-sky-900";
 }
 
-function workTypeLabel(workType) {
-  return workType === "article" ? "مقال" : "طلب";
+function workTypeLabel(workType, t) {
+  return workType === "article" ? t("institutions.work.workTypeArticle") : t("institutions.work.workTypeOrder");
+}
+
+function sourceLabelForBundle(bundle, t) {
+  return bundle?.source === "storage" || bundle?.order?.institutionalStorageId
+    ? t("institutions.work.sourceStorage")
+    : t("institutions.work.sourceDirect");
 }
 
 function publicationBadgeClass(status) {
@@ -83,7 +90,7 @@ export default function SuperAdminInstitutionWorkDetailPage() {
       const res = await adminGetInstitutionWorkRequest(institutionId, workType, workId);
       setBundle(res?.data || null);
     } catch (err) {
-      setError(getSafeApiErrorMessage(err) || t("dashboard.institutions.sectionLoadError"));
+      setError(getSafeApiErrorMessage(err) || t("institutions.sectionLoadError"));
       setBundle(null);
     } finally {
       setLoading(false);
@@ -98,25 +105,25 @@ export default function SuperAdminInstitutionWorkDetailPage() {
   const article = bundle?.article || null;
   const applicants = Array.isArray(bundle?.applicants) ? bundle.applicants : [];
   const title = order?.title || article?.title || `#${workId}`;
-  const sourceLabel =
-    bundle?.source === "storage" || order?.institutionalStorageId
-      ? "من مخزون المؤسسة"
-      : "مباشر";
+  const sourceLabel = sourceLabelForBundle(bundle, t);
 
   const tabs = useMemo(() => {
-    const list = [{ id: "details", label: "التفاصيل" }];
+    const list = [{ id: "details", label: t("institutions.work.tabDetails") }];
     // Bidding-style applicants only; fixed/take uses pool claim (no bids tab).
     const showApplicants =
       workType === "article" || (workType === "order" && order?.projectType === "bidding");
     if (showApplicants) {
-      list.push({ id: "applicants", label: workType === "article" ? "المتقدمون" : "العروض" });
+      list.push({
+        id: "applicants",
+        label: workType === "article" ? t("institutions.work.tabApplicants") : t("institutions.work.tabBids"),
+      });
     }
     const assigned =
       order?.assignedFreelancerId ||
       article?.assignedFreelancerId ||
       applicants.some((a) => ["selected", "assigned", "writing", "approved"].includes(String(a.status)));
     if (assigned || order?.orderStatus === "in_progress" || order?.projectType === "fixed") {
-      list.push({ id: "execution", label: "التنفيذ" });
+      list.push({ id: "execution", label: t("institutions.work.tabExecution") });
     }
     const deliveryRelevant =
       workType === "order"
@@ -128,10 +135,10 @@ export default function SuperAdminInstitutionWorkDetailPage() {
               ["submitted", "under_review", "revision_requested", "approved"].includes(String(a.status)) ||
               a.articleSubmission?.status === "submitted",
           );
-    if (deliveryRelevant) list.push({ id: "delivery", label: "التسليم" });
-    list.push({ id: "log", label: "السجل" });
+    if (deliveryRelevant) list.push({ id: "delivery", label: t("institutions.work.tabDelivery") });
+    list.push({ id: "log", label: t("institutions.work.tabLog") });
     return list;
-  }, [workType, order, article, applicants]);
+  }, [workType, order, article, applicants, t]);
 
   useEffect(() => {
     if (!tabs.some((tab) => tab.id === activeTab)) {
@@ -145,10 +152,10 @@ export default function SuperAdminInstitutionWorkDetailPage() {
     setActionBusyId(String(id));
     try {
       await adminAcceptInstitutionWorkApplicantRequest(institutionId, workType, workId, id, {});
-      push({ type: "success", message: "تم قبول المتقدم." });
+      push({ type: "success", message: t("institutions.work.acceptApplicantSuccess") });
       await load();
     } catch (err) {
-      push({ type: "error", message: getSafeApiErrorMessage(err) || "تعذر قبول المتقدم." });
+      push({ type: "error", message: getSafeApiErrorMessage(err) || t("institutions.work.acceptApplicantError") });
     } finally {
       setActionBusyId(null);
     }
@@ -160,10 +167,10 @@ export default function SuperAdminInstitutionWorkDetailPage() {
     setActionBusyId(String(id));
     try {
       await adminRejectInstitutionWorkApplicantRequest(institutionId, workType, workId, id, {});
-      push({ type: "success", message: "تم رفض المتقدم." });
+      push({ type: "success", message: t("institutions.work.rejectApplicantSuccess") });
       await load();
     } catch (err) {
-      push({ type: "error", message: getSafeApiErrorMessage(err) || "تعذر رفض المتقدم." });
+      push({ type: "error", message: getSafeApiErrorMessage(err) || t("institutions.work.rejectApplicantError") });
     } finally {
       setActionBusyId(null);
     }
@@ -176,10 +183,10 @@ export default function SuperAdminInstitutionWorkDetailPage() {
       const payload =
         workType === "article" ? { applicationId: applicationId || undefined } : {};
       await adminApproveInstitutionWorkDeliveryRequest(institutionId, workType, workId, payload);
-      push({ type: "success", message: "تم اعتماد التسليم." });
+      push({ type: "success", message: t("institutions.work.approveDeliverySuccess") });
       await load();
     } catch (err) {
-      push({ type: "error", message: getSafeApiErrorMessage(err) || "تعذر اعتماد التسليم." });
+      push({ type: "error", message: getSafeApiErrorMessage(err) || t("institutions.work.approveDeliveryError") });
     } finally {
       setDeliveryBusy(false);
     }
@@ -197,11 +204,11 @@ export default function SuperAdminInstitutionWorkDetailPage() {
         [],
         workType === "article" ? { applicationId } : {},
       );
-      push({ type: "success", message: "تم طلب التعديل." });
+      push({ type: "success", message: t("institutions.work.requestRevisionSuccess") });
       setRevisionNote("");
       await load();
     } catch (err) {
-      push({ type: "error", message: getSafeApiErrorMessage(err) || "تعذر طلب التعديل." });
+      push({ type: "error", message: getSafeApiErrorMessage(err) || t("institutions.work.requestRevisionError") });
     } finally {
       setDeliveryBusy(false);
     }
@@ -212,7 +219,7 @@ export default function SuperAdminInstitutionWorkDetailPage() {
   if (loading && !bundle) {
     return (
       <DashboardShell>
-        <DashboardLoadingState label={t("dashboard.institutions.loading")} />
+        <DashboardLoadingState label={t("institutions.loading")} />
       </DashboardShell>
     );
   }
@@ -222,7 +229,7 @@ export default function SuperAdminInstitutionWorkDetailPage() {
       <DashboardShell>
         <DashboardEmptyState title={error} />
         <Link to={detailBack} className="btn btn-secondary mt-3">
-          العودة للمؤسسة
+          {t("institutions.work.backToInstitution")}
         </Link>
       </DashboardShell>
     );
@@ -231,43 +238,47 @@ export default function SuperAdminInstitutionWorkDetailPage() {
   return (
     <DashboardShell className="oh-institution-work-detail">
       <DashboardPageHeader
-        eyebrow="المؤسسات"
+        eyebrow={t("institutions.work.eyebrow")}
         title={title}
-        description={`${workTypeLabel(workType)} · ${sourceLabel}`}
+        description={`${workTypeLabel(workType, t)} · ${sourceLabel}`}
         breadcrumbs={[
           ...superAdminBreadcrumbs("dashboard.breadcrumbs.institutions"),
-          { label: t("dashboard.institutions.title"), href: LIST_PATH },
+          { label: t("institutions.title"), href: LIST_PATH },
           { label: institutionId, href: detailBack },
           { label: title },
         ]}
         actions={
           <Link to={detailBack} className="btn btn-secondary inline-flex items-center gap-2">
             <ArrowRight size={18} aria-hidden="true" />
-            العودة للطلبات
+            {t("institutions.work.backToOrders")}
           </Link>
         }
       />
 
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-medium ${workTypeBadge(workType)}`}>
-          {workTypeLabel(workType)}
+          {workTypeLabel(workType, t)}
         </span>
         <span
           className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-medium ${publicationBadgeClass(
             order?.isPublished ? "published" : article?.status === "published" ? "published" : "draft",
           )}`}
         >
-          {order?.isPublished || article?.status === "published" ? "منشور" : "مسودة / غير منشور"}
+          {order?.isPublished || article?.status === "published"
+            ? t("institutions.work.published")
+            : t("institutions.work.draftUnpublished")}
         </span>
         <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-xs text-slate-800">
           {sourceLabel}
         </span>
         {applicants.length ? (
-          <span className="text-xs text-slate-600">المتقدمون: {applicants.length}</span>
+          <span className="text-xs text-slate-600">
+            {t("institutions.work.applicantsCount", { count: applicants.length })}
+          </span>
         ) : null}
       </div>
 
-      <DashboardTabs aria-label="أقسام العمل" className="mb-3">
+      <DashboardTabs aria-label={t("institutions.work.tabsAria")} className="mb-3">
         {tabs.map((tab) => (
           <DashboardTab key={tab.id} active={activeTab === tab.id} onClick={() => setActiveTab(tab.id)}>
             {tab.label}
@@ -276,27 +287,27 @@ export default function SuperAdminInstitutionWorkDetailPage() {
       </DashboardTabs>
 
       {activeTab === "details" ? (
-        <DashboardSection title="التفاصيل">
+        <DashboardSection title={t("institutions.work.tabDetails")}>
           {workType === "order" && order ? (
             <dl className="grid gap-3 text-sm sm:grid-cols-2">
               <div>
-                <dt className="text-slate-600">الحالة</dt>
+                <dt className="text-slate-600">{t("institutions.work.status")}</dt>
                 <dd className="font-medium text-slate-900">{order.orderStatus || "—"}</dd>
               </div>
               <div>
-                <dt className="text-slate-600">رمز الطلب</dt>
+                <dt className="text-slate-600">{t("institutions.work.orderCode")}</dt>
                 <dd className="font-medium text-slate-900">{order.orderCode || "—"}</dd>
               </div>
               <div>
-                <dt className="text-slate-600">نوع المشروع</dt>
+                <dt className="text-slate-600">{t("institutions.work.projectType")}</dt>
                 <dd className="font-medium text-slate-900">{order.projectType || "—"}</dd>
               </div>
               <div>
-                <dt className="text-slate-600">تاريخ الإنشاء</dt>
+                <dt className="text-slate-600">{t("institutions.work.createdAt")}</dt>
                 <dd className="font-medium text-slate-900">{formatDate(order.createdAt)}</dd>
               </div>
               <div className="sm:col-span-2">
-                <dt className="text-slate-600">الوصف</dt>
+                <dt className="text-slate-600">{t("institutions.work.description")}</dt>
                 <dd className="whitespace-pre-wrap break-words text-slate-900">{order.description || "—"}</dd>
               </div>
             </dl>
@@ -304,11 +315,11 @@ export default function SuperAdminInstitutionWorkDetailPage() {
           {workType === "article" && article ? (
             <dl className="grid gap-3 text-sm sm:grid-cols-2">
               <div>
-                <dt className="text-slate-600">الحالة</dt>
+                <dt className="text-slate-600">{t("institutions.work.status")}</dt>
                 <dd className="font-medium text-slate-900">{article.status || "—"}</dd>
               </div>
               <div>
-                <dt className="text-slate-600">المستوى / الخطة</dt>
+                <dt className="text-slate-600">{t("institutions.work.planLevel")}</dt>
                 <dd className="font-medium text-slate-900">
                   {ARTICLE_PACKAGE_PLAN_LABELS_AR[article.activationPlanTierCode] ||
                     article.activationPlanTierCode ||
@@ -317,11 +328,11 @@ export default function SuperAdminInstitutionWorkDetailPage() {
                 </dd>
               </div>
               <div>
-                <dt className="text-slate-600">تاريخ الإنشاء</dt>
+                <dt className="text-slate-600">{t("institutions.work.createdAt")}</dt>
                 <dd className="font-medium text-slate-900">{formatDate(article.createdAt)}</dd>
               </div>
               <div className="sm:col-span-2">
-                <dt className="text-slate-600">الوصف</dt>
+                <dt className="text-slate-600">{t("institutions.work.description")}</dt>
                 <dd className="whitespace-pre-wrap break-words text-slate-900">{article.description || "—"}</dd>
               </div>
             </dl>
@@ -330,18 +341,24 @@ export default function SuperAdminInstitutionWorkDetailPage() {
       ) : null}
 
       {activeTab === "applicants" ? (
-        <DashboardSection title="المتقدمون" description="قبول أو رفض المتقدمين عبر واجهة المؤسسة (بدون Stripe).">
+        <DashboardSection
+          title={t("institutions.work.tabApplicants")}
+          description={t("institutions.work.applicantsSectionDesc")}
+        >
           {applicants.length === 0 ? (
-            <DashboardEmptyState title="لا متقدمين حالياً." icon={<ClipboardList size={28} aria-hidden="true" />} />
+            <DashboardEmptyState
+              title={t("institutions.work.applicantsEmpty")}
+              icon={<ClipboardList size={28} aria-hidden="true" />}
+            />
           ) : (
-            <DashboardTable caption="المتقدمون">
+            <DashboardTable caption={t("institutions.work.applicantsTableCaption")}>
               <thead>
                 <tr>
-                  <th>المستقل</th>
-                  <th>الحالة</th>
-                  {workType === "order" ? <th>العرض</th> : null}
-                  <th>عضو مؤسسة</th>
-                  <th>{t("dashboard.institutions.actions")}</th>
+                  <th>{t("institutions.work.freelancer")}</th>
+                  <th>{t("institutions.work.status")}</th>
+                  {workType === "order" ? <th>{t("institutions.work.bid")}</th> : null}
+                  <th>{t("institutions.work.institutionMember")}</th>
+                  <th>{t("institutions.actions")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -362,7 +379,7 @@ export default function SuperAdminInstitutionWorkDetailPage() {
                           </bdi>
                         </td>
                       ) : null}
-                      <td>{a.isInstitutionMember ? "نعم" : "—"}</td>
+                      <td>{a.isInstitutionMember ? t("institutions.work.yes") : "—"}</td>
                       <td>
                         {pending ? (
                           <div className="flex flex-wrap gap-2">
@@ -372,7 +389,7 @@ export default function SuperAdminInstitutionWorkDetailPage() {
                               disabled={actionBusyId === String(id)}
                               onClick={() => void acceptApplicant(a)}
                             >
-                              قبول
+                              {t("institutions.work.accept")}
                             </button>
                             <button
                               type="button"
@@ -380,7 +397,7 @@ export default function SuperAdminInstitutionWorkDetailPage() {
                               disabled={actionBusyId === String(id)}
                               onClick={() => void rejectApplicant(a)}
                             >
-                              رفض
+                              {t("institutions.work.reject")}
                             </button>
                           </div>
                         ) : (
@@ -397,10 +414,10 @@ export default function SuperAdminInstitutionWorkDetailPage() {
       ) : null}
 
       {activeTab === "execution" ? (
-        <DashboardSection title="التنفيذ">
+        <DashboardSection title={t("institutions.work.tabExecution")}>
           <dl className="grid gap-3 text-sm sm:grid-cols-2">
             <div>
-              <dt className="text-slate-600">المستقل المعيّن</dt>
+              <dt className="text-slate-600">{t("institutions.work.assignedFreelancer")}</dt>
               <dd className="font-medium text-slate-900">
                 {order?.assignedFreelancerName ||
                   applicants.find((a) => ["selected", "assigned", "writing", "approved"].includes(String(a.status)))
@@ -409,7 +426,7 @@ export default function SuperAdminInstitutionWorkDetailPage() {
               </dd>
             </div>
             <div>
-              <dt className="text-slate-600">حالة التنفيذ</dt>
+              <dt className="text-slate-600">{t("institutions.work.executionStatus")}</dt>
               <dd className="font-medium text-slate-900">{order?.orderStatus || article?.status || "—"}</dd>
             </div>
           </dl>
@@ -417,7 +434,7 @@ export default function SuperAdminInstitutionWorkDetailPage() {
       ) : null}
 
       {activeTab === "delivery" ? (
-        <DashboardSection title="التسليم">
+        <DashboardSection title={t("institutions.work.tabDelivery")}>
           {workType === "article" ? (
             <div className="grid gap-4">
               {applicants
@@ -429,7 +446,11 @@ export default function SuperAdminInstitutionWorkDetailPage() {
                 .map((a) => (
                   <div key={String(applicantId(a))} className="rounded-xl border border-slate-200 p-4">
                     <p className="mt-0 text-sm font-medium text-slate-900">{applicantDisplayName(a)}</p>
-                    <p className="text-xs text-slate-600">حالة التسليم: {a.articleSubmission?.status || a.status}</p>
+                    <p className="text-xs text-slate-600">
+                      {t("institutions.work.deliveryStatus", {
+                        status: a.articleSubmission?.status || a.status || "—",
+                      })}
+                    </p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       <button
                         type="button"
@@ -437,7 +458,7 @@ export default function SuperAdminInstitutionWorkDetailPage() {
                         disabled={deliveryBusy}
                         onClick={() => void approveDelivery(applicantId(a))}
                       >
-                        اعتماد التسليم
+                        {t("institutions.work.approveDelivery")}
                       </button>
                     </div>
                   </div>
@@ -447,14 +468,14 @@ export default function SuperAdminInstitutionWorkDetailPage() {
                   a.articleSubmission?.status === "submitted" ||
                   ["submitted", "under_review"].includes(String(a.status)),
               ) ? (
-                <DashboardEmptyState title="لا تسليمات بانتظار المراجعة." />
+                <DashboardEmptyState title={t("institutions.work.deliveryEmpty")} />
               ) : null}
             </div>
           ) : (
             <div className="grid gap-3 max-w-xl">
-              <p className="m-0 text-sm text-slate-700">اعتماد تسليم الطلب أو طلب تعديل من المستقل.</p>
+              <p className="m-0 text-sm text-slate-700">{t("institutions.work.orderDeliveryHint")}</p>
               <label className="grid gap-1 text-sm">
-                <span className="text-slate-700">ملاحظة التعديل (اختياري)</span>
+                <span className="text-slate-700">{t("institutions.work.revisionNoteOptional")}</span>
                 <textarea
                   className="form-control min-h-[96px]"
                   value={revisionNote}
@@ -468,7 +489,7 @@ export default function SuperAdminInstitutionWorkDetailPage() {
                   disabled={deliveryBusy}
                   onClick={() => void approveDelivery()}
                 >
-                  اعتماد التسليم
+                  {t("institutions.work.approveDelivery")}
                 </button>
                 <button
                   type="button"
@@ -476,7 +497,7 @@ export default function SuperAdminInstitutionWorkDetailPage() {
                   disabled={deliveryBusy}
                   onClick={() => void requestRevision()}
                 >
-                  طلب تعديل
+                  {t("institutions.work.requestRevision")}
                 </button>
               </div>
             </div>
@@ -484,7 +505,7 @@ export default function SuperAdminInstitutionWorkDetailPage() {
           {workType === "article" ? (
             <div className="mt-4 grid gap-2 max-w-xl">
               <label className="grid gap-1 text-sm">
-                <span className="text-slate-700">ملاحظة طلب تعديل (مقال)</span>
+                <span className="text-slate-700">{t("institutions.work.articleRevisionNote")}</span>
                 <textarea
                   className="form-control min-h-[80px]"
                   value={revisionNote}
@@ -500,7 +521,7 @@ export default function SuperAdminInstitutionWorkDetailPage() {
                   if (target) void requestRevision(applicantId(target));
                 }}
               >
-                طلب تعديل للتسليم الحالي
+                {t("institutions.work.requestRevisionCurrent")}
               </button>
             </div>
           ) : null}
@@ -508,28 +529,26 @@ export default function SuperAdminInstitutionWorkDetailPage() {
       ) : null}
 
       {activeTab === "log" ? (
-        <DashboardSection title="السجل">
+        <DashboardSection title={t("institutions.work.tabLog")}>
           <ul className="m-0 grid list-none gap-2 p-0 text-sm text-slate-800">
             <li>
-              <span className="text-slate-600">المصدر: </span>
+              <span className="text-slate-600">{t("institutions.work.logSource")}</span>
               {sourceLabel}
             </li>
             <li>
-              <span className="text-slate-600">نوع العمل: </span>
-              {workTypeLabel(workType)}
+              <span className="text-slate-600">{t("institutions.work.logWorkType")}</span>
+              {workTypeLabel(workType, t)}
             </li>
             <li>
-              <span className="text-slate-600">المعرّف: </span>
+              <span className="text-slate-600">{t("institutions.work.logId")}</span>
               <bdi dir="ltr">{workId}</bdi>
             </li>
             <li>
-              <span className="text-slate-600">آخر تحميل: </span>
+              <span className="text-slate-600">{t("institutions.work.logLastLoad")}</span>
               {formatDate(new Date().toISOString())}
             </li>
           </ul>
-          <p className="mb-0 mt-3 text-xs text-slate-500">
-            سجل التدقيق التفصيلي للمؤسسة يُعرض في تقارير الإدارة — هذه الصفحة تعرض ملخصاً تشغيلياً فقط.
-          </p>
+          <p className="mb-0 mt-3 text-xs text-slate-500">{t("institutions.work.logAuditHint")}</p>
         </DashboardSection>
       ) : null}
     </DashboardShell>

@@ -79,66 +79,73 @@ export function isWhatsappEligibleSubscription(sub) {
  * Ordered field groups for the WhatsApp composer. Each field resolves to a printable
  * string (empty string means "no value" and is skipped in the generated message).
  */
-export function getWhatsappFieldGroups(sub, planTitle) {
+export function getWhatsappFieldGroups(sub, planTitle, t) {
   const f = sub?.freelancer || {};
   const dt = (v) => {
     const out = formatSubscriptionAdminDateTime(v);
     return out === "—" ? "" : out;
   };
   const clean = (v) => (v && String(v).trim() && String(v).trim() !== "—" ? String(v).trim() : "");
+  const fieldLabel = (id) => t(`subscriptions.whatsapp.fields.${id}`);
   return [
     {
       id: "user",
-      title: "بيانات المستخدم",
+      title: t("subscriptions.whatsapp.sections.user"),
       fields: [
-        { id: "fullName", label: "الاسم الكامل", value: formatFreelancerDisplayName(sub) },
-        { id: "email", label: "البريد الإلكتروني", value: f.email || "" },
-        { id: "phone", label: "الهاتف", value: f.phone || "" },
-        { id: "whatsapp", label: "واتساب", value: f.whatsapp || "" },
-        { id: "country", label: "الدولة", value: resolveFreelancerCountryLabel(sub) },
-        { id: "accountId", label: "رقم الحساب", value: f.accountId || "" },
+        { id: "fullName", label: fieldLabel("fullName"), value: formatFreelancerDisplayName(sub, t) },
+        { id: "email", label: fieldLabel("email"), value: f.email || "" },
+        { id: "phone", label: fieldLabel("phone"), value: f.phone || "" },
+        { id: "whatsapp", label: fieldLabel("whatsapp"), value: f.whatsapp || "" },
+        { id: "country", label: fieldLabel("country"), value: resolveFreelancerCountryLabel(sub) },
+        { id: "accountId", label: fieldLabel("accountId"), value: f.accountId || "" },
       ],
     },
     {
       id: "subscription",
-      title: "تفاصيل الاشتراك",
+      title: t("subscriptions.whatsapp.sections.subscription"),
       fields: [
-        { id: "subId", label: "رقم الاشتراك", value: sub?.id ? `#${sub.id}` : "" },
-        { id: "subPaymentStatus", label: "حالة الدفع", value: clean(paymentStatusLabel(sub?.paymentStatus)) },
-        { id: "subStatus", label: "حالة الاشتراك", value: clean(subscriptionStatusLabel(sub?.status)) },
-        { id: "subActivationStatus", label: "حالة التفعيل", value: clean(activationStatusLabel(sub?.activationStatus)) },
-        { id: "assignedAt", label: "تاريخ الإسناد", value: dt(sub?.assignedAt) },
-        { id: "actualStartDate", label: "بداية التفعيل", value: dt(sub?.actualStartDate) },
-        { id: "expiryDate", label: "تاريخ الانتهاء", value: dt(sub?.expiryDate) },
-        { id: "firstOrderDate", label: "تاريخ أول طلب", value: dt(sub?.firstOrderDate) },
+        { id: "subId", label: fieldLabel("subId"), value: sub?.id ? `#${sub.id}` : "" },
+        { id: "subPaymentStatus", label: fieldLabel("subPaymentStatus"), value: clean(paymentStatusLabel(sub?.paymentStatus, t)) },
+        { id: "subStatus", label: fieldLabel("subStatus"), value: clean(subscriptionStatusLabel(sub?.status, t)) },
+        { id: "subActivationStatus", label: fieldLabel("subActivationStatus"), value: clean(activationStatusLabel(sub?.activationStatus, t)) },
+        { id: "assignedAt", label: fieldLabel("assignedAt"), value: dt(sub?.assignedAt) },
+        { id: "actualStartDate", label: fieldLabel("actualStartDate"), value: dt(sub?.actualStartDate) },
+        { id: "expiryDate", label: fieldLabel("expiryDate"), value: dt(sub?.expiryDate) },
+        { id: "firstOrderDate", label: fieldLabel("firstOrderDate"), value: dt(sub?.firstOrderDate) },
       ],
     },
     {
       id: "plan",
-      title: "تفاصيل الباقة",
+      title: t("subscriptions.whatsapp.sections.plan"),
       fields: [
-        { id: "planTitle", label: "الباقة", value: planTitle || sub?.plan?.title || sub?.plan?.name || "" },
-        { id: "planId", label: "معرّف الباقة", value: sub?.planId || "" },
+        { id: "planTitle", label: fieldLabel("planTitle"), value: planTitle || sub?.plan?.title || sub?.plan?.name || "" },
+        { id: "planId", label: fieldLabel("planId"), value: sub?.planId || "" },
         {
           id: "planDuration",
-          label: "المدة",
-          value: sub?.plan?.durationDays != null ? `${sub.plan.durationDays} يوم` : "",
+          label: fieldLabel("duration"),
+          value:
+            sub?.plan?.durationDays != null
+              ? t("subscriptions.whatsapp.fields.durationDays", { days: sub.plan.durationDays })
+              : "",
         },
         {
           id: "planPrice",
-          label: "السعر",
-          value: sub?.plan?.priceJod != null ? `${sub.plan.priceJod} د.أ` : "",
+          label: fieldLabel("price"),
+          value:
+            sub?.plan?.priceJod != null
+              ? t("subscriptions.whatsapp.fields.priceJod", { amount: sub.plan.priceJod })
+              : "",
         },
       ],
     },
     {
       id: "payment",
-      title: "تفاصيل الدفع",
+      title: t("subscriptions.whatsapp.sections.payment"),
       fields: [
-        { id: "payStatus", label: "حالة الدفع", value: clean(paymentStatusLabel(sub?.paymentStatus)) },
-        { id: "paidAt", label: "تاريخ الدفع", value: dt(sub?.paidAt) },
-        { id: "stripeSessionId", label: "معرّف جلسة Stripe", value: sub?.stripeSessionId || "" },
-        { id: "stripePaymentIntentId", label: "معرّف عملية الدفع", value: sub?.stripePaymentIntentId || "" },
+        { id: "payStatus", label: fieldLabel("payStatus"), value: clean(paymentStatusLabel(sub?.paymentStatus, t)) },
+        { id: "paidAt", label: fieldLabel("paidAt"), value: dt(sub?.paidAt) },
+        { id: "stripeSessionId", label: fieldLabel("stripeSessionId"), value: sub?.stripeSessionId || "" },
+        { id: "stripePaymentIntentId", label: fieldLabel("stripePaymentIntentId"), value: sub?.stripePaymentIntentId || "" },
       ],
     },
   ];
@@ -159,8 +166,9 @@ export const DEFAULT_WHATSAPP_SELECTION = {
  * Build the final Arabic WhatsApp message from selected fields + optional admin text.
  * Empty-valued or unselected fields are skipped; empty groups are omitted entirely.
  */
-export function buildSubscriptionWhatsAppMessage({ sub, planTitle, selection = {}, customText = "" }) {
-  const groups = getWhatsappFieldGroups(sub, planTitle);
+export function buildSubscriptionWhatsAppMessage({ sub, planTitle, selection = {}, customText = "", t }) {
+  if (!t) throw new Error("buildSubscriptionWhatsAppMessage requires t");
+  const groups = getWhatsappFieldGroups(sub, planTitle, t);
   const parts = [];
 
   const trimmedCustom = String(customText || "").trim();

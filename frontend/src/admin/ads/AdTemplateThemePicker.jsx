@@ -2,20 +2,23 @@ import HomePromoOfferCard from "../../components/ads/HomePromoOfferCard";
 import { BANNER_META_ID } from "../../components/ads/bannerAdMeta";
 import {
   BANNER_TEMPLATES_CONFIG,
-  THEME_LABELS_AR,
   defaultAssetForTemplate,
   getTemplateConfig,
   getThemesForTemplate,
+  resolveBannerTemplateHint,
+  resolveBannerTemplateLabel,
 } from "../../components/ads/bannerDesignSystem";
 import { applyTemplateSelection } from "./adFormUtils";
 import { applyBannerColorPreset } from "./adBannerColorPresets";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/adsResources";
 
 /**
  * @param {object} draft
  * @param {string} templateId
  * @returns {import("../../types/ad.js").Ad}
  */
-function buildMiniPreviewAd(draft, templateId) {
+function buildMiniPreviewAd(draft, templateId, demo) {
   const cfg = getTemplateConfig(templateId);
   const cp = draft.colorPreset || cfg.defaultColorPreset;
   const asset = draft.selectedAssetKey || defaultAssetForTemplate(templateId);
@@ -24,12 +27,12 @@ function buildMiniPreviewAd(draft, templateId) {
   return {
     id: "picker-inline",
     themePreset: templateId,
-    title: draft.title?.trim() || "خصم 40% اليوم",
-    subtitle: draft.subtitle?.trim() || "عرض محدود",
+    title: draft.title?.trim() || demo.title,
+    subtitle: draft.subtitle?.trim() || demo.subtitle,
     description: draft.description?.trim() || "",
-    companyName: draft.companyName?.trim() || "متجر هدايا",
-    badgeText: draft.badgeText?.trim() || "عرض حصري",
-    ctaText: draft.ctaText?.trim() || "احصل على العرض",
+    companyName: draft.companyName?.trim() || demo.companyName,
+    badgeText: draft.badgeText?.trim() || demo.badgeText,
+    ctaText: draft.ctaText?.trim() || demo.ctaText,
     ctaUrl: "#",
     openInNewTab: true,
     isClickableCard: false,
@@ -40,7 +43,7 @@ function buildMiniPreviewAd(draft, templateId) {
         content: "",
         colorPreset: cp,
         salePercent: draft.salePercent ? Number(draft.salePercent) : 40,
-        companyName: draft.companyName?.trim() || "متجر هدايا",
+        companyName: draft.companyName?.trim() || demo.companyName,
         imageMode,
         selectedAssetKey: asset || "",
         backgroundImageUrl: draft.backgroundImageUrl || "",
@@ -66,30 +69,38 @@ function ThemeDots({ preset }) {
  * @param {{ data: object; onChange: (next: object) => void }} p
  */
 export default function AdTemplateThemePicker({ data, onChange }) {
+  const { t } = useTranslation();
   const patch = (p) => onChange({ ...data, ...p });
-  const themes = getThemesForTemplate(data.themePreset, data.colorPreset);
+  const themes = getThemesForTemplate(data.themePreset, data.colorPreset, t);
+  const demo = {
+    title: t("ads.preview.templateDemo.title"),
+    subtitle: t("ads.preview.templateDemo.subtitle"),
+    companyName: t("ads.preview.templateDemo.companyName"),
+    badgeText: t("ads.preview.templateDemo.badgeText"),
+    ctaText: t("ads.preview.templateDemo.ctaText"),
+  };
 
   return (
     <section className="oh-admin-ads__design-picker">
       <header className="oh-admin-ads__form-card-head">
-        <h3 className="oh-admin-ads__form-card-title">التصميم والقالب</h3>
-        <p className="oh-admin-ads__form-card-hint">اختر شكل البانر (تخطيط مختلف) ثم ثيم الألوان من القائمة أدناه</p>
+        <h3 className="oh-admin-ads__form-card-title">{t("ads.form.designTemplateTitle")}</h3>
+        <p className="oh-admin-ads__form-card-hint">{t("ads.form.designTemplateHint")}</p>
       </header>
 
       <div className="oh-admin-ads__template-grid ad-template-grid">
-        {BANNER_TEMPLATES_CONFIG.map((t) => {
-          const selected = data.themePreset === t.id;
-          const sample = buildMiniPreviewAd({ ...data, themePreset: t.id, colorPreset: t.defaultColorPreset }, t.id);
+        {BANNER_TEMPLATES_CONFIG.map((tpl) => {
+          const selected = data.themePreset === tpl.id;
+          const sample = buildMiniPreviewAd({ ...data, themePreset: tpl.id, colorPreset: tpl.defaultColorPreset }, tpl.id, demo);
           return (
             <button
-              key={t.id}
+              key={tpl.id}
               type="button"
               className={`oh-admin-ads__template-tile${selected ? " oh-admin-ads__template-tile--active" : ""}`}
               aria-pressed={selected}
-              onClick={() => patch(applyTemplateSelection(data, t.id))}
+              onClick={() => patch(applyTemplateSelection(data, tpl.id))}
             >
-              <span className="oh-admin-ads__template-tile-label">{t.label}</span>
-              <span className="oh-admin-ads__template-tile-hint">{t.hint}</span>
+              <span className="oh-admin-ads__template-tile-label">{resolveBannerTemplateLabel(tpl, t)}</span>
+              <span className="oh-admin-ads__template-tile-hint">{resolveBannerTemplateHint(tpl, t)}</span>
               <div className="oh-admin-ads__template-tile-preview ad-template-card__preview" aria-hidden>
                 <div className="oh-admin-ads__template-tile-preview-inner ad-template-card__preview-inner">
                   <HomePromoOfferCard ad={sample} previewMode />
@@ -101,7 +112,7 @@ export default function AdTemplateThemePicker({ data, onChange }) {
       </div>
 
       <div className="oh-admin-ads__theme-row">
-        <span className="oh-admin-ads__field-label-spaced">ثيم الألوان</span>
+        <span className="oh-admin-ads__field-label-spaced">{t("ads.form.colorTheme")}</span>
         <div className="oh-admin-ads__theme-swatches theme-preset-list">
           {themes.map((th) => (
             <button
@@ -113,7 +124,7 @@ export default function AdTemplateThemePicker({ data, onChange }) {
               onClick={() => patch(applyBannerColorPreset(data, th.value))}
             >
               <ThemeDots preset={th.value} />
-              <span className="oh-admin-ads__theme-swatch-label">{THEME_LABELS_AR[th.value] || th.label}</span>
+              <span className="oh-admin-ads__theme-swatch-label">{th.label}</span>
             </button>
           ))}
         </div>

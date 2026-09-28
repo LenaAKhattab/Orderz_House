@@ -1,12 +1,15 @@
 import { useState } from "react";
 import Button from "../../components/ui/Button";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/planAdminResources";
 import PublicPlansContentModal from "./PublicPlansContentModal";
 
 /**
  * Page-level Super Admin action: edit public `/plans` hero copy + initial tab.
  * Fields live in a modal, not permanently on the page.
  */
-export default function PublicPlansContentAdminControl({ isEn = false }) {
+export default function PublicPlansContentAdminControl() {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
 
   return (
@@ -15,12 +18,12 @@ export default function PublicPlansContentAdminControl({ isEn = false }) {
         type="button"
         variant="ghost"
         className="oh-sapl-public-content-btn oh-sapl-action-toolbar__tertiary"
-        title={isEn ? "Edit shared public plans page content" : "تعديل محتوى صفحة الباقات العامة المشتركة"}
+        title={t("planAdmin.publicContent.editButtonTitle")}
         onClick={() => setOpen(true)}
       >
-        {isEn ? "Edit plans page content" : "تعديل محتوى صفحة الباقات"}
+        {t("planAdmin.publicContent.editButton")}
       </Button>
-      <PublicPlansContentModal open={open} isEn={isEn} onClose={() => setOpen(false)} />
+      <PublicPlansContentModal open={open} onClose={() => setOpen(false)} />
     </div>
   );
 }

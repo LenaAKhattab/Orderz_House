@@ -1,5 +1,27 @@
+import { readStoredLocale } from "../i18n/localePreference.js";
+
 /** Matches backend `GENERIC_5XX` style responses. */
 const DEFAULT_GENERIC_AR = "حدث خطأ غير متوقع، حاول لاحقاً";
+const ARABIC = /[\u0600-\u06FF]/;
+
+const EN_ERRORS = {
+  generic: "Something went wrong. Please try again.",
+  timeout: "The request took too long. Check your connection and try again.",
+  network: "Could not reach the server. Check your connection and try again.",
+  unavailable: "This action is not available.",
+  pricingChanged:
+    "The approved price changed. Refresh the page and review the amount in JOD before submitting again.",
+  rateLimited: "Too many requests were sent. Wait a moment and try again.",
+  orderCreateFailed: "Could not create the request. Please try again.",
+};
+
+function isEnglishLocale() {
+  return readStoredLocale() === "en";
+}
+
+function englishOr(ar, key) {
+  return isEnglishLocale() ? EN_ERRORS[key] : ar;
+}
 
 const RATE_LIMITED_CODE = "RATE_LIMITED";
 const EMAIL_ALREADY_REGISTERED_CODE = "EMAIL_ALREADY_REGISTERED";
@@ -27,23 +49,37 @@ export function getOrderCreateErrorMessage(err) {
   const code = err?.response?.data?.code;
   if (err?.response?.status === 409 && (code === "PRICING_CHANGED" || code === "PRICING_MISMATCH")) {
     const fromApi = err?.response?.data?.message;
-    if (typeof fromApi === "string" && fromApi.trim() && !looksTechnicalOrUnsafe(fromApi.trim())) {
+    if (
+      typeof fromApi === "string" &&
+      fromApi.trim() &&
+      !looksTechnicalOrUnsafe(fromApi.trim()) &&
+      !(isEnglishLocale() && ARABIC.test(fromApi))
+    ) {
       return fromApi.trim();
     }
-    return "تغير السعر المعتمد. حدّث الصفحة وراجع المبلغ بالدينار الأردني قبل إعادة الإرسال.";
+    return englishOr(
+      "تغير السعر المعتمد. حدّث الصفحة وراجع المبلغ بالدينار الأردني قبل إعادة الإرسال.",
+      "pricingChanged",
+    );
   }
   if (isRateLimitedError(err)) {
     const fromApi = err?.response?.data?.message;
-    if (typeof fromApi === "string" && fromApi.trim() && !looksTechnicalOrUnsafe(fromApi.trim())) {
+    if (
+      typeof fromApi === "string" &&
+      fromApi.trim() &&
+      !looksTechnicalOrUnsafe(fromApi.trim()) &&
+      !(isEnglishLocale() && ARABIC.test(fromApi))
+    ) {
       const retry = getRetryAfterSeconds(err);
       if (retry != null && retry <= 120) {
-        return `${fromApi.trim()} (انتظر حوالي ${retry} ثانية)`;
+        const wait = isEnglishLocale() ? `(wait about ${retry} seconds)` : `(انتظر حوالي ${retry} ثانية)`;
+        return `${fromApi.trim()} ${wait}`;
       }
       return fromApi.trim();
     }
-    return "تم إرسال عدد كبير من الطلبات. انتظر قليلًا ثم حاول مرة أخرى.";
+    return englishOr("تم إرسال عدد كبير من الطلبات. انتظر قليلًا ثم حاول مرة أخرى.", "rateLimited");
   }
-  return getSafeApiErrorMessage(err, "تعذر إنشاء الطلب. حاول مرة أخرى.");
+  return getSafeApiErrorMessage(err, englishOr("تعذر إنشاء الطلب. حاول مرة أخرى.", "orderCreateFailed"));
 }
 
 /** True when register/login reports the email is already taken (verified account). */
@@ -146,12 +182,14 @@ export function getAuthApiErrorMessage(err, t, fallbackKey) {
  * Falls back when the backend might have leaked internal/English vendor text.
  */
 export function getSafeApiErrorMessage(err, fallback = DEFAULT_GENERIC_AR) {
+  const en = isEnglishLocale();
+  const safeFallback = en && ARABIC.test(String(fallback || "")) ? EN_ERRORS.generic : fallback;
   if (isAxiosTimeoutError(err)) {
-    return "استغرق الطلب وقتاً طويلاً. تحقق من الاتصال وحاول مجدداً.";
+    return en ? EN_ERRORS.timeout : "استغرق الطلب وقتاً طويلاً. تحقق من الاتصال وحاول مجدداً.";
   }
 
   if (isAxiosNetworkError(err)) {
-    return "تعذر الاتصال بالخادم. تحقق من الاتصال وحاول مجدداً.";
+    return en ? EN_ERRORS.network : "تعذر الاتصال بالخادم. تحقق من الاتصال وحاول مجدداً.";
   }
 
   const code = err?.response?.data?.code;
@@ -161,17 +199,18 @@ export function getSafeApiErrorMessage(err, fallback = DEFAULT_GENERIC_AR) {
     code === "VERIFICATION_WORK_TOKEN_REWARDS_DEPRECATED" ||
     code === "PRIORITY_BIDDING_ENGINE_DEPRECATED"
   ) {
-    return "هذا الإجراء غير متاح.";
+    return en ? EN_ERRORS.unavailable : "هذا الإجراء غير متاح.";
   }
 
   const msg = err?.response?.data?.message;
   if (typeof msg !== "string" || !msg.trim()) {
-    return fallback;
+    return safeFallback;
   }
   const t = msg.trim();
   if (looksTechnicalOrUnsafe(t)) {
-    return fallback;
+    return safeFallback;
   }
+  if (en && ARABIC.test(t)) return safeFallback;
   return t;
 }
 
@@ -185,6 +224,22 @@ function looksTechnicalOrUnsafe(t) {
     return true;
   }
   return false;
+}
+
+/**
+ * English UI must not render unmapped Arabic API error text.
+ * Mutates the axios error so callers that read `response.data.message` directly stay in English.
+ */
+export function scrubArabicApiError(err) {
+  if (!isEnglishLocale() || !err) return err;
+  const data = err.response?.data;
+  if (data && typeof data === "object" && typeof data.message === "string" && ARABIC.test(data.message)) {
+    data.message = EN_ERRORS.generic;
+  }
+  if (typeof err.message === "string" && ARABIC.test(err.message)) {
+    err.message = EN_ERRORS.generic;
+  }
+  return err;
 }
 
 export { DEFAULT_GENERIC_AR };

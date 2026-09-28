@@ -5,21 +5,23 @@ import CourseFileManagerSection from "./CourseFileManagerSection";
 import CourseUrlField from "./CourseUrlField";
 import ExamQuestionsEditor, { isExamQuestionsEditorValid } from "./ExamQuestionsEditor";
 import { analyzeYoutubeSourceUrl, isHttpUrl } from "./youtubeSourceUtils";
+import "../../i18n/coursesResources";
+import { useTranslation } from "../../i18n/LanguageProvider";
 import "./adminCourseComposer.css";
 import "./courseAssetFields.css";
 
 const CREATE_STEPS = [
-  { id: "import", label: "رابط يوتيوب" },
-  { id: "info", label: "معلومات الدورة" },
-  { id: "test", label: "اختبار (اختياري)" },
-  { id: "create", label: "إنشاء الدورة" },
+  { id: "import", labelKey: "courses.composer.stepYoutube" },
+  { id: "info", labelKey: "courses.composer.stepInfo" },
+  { id: "test", labelKey: "courses.composer.stepTest" },
+  { id: "create", labelKey: "courses.composer.stepCreate" },
 ];
 
 const COURSE_REQUIRED_TIER_OPTIONS = [
-  { value: "starter", label: "ستارتر" },
-  { value: "silver", label: "فضة" },
-  { value: "pro", label: "برو" },
-  { value: "elite", label: "إيليت" },
+  { value: "starter", labelKey: "courses.composer.tierStarter" },
+  { value: "silver", labelKey: "courses.composer.tierSilver" },
+  { value: "pro", labelKey: "courses.composer.tierPro" },
+  { value: "elite", labelKey: "courses.composer.tierElite" },
 ];
 
 function CoursePreviewPlaceholderIcon() {
@@ -73,6 +75,7 @@ export default function AdminCourseCreateComposer({
   fileRemoveBusy = false,
   membershipRequiredCourseId = "",
 }) {
+  const { t } = useTranslation();
   const isEdit = mode === "edit" && Boolean(editingCourseId);
   const [analysis, setAnalysis] = useState(null);
   const [analyzeBusy, setAnalyzeBusy] = useState(false);
@@ -193,7 +196,7 @@ export default function AdminCourseCreateComposer({
     if (isEdit && editMeta) {
       const lessons = editMeta.lessonsCount;
       return {
-        sourceLabel: editMeta.youtubeSourceUrl ? "يوتيوب" : null,
+        sourceLabel: editMeta.youtubeSourceUrl ? t("courses.composer.sourceYoutube") : null,
         lessonCount: lessons != null ? String(lessons) : null,
         videoCount: lessons != null ? String(lessons) : null,
         duration: null,
@@ -201,23 +204,22 @@ export default function AdminCourseCreateComposer({
     }
     if (!analysis?.ok) return null;
     return {
-      sourceLabel: analysis.sourceLabel,
+      sourceLabel: analysis.sourceLabelKey ? t(analysis.sourceLabelKey) : null,
       lessonCount:
         analysis.expectedLessonCount != null ? String(analysis.expectedLessonCount) : null,
       videoCount:
         analysis.expectedLessonCount != null ? String(analysis.expectedLessonCount) : null,
       duration: null,
     };
-  }, [analysis, editMeta, isEdit]);
+  }, [analysis, editMeta, isEdit, t]);
 
   const showSummary =
     (isEdit && summaryStats && (summaryStats.lessonCount || summaryStats.sourceLabel)) ||
     (!isEdit && analysis?.ok);
 
-  const previewTitle = String(form.title || "").trim() || "عنوان الدورة";
+  const previewTitle = String(form.title || "").trim() || t("courses.composer.defaultTitle");
   const previewDesc =
-    String(form.description || "").trim() ||
-    "سيظهر وصف الدورة هنا كما يراه الطلاب في بطاقة الدورة.";
+    String(form.description || "").trim() || t("courses.composer.defaultDescription");
   const coverUrl = String(form.coverImage || "").trim();
   const [coverBroken, setCoverBroken] = useState(false);
   const isMembershipTrainingCourse =
@@ -233,7 +235,7 @@ export default function AdminCourseCreateComposer({
     <form className="oh-admin-courses__composer oh-admin-courses__composer--in-modal" onSubmit={onSubmit} noValidate={false}>
       <div className="oh-admin-courses__composer-scroll">
       {!isEdit ? (
-        <div className="oh-admin-courses__composer-steps" aria-label="مراحل إنشاء الدورة">
+        <div className="oh-admin-courses__composer-steps" aria-label={t("courses.composer.stepsAria")}>
           {CREATE_STEPS.map((step, idx) => {
             const done =
               (step.id === "import" && stepState.importDone) ||
@@ -256,7 +258,7 @@ export default function AdminCourseCreateComposer({
                 className={`oh-admin-courses__composer-step${done ? " oh-admin-courses__composer-step--done" : ""}${current ? " oh-admin-courses__composer-step--current" : ""}`}
               >
                 <span className="oh-admin-courses__composer-step-num">{idx + 1}</span>
-                {step.label}
+                {t(step.labelKey)}
               </span>
             );
           })}
@@ -266,14 +268,14 @@ export default function AdminCourseCreateComposer({
       {!isEdit ? (
         <section className="oh-admin-courses__composer-hero" aria-labelledby="course-import-hero-title">
           <h2 id="course-import-hero-title" className="oh-admin-courses__composer-hero-title">
-            استيراد دورة من يوتيوب
+            {t("courses.composer.importHeroTitle")}
           </h2>
           <p className="oh-admin-courses__composer-hero-desc">
-            أدخل رابط قائمة التشغيل، وسنجهّز الدروس تلقائياً.
+            {t("courses.composer.importHeroDesc")}
           </p>
           <div className="oh-admin-courses__composer-youtube-card">
             <label className="oh-admin-courses__composer-youtube-label" htmlFor="course-youtube-source">
-              رابط قائمة التشغيل
+              {t("courses.composer.playlistUrl")}
             </label>
             <input
               id="course-youtube-source"
@@ -295,26 +297,28 @@ export default function AdminCourseCreateComposer({
                 disabled={creating || analyzeBusy || !String(form.youtubeSourceUrl || "").trim()}
                 onClick={onAnalyzeUrl}
               >
-                {analyzeBusy ? "جاري الفحص…" : "فحص الرابط"}
+                {analyzeBusy ? t("courses.composer.analyzing") : t("courses.composer.analyzeUrl")}
               </button>
               <p className="oh-admin-courses__composer-analyze-hint">
-                بعد الفحص يمكنك مراجعة معلومات الدورة قبل إنشائها.
+                {t("courses.composer.analyzeHint")}
               </p>
             </div>
             {analysis?.ok ? (
               <p className="oh-admin-courses__composer-analyze-ok" role="status">
-                ✓ الرابط جاهز ({analysis.sourceLabel})
+                {t("courses.composer.urlReady", {
+                  label: analysis.sourceLabelKey ? t(analysis.sourceLabelKey) : "",
+                })}
               </p>
             ) : null}
             {analysis && !analysis.ok ? (
               <p className="oh-admin-courses__composer-analyze-ok" style={{ color: "#fecaca" }} role="alert">
-                {analysis.error}
+                {analysis.errorKey ? t(analysis.errorKey) : null}
               </p>
             ) : null}
             {isHttpUrl(form.youtubeSourceUrl) ? (
               <CourseCurrentLinkCard
                 url={form.youtubeSourceUrl}
-                title="الرابط الذي أدخلته"
+                title={t("courses.composer.enteredUrlTitle")}
                 className="oh-admin-courses__composer-youtube-saved"
               />
             ) : null}
@@ -322,14 +326,14 @@ export default function AdminCourseCreateComposer({
         </section>
       ) : (
         <DashboardFormCard
-          title="مصدر الدورة"
-          description="لاستيراد دروس جديدة استخدم تبويب «الدروس» في إدارة الدورة."
+          title={t("courses.composer.courseSource")}
+          description={t("courses.composer.courseSourceEditDesc")}
         >
           <CourseUrlField
-            label="رابط يوتيوب المحفوظ"
+            label={t("courses.composer.youtubeSavedLabel")}
             value={form.youtubeSourceUrl || editMeta?.youtubeSourceUrl || ""}
             readOnly
-            linkTitle="مصدر الدورة (يوتيوب)"
+            linkTitle={t("courses.admin.courseSourceYoutube")}
             updatedAt={assetUpdatedAt}
           />
           <label className="oh-admin-courses__composer-edit-active">
@@ -338,39 +342,39 @@ export default function AdminCourseCreateComposer({
               checked={Boolean(form.isActive)}
               onChange={(e) => setForm((s) => ({ ...s, isActive: e.target.checked }))}
             />
-            <span>الدورة نشطة (منشورة)</span>
+            <span>{t("courses.composer.courseActivePublished")}</span>
           </label>
         </DashboardFormCard>
       )}
 
       <div className="oh-admin-courses__composer-grid-2">
         <div className="oh-admin-courses__composer-surface">
-          <h3 className="oh-admin-courses__composer-surface-title">معلومات الدورة</h3>
-          <p className="oh-admin-courses__composer-surface-desc">عنوان الدورة ووصفها وصورة الغلاف.</p>
+          <h3 className="oh-admin-courses__composer-surface-title">{t("courses.composer.infoTitle")}</h3>
+          <p className="oh-admin-courses__composer-surface-desc">{t("courses.composer.infoDesc")}</p>
           <div className="oh-admin-courses__composer-fields">
             <label className="oh-admin-courses__field">
-              <span>عنوان الدورة</span>
+              <span>{t("courses.composer.courseTitle")}</span>
               <input
                 className="oh-admin-courses__input"
                 value={form.title}
                 onChange={(e) => setForm((s) => ({ ...s, title: e.target.value }))}
                 required
                 minLength={2}
-                placeholder="مثال: أساسيات التصميم"
+                placeholder={t("courses.composer.titlePlaceholder")}
               />
             </label>
             <CourseUrlField
-              label="رابط صورة الغلاف (اختياري)"
+              label={t("courses.composer.coverOptional")}
               optional
               value={form.coverImage}
               onChange={(e) => setForm((s) => ({ ...s, coverImage: e.target.value }))}
               updatedAt={assetUpdatedAt}
-              linkTitle="رابط الغلاف الحالي"
+              linkTitle={t("courses.admin.coverLinkTitle")}
             />
             <label className="oh-admin-courses__field">
-              <span>وصف الدورة</span>
+              <span>{t("courses.composer.courseDescription")}</span>
               <span className="oh-admin-courses__field-hint">
-                اكتب وصفاً قصيراً يظهر للطلاب في بطاقة الدورة (10 أحرف على الأقل).
+                {t("courses.composer.descriptionHint")}
               </span>
               <textarea
                 className="oh-admin-courses__textarea oh-admin-courses__textarea--compact"
@@ -381,9 +385,9 @@ export default function AdminCourseCreateComposer({
               />
             </label>
             <label className="oh-admin-courses__field">
-              <span>الحد الأدنى للباقة</span>
+              <span>{t("courses.composer.minMembershipPlan")}</span>
               <span className="oh-admin-courses__field-hint">
-                الدورات المحددة بفضة أو أعلى ستظهر للمستقلين الأقل كبطاقات مقفلة مع زر ترقية الباقة.
+                {t("courses.composer.tierHint")}
               </span>
               <select
                 className="oh-admin-courses__input"
@@ -392,29 +396,29 @@ export default function AdminCourseCreateComposer({
               >
                 {COURSE_REQUIRED_TIER_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>
-                    {opt.label}
+                    {t(opt.labelKey)}
                   </option>
                 ))}
               </select>
               {isMembershipTrainingCourse ? (
                 <span className="oh-admin-courses__field-hint" style={{ marginTop: "0.35rem" }}>
-                  هذه الدورة مستخدمة كتدريب إلزامي لتفعيل العضوية، وستبقى متاحة للمستقلين حسب إعدادات التفعيل.
+                  {t("courses.composer.membershipTrainingHint")}
                 </span>
               ) : null}
             </label>
           </div>
           {!isEdit ? (
             <p className="oh-admin-courses__modal-hint" style={{ marginTop: "0.65rem", marginBottom: 0 }}>
-              تُحفظ الدورة كمسودة. انشرها من القائمة بعد التأكد من الدروس.
+              {t("courses.composer.draftHint")}
             </p>
           ) : null}
         </div>
 
         <div className="oh-admin-courses__composer-surface">
-          <h3 className="oh-admin-courses__composer-surface-title">معاينة البطاقة</h3>
-          <p className="oh-admin-courses__composer-surface-desc">هكذا ستظهر الدورة للطلاب.</p>
+          <h3 className="oh-admin-courses__composer-surface-title">{t("courses.composer.previewTitle")}</h3>
+          <p className="oh-admin-courses__composer-surface-desc">{t("courses.composer.previewDesc")}</p>
           <div className="oh-admin-courses__composer-preview-wrap">
-            <article className="oh-admin-courses__composer-preview-card" aria-label="معاينة بطاقة الدورة">
+            <article className="oh-admin-courses__composer-preview-card" aria-label={t("courses.composer.previewCardAria")}>
               <div className="oh-admin-courses__composer-preview-media">
                 {coverUrl && !coverBroken ? (
                   <img
@@ -429,7 +433,7 @@ export default function AdminCourseCreateComposer({
                     <CoursePreviewPlaceholderIcon />
                   </div>
                 )}
-                <span className="oh-admin-courses__composer-preview-badge">معاينة</span>
+                <span className="oh-admin-courses__composer-preview-badge">{t("courses.composer.previewBadge")}</span>
               </div>
               <div className="oh-admin-courses__composer-preview-body">
                 <h4 className="oh-admin-courses__composer-preview-title">{previewTitle}</h4>
@@ -442,23 +446,23 @@ export default function AdminCourseCreateComposer({
 
       {showSummary ? (
         <div className="oh-admin-courses__composer-surface">
-          <h3 className="oh-admin-courses__composer-surface-title">ملخص الرابط</h3>
+          <h3 className="oh-admin-courses__composer-surface-title">{t("courses.composer.linkSummaryTitle")}</h3>
           <p className="oh-admin-courses__composer-surface-desc">
-            {isEdit ? "معلومات الدورة الحالية." : "تقدير عدد الدروس — العدد النهائي يظهر بعد إنشاء الدورة."}
+            {isEdit ? t("courses.composer.linkSummaryEdit") : t("courses.composer.linkSummaryCreate")}
           </p>
           <div className="oh-admin-courses__composer-summary-grid">
-            <SummaryStat label="المصدر" value={summaryStats?.sourceLabel} />
-            <SummaryStat label="عدد الدروس المتوقع" value={summaryStats?.lessonCount} />
-            <SummaryStat label="عدد الفيديوهات" value={summaryStats?.videoCount} />
-            <SummaryStat label="مدة الدورة" value={summaryStats?.duration} />
+            <SummaryStat label={t("courses.composer.statSource")} value={summaryStats?.sourceLabel} />
+            <SummaryStat label={t("courses.composer.statExpectedLessons")} value={summaryStats?.lessonCount} />
+            <SummaryStat label={t("courses.composer.statVideos")} value={summaryStats?.videoCount} />
+            <SummaryStat label={t("courses.composer.statDuration")} value={summaryStats?.duration} />
           </div>
         </div>
       ) : null}
 
       <div className="oh-admin-courses__composer-surface">
-        <h3 className="oh-admin-courses__composer-surface-title">اختبار بعد الدورة</h3>
+        <h3 className="oh-admin-courses__composer-surface-title">{t("courses.composer.postTestTitle")}</h3>
         <p className="oh-admin-courses__composer-surface-desc">
-          يمكنك تفعيل اختبار يطلب من الطالب رفع إجابة أو إرسال نص بعد إنهاء الدورة.
+          {t("courses.composer.postTestDesc")}
         </p>
         <label className="oh-admin-courses__toggle">
           <input
@@ -466,7 +470,7 @@ export default function AdminCourseCreateComposer({
             checked={Boolean(form.isTestingEnabled)}
             onChange={(e) => setForm((s) => ({ ...s, isTestingEnabled: e.target.checked }))}
           />
-          <span>إضافة اختبار نهائي بعد إكمال الدروس</span>
+          <span>{t("courses.composer.enableFinalExam")}</span>
         </label>
         <div
           className={`oh-admin-courses__composer-test-panel${
@@ -479,8 +483,8 @@ export default function AdminCourseCreateComposer({
           <div className="oh-admin-courses__composer-test-inner">
             <div className="oh-admin-courses__exam-block">
               <CourseFileManagerSection
-                label="ملف الاختبار / التكليف"
-                description="يُستخدم هذا الملف ضمن خطوات الاختبار النهائي."
+                label={t("courses.composer.testFileLabel")}
+                description={t("courses.composer.testFileDesc")}
                 value={form.testFileUrl}
                 onChangeUrl={(next) => {
                   setForm((s) => ({ ...s, testFileUrl: next }));
@@ -503,8 +507,8 @@ export default function AdminCourseCreateComposer({
 
             <div className="oh-admin-courses__exam-block">
               <CourseFileManagerSection
-                label="ملف مطالبة ChatGPT للمستقل"
-                description="يُستخدم مع ملف الاختبار عند تقييم إجابة المستقل."
+                label={t("courses.composer.promptFileLabel")}
+                description={t("courses.composer.promptFileDesc")}
                 value={form.testPromptFileUrl}
                 onChangeUrl={(next) => {
                   setForm((s) => ({ ...s, testPromptFileUrl: next }));
@@ -527,8 +531,8 @@ export default function AdminCourseCreateComposer({
 
             <div className="oh-admin-courses__exam-block">
               <CourseFileManagerSection
-                label="ملف الإجابة النموذجية"
-                description="يُستخدم مع ملف الاختبار وملف التعليمات في ChatGPT عند التقييم."
+                label={t("courses.composer.modelAnswerLabel")}
+                description={t("courses.composer.modelAnswerDesc")}
                 value={form.testModelAnswerFileUrl}
                 onChangeUrl={(next) => {
                   setForm((s) => ({ ...s, testModelAnswerFileUrl: next }));
@@ -554,7 +558,7 @@ export default function AdminCourseCreateComposer({
                 <span className="oh-admin-courses__exam-block-icon" aria-hidden>
                   ✍️
                 </span>
-                إعدادات التقييم والأسئلة
+                {t("courses.composer.gradingSettings")}
               </h4>
               <ExamQuestionsEditor
                 disabled={creating}
@@ -575,14 +579,14 @@ export default function AdminCourseCreateComposer({
             type="button"
             className="btn btn-secondary oh-admin-courses__composer-draft-btn"
             disabled
-            title="سيتوفر قريباً"
+            title={t("courses.composer.comingSoon")}
             aria-disabled="true"
           >
-            حفظ كمسودة
+            {t("courses.composer.saveDraft")}
           </button>
         ) : (
           <button type="button" className="btn btn-secondary" disabled={creating} onClick={onCancelEdit}>
-            إلغاء التعديل
+            {t("courses.composer.cancelEdit")}
           </button>
         )}
         <button
@@ -592,11 +596,11 @@ export default function AdminCourseCreateComposer({
         >
           {creating
             ? isEdit
-              ? "جاري الحفظ…"
-              : "جاري إنشاء الدورة…"
+              ? t("courses.composer.saving")
+              : t("courses.composer.creating")
             : isEdit
-              ? "حفظ التعديلات"
-              : "إنشاء الدورة"}
+              ? t("courses.composer.saveChanges")
+              : t("courses.composer.createCourseBtn")}
         </button>
       </div>
     </form>

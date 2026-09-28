@@ -712,6 +712,10 @@
   overflow: hidden;
 }
 
+[dir="rtl"] .oh-sa-users-drawer__panel {
+  box-shadow: 12px 0 40px rgba(15, 23, 42, 0.16);
+}
+
 .oh-sa-users-drawer__sub {
   margin: 4px 0 0;
   font-size: 0.8rem;

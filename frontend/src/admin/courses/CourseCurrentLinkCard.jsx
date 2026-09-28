@@ -8,26 +8,29 @@ import {
   isProbablyImageUrl,
   isYoutubeUrl,
 } from "./courseAssetDisplayUtils";
+import { useTranslation } from "../../i18n/LanguageProvider";
 
 /**
  * Saved URL preview — open, copy, optional image/YouTube thumbnail.
  */
 export default function CourseCurrentLinkCard({
   url,
-  title = "الرابط الحالي",
+  title,
   updatedAt = null,
   className = "",
 }) {
+  const { t, locale } = useTranslation();
   const [copied, setCopied] = useState(false);
   const [imgBroken, setImgBroken] = useState(false);
   const trimmed = String(url || "").trim();
+  const resolvedTitle = title ?? t("courses.assets.currentLink");
 
   if (!isHttpUrl(trimmed)) return null;
 
-  const dateLabel = formatAssetDate(updatedAt);
+  const dateLabel = formatAssetDate(updatedAt, locale);
   const showImage = isProbablyImageUrl(trimmed) && !imgBroken;
   const ytThumb = !showImage && isYoutubeUrl(trimmed) ? getYoutubeThumbnail(trimmed) : null;
-  const displayName = fileNameFromUrl(trimmed);
+  const displayName = fileNameFromUrl(trimmed, t);
 
   const onCopy = async () => {
     const ok = await copyTextToClipboard(trimmed);
@@ -38,10 +41,12 @@ export default function CourseCurrentLinkCard({
   };
 
   return (
-    <div className={`oh-course-asset oh-course-asset--link ${className}`.trim()} role="region" aria-label={title}>
+    <div className={`oh-course-asset oh-course-asset--link ${className}`.trim()} role="region" aria-label={resolvedTitle}>
       <div className="oh-course-asset__head">
-        <span className="oh-course-asset__title">{title}</span>
-        {dateLabel ? <span className="oh-course-asset__meta">آخر تحديث: {dateLabel}</span> : null}
+        <span className="oh-course-asset__title">{resolvedTitle}</span>
+        {dateLabel ? (
+          <span className="oh-course-asset__meta">{t("courses.assets.lastUpdated", { date: dateLabel })}</span>
+        ) : null}
       </div>
 
       {(showImage || ytThumb) && !imgBroken ? (
@@ -76,10 +81,10 @@ export default function CourseCurrentLinkCard({
 
       <div className="oh-course-asset__actions">
         <a className="btn btn-secondary oh-course-asset__btn" href={trimmed} target="_blank" rel="noopener noreferrer">
-          فتح الرابط
+          {t("courses.assets.openLink")}
         </a>
         <button type="button" className="btn btn-secondary oh-course-asset__btn" onClick={() => void onCopy()}>
-          {copied ? "تم النسخ" : "نسخ الرابط"}
+          {copied ? t("courses.assets.copied") : t("courses.assets.copyLink")}
         </button>
       </div>
     </div>

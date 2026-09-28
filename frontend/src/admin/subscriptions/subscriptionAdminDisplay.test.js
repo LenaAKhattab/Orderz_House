@@ -4,6 +4,8 @@
  */
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import "../../i18n/subscriptionsResources.js";
+import { getTranslation } from "../../lib/translation/getTranslation.js";
 import {
   activationStatusLabel,
   adminSubscriptionActivationMenuLabel,
@@ -11,10 +13,12 @@ import {
   formatSubscriptionAdminDate,
 } from "./subscriptionAdminDisplay.js";
 
+const t = (key, values) => getTranslation(key, "ar", values);
+
 describe("activationStatusLabel", () => {
   it("does not use generic مفعّل for company_approved", () => {
-    assert.equal(activationStatusLabel("company_approved"), "موافقة الشركة مكتملة");
-    assert.notEqual(activationStatusLabel("company_approved"), "مفعّل");
+    assert.equal(activationStatusLabel("company_approved", t), "موافقة الشركة مكتملة");
+    assert.notEqual(activationStatusLabel("company_approved", t), "مفعّل");
   });
 });
 
@@ -24,6 +28,7 @@ describe("describeFreelancerAdminEligibilityState", () => {
       eligibility: { eligible: false, reason: "activation_fee_unpaid" },
       subscription: { activationStatus: "company_approved", status: "assigned_not_started" },
       activationFeeStatus: { needsPayment: true, isCurrent: false },
+      t,
     });
     assert.equal(state.code, "activation_fee_unpaid");
     assert.equal(state.label, "موافقة الشركة مكتملة، لكن رسوم التفعيل غير مدفوعة");
@@ -35,6 +40,7 @@ describe("describeFreelancerAdminEligibilityState", () => {
       eligibility: { eligible: true, reason: "assigned_not_started" },
       subscription: { activationStatus: "company_approved", status: "assigned_not_started" },
       activationFeeStatus: { needsPayment: false, isCurrent: true },
+      t,
     });
     assert.equal(state.code, "fully_eligible");
     assert.equal(state.label, "المستخدم مؤهل لاستلام الطلبات");
@@ -45,6 +51,7 @@ describe("describeFreelancerAdminEligibilityState", () => {
     const state = describeFreelancerAdminEligibilityState({
       eligibility: { eligible: false, reason: "plan_configuration_error" },
       subscription: { activationStatus: "company_approved", status: "assigned_not_started" },
+      t,
     });
     assert.equal(state.code, "plan_configuration_error");
     assert.equal(state.label, "تعذر التحقق من أهلية خطتك حالياً. يرجى التواصل مع الدعم.");
@@ -60,6 +67,7 @@ describe("adminSubscriptionActivationMenuLabel", () => {
       eligibility: { eligible: false, reason: "activation_fee_unpaid" },
       subscription: { activationStatus: "company_approved" },
       activationFeeStatus: { needsPayment: true },
+      t,
     });
     assert.match(label, /رسوم التفعيل غير مدفوعة/);
     assert.ok(!label.includes("مفعّل بالكامل"));

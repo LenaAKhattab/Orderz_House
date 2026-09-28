@@ -6,6 +6,7 @@ import DashboardEmptyState from "../../components/dashboard/DashboardEmptyState"
 import DashboardErrorState from "../../components/dashboard/DashboardErrorState";
 import ConfirmDialog from "../../components/dashboard/ConfirmDialog";
 import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/planAdminResources";
 import { useToast } from "../../components/ui/toastContext";
 import {
   createMarketplaceMembershipPlanRequest,
@@ -24,15 +25,11 @@ import {
 import PlanCatalogAdminShell from "../../admin/plans/PlanCatalogAdminShell";
 import PlanCatalogActionToolbar from "../../admin/plans/PlanCatalogActionToolbar";
 import { PlanCardsGridSkeleton } from "../../admin/plans/PlanCatalogSkeletons";
-import { SECTION_COPY } from "../../admin/plans/planMetricTerminology";
 import { PLAN_CATALOG } from "../../constants/planCatalogs";
-import "../../admin/marketplaceMembership/marketplace-membership-plans.css";
 
 export default function SuperAdminMarketplacePlansPage() {
-  const { locale } = useTranslation();
-  const isEn = locale === "en";
+  const { t } = useTranslation();
   const { push } = useToast();
-  const sectionCopy = SECTION_COPY.marketplace;
 
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -52,12 +49,12 @@ export default function SuperAdminMarketplacePlansPage() {
       const res = await listAdminMarketplaceMembershipPlansRequest({ includeInactive: true });
       setPlans(Array.isArray(res?.data?.plans) ? res.data.plans : []);
     } catch (err) {
-      setError(getSafeApiErrorMessage(err) || (isEn ? "Could not load plan catalog data." : "تعذر تحميل بيانات الباقات"));
+      setError(getSafeApiErrorMessage(err) || t("planAdmin.page.marketplaceLoadFailed"));
       setPlans([]);
     } finally {
       setLoading(false);
     }
-  }, [isEn]);
+  }, [t]);
 
   useEffect(() => {
     void refresh();
@@ -70,13 +67,13 @@ export default function SuperAdminMarketplacePlansPage() {
       setCreateOpen(false);
       push({
         type: "success",
-        message: isEn ? "Plan created." : "تم إنشاء الباقة.",
+        message: t("planAdmin.page.marketplaceCreated"),
       });
       await refresh();
     } catch (err) {
       push({
         type: "error",
-        message: getSafeApiErrorMessage(err) || (isEn ? "Create failed." : "فشل الإنشاء."),
+        message: getSafeApiErrorMessage(err) || t("planAdmin.page.marketplaceCreateFailed"),
       });
     } finally {
       setSubmitting(false);
@@ -91,13 +88,13 @@ export default function SuperAdminMarketplacePlansPage() {
       setEditPlan(null);
       push({
         type: "success",
-        message: isEn ? "Plan updated." : "تم تحديث الباقة.",
+        message: t("planAdmin.page.marketplaceUpdated"),
       });
       await refresh();
     } catch (err) {
       push({
         type: "error",
-        message: getSafeApiErrorMessage(err) || (isEn ? "Update failed." : "فشل التحديث."),
+        message: getSafeApiErrorMessage(err) || t("planAdmin.page.marketplaceUpdateFailed"),
       });
     } finally {
       setSubmitting(false);
@@ -122,7 +119,7 @@ export default function SuperAdminMarketplacePlansPage() {
     } catch (err) {
       push({
         type: "error",
-        message: getSafeApiErrorMessage(err) || (isEn ? "Update failed." : "فشل التحديث."),
+        message: getSafeApiErrorMessage(err) || t("planAdmin.page.marketplaceUpdateFailed"),
       });
     } finally {
       setSubmitting(false);
@@ -147,16 +144,12 @@ export default function SuperAdminMarketplacePlansPage() {
       setArchiveTarget(null);
       push({
         type: "success",
-        message: isEn ? "Package deactivated successfully." : "تم تعطيل الباقة بنجاح.",
+        message: t("planAdmin.page.deactivateSuccess"),
       });
     } catch (err) {
       push({
         type: "error",
-        message:
-          getSafeApiErrorMessage(err) ||
-          (isEn
-            ? "This package cannot be removed because it is linked to users or current records."
-            : "لا يمكن حذف هذه الباقة لأنها مرتبطة بمستخدمين أو سجلات حالية. يمكنك تعطيلها بدلاً من حذفها."),
+        message: getSafeApiErrorMessage(err) || t("planAdmin.page.deactivateBlocked"),
       });
     } finally {
       setSubmitting(false);
@@ -177,7 +170,7 @@ export default function SuperAdminMarketplacePlansPage() {
     } catch (err) {
       push({
         type: "error",
-        message: getSafeApiErrorMessage(err) || (isEn ? "Reorder failed." : "فشل إعادة الترتيب."),
+        message: getSafeApiErrorMessage(err) || t("planAdmin.page.marketplaceReorderFailed"),
       });
     } finally {
       setReorderingPlanId(null);
@@ -185,50 +178,40 @@ export default function SuperAdminMarketplacePlansPage() {
   };
 
   return (
-    <PlanCatalogAdminShell
-      className="oh-mmp-page"
-      activeCatalog={PLAN_CATALOG.MARKETPLACE_PLANS}
-      isEn={isEn}
-      hint={isEn ? sectionCopy.hintEn : sectionCopy.hintAr}
-    >
+    <PlanCatalogAdminShell className="oh-mmp-page" activeCatalog={PLAN_CATALOG.MARKETPLACE_PLANS} hint={t("planAdmin.sections.marketplace.hint")}>
       {error ? <DashboardErrorState message={error} onRetry={refresh} /> : null}
 
       <DashboardSection
-        title={isEn ? sectionCopy.en : sectionCopy.ar}
+        title={t("planAdmin.sections.marketplace.title")}
         className="oh-sapl-section--plans oh-sapl-section--tight"
-        description={
-          isEn
-            ? "Pay As You Work, Active, Pro, Elite — managed by tier code."
-            : "Pay As You Work و Active و Pro و Elite — تُدار عبر رمز الباقة."
-        }
+        description={t("planAdmin.sections.marketplace.description")}
         actions={
           <PlanCatalogActionToolbar
-            isEn={isEn}
             catalog={PLAN_CATALOG.MARKETPLACE_PLANS}
             onCreate={() => setCreateOpen(true)}
-            createLabel={isEn ? "+ Add plan" : "+ إضافة باقة"}
+            createLabel={t("planAdmin.sections.marketplace.addPlan")}
             extra={
               <Link
                 className="btn btn-ghost oh-sapl-action-toolbar__tertiary"
                 to="/dashboard/super-admin/marketplace-economy"
               >
-                {isEn ? "Work economy settings" : "إعدادات اقتصاد العمل"}
+                {t("planAdmin.sections.marketplace.workEconomy")}
               </Link>
             }
           />
         }
       >
         {loading ? (
-          <PlanCardsGridSkeleton count={4} className="oh-mmp-grid" variant="marketplace" isEn={isEn} />
+          <PlanCardsGridSkeleton count={4} className="oh-mmp-grid" variant="marketplace" />
         ) : null}
 
         {!loading && !error && plans.length === 0 ? (
           <DashboardEmptyState
-            title={isEn ? sectionCopy.emptyTitleEn : sectionCopy.emptyTitleAr}
-            description={isEn ? sectionCopy.emptyDescEn : sectionCopy.emptyDescAr}
+            title={t("planAdmin.sections.marketplace.emptyTitle")}
+            description={t("planAdmin.sections.marketplace.emptyDesc")}
             actions={
               <Button type="button" onClick={() => setCreateOpen(true)}>
-                {isEn ? "+ Add plan" : "+ إضافة باقة"}
+                {t("planAdmin.sections.marketplace.addPlan")}
               </Button>
             }
           />
@@ -242,7 +225,6 @@ export default function SuperAdminMarketplacePlansPage() {
                 <MarketplaceMembershipPlanCard
                   key={plan.id}
                   plan={plan}
-                  isEn={isEn}
                   busy={submitting}
                   reordering={reorderingPlanId === String(plan.id)}
                   canMoveUp={moveMeta.canMoveUp}
@@ -260,14 +242,10 @@ export default function SuperAdminMarketplacePlansPage() {
 
       <ConfirmDialog
         open={Boolean(archiveTarget)}
-        title={isEn ? "Confirm package removal" : "تأكيد حذف الباقة"}
-        body={
-          isEn
-            ? "Are you sure? This package will be hidden from new use. Existing subscriptions and historical records will not be deleted."
-            : "هل أنت متأكد؟ سيتم إيقاف ظهور هذه الباقة للاستخدام الجديد، ولن يتم حذف الاشتراكات أو السجلات القديمة المرتبطة بها."
-        }
-        confirmLabel={isEn ? "Deactivate package" : "تعطيل الباقة"}
-        cancelLabel={isEn ? "Cancel" : "إلغاء"}
+        title={t("planAdmin.page.confirmDeactivateTitle")}
+        body={t("planAdmin.page.confirmDeactivateBody")}
+        confirmLabel={t("planAdmin.page.deactivateConfirm")}
+        cancelLabel={t("planAdmin.common.cancel")}
         confirmVariant="danger"
         confirmBusy={submitting}
         onCancel={() => {
@@ -279,7 +257,6 @@ export default function SuperAdminMarketplacePlansPage() {
       <MarketplaceMembershipPlanFormModal
         open={createOpen}
         mode="create"
-        isEn={isEn}
         submitting={submitting}
         onClose={() => setCreateOpen(false)}
         onSubmit={handleCreate}
@@ -288,7 +265,6 @@ export default function SuperAdminMarketplacePlansPage() {
         open={Boolean(editPlan)}
         mode="edit"
         initialPlan={editPlan}
-        isEn={isEn}
         submitting={submitting}
         onClose={() => setEditPlan(null)}
         onSubmit={handleUpdate}

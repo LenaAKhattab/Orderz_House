@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
+import { useTranslation } from "../../i18n/LanguageProvider";
 import "./legacySmartFields.css";
 
 /**
@@ -18,10 +19,12 @@ export default function LegacySmartTextField({
   placeholder = "",
   className = "",
   inputClassName = "",
-  emptyText = "لا توجد اقتراحات مطابقة",
+  emptyText,
   dir = "rtl",
   "aria-label": ariaLabel,
 }) {
+  const { t } = useTranslation();
+  const resolvedEmptyText = emptyText ?? t("legacy.common.noMatchingSuggestions");
   const autoId = useId();
   const inputId = id || `legacy-smart-${autoId}`;
   const listId = `${inputId}-list`;
@@ -108,11 +111,11 @@ export default function LegacySmartTextField({
         <ul id={listId} className="oh-legacy-smart__list" role="listbox" dir={dir}>
           {loading ? (
             <li className="oh-legacy-smart__empty" role="presentation">
-              جاري التحميل…
+              {t("legacy.common.loadingShort")}
             </li>
           ) : suggestions.length === 0 ? (
             <li className="oh-legacy-smart__empty" role="presentation">
-              {emptyText}
+              {resolvedEmptyText}
             </li>
           ) : (
             suggestions.map((s, idx) => (

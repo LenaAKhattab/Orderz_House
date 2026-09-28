@@ -1,5 +1,5 @@
 import { getLocalizedField } from "./getLocalizedField";
-import { resolveFaqLocaleKey } from "./resolveFaqLocaleKey";
+import { canonicalFaqIdForField } from "./resolveFaqLocaleKey";
 
 /**
  * Resolve FAQ question/answer for the active locale.
@@ -25,7 +25,7 @@ export function getFaqLocalizedText(item, field, locale, t, index) {
     return fromApi;
   }
 
-  const localeKey = resolveFaqLocaleKey(item, index);
+  const localeKey = canonicalFaqIdForField(item, field);
   if (localeKey) {
     const key = `home.faq.items.${localeKey}.${field}`;
     const translated = t(key);

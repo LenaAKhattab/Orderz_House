@@ -1,7 +1,11 @@
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/planAdminResources";
+
 /**
  * Empty list for super-admin plans.
  */
 export default function EmptyPlansState() {
+  const { t } = useTranslation();
   return (
     <div className="oh-sapl-empty">
       <div className="oh-sapl-empty__icon" aria-hidden>
@@ -16,8 +20,8 @@ export default function EmptyPlansState() {
           />
         </svg>
       </div>
-      <p className="oh-sapl-empty__title">لا توجد باقات بعد</p>
-      <p className="oh-sapl-empty__hint">أنشئ أول باقة من النموذج أعلاه لتظهر هنا.</p>
+      <p className="oh-sapl-empty__title">{t("planAdmin.empty.title")}</p>
+      <p className="oh-sapl-empty__hint">{t("planAdmin.empty.hint")}</p>
     </div>
   );
 }

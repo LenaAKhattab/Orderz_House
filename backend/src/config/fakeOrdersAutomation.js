@@ -1,8 +1,10 @@
 /**
  * Environment controls for the fake-orders automation runner (setInterval in server.js).
  * Production: in-process tick OFF unless FAKE_ORDERS_AUTOMATION_ENABLED=true (single instance).
- * Development: in-process tick ON by default unless explicitly disabled.
+ * Local development (localhost database): in-process tick ON by default unless explicitly disabled.
+ * A non-production process pointed at a remote database does not tick unless explicitly enabled.
  */
+const { classifyDatabaseUrl } = require("../utils/databaseEnvironmentSafety");
 
 function parseBoolEnv(name, defaultValue = false) {
   const v = process.env[name];
@@ -19,6 +21,14 @@ function isProductionNodeEnv() {
   return String(process.env.NODE_ENV || "").toLowerCase() === "production";
 }
 
+/** True when this process is not production and DATABASE_URL is not a local database. */
+function isNonProductionRemoteDatabase() {
+  if (isProductionNodeEnv()) return false;
+  const kind = classifyDatabaseUrl()?.classification;
+  if (!kind || kind === "LOCAL" || kind === "MISSING") return false;
+  return true;
+}
+
 /**
  * When true, server.js registers setInterval(runAutomationTick).
  * - Production default: false (use external cron on multi-instance).
@@ -30,7 +40,18 @@ function isInProcessAutomationIntervalEnabled() {
   if (raw !== undefined && String(raw).trim() !== "") {
     return parseBoolEnv("FAKE_ORDERS_AUTOMATION_ENABLED", false);
   }
-  return !isProductionNodeEnv();
+  if (isProductionNodeEnv()) return false;
+  if (isNonProductionRemoteDatabase()) return false;
+  return true;
+}
+
+/**
+ * Startup marketplace fill. Production keeps today's boot behavior.
+ * Local/staging-connected processes skip it unless in-process ticks are enabled.
+ */
+function shouldRunStartupTrainingBootstrap() {
+  if (isProductionNodeEnv()) return true;
+  return isInProcessAutomationIntervalEnabled();
 }
 
 /** True when in-process ticks or a valid cron secret is configured. */
@@ -90,6 +111,8 @@ function resolveRoundOrderBoundsFromEnv(settings = {}) {
 
 module.exports = {
   isInProcessAutomationIntervalEnabled,
+  isNonProductionRemoteDatabase,
+  shouldRunStartupTrainingBootstrap,
   isAutomationDriverConfigured,
   isProductionNodeEnv,
   getFakeOrdersTickMs,

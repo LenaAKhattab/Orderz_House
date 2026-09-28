@@ -27,8 +27,8 @@ export default function ConfirmDialog({
   open,
   title,
   body,
-  confirmLabel = "تأكيد",
-  cancelLabel = "إلغاء",
+  confirmLabel,
+  cancelLabel,
   onConfirm,
   onCancel,
   className = "",
@@ -38,7 +38,9 @@ export default function ConfirmDialog({
   layerClassName = "z-[1200]",
   confirmBusy = false,
 }) {
-  const { dir } = useTranslation();
+  const { dir, t } = useTranslation();
+  const resolvedConfirm = confirmLabel ?? t("dashboard.ui.confirm");
+  const resolvedCancel = cancelLabel ?? t("dashboard.ui.cancel");
   const titleId = useId();
   const cancelRef = useRef(null);
   const panelRef = useRef(null);
@@ -92,12 +94,12 @@ export default function ConfirmDialog({
 
   const confirmBtn = (
     <button type="button" className={confirmBtnClass} onClick={onConfirm} disabled={confirmBusy}>
-      {confirmLabel}
+      {resolvedConfirm}
     </button>
   );
   const cancelBtn = (
     <button ref={cancelRef} type="button" className="btn btn-secondary" onClick={onCancel} disabled={confirmBusy}>
-      {cancelLabel}
+      {resolvedCancel}
     </button>
   );
 
@@ -109,7 +111,7 @@ export default function ConfirmDialog({
       <button
         type="button"
         className="dash-ui-confirm-dialog__backdrop absolute inset-0 bg-slate-900/40"
-        aria-label={cancelLabel}
+        aria-label={resolvedCancel}
         onClick={confirmBusy ? undefined : onCancel}
         disabled={confirmBusy}
       />

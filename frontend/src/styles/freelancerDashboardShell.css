@@ -44,10 +44,9 @@
 
 .fdl-shell__grid {
   display: grid;
-  direction: ltr;
   width: 100%;
   max-width: 100%;
-  grid-template-columns: minmax(0, 1fr) var(--fdl-sidebar-w);
+  grid-template-columns: var(--fdl-sidebar-w) minmax(0, 1fr);
   gap: var(--fdl-shell-gap);
   min-height: 100dvh;
   padding: var(--fdl-shell-gap);
@@ -59,12 +58,10 @@
   position: sticky;
   top: var(--fdl-shell-gap);
   z-index: 40;
-  order: 2;
   align-self: start;
   width: var(--fdl-sidebar-w);
   height: calc(100dvh - var(--fdl-shell-gap) * 2);
   max-height: calc(100dvh - var(--fdl-shell-gap) * 2);
-  direction: ltr;
   transition: width 0.28s var(--fdl-ease);
 }
 
@@ -391,7 +388,6 @@
 }
 
 .fdl-workspace {
-  order: 1;
   display: flex;
   flex-direction: column;
   gap: 6px;

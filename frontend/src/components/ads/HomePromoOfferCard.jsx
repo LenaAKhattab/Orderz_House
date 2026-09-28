@@ -1,3 +1,4 @@
+import { useTranslation } from "../../i18n/LanguageProvider";
 import PremiumPromoBanner from "./PremiumPromoBanner";
 import "./home-promo-banner-templates.css";
 import "./home-promo-premium-banners.css";
@@ -11,6 +12,7 @@ import "./home-promo-premium-banners.css";
  * @param {boolean} [p.previewMode] — admin preview: no modal trigger
  */
 export default function HomePromoOfferCard({ ad, onTrackClick, onOpenDetails, variant = "default", previewMode = false }) {
+  const { t } = useTranslation();
   const stopCardActivate = (e) => {
     e.stopPropagation();
   };
@@ -43,7 +45,7 @@ export default function HomePromoOfferCard({ ad, onTrackClick, onOpenDetails, va
       role="button"
       tabIndex={0}
       aria-haspopup="dialog"
-      aria-label={`عرض تفاصيل الإعلان: ${ad.title}`}
+      aria-label={t("home.promoAds.offerDetailAria", { title: ad.title })}
       data-home-promo-card-trigger
       onClick={(e) => openFromShell(/** @type {HTMLElement} */ (e.currentTarget))}
       onKeyDown={(e) => {

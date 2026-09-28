@@ -1,4 +1,24 @@
 import PublicPageHeader from "../layout/PublicPageHeader";
+import { useTranslation } from "../../i18n/LanguageProvider";
+
+function HiwImageFigure({ block }) {
+  const { t } = useTranslation();
+  const altFallback = t("home.hiw.illustrationAlt");
+  return (
+    <figure className="hiw-block hiw-block--image">
+      {block.imageUrl ? (
+        <img
+          src={block.imageUrl}
+          alt={block.title?.trim() || altFallback}
+          className="hiw-block__image"
+          loading="lazy"
+          decoding="async"
+        />
+      ) : null}
+      {block.title ? <figcaption className="hiw-block__caption">{block.title}</figcaption> : null}
+    </figure>
+  );
+}
 
 const BLOCK_RENDERERS = {
   title: ({ block }) => (
@@ -20,21 +40,14 @@ const BLOCK_RENDERERS = {
       </div>
     </article>
   ),
-  image: ({ block }) => (
-    <figure className="hiw-block hiw-block--image">
-      {block.imageUrl ? (
-        <img
-          src={block.imageUrl}
-          alt={block.title?.trim() || "صورة توضيحية"}
-          className="hiw-block__image"
-          loading="lazy"
-          decoding="async"
-        />
-      ) : null}
-      {block.title ? <figcaption className="hiw-block__caption">{block.title}</figcaption> : null}
-    </figure>
-  ),
-  text_image: ({ block, index }) => (
+  image: ({ block }) => <HiwImageFigure block={block} />,
+  text_image: ({ block, index }) => <HiwTextImageBlock block={block} index={index} />,
+};
+
+function HiwTextImageBlock({ block, index }) {
+  const { t } = useTranslation();
+  const altFallback = t("home.hiw.illustrationAlt");
+  return (
     <article className="hiw-block hiw-block--text-image">
       <div className="hiw-block__split">
         <div className="hiw-block__split-copy">
@@ -48,7 +61,7 @@ const BLOCK_RENDERERS = {
           <div className="hiw-block__split-media">
             <img
               src={block.imageUrl}
-              alt={block.title?.trim() || "صورة توضيحية"}
+              alt={block.title?.trim() || altFallback}
               className="hiw-block__image"
               loading="lazy"
               decoding="async"
@@ -57,14 +70,13 @@ const BLOCK_RENDERERS = {
         ) : null}
       </div>
     </article>
-  ),
-};
+  );
+}
 
 export default function HowItWorksBlockRenderer({ blocks }) {
+  const { t } = useTranslation();
   if (!blocks.length) {
-    return (
-      <p className="hiw-page__empty">لا يوجد محتوى لعرضه حالياً.</p>
-    );
+    return <p className="hiw-page__empty">{t("home.hiw.empty")}</p>;
   }
 
   let stepIndex = 0;
@@ -90,10 +102,11 @@ export default function HowItWorksBlockRenderer({ blocks }) {
 }
 
 export function HowItWorksPageShell({ page, blocks, children }) {
+  const { t } = useTranslation();
   return (
     <main className="hiw-page page-content" lang="ar" dir="rtl">
       <div className="hiw-page__inner">
-        <PublicPageHeader title={page?.title || "طريقة العمل"} />
+        <PublicPageHeader title={page?.title || t("home.hiw.defaultTitle")} />
         {children || <HowItWorksBlockRenderer blocks={blocks} />}
       </div>
     </main>

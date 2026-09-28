@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Users, UserCheck, IdCard, Package } from "lucide-react";
 import { useAuth } from "../../context/useAuth";
 import Button from "../../components/ui/Button";
@@ -9,10 +9,11 @@ import DashboardEmptyState from "../../components/dashboard/DashboardEmptyState"
 import DashboardTabs, { DashboardTab } from "../../components/dashboard/DashboardTabs";
 import { LEGACY_FREELANCERS_MANAGE_PERMISSION } from "../../constants/dashboardPermissions";
 import { listLegacyFreelancersRequest } from "../../services/api";
+import { useTranslation } from "../../i18n/LanguageProvider";
 import LegacyCampaignsPanel from "./legacyFreelancerAdmin/LegacyCampaignsPanel";
 import LegacyFreelancersPanel from "./legacyFreelancerAdmin/LegacyFreelancersPanel";
 import LegacyDocumentsPanel from "./legacyFreelancerAdmin/LegacyDocumentsPanel";
-import { CENTER_TABS } from "./legacyFreelancerAdmin/legacyAdminShared";
+import { getCenterTabs } from "./legacyFreelancerAdmin/legacyAdminShared";
 import "./superAdminUsersPage.css";
 import "./legacyFreelancerAdmin/legacyAdminCenter.css";
 
@@ -41,6 +42,8 @@ function InsightCard({ label, value, hint, icon: Icon, tone = "default" }) {
 }
 
 export default function SuperAdminLegacyFreelancerInvitesPage() {
+  const { t } = useTranslation();
+  const centerTabs = useMemo(() => getCenterTabs(t), [t]);
   const { hasPermission } = useAuth();
   const canManage = Boolean(hasPermission?.(LEGACY_FREELANCERS_MANAGE_PERMISSION));
   const [activeTab, setActiveTab] = useState("freelancers");
@@ -79,8 +82,8 @@ export default function SuperAdminLegacyFreelancerInvitesPage() {
     return (
       <DashboardShell>
         <DashboardEmptyState
-          title="غير مصرح"
-          description="تحتاج صلاحية إدارة الفريلانسرز القدامى لعرض هذا المركز."
+          title={t("legacy.common.unauthorized")}
+          description={t("legacy.center.unauthorizedDesc")}
         />
       </DashboardShell>
     );
@@ -90,14 +93,14 @@ export default function SuperAdminLegacyFreelancerInvitesPage() {
     <DashboardShell>
       <div className="oh-legacy-admin">
         <DashboardPageHeader
-          eyebrow="إدارة النظام"
-          title="مركز إدارة الفريلانسر القدامى"
+          eyebrow={t("legacy.common.systemManagement")}
+          title={t("legacy.center.title")}
           breadcrumbs={superAdminBreadcrumbs("dashboard.breadcrumbs.legacyFreelancerInvites")}
-          description="إدارة الفريلانسرز القدامى، حملات الدعوة، الأوراق، وإعدادات التسجيل."
+          description={t("legacy.center.description")}
           actions={
             activeTab === "freelancers" ? (
               <Button type="button" onClick={() => setCreateSignal((n) => n + 1)}>
-                إضافة فريلانسر قديم
+                {t("legacy.common.addLegacyFreelancer")}
               </Button>
             ) : null
           }
@@ -106,29 +109,29 @@ export default function SuperAdminLegacyFreelancerInvitesPage() {
         {activeTab === "freelancers" ? (
           <div className="oh-legacy-admin__stats" aria-busy={insightsLoading || undefined}>
             <InsightCard
-              label="إجمالي القدامى"
+              label={t("legacy.center.stats.total")}
               value={insights.total}
-              hint="كل المسجّلين"
+              hint={t("legacy.center.stats.totalHint")}
               icon={Users}
             />
             <InsightCard
-              label="نشط"
+              label={t("legacy.center.stats.active")}
               value={insights.active}
-              hint="حسابات فعّالة"
+              hint={t("legacy.center.stats.activeHint")}
               icon={UserCheck}
               tone="success"
             />
             <InsightCard
-              label="هوية غير مكتملة"
+              label={t("legacy.center.stats.pendingIdentity")}
               value={insights.pendingIdentity}
-              hint="ينقص وجه أمامي/خلفي"
+              hint={t("legacy.center.stats.pendingIdentityHint")}
               icon={IdCard}
               tone="warning"
             />
             <InsightCard
-              label="باقة نشطة"
+              label={t("legacy.center.stats.activePackage")}
               value={insights.packageAssigned}
-              hint="اشتراك حالي"
+              hint={t("legacy.center.stats.activePackageHint")}
               icon={Package}
               tone="info"
             />
@@ -136,10 +139,10 @@ export default function SuperAdminLegacyFreelancerInvitesPage() {
         ) : null}
 
         <div className="oh-legacy-admin__tabs">
-          <DashboardTabs aria-label="أقسام مركز الفريلانسر القدامى">
-            {CENTER_TABS.map((t) => (
-              <DashboardTab key={t.id} selected={activeTab === t.id} onSelect={() => setActiveTab(t.id)}>
-                {t.label}
+          <DashboardTabs aria-label={t("legacy.center.tabsAria")}>
+            {centerTabs.map((tab) => (
+              <DashboardTab key={tab.id} selected={activeTab === tab.id} onSelect={() => setActiveTab(tab.id)}>
+                {tab.label}
               </DashboardTab>
             ))}
           </DashboardTabs>

@@ -1,9 +1,9 @@
 import {
   BILDAZO_AUTHOR_COUNTRIES,
   BILDAZO_AUTHOR_LINK_FLOWS,
-  BILDAZO_WRITER_ROLE_LABEL_AR,
-  ORDERZHOUSE_BILDAZO_AUTHOR_TERMS_COPY_AR,
 } from "../../constants/bildazoAuthorTerms";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/articlesResources";
 
 function Field({ label, children }) {
   return (
@@ -40,9 +40,13 @@ export default function FreelancerBildazoAuthorLinkForm({
   error,
   busy,
   onSubmit,
-  newSubmitLabel = "إنشاء وربط حساب الكاتب",
-  existingSubmitLabel = "ربط حساب Bildazo الحالي",
+  newSubmitLabel,
+  existingSubmitLabel,
 }) {
+  const { t, locale } = useTranslation();
+  const submitNew = newSubmitLabel || t("articles.bildazoGate.submitNew");
+  const submitExisting = existingSubmitLabel || t("articles.bildazoGate.submitExisting");
+  const regionNames = new Intl.DisplayNames([locale === "en" ? "en" : "ar"], { type: "region" });
   return (
     <>
       <div className="bz-gate__tabs" role="tablist">
@@ -51,14 +55,14 @@ export default function FreelancerBildazoAuthorLinkForm({
           className={`bz-gate__tab${flow === BILDAZO_AUTHOR_LINK_FLOWS.NEW_ACCOUNT ? " is-active" : ""}`}
           onClick={() => onFlowChange(BILDAZO_AUTHOR_LINK_FLOWS.NEW_ACCOUNT)}
         >
-          أنشئ حساب الكاتب في Bildazo
+          {t("articles.bildazoGate.tabNew")}
         </button>
         <button
           type="button"
           className={`bz-gate__tab${flow === BILDAZO_AUTHOR_LINK_FLOWS.EXISTING_ACCOUNT ? " is-active" : ""}`}
           onClick={() => onFlowChange(BILDAZO_AUTHOR_LINK_FLOWS.EXISTING_ACCOUNT)}
         >
-          لدي حساب في Bildazo
+          {t("articles.bildazoGate.tabExisting")}
         </button>
       </div>
 
@@ -66,7 +70,7 @@ export default function FreelancerBildazoAuthorLinkForm({
         {flow === BILDAZO_AUTHOR_LINK_FLOWS.NEW_ACCOUNT ? (
           <>
             <div className="bz-gate__grid bz-gate__grid--2">
-              <Field label="الاسم الكامل">
+              <Field label={t("articles.bildazoGate.fullName")}>
                 <input
                   className="bz-gate__input"
                   value={fullName}
@@ -77,7 +81,7 @@ export default function FreelancerBildazoAuthorLinkForm({
                   data-testid="bildazo-full-name"
                 />
               </Field>
-              <Field label="البريد الإلكتروني">
+              <Field label={t("articles.bildazoGate.email")}>
                 <input
                   className="bz-gate__input"
                   value={verifiedEmail}
@@ -86,7 +90,7 @@ export default function FreelancerBildazoAuthorLinkForm({
                   data-testid="bildazo-orderz-email"
                 />
               </Field>
-              <Field label="رقم الجوال">
+              <Field label={t("articles.bildazoGate.phone")}>
                 <input
                   className="bz-gate__input"
                   value={phoneE164}
@@ -95,7 +99,7 @@ export default function FreelancerBildazoAuthorLinkForm({
                   autoComplete="tel"
                 />
               </Field>
-              <Field label="الدولة">
+              <Field label={t("articles.bildazoGate.country")}>
                 <select
                   className="bz-gate__select"
                   value={countryIso}
@@ -104,12 +108,12 @@ export default function FreelancerBildazoAuthorLinkForm({
                 >
                   {BILDAZO_AUTHOR_COUNTRIES.map((c) => (
                     <option key={c.iso} value={c.iso}>
-                      {c.labelAr}
+                      {regionNames.of(c.iso) || c.labelAr}
                     </option>
                   ))}
                 </select>
               </Field>
-              <Field label="تاريخ الميلاد (اختياري)">
+              <Field label={t("articles.bildazoGate.birthOptional")}>
                 <input
                   className="bz-gate__input"
                   type="date"
@@ -117,10 +121,10 @@ export default function FreelancerBildazoAuthorLinkForm({
                   onChange={(e) => onDateOfBirthChange(e.target.value)}
                 />
               </Field>
-              <Field label="فئة الحساب">
-                <input className="bz-gate__input" value={BILDAZO_WRITER_ROLE_LABEL_AR} readOnly />
+              <Field label={t("articles.bildazoGate.accountCategory")}>
+                <input className="bz-gate__input" value={t("articles.bildazoGate.writerRole")} readOnly />
               </Field>
-              <Field label="كلمة المرور">
+              <Field label={t("articles.bildazoGate.password")}>
                 <input
                   className="bz-gate__input"
                   type="password"
@@ -131,7 +135,7 @@ export default function FreelancerBildazoAuthorLinkForm({
                   data-testid="bildazo-new-password"
                 />
               </Field>
-              <Field label="تأكيد كلمة المرور">
+              <Field label={t("articles.bildazoGate.passwordConfirm")}>
                 <input
                   className="bz-gate__input"
                   type="password"
@@ -144,12 +148,12 @@ export default function FreelancerBildazoAuthorLinkForm({
               </Field>
             </div>
             <p className="bz-gate__hint">
-              فئة الحساب ثابتة على «كاتب». يُنشأ الحساب عبر خادم OrderzHouse ولا تُحفظ كلمة المرور هنا.
+              {t("articles.bildazoGate.roleHint")}
             </p>
           </>
         ) : (
           <div className="bz-gate__grid bz-gate__grid--2">
-            <Field label="بريد حساب Bildazo">
+            <Field label={t("articles.bildazoGate.existingEmail")}>
               <input
                 className="bz-gate__input"
                 type="email"
@@ -160,7 +164,7 @@ export default function FreelancerBildazoAuthorLinkForm({
                 data-testid="bildazo-existing-email"
               />
             </Field>
-            <Field label="كلمة مرور Bildazo">
+            <Field label={t("articles.bildazoGate.existingPassword")}>
               <input
                 className="bz-gate__input"
                 type="password"
@@ -182,7 +186,7 @@ export default function FreelancerBildazoAuthorLinkForm({
             checked={termsChecked}
             onChange={(e) => onTermsChange(e.target.checked)}
           />
-          <span>{ORDERZHOUSE_BILDAZO_AUTHOR_TERMS_COPY_AR}</span>
+          <span>{t("articles.bildazoGate.terms")}</span>
         </label>
 
         {error ? (
@@ -192,7 +196,7 @@ export default function FreelancerBildazoAuthorLinkForm({
         ) : null}
 
         <button className="bz-gate__submit" type="submit" disabled={busy}>
-          {flow === BILDAZO_AUTHOR_LINK_FLOWS.NEW_ACCOUNT ? newSubmitLabel : existingSubmitLabel}
+          {flow === BILDAZO_AUTHOR_LINK_FLOWS.NEW_ACCOUNT ? submitNew : submitExisting}
         </button>
       </form>
     </>

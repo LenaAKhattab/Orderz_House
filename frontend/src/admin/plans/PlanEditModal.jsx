@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
 import Button from "../../components/ui/Button";
 import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/planAdminResources";
 import { planToEditForm } from "./planFormConstants";
 import { canSubmitEdit, normalizeEditPayload } from "./planPayloadUtils";
 import { buildPlanPagesIndex } from "./planAdminSections";
 import PlanFormModalBody from "./PlanFormModalBody";
 
 function PlanEditForm({ plan, submitting, onClose, onSave, planPages, canonicalPlans }) {
-  const { locale } = useTranslation();
-  const isEn = locale === "en";
+  const { t } = useTranslation();
   const [form, setForm] = useState(() => planToEditForm(plan));
 
   return (
@@ -16,13 +16,11 @@ function PlanEditForm({ plan, submitting, onClose, onSave, planPages, canonicalP
       <header className="oh-sapl-modal__head">
         <div>
           <h2 id="oh-sapl-edit-title" className="oh-sapl-modal__title">
-            {isEn ? "Edit plan" : "تعديل الباقة"}
+            {t("planAdmin.modals.editTitle")}
           </h2>
-          <p className="oh-sapl-modal__subtitle">
-            {isEn ? "Edit plan sections using the tabs below." : "عدّل أقسام الباقة من التبويبات أدناه."}
-          </p>
+          <p className="oh-sapl-modal__subtitle">{t("planAdmin.modals.editSubtitle")}</p>
         </div>
-        <button type="button" className="oh-sapl-modal__close" onClick={onClose} aria-label="إغلاق">
+        <button type="button" className="oh-sapl-modal__close" onClick={onClose} aria-label={t("planAdmin.common.close")}>
           ×
         </button>
       </header>
@@ -41,14 +39,14 @@ function PlanEditForm({ plan, submitting, onClose, onSave, planPages, canonicalP
 
       <footer className="oh-sapl-modal__foot">
         <Button type="button" variant="secondary" disabled={submitting} onClick={onClose}>
-          {isEn ? "Cancel" : "إلغاء"}
+          {t("planAdmin.common.cancel")}
         </Button>
         <Button
           type="button"
           disabled={submitting || !canSubmitEdit(form, { planPagesById: buildPlanPagesIndex(planPages) })}
           onClick={() => void onSave(normalizeEditPayload(form))}
         >
-          {submitting ? (isEn ? "Saving…" : "جارٍ الحفظ…") : isEn ? "Save changes" : "حفظ التعديلات"}
+          {submitting ? t("planAdmin.common.saving") : t("planAdmin.modals.editSubmit")}
         </Button>
       </footer>
     </>
@@ -67,6 +65,7 @@ function PlanEditForm({ plan, submitting, onClose, onSave, planPages, canonicalP
  * }} p
  */
 export default function PlanEditModal({ plan, open, submitting, onClose, onSave, planPages = [], canonicalPlans = [] }) {
+  const { t } = useTranslation();
   useEffect(() => {
     if (!open) return undefined;
 
@@ -91,7 +90,7 @@ export default function PlanEditModal({ plan, open, submitting, onClose, onSave,
 
   return (
     <div className="oh-sapl-modal-root" role="presentation">
-      <button type="button" className="oh-sapl-modal-backdrop" onClick={onClose} aria-label="إغلاق النافذة" />
+      <button type="button" className="oh-sapl-modal-backdrop" onClick={onClose} aria-label={t("planAdmin.common.closeDialog")} />
       <div
         className="oh-sapl-modal oh-sapl-modal--wide"
         role="dialog"

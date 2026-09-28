@@ -2,15 +2,32 @@ import { HOME_PUBLIC_METRICS } from "../../constants/homeAnalyticsMetrics";
 import { HomeAnalyticsMetricLabelRow } from "../analytics/HomeAnalyticsMetricInfo";
 import { usePublicHomeStats } from "../../hooks/usePublicHomeStats";
 import { useTranslation } from "../../i18n/LanguageProvider";
-import { resolveAnalyticsHint, resolveNumber } from "./heroHomeStatUtils";
+import { resolveNumber } from "./heroHomeStatUtils";
 import "../analytics/home-analytics-metric-info.css";
 import "./home-public-stats.css";
 
 /**
  * Horizontal stats strip below the hero. Cards render only when their Super Admin toggle is ON.
  */
+const HINT_KEYS = {
+  zero_traffic_views: "home.metrics.zeroViews",
+  zero_traffic_active: "home.metrics.zeroActive",
+  db_unavailable: "home.metrics.dbUnavailable",
+  dev_tracking_disabled: "home.metrics.devTrackingDisabled",
+};
+
+function localizedHint(t, payload, key) {
+  const reason = key === "views" ? payload?.visitorsReason : key === "active" ? payload?.activeUsersReason : null;
+  if (reason === "zero_traffic") {
+    return key === "views" ? t(HINT_KEYS.zero_traffic_views) : t(HINT_KEYS.zero_traffic_active);
+  }
+  if (reason && HINT_KEYS[reason]) return t(HINT_KEYS[reason]);
+  if (payload?.analyticsDegraded) return t(HINT_KEYS.db_unavailable);
+  return null;
+}
+
 export default function HomePublicStatsStrip() {
-  const { dir } = useTranslation();
+  const { t, dir } = useTranslation();
   const { payload } = usePublicHomeStats();
 
   if (payload === null || payload.error) return null;
@@ -22,17 +39,23 @@ export default function HomePublicStatsStrip() {
   if (showVisitorsCount) {
     const m = HOME_PUBLIC_METRICS.views;
     cards.push({
-      ...m,
+      key: m.key,
+      tone: m.tone,
+      stripLabel: t("home.metrics.views"),
+      sub: t("home.metrics.viewsSub"),
       display: resolveNumber(payload, "views"),
-      hint: resolveAnalyticsHint(payload, "views"),
+      hint: localizedHint(t, payload, "views"),
     });
   }
   if (showActiveUsersCount) {
     const m = HOME_PUBLIC_METRICS.active;
     cards.push({
-      ...m,
+      key: m.key,
+      tone: m.tone,
+      stripLabel: t("home.metrics.activeUsers"),
+      sub: t("home.metrics.activeSub"),
       display: resolveNumber(payload, "active"),
-      hint: resolveAnalyticsHint(payload, "active"),
+      hint: localizedHint(t, payload, "active"),
     });
   }
 

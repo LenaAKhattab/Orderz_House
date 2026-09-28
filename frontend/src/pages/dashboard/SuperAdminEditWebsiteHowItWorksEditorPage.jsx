@@ -9,7 +9,9 @@ import DashboardLoadingState from "../../components/dashboard/DashboardLoadingSt
 import DashboardErrorState from "../../components/dashboard/DashboardErrorState";
 import { editWebsiteBreadcrumbs } from "../../components/dashboard/dashboardBreadcrumbs";
 import { EDIT_WEBSITE_BASE } from "../../constants/superAdminWebsiteSections";
-import { BLOCK_TYPE_LABELS, HOW_IT_WORKS_SLUG_TO_PAGE } from "../../constants/howItWorksPages";
+import { HOW_IT_WORKS_SLUG_TO_PAGE } from "../../constants/howItWorksPages";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/siteEditorResources";
 import {
   createSuperAdminWebsitePageBlockRequest,
   deleteSuperAdminWebsitePageBlockRequest,
@@ -23,18 +25,21 @@ import "./superAdminEditWebsitePage.css";
 
 const BLOCK_TYPES = ["title", "text", "image", "text_image"];
 
-function errorMessage(err) {
-  return err?.response?.data?.message || "تعذر تنفيذ العملية. حاول مجدداً.";
+function blockTypeLabel(blockType, t) {
+  const key = `siteEditor.blockTypes.${blockType}`;
+  const label = t(key);
+  return label === key ? t("siteEditor.blockTypes.content") : label;
 }
 
-function blockSummary(block) {
-  if (block.blockType === "image") return block.title || block.imageUrl || "صورة";
+function blockSummary(block, t) {
+  if (block.blockType === "image") return block.title || block.imageUrl || t("siteEditor.blockTypes.image");
   if (block.title) return block.title;
   if (block.body) return block.body.slice(0, 80);
-  return BLOCK_TYPE_LABELS[block.blockType] || "محتوى";
+  return blockTypeLabel(block.blockType, t);
 }
 
 function BlockFormModal({ mode, open, initial, onClose, onSaved, slug }) {
+  const { t } = useTranslation();
   const isEdit = mode === "edit";
   const [blockType, setBlockType] = useState("text");
   const [title, setTitle] = useState("");
@@ -58,6 +63,8 @@ function BlockFormModal({ mode, open, initial, onClose, onSaved, slug }) {
   const needsBody = blockType === "title" || blockType === "text" || blockType === "text_image";
   const needsImage = blockType === "image" || blockType === "text_image";
 
+  const operationError = (err) => err?.response?.data?.message || t("siteEditor.errors.operationFailed");
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -69,19 +76,19 @@ function BlockFormModal({ mode, open, initial, onClose, onSaved, slug }) {
     };
 
     if (blockType === "title" && !payload.title) {
-      setError("أدخل عنوانًا للكتلة.");
+      setError(t("siteEditor.errors.enterBlockTitle"));
       return;
     }
     if (blockType === "text" && !payload.title && !payload.body) {
-      setError("أدخل عنوانًا أو نصًا.");
+      setError(t("siteEditor.errors.enterTitleOrText"));
       return;
     }
     if (blockType === "image" && !payload.imageUrl) {
-      setError("أضف صورة أو رابطًا.");
+      setError(t("siteEditor.errors.addImageOrUrl"));
       return;
     }
     if (blockType === "text_image" && !payload.title && !payload.body && !payload.imageUrl) {
-      setError("أضف عنوانًا أو نصًا أو صورة.");
+      setError(t("siteEditor.errors.addTitleTextOrImage"));
       return;
     }
 
@@ -95,7 +102,7 @@ function BlockFormModal({ mode, open, initial, onClose, onSaved, slug }) {
       onSaved();
       onClose();
     } catch (err) {
-      setError(errorMessage(err));
+      setError(operationError(err));
     } finally {
       setSubmitting(false);
     }
@@ -103,50 +110,66 @@ function BlockFormModal({ mode, open, initial, onClose, onSaved, slug }) {
 
   return (
     <div className="oh-website-faq-modal" role="dialog" aria-modal="true">
-      <button type="button" className="oh-website-faq-modal__backdrop" aria-label="إغلاق" onClick={onClose} />
+      <button
+        type="button"
+        className="oh-website-faq-modal__backdrop"
+        aria-label={t("siteEditor.common.close")}
+        onClick={onClose}
+      />
       <div className="oh-website-faq-modal__panel oh-website-faq-modal__panel--wide">
         <div className="oh-website-faq-modal__header">
-          <h2>{isEdit ? "تعديل محتوى" : "إضافة محتوى"}</h2>
-          <button type="button" className="oh-website-faq-modal__close" aria-label="إغلاق" onClick={onClose}>
+          <h2>
+            {isEdit ? t("siteEditor.howItWorksEditor.modalEditTitle") : t("siteEditor.howItWorksEditor.modalAddTitle")}
+          </h2>
+          <button
+            type="button"
+            className="oh-website-faq-modal__close"
+            aria-label={t("siteEditor.common.close")}
+            onClick={onClose}
+          >
             ×
           </button>
         </div>
         <form className="oh-website-faq-form" onSubmit={handleSubmit}>
           <label>
-            نوع المحتوى
+            {t("siteEditor.howItWorksEditor.contentType")}
             <select value={blockType} onChange={(e) => setBlockType(e.target.value)} disabled={submitting || isEdit}>
               {BLOCK_TYPES.map((type) => (
                 <option key={type} value={type}>
-                  {BLOCK_TYPE_LABELS[type]}
+                  {blockTypeLabel(type, t)}
                 </option>
               ))}
             </select>
           </label>
           {needsTitle ? (
             <label>
-              العنوان
+              {t("siteEditor.howItWorksEditor.fieldTitle")}
               <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} disabled={submitting} />
             </label>
           ) : null}
           {needsBody ? (
             <label>
-              النص
+              {t("siteEditor.howItWorksEditor.fieldText")}
               <textarea value={body} onChange={(e) => setBody(e.target.value)} disabled={submitting} rows={5} />
             </label>
           ) : null}
           {needsImage ? (
             <div className="oh-website-faq-form__field">
-              <span className="oh-website-faq-form__field-label">الصورة</span>
+              <span className="oh-website-faq-form__field-label">{t("siteEditor.howItWorksEditor.fieldImage")}</span>
               <WebsiteContentImagePicker value={imageUrl} onChange={setImageUrl} disabled={submitting} />
             </div>
           ) : null}
           {error ? <p className="oh-website-faq-form__error">{error}</p> : null}
           <div className="oh-website-faq-form__actions">
             <Button type="button" variant="secondary" onClick={onClose} disabled={submitting}>
-              إلغاء
+              {t("siteEditor.common.cancel")}
             </Button>
             <Button type="submit" disabled={submitting}>
-              {submitting ? "جاري الحفظ…" : isEdit ? "حفظ التعديل" : "إضافة"}
+              {submitting
+                ? t("siteEditor.common.saving")
+                : isEdit
+                  ? t("siteEditor.common.saveEdit")
+                  : t("siteEditor.common.add")}
             </Button>
           </div>
         </form>
@@ -156,6 +179,7 @@ function BlockFormModal({ mode, open, initial, onClose, onSaved, slug }) {
 }
 
 export default function SuperAdminEditWebsiteHowItWorksEditorPage() {
+  const { t } = useTranslation();
   const { slug = "" } = useParams();
   const pageMeta = HOW_IT_WORKS_SLUG_TO_PAGE[slug];
   const [page, setPage] = useState(null);
@@ -167,6 +191,11 @@ export default function SuperAdminEditWebsiteHowItWorksEditorPage() {
   const [savingTitle, setSavingTitle] = useState(false);
   const [modal, setModal] = useState({ open: false, mode: "create", item: null });
 
+  const operationError = useCallback(
+    (err) => err?.response?.data?.message || t("siteEditor.errors.operationFailed"),
+    [t],
+  );
+
   const loadPage = useCallback(async () => {
     if (!slug) return;
     setLoading(true);
@@ -177,13 +206,13 @@ export default function SuperAdminEditWebsiteHowItWorksEditorPage() {
       setBlocks(Array.isArray(res?.data?.blocks) ? res.data.blocks : []);
       setPageTitle(res?.data?.page?.title || "");
     } catch (err) {
-      setError(errorMessage(err));
+      setError(operationError(err));
       setPage(null);
       setBlocks([]);
     } finally {
       setLoading(false);
     }
-  }, [slug]);
+  }, [slug, operationError]);
 
   useEffect(() => {
     loadPage();
@@ -192,7 +221,7 @@ export default function SuperAdminEditWebsiteHowItWorksEditorPage() {
   const savePageTitle = async () => {
     const nextTitle = pageTitle.trim();
     if (!nextTitle) {
-      window.alert("أدخل عنوان الصفحة.");
+      window.alert(t("siteEditor.errors.enterPageTitle"));
       return;
     }
     setSavingTitle(true);
@@ -200,20 +229,21 @@ export default function SuperAdminEditWebsiteHowItWorksEditorPage() {
       await updateSuperAdminWebsitePageRequest(slug, { title: nextTitle });
       await loadPage();
     } catch (err) {
-      window.alert(errorMessage(err));
+      window.alert(operationError(err));
     } finally {
       setSavingTitle(false);
     }
   };
 
   const handleDelete = async (block) => {
-    if (!window.confirm(`حذف: «${blockSummary(block).slice(0, 48)}»؟`)) return;
+    const preview = blockSummary(block, t).slice(0, 48);
+    if (!window.confirm(t("siteEditor.howItWorksEditor.deleteConfirm", { preview }))) return;
     setBusyId(block.id);
     try {
       await deleteSuperAdminWebsitePageBlockRequest(slug, block.id);
       await loadPage();
     } catch (err) {
-      window.alert(errorMessage(err));
+      window.alert(operationError(err));
     } finally {
       setBusyId(null);
     }
@@ -233,7 +263,7 @@ export default function SuperAdminEditWebsiteHowItWorksEditorPage() {
       );
       setBlocks(Array.isArray(res?.data?.blocks) ? res.data.blocks : next);
     } catch (err) {
-      window.alert(errorMessage(err));
+      window.alert(operationError(err));
     } finally {
       setBusyId(null);
     }
@@ -242,18 +272,18 @@ export default function SuperAdminEditWebsiteHowItWorksEditorPage() {
   if (!pageMeta) {
     return (
       <DashboardShell>
-        <DashboardErrorState message="صفحة غير معروفة." />
+        <DashboardErrorState message={t("siteEditor.howItWorksEditor.unknownPage")} />
       </DashboardShell>
     );
   }
 
-  const sectionLabel = pageMeta.adminLabel;
+  const sectionLabel = t(pageMeta.adminLabelKey);
 
   return (
     <DashboardShell>
       <DashboardPageHeader
         title={sectionLabel}
-        description="أضف وعدّل ورتّب محتوى الصفحة. التصميم ثابت ولا يمكن تغييره من هنا."
+        description={t("siteEditor.howItWorksEditor.pageDescription")}
         breadcrumbs={[
           ...editWebsiteBreadcrumbs("dashboard.breadcrumbs.howItWorks").slice(0, -1),
           { labelKey: "dashboard.breadcrumbs.howItWorks", href: `${EDIT_WEBSITE_BASE}/how-it-works` },
@@ -261,15 +291,15 @@ export default function SuperAdminEditWebsiteHowItWorksEditorPage() {
         ]}
         actions={
           <Link to={`${EDIT_WEBSITE_BASE}/how-it-works`} className="btn btn-secondary btn-sm">
-            رجوع
+            {t("siteEditor.common.back")}
           </Link>
         }
       />
 
-      <DashboardSection title="إعدادات الصفحة">
+      <DashboardSection title={t("siteEditor.howItWorksEditor.pageSettingsTitle")}>
         <div className="oh-website-hiw-page-settings">
           <label className="oh-website-hiw-page-settings__title">
-            عنوان الصفحة
+            {t("siteEditor.howItWorksEditor.pageTitleLabel")}
             <input
               type="text"
               value={pageTitle}
@@ -278,46 +308,44 @@ export default function SuperAdminEditWebsiteHowItWorksEditorPage() {
             />
           </label>
           <Button type="button" disabled={loading || savingTitle} onClick={savePageTitle}>
-            {savingTitle ? "جاري الحفظ…" : "حفظ العنوان"}
+            {savingTitle ? t("siteEditor.common.saving") : t("siteEditor.common.saveTitle")}
           </Button>
           {page ? (
             <span
               className={`oh-website-hiw-page-card__badge${page.isActive ? " oh-website-hiw-page-card__badge--visible" : ""}`}
             >
-              {page.isActive ? "ظاهرة" : "مخفية"}
+              {page.isActive ? t("siteEditor.common.visiblePage") : t("siteEditor.common.hiddenPage")}
             </span>
           ) : null}
         </div>
       </DashboardSection>
 
-      <DashboardSection title="محتوى الصفحة">
+      <DashboardSection title={t("siteEditor.howItWorksEditor.contentSectionTitle")}>
         <div className="oh-website-faq-toolbar">
-          <p className="oh-website-faq-toolbar__hint">
-            أضف كتل محتوى (عنوان، نص، صورة، نص + صورة) ورتّبها كما تظهر للزائر.
-          </p>
+          <p className="oh-website-faq-toolbar__hint">{t("siteEditor.howItWorksEditor.contentHint")}</p>
           <Button type="button" onClick={() => setModal({ open: true, mode: "create", item: null })}>
-            إضافة محتوى
+            {t("siteEditor.howItWorksEditor.addContent")}
           </Button>
         </div>
 
-        {loading ? <DashboardLoadingState label="جاري تحميل المحتوى…" /> : null}
+        {loading ? <DashboardLoadingState label={t("siteEditor.common.loadingContent")} /> : null}
         {!loading && error ? (
           <DashboardErrorState
             message={error}
             actions={
               <Button type="button" variant="secondary" onClick={loadPage}>
-                إعادة المحاولة
+                {t("siteEditor.common.retry")}
               </Button>
             }
           />
         ) : null}
         {!loading && !error && blocks.length === 0 ? (
           <DashboardEmptyState
-            title="لا يوجد محتوى"
-            description="أضف أول كتلة محتوى لهذه الصفحة."
+            title={t("siteEditor.howItWorksEditor.emptyTitle")}
+            description={t("siteEditor.howItWorksEditor.emptyDescription")}
             actions={
               <Button type="button" onClick={() => setModal({ open: true, mode: "create", item: null })}>
-                إضافة محتوى
+                {t("siteEditor.howItWorksEditor.addContent")}
               </Button>
             }
           />
@@ -330,8 +358,8 @@ export default function SuperAdminEditWebsiteHowItWorksEditorPage() {
                 <div className="oh-website-faq-item__head">
                   <span className="oh-website-faq-item__order">{index + 1}</span>
                   <div className="oh-website-faq-item__body">
-                    <p className="oh-website-hiw-block-item__type">{BLOCK_TYPE_LABELS[block.blockType]}</p>
-                    <p className="oh-website-faq-item__question">{blockSummary(block)}</p>
+                    <p className="oh-website-hiw-block-item__type">{blockTypeLabel(block.blockType, t)}</p>
+                    <p className="oh-website-faq-item__question">{blockSummary(block, t)}</p>
                     {block.body && block.blockType !== "title" ? (
                       <p className="oh-website-faq-item__answer">{block.body}</p>
                     ) : null}
@@ -347,7 +375,7 @@ export default function SuperAdminEditWebsiteHowItWorksEditorPage() {
                         disabled={busyId === block.id}
                         onClick={() => setModal({ open: true, mode: "edit", item: block })}
                       >
-                        تعديل
+                        {t("siteEditor.common.edit")}
                       </Button>
                       <Button
                         type="button"
@@ -355,14 +383,14 @@ export default function SuperAdminEditWebsiteHowItWorksEditorPage() {
                         disabled={busyId === block.id}
                         onClick={() => handleDelete(block)}
                       >
-                        حذف
+                        {t("siteEditor.common.delete")}
                       </Button>
                     </div>
                   </div>
                   <div className="oh-website-faq-item__reorder">
                     <button
                       type="button"
-                      aria-label="تحريك لأعلى"
+                      aria-label={t("siteEditor.common.moveUp")}
                       disabled={index === 0 || busyId === block.id}
                       onClick={() => moveBlock(index, -1)}
                     >
@@ -370,7 +398,7 @@ export default function SuperAdminEditWebsiteHowItWorksEditorPage() {
                     </button>
                     <button
                       type="button"
-                      aria-label="تحريك لأسفل"
+                      aria-label={t("siteEditor.common.moveDown")}
                       disabled={index === blocks.length - 1 || busyId === block.id}
                       onClick={() => moveBlock(index, 1)}
                     >

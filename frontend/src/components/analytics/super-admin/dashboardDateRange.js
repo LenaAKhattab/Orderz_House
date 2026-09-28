@@ -1,14 +1,27 @@
 /** Dashboard period presets — persisted for Super Admin home. */
 
-export const PERIOD_PRESETS = [
-  { id: "today", label: "اليوم" },
-  { id: "7d", label: "آخر 7 أيام" },
-  { id: "30d", label: "آخر 30 يوماً" },
-  { id: "90d", label: "آخر 90 يوماً" },
-  { id: "this_month", label: "هذا الشهر" },
-  { id: "last_month", label: "الشهر الماضي" },
-  { id: "custom", label: "مخصص" },
-];
+export const PERIOD_PRESET_IDS = ["today", "7d", "30d", "90d", "this_month", "last_month", "custom"];
+
+/** @param {string} id */
+export function periodPresetLabelKey(id) {
+  const key = PERIOD_PRESET_IDS.includes(id) ? id : "7d";
+  return `analysis.range.${key}`;
+}
+
+/** @param {(key: string, values?: Record<string, string | number>) => string} t */
+export function getPeriodPresets(t) {
+  return PERIOD_PRESET_IDS.map((id) => ({
+    id,
+    label: t(periodPresetLabelKey(id)),
+    labelKey: periodPresetLabelKey(id),
+  }));
+}
+
+/** @deprecated Use getPeriodPresets(t) — labels require translation at render time. */
+export const PERIOD_PRESETS = PERIOD_PRESET_IDS.map((id) => ({
+  id,
+  labelKey: periodPresetLabelKey(id),
+}));
 
 const STORAGE_KEY = "sa-dashboard-period-v1";
 
@@ -108,12 +121,13 @@ export function resolveDashboardPeriod({ preset = "7d", customFrom = null, custo
       break;
   }
 
-  const label = PERIOD_PRESETS.find((p) => p.id === preset)?.label || "آخر 7 أيام";
+  const resolvedPreset = PERIOD_PRESET_IDS.includes(preset) ? preset : "7d";
+  const labelKey = periodPresetLabelKey(resolvedPreset);
   const spanDays = Math.max(1, Math.ceil((end - start) / 86400000) + 1);
 
   return {
-    preset,
-    label,
+    preset: resolvedPreset,
+    labelKey,
     customFrom: customFrom || toIsoDate(start),
     customTo: customTo || toIsoDate(end),
     start,
@@ -123,7 +137,7 @@ export function resolveDashboardPeriod({ preset = "7d", customFrom = null, custo
     spanDays,
     posthogRange,
     posthogLimited: preset === "90d" || (preset === "custom" && spanDays > 30),
-    cacheKey: `${preset}:${toIsoDate(start)}:${toIsoDate(end)}`,
+    cacheKey: `${resolvedPreset}:${toIsoDate(start)}:${toIsoDate(end)}`,
   };
 }
 

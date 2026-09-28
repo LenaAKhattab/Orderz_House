@@ -1,0 +1,242 @@
+{
+  "errors": {
+    "operationFailed": "Could not complete the action. Please try again.",
+    "loadPagesFailed": "Could not load pages. Please try again.",
+    "noServerUrl": "The server did not return a URL.",
+    "imageUploadFailed": "Image upload failed.",
+    "enterQuestionAndAnswer": "Enter the question and answer.",
+    "enterBlockTitle": "Enter a title for the block.",
+    "enterTitleOrText": "Enter a title or text.",
+    "addImageOrUrl": "Add an image or URL.",
+    "addTitleTextOrImage": "Add a title, text, or image.",
+    "enterPageTitle": "Enter the page title."
+  },
+  "common": {
+    "close": "Close",
+    "cancel": "Cancel",
+    "add": "Add",
+    "edit": "Edit",
+    "delete": "Delete",
+    "retry": "Try again",
+    "saving": "Saving…",
+    "saveChanges": "Save changes",
+    "saveEdit": "Save edit",
+    "saveTitle": "Save title",
+    "visible": "Visible",
+    "hidden": "Hidden",
+    "visiblePage": "Visible",
+    "hiddenPage": "Hidden",
+    "show": "Show",
+    "hide": "Hide",
+    "busy": "Working…",
+    "back": "Back",
+    "backToFooterSections": "← Back to footer sections",
+    "yes": "Yes",
+    "no": "No",
+    "published": "Published",
+    "draft": "Draft",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "showFieldOnSite": "Show {{label}} on site",
+    "loadingSettings": "Loading settings…",
+    "loadingPages": "Loading pages…",
+    "loadingQuestions": "Loading questions…",
+    "loadingContent": "Loading content…",
+    "loadingPage": "Loading page…",
+    "loadingSectionStatus": "Loading section status…",
+    "editSection": "Edit section",
+    "editSectionShort": "Edit"
+  },
+  "imagePicker": {
+    "uploading": "Uploading…",
+    "changeImage": "Change image",
+    "uploadImage": "Upload image",
+    "remove": "Remove",
+    "pasteUrlLabel": "Or paste image URL"
+  },
+  "blockTypes": {
+    "title": "Title",
+    "text": "Text",
+    "image": "Image",
+    "text_image": "Text + image",
+    "content": "Content"
+  },
+  "howItWorksPages": {
+    "freelancer": "How it works for freelancers",
+    "client": "How to order for clients"
+  },
+  "sections": {
+    "faq": {
+      "title": "FAQ",
+      "description": "Edit questions and answers shown on the home page",
+      "editLabel": "Edit section"
+    },
+    "howItWorks": {
+      "title": "How it works",
+      "description": "Edit freelancer and client how-it-works pages",
+      "editLabel": "Edit section"
+    },
+    "sitePages": {
+      "title": "Public pages",
+      "description": "Edit public site pages (privacy, terms, help center, and more)",
+      "editLabel": "Edit section"
+    },
+    "footerHub": {
+      "title": "Edit site footer",
+      "description": "Edit contact details, working hours, and app download section in the site footer.",
+      "editLabel": "Edit section"
+    }
+  },
+  "footerSections": {
+    "contact": {
+      "title": "Contact us",
+      "description": "Edit phone, email, WhatsApp, and location.",
+      "editLabel": "Edit"
+    },
+    "workingHours": {
+      "title": "Working hours",
+      "description": "Edit the text shown in the working hours section.",
+      "editLabel": "Edit"
+    },
+    "appDownloads": {
+      "title": "App download",
+      "description": "Edit the app download section title and App Store / Google Play links.",
+      "editLabel": "Edit"
+    },
+    "contactCenter": {
+      "title": "Contact center",
+      "description": "Edit contact center copy, link, and footer visibility options.",
+      "editLabel": "Edit"
+    }
+  },
+  "editWebsiteHub": {
+    "pageTitle": "Edit website",
+    "pageDescription": "Choose a section to edit from the public website content.",
+    "sectionTitle": "Editable website sections"
+  },
+  "faq": {
+    "pageTitle": "FAQ",
+    "pageDescription": "Manage Q&A shown in the FAQ section on the home page.",
+    "sectionTitle": "Question list",
+    "toolbarHint": "Changes appear immediately in the FAQ section on the home page.",
+    "addQuestion": "Add question",
+    "emptyTitle": "No questions yet",
+    "emptyDescription": "Add the first FAQ item to show on the home page.",
+    "modalEditTitle": "Edit question",
+    "modalAddTitle": "Add question",
+    "fieldQuestion": "Question",
+    "fieldAnswer": "Answer",
+    "deleteConfirm": "Delete question: «{{preview}}…»?"
+  },
+  "howItWorksHub": {
+    "pageTitle": "How it works",
+    "pageDescription": "Manage freelancer and client how-it-works pages.",
+    "sectionTitle": "How-it-works pages"
+  },
+  "howItWorksEditor": {
+    "pageDescription": "Add, edit, and reorder page content. Layout is fixed and cannot be changed here.",
+    "unknownPage": "Unknown page.",
+    "pageSettingsTitle": "Page settings",
+    "pageTitleLabel": "Page title",
+    "contentSectionTitle": "Page content",
+    "contentHint": "Add content blocks (title, text, image, text + image) and order them as visitors see them.",
+    "addContent": "Add content",
+    "emptyTitle": "No content yet",
+    "emptyDescription": "Add the first content block for this page.",
+    "modalEditTitle": "Edit content",
+    "modalAddTitle": "Add content",
+    "contentType": "Content type",
+    "fieldTitle": "Title",
+    "fieldText": "Text",
+    "fieldImage": "Image",
+    "deleteConfirm": "Delete: «{{preview}}»?"
+  },
+  "footerHub": {
+    "pageTitle": "Edit site footer",
+    "pageDescription": "Choose a footer section to edit.",
+    "sectionTitle": "Footer sections"
+  },
+  "footerContact": {
+    "pageTitle": "Contact us",
+    "pageDescription": "Edit contact details shown in the site footer.",
+    "sectionTitle": "Contact details",
+    "toastSaved": "Contact details saved successfully.",
+    "showSectionInFooter": "Show section in site footer",
+    "showContactSectionInFooter": "Show \"Contact us\" section in site footer",
+    "phone": "Phone number",
+    "email": "Email",
+    "whatsapp": "WhatsApp number",
+    "location": "Location"
+  },
+  "footerHours": {
+    "pageTitle": "Working hours",
+    "pageDescription": "Edit the working hours title and text in the site footer.",
+    "sectionTitle": "Working hours",
+    "toastSaved": "Working hours saved successfully.",
+    "showSectionInFooter": "Show section in site footer",
+    "showWorkingHoursSectionInFooter": "Show \"Working hours\" section in site footer",
+    "sectionTitleField": "Section title",
+    "textField": "Text",
+    "showHoursTextOnSite": "Show working hours text on site"
+  },
+  "footerApps": {
+    "pageTitle": "App download",
+    "pageDescription": "Edit the app download section title and store links in the site footer.",
+    "sectionTitle": "App download settings",
+    "toastSaved": "App download settings saved successfully.",
+    "showSectionInFooter": "Show section in site footer",
+    "showAppDownloadsSectionInFooter": "Show \"App download\" section in site footer",
+    "sectionTitleField": "Section title",
+    "sectionTitleHint": "Shown in the site footer.",
+    "showSectionTitleOnSite": "Show section title on site",
+    "googlePlayUrl": "Google Play link",
+    "showGooglePlayOnSite": "Show Google Play button on site",
+    "appStoreUrl": "App Store link",
+    "showAppStoreOnSite": "Show App Store button on site"
+  },
+  "footerContactCenter": {
+    "pageTitle": "Contact center",
+    "pageDescription": "Edit contact center content shown in the site footer.",
+    "sectionTitle": "Contact center",
+    "toastSaved": "Contact center saved successfully.",
+    "showContactCenterInFooter": "Show contact center in site footer",
+    "helperTextLabel": "Helper text",
+    "showHelperText": "Show helper text",
+    "buttonTextLabel": "Button text",
+    "showContactCenterButton": "Show contact center button",
+    "buttonBehaviorHint": "The contact center button always routes to the issues and suggestions page for signed-in users by role, or to sign-in for visitors."
+  },
+  "sitePages": {
+    "pageTitle": "Public pages",
+    "pageDescription": "Manage public site pages (footer and mobile menu).",
+    "sectionTitle": "Page list",
+    "toolbarHint": "Published pages appear under \"Important links\" in the footer (desktop) and in the mobile menu based on settings.",
+    "tableTitle": "Title",
+    "tableLink": "Link",
+    "tablePublish": "Publish",
+    "tableMobile": "Mobile",
+    "tableFooter": "Footer",
+    "tableAction": "Action"
+  },
+  "sitePageEdit": {
+    "editPageFallback": "Edit page",
+    "pageDescription": "Edit page content and visibility in the footer and mobile menu.",
+    "sectionTitle": "Page content",
+    "toastSaved": "Page saved.",
+    "pagePathLabel": "Page URL:",
+    "pageTitle": "Page title",
+    "menuLabel": "Menu link label",
+    "sortOrder": "Display order",
+    "publishedToggle": "Published",
+    "showMobile": "Show in mobile menu",
+    "showFooter": "Show in footer",
+    "contentLabel": "Content",
+    "contentHint": "Write plain text. Separate paragraphs with a blank line. Use ## before a subheading.",
+    "seoOptional": "Optional SEO settings",
+    "metaTitle": "SEO title (optional)",
+    "metaDescription": "SEO description (optional)",
+    "backToList": "Back to list"
+  }
+}

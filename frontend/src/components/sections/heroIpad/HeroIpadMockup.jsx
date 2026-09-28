@@ -3,20 +3,32 @@ import * as tw from "../../auth/authTw";
 import usePublicHomeCategories from "../../../hooks/usePublicHomeCategories";
 import usePublicPoolOrdersPreview from "../../../hooks/usePublicPoolOrdersPreview";
 import usePublicPlans from "../../../hooks/usePublicPlans";
-import { orderPriceText, typeLabelAr } from "../../open-orders/openOrdersFormatters";
+import { orderPriceText } from "../../open-orders/openOrdersFormatters";
 import { getOrderStatusLabel } from "../../../utils/orderFlowUi";
 import { useTranslation } from "../../../i18n/LanguageProvider";
 import { getLocalizedField } from "../../../lib/i18n/getLocalizedField";
 import { resolveBackendAssetUrl } from "../../../utils/homeCategoryCards";
+import { formatJodMoney } from "../../../utils/formatJodMoney";
 import HeroIpadOverviewAnalytics from "./HeroIpadOverviewAnalytics";
-import { HERO_IPAD_BRAND_AR, HERO_IPAD_DEFAULT_ID, HERO_IPAD_LOGO_SRC, HERO_IPAD_NAV } from "./heroIpadData";
+import {
+  HERO_IPAD_DEFAULT_ID,
+  HERO_IPAD_LOGO_SRC,
+  HERO_IPAD_NAV,
+  resolveHeroIpadNavItem,
+} from "./heroIpadData";
 
-function formatPriceJod(priceJod) {
+function projectTypeLabel(projectType, t) {
+  if (projectType === "fixed") return t("home.heroIpad.orders.projectType.fixed");
+  if (projectType === "bidding") return t("home.heroIpad.orders.projectType.bidding");
+  return "—";
+}
+
+function formatPriceJod(priceJod, { locale, t }) {
   if (priceJod === null || priceJod === undefined) return null;
   const n = Number(priceJod);
   if (!Number.isFinite(n)) return null;
-  if (n === 0) return "مجانية";
-  return `${n.toLocaleString("en-US", { maximumFractionDigits: 2 })} د.أ`;
+  if (n === 0) return t("home.heroIpad.free");
+  return formatJodMoney(n, { locale });
 }
 
 function pickFeaturedPlanIndex(plans) {
@@ -28,10 +40,10 @@ function pickFeaturedPlanIndex(plans) {
   return Math.floor(plans.length / 2);
 }
 
-function formatIpadPlanPriceLine(plan) {
-  const price = formatPriceJod(plan?.priceJod);
+function formatIpadPlanPriceLine(plan, { locale, t }) {
+  const price = formatPriceJod(plan?.priceJod, { locale, t });
   const d = Number(plan?.durationDays);
-  const dur = Number.isFinite(d) && d > 0 ? `${d} يوم` : null;
+  const dur = Number.isFinite(d) && d > 0 ? `${d} ${t("home.heroIpad.dayUnit")}` : null;
   if (price && dur) return `${price} · ${dur}`;
   if (price) return price;
   if (dur) return dur;
@@ -75,14 +87,14 @@ function IpadAuthIconFreelancer({ className }) {
 const HERO_IPAD_AUTH_ROLES = [
   {
     id: "client",
-    title: "عميل",
-    description: "أنشئ طلبات وابحث عن أفضل المستقلين.",
+    titleKey: "home.heroIpad.auth.roles.client.title",
+    descriptionKey: "home.heroIpad.auth.roles.client.description",
     Icon: IpadAuthIconClient,
   },
   {
     id: "freelancer",
-    title: "مستقل",
-    description: "استقبل الطلبات وابدأ العمل بسهولة.",
+    titleKey: "home.heroIpad.auth.roles.freelancer.title",
+    descriptionKey: "home.heroIpad.auth.roles.freelancer.description",
     Icon: IpadAuthIconFreelancer,
   },
 ];
@@ -148,11 +160,12 @@ function SidebarIcon({ name, className = "size-[1em] shrink-0" }) {
 }
 
 function ScreenOverview() {
+  const { t } = useTranslation();
   return (
     <div className="home-hero-ipad-screen home-hero-ipad-screen--overview">
-      <p className="home-hero-ipad-screen__kicker">مرحبًا بك في لوحة التحكم</p>
+      <p className="home-hero-ipad-screen__kicker">{t("home.heroIpad.overview.kicker")}</p>
       <HeroIpadOverviewAnalytics />
-      <p className="home-hero-ipad-screen__hint">يتغيّر المحتوى حسب الدور: عميل، مستقل، أو إداري.</p>
+      <p className="home-hero-ipad-screen__hint">{t("home.heroIpad.overview.hint")}</p>
     </div>
   );
 }
@@ -161,14 +174,14 @@ function ScreenOverview() {
  * @param {{ categories?: { id?: number|string; slug?: string; name?: string; description?: string|null; image_url?: string|null }[]; loading?: boolean; error?: boolean }} p
  */
 function ScreenServices({ categories = [], loading = false, error = false }) {
-  const { locale } = useTranslation();
+  const { locale, t } = useTranslation();
 
   return (
     <div className="home-hero-ipad-screen home-hero-ipad-screen--services-v2">
-      <p className="home-hero-ipad-services-v2__kicker">تصنيفات الخدمات</p>
+      <p className="home-hero-ipad-services-v2__kicker">{t("home.heroIpad.services.kicker")}</p>
 
       {loading ? (
-        <div className="home-hero-ipad-services-v2__grid" aria-busy="true" aria-label="جاري التحميل">
+        <div className="home-hero-ipad-services-v2__grid" aria-busy="true" aria-label={t("home.heroIpad.loading")}>
           {Array.from({ length: 4 }, (_, i) => (
             <div key={i} className="home-hero-ipad-services-v2__card home-hero-ipad-services-v2__card--skeleton">
               <span className="home-hero-ipad-services-v2__sk home-hero-ipad-services-v2__sk--line home-hero-ipad-services-v2__sk--w40" />
@@ -181,12 +194,12 @@ function ScreenServices({ categories = [], loading = false, error = false }) {
 
       {!loading && error ? (
         <p className="home-hero-ipad-screen__hint home-hero-ipad-screen__hint--warn" role="alert">
-          تعذر تحميل التصنيفات. تحقق من الاتصال بالخادم.
+          {t("home.heroIpad.services.loadError")}
         </p>
       ) : null}
 
       {!loading && !error && categories.length === 0 ? (
-        <p className="home-hero-ipad-screen__hint">لا توجد تصنيفات مفعّلة حالياً.</p>
+        <p className="home-hero-ipad-screen__hint">{t("home.heroIpad.services.empty")}</p>
       ) : null}
 
       {!loading && !error && categories.length > 0 ? (
@@ -220,7 +233,7 @@ function ScreenServices({ categories = [], loading = false, error = false }) {
       ) : null}
 
       {!loading && !error ? (
-        <p className="home-hero-ipad-screen__hint">البيانات من جدول التصنيفات النشطة في المنصة.</p>
+        <p className="home-hero-ipad-screen__hint">{t("home.heroIpad.services.footHint")}</p>
       ) : null}
     </div>
   );
@@ -230,12 +243,14 @@ function ScreenServices({ categories = [], loading = false, error = false }) {
  * @param {{ plans?: { id?: string; name?: string; title?: string; description?: string|null; priceJod?: number|null; durationDays?: number|null }[]; loading?: boolean; error?: boolean }} p
  */
 function ScreenPlans({ plans = [], loading = false, error = false }) {
+  const { locale, t } = useTranslation();
   const featuredIndex = useMemo(() => pickFeaturedPlanIndex(plans), [plans]);
+  const priceFmt = { locale, t };
 
   return (
     <div className="home-hero-ipad-screen home-hero-ipad-screen--plans">
       {loading ? (
-        <div className="home-hero-ipad-plans-stack" aria-busy="true" aria-label="جاري التحميل">
+        <div className="home-hero-ipad-plans-stack" aria-busy="true" aria-label={t("home.heroIpad.loading")}>
           {[0, 1, 2].map((i) => (
             <div key={i} className="home-hero-ipad-plan-card home-hero-ipad-plan-card--skeleton">
               <span className="home-hero-ipad-services-v2__sk home-hero-ipad-services-v2__sk--line home-hero-ipad-services-v2__sk--w50" />
@@ -248,12 +263,12 @@ function ScreenPlans({ plans = [], loading = false, error = false }) {
 
       {!loading && error ? (
         <p className="home-hero-ipad-screen__hint home-hero-ipad-screen__hint--warn" role="alert">
-          تعذر تحميل الباقات. تحقق من الاتصال بالخادم.
+          {t("home.heroIpad.plans.loadError")}
         </p>
       ) : null}
 
       {!loading && !error && plans.length === 0 ? (
-        <p className="home-hero-ipad-screen__hint">لا توجد باقات ظاهرة حالياً.</p>
+        <p className="home-hero-ipad-screen__hint">{t("home.heroIpad.plans.empty")}</p>
       ) : null}
 
       {!loading && !error && plans.length > 0 ? (
@@ -263,7 +278,7 @@ function ScreenPlans({ plans = [], loading = false, error = false }) {
             const featured = idx === featuredIndex;
             const title = p.title || p.name || "—";
             const desc = (p.description && String(p.description).trim()) || "—";
-            const priceLine = formatIpadPlanPriceLine(p);
+            const priceLine = formatIpadPlanPriceLine(p, priceFmt);
             return (
               <article
                 key={id}
@@ -272,7 +287,7 @@ function ScreenPlans({ plans = [], loading = false, error = false }) {
               >
                 {featured ? (
                   <span className="home-hero-ipad-plan-card__badge" aria-hidden>
-                    الأكثر شيوعًا
+                    {t("home.heroIpad.plans.popularBadge")}
                   </span>
                 ) : null}
                 <h3 className="home-hero-ipad-plan-card__title">{title}</h3>
@@ -285,7 +300,7 @@ function ScreenPlans({ plans = [], loading = false, error = false }) {
       ) : null}
 
       {!loading && !error ? (
-        <p className="home-hero-ipad-screen__hint">البيانات من جدول الباقات النشطة الظاهرة في المنصة.</p>
+        <p className="home-hero-ipad-screen__hint">{t("home.heroIpad.plans.footHint")}</p>
       ) : null}
     </div>
   );
@@ -300,11 +315,11 @@ function ScreenOrders({ orders = [], loading = false, error = false }) {
   return (
     <div className="home-hero-ipad-screen home-hero-ipad-screen--orders">
       {loading ? (
-        <div className="home-hero-ipad-table" aria-busy="true" aria-label="جاري التحميل">
+        <div className="home-hero-ipad-table" aria-busy="true" aria-label={t("home.heroIpad.loading")}>
           <div className="home-hero-ipad-table__row home-hero-ipad-table__row--head">
-            <span>الطلب</span>
-            <span>الحالة</span>
-            <span>الميزانية</span>
+            <span>{t("home.heroIpad.orders.table.order")}</span>
+            <span>{t("home.heroIpad.orders.table.status")}</span>
+            <span>{t("home.heroIpad.orders.table.budget")}</span>
           </div>
           {[0, 1, 2].map((i) => (
             <div key={i} className="home-hero-ipad-table__row home-hero-ipad-table__row--skeleton">
@@ -318,25 +333,25 @@ function ScreenOrders({ orders = [], loading = false, error = false }) {
 
       {!loading && error ? (
         <p className="home-hero-ipad-screen__hint home-hero-ipad-screen__hint--warn" role="alert">
-          تعذر تحميل معرض الطلبات. تحقق من الاتصال بالخادم.
+          {t("home.heroIpad.orders.loadError")}
         </p>
       ) : null}
 
       {!loading && !error && orders.length === 0 ? (
-        <p className="home-hero-ipad-screen__hint">لا توجد طلبات في المعرض حالياً.</p>
+        <p className="home-hero-ipad-screen__hint">{t("home.heroIpad.orders.empty")}</p>
       ) : null}
 
       {!loading && !error && orders.length > 0 ? (
         <div className="home-hero-ipad-table" role="presentation">
           <div className="home-hero-ipad-table__row home-hero-ipad-table__row--head">
-            <span>الطلب</span>
-            <span>الحالة</span>
-            <span>الميزانية</span>
+            <span>{t("home.heroIpad.orders.table.order")}</span>
+            <span>{t("home.heroIpad.orders.table.status")}</span>
+            <span>{t("home.heroIpad.orders.table.budget")}</span>
           </div>
           {orders.map((o, i) => {
             const id = o?.id != null ? String(o.id) : `idx-${i}`;
             const title = String(o?.title || "—").trim() || "—";
-            const statusLine = `${getOrderStatusLabel(o?.orderStatus, t)} · ${typeLabelAr(o?.projectType)}`;
+            const statusLine = `${getOrderStatusLabel(o?.orderStatus, t)} · ${projectTypeLabel(o?.projectType, t)}`;
             const budget = orderPriceText(o);
             return (
               <div key={id} className="home-hero-ipad-table__row">
@@ -354,7 +369,7 @@ function ScreenOrders({ orders = [], loading = false, error = false }) {
       ) : null}
 
       {!loading && !error ? (
-        <p className="home-hero-ipad-screen__hint">نفس بيانات صفحة معرض الطلبات العامة (`/orders`).</p>
+        <p className="home-hero-ipad-screen__hint">{t("home.heroIpad.orders.footHint")}</p>
       ) : null}
     </div>
   );
@@ -363,6 +378,7 @@ function ScreenOrders({ orders = [], loading = false, error = false }) {
 function ScreenAuth({ dir }) {
   const roleGroupId = useId();
   const [role, setRole] = useState(null);
+  const { t } = useTranslation();
 
   return (
     <div className="home-hero-ipad-screen home-hero-ipad-screen--auth" dir={dir}>
@@ -376,13 +392,13 @@ function ScreenAuth({ dir }) {
             height={14}
             decoding="async"
           />
-          <span className="hi-ipad-auth-onb__brand">{HERO_IPAD_BRAND_AR}</span>
+          <span className="hi-ipad-auth-onb__brand">{t("home.heroIpad.brand")}</span>
         </header>
 
         <h2 className="hi-ipad-auth-onb__title" id={`${roleGroupId}-heading`}>
-          ابدأ رحلتك داخل المنصة
+          {t("home.heroIpad.auth.title")}
         </h2>
-        <p className="hi-ipad-auth-onb__lede">اختر نوع الحساب المناسب للمتابعة.</p>
+        <p className="hi-ipad-auth-onb__lede">{t("home.heroIpad.auth.lede")}</p>
 
         <div className="hi-ipad-auth-onb__roles" role="radiogroup" aria-labelledby={`${roleGroupId}-heading`}>
           {HERO_IPAD_AUTH_ROLES.map((r) => {
@@ -401,8 +417,8 @@ function ScreenAuth({ dir }) {
                   <Icon className="hi-ipad-auth-onb__role-icon" />
                 </span>
                 <span className="hi-ipad-auth-onb__role-body">
-                  <span className="hi-ipad-auth-onb__role-title">{r.title}</span>
-                  <span className="hi-ipad-auth-onb__role-desc">{r.description}</span>
+                  <span className="hi-ipad-auth-onb__role-title">{t(r.titleKey)}</span>
+                  <span className="hi-ipad-auth-onb__role-desc">{t(r.descriptionKey)}</span>
                 </span>
               </button>
             );
@@ -410,15 +426,15 @@ function ScreenAuth({ dir }) {
         </div>
 
         <button type="button" className={`${tw.authSubmitBtn} hi-ipad-auth-onb__cta`} disabled={!role} tabIndex={-1}>
-          متابعة
+          {t("home.heroIpad.auth.continue")}
         </button>
 
         <p className="hi-ipad-auth-onb__foot">
-          <span className={tw.authInlineLink}>تسجيل الدخول</span>
+          <span className={tw.authInlineLink}>{t("home.heroIpad.auth.signIn")}</span>
           <span className="hi-ipad-auth-onb__foot-sep" aria-hidden>
             {" · "}
           </span>
-          <span className={tw.authSubtleLink}>إنشاء حساب</span>
+          <span className={tw.authSubtleLink}>{t("home.heroIpad.auth.signUp")}</span>
         </p>
       </div>
     </div>
@@ -435,7 +451,7 @@ const SCREEN_BY_ID = {
 
 export default function HeroIpadMockup() {
   const baseId = useId();
-  const { dir } = useTranslation();
+  const { dir, t } = useTranslation();
   const sidebarId = `${baseId}-sidebar`;
   const [selectedId, setSelectedId] = useState(HERO_IPAD_DEFAULT_ID);
   const [sidebarOpen, setSidebarOpen] = useHeroIpadSidebarOpen();
@@ -444,10 +460,10 @@ export default function HeroIpadMockup() {
   const { items: publicPlans, loading: publicPlansLoading, error: publicPlansError } = usePublicPlans();
   const { items: poolOrders, loading: poolOrdersLoading, error: poolOrdersError } = usePublicPoolOrdersPreview();
 
-  const activeMeta = useMemo(
-    () => HERO_IPAD_NAV.find((n) => n.id === selectedId) ?? HERO_IPAD_NAV[0],
-    [selectedId],
-  );
+  const activeMeta = useMemo(() => {
+    const item = HERO_IPAD_NAV.find((n) => n.id === selectedId) ?? HERO_IPAD_NAV[0];
+    return resolveHeroIpadNavItem(item, t);
+  }, [selectedId, t]);
 
   const ActiveScreen = SCREEN_BY_ID[selectedId] ?? ScreenOverview;
   const activeScreenProps =
@@ -520,7 +536,9 @@ export default function HeroIpadMockup() {
                       <span />
                       <span />
                     </span>
-                    <span className="sr-only">{sidebarOpen ? "إغلاق القائمة" : "فتح القائمة"}</span>
+                    <span className="sr-only">
+                      {sidebarOpen ? t("home.heroIpad.menuClose") : t("home.heroIpad.menuOpen")}
+                    </span>
                   </button>
                   <div className="home-hero-ipad-app__header-brand">
                     <img
@@ -532,7 +550,7 @@ export default function HeroIpadMockup() {
                       height={36}
                     />
                     <div className="home-hero-ipad-app__header-text">
-                      <span className="home-hero-ipad-app__brand-name">{HERO_IPAD_BRAND_AR}</span>
+                      <span className="home-hero-ipad-app__brand-name">{t("home.heroIpad.brand")}</span>
                     </div>
                   </div>
                 </header>
@@ -542,7 +560,7 @@ export default function HeroIpadMockup() {
                     id={sidebarId}
                     className="home-hero-ipad-sidebar"
                     data-state={sidebarOpen ? "open" : "collapsed"}
-                    aria-label="التنقل بين الأقسام"
+                    aria-label={t("home.heroIpad.sidebarNavAria")}
                   >
                     <nav
                       className="home-hero-ipad-sidebar__nav"
@@ -551,6 +569,7 @@ export default function HeroIpadMockup() {
                     >
                       {HERO_IPAD_NAV.map((item) => {
                         const active = item.id === selectedId;
+                        const navItem = resolveHeroIpadNavItem(item, t);
                         return (
                           <button
                             key={item.id}
@@ -560,7 +579,7 @@ export default function HeroIpadMockup() {
                             onClick={() => setSelectedId(item.id)}
                           >
                             <SidebarIcon name={item.icon} className="home-hero-ipad-sidebar__icon" />
-                            <span className="home-hero-ipad-sidebar__label">{item.label}</span>
+                            <span className="home-hero-ipad-sidebar__label">{navItem.label}</span>
                           </button>
                         );
                       })}

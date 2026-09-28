@@ -104,7 +104,7 @@ describe("Web-Admin-List-Timeout-05 — page/hook contracts", () => {
     assert.match(src, /controlsDisabled = refreshing \|\| rateLimited/);
     assert.match(src, /data-testid="admin-identity-refresh"/);
     assert.match(src, /admin-list-rate-limit-cooldown/);
-    assert.match(src, /جاري البحث/);
+    assert.match(src, /activation\.requests\.searching/);
     assert.doesNotMatch(src, /disabled=\{initialLoading \|\| refreshing\}/);
   });
 
@@ -135,6 +135,6 @@ describe("Web-Admin-List-Timeout-05 — page/hook contracts", () => {
 
   it("3-column admin action center unaffected", () => {
     const home = read("pages/dashboard/AdminDashboardHome.jsx");
-    assert.match(home, /acc-actions-grid--admin-center|action-center|مركز المهام/);
+    assert.match(home, /acc-actions-grid--admin-center|action-center|opsAdmin\.adminHome\.tasksTitle/);
   });
 });

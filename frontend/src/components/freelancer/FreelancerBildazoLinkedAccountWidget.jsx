@@ -12,18 +12,16 @@ import {
   getFreelancerBildazoAuthorLinkRequest,
 } from "../../services/api";
 import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/articlesResources";
+import { formatLocaleDate } from "../../i18n/formatLocale";
 import FreelancerBildazoAuthorLinkForm from "./FreelancerBildazoAuthorLinkForm";
 import "./bildazo-author-gate.css";
 
-function formatLinkedAt(value) {
+function formatLinkedAt(value, locale) {
   if (!value) return null;
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return null;
-  try {
-    return new Intl.DateTimeFormat("ar", { dateStyle: "medium" }).format(d);
-  } catch {
-    return d.toISOString().slice(0, 10);
-  }
+  const formatted = formatLocaleDate(value, locale);
+  return formatted || null;
 }
 
 export default function FreelancerBildazoLinkedAccountWidget({
@@ -32,6 +30,7 @@ export default function FreelancerBildazoLinkedAccountWidget({
   isEn = false,
 }) {
   const { user } = useAuth();
+  const { t, dir, locale } = useTranslation();
   const rootRef = useRef(null);
   const [open, setOpen] = useState(false);
   const [changeOpen, setChangeOpen] = useState(false);
@@ -52,7 +51,7 @@ export default function FreelancerBildazoLinkedAccountWidget({
   const verifiedEmail = link?.orderzVerifiedEmail || user?.email || "";
   const publicId = link?.linked?.bildazoPublicId || "";
   const linkedEmail = link?.linked?.email || link?.submitted?.existingBildazoEmail || verifiedEmail;
-  const linkedAt = formatLinkedAt(link?.linked?.linkedAt);
+  const linkedAt = formatLinkedAt(link?.linked?.linkedAt, locale);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -97,14 +96,14 @@ export default function FreelancerBildazoLinkedAccountWidget({
     event.preventDefault();
     setError("");
     if (!confirmChange) {
-      setError("يجب تأكيد أن التغيير يؤثر على المقالات القادمة فقط.");
+      setError(t("articles.bildazoGate.confirmFutureOnly"));
       return;
     }
     const payload =
       flow === BILDAZO_AUTHOR_LINK_FLOWS.NEW_ACCOUNT
         ? { fullName, phoneE164, countryIso, dateOfBirth, password, passwordConfirm }
         : { existingBildazoEmail: existingEmail, password: existingPassword };
-    const validation = validateBildazoAuthorLinkForm({ flow, payload, termsChecked });
+    const validation = validateBildazoAuthorLinkForm({ flow, payload, termsChecked, t });
     if (validation) {
       setError(validation);
       return;
@@ -134,8 +133,8 @@ export default function FreelancerBildazoLinkedAccountWidget({
       resetSecrets();
       if (next?.changed === false && next?.failureCode) {
         setError(
-          bildazoLinkFailureMessage({ status: "failed", failureCode: next.failureCode }, isEn) ||
-            "تعذر تغيير حساب الربط.",
+          bildazoLinkFailureMessage({ status: "failed", failureCode: next.failureCode }, isEn, t) ||
+            t("articles.bildazoGate.changeFailed"),
         );
         onUpdated?.(next);
         return;
@@ -148,8 +147,8 @@ export default function FreelancerBildazoLinkedAccountWidget({
       const unsupported = /replace-link|replace mode/i.test(String(raw || ""));
       setError(
         unsupported
-          ? "Bildazo needs a safe replace-link endpoint or replace mode."
-          : raw || "تعذر تغيير حساب الربط.",
+          ? t("articles.bildazoGate.replaceUnsupported")
+          : raw || t("articles.bildazoGate.changeFailed"),
       );
     } finally {
       setBusy(false);
@@ -157,7 +156,7 @@ export default function FreelancerBildazoLinkedAccountWidget({
   };
 
   return (
-    <div className="bz-account" dir="rtl" ref={rootRef}>
+    <div className="bz-account" dir={dir} ref={rootRef}>
       <button
         type="button"
         className="bz-account__chip"
@@ -171,11 +170,11 @@ export default function FreelancerBildazoLinkedAccountWidget({
         <span className="bz-account__copy">
           <span className="bz-account__title">
             <span className="bz-account__dot" aria-hidden="true" />
-            حساب Bildazo مرتبط
+            {t("articles.bildazoGate.linkedTitle")}
           </span>
           {publicId ? (
             <span className="bz-account__id" data-testid="bildazo-public-id">
-              المعرّف: {publicId}
+              {t("articles.bildazoGate.publicId", { id: publicId })}
             </span>
           ) : null}
         </span>
@@ -183,10 +182,10 @@ export default function FreelancerBildazoLinkedAccountWidget({
 
       {open ? (
         <div className="bz-account__menu" data-testid="bildazo-account-menu" role="menu">
-          <p className="bz-account__helper">سيتم نشر المقالات المقبولة على هذا الحساب.</p>
-          {publicId ? <p className="bz-account__detail">المعرّف: {publicId}</p> : null}
-          {linkedEmail ? <p className="bz-account__detail">البريد: {linkedEmail}</p> : null}
-          {linkedAt ? <p className="bz-account__detail">تاريخ الربط: {linkedAt}</p> : null}
+          <p className="bz-account__helper">{t("articles.bildazoGate.publishHelper")}</p>
+          {publicId ? <p className="bz-account__detail">{t("articles.bildazoGate.publicId", { id: publicId })}</p> : null}
+          {linkedEmail ? <p className="bz-account__detail">{t("articles.bildazoGate.emailLine", { email: linkedEmail })}</p> : null}
+          {linkedAt && linkedAt !== "—" ? <p className="bz-account__detail">{t("articles.bildazoGate.linkedAt", { date: linkedAt })}</p> : null}
           {link?.linked?.bildazoProfileUrl ? (
             <a
               className="bz-account__detail"
@@ -207,13 +206,13 @@ export default function FreelancerBildazoLinkedAccountWidget({
               setChangeOpen(true);
             }}
           >
-            تغيير حساب الربط
+            {t("articles.bildazoGate.changeAccount")}
           </button>
           <button type="button" className="bz-account__action bz-account__action--ghost" onClick={handleReverify}>
-            إعادة التحقق من الربط
+            {t("articles.bildazoGate.recheck")}
           </button>
           <button type="button" className="bz-account__action bz-account__action--ghost" onClick={() => setOpen(false)}>
-            إغلاق
+            {t("articles.bildazoGate.close")}
           </button>
         </div>
       ) : null}
@@ -222,12 +221,9 @@ export default function FreelancerBildazoLinkedAccountWidget({
         <div className="bz-change" data-testid="bildazo-change-modal">
           <div className="bz-change__dialog" role="dialog" aria-modal="true" aria-labelledby="bz-change-title">
             <h3 id="bz-change-title" className="bz-change__title">
-              تغيير حساب Bildazo المرتبط
+              {t("articles.bildazoGate.changeTitle")}
             </h3>
-            <p className="bz-change__note">
-              سيتم استخدام الحساب الجديد للمقالات القادمة فقط. المقالات التي نُشرت سابقًا ستبقى مرتبطة بالحساب الذي
-              نُشرت عليه.
-            </p>
+            <p className="bz-change__note">{t("articles.bildazoGate.changeNote")}</p>
             <label className="bz-gate__terms">
               <input
                 type="checkbox"
@@ -235,7 +231,7 @@ export default function FreelancerBildazoLinkedAccountWidget({
                 onChange={(e) => setConfirmChange(e.target.checked)}
                 data-testid="bildazo-change-confirm"
               />
-              <span>أفهم أن تغيير حساب Bildazo سيؤثر على المقالات القادمة فقط.</span>
+              <span>{t("articles.bildazoGate.changeConfirm")}</span>
             </label>
             <FreelancerBildazoAuthorLinkForm
               flow={flow}
@@ -262,11 +258,11 @@ export default function FreelancerBildazoLinkedAccountWidget({
               error={error}
               busy={busy || !confirmChange}
               onSubmit={handleChangeSubmit}
-              newSubmitLabel="إنشاء الحساب الجديد وربطه"
-              existingSubmitLabel="ربط الحساب الحالي"
+              newSubmitLabel={t("articles.bildazoGate.submitNewChange")}
+              existingSubmitLabel={t("articles.bildazoGate.submitExistingChange")}
             />
             <button type="button" className="bz-account__action bz-account__action--ghost" onClick={closeChange}>
-              إلغاء
+              {t("articles.bildazoGate.cancel")}
             </button>
           </div>
         </div>

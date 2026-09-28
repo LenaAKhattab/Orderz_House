@@ -30,7 +30,7 @@ const URL_OPTIONAL = (s) => {
 
 export default function FreelancerSettingsPage() {
   const { refreshUser, user } = useAuth();
-  const { t, dir } = useTranslation();
+  const { t, dir, locale } = useTranslation();
   const s = "freelancerDashboard.settings";
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
@@ -77,7 +77,7 @@ export default function FreelancerSettingsPage() {
         setWhatsApp(u.whatsApp || "");
         setProfessionalTitle(u.professionalTitle || "");
         setBio(u.bio || "");
-        setSkillsText(Array.isArray(u.skills) ? u.skills.join("، ") : "");
+        setSkillsText(Array.isArray(u.skills) ? u.skills.join(locale === "en" ? ", " : "، ") : "");
         setWebsiteUrl(u.websiteUrl || "");
         setLinkedinUrl(u.linkedinUrl || "");
         setGithubUrl(u.githubUrl || "");
@@ -94,7 +94,7 @@ export default function FreelancerSettingsPage() {
     } finally {
       setLoading(false);
     }
-  }, [t]);
+  }, [t, locale]);
 
   useEffect(() => {
     load();
@@ -292,11 +292,10 @@ export default function FreelancerSettingsPage() {
           }}
         >
           <h2 className="oh-account-card__title" style={{ color: "#92400e" }}>
-            يجب تغيير كلمة المرور
+            {t(`${s}.security.mustChangeTitle`)}
           </h2>
           <p className="oh-account-value" style={{ margin: 0, color: "#78350f" }}>
-            تم إنشاء حسابك بكلمة مرور مؤقتة. يرجى تعيين كلمة مرور جديدة أدناه قبل متابعة استخدام المنصة.
-            استخدم الرقم الوطني ككلمة المرور الحالية إن لم تُغيَّر من قبل.
+            {t(`${s}.security.mustChangeBody`)}
           </p>
         </div>
       ) : null}
@@ -511,7 +510,7 @@ export default function FreelancerSettingsPage() {
       </div>
 
       <div className="oh-account-card" style={{ marginBottom: 16 }}>
-        <h2 className="oh-account-card__title">العملة التقريبية المفضلة</h2>
+        <h2 className="oh-account-card__title">{t(`${s}.preferredCurrencyTitle`)}</h2>
         <PreferredDisplayCurrencySettings />
       </div>
 

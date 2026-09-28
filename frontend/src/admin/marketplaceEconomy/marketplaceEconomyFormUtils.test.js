@@ -123,9 +123,9 @@ describe("SuperAdminMarketplaceEconomyPage wiring", () => {
     assert.doesNotMatch(page, /id="mes-flag-tokens"/);
     assert.doesNotMatch(page, /id="mes-flag-priority"/);
     assert.doesNotMatch(page, /id="mes-flag-verify"/);
-    assert.match(page, /Priority Application Boost/);
-    assert.match(page, /Enable Bid Credits engine/);
-    assert.match(page, /Fair Work Distribution|التوزيع العادل/);
+    assert.match(page, /economy\.sections\.priorityBoost\.title/);
+    assert.match(page, /economy\.sections\.bidPurchases\.bidCredits/);
+    assert.match(page, /economy\.sections\.fair\.title/);
     assert.doesNotMatch(page, /id="mes-token-value"/);
     assert.doesNotMatch(page, /id="mes-pb-duration"/);
     assert.doesNotMatch(page, /id="mes-normal-refund"/);

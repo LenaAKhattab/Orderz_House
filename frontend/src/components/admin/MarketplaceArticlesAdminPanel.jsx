@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useArticlesT } from "../../admin/marketplaceArticles/useArticlesT";
 import Button from "../../components/ui/Button";
 import DashboardSection from "../../components/dashboard/DashboardSection";
 import DashboardEmptyState from "../../components/dashboard/DashboardEmptyState";
@@ -25,8 +26,6 @@ import MarketplaceArticleFormModal from "../../admin/marketplaceArticles/Marketp
 import MarketplaceArticleApplicationsPanel from "../../admin/marketplaceArticles/MarketplaceArticleApplicationsPanel";
 import {
   ARTICLE_PACKAGE_PLAN_CODES,
-  ARTICLE_PACKAGE_PLAN_LABELS_AR,
-  BILDAZO_CATEGORIES_LOAD_ERROR_AR,
   defaultPackageRequirementsState,
 } from "../../admin/marketplaceArticles/marketplaceArticleFormUtils";
 import { useAdminListLoad } from "../../hooks/useAdminListLoad";
@@ -44,6 +43,7 @@ export default function MarketplaceArticlesAdminPanel({
   showHeaderActions = true,
   inventoryHub = false,
 }) {
+  const { t } = useArticlesT();
   const { push } = useToast();
   const { user } = useAuth();
   const canEditPackageRequirements = isSuperAdminUser(user);
@@ -69,7 +69,7 @@ export default function MarketplaceArticlesAdminPanel({
     rateLimited,
     run: runListLoad,
   } = useAdminListLoad({
-    mapError: (err) => getSafeApiErrorMessage(err) || "تعذر تحميل المقالات.",
+    mapError: (err) => getSafeApiErrorMessage(err) || t("adminPanel.loadError"),
   });
   const [submitting, setSubmitting] = useState(false);
   const [createOpen, setCreateOpen] = useState(Boolean(inventoryHub));
@@ -142,7 +142,7 @@ export default function MarketplaceArticlesAdminPanel({
     } catch (err) {
       setBildazoCategories([]);
       setBildazoCategoriesError(
-        getSafeApiErrorMessage(err) || BILDAZO_CATEGORIES_LOAD_ERROR_AR,
+        getSafeApiErrorMessage(err) || t("form.bildazoLoadError"),
       );
     } finally {
       setBildazoCategoriesLoading(false);
@@ -194,12 +194,12 @@ export default function MarketplaceArticlesAdminPanel({
     try {
       await createMarketplaceArticleRequest(payload);
       if (!inventoryHub) setCreateOpen(false);
-      push({ type: "success", message: "تم إنشاء المقال." });
+      push({ type: "success", message: t("adminPanel.createSuccess") });
       await refresh();
     } catch (err) {
       push({
         type: "error",
-        message: getSafeApiErrorMessage(err) || "فشل الإنشاء.",
+        message: getSafeApiErrorMessage(err) || t("adminPanel.createError"),
       });
     } finally {
       setSubmitting(false);
@@ -215,12 +215,12 @@ export default function MarketplaceArticlesAdminPanel({
       const next = new URLSearchParams(searchParams);
       next.delete("edit");
       setSearchParams(next, { replace: true });
-      push({ type: "success", message: "تم تحديث المقال." });
+      push({ type: "success", message: t("adminPanel.updateSuccess") });
       await refresh();
     } catch (err) {
       push({
         type: "error",
-        message: getSafeApiErrorMessage(err) || "فشل التحديث.",
+        message: getSafeApiErrorMessage(err) || t("adminPanel.updateError"),
       });
     } finally {
       setSubmitting(false);
@@ -257,11 +257,11 @@ export default function MarketplaceArticlesAdminPanel({
           }),
         );
       }
-      push({ type: "success", message: "تم حفظ متطلبات الباقات." });
+      push({ type: "success", message: t("adminPanel.packageSaveSuccess") });
     } catch (err) {
       push({
         type: "error",
-        message: getSafeApiErrorMessage(err) || "تعذر حفظ متطلبات الباقات.",
+        message: getSafeApiErrorMessage(err) || t("adminPanel.packageSaveError"),
       });
     } finally {
       setPackageReqsSaving(false);
@@ -274,19 +274,19 @@ export default function MarketplaceArticlesAdminPanel({
         {inventoryHub ? (
           <div className="oh-mmp-inventory-hub-banner" style={{ marginBottom: 12 }} data-testid="inventory-add-section">
             <h3 className="oh-articles-hub__section-title" style={{ marginTop: 0 }}>
-              إضافة مقال إلى المخزون
+              {t("adminPanel.inventoryAddTitle")}
             </h3>
           </div>
         ) : (
           <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
             <p style={{ marginTop: 0, opacity: 0.9, maxWidth: "40rem" }}>
-              أنشئ وعدّل مقالات العمل، وربطها بحملات التفعيل عند الحاجة.
+              {t("adminPanel.intro")}
             </p>
             {showHeaderActions ? (
               <div className="flex flex-wrap items-center gap-2">
                 {refreshing ? (
                   <span className="text-sm text-slate-500" data-testid="admin-list-refreshing">
-                    جاري التحديث...
+                    {t("adminPanel.refreshing")}
                   </span>
                 ) : null}
                 <Button
@@ -296,10 +296,10 @@ export default function MarketplaceArticlesAdminPanel({
                   disabled={refreshing || rateLimited}
                   data-testid="articles-refresh-btn"
                 >
-                  تحديث
+                  {t("common.refresh")}
                 </Button>
                 <Button type="button" onClick={() => setCreateOpen(true)} data-testid="articles-add-btn">
-                  إضافة مقال
+                  {t("adminPanel.addArticle")}
                 </Button>
               </div>
             ) : null}
@@ -319,10 +319,9 @@ export default function MarketplaceArticlesAdminPanel({
             activationCampaigns={activationCampaigns}
             packageRequirements={packageRequirements}
             inventorySimplified
-            isEn={false}
             submitting={submitting}
-            titleOverride="إضافة مقال إلى المخزون"
-            submitLabel="حفظ في المخزون"
+            titleOverride={t("adminPanel.inventoryAddTitle")}
+            submitLabel={t("adminPanel.saveToInventory")}
             hideCancel
             onClose={() => {}}
             onSubmit={handleCreate}
@@ -335,27 +334,30 @@ export default function MarketplaceArticlesAdminPanel({
           data-testid="package-requirements-section"
           open={false}
         >
-          <summary>متطلبات الباقات</summary>
+          <summary>{t("adminPanel.packageReqsTitle")}</summary>
           <p className="oh-mmp-form__hint" data-testid="package-requirements-auto-hint">
-            هذه القيم تُطبّق تلقائياً حسب الخطة المستهدفة.
+            {t("adminPanel.packageReqsHint")}
           </p>
           {packageReqsLoading ? (
-            <p className="oh-mmp-form__hint">جارٍ التحميل…</p>
+            <p className="oh-mmp-form__hint">{t("adminPanel.packageLoading")}</p>
           ) : (
             <div className="oh-mmp-package-reqs__grid">
               {packageRequirements.map((row) => (
                 <div key={row.planCode} className="oh-mmp-package-reqs__row">
                   <div className="oh-mmp-package-reqs__plan">
                     {row.planCode}
-                    {ARTICLE_PACKAGE_PLAN_LABELS_AR[row.planCode]
-                      ? ` / ${ARTICLE_PACKAGE_PLAN_LABELS_AR[row.planCode]}`
+                    {t(`planLabels.${row.planCode}`)
+                      ? ` / ${t(`planLabels.${row.planCode}`)}`
                       : ""}
                     <span className="oh-mmp-form__hint" style={{ display: "block", fontWeight: 400 }}>
-                      {row.minWords} كلمة، {row.minReferences} مراجع
+                      {t("adminPanel.wordsRefsSummary", {
+                        words: row.minWords,
+                        references: row.minReferences,
+                      })}
                     </span>
                   </div>
                   <label>
-                    الحد الأدنى للكلمات
+                    {t("adminPanel.minWords")}
                     <input
                       type="number"
                       min="1"
@@ -367,7 +369,7 @@ export default function MarketplaceArticlesAdminPanel({
                     />
                   </label>
                   <label>
-                    الحد الأدنى للمراجع
+                    {t("adminPanel.minReferences")}
                     <input
                       type="number"
                       min="0"
@@ -388,12 +390,12 @@ export default function MarketplaceArticlesAdminPanel({
                     onClick={() => void handleSavePackageRequirements()}
                     data-testid="package-requirements-save"
                   >
-                    {packageReqsSaving ? "جارٍ الحفظ…" : "حفظ متطلبات الباقات"}
+                    {packageReqsSaving ? t("common.saving") : t("adminPanel.savePackageReqs")}
                   </Button>
                 </div>
               ) : (
                 <p className="oh-mmp-form__hint" style={{ margin: 0 }}>
-                  عرض فقط — تعديل متطلبات الباقات متاح للسوبر أدمن.
+                  {t("adminPanel.packageReadOnly")}
                 </p>
               )}
             </div>
@@ -403,7 +405,7 @@ export default function MarketplaceArticlesAdminPanel({
         {inventoryHub && showHeaderActions ? (
           <div className="flex flex-wrap items-center gap-2" style={{ margin: "12px 0" }}>
             <h3 className="oh-articles-hub__section-title" style={{ margin: 0, flex: "1 1 auto" }}>
-              قائمة مقالات المخزون
+              {t("adminPanel.inventoryListTitle")}
             </h3>
             <Button
               type="button"
@@ -412,7 +414,7 @@ export default function MarketplaceArticlesAdminPanel({
               disabled={refreshing || rateLimited}
               data-testid="articles-refresh-btn"
             >
-              تحديث القائمة
+              {t("common.refreshList")}
             </Button>
           </div>
         ) : null}
@@ -429,8 +431,8 @@ export default function MarketplaceArticlesAdminPanel({
         ) : null}
         {!initialLoading && !initialLoadError && articles.length === 0 ? (
           <DashboardEmptyState
-            title="لا توجد مقالات في المخزون بعد"
-            description="أضف أول مقال باستخدام النموذج أعلاه"
+            title={t("adminPanel.emptyTitle")}
+            description={t("adminPanel.emptyDescription")}
           />
         ) : null}
         {articles.length > 0 ? (
@@ -439,7 +441,6 @@ export default function MarketplaceArticlesAdminPanel({
               <MarketplaceArticleCard
                 key={article.id}
                 article={article}
-                isEn={false}
                 busy={submitting}
                 activationCampaigns={activationCampaigns}
                 onEdit={async (a) => {
@@ -466,7 +467,6 @@ export default function MarketplaceArticlesAdminPanel({
           categoriesError={bildazoCategoriesError}
           activationCampaigns={activationCampaigns}
           packageRequirements={packageRequirements}
-          isEn={false}
           submitting={submitting}
           onClose={() => setCreateOpen(false)}
           onSubmit={handleCreate}
@@ -485,7 +485,6 @@ export default function MarketplaceArticlesAdminPanel({
         categoriesError={bildazoCategoriesError}
         activationCampaigns={activationCampaigns}
         packageRequirements={packageRequirements}
-        isEn={false}
         submitting={submitting}
         onClose={() => {
           setEditArticle(null);
@@ -501,7 +500,6 @@ export default function MarketplaceArticlesAdminPanel({
         <DashboardSection>
           <MarketplaceArticleApplicationsPanel
             articleId={editArticle.id}
-            isEn={false}
             onToast={push}
             onRelisted={refresh}
           />

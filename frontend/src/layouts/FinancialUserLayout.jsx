@@ -4,6 +4,7 @@ import LazyRouteOutlet from "../components/layout/LazyRouteOutlet";
 import AdminNavIcon from "../components/dashboard/AdminNavIcon";
 import { useAuth } from "../context/useAuth";
 import { useTranslation } from "../i18n/LanguageProvider";
+import LanguageSwitcher from "../components/layout/LanguageSwitcher";
 
 import "../styles/dashboardTokens.css";
 import "../styles/dashboardHub.css";
@@ -115,6 +116,7 @@ export default function FinancialUserLayout() {
               </div>
             </div>
             <div className="oh-sa-topbar__actions">
+              <LanguageSwitcher />
               <div className="oh-sa-user" ref={userMenuRef}>
                 <button
                   type="button"

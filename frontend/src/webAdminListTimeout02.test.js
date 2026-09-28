@@ -114,7 +114,7 @@ describe("Web-Admin-List-Timeout-02 — page contracts", () => {
     assert.match(src, /useAdminListLoad/);
     assert.match(src, /ADMIN_LIST_SEARCH_DEBOUNCE_MS/);
     assert.match(src, /admin-list-refresh-soft-note/);
-    assert.match(src, /جاري التحديث/);
+    assert.match(src, /activation\.requests\.refreshing/);
     assert.match(src, /items\.length === 0/);
     assert.doesNotMatch(src, /catch\s*\([^)]*\)\s*\{[^}]*setItems\(\[\]\)/s);
     assert.match(src, /hasExistingRows:\s*itemsLenRef/);
@@ -124,7 +124,7 @@ describe("Web-Admin-List-Timeout-02 — page contracts", () => {
     const src = read("pages/dashboard/AdminPantryPage.jsx");
     assert.match(src, /createAdminListRequestGate|listGateRef/);
     assert.match(src, /ADMIN_LIST_REFRESH_SOFT_NOTE/);
-    assert.match(src, /جاري التحديث/);
+    assert.match(src, /pantry\.refreshing/);
     assert.match(src, /hasExisting/);
     assert.match(src, /if\s*\(!hasExisting\)\s*\{[\s\S]*?setRequests\(\[\]\)/);
     const api = read("services/api.js");
@@ -160,7 +160,7 @@ describe("Web-Admin-List-Timeout-02 — page contracts", () => {
     assert.match(src, /admin-list-refresh-soft-note/);
     assert.match(src, /subs\.length > 0/);
     assert.match(src, /resolved\.shouldClearRows/);
-    assert.match(src, /جاري التحديث/);
+    assert.match(src, /subscriptions\.page\.refreshing/);
   });
 
   it("notifications: request gate and does not clear items on catch", () => {

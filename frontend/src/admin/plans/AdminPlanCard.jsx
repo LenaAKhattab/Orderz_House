@@ -1,4 +1,6 @@
 import { Trash2 } from "lucide-react";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/planAdminResources";
 import PlanStatusBadge from "./PlanStatusBadge";
 import PlanToggle from "./PlanToggle";
 import { formatOrderValueRange, formatPriceJod, buildPlanBenefits } from "./planDisplayUtils";
@@ -31,9 +33,11 @@ export default function AdminPlanCard({
   onMoveUp,
   onMoveDown,
 }) {
+  const { t } = useTranslation();
   const priceLabel = formatPriceJod(plan.priceJod);
   const orderRange = formatOrderValueRange(plan.orderValueMinJod, plan.orderValueMaxJod);
   const benefits = buildPlanBenefits(plan);
+  const toggleAction = plan.isActive ? t("planAdmin.card.disable") : t("planAdmin.card.enable");
 
   return (
     <article className={`oh-sapl-card${plan.isActive ? "" : " oh-sapl-card--inactive"}`}>
@@ -48,10 +52,10 @@ export default function AdminPlanCard({
           </div>
         </div>
         <div className="oh-sapl-card__header-toggle">
-          <span className="oh-sapl-card__active-label">تشغيل</span>
+          <span className="oh-sapl-card__active-label">{t("planAdmin.card.activeLabel")}</span>
           <PlanToggle
             compact
-            ariaLabel={`${plan.isActive ? "تعطيل" : "تفعيل"} الباقة «${plan.title}»`}
+            ariaLabel={t("planAdmin.card.toggleAria", { action: toggleAction, title: plan.title })}
             checked={Boolean(plan.isActive)}
             disabled={submitting || reorderBusy}
             onChange={(next) => onActiveChange(plan, next)}
@@ -60,21 +64,23 @@ export default function AdminPlanCard({
       </header>
 
       <div className="oh-sapl-card__body">
-        <p className="oh-sapl-card__price">{priceLabel ?? "مجانية"}</p>
+        <p className="oh-sapl-card__price">{priceLabel ?? t("planAdmin.common.free")}</p>
 
         <div className="oh-sapl-card__meta-row">
-          <span>{plan.durationDays} يوم</span>
+          <span>
+            {plan.durationDays} {t("planAdmin.common.days")}
+          </span>
         </div>
 
         {orderRange ? (
           <div className="oh-sapl-card__order-range">
-            <span className="oh-sapl-card__order-range-label">نطاق الطلبات</span>
+            <span className="oh-sapl-card__order-range-label">{t("planAdmin.card.orderRange")}</span>
             <strong className="oh-sapl-card__order-range-value">{orderRange}</strong>
           </div>
         ) : null}
 
         {benefits.length > 0 ? (
-          <ul className="oh-sapl-card__benefits" aria-label="مزايا الباقة">
+          <ul className="oh-sapl-card__benefits" aria-label={t("planAdmin.card.benefitsAria")}>
             {benefits.map((row) => (
               <li key={row.id} className={`oh-sapl-card__benefit oh-sapl-card__benefit--${row.kind}`}>
                 <span className="oh-sapl-card__benefit-icon" aria-hidden>
@@ -85,7 +91,7 @@ export default function AdminPlanCard({
             ))}
           </ul>
         ) : (
-          <p className="oh-sapl-card__features-empty">لا توجد مزايا مسجّلة لهذه الباقة</p>
+          <p className="oh-sapl-card__features-empty">{t("planAdmin.card.noBenefits")}</p>
         )}
       </div>
 
@@ -94,8 +100,8 @@ export default function AdminPlanCard({
           <button
             type="button"
             className="oh-sapl-card__reorder-btn oh-sapl-card__reorder-btn--up"
-            title="رفع الباقة"
-            aria-label="رفع الباقة"
+            title={t("planAdmin.card.moveUp")}
+            aria-label={t("planAdmin.card.moveUp")}
             disabled={submitting || reorderBusy || !canMoveUp}
             onClick={() => onMoveUp?.()}
           >
@@ -109,15 +115,18 @@ export default function AdminPlanCard({
             disabled={submitting || reorderBusy}
             onClick={onEdit}
           >
-            تعديل
+            {t("planAdmin.card.edit")}
           </button>
           <button
             type="button"
             className="oh-sapl-card__action oh-sapl-card__action--danger oh-sapl-card__action--icon"
             disabled={submitting || reorderBusy}
             onClick={onDelete}
-            title="تعطيل الباقة"
-            aria-label={`تعطيل الباقة «${plan.title}»`}
+            title={t("planAdmin.card.deactivate")}
+            aria-label={t("planAdmin.card.toggleAria", {
+              action: t("planAdmin.card.deactivate"),
+              title: plan.title,
+            })}
             data-testid="plan-card-delete"
           >
             <Trash2 size={16} strokeWidth={2} aria-hidden />
@@ -127,8 +136,8 @@ export default function AdminPlanCard({
           <button
             type="button"
             className="oh-sapl-card__reorder-btn oh-sapl-card__reorder-btn--down"
-            title="خفض الباقة"
-            aria-label="خفض الباقة"
+            title={t("planAdmin.card.moveDown")}
+            aria-label={t("planAdmin.card.moveDown")}
             disabled={submitting || reorderBusy || !canMoveDown}
             onClick={() => onMoveDown?.()}
           >

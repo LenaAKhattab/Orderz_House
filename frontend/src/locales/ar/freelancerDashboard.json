@@ -505,6 +505,8 @@
     },
     "security": {
       "title": "الأمان",
+      "mustChangeTitle": "يجب تغيير كلمة المرور",
+      "mustChangeBody": "تم إنشاء حسابك بكلمة مرور مؤقتة. يرجى تعيين كلمة مرور جديدة أدناه قبل متابعة استخدام المنصة. استخدم الرقم الوطني ككلمة المرور الحالية إن لم تُغيَّر من قبل.",
       "currentPassword": "كلمة المرور الحالية",
       "newPassword": "كلمة المرور الجديدة",
       "confirmPassword": "تأكيد كلمة المرور",
@@ -516,6 +518,7 @@
       "success": "تم تحديث كلمة المرور.",
       "error": "تعذّر تغيير كلمة المرور."
     },
+    "preferredCurrencyTitle": "العملة التقريبية المفضلة",
     "notifications": {
       "title": "إعدادات الإشعارات",
       "orders": "إشعارات الطلبات",
@@ -1185,5 +1188,16 @@
       "goDashboard": "الذهاب إلى لوحة التحكم",
       "goArticles": "مقالات العمل"
     }
+  },
+  "onboardingPanel": {
+    "completeNow": "أكمل الآن",
+    "gettingStarted": "مركز البداية",
+    "remindLater": "تذكير لاحقًا"
+  },
+  "silverConversion": {
+    "defaultTitle": "استمر في استقبال فرص العمل عبر Silver",
+    "starting": "جاري البدء…",
+    "earnedBalanceLink": "عرض تفاصيل الرصيد المكتسب",
+    "openPlans": "عرض الباقات"
   }
 }

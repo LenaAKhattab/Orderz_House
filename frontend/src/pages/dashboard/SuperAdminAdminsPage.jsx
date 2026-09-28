@@ -16,17 +16,15 @@ import {
 } from "../../services/api";
 import { useAuth } from "../../context/useAuth";
 import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/opsAdminResources";
 import "./superAdminAdminsPage.css";
 
-function errorMessage(err) {
-  return err?.response?.data?.message || "تعذر تنفيذ العملية. حاول مجدداً.";
-}
-
-function formatJoDate(value) {
+function formatJoDate(value, locale) {
   if (!value) return "—";
   const d = new Date(value);
   if (!Number.isFinite(d.getTime())) return "—";
-  return new Intl.DateTimeFormat("ar-JO-u-nu-latn", {
+  const tag = locale === "ar" ? "ar-JO-u-nu-latn" : "en-GB";
+  return new Intl.DateTimeFormat(tag, {
     timeZone: "Asia/Amman",
     dateStyle: "medium",
   }).format(d);
@@ -77,6 +75,7 @@ function PermissionsChecklist({ groups, selected, onChange, disabled }) {
 }
 
 function AdminFormModal({ mode, open, onClose, groups, initial, onSaved, currentUserId, onSelfPermissionsSaved }) {
+  const { t } = useTranslation();
   const isEdit = mode === "edit";
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -84,6 +83,11 @@ function AdminFormModal({ mode, open, onClose, groups, initial, onSaved, current
   const [permissions, setPermissions] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+
+  const errorMessage = useCallback(
+    (err) => err?.response?.data?.message || t("opsAdmin.common.genericError"),
+    [t],
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -120,27 +124,29 @@ function AdminFormModal({ mode, open, onClose, groups, initial, onSaved, current
 
   return (
     <div className="oh-admins-modal" role="dialog" aria-modal="true" aria-labelledby="oh-admins-modal-title">
-      <button type="button" className="oh-admins-modal__backdrop" aria-label="إغلاق" onClick={onClose} />
+      <button type="button" className="oh-admins-modal__backdrop" aria-label={t("opsAdmin.common.closeDialog")} onClick={onClose} />
       <div className="oh-admins-modal__panel">
         <header className="oh-admins-modal__header">
-          <h2 id="oh-admins-modal-title">{isEdit ? "تعديل صلاحيات الأدمن" : "إنشاء حساب أدمن"}</h2>
-          <button type="button" className="oh-admins-modal__close" onClick={onClose} aria-label="إغلاق">
+          <h2 id="oh-admins-modal-title">
+            {isEdit ? t("opsAdmin.admins.modalEditTitle") : t("opsAdmin.admins.modalCreateTitle")}
+          </h2>
+          <button type="button" className="oh-admins-modal__close" onClick={onClose} aria-label={t("opsAdmin.common.closeDialog")}>
             ×
           </button>
         </header>
         <form className="oh-admins-modal__body" onSubmit={submit}>
           {error ? <div className="oh-admins-modal__error">{error}</div> : null}
           <label className="oh-admins-field">
-            <span>الاسم</span>
+            <span>{t("opsAdmin.admins.fieldName")}</span>
             <input value={name} onChange={(e) => setName(e.target.value)} required minLength={2} maxLength={80} />
           </label>
           <label className="oh-admins-field">
-            <span>البريد الإلكتروني</span>
+            <span>{t("opsAdmin.admins.fieldEmail")}</span>
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
           </label>
           {!isEdit ? (
             <label className="oh-admins-field">
-              <span>كلمة المرور</span>
+              <span>{t("opsAdmin.admins.fieldPassword")}</span>
               <input
                 type="password"
                 value={password}
@@ -152,15 +158,19 @@ function AdminFormModal({ mode, open, onClose, groups, initial, onSaved, current
             </label>
           ) : null}
           <div className="oh-admins-field">
-            <span>صلاحيات الصفحات</span>
+            <span>{t("opsAdmin.admins.fieldPagePermissions")}</span>
             <PermissionsChecklist groups={groups} selected={permissions} onChange={setPermissions} disabled={submitting} />
           </div>
           <footer className="oh-admins-modal__footer">
             <Button type="button" variant="secondary" onClick={onClose} disabled={submitting}>
-              إلغاء
+              {t("opsAdmin.common.cancel")}
             </Button>
             <Button type="submit" disabled={submitting}>
-              {submitting ? "جاري الحفظ…" : isEdit ? "حفظ التعديلات" : "إنشاء الأدمن"}
+              {submitting
+                ? t("opsAdmin.admins.saving")
+                : isEdit
+                  ? t("opsAdmin.admins.saveChanges")
+                  : t("opsAdmin.admins.createAdmin")}
             </Button>
           </footer>
         </form>
@@ -171,6 +181,7 @@ function AdminFormModal({ mode, open, onClose, groups, initial, onSaved, current
 
 export default function SuperAdminAdminsPage() {
   const { user, refreshUser } = useAuth();
+  const { t, locale } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [admins, setAdmins] = useState([]);
@@ -178,6 +189,11 @@ export default function SuperAdminAdminsPage() {
   const [modalMode, setModalMode] = useState(null);
   const [editingAdmin, setEditingAdmin] = useState(null);
   const [togglingId, setTogglingId] = useState(null);
+
+  const errorMessage = useCallback(
+    (err) => err?.response?.data?.message || t("opsAdmin.common.genericError"),
+    [t],
+  );
 
   const load = useCallback(async () => {
     setError("");
@@ -195,7 +211,7 @@ export default function SuperAdminAdminsPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [errorMessage]);
 
   useEffect(() => {
     load();
@@ -232,26 +248,26 @@ export default function SuperAdminAdminsPage() {
   return (
     <DashboardShell>
       <DashboardPageHeader
-        title="إدارة الأدمن"
-        description="إنشاء حسابات الأدمن وتحديد صلاحيات الوصول لصفحات لوحة الإدارة."
+        title={t("opsAdmin.admins.title")}
+        description={t("opsAdmin.admins.description")}
         breadcrumbs={superAdminBreadcrumbs("dashboard.breadcrumbs.admins")}
         actions={
           <Button type="button" onClick={openCreate}>
-            + إضافة أدمن
+            {t("opsAdmin.admins.addAdmin")}
           </Button>
         }
       />
 
       {error && !loading ? <DashboardErrorState message={error} onRetry={load} /> : null}
 
-      <DashboardSection title="حسابات الأدمن">
+      <DashboardSection title={t("opsAdmin.admins.sectionAccounts")}>
         {loading ? (
-          <DashboardLoadingState label="جاري تحميل حسابات الأدمن…" />
+          <DashboardLoadingState label={t("opsAdmin.admins.loading")} />
         ) : admins.length === 0 ? (
           <DashboardEmptyState
-            title="لا يوجد أدمن بعد"
-            description="أنشئ أول حساب أدمن وحدد الصفحات التي يمكنه الوصول إليها."
-            actionLabel="إضافة أدمن"
+            title={t("opsAdmin.admins.emptyTitle")}
+            description={t("opsAdmin.admins.emptyDescription")}
+            actionLabel={t("opsAdmin.admins.emptyAction")}
             onAction={openCreate}
           />
         ) : (
@@ -259,12 +275,12 @@ export default function SuperAdminAdminsPage() {
             <table className="oh-admins-table">
               <thead>
                 <tr>
-                  <th>الاسم</th>
-                  <th>البريد</th>
-                  <th>الحالة</th>
-                  <th>الصلاحيات</th>
-                  <th>تاريخ الإنشاء</th>
-                  <th>إجراءات</th>
+                  <th>{t("opsAdmin.admins.colName")}</th>
+                  <th>{t("opsAdmin.admins.colEmail")}</th>
+                  <th>{t("opsAdmin.admins.colStatus")}</th>
+                  <th>{t("opsAdmin.admins.colPermissions")}</th>
+                  <th>{t("opsAdmin.admins.colCreated")}</th>
+                  <th>{t("opsAdmin.admins.colActions")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -276,15 +292,15 @@ export default function SuperAdminAdminsPage() {
                     </td>
                     <td>
                       <StatusBadge tone={admin.isActive ? "success" : "inactive"}>
-                        {admin.isActive ? "نشط" : "معطّل"}
+                        {admin.isActive ? t("opsAdmin.admins.statusActive") : t("opsAdmin.admins.statusDisabled")}
                       </StatusBadge>
                     </td>
                     <td>{admin.permissionCount ?? admin.permissions?.length ?? 0}</td>
-                    <td>{formatJoDate(admin.createdAt)}</td>
+                    <td>{formatJoDate(admin.createdAt, locale)}</td>
                     <td>
                       <div className="oh-admins-table__actions">
                         <Button type="button" variant="secondary" onClick={() => openEdit(admin)}>
-                          تعديل الصلاحيات
+                          {t("opsAdmin.admins.editPermissions")}
                         </Button>
                         <Button
                           type="button"
@@ -292,7 +308,11 @@ export default function SuperAdminAdminsPage() {
                           disabled={togglingId === admin.id}
                           onClick={() => toggleActive(admin)}
                         >
-                          {togglingId === admin.id ? "…" : admin.isActive ? "تعطيل" : "تفعيل"}
+                          {togglingId === admin.id
+                            ? "…"
+                            : admin.isActive
+                              ? t("opsAdmin.admins.disable")
+                              : t("opsAdmin.admins.enable")}
                         </Button>
                       </div>
                     </td>

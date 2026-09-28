@@ -13,10 +13,11 @@ function read(...parts) {
 describe("Phase A1 freelancer activation trial UI", () => {
   it("status block renders active state, next action, and no earned balance", () => {
     const src = read("components/freelancer/FreelancerActivationTrialStatusBlock.jsx");
-    assert.match(src, /Trial active/);
-    assert.match(src, /التجربة نشطة/);
+    const ar = JSON.parse(read("locales/ar/activation.json"));
+    assert.match(src, /activation\.trial\.trial_active/);
+    assert.equal(ar.trial.trial_active, "التجربة نشطة");
     assert.match(src, /data-next-action/);
-    assert.match(src, /day\(s\) remaining/);
+    assert.match(src, /activation\.trial\.daysRemaining/);
     assert.doesNotMatch(src, /earned balance/i);
     assert.doesNotMatch(src, /رصيد مكتسب/);
     assert.doesNotMatch(src, /wallet/i);

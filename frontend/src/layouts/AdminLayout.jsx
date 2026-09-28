@@ -12,6 +12,7 @@ import {
 } from "../constants/adminNav";
 import { userHasPermission } from "../constants/dashboardPermissions";
 import NotificationsBell from "../components/notifications/NotificationsBell";
+import LanguageSwitcher from "../components/layout/LanguageSwitcher";
 import { useTranslation } from "../i18n/LanguageProvider";
 import { resolveNavLabel } from "../lib/i18n/resolveNavLabel";
 
@@ -152,6 +153,7 @@ export default function AdminLayout() {
           </div>
 
           <div className="oh-sa-topbar__actions">
+            <LanguageSwitcher />
             <NotificationsBell notificationsPagePath={notificationsPath} variant="superadmin" />
             <span className="oh-sa-topbar__divider" aria-hidden />
             <div className="oh-sa-user" ref={userMenuRef}>

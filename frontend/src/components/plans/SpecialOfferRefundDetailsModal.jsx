@@ -5,6 +5,14 @@ import {
   SPECIAL_OFFER_REFUND_SECTION_TITLES_AR,
   splitSpecialOfferRefundSections,
 } from "../../constants/specialOfferPackage";
+import { useTranslation } from "../../i18n/LanguageProvider";
+
+const REFUND_SECTION_TITLE_KEYS = [
+  "plans.specialOffer.refundSections.monthly",
+  "plans.specialOffer.refundSections.inactiveMonths",
+  "plans.specialOffer.refundSections.orderIncome",
+  "plans.specialOffer.refundSections.importantNotice",
+];
 import "./specialOfferRefundDetailsModal.css";
 
 function formatAmount(value) {
@@ -22,7 +30,9 @@ export default function SpecialOfferRefundDetailsModal({
   t,
   triggerRef = null,
 }) {
-  const jod = t?.("plans.currency.jod") || "د.أ";
+  const { t: tHook } = useTranslation();
+  const tr = (key, params) => (t ?? tHook)(key, params);
+  const jod = tr("plans.currency.jod");
   const sections = useMemo(
     () => splitSpecialOfferRefundSections(offer?.refundExplanationAr),
     [offer?.refundExplanationAr],
@@ -32,35 +42,35 @@ export default function SpecialOfferRefundDetailsModal({
     if (!offer) return [];
     const maxProject =
       offer.maxProjectValueJod != null
-        ? `${t?.("plans.specialOffer.upTo") || "حتى"} ${formatAmount(offer.maxProjectValueJod)} ${jod}`
-        : t?.("plans.specialOffer.unlimitedProjects") || "بلا سقف للمشاريع";
+        ? `${tr("plans.specialOffer.upTo")} ${formatAmount(offer.maxProjectValueJod)} ${jod}`
+        : tr("plans.specialOffer.unlimitedProjects");
     return [
       {
         key: "offers",
-        label: t?.("plans.specialOffer.totalOffers") || "عدد العروض",
-        value: `${formatAmount(offer.totalOffers)} ${t?.("plans.specialOffer.available") || "متاح"}`,
+        label: tr("plans.specialOffer.totalOffers"),
+        value: `${formatAmount(offer.totalOffers)} ${tr("plans.specialOffer.available")}`,
         Icon: Target,
       },
       {
         key: "daily",
-        label: t?.("plans.specialOffer.dailyLimit") || "حد يومي",
-        value: `${formatAmount(offer.dailyLimit)} ${t?.("plans.specialOffer.offersPerDay") || "عرض يومياً"}`,
+        label: tr("plans.specialOffer.dailyLimit"),
+        value: `${formatAmount(offer.dailyLimit)} ${tr("plans.specialOffer.offersPerDay")}`,
         Icon: CalendarDays,
       },
       {
         key: "max",
-        label: t?.("plans.specialOffer.maxProject") || "الحد الأقصى للمشروع",
+        label: tr("plans.specialOffer.maxProject"),
         value: maxProject,
         Icon: Briefcase,
       },
       {
         key: "duration",
-        label: t?.("plans.specialOffer.durationShort") || "المدة",
-        value: `${offer.durationDays} ${t?.("plans.specialOffer.days") || "يوم"}`,
+        label: tr("plans.specialOffer.durationShort"),
+        value: `${offer.durationDays} ${tr("plans.specialOffer.days")}`,
         Icon: CalendarDays,
       },
     ];
-  }, [offer, jod, t]);
+  }, [offer, jod, t, tHook]);
 
   if (!offer) return null;
 
@@ -68,17 +78,17 @@ export default function SpecialOfferRefundDetailsModal({
     <DashboardModal
       open={open}
       onClose={onClose}
-      title={t?.("plans.specialOffer.refundModalTitle") || "تفاصيل استرداد مبلغ باقة العرض"}
+      title={tr("plans.specialOffer.refundModalTitle")}
       triggerRef={triggerRef}
       panelClassName="oh-special-offer-refund-modal__panel"
       footer={
         <button type="button" className="oh-special-offer-refund-modal__close-btn" onClick={onClose}>
-          {t?.("plans.specialOffer.refundModalGotIt") || "فهمت"}
+          {tr("plans.specialOffer.refundModalGotIt")}
         </button>
       }
     >
       <div className="oh-special-offer-refund-modal">
-        <div className="oh-special-offer-refund-modal__summary" aria-label={t?.("plans.specialOffer.refundSummaryAria") || "ملخص الباقة"}>
+        <div className="oh-special-offer-refund-modal__summary" aria-label={tr("plans.specialOffer.refundSummaryAria")}>
           {summaryItems.map(({ key, label, value, Icon }) => (
             <div key={key} className="oh-special-offer-refund-modal__summary-item">
               <span className="oh-special-offer-refund-modal__summary-icon" aria-hidden="true">
@@ -96,8 +106,9 @@ export default function SpecialOfferRefundDetailsModal({
           {sections.map((body, index) => {
             const Icon = SECTION_ICONS[index] || ShieldAlert;
             const title =
+              tr(REFUND_SECTION_TITLE_KEYS[index]) ||
               SPECIAL_OFFER_REFUND_SECTION_TITLES_AR[index] ||
-              `${t?.("plans.specialOffer.refundSectionFallback") || "تفاصيل"} ${index + 1}`;
+              `${tr("plans.specialOffer.refundSectionFallback")} ${index + 1}`;
             return (
               <section key={`${index}-${title}`} className="oh-special-offer-refund-modal__section">
                 <header className="oh-special-offer-refund-modal__section-head">

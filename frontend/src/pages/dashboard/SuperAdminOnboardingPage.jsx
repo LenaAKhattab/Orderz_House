@@ -15,6 +15,8 @@ import {
 } from "../../services/api";
 import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
 import { resolveSafeInternalNavPath } from "../../utils/safeInternalNavPath";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/opsAdminResources";
 
 const CONDITIONS = [
   "freelancer_new",
@@ -44,6 +46,7 @@ const emptyForm = {
 
 export default function SuperAdminOnboardingPage() {
   const { push } = useToast();
+  const { t } = useTranslation();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -60,11 +63,11 @@ export default function SuperAdminOnboardingPage() {
       const res = await adminListOnboardingItemsRequest();
       setItems(Array.isArray(res?.data?.items) ? res.data.items : []);
     } catch (err) {
-      setError(getSafeApiErrorMessage(err) || "تعذر تحميل عناصر الإرشاد.");
+      setError(getSafeApiErrorMessage(err) || t("opsAdmin.onboarding.loadError"));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void load();
@@ -94,7 +97,7 @@ export default function SuperAdminOnboardingPage() {
     if (ctaRaw) {
       ctaUrl = resolveSafeInternalNavPath(ctaRaw, "");
       if (!ctaUrl) {
-        push("مسار الزر يجب أن يكون مساراً داخلياً يبدأ بـ /", "error");
+        push(t("opsAdmin.onboarding.errCtaPath"), "error");
         return;
       }
     }
@@ -109,16 +112,16 @@ export default function SuperAdminOnboardingPage() {
       };
       if (editingId) {
         await adminUpdateOnboardingItemRequest(editingId, payload);
-        push("تم حفظ العنصر.", "success");
+        push(t("opsAdmin.onboarding.saved"), "success");
       } else {
         await adminCreateOnboardingItemRequest(payload);
-        push("تم إنشاء العنصر.", "success");
+        push(t("opsAdmin.onboarding.created"), "success");
       }
       setEditingId(null);
       setForm(emptyForm);
       await load();
     } catch (err) {
-      push(getSafeApiErrorMessage(err) || "تعذر الحفظ. إن لم تُطبَّق الهجرة بعد فهذا متوقع.", "error");
+      push(getSafeApiErrorMessage(err) || t("opsAdmin.onboarding.saveError"), "error");
     } finally {
       savingRef.current = false;
       setSaving(false);
@@ -133,7 +136,7 @@ export default function SuperAdminOnboardingPage() {
       else await adminEnableOnboardingItemRequest(item.id);
       await load();
     } catch (err) {
-      push(getSafeApiErrorMessage(err) || "تعذر تحديث الحالة.", "error");
+      push(getSafeApiErrorMessage(err) || t("opsAdmin.onboarding.toggleError"), "error");
     } finally {
       togglingIdRef.current = null;
     }
@@ -142,38 +145,38 @@ export default function SuperAdminOnboardingPage() {
   return (
     <DashboardShell>
       <DashboardPageHeader
-        title="محتوى إرشاد المستقلين"
-        description="عناوين ونصوص وأزرار إرشاد ما قبل التفعيل ومركز البداية. الشروط مفاتيح آمنة وليست كودًا."
+        title={t("opsAdmin.onboarding.title")}
+        description={t("opsAdmin.onboarding.description")}
         breadcrumbs={superAdminBreadcrumbs(["dashboard.breadcrumbs.onboarding"])}
       />
-      <DashboardSection title="عنصر">
+      <DashboardSection title={t("opsAdmin.onboarding.sectionItem")}>
         <form onSubmit={save} className="dash-ui-form" style={{ display: "grid", gap: 10, maxWidth: 720 }}>
           {!editingId ? (
             <label>
-              المفتاح
+              {t("opsAdmin.onboarding.fieldKey")}
               <input value={form.key} onChange={(e) => setForm((f) => ({ ...f, key: e.target.value }))} required={!editingId} />
             </label>
           ) : (
-            <p>تعديل: {form.key}</p>
+            <p>{t("opsAdmin.onboarding.editingKey", { key: form.key })}</p>
           )}
           <label>
-            العنوان
+            {t("opsAdmin.onboarding.fieldTitle")}
             <input value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} required />
           </label>
           <label>
-            النص
+            {t("opsAdmin.onboarding.fieldBody")}
             <textarea rows={4} value={form.body} onChange={(e) => setForm((f) => ({ ...f, body: e.target.value }))} required />
           </label>
           <label>
-            نص الزر
+            {t("opsAdmin.onboarding.fieldCtaLabel")}
             <input value={form.ctaLabel} onChange={(e) => setForm((f) => ({ ...f, ctaLabel: e.target.value }))} />
           </label>
           <label>
-            مسار الزر (داخلي)
+            {t("opsAdmin.onboarding.fieldCtaUrl")}
             <input value={form.ctaUrl} onChange={(e) => setForm((f) => ({ ...f, ctaUrl: e.target.value }))} placeholder="/dashboard/freelancer/..." />
           </label>
           <label>
-            الشرط
+            {t("opsAdmin.onboarding.fieldCondition")}
             <select value={form.conditionKey} onChange={(e) => setForm((f) => ({ ...f, conditionKey: e.target.value }))}>
               {CONDITIONS.map((key) => (
                 <option key={key} value={key}>
@@ -183,14 +186,14 @@ export default function SuperAdminOnboardingPage() {
             </select>
           </label>
           <label>
-            النوع
+            {t("opsAdmin.onboarding.fieldType")}
             <select value={form.itemType} onChange={(e) => setForm((f) => ({ ...f, itemType: e.target.value }))}>
               <option value="informational">informational</option>
               <option value="required">required</option>
             </select>
           </label>
           <label>
-            الموضع
+            {t("opsAdmin.onboarding.fieldPlacement")}
             <select value={form.placement} onChange={(e) => setForm((f) => ({ ...f, placement: e.target.value }))}>
               <option value="dashboard_banner">dashboard_banner</option>
               <option value="getting_started">getting_started</option>
@@ -199,7 +202,7 @@ export default function SuperAdminOnboardingPage() {
             </select>
           </label>
           <label>
-            الترتيب
+            {t("opsAdmin.onboarding.fieldSortOrder")}
             <input type="number" value={form.sortOrder} onChange={(e) => setForm((f) => ({ ...f, sortOrder: e.target.value }))} />
           </label>
           <label>
@@ -208,14 +211,14 @@ export default function SuperAdminOnboardingPage() {
               checked={form.isDismissible}
               onChange={(e) => setForm((f) => ({ ...f, isDismissible: e.target.checked }))}
             />{" "}
-            قابل للإخفاء
+            {t("opsAdmin.onboarding.dismissible")}
           </label>
           <button type="submit" className="btn btn-primary" disabled={saving}>
-            {saving ? "جارٍ الحفظ…" : editingId ? "حفظ التعديل" : "إنشاء"}
+            {saving ? t("opsAdmin.common.saving") : editingId ? t("opsAdmin.onboarding.saveEdit") : t("opsAdmin.onboarding.create")}
           </button>
         </form>
       </DashboardSection>
-      <DashboardSection title="العناصر والإحصاءات">
+      <DashboardSection title={t("opsAdmin.onboarding.sectionList")}>
         {loading ? <DashboardLoadingState /> : null}
         {!loading && error ? <DashboardErrorState message={error} onRetry={load} /> : null}
         {!loading && !error ? (
@@ -223,15 +226,15 @@ export default function SuperAdminOnboardingPage() {
             <table className="dash-ui-table">
               <thead>
                 <tr>
-                  <th>المفتاح</th>
-                  <th>العنوان</th>
-                  <th>شرط</th>
-                  <th>موضع</th>
-                  <th>مفعّل</th>
-                  <th>مشاهدات</th>
-                  <th>نقرات</th>
-                  <th>إخفاء</th>
-                  <th>إكمال</th>
+                  <th>{t("opsAdmin.onboarding.colKey")}</th>
+                  <th>{t("opsAdmin.onboarding.colTitle")}</th>
+                  <th>{t("opsAdmin.onboarding.colCondition")}</th>
+                  <th>{t("opsAdmin.onboarding.colPlacement")}</th>
+                  <th>{t("opsAdmin.onboarding.colEnabled")}</th>
+                  <th>{t("opsAdmin.onboarding.colViews")}</th>
+                  <th>{t("opsAdmin.onboarding.colClicks")}</th>
+                  <th>{t("opsAdmin.onboarding.colDismissals")}</th>
+                  <th>{t("opsAdmin.onboarding.colCompletions")}</th>
                   <th />
                 </tr>
               </thead>
@@ -242,22 +245,22 @@ export default function SuperAdminOnboardingPage() {
                     <td>{item.title}</td>
                     <td>{item.conditionKey}</td>
                     <td>{item.placement}</td>
-                    <td>{item.isEnabled ? "نعم" : "لا"}</td>
+                    <td>{item.isEnabled ? t("opsAdmin.common.yes") : t("opsAdmin.common.no")}</td>
                     <td>{item.stats?.views ?? 0}</td>
                     <td>{item.stats?.ctaClicks ?? 0}</td>
                     <td>{item.stats?.dismissals ?? 0}</td>
                     <td>{item.stats?.completions ?? 0}</td>
                     <td>
                       <button type="button" onClick={() => startEdit(item)}>
-                        تعديل
+                        {t("opsAdmin.common.edit")}
                       </button>{" "}
                       {item.isEnabled ? (
                         <button type="button" onClick={() => void toggleEnabled(item)}>
-                          إيقاف
+                          {t("opsAdmin.onboarding.disable")}
                         </button>
                       ) : (
                         <button type="button" onClick={() => void toggleEnabled(item)}>
-                          تشغيل
+                          {t("opsAdmin.onboarding.enable")}
                         </button>
                       )}
                     </td>

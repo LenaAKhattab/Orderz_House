@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { FilePlus2, X } from "lucide-react";
 import AdminInternalOrderWizard from "../../../components/orders/AdminInternalOrderWizard";
 import ConfirmDialog from "../../../components/dashboard/ConfirmDialog";
+import "../../../i18n/institutionsResources";
 import { useTranslation } from "../../../i18n/LanguageProvider";
 import { useToast } from "../../../components/ui/toastContext";
 import { adminCreateInstitutionWorkRequest, getCategoriesRequest } from "../../../services/api";
@@ -15,21 +16,14 @@ import {
 } from "../../../admin/marketplaceArticles/marketplaceArticleFormUtils";
 import "../../../styles/createOrderModal.css";
 
-const STEPS = [
-  { id: 1, label: "نوع العمل" },
-  { id: 2, label: "بيانات العمل" },
-  { id: 3, label: "مراجعة ونشر" },
-];
-
-function InstitutionArticleFields({ form, setField, categories, errors }) {
+function InstitutionArticleFields({ form, setField, categories, errors, t, dir }) {
   return (
-    <div className="grid gap-4" dir="rtl">
+    <div className="grid gap-4" dir={dir}>
       <p className="m-0 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700">
-        نفس حقول إنشاء المقال القياسية. المقال يُنشأ مباشرةً كنطاق مؤسسة (بدون ظهور في السوق العام). الاعتماد النهائي
-        لا يُنشئ تسوية سوقية.
+        {t("institutions.createWork.articleIntro")}
       </p>
       <label className="grid gap-1">
-        <span className="text-sm font-medium text-slate-800">عنوان المقال</span>
+        <span className="text-sm font-medium text-slate-800">{t("institutions.createWork.articleTitle")}</span>
         <input
           type="text"
           className="form-control"
@@ -40,7 +34,7 @@ function InstitutionArticleFields({ form, setField, categories, errors }) {
         {errors.title ? <span className="text-sm text-red-700">{errors.title}</span> : null}
       </label>
       <label className="grid gap-1">
-        <span className="text-sm font-medium text-slate-800">الوصف / الموجز</span>
+        <span className="text-sm font-medium text-slate-800">{t("institutions.createWork.articleDescription")}</span>
         <textarea
           className="form-control min-h-[120px]"
           value={form.description}
@@ -50,7 +44,7 @@ function InstitutionArticleFields({ form, setField, categories, errors }) {
         {errors.description ? <span className="text-sm text-red-700">{errors.description}</span> : null}
       </label>
       <label className="grid gap-1">
-        <span className="text-sm font-medium text-slate-800">خطة المقال / المستوى</span>
+        <span className="text-sm font-medium text-slate-800">{t("institutions.createWork.articlePlan")}</span>
         <select
           className="form-control"
           value={form.targetPlanCode || ""}
@@ -65,19 +59,19 @@ function InstitutionArticleFields({ form, setField, categories, errors }) {
         <span className="text-xs text-slate-600">{formatDerivedPlanRequirementsSummaryAr(form.targetPlanCode)}</span>
       </label>
       <label className="grid gap-1">
-        <span className="text-sm font-medium text-slate-800">نمط الكتابة</span>
+        <span className="text-sm font-medium text-slate-800">{t("institutions.createWork.writingMode")}</span>
         <select
           className="form-control"
           value={form.writingMode || "either"}
           onChange={(e) => setField("writingMode", e.target.value)}
         >
-          <option value="either">لا يفرق</option>
-          <option value="manual">يدوي</option>
-          <option value="ai">بالذكاء الاصطناعي</option>
+          <option value="either">{t("institutions.createWork.writingEither")}</option>
+          <option value="manual">{t("institutions.createWork.writingManual")}</option>
+          <option value="ai">{t("institutions.createWork.writingAi")}</option>
         </select>
       </label>
       <label className="grid gap-1">
-        <span className="text-sm font-medium text-slate-800">حد المتقدمين المطلوب</span>
+        <span className="text-sm font-medium text-slate-800">{t("institutions.createWork.requiredApplicants")}</span>
         <input
           type="number"
           min={1}
@@ -88,20 +82,20 @@ function InstitutionArticleFields({ form, setField, categories, errors }) {
         />
       </label>
       <label className="grid gap-1">
-        <span className="text-sm font-medium text-slate-800">مدة جمع المتقدمين (ساعات)</span>
+        <span className="text-sm font-medium text-slate-800">{t("institutions.createWork.bidCollectionHours")}</span>
         <select
           className="form-control"
           value={form.bidCollectionDurationHours ?? 24}
           onChange={(e) => setField("bidCollectionDurationHours", Number(e.target.value))}
         >
-          <option value={24}>24 ساعة</option>
-          <option value={48}>48 ساعة</option>
-          <option value={72}>3 أيام</option>
-          <option value={168}>7 أيام</option>
+          <option value={24}>{t("institutions.createWork.hours24")}</option>
+          <option value={48}>{t("institutions.createWork.hours48")}</option>
+          <option value={72}>{t("institutions.createWork.hours72")}</option>
+          <option value={168}>{t("institutions.createWork.hours168")}</option>
         </select>
       </label>
       <label className="grid gap-1">
-        <span className="text-sm font-medium text-slate-800">التصنيف (اختياري)</span>
+        <span className="text-sm font-medium text-slate-800">{t("institutions.createWork.categoryOptional")}</span>
         <select
           className="form-control"
           value={form.categoryId || ""}
@@ -130,7 +124,13 @@ export default function InstitutionCreateWorkModal({
   onSuccess = null,
   triggerRef = null,
 }) {
-  const { t } = useTranslation();
+  const { t, dir } = useTranslation();
+
+  const steps = [
+    { id: 1, label: t("institutions.createWork.stepWorkType") },
+    { id: 2, label: t("institutions.createWork.stepWorkData") },
+    { id: 3, label: t("institutions.createWork.stepReviewPublish") },
+  ];
   const { push } = useToast();
   const titleId = useId();
   const subtitleId = useId();
@@ -218,8 +218,10 @@ export default function InstitutionCreateWorkModal({
 
   const validateArticle = () => {
     const next = {};
-    if (!String(articleForm.title || "").trim()) next.title = "العنوان مطلوب.";
-    if (!String(articleForm.description || "").trim()) next.description = "الوصف مطلوب.";
+    if (!String(articleForm.title || "").trim()) next.title = t("institutions.createWork.validationTitleRequired");
+    if (!String(articleForm.description || "").trim()) {
+      next.description = t("institutions.createWork.validationDescriptionRequired");
+    }
     setArticleErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -251,7 +253,7 @@ export default function InstitutionCreateWorkModal({
     try {
       if (workType === "order") {
         const fd = pendingOrderFormRef.current;
-        if (!fd) throw new Error("لا توجد بيانات الطلب.");
+        if (!fd) throw new Error(t("institutions.createWork.noOrderData"));
         fd.append("workType", "order");
         fd.append("publish", "true");
         await adminCreateInstitutionWorkRequest(institutionId, fd);
@@ -259,7 +261,7 @@ export default function InstitutionCreateWorkModal({
         const payload = { ...(articleReview || normalizeMarketplaceArticlePayload(articleForm)), publish: true };
         await adminCreateInstitutionWorkRequest(institutionId, payload);
       }
-      push({ type: "success", message: "تم إنشاء العمل ونشره للمؤسسة." });
+      push({ type: "success", message: t("institutions.createWork.publishSuccess") });
       finishClose();
       if (typeof onSuccess === "function") {
         void Promise.resolve(onSuccess()).catch(() => {});
@@ -267,7 +269,7 @@ export default function InstitutionCreateWorkModal({
     } catch (err) {
       push({
         type: "error",
-        message: getSafeApiErrorMessage(err) || "تعذر نشر العمل.",
+        message: getSafeApiErrorMessage(err) || t("institutions.createWork.publishError"),
       });
     } finally {
       setPublishBusy(false);
@@ -277,8 +279,8 @@ export default function InstitutionCreateWorkModal({
   if (!open) return null;
 
   const subtitle = institutionName
-    ? `إضافة عمل جديد للمؤسسة «${institutionName}»`
-    : "إضافة طلب أو مقال ضمن نطاق المؤسسة";
+    ? t("institutions.createWork.subtitleWithName", { name: institutionName })
+    : t("institutions.createWork.subtitleDefault");
 
   return createPortal(
     <>
@@ -301,7 +303,7 @@ export default function InstitutionCreateWorkModal({
           aria-modal="true"
           aria-labelledby={titleId}
           aria-describedby={subtitleId}
-          dir="rtl"
+          dir={dir}
           style={step === 2 && workType === "order" ? undefined : { maxWidth: 640, width: "min(96vw, 640px)" }}
           onMouseDown={(e) => e.stopPropagation()}
         >
@@ -312,7 +314,7 @@ export default function InstitutionCreateWorkModal({
               </span>
               <div className="min-w-0">
                 <h2 id={titleId} className="client-order-modal__title co-modal-ref__title">
-                  إضافة طلب للمؤسسة
+                  {t("institutions.createWork.modalTitle")}
                 </h2>
                 <p id={subtitleId} className="oh-ios-create-order-subtitle">
                   {subtitle}
@@ -330,8 +332,11 @@ export default function InstitutionCreateWorkModal({
             </button>
           </header>
 
-          <nav className="flex flex-wrap gap-2 border-b border-slate-200 px-4 py-3" aria-label="خطوات الإنشاء">
-            {STEPS.map((s) => (
+          <nav
+            className="flex flex-wrap gap-2 border-b border-slate-200 px-4 py-3"
+            aria-label={t("institutions.createWork.stepsAria")}
+          >
+            {steps.map((s) => (
               <span
                 key={s.id}
                 className={[
@@ -357,11 +362,19 @@ export default function InstitutionCreateWorkModal({
           >
             {step === 1 ? (
               <div className="grid gap-3">
-                <p className="m-0 text-sm text-slate-700">اختر نوع العمل الذي تريد إضافته للمؤسسة.</p>
+                <p className="m-0 text-sm text-slate-700">{t("institutions.createWork.chooseWorkType")}</p>
                 <div className="grid gap-2 sm:grid-cols-2">
                   {[
-                    { id: "order", label: "طلب عادي", hint: "نفس حقول إنشاء الطلب الداخلي (معرّف، ميزانية، مدة…)" },
-                    { id: "article", label: "مقال", hint: "مقال معرض ضمن نطاق المؤسسة فقط" },
+                    {
+                      id: "order",
+                      label: t("institutions.createWork.typeOrderLabel"),
+                      hint: t("institutions.createWork.typeOrderHint"),
+                    },
+                    {
+                      id: "article",
+                      label: t("institutions.createWork.typeArticleLabel"),
+                      hint: t("institutions.createWork.typeArticleHint"),
+                    },
                   ].map((opt) => (
                     <button
                       key={opt.id}
@@ -381,10 +394,10 @@ export default function InstitutionCreateWorkModal({
                 </div>
                 <div className="flex justify-end gap-2 pt-2">
                   <button type="button" className="btn btn-secondary" onClick={requestClose}>
-                    إلغاء
+                    {t("institutions.cancel")}
                   </button>
                   <button type="button" className="btn btn-primary" onClick={() => setStep(2)}>
-                    متابعة
+                    {t("institutions.createWork.continue")}
                   </button>
                 </div>
               </div>
@@ -412,13 +425,15 @@ export default function InstitutionCreateWorkModal({
                   setField={setArticleField}
                   categories={categories}
                   errors={articleErrors}
+                  t={t}
+                  dir={dir}
                 />
                 <div className="flex justify-between gap-2 pt-2">
                   <button type="button" className="btn btn-secondary" onClick={() => setStep(1)}>
-                    رجوع
+                    {t("institutions.createWork.back")}
                   </button>
                   <button type="button" className="btn btn-primary" onClick={goArticleReview}>
-                    متابعة للمراجعة
+                    {t("institutions.createWork.continueToReview")}
                   </button>
                 </div>
               </div>
@@ -426,32 +441,34 @@ export default function InstitutionCreateWorkModal({
 
             {step === 3 ? (
               <div className="grid gap-4">
-                <p className="m-0 text-sm text-slate-700">
-                  راجع البيانات ثم أكّد النشر. سيكون العمل مرئياً ضمن نطاق المؤسسة (بدون دفع Stripe).
-                </p>
+                <p className="m-0 text-sm text-slate-700">{t("institutions.createWork.reviewIntro")}</p>
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm">
                   <div className="mb-2 font-semibold text-slate-900">
-                    {workType === "order" ? "طلب عادي" : "مقال"}
+                    {workType === "order"
+                      ? t("institutions.createWork.typeOrderLabel")
+                      : t("institutions.createWork.typeArticleLabel")}
                   </div>
                   {workType === "order" ? (
                     <ul className="m-0 grid list-none gap-1 p-0 text-slate-800">
                       <li>
-                        <span className="text-slate-600">العنوان: </span>
+                        <span className="text-slate-600">{t("institutions.createWork.reviewTitleLabel")}</span>
                         {pendingOrderSummaryRef.current?.title || "—"}
                       </li>
                       <li>
-                        <span className="text-slate-600">نوع التسعير: </span>
-                        {pendingOrderSummaryRef.current?.projectType === "bidding" ? "مزايدة" : "ثابت"}
+                        <span className="text-slate-600">{t("institutions.createWork.reviewPricingType")}</span>
+                        {pendingOrderSummaryRef.current?.projectType === "bidding"
+                          ? t("institutions.createWork.reviewPricingBidding")
+                          : t("institutions.createWork.reviewPricingFixed")}
                       </li>
                     </ul>
                   ) : (
                     <ul className="m-0 grid list-none gap-1 p-0 text-slate-800">
                       <li>
-                        <span className="text-slate-600">العنوان: </span>
+                        <span className="text-slate-600">{t("institutions.createWork.reviewTitleLabel")}</span>
                         {articleReview?.title || articleForm.title}
                       </li>
                       <li>
-                        <span className="text-slate-600">الخطة: </span>
+                        <span className="text-slate-600">{t("institutions.createWork.reviewPlanLabel")}</span>
                         {articleReview?.targetPlanCode || articleForm.targetPlanCode}
                       </li>
                     </ul>
@@ -464,10 +481,10 @@ export default function InstitutionCreateWorkModal({
                     disabled={publishBusy}
                     onClick={() => setStep(2)}
                   >
-                    رجوع
+                    {t("institutions.createWork.back")}
                   </button>
                   <button type="button" className="btn btn-primary" disabled={publishBusy} onClick={() => void publishWork()}>
-                    {publishBusy ? "جارٍ النشر…" : "تأكيد ونشر"}
+                    {publishBusy ? t("institutions.createWork.publishing") : t("institutions.createWork.confirmPublish")}
                   </button>
                 </div>
               </div>

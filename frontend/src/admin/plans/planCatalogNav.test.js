@@ -5,9 +5,8 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
-  DEFAULT_PLAN_CATALOG_TAB_BADGE,
   PLAN_CATALOG_ADMIN_HREF,
-  PLAN_CATALOG_ADMIN_TITLE,
+  PLAN_CATALOG_ADMIN_TITLE_KEY,
   PLAN_CATALOG_NAV,
   SPECIAL_OFFER_NAV_ID,
   catalogIdForAdminSection,
@@ -42,13 +41,12 @@ describe("PLAN_CATALOG_NAV", () => {
       PLAN_CATALOG_ADMIN_HREF[PLAN_CATALOG.MARKETPLACE_PLANS],
       "/dashboard/super-admin/marketplace-plans",
     );
-    assert.equal(PLAN_CATALOG_NAV[0].labelAr, "الباقات الرئيسية");
-    assert.equal(PLAN_CATALOG_NAV[1].labelAr, "باقات الصفحات");
-    assert.equal(PLAN_CATALOG_NAV[2].labelAr, "باقات العمل");
-    assert.equal(PLAN_CATALOG_NAV[3].labelAr, "باقات التدريب");
-    assert.equal(PLAN_CATALOG_NAV[4].labelAr, "باقة العرض");
-    assert.equal(PLAN_CATALOG_ADMIN_TITLE.ar, "إدارة الباقات والاشتراكات");
-    assert.equal(DEFAULT_PLAN_CATALOG_TAB_BADGE.ar, "معروض الآن");
+    assert.equal(PLAN_CATALOG_NAV[0].labelKey, "planAdmin.catalog.nav.main_plans");
+    assert.equal(PLAN_CATALOG_NAV[1].labelKey, "planAdmin.catalog.nav.page_plans");
+    assert.equal(PLAN_CATALOG_NAV[2].labelKey, "planAdmin.catalog.nav.marketplace_plans");
+    assert.equal(PLAN_CATALOG_NAV[3].labelKey, "planAdmin.catalog.nav.training");
+    assert.equal(PLAN_CATALOG_NAV[4].labelKey, "planAdmin.catalog.nav.specialOffer");
+    assert.equal(PLAN_CATALOG_ADMIN_TITLE_KEY, "planAdmin.catalog.adminTitle");
     assert.equal(
       PLAN_CATALOG_ADMIN_HREF.training_packages,
       "/dashboard/super-admin/training-packages",

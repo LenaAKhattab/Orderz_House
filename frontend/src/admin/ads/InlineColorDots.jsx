@@ -1,20 +1,13 @@
-import { useId } from "react";
+import { useId, useMemo } from "react";
 import { BASIC_FIELD_COLOR_OPTIONS } from "./adColorPalette";
+import { mapPaletteOptions } from "./adsLocaleHelpers";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/adsResources";
 
 function normHex(v) {
   return (v ?? "").toString().trim().toLowerCase();
 }
 
-/**
- * Compact inline color dots — افتراضي first, then swatches. No hex inputs.
- *
- * @param {object} p
- * @param {string} p.label — e.g. لون العنوان
- * @param {string} [p.value]
- * @param {(next: string) => void} p.onChange
- * @param {{ label: string, value: string }[]} [p.options]
- * @param {boolean} [p.disabled]
- */
 export default function InlineColorDots({
   label,
   value = "",
@@ -22,7 +15,9 @@ export default function InlineColorDots({
   options = BASIC_FIELD_COLOR_OPTIONS,
   disabled = false,
 }) {
+  const { t } = useTranslation();
   const baseId = useId();
+  const resolvedOptions = useMemo(() => mapPaletteOptions(options, t), [options, t]);
   const trimmed = (value || "").trim();
   const lower = normHex(trimmed);
 
@@ -31,7 +26,7 @@ export default function InlineColorDots({
     return /^#f|^#e[def]|^#ff/i.test(hex);
   };
 
-  const isKnown = options.some((o) => (o.value === "" ? !trimmed : normHex(o.value) === lower));
+  const isKnown = resolvedOptions.some((o) => (o.value === "" ? !trimmed : normHex(o.value) === lower));
 
   return (
     <div className="oh-admin-inline-colors">
@@ -39,7 +34,7 @@ export default function InlineColorDots({
         {label}
       </span>
       <div className="oh-admin-inline-colors__row" role="group" aria-labelledby={baseId}>
-        {options.map((opt) => {
+        {resolvedOptions.map((opt) => {
           const isDefault = opt.value === "";
           const selected = isDefault ? !trimmed : lower === normHex(opt.value);
           if (isDefault) {
@@ -83,7 +78,7 @@ export default function InlineColorDots({
       </div>
       {trimmed && !isKnown ? (
         <p className="oh-admin-inline-colors__note" role="status">
-          لون محفوظ غير مدرج في القائمة — لا يزال يظهر في المعاينة والصفحة العامة كما هو.
+          {t("ads.colors.savedNotInList")}
         </p>
       ) : null}
     </div>

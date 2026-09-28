@@ -8,6 +8,8 @@ import {
   getFreelancerEligibilityAdminRequest,
 } from "../../services/api";
 import { useToast } from "../../components/ui/toastContext";
+import "../../i18n/coursesResources";
+import { useTranslation } from "../../i18n/LanguageProvider";
 import {
   activationStatusLabel,
   adminSubscriptionActivationMenuLabel,
@@ -20,8 +22,8 @@ import {
 } from "../subscriptions/subscriptionAdminDisplay";
 import { fetchAssignmentSubscriptionSummary } from "../subscriptions/assignmentSubscriptionSummary";
 
-function errorMessage(err) {
-  return err?.response?.data?.message || "تعذر تنفيذ الإجراء";
+function errorMessage(err, t) {
+  return err?.response?.data?.message || t("courses.errors.actionFailed");
 }
 
 function formatJoDate(iso) {
@@ -60,6 +62,7 @@ function computeFloatingMenuPosition(triggerEl) {
 }
 
 function InlineModal({ title, onClose, children, busy }) {
+  const { t } = useTranslation();
   const titleId = useId();
   return (
     <div
@@ -74,7 +77,7 @@ function InlineModal({ title, onClose, children, busy }) {
           <h4 id={titleId} className="oh-admin-courses__progress-action-dialog__title">
             {title}
           </h4>
-          <button type="button" className="oh-admin-courses__progress-action-dialog__close" onClick={onClose} disabled={busy} aria-label="إغلاق">
+          <button type="button" className="oh-admin-courses__progress-action-dialog__close" onClick={onClose} disabled={busy} aria-label={t("courses.common.close")}>
             ×
           </button>
         </div>
@@ -98,6 +101,7 @@ export default function CourseProgressFreelancerActions({
   assignablePlansLoading = false,
   onSubscriptionUpdate,
 }) {
+  const { t } = useTranslation();
   const toast = useToast();
   const triggerRef = useRef(null);
   const portalMenuRef = useRef(null);
@@ -184,9 +188,9 @@ export default function CourseProgressFreelancerActions({
       // Staff path: backend requires approved KYC (or Super Admin override elsewhere).
       await activateSubscriptionCompanyRequest(subscriptionId);
       await refreshSummary();
-      toast.success("تم تفعيل اشتراك المستقل بنجاح");
+      toast.success(t("courses.toast.subscriptionActivated"));
     } catch (err) {
-      toast.error(errorMessage(err));
+      toast.error(errorMessage(err, t));
     } finally {
       setBusy(null);
     }
@@ -206,13 +210,13 @@ export default function CourseProgressFreelancerActions({
       const eligible = res?.data?.eligibility?.eligible === true;
       toast.success(
         eligible
-          ? "تم تعيين الخطة أوفلاين — المستقل مؤهل لاستلام الطلبات وفق حدود الباقة"
-          : "تم تعيين الخطة أوفلاين (اشتراك + رسوم تفعيل). راجع أهلية استلام الطلبات.",
+          ? t("courses.toast.planAssignedEligible")
+          : t("courses.toast.planAssignedReview"),
       );
       setModal(null);
       setPlanPick("");
     } catch (err) {
-      toast.error(errorMessage(err));
+      toast.error(errorMessage(err, t));
     } finally {
       setBusy(null);
     }
@@ -318,21 +322,21 @@ export default function CourseProgressFreelancerActions({
           disabled={busy === "activate"}
           onClick={handleActivate}
         >
-          {busy === "activate" ? "جاري التفعيل…" : "تفعيل الاشتراك"}
+          {busy === "activate" ? t("courses.progressActions.activating") : t("courses.progressActions.activateSubscription")}
         </button>
       ) : (
         <span className="oh-admin-courses__progress-actions-item oh-admin-courses__progress-actions-item--muted" role="menuitem">
-          {activationMenuLabel || "لا يوجد اشتراك للتفعيل"}
+          {activationMenuLabel || t("courses.progressActions.noSubscription")}
         </span>
       )}
       <button type="button" role="menuitem" className="oh-admin-courses__progress-actions-item" disabled={!!busy} onClick={openChangePlan}>
-        تغيير الخطة
+        {t("courses.progressActions.changePlan")}
       </button>
       <button type="button" role="menuitem" className="oh-admin-courses__progress-actions-item" disabled={!!busy} onClick={openDetails}>
-        عرض تفاصيل الاشتراك
+        {t("courses.progressActions.subscriptionDetails")}
       </button>
       <button type="button" role="menuitem" className="oh-admin-courses__progress-actions-item" disabled={!!busy} onClick={openProfile}>
-        عرض بيانات المستقل
+        {t("courses.progressActions.freelancerProfile")}
       </button>
     </div>
   ) : null;
@@ -350,48 +354,48 @@ export default function CourseProgressFreelancerActions({
           aria-expanded={menuOpen}
           onClick={toggleMenu}
         >
-          إدارة المستقل ▾
+          {t("courses.progressActions.manageFreelancer")}
         </button>
       </div>
       {menuPanel ? createPortal(menuPanel, document.body) : null}
 
       {modal === "details" ? (
-        <InlineModal title="تفاصيل الاشتراك" busy={detailsLoading} onClose={() => !detailsLoading && setModal(null)}>
+        <InlineModal title={t("courses.progressActions.subscriptionDetailsTitle")} busy={detailsLoading} onClose={() => !detailsLoading && setModal(null)}>
           {detailsLoading ? (
-            <p className="help">جاري التحميل…</p>
+            <p className="help">{t("courses.common.loading")}</p>
           ) : (
             <dl className="oh-admin-courses__progress-action-dl">
               <div>
-                <dt>الباقة الحالية</dt>
+                <dt>{t("courses.progressActions.currentPlan")}</dt>
                 <dd>{displaySub?.plan?.title || displaySub?.plan?.name || sub?.planName || "—"}</dd>
               </div>
               <div>
-                <dt>موافقة الشركة</dt>
+                <dt>{t("courses.progressActions.companyApproval")}</dt>
                 <dd>{activationStatusLabel(displaySub?.activationStatus || sub?.activationStatus)}</dd>
               </div>
               <div>
-                <dt>حالة الدفع</dt>
+                <dt>{t("courses.progressActions.paymentStatus")}</dt>
                 <dd>{paymentStatusLabel(displaySub?.paymentStatus || sub?.paymentStatus)}</dd>
               </div>
               <div>
-                <dt>حالة الاشتراك</dt>
+                <dt>{t("courses.progressActions.subscriptionStatus")}</dt>
                 <dd>{subscriptionStatusLabel(displaySub?.status || sub?.subscriptionStatus)}</dd>
               </div>
               <div>
-                <dt>تاريخ الانتهاء</dt>
+                <dt>{t("courses.progressActions.expiryDate")}</dt>
                 <dd>{formatJoDate(displaySub?.expiryDate || sub?.expiryDate)}</dd>
               </div>
               <div>
-                <dt>أهلية استلام الطلبات</dt>
+                <dt>{t("courses.progressActions.orderEligibility")}</dt>
                 <dd>{eligibilityState.label}</dd>
               </div>
               <div>
-                <dt>يمكن استلام الطلبات</dt>
-                <dd>{displayEligibility?.eligible ? "نعم" : "لا"}</dd>
+                <dt>{t("courses.progressActions.canTakeOrders")}</dt>
+                <dd>{displayEligibility?.eligible ? t("courses.common.yes") : t("courses.common.no")}</dd>
               </div>
               {displayEligibility?.reason ? (
                 <div>
-                  <dt>رمز الأهلية</dt>
+                  <dt>{t("courses.progressActions.eligibilityCode")}</dt>
                   <dd>
                     {eligibilityReasonAdminMessage(
                       displayEligibility?.reason || sub?.eligibilityReason,
@@ -402,14 +406,14 @@ export default function CourseProgressFreelancerActions({
               ) : null}
               {displayEligibility?.activationFeeStatus ? (
                 <div>
-                  <dt>رسوم التفعيل</dt>
+                  <dt>{t("courses.progressActions.activationFee")}</dt>
                   <dd>
                     {displayEligibility.activationFeeStatus.enabled === false
-                      ? "غير مطلوبة (معطّلة)"
+                      ? t("courses.progressActions.feeNotRequired")
                       : displayEligibility.activationFeeStatus.needsPayment
-                      ? "غير مدفوعة"
+                      ? t("courses.progressActions.feeUnpaid")
                       : displayEligibility.activationFeeStatus.isCurrent
-                        ? "مدفوعة وسارية"
+                        ? t("courses.progressActions.feePaidCurrent")
                         : "—"}
                   </dd>
                 </div>
@@ -420,13 +424,13 @@ export default function CourseProgressFreelancerActions({
       ) : null}
 
       {modal === "plan" ? (
-        <InlineModal title="تغيير الخطة" busy={busy === "plan"} onClose={() => busy !== "plan" && setModal(null)}>
-          <p className="help oh-admin-courses__progress-action-hint">تغيير الباقة لا يؤثر على تقدم الدورة أو درجة الاختبار.</p>
+        <InlineModal title={t("courses.progressActions.changePlanTitle")} busy={busy === "plan"} onClose={() => busy !== "plan" && setModal(null)}>
+          <p className="help oh-admin-courses__progress-action-hint">{t("courses.progressActions.planChangeHint")}</p>
           <p className="help oh-admin-courses__progress-action-hint" role="note">
-            عند تعيين الخطة يدويًا، سيُعتبر اشتراك الخطة ورسوم التفعيل مدفوعين أوفلاين، وسيتمكن المستقل من استلام الطلبات مباشرة وفق حدود الخطة.
+            {t("courses.progressActions.offlinePlanHint")}
           </p>
           <label className="oh-admin-courses__progress-action-label" htmlFor={planSelectId}>
-            اختر الباقة
+            {t("courses.progressActions.choosePlan")}
           </label>
           <select
             id={planSelectId}
@@ -435,7 +439,7 @@ export default function CourseProgressFreelancerActions({
             disabled={assignablePlansLoading || busy === "plan"}
             onChange={(e) => setPlanPick(e.target.value)}
           >
-            <option value="">— اختر —</option>
+            <option value="">{t("courses.progressActions.choosePlaceholder")}</option>
             {(assignablePlans || []).map((p) => (
               <option key={p.id} value={p.id}>
                 {[p.title || p.name, formatPlanOrderValueRange(p), formatPlanPriceLabel(p)].filter((x) => x && x !== "—").join(" · ")}
@@ -444,42 +448,42 @@ export default function CourseProgressFreelancerActions({
           </select>
           <div className="oh-admin-courses__progress-action-dialog__foot">
             <Button type="button" variant="secondary" disabled={busy === "plan"} onClick={() => setModal(null)}>
-              إلغاء
+              {t("courses.common.cancel")}
             </Button>
             <Button type="button" disabled={!planPick || busy === "plan"} onClick={handleAssignPlan}>
-              {busy === "plan" ? "جاري الحفظ…" : "حفظ"}
+              {busy === "plan" ? t("courses.progressActions.saving") : t("courses.common.save")}
             </Button>
           </div>
         </InlineModal>
       ) : null}
 
       {modal === "profile" ? (
-        <InlineModal title="بيانات المستقل" busy={false} onClose={() => setModal(null)}>
+        <InlineModal title={t("courses.progressActions.freelancerProfileTitle")} busy={false} onClose={() => setModal(null)}>
           <dl className="oh-admin-courses__progress-action-dl">
             <div>
-              <dt>الاسم</dt>
+              <dt>{t("courses.progressActions.name")}</dt>
               <dd>{fullNameAr(assignment) || "—"}</dd>
             </div>
             <div>
-              <dt>رقم الحساب</dt>
+              <dt>{t("courses.progressActions.accountId")}</dt>
               <dd>{assignment.accountId || "—"}</dd>
             </div>
             <div>
-              <dt>البريد</dt>
+              <dt>{t("courses.progressActions.email")}</dt>
               <dd>{assignment.email || "—"}</dd>
             </div>
             {assignment.phone ? (
               <div>
-                <dt>الهاتف</dt>
+                <dt>{t("courses.progressActions.phone")}</dt>
                 <dd>{assignment.phone}</dd>
               </div>
             ) : null}
             <div>
-              <dt>الباقة الحالية</dt>
+              <dt>{t("courses.progressActions.currentPlan")}</dt>
               <dd>{sub?.planName || "—"}</dd>
             </div>
             <div>
-              <dt>حالة التفعيل</dt>
+              <dt>{t("courses.progressActions.activationState")}</dt>
               <dd>{activationStatusLabel(sub?.activationStatus)}</dd>
             </div>
           </dl>

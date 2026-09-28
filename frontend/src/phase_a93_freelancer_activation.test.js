@@ -12,11 +12,14 @@ function read(...parts) {
 describe("Phase A9.3 auto-assignment UI", () => {
   it("admin applications panel shows auto-assign status, badge, run button", () => {
     const panel = read("admin/marketplaceArticles/MarketplaceArticleApplicationsPanel.jsx");
+    const ar = JSON.parse(read("locales/ar/articles.json"));
     assert.match(panel, /activation-auto-assign-panel/);
     assert.match(panel, /activation-auto-assign-status/);
-    assert.match(panel, /تم الإسناد تلقائيًا/);
+    assert.match(panel, /applications\.autoAssignedStatus/);
+    assert.match(ar.applications.autoAssignedStatus, /تم الإسناد تلقائيًا/);
     assert.match(panel, /activation-auto-assign-run-btn/);
-    assert.match(panel, /تشغيل التوزيع التلقائي الآن/);
+    assert.match(panel, /applications\.runAutoAssign/);
+    assert.match(ar.applications.runAutoAssign, /تشغيل التوزيع التلقائي الآن/);
     assert.match(panel, /activation-auto-assign-fairness-summary/);
     assert.match(panel, /runAdminArticleAutoAssignmentRequest/);
     assert.match(panel, /activation-auto-assign-skip-reason/);

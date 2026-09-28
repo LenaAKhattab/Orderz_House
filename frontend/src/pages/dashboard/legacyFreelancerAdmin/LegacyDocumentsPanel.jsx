@@ -15,8 +15,10 @@ import DashboardEmptyState from "../../../components/dashboard/DashboardEmptySta
 import DashboardLoadingState from "../../../components/dashboard/DashboardLoadingState";
 import DashboardTable from "../../../components/dashboard/DashboardTable";
 import StatusBadge from "../../../components/dashboard/StatusBadge";
+import { useTranslation } from "../../../i18n/LanguageProvider";
 
 export default function LegacyDocumentsPanel({ selectedCampaignId, onSelectedCampaignIdChange }) {
+  const { t } = useTranslation();
   const { pushToast } = useToast();
   const [loadingTypes, setLoadingTypes] = useState(true);
   const [types, setTypes] = useState([]);
@@ -32,7 +34,7 @@ export default function LegacyDocumentsPanel({ selectedCampaignId, onSelectedCam
       const res = await listLegacyDocumentTypesRequest({ includeInactive: true });
       setTypes(Array.isArray(res?.data) ? res.data : []);
     } catch (err) {
-      pushToast({ type: "error", message: getSafeApiErrorMessage(err, "تعذر تحميل أنواع المستندات") });
+      pushToast({ type: "error", message: getSafeApiErrorMessage(err, t("legacy.toast.loadDocTypesFailed")) });
     } finally {
       setLoadingTypes(false);
     }
@@ -57,7 +59,7 @@ export default function LegacyDocumentsPanel({ selectedCampaignId, onSelectedCam
         const res = await getLegacyCampaignDocumentRequirementsRequest(campaignId);
         setReqs(Array.isArray(res?.data) ? res.data : []);
       } catch (err) {
-        pushToast({ type: "error", message: getSafeApiErrorMessage(err, "تعذر تحميل متطلبات الحملة") });
+        pushToast({ type: "error", message: getSafeApiErrorMessage(err, t("legacy.toast.loadCampaignReqsFailed")) });
       }
     },
     [pushToast],
@@ -84,10 +86,10 @@ export default function LegacyDocumentsPanel({ selectedCampaignId, onSelectedCam
         isActive: true,
       });
       setForm({ code: "", labelAr: "", description: "", sortOrder: 100 });
-      pushToast({ type: "success", message: "تم إنشاء نوع المستند" });
+      pushToast({ type: "success", message: t("legacy.toast.docTypeCreated") });
       await loadTypes();
     } catch (err) {
-      pushToast({ type: "error", message: getSafeApiErrorMessage(err, "تعذر إنشاء نوع المستند") });
+      pushToast({ type: "error", message: getSafeApiErrorMessage(err, t("legacy.toast.createDocTypeFailed")) });
     } finally {
       setCreating(false);
     }
@@ -98,7 +100,7 @@ export default function LegacyDocumentsPanel({ selectedCampaignId, onSelectedCam
       await updateLegacyDocumentTypeRequest(row.id, { isActive: !row.isActive });
       await loadTypes();
     } catch (err) {
-      pushToast({ type: "error", message: getSafeApiErrorMessage(err, "تعذر التحديث") });
+      pushToast({ type: "error", message: getSafeApiErrorMessage(err, t("legacy.toast.updateFailed")) });
     }
   };
 
@@ -120,9 +122,9 @@ export default function LegacyDocumentsPanel({ selectedCampaignId, onSelectedCam
       }));
       const res = await putLegacyCampaignDocumentRequirementsRequest(selectedCampaignId, payload);
       setReqs(Array.isArray(res?.data) ? res.data : []);
-      pushToast({ type: "success", message: "تم حفظ متطلبات المستندات للحملة" });
+      pushToast({ type: "success", message: t("legacy.toast.campaignDocsSaved") });
     } catch (err) {
-      pushToast({ type: "error", message: getSafeApiErrorMessage(err, "تعذر حفظ المتطلبات") });
+      pushToast({ type: "error", message: getSafeApiErrorMessage(err, t("legacy.toast.saveCampaignDocsFailed")) });
     } finally {
       setReqsBusy(false);
     }
@@ -133,17 +135,17 @@ export default function LegacyDocumentsPanel({ selectedCampaignId, onSelectedCam
   return (
     <>
       <DashboardSection
-        title="كتالوج أنواع الأوراق والعقود"
-        description="أنواع المستندات الافتراضية والمخصصة التي يمكن ربطها بالحملات وتأكيد توقيعها للفريلانسر."
+        title={t("legacy.campaigns.docsCatalogTitle")}
+        description={t("legacy.campaigns.docsCatalogDesc")}
         actions={
           <Button type="button" variant="secondary" onClick={loadTypes} disabled={loadingTypes}>
-            تحديث
+            {t("legacy.common.refresh")}
           </Button>
         }
       >
         <form className="oh-legacy-admin__form-grid oh-legacy-admin__form-grid--2" onSubmit={onCreateType} style={{ marginBottom: "1.25rem" }}>
           <label className="oh-sa-users-field">
-            <span>الرمز (CODE)</span>
+            <span>{t("legacy.common.codeField")}</span>
             <input
               required
               dir="ltr"
@@ -153,7 +155,7 @@ export default function LegacyDocumentsPanel({ selectedCampaignId, onSelectedCam
             />
           </label>
           <label className="oh-sa-users-field">
-            <span>الاسم بالعربية</span>
+            <span>{t("legacy.common.nameAr")}</span>
             <input
               required
               value={form.labelAr}
@@ -161,14 +163,14 @@ export default function LegacyDocumentsPanel({ selectedCampaignId, onSelectedCam
             />
           </label>
           <label className="oh-sa-users-field oh-legacy-admin__form-span">
-            <span>الوصف (اختياري)</span>
+            <span>{t("legacy.common.descriptionOptional")}</span>
             <input
               value={form.description}
               onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
             />
           </label>
           <label className="oh-sa-users-field">
-            <span>الترتيب</span>
+            <span>{t("legacy.common.order")}</span>
             <input
               type="number"
               value={form.sortOrder}
@@ -177,7 +179,7 @@ export default function LegacyDocumentsPanel({ selectedCampaignId, onSelectedCam
           </label>
           <div className="oh-sa-users-filters__actions">
             <Button type="submit" disabled={creating}>
-              {creating ? "جاري الإنشاء…" : "إضافة نوع مستند"}
+              {creating ? t("legacy.common.creating") : t("legacy.common.addDocumentType")}
             </Button>
           </div>
         </form>
@@ -185,17 +187,17 @@ export default function LegacyDocumentsPanel({ selectedCampaignId, onSelectedCam
         {loadingTypes ? (
           <DashboardLoadingState />
         ) : types.length === 0 ? (
-          <DashboardEmptyState title="لا توجد أنواع مستندات" />
+          <DashboardEmptyState title={t("legacy.campaigns.noDocTypes")} />
         ) : (
           <div className="oh-sa-users-table-wrap">
-            <DashboardTable caption="أنواع المستندات">
+            <DashboardTable caption={t("legacy.campaigns.docTypesCaption")}>
               <thead>
                 <tr>
-                  <th scope="col">الرمز</th>
-                  <th scope="col">الاسم</th>
-                  <th scope="col">الترتيب</th>
-                  <th scope="col">الحالة</th>
-                  <th scope="col">إجراء</th>
+                  <th scope="col">{t("legacy.common.code")}</th>
+                  <th scope="col">{t("legacy.common.name")}</th>
+                  <th scope="col">{t("legacy.common.order")}</th>
+                  <th scope="col">{t("legacy.common.status")}</th>
+                  <th scope="col">{t("legacy.common.action")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -213,12 +215,12 @@ export default function LegacyDocumentsPanel({ selectedCampaignId, onSelectedCam
                     <td>{row.sortOrder}</td>
                     <td>
                       <StatusBadge tone={row.isActive ? "success" : "danger"}>
-                        {row.isActive ? "نشط" : "معطّل"}
+                        {row.isActive ? t("legacy.common.active") : t("legacy.common.disabled")}
                       </StatusBadge>
                     </td>
                     <td>
                       <Button type="button" variant="secondary" onClick={() => toggleTypeActive(row)}>
-                        {row.isActive ? "تعطيل" : "تفعيل"}
+                        {row.isActive ? t("legacy.common.deactivate") : t("legacy.common.enable")}
                       </Button>
                     </td>
                   </tr>
@@ -230,23 +232,23 @@ export default function LegacyDocumentsPanel({ selectedCampaignId, onSelectedCam
       </DashboardSection>
 
       <DashboardSection
-        title="أوراق يجب على الإدارة التحقق منها"
-        description="تكوين قائمة تحقق إدارية لأنواع الأوراق/العقود. الفريلانسر لا يؤكّدها أثناء التسجيل — الإدارة فقط تُسجّل التوقيع من صفحة المسجّل."
+        title={t("legacy.campaigns.docsAdminTitle")}
+        description={t("legacy.campaigns.docsAdminDescPanel")}
         actions={
           selectedCampaignId ? (
             <Button type="button" disabled={reqsBusy || !reqs.length} onClick={saveReqs}>
-              {reqsBusy ? "جاري الحفظ…" : "حفظ متطلبات الحملة"}
+              {reqsBusy ? t("legacy.common.saving") : t("legacy.common.saveCampaignRequirements")}
             </Button>
           ) : null
         }
       >
         <label className="oh-sa-users-field" style={{ maxWidth: "28rem", marginBottom: "1rem" }}>
-          <span>الحملة</span>
+          <span>{t("legacy.common.campaign")}</span>
           <select
             value={selectedCampaignId || ""}
             onChange={(e) => onSelectedCampaignIdChange(e.target.value || null)}
           >
-            <option value="">— اختر حملة —</option>
+            <option value="">{t("legacy.common.selectCampaign")}</option>
             {campaigns.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name} ({c.slug})
@@ -256,23 +258,23 @@ export default function LegacyDocumentsPanel({ selectedCampaignId, onSelectedCam
         </label>
 
         {!selectedCampaignId ? (
-          <DashboardEmptyState title="اختر حملة" description="حدد حملة لعرض وتعديل متطلبات الأوراق." />
+          <DashboardEmptyState title={t("legacy.campaigns.chooseCampaignEmpty")} description={t("legacy.campaigns.chooseCampaignEmptyDesc")} />
         ) : (
           <>
             <p className="oh-legacy-admin__notice oh-legacy-admin__notice--info">
-              الحملة المحددة: <strong>{selectedCampaign?.name || "—"}</strong>
+              {t("legacy.common.selectedCampaign")}: <strong>{selectedCampaign?.name || "—"}</strong>
             </p>
             {reqs.length === 0 ? (
-              <DashboardEmptyState title="لا متطلبات بعد" />
+              <DashboardEmptyState title={t("legacy.campaigns.noRequirementsYet")} />
             ) : (
               <div className="oh-sa-users-table-wrap">
-                <DashboardTable caption="متطلبات الحملة">
+                <DashboardTable caption={t("legacy.campaigns.requirementsCaption")}>
                   <thead>
                     <tr>
-                      <th scope="col">المستند</th>
-                      <th scope="col">في القائمة</th>
-                      <th scope="col">يجب التحقق</th>
-                      <th scope="col">الترتيب</th>
+                      <th scope="col">{t("legacy.common.document")}</th>
+                      <th scope="col">{t("legacy.common.inList")}</th>
+                      <th scope="col">{t("legacy.common.mustVerify")}</th>
+                      <th scope="col">{t("legacy.common.order")}</th>
                     </tr>
                   </thead>
                   <tbody>

@@ -10,6 +10,8 @@ import DashboardErrorState from "../../components/dashboard/DashboardErrorState"
 import { editWebsiteBreadcrumbs } from "../../components/dashboard/dashboardBreadcrumbs";
 import { SUPER_ADMIN_FOOTER_SECTIONS } from "../../constants/superAdminWebsiteSections";
 import { coalesceFooterVisible, mergeFooterSettings } from "../../constants/footerSettings";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/siteEditorResources";
 import { getSuperAdminFooterSettingsRequest } from "../../services/api";
 import "./superAdminEditWebsitePage.css";
 
@@ -19,10 +21,6 @@ const SECTION_ICONS = {
   "app-downloads": Smartphone,
   "contact-center": MessageCircle,
 };
-
-function errorMessage(err) {
-  return err?.response?.data?.message || "تعذر تنفيذ العملية. حاول مجدداً.";
-}
 
 function sectionVisible(settings, sectionId) {
   if (!settings) return true;
@@ -34,9 +32,15 @@ function sectionVisible(settings, sectionId) {
 }
 
 export default function SuperAdminEditWebsiteFooterPage() {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [settings, setSettings] = useState(null);
+
+  const operationError = useCallback(
+    (err) => err?.response?.data?.message || t("siteEditor.errors.operationFailed"),
+    [t],
+  );
 
   const loadSettings = useCallback(async () => {
     setLoading(true);
@@ -45,12 +49,12 @@ export default function SuperAdminEditWebsiteFooterPage() {
       const res = await getSuperAdminFooterSettingsRequest();
       setSettings(mergeFooterSettings(res?.data?.settings || null));
     } catch (err) {
-      setError(errorMessage(err));
+      setError(operationError(err));
       setSettings(null);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [operationError]);
 
   useEffect(() => {
     loadSettings();
@@ -59,19 +63,19 @@ export default function SuperAdminEditWebsiteFooterPage() {
   return (
     <DashboardShell>
       <DashboardPageHeader
-        title="تعديل تذييل الموقع"
-        description="اختر القسم الذي تريد تعديله من تذييل الموقع."
+        title={t("siteEditor.footerHub.pageTitle")}
+        description={t("siteEditor.footerHub.pageDescription")}
         breadcrumbs={editWebsiteBreadcrumbs("dashboard.breadcrumbs.editFooter")}
       />
 
-      <DashboardSection title="أقسام التذييل">
-        {loading ? <DashboardLoadingState label="جاري تحميل حالة الأقسام…" /> : null}
+      <DashboardSection title={t("siteEditor.footerHub.sectionTitle")}>
+        {loading ? <DashboardLoadingState label={t("siteEditor.common.loadingSectionStatus")} /> : null}
         {!loading && error ? (
           <DashboardErrorState
             message={error}
             actions={
               <Button type="button" variant="secondary" onClick={loadSettings}>
-                إعادة المحاولة
+                {t("siteEditor.common.retry")}
               </Button>
             }
           />
@@ -89,7 +93,7 @@ export default function SuperAdminEditWebsiteFooterPage() {
                       <Icon className="oh-website-section-card__icon-svg" strokeWidth={1.75} />
                     </div>
                     <div className="oh-website-section-card__head">
-                      <h3 className="oh-website-section-card__title">{section.title}</h3>
+                      <h3 className="oh-website-section-card__title">{t(section.titleKey)}</h3>
                       <div className="oh-website-section-card__status">
                         <span
                           className={`oh-website-section-card__badge ${
@@ -98,12 +102,12 @@ export default function SuperAdminEditWebsiteFooterPage() {
                               : "oh-website-section-card__badge--off"
                           }`}
                         >
-                          {visible ? "ظاهر" : "مخفي"}
+                          {visible ? t("siteEditor.common.visible") : t("siteEditor.common.hidden")}
                         </span>
                       </div>
                     </div>
                   </div>
-                  <p className="oh-website-section-card__desc">{section.description}</p>
+                  <p className="oh-website-section-card__desc">{t(section.descriptionKey)}</p>
                   <div className="oh-website-section-card__actions">
                     <Link to={section.path} className="btn btn-primary oh-website-section-card__btn">
                       <span className="oh-website-section-card__btn-label">
@@ -113,7 +117,7 @@ export default function SuperAdminEditWebsiteFooterPage() {
                           strokeWidth={2}
                           aria-hidden
                         />
-                        <span>{section.editLabel}</span>
+                        <span>{t(section.editLabelKey)}</span>
                       </span>
                       <ChevronLeft
                         className="oh-website-section-card__btn-arrow"

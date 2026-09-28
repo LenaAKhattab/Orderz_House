@@ -114,15 +114,14 @@ describe("Super Admin default catalog button UX", () => {
     const page = read("pages/dashboard/SuperAdminPlansPage.jsx");
     const marketplace = read("pages/dashboard/SuperAdminMarketplacePlansPage.jsx");
     assert.match(sel, /function DefaultPlanCatalogControl/);
-    assert.match(sel, /تعيين كافتراضي/);
-    assert.match(sel, /DEFAULT_PLAN_CATALOG_TAB_BADGE/);
-    assert.match(sel, /BADGE_AR = DEFAULT_PLAN_CATALOG_TAB_BADGE\.ar/);
-    assert.match(sel, /عرض هذه الباقات للمستخدمين/);
+    assert.match(sel, /planAdmin\.catalog\.defaultControl\.setButton/);
+    assert.match(sel, /planAdmin\.catalog\.tabBadgeShown/);
+    assert.match(sel, /planAdmin\.catalog\.defaultControl\.helper/);
     assert.doesNotMatch(sel, /oh-sapl-default-control__helper/);
     assert.doesNotMatch(sel, /الافتراضي حاليًا/);
-    assert.match(sel, /تعيين هذه الباقات كافتراضية؟/);
-    assert.match(sel, /صفحة الباقات العامة ولوحة المستقل/);
-    assert.match(sel, /لا يمكن تعيين هذا القسم كافتراضي لأنه لا يحتوي على باقات مفعلة/);
+    assert.match(sel, /planAdmin\.catalog\.defaultControl\.confirmTitle/);
+    assert.match(sel, /planAdmin\.catalog\.defaultControl\.confirmBody/);
+    assert.match(sel, /planAdmin\.catalog\.defaultControl\.emptyCatalog/);
     assert.match(sel, /updateAdminDefaultPlanCatalogRequest/);
     assert.match(sel, /useAdminDefaultPlanCatalog/);
     assert.match(sel, /applyPayload/);
@@ -131,7 +130,7 @@ describe("Super Admin default catalog button UX", () => {
     assert.match(ctx, /getAdminDefaultPlanCatalogRequest/);
     assert.match(ctx, /DefaultPlanCatalogAdminProvider/);
     assert.match(sel, /invalidatePublicPlansCache/);
-    assert.match(sel, /تم تعيين "/);
+    assert.match(sel, /planAdmin\.catalog\.defaultControl\.success/);
     assert.doesNotMatch(sel, /data-default-plan-catalog-selector/);
     assert.doesNotMatch(sel, /role="radiogroup"/);
     assert.doesNotMatch(sel, /DashboardSection/);
@@ -158,9 +157,9 @@ describe("Super Admin default catalog button UX", () => {
     const marketplace = read("pages/dashboard/SuperAdminMarketplacePlansPage.jsx");
     const copy = read("admin/plans/planMetricTerminology.js");
     assert.match(marketplace, /listAdminMarketplaceMembershipPlansRequest/);
-    assert.match(marketplace, /SECTION_COPY\.marketplace/);
-    assert.match(copy, /إدارة باقات العمل/);
-    assert.match(copy, /Work membership plans/);
+    assert.match(marketplace, /planAdmin\.sections\.marketplace/);
+    assert.match(copy, /planMetricT/);
+    assert.match(copy, /planAdmin\.metrics/);
   });
 
   it("uses one shared catalog shell and navigation for all three admin pages", () => {
@@ -174,18 +173,18 @@ describe("Super Admin default catalog button UX", () => {
     assert.match(labels, /الباقات الرئيسية/);
     assert.match(labels, /باقات الصفحات/);
     assert.match(labels, /باقات العمل/);
-    assert.match(nav, /باقات التدريب/);
+    assert.match(nav, /labelKey/);
     assert.match(nav, /\/dashboard\/super-admin\/plans\?section=core/);
     assert.match(nav, /\/dashboard\/super-admin\/plans\?section=pages/);
     assert.match(nav, /\/dashboard\/super-admin\/marketplace-plans/);
     assert.match(nav, /\/dashboard\/super-admin\/training-packages/);
-    assert.match(nav, /إدارة الباقات والاشتراكات/);
-    assert.match(shell, /PLAN_CATALOG_ADMIN_TITLE/);
+    assert.match(nav, /PLAN_CATALOG_ADMIN_TITLE_KEY/);
+    assert.match(shell, /planAdmin\.catalog\.adminTitle/);
     assert.match(shell, /PlanCatalogNavigation/);
     assert.match(shell, /dashboard\.breadcrumbs\.managePlans/);
     assert.match(tabs, /orderPlanCatalogNav/);
     assert.match(tabs, /PLAN_CATALOG_NAV/);
-    assert.match(tabs, /معروض الآن/);
+    assert.match(tabs, /planAdmin\.catalog\.tabBadgeShown/);
     assert.match(tabs, /data-shown-now-badge/);
     assert.match(tabs, /aria-selected=\{selected\}/);
     assert.match(shell, /DefaultPlanCatalogAdminProvider/);
@@ -216,8 +215,8 @@ describe("Super Admin default catalog button UX", () => {
     const marketplace = read("pages/dashboard/SuperAdminMarketplacePlansPage.jsx");
     const css = read("admin/plans/super-admin-plans.css");
     assert.match(sel, /DefaultPlanControlSkeleton/);
-    assert.match(sel, /تعذر تحميل بيانات الباقات/);
-    assert.match(sel, /إعادة المحاولة/);
+    assert.match(sel, /planAdmin\.catalog\.defaultControl\.loadFailed/);
+    assert.match(sel, /planAdmin\.catalog\.defaultControl\.retry/);
     assert.doesNotMatch(sel, /جارٍ التحميل|Loading…/);
     assert.match(skeletons, /function DefaultPlanControlSkeleton/);
     assert.match(skeletons, /function PlanCatalogNavSkeleton/);

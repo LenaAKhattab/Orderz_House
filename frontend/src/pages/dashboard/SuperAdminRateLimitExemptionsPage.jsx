@@ -20,17 +20,16 @@ import {
   exemptionStatus,
   isAllowedRateLimitExemptionScope,
 } from "../../constants/rateLimitExemptions";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/opsAdminResources";
 import "./superAdminRateLimitExemptionsPage.css";
 
-function errorMessage(err) {
-  return err?.response?.data?.message || "تعذر تنفيذ العملية. حاول مجدداً.";
-}
-
-function formatJoDateTime(value) {
+function formatJoDateTime(value, locale) {
   if (!value) return "—";
   const d = new Date(value);
   if (!Number.isFinite(d.getTime())) return "—";
-  return new Intl.DateTimeFormat("ar-JO-u-nu-latn", {
+  const tag = locale === "ar" ? "ar-JO-u-nu-latn" : "en-GB";
+  return new Intl.DateTimeFormat(tag, {
     timeZone: "Asia/Amman",
     dateStyle: "medium",
     timeStyle: "short",
@@ -42,13 +41,6 @@ function statusTone(status) {
   if (status === "expired") return "warning";
   if (status === "revoked") return "danger";
   return "neutral";
-}
-
-function statusLabel(status) {
-  if (status === "active") return "نشط";
-  if (status === "expired") return "منتهٍ";
-  if (status === "revoked") return "ملغى";
-  return status;
 }
 
 const emptyForm = {
@@ -65,6 +57,7 @@ const emptyForm = {
 };
 
 export default function SuperAdminRateLimitExemptionsPage() {
+  const { t, locale } = useTranslation();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -76,6 +69,21 @@ export default function SuperAdminRateLimitExemptionsPage() {
   const [userQuery, setUserQuery] = useState("");
   const [userResults, setUserResults] = useState([]);
   const [searchingUsers, setSearchingUsers] = useState(false);
+
+  const errorMessage = useCallback(
+    (err) => err?.response?.data?.message || t("opsAdmin.common.genericError"),
+    [t],
+  );
+
+  const statusLabel = useCallback(
+    (status) => {
+      if (status === "active") return t("opsAdmin.rateLimit.statusActive");
+      if (status === "expired") return t("opsAdmin.rateLimit.statusExpired");
+      if (status === "revoked") return t("opsAdmin.rateLimit.statusRevoked");
+      return status;
+    },
+    [t],
+  );
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -89,7 +97,7 @@ export default function SuperAdminRateLimitExemptionsPage() {
     } finally {
       setLoading(false);
     }
-  }, [includeInactive]);
+  }, [includeInactive, errorMessage]);
 
   useEffect(() => {
     load();
@@ -103,7 +111,7 @@ export default function SuperAdminRateLimitExemptionsPage() {
       return undefined;
     }
     let cancelled = false;
-    const t = setTimeout(async () => {
+    const timer = setTimeout(async () => {
       setSearchingUsers(true);
       try {
         const res = await searchRateLimitExemptionUsersRequest(q);
@@ -116,7 +124,7 @@ export default function SuperAdminRateLimitExemptionsPage() {
     }, 300);
     return () => {
       cancelled = true;
-      clearTimeout(t);
+      clearTimeout(timer);
     };
   }, [userQuery, modalOpen]);
 
@@ -129,19 +137,19 @@ export default function SuperAdminRateLimitExemptionsPage() {
     e.preventDefault();
     setFormError("");
     if (!form.userId) {
-      setFormError("اختر مستخدمًا من نتائج البحث.");
+      setFormError(t("opsAdmin.rateLimit.errPickUser"));
       return;
     }
     if (!isAllowedRateLimitExemptionScope(form.scope)) {
-      setFormError("النطاق غير مسموح.");
+      setFormError(t("opsAdmin.rateLimit.errScope"));
       return;
     }
     if (!form.reason.trim() || form.reason.trim().length < 5) {
-      setFormError("السبب مطلوب (5 أحرف على الأقل).");
+      setFormError(t("opsAdmin.rateLimit.errReason"));
       return;
     }
     if (!form.expiresAt && !form.confirmPermanent) {
-      setFormError("حدد تاريخ انتهاء أو أكّد الاستثناء الدائم.");
+      setFormError(t("opsAdmin.rateLimit.errExpiry"));
       return;
     }
     setSaving(true);
@@ -171,7 +179,7 @@ export default function SuperAdminRateLimitExemptionsPage() {
   }
 
   async function handleRevoke(id) {
-    if (!window.confirm("إلغاء هذا الاستثناء؟ سيعود المستخدم للحدود العادية فورًا (مع تأخير كاش قصير).")) {
+    if (!window.confirm(t("opsAdmin.rateLimit.revokeConfirm"))) {
       return;
     }
     try {
@@ -185,23 +193,25 @@ export default function SuperAdminRateLimitExemptionsPage() {
   return (
     <DashboardShell>
       <DashboardPageHeader
-        title="استثناءات Rate Limit"
-        description="للمستخدمين الموثوقين فقط — حدود أعلى أو تجاوز scoped. لا يشمل تسجيل الدخول أو استعادة كلمة المرور."
+        title={t("opsAdmin.rateLimit.title")}
+        description={t("opsAdmin.rateLimit.description")}
         breadcrumbs={superAdminBreadcrumbs("dashboard.breadcrumbs.rateLimitExemptions")}
         actions={
           <Button type="button" onClick={() => { setForm(emptyForm); setFormError(""); setModalOpen(true); }}>
-            إضافة استثناء
+            {t("opsAdmin.rateLimit.addExemption")}
           </Button>
         }
       />
 
       <div className="oh-rle-warning" role="note">
-        هذه الخاصية للمستخدمين الموثوقين فقط. لا تشمل تسجيل الدخول أو استعادة كلمة المرور أو OTP أو الدفع.
-        الاستثناء مربوط بـ <strong>userId</strong> وليس IP.
+        {t("opsAdmin.rateLimit.warningLine1")}{" "}
+        {t("opsAdmin.rateLimit.warningLine2Prefix")}
+        <strong>userId</strong>
+        {t("opsAdmin.rateLimit.warningLine2Suffix")}
       </div>
 
       <DashboardSection
-        title={`الاستثناءات (${activeCount} نشط)`}
+        title={t("opsAdmin.rateLimit.sectionTitle", { count: activeCount })}
         actions={
           <label className="oh-rle-toggle">
             <input
@@ -209,26 +219,29 @@ export default function SuperAdminRateLimitExemptionsPage() {
               checked={includeInactive}
               onChange={(e) => setIncludeInactive(e.target.checked)}
             />
-            إظهار الملغاة/السابقة
+            {t("opsAdmin.rateLimit.showInactive")}
           </label>
         }
       >
         {loading ? <DashboardLoadingState /> : null}
         {!loading && error ? <DashboardErrorState message={error} onRetry={load} /> : null}
         {!loading && !error && rows.length === 0 ? (
-          <DashboardEmptyState title="لا توجد استثناءات" description="أضف استثناءً لمستخدم موثوق عند الحاجة." />
+          <DashboardEmptyState
+            title={t("opsAdmin.rateLimit.emptyTitle")}
+            description={t("opsAdmin.rateLimit.emptyDescription")}
+          />
         ) : null}
         {!loading && !error && rows.length > 0 ? (
           <div className="oh-rle-table-wrap">
             <table className="oh-rle-table">
               <thead>
                 <tr>
-                  <th>المستخدم</th>
-                  <th>النطاق</th>
-                  <th>الوضع</th>
-                  <th>الانتهاء</th>
-                  <th>الحالة</th>
-                  <th>السبب</th>
+                  <th>{t("opsAdmin.rateLimit.colUser")}</th>
+                  <th>{t("opsAdmin.rateLimit.colScope")}</th>
+                  <th>{t("opsAdmin.rateLimit.colMode")}</th>
+                  <th>{t("opsAdmin.rateLimit.colExpires")}</th>
+                  <th>{t("opsAdmin.rateLimit.colStatus")}</th>
+                  <th>{t("opsAdmin.rateLimit.colReason")}</th>
                   <th />
                 </tr>
               </thead>
@@ -247,7 +260,11 @@ export default function SuperAdminRateLimitExemptionsPage() {
                         <code>{row.scope}</code>
                       </td>
                       <td>{row.mode}</td>
-                      <td>{row.expiresAt ? formatJoDateTime(row.expiresAt) : "دائم"}</td>
+                      <td>
+                        {row.expiresAt
+                          ? formatJoDateTime(row.expiresAt, locale)
+                          : t("opsAdmin.rateLimit.permanent")}
+                      </td>
                       <td>
                         <StatusBadge tone={statusTone(status)}>{statusLabel(status)}</StatusBadge>
                       </td>
@@ -255,7 +272,7 @@ export default function SuperAdminRateLimitExemptionsPage() {
                       <td>
                         {status === "active" ? (
                           <Button type="button" variant="ghost" onClick={() => handleRevoke(row.id)}>
-                            إلغاء
+                            {t("opsAdmin.rateLimit.revoke")}
                           </Button>
                         ) : null}
                       </td>
@@ -271,22 +288,19 @@ export default function SuperAdminRateLimitExemptionsPage() {
       {modalOpen ? (
         <div className="oh-rle-modal-backdrop" role="dialog" aria-modal="true">
           <form className="oh-rle-modal" onSubmit={handleCreate}>
-            <h2>إضافة استثناء</h2>
-            <p className="oh-rle-modal__hint">
-              مثال عملي: صديق يُدخل طلبات تدريب بكثافة → scope = <code>fake_order_create</code> أو{" "}
-              <code>training_bulk</code> بوضع bypass وحد زمني واضح.
-            </p>
+            <h2>{t("opsAdmin.rateLimit.modalTitle")}</h2>
+            <p className="oh-rle-modal__hint">{t("opsAdmin.rateLimit.modalHint")}</p>
 
             <label className="oh-rle-field">
-              بحث المستخدم (اسم / إيميل / id)
+              {t("opsAdmin.rateLimit.userSearchLabel")}
               <input
                 value={userQuery}
                 onChange={(e) => setUserQuery(e.target.value)}
-                placeholder="اكتب حرفين على الأقل…"
+                placeholder={t("opsAdmin.rateLimit.userSearchPlaceholder")}
                 autoComplete="off"
               />
             </label>
-            {searchingUsers ? <div className="oh-rle-muted">جاري البحث…</div> : null}
+            {searchingUsers ? <div className="oh-rle-muted">{t("opsAdmin.rateLimit.searching")}</div> : null}
             {userResults.length > 0 ? (
               <ul className="oh-rle-user-results">
                 {userResults.map((u) => (
@@ -309,32 +323,34 @@ export default function SuperAdminRateLimitExemptionsPage() {
               </ul>
             ) : null}
             {form.userId ? (
-              <div className="oh-rle-selected">المحدد: {form.userLabel || form.userId}</div>
+              <div className="oh-rle-selected">
+                {t("opsAdmin.rateLimit.selectedUser", { label: form.userLabel || form.userId })}
+              </div>
             ) : null}
 
             <label className="oh-rle-field">
-              النطاق
+              {t("opsAdmin.rateLimit.scopeLabel")}
               <select
                 value={form.scope}
                 onChange={(e) => setForm((f) => ({ ...f, scope: e.target.value }))}
               >
                 {RATE_LIMIT_EXEMPTION_SCOPES.map((s) => (
                   <option key={s.value} value={s.value}>
-                    {s.label}
+                    {t(`opsAdmin.rateLimit.scopes.${s.value}`)}
                   </option>
                 ))}
               </select>
             </label>
 
             <label className="oh-rle-field">
-              الوضع
+              {t("opsAdmin.rateLimit.modeLabel")}
               <select
                 value={form.mode}
                 onChange={(e) => setForm((f) => ({ ...f, mode: e.target.value }))}
               >
                 {RATE_LIMIT_EXEMPTION_MODES.map((m) => (
                   <option key={m.value} value={m.value}>
-                    {m.label}
+                    {t(`opsAdmin.rateLimit.modes.${m.value}`)}
                   </option>
                 ))}
               </select>
@@ -343,7 +359,7 @@ export default function SuperAdminRateLimitExemptionsPage() {
             {form.mode === "increased_limit" ? (
               <div className="oh-rle-row">
                 <label className="oh-rle-field">
-                  max / دقيقة
+                  {t("opsAdmin.rateLimit.maxPerMinute")}
                   <input
                     type="number"
                     min="1"
@@ -352,7 +368,7 @@ export default function SuperAdminRateLimitExemptionsPage() {
                   />
                 </label>
                 <label className="oh-rle-field">
-                  max / ساعة
+                  {t("opsAdmin.rateLimit.maxPerHour")}
                   <input
                     type="number"
                     min="1"
@@ -364,7 +380,7 @@ export default function SuperAdminRateLimitExemptionsPage() {
             ) : null}
 
             <label className="oh-rle-field">
-              ينتهي في
+              {t("opsAdmin.rateLimit.expiresAt")}
               <input
                 type="datetime-local"
                 value={form.expiresAt}
@@ -385,21 +401,21 @@ export default function SuperAdminRateLimitExemptionsPage() {
                   }))
                 }
               />
-              استثناء دائم بدون تاريخ انتهاء (غير مُفضّل)
+              {t("opsAdmin.rateLimit.confirmPermanent")}
             </label>
 
             <label className="oh-rle-field">
-              السبب (مطلوب)
+              {t("opsAdmin.rateLimit.reasonRequired")}
               <textarea
                 required
                 rows={3}
                 value={form.reason}
                 onChange={(e) => setForm((f) => ({ ...f, reason: e.target.value }))}
-                placeholder="مثال: موثوق لإدخال طلبات تدريب عبر أدوات مساعدة"
+                placeholder={t("opsAdmin.rateLimit.reasonPlaceholder")}
               />
             </label>
             <label className="oh-rle-field">
-              ملاحظات
+              {t("opsAdmin.rateLimit.notes")}
               <textarea
                 rows={2}
                 value={form.notes}
@@ -411,10 +427,10 @@ export default function SuperAdminRateLimitExemptionsPage() {
 
             <div className="oh-rle-modal__actions">
               <Button type="button" variant="ghost" onClick={() => setModalOpen(false)} disabled={saving}>
-                إلغاء
+                {t("opsAdmin.common.cancel")}
               </Button>
               <Button type="submit" disabled={saving}>
-                {saving ? "جارٍ الحفظ…" : "حفظ"}
+                {saving ? t("opsAdmin.common.saving") : t("opsAdmin.common.save")}
               </Button>
             </div>
           </form>

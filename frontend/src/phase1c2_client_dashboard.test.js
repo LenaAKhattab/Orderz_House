@@ -56,10 +56,8 @@ describe("Phase 1C.2 client routes", () => {
 
   it("create-order stepper has three client steps and mobile wrap classes", () => {
     const wizard = read("components/orders/AdminInternalOrderWizard.jsx");
-    assert.match(wizard, /CLIENT_STEPS = \[/);
-    assert.match(wizard, /key: "core"/);
-    assert.match(wizard, /key: "files"/);
-    assert.match(wizard, /key: "review"/);
+    assert.match(wizard, /CLIENT_STEP_KEYS = \[/);
+    assert.match(wizard, /CLIENT_STEP_KEYS = \["core", "files", "review"\]/);
     assert.match(wizard, /max-\[420px\]:flex-wrap/);
   });
 
@@ -70,7 +68,8 @@ describe("Phase 1C.2 client routes", () => {
     assert.match(card, /ClientFixedOrderPayNowButton/);
     const btn = read("components/orders/ClientFixedOrderPayNowButton.jsx");
     assert.match(btn, /createClientFixedOrderCheckoutRequest/);
-    assert.match(btn, /ادفع الآن/);
+    assert.match(btn, /clientArea\.payNow/);
+    assert.match(btn, /\$\{p\}\.label/);
     assert.doesNotMatch(btn, /startCheckout|in.?app purchase|training package/i);
 
     assert.equal(

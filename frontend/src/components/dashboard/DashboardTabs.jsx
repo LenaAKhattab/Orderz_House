@@ -1,10 +1,14 @@
+import { useTranslation } from "../../i18n/LanguageProvider";
+
 /**
  * Tab list container — compose with `DashboardTab` children.
  * @param {{ "aria-label"?: string; children: import("react").ReactNode; className?: string }} p
  */
-export default function DashboardTabs({ "aria-label": ariaLabel = "أقسام", children, className = "" }) {
+export default function DashboardTabs({ "aria-label": ariaLabel, children, className = "" }) {
+  const { t } = useTranslation();
+  const label = ariaLabel ?? t("dashboard.ui.tabsAria");
   return (
-    <div className={`dash-ui-tabs flex flex-wrap gap-1.5 ${className}`.trim()} role="tablist" aria-label={ariaLabel}>
+    <div className={`dash-ui-tabs flex flex-wrap gap-1.5 ${className}`.trim()} role="tablist" aria-label={label}>
       {children}
     </div>
   );

@@ -1,4 +1,6 @@
 import StatusBadge from "../../components/dashboard/StatusBadge";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/subscriptionsResources";
 import {
   subscriptionPaymentLabel,
   subscriptionPaymentTone,
@@ -13,12 +15,12 @@ import {
 } from "../../admin/subscriptions/subscriptionWhatsApp";
 import { formatSubscriptionPaymentCountry } from "../../utils/countryDisplay";
 
-function subscriptionCountryLine(sub) {
+function subscriptionCountryLine(sub, t) {
   const text = formatSubscriptionPaymentCountry({
     countryCode: sub.paymentCountryCode,
     paymentStatus: sub.paymentStatus,
   });
-  if (!text || text === "غير معروف") return null;
+  if (!text || text === t("subscriptions.display.unknown")) return null;
   return text;
 }
 
@@ -46,6 +48,7 @@ function SubscriptionActions({
   onCompanyActivate,
   onWhatsApp,
   layout = "wrap",
+  t,
 }) {
   const hasFirstOrderRecorded = Boolean(sub?.hasFirstOrder || sub?.firstOrderDate);
   const showCompanyActivate = sub.paymentStatus === "paid" && sub.activationStatus !== "company_approved";
@@ -61,7 +64,7 @@ function SubscriptionActions({
         disabled={submitting}
         onClick={() => onDisable(sub)}
       >
-        تعطيل
+        {t("subscriptions.list.deactivate")}
       </button>
       <button
         type="button"
@@ -69,7 +72,7 @@ function SubscriptionActions({
         disabled={submitting}
         onClick={() => onCancel(sub)}
       >
-        إلغاء
+        {t("subscriptions.list.cancel")}
       </button>
       {!hasFirstOrderRecorded ? (
         <button
@@ -78,7 +81,7 @@ function SubscriptionActions({
           disabled={submitting}
           onClick={() => onFirstOrder(sub)}
         >
-          تسجيل أول طلب
+          {t("subscriptions.list.firstOrder")}
         </button>
       ) : null}
       {showCompanyActivate ? (
@@ -88,7 +91,7 @@ function SubscriptionActions({
           disabled={submitting}
           onClick={() => onCompanyActivate(sub)}
         >
-          تفعيل الشركة
+          {t("subscriptions.list.activateCompany")}
         </button>
       ) : null}
       {showWhatsApp ? (
@@ -96,10 +99,10 @@ function SubscriptionActions({
           type="button"
           className="btn btn-secondary btn-sm oh-sa-subs-actions__btn oh-sa-subs-actions__btn--wa"
           disabled={submitting || !whatsappNumber}
-          title={whatsappNumber ? "إرسال رسالة واتساب" : "لا يوجد رقم واتساب"}
+          title={whatsappNumber ? t("subscriptions.list.whatsappTitle") : t("subscriptions.list.whatsappNoNumber")}
           onClick={() => onWhatsApp(sub)}
         >
-          واتساب
+          {t("subscriptions.list.whatsapp")}
         </button>
       ) : null}
     </div>
@@ -119,6 +122,7 @@ export default function SuperAdminSubscriptionsList({
   onCompanyActivate,
   onWhatsApp,
 }) {
+  const { t } = useTranslation();
   const planName = (sub) => sub?.plan?.title || planTitleById[String(sub?.planId || "")] || "—";
 
   return (
@@ -138,22 +142,22 @@ export default function SuperAdminSubscriptionsList({
           </colgroup>
           <thead>
             <tr>
-              <th className="oh-sa-subs-col-id">رقم الاشتراك</th>
-              <th className="oh-sa-subs-col-freelancer">المستقل</th>
-              <th className="oh-sa-subs-col-plan">الباقة</th>
-              <th className="oh-sa-subs-col-status">الحالة</th>
-              <th className="oh-sa-subs-col-payment">الدفع</th>
-              <th className="oh-sa-subs-col-assigned">تاريخ الإسناد</th>
-              <th className="oh-sa-subs-col-start">بداية التفعيل</th>
-              <th className="oh-sa-subs-col-expiry">الانتهاء</th>
-              <th className="oh-sa-subs-col-actions">إجراءات</th>
+              <th className="oh-sa-subs-col-id">{t("subscriptions.list.colId")}</th>
+              <th className="oh-sa-subs-col-freelancer">{t("subscriptions.list.colFreelancer")}</th>
+              <th className="oh-sa-subs-col-plan">{t("subscriptions.list.colPlan")}</th>
+              <th className="oh-sa-subs-col-status">{t("subscriptions.list.colStatus")}</th>
+              <th className="oh-sa-subs-col-payment">{t("subscriptions.list.colPayment")}</th>
+              <th className="oh-sa-subs-col-assigned">{t("subscriptions.list.colAssigned")}</th>
+              <th className="oh-sa-subs-col-start">{t("subscriptions.list.colStart")}</th>
+              <th className="oh-sa-subs-col-expiry">{t("subscriptions.list.colExpiry")}</th>
+              <th className="oh-sa-subs-col-actions">{t("subscriptions.list.colActions")}</th>
             </tr>
           </thead>
           <tbody>
             {subscriptions.map((s) => {
-              const name = formatFreelancerDisplayName(s);
-              const subline = formatFreelancerDisplaySubline(s);
-              const countryLine = subscriptionCountryLine(s);
+              const name = formatFreelancerDisplayName(s, t);
+              const subline = formatFreelancerDisplaySubline(s, t);
+              const countryLine = subscriptionCountryLine(s, t);
               const plan = planName(s);
               return (
               <tr key={s.id}>
@@ -180,12 +184,12 @@ export default function SuperAdminSubscriptionsList({
                 </td>
                 <td className="oh-sa-subs-col-status oh-sa-subs-table__status">
                   <StatusBadge tone={subscriptionStatusTone(s.status)} className="oh-sa-subs-table__badge">
-                    {subscriptionStatusLabel(s.status)}
+                    {subscriptionStatusLabel(s.status, t)}
                   </StatusBadge>
                 </td>
                 <td className="oh-sa-subs-col-payment oh-sa-subs-table__payment">
                   <StatusBadge tone={subscriptionPaymentTone(s)} className="oh-sa-subs-table__badge">
-                    {subscriptionPaymentLabel(s)}
+                    {subscriptionPaymentLabel(s, t)}
                   </StatusBadge>
                 </td>
                 <td className="oh-sa-subs-col-assigned oh-sa-subs-table__date" dir="ltr">
@@ -207,6 +211,7 @@ export default function SuperAdminSubscriptionsList({
                     onCompanyActivate={onCompanyActivate}
                     onWhatsApp={onWhatsApp}
                     layout="compact"
+                    t={t}
                   />
                 </td>
               </tr>
@@ -223,28 +228,28 @@ export default function SuperAdminSubscriptionsList({
               <span className="oh-sa-subs-mobile-card__id" dir="ltr">
                 #{s.id}
               </span>
-              <StatusBadge tone={subscriptionStatusTone(s.status)}>{subscriptionStatusLabel(s.status)}</StatusBadge>
+              <StatusBadge tone={subscriptionStatusTone(s.status)}>{subscriptionStatusLabel(s.status, t)}</StatusBadge>
             </div>
             <div className="oh-sa-subs-mobile-card__body">
-              <p className="oh-sa-subs-mobile-card__name">{formatFreelancerDisplayName(s)}</p>
-              {formatFreelancerDisplaySubline(s) ? (
-                <p className="oh-sa-subs-mobile-card__meta">{formatFreelancerDisplaySubline(s)}</p>
+              <p className="oh-sa-subs-mobile-card__name">{formatFreelancerDisplayName(s, t)}</p>
+              {formatFreelancerDisplaySubline(s, t) ? (
+                <p className="oh-sa-subs-mobile-card__meta">{formatFreelancerDisplaySubline(s, t)}</p>
               ) : null}
-              {subscriptionCountryLine(s) ? (
-                <p className="oh-sa-subs-mobile-card__meta sa-sub-country">{subscriptionCountryLine(s)}</p>
+              {subscriptionCountryLine(s, t) ? (
+                <p className="oh-sa-subs-mobile-card__meta sa-sub-country">{subscriptionCountryLine(s, t)}</p>
               ) : null}
               <div className="oh-sa-subs-mobile-card__row">
-                <span>الباقة</span>
+                <span>{t("subscriptions.list.colPlan")}</span>
                 <strong>{planName(s)}</strong>
               </div>
               <div className="oh-sa-subs-mobile-card__row">
-                <span>الدفع</span>
-                <StatusBadge tone={subscriptionPaymentTone(s)}>{subscriptionPaymentLabel(s)}</StatusBadge>
+                <span>{t("subscriptions.list.colPayment")}</span>
+                <StatusBadge tone={subscriptionPaymentTone(s)}>{subscriptionPaymentLabel(s, t)}</StatusBadge>
               </div>
               <div className="oh-sa-subs-mobile-card__dates">
-                <span dir="ltr">إسناد: {formatSubscriptionAdminDateTime(s.assignedAt)}</span>
-                <span dir="ltr">بداية: {formatSubscriptionAdminDateTime(s.actualStartDate)}</span>
-                <span dir="ltr">انتهاء: {formatSubscriptionAdminDateTime(s.expiryDate)}</span>
+                <span dir="ltr">{t("subscriptions.list.assignedPrefix")} {formatSubscriptionAdminDateTime(s.assignedAt)}</span>
+                <span dir="ltr">{t("subscriptions.list.startPrefix")} {formatSubscriptionAdminDateTime(s.actualStartDate)}</span>
+                <span dir="ltr">{t("subscriptions.list.expiryPrefix")} {formatSubscriptionAdminDateTime(s.expiryDate)}</span>
               </div>
             </div>
             <SubscriptionActions
@@ -255,6 +260,7 @@ export default function SuperAdminSubscriptionsList({
               onFirstOrder={onFirstOrder}
               onCompanyActivate={onCompanyActivate}
               onWhatsApp={onWhatsApp}
+              t={t}
             />
           </li>
         ))}

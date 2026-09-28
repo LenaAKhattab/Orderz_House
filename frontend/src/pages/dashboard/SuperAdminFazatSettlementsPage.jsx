@@ -1,3 +1,4 @@
+import "../../i18n/financeResources";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   approveFazatSettlementRequest,
@@ -18,18 +19,21 @@ import DashboardEmptyState from "../../components/dashboard/DashboardEmptyState"
 import DashboardLoadingState from "../../components/dashboard/DashboardLoadingState";
 import StatusBadge from "../../components/dashboard/StatusBadge";
 import DashboardModal from "../../components/dashboard/DashboardModal";
+import { useTranslation } from "../../i18n/LanguageProvider";
 
-function formatDate(value) {
+function formatDate(value, locale) {
   if (!value) return "—";
   const d = new Date(value);
   if (!Number.isFinite(d.getTime())) return "—";
-  return new Intl.DateTimeFormat("ar-JO-u-nu-latn", { dateStyle: "medium", timeStyle: "short" }).format(d);
+  const tag = locale === "en" ? "en-GB" : "ar-JO-u-nu-latn";
+  return new Intl.DateTimeFormat(tag, { dateStyle: "medium", timeStyle: "short" }).format(d);
 }
 
-function formatMinor(amountMinor, currency = "JOD") {
+function formatMinor(amountMinor, currency = "JOD", locale) {
   if (amountMinor == null || Number.isNaN(Number(amountMinor))) return "—";
   const major = Number(amountMinor) / 100;
-  return `${new Intl.NumberFormat("ar-JO-u-nu-latn", { maximumFractionDigits: 2 }).format(major)} ${currency}`;
+  const tag = locale === "en" ? "en-US" : "ar-JO-u-nu-latn";
+  return `${new Intl.NumberFormat(tag, { maximumFractionDigits: 2 }).format(major)} ${currency}`;
 }
 
 function statusTone(status) {
@@ -41,7 +45,26 @@ function statusTone(status) {
   return "neutral";
 }
 
+function settlementStatusLabel(status, t) {
+  const v = String(status || "");
+  const key = `finance.fazatSettlements.settlementStatus.${v}`;
+  const label = v ? t(key) : "";
+  if (label && label !== key) return label;
+  return v || "—";
+}
+
+const STATUS_FILTER_VALUES = [
+  "",
+  "PENDING_REVIEW",
+  "APPROVED_CREDITED",
+  "ADJUSTED_APPROVED",
+  "REJECTED",
+  "CREDIT_FAILED",
+];
+
 export default function SuperAdminFazatSettlementsPage() {
+  const { t, locale } = useTranslation();
+  const fs = "finance.fazatSettlements";
   const { pushToast } = useToast();
   const { user } = useAuth();
   const isSuperAdmin = String(user?.role || "") === ROLE.SUPER_ADMIN;
@@ -58,6 +81,15 @@ export default function SuperAdminFazatSettlementsPage() {
   const [adjustAmount, setAdjustAmount] = useState("");
   const [adjustReason, setAdjustReason] = useState("");
 
+  const statusFilterOptions = useMemo(
+    () =>
+      STATUS_FILTER_VALUES.map((value) => ({
+        value,
+        label: value ? settlementStatusLabel(value, t) : t(`${fs}.filterAllStatuses`),
+      })),
+    [t, fs],
+  );
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -69,12 +101,12 @@ export default function SuperAdminFazatSettlementsPage() {
     } catch (err) {
       pushToast({
         type: "error",
-        message: getSafeApiErrorMessage(err, "تعذر تحميل تسويات فزعات"),
+        message: getSafeApiErrorMessage(err, t(`${fs}.toastLoadError`)),
       });
     } finally {
       setLoading(false);
     }
-  }, [statusFilter, pushToast]);
+  }, [statusFilter, pushToast, t, fs]);
 
   useEffect(() => {
     load();
@@ -89,12 +121,12 @@ export default function SuperAdminFazatSettlementsPage() {
     setBusyId(row.id);
     try {
       await approveFazatSettlementRequest(row.id);
-      pushToast({ type: "success", message: "تم الاعتماد وإضافة الرصيد للمحفظة" });
+      pushToast({ type: "success", message: t(`${fs}.toastApproved`) });
       await load();
     } catch (err) {
       pushToast({
         type: "error",
-        message: getSafeApiErrorMessage(err, "تعذر اعتماد التسوية"),
+        message: getSafeApiErrorMessage(err, t(`${fs}.toastApproveError`)),
       });
     } finally {
       setBusyId(null);
@@ -104,20 +136,20 @@ export default function SuperAdminFazatSettlementsPage() {
   const onReject = async () => {
     if (!rejectOpen) return;
     if (String(rejectReason || "").trim().length < 3) {
-      pushToast({ type: "error", message: "يجب إدخال سبب الرفض." });
+      pushToast({ type: "error", message: t(`${fs}.toastRejectReasonRequired`) });
       return;
     }
     setBusyId(rejectOpen.id);
     try {
       await rejectFazatSettlementRequest(rejectOpen.id, { reason: rejectReason.trim() });
-      pushToast({ type: "success", message: "تم رفض التسوية" });
+      pushToast({ type: "success", message: t(`${fs}.toastRejected`) });
       setRejectOpen(null);
       setRejectReason("");
       await load();
     } catch (err) {
       pushToast({
         type: "error",
-        message: getSafeApiErrorMessage(err, "تعذر رفض التسوية"),
+        message: getSafeApiErrorMessage(err, t(`${fs}.toastRejectError`)),
       });
     } finally {
       setBusyId(null);
@@ -128,11 +160,11 @@ export default function SuperAdminFazatSettlementsPage() {
     if (!adjustOpen) return;
     const major = Number(adjustAmount);
     if (!Number.isFinite(major) || major <= 0) {
-      pushToast({ type: "error", message: "لا يمكن اعتماد مبلغ صفر أو أقل." });
+      pushToast({ type: "error", message: t(`${fs}.toastInvalidAmount`) });
       return;
     }
     if (String(adjustReason || "").trim().length < 3) {
-      pushToast({ type: "error", message: "يجب إدخال سبب التعديل." });
+      pushToast({ type: "error", message: t(`${fs}.toastAdjustReasonRequired`) });
       return;
     }
     const adjustedAmountMinor = Math.round(major * 100);
@@ -142,7 +174,7 @@ export default function SuperAdminFazatSettlementsPage() {
         adjustedAmountMinor,
         reason: adjustReason.trim(),
       });
-      pushToast({ type: "success", message: "تم تعديل المبلغ واعتماد التسوية" });
+      pushToast({ type: "success", message: t(`${fs}.toastAdjustedApproved`) });
       setAdjustOpen(null);
       setAdjustAmount("");
       setAdjustReason("");
@@ -150,7 +182,7 @@ export default function SuperAdminFazatSettlementsPage() {
     } catch (err) {
       pushToast({
         type: "error",
-        message: getSafeApiErrorMessage(err, "تعذر تعديل واعتماد التسوية"),
+        message: getSafeApiErrorMessage(err, t(`${fs}.toastAdjustError`)),
       });
     } finally {
       setBusyId(null);
@@ -160,9 +192,9 @@ export default function SuperAdminFazatSettlementsPage() {
   return (
     <DashboardShell>
       <DashboardPageHeader
-        title="تسويات فزعات"
+        title={t(`${fs}.title`)}
         breadcrumbs={superAdminBreadcrumbs("dashboard.breadcrumbs.fazatSettlements")}
-        description="مراجعة تسويات أرباح الفريلانسر القادمة من فزعات قبل إضافة الرصيد إلى محفظة Orderz."
+        description={t(`${fs}.description`)}
       />
 
       <DashboardToolbar>
@@ -172,38 +204,37 @@ export default function SuperAdminFazatSettlementsPage() {
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
-            <option value="">كل الحالات</option>
-            <option value="PENDING_REVIEW">بانتظار المراجعة</option>
-            <option value="APPROVED_CREDITED">معتمد وتمت إضافة الرصيد</option>
-            <option value="ADJUSTED_APPROVED">معدل ومعتمد</option>
-            <option value="REJECTED">مرفوض</option>
-            <option value="CREDIT_FAILED">فشل إضافة الرصيد</option>
+            {statusFilterOptions.map((opt) => (
+              <option key={opt.value || "all"} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
           </select>
           <button type="button" className="btn btn-secondary" onClick={load} disabled={loading}>
-            تحديث ({pendingCount} بانتظار)
+            {t(`${fs}.refresh`, { count: pendingCount })}
           </button>
         </div>
       </DashboardToolbar>
 
-      <DashboardSection title="قائمة التسويات">
+      <DashboardSection title={t(`${fs}.listTitle`)}>
         {loading ? (
           <DashboardLoadingState />
         ) : rows.length === 0 ? (
-          <DashboardEmptyState title="لا توجد تسويات" description="لم تصل أي تسويات من فزعات بعد." />
+          <DashboardEmptyState title={t(`${fs}.emptyTitle`)} description={t(`${fs}.emptyDescription`)} />
         ) : (
           <div className="oh-table-wrap">
             <table className="oh-table">
               <thead>
                 <tr>
-                  <th>المعرّف</th>
-                  <th>مرجع فزعات</th>
-                  <th>طلب Orderz</th>
-                  <th>الفريلانسر</th>
-                  <th>المبلغ</th>
-                  <th>النهائي</th>
-                  <th>الحالة</th>
-                  <th>التاريخ</th>
-                  <th>إجراءات</th>
+                  <th>{t(`${fs}.colId`)}</th>
+                  <th>{t(`${fs}.colFazatRef`)}</th>
+                  <th>{t(`${fs}.colOrderzOrder`)}</th>
+                  <th>{t(`${fs}.colFreelancer`)}</th>
+                  <th>{t(`${fs}.colAmount`)}</th>
+                  <th>{t(`${fs}.colFinal`)}</th>
+                  <th>{t(`${fs}.colStatus`)}</th>
+                  <th>{t(`${fs}.colDate`)}</th>
+                  <th>{t(`${fs}.colActions`)}</th>
                 </tr>
               </thead>
               <tbody>
@@ -222,19 +253,20 @@ export default function SuperAdminFazatSettlementsPage() {
                         <div>{row.freelancerName || "—"}</div>
                         <div className="text-xs opacity-70">#{row.freelancerId}</div>
                       </td>
-                      <td>{formatMinor(row.amountMinor, row.currency)}</td>
+                      <td>{formatMinor(row.amountMinor, row.currency, locale)}</td>
                       <td>
                         {formatMinor(
                           row.finalAmountMinor ?? row.adjustedAmountMinor ?? row.amountMinor,
                           row.currency,
+                          locale,
                         )}
                       </td>
                       <td>
                         <StatusBadge tone={statusTone(row.status)}>
-                          {row.statusLabelAr || row.status}
+                          {settlementStatusLabel(row.status, t)}
                         </StatusBadge>
                       </td>
-                      <td>{formatDate(row.createdAt)}</td>
+                      <td>{formatDate(row.createdAt, locale)}</td>
                       <td>
                         <div className="flex flex-wrap gap-1">
                           <button
@@ -242,7 +274,7 @@ export default function SuperAdminFazatSettlementsPage() {
                             className="btn btn-secondary"
                             onClick={() => setDetail(row)}
                           >
-                            تفاصيل
+                            {t(`${fs}.details`)}
                           </button>
                           {canAct ? (
                             <>
@@ -252,7 +284,7 @@ export default function SuperAdminFazatSettlementsPage() {
                                 disabled={busyId === row.id}
                                 onClick={() => onApprove(row)}
                               >
-                                اعتماد وإضافة للمحفظة
+                                {t(`${fs}.approveCredit`)}
                               </button>
                               <button
                                 type="button"
@@ -263,7 +295,7 @@ export default function SuperAdminFazatSettlementsPage() {
                                   setRejectReason("");
                                 }}
                               >
-                                رفض التسوية
+                                {t(`${fs}.reject`)}
                               </button>
                               {isSuperAdmin ? (
                                 <button
@@ -276,7 +308,7 @@ export default function SuperAdminFazatSettlementsPage() {
                                     setAdjustReason("");
                                   }}
                                 >
-                                  تعديل المبلغ واعتماد
+                                  {t(`${fs}.adjustApprove`)}
                                 </button>
                               ) : null}
                             </>
@@ -295,45 +327,43 @@ export default function SuperAdminFazatSettlementsPage() {
       <DashboardModal
         open={Boolean(detail)}
         onClose={() => setDetail(null)}
-        title="تفاصيل تسوية فزعات"
+        title={t(`${fs}.detailModalTitle`)}
       >
         {detail ? (
           <div className="space-y-2 text-sm">
             <p>
-              <strong>مرجع فزعات:</strong> {detail.fazatOrderId} / {detail.fazatSettlementId}
+              <strong>{t(`${fs}.fazatRef`)}:</strong> {detail.fazatOrderId} / {detail.fazatSettlementId}
             </p>
             <p>
-              <strong>طلب Orderz:</strong> {detail.orderzOrderId || "—"}
+              <strong>{t(`${fs}.orderzOrder`)}:</strong> {detail.orderzOrderId || "—"}
             </p>
             <p>
-              <strong>الفريلانسر:</strong> {detail.freelancerName} (#{detail.freelancerId})
+              <strong>{t(`${fs}.colFreelancer`)}:</strong> {detail.freelancerName} (#{detail.freelancerId})
             </p>
             <p>
-              <strong>المبلغ:</strong> {formatMinor(detail.amountMinor, detail.currency)}
+              <strong>{t(`${fs}.amount`)}:</strong> {formatMinor(detail.amountMinor, detail.currency, locale)}
             </p>
             {detail.adjustedAmountMinor != null ? (
               <p>
-                <strong>المعدل:</strong>{" "}
-                {formatMinor(detail.adjustedAmountMinor, detail.currency)}
+                <strong>{t(`${fs}.adjusted`)}:</strong>{" "}
+                {formatMinor(detail.adjustedAmountMinor, detail.currency, locale)}
                 {detail.adjustmentReason ? ` — ${detail.adjustmentReason}` : ""}
               </p>
             ) : null}
             <p>
-              <strong>الحالة:</strong> {detail.statusLabelAr}
+              <strong>{t(`${fs}.statusLabel`)}:</strong> {settlementStatusLabel(detail.status, t)}
             </p>
             {detail.rejectionReason ? (
               <p>
-                <strong>سبب الرفض:</strong> {detail.rejectionReason}
+                <strong>{t(`${fs}.rejectionReason`)}:</strong> {detail.rejectionReason}
               </p>
             ) : null}
             {detail.walletLedgerEntryId ? (
               <p>
-                <strong>قيد المحفظة:</strong> #{detail.walletLedgerEntryId}
+                <strong>{t(`${fs}.walletEntry`)}:</strong> #{detail.walletLedgerEntryId}
               </p>
             ) : null}
-            <p className="opacity-70 text-xs">
-              لا يظهر للفريلانسر أي إشارة لفزعات — يرى فقط «أرباح طلب مُدار».
-            </p>
+            <p className="opacity-70 text-xs">{t(`${fs}.freelancerPrivacyNote`)}</p>
           </div>
         ) : null}
       </DashboardModal>
@@ -341,7 +371,7 @@ export default function SuperAdminFazatSettlementsPage() {
       <DashboardModal
         open={Boolean(rejectOpen)}
         onClose={() => setRejectOpen(null)}
-        title="رفض التسوية"
+        title={t(`${fs}.rejectModalTitle`)}
         footer={
           <button
             type="button"
@@ -349,24 +379,24 @@ export default function SuperAdminFazatSettlementsPage() {
             disabled={busyId === rejectOpen?.id}
             onClick={onReject}
           >
-            تأكيد الرفض
+            {t(`${fs}.confirmReject`)}
           </button>
         }
       >
-        <label className="block text-sm mb-1">سبب الرفض</label>
+        <label className="block text-sm mb-1">{t(`${fs}.rejectReasonLabel`)}</label>
         <textarea
           className="input w-full"
           rows={3}
           value={rejectReason}
           onChange={(e) => setRejectReason(e.target.value)}
-          placeholder="سبب واضح للمراجعة المالية…"
+          placeholder={t(`${fs}.rejectReasonPlaceholder`)}
         />
       </DashboardModal>
 
       <DashboardModal
         open={Boolean(adjustOpen)}
         onClose={() => setAdjustOpen(null)}
-        title="تعديل المبلغ واعتماد"
+        title={t(`${fs}.adjustModalTitle`)}
         footer={
           <button
             type="button"
@@ -374,11 +404,13 @@ export default function SuperAdminFazatSettlementsPage() {
             disabled={busyId === adjustOpen?.id}
             onClick={onAdjustApprove}
           >
-            تعديل المبلغ واعتماد
+            {t(`${fs}.adjustApprove`)}
           </button>
         }
       >
-        <label className="block text-sm mb-1">المبلغ النهائي ({adjustOpen?.currency || "JOD"})</label>
+        <label className="block text-sm mb-1">
+          {t(`${fs}.finalAmountLabel`, { currency: adjustOpen?.currency || "JOD" })}
+        </label>
         <input
           type="number"
           min="0.01"
@@ -387,7 +419,7 @@ export default function SuperAdminFazatSettlementsPage() {
           value={adjustAmount}
           onChange={(e) => setAdjustAmount(e.target.value)}
         />
-        <label className="block text-sm mb-1">سبب التعديل</label>
+        <label className="block text-sm mb-1">{t(`${fs}.adjustReasonLabel`)}</label>
         <textarea
           className="input w-full"
           rows={3}

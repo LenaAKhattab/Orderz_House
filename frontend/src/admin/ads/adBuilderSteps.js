@@ -1,10 +1,18 @@
-/** Admin ad builder — step tabs (UI only; all fields still submit via same payload). */
-
-export const BUILDER_STEPS = [
-  { id: 1, label: "المحتوى", short: "١" },
-  { id: 2, label: "التصميم", short: "٢" },
-  { id: 3, label: "العرض والخصم", short: "٣" },
-  { id: 4, label: "الصور", short: "٤" },
-  { id: 5, label: "النشر", short: "٥" },
-  { id: 6, label: "الترتيب والإحصاء", short: "٦" },
+/** Builder step metadata — labels resolved via i18n in AdBuilderStepNav. */
+export const BUILDER_STEP_DEFS = [
+  { id: 1, key: "content" },
+  { id: 2, key: "design" },
+  { id: 3, key: "offer" },
+  { id: 4, key: "images" },
+  { id: 5, key: "publish" },
+  { id: 6, key: "orderStats" },
 ];
+
+/** @param {(key: string, values?: Record<string, string | number>) => string} t */
+export function getBuilderSteps(t) {
+  return BUILDER_STEP_DEFS.map((s) => ({
+    id: s.id,
+    label: t(`ads.builderSteps.${s.key}.label`),
+    short: t(`ads.builderSteps.${s.key}.short`),
+  }));
+}

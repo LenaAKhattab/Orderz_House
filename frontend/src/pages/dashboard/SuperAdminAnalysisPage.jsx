@@ -2,24 +2,27 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { CalendarRange, RefreshCw } from "lucide-react";
 import DashboardShell from "../../components/dashboard/DashboardShell";
 import { formatInt, formatMoneyJod } from "../../components/analytics/super-admin/superAdminHomeBundleUi";
+import { isUnknownCountryRow } from "../../components/analytics/super-admin/registerAnalysisLocale";
+import { useTranslation } from "../../i18n/LanguageProvider";
 import { getSuperadminDashboardAnalysisRequest } from "../../services/api";
+import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
 import { withResolvedCountryNames } from "../../utils/countryDisplayAr";
 import "../../styles/adminOverviewSoft.css";
 import "../../styles/adminAnalysisSoft.css";
 
-const RANGE_OPTIONS = [
-  { value: "all", label: "كل الفترات" },
-  { value: "today", label: "اليوم" },
-  { value: "7d", label: "آخر 7 أيام" },
-  { value: "30d", label: "آخر 30 يوماً" },
-  { value: "this_month", label: "هذا الشهر" },
-  { value: "last_month", label: "الشهر الماضي" },
+const RANGE_OPTION_KEYS = [
+  { value: "all", labelKey: "analysis.range.all" },
+  { value: "today", labelKey: "analysis.range.today" },
+  { value: "7d", labelKey: "analysis.range.7d" },
+  { value: "30d", labelKey: "analysis.range.30d" },
+  { value: "this_month", labelKey: "analysis.range.this_month" },
+  { value: "last_month", labelKey: "analysis.range.last_month" },
 ];
 
-function SoftHBars({ rows, valueKey = "value", labelKey = "label" }) {
+function SoftHBars({ rows, valueKey = "value", labelKey = "label", emptyMessage }) {
   const list = rows || [];
   if (!list.length) {
-    return <p className="aos-chart__empty">لا توجد بيانات كافية لعرض المخطط.</p>;
+    return <p className="aos-chart__empty">{emptyMessage}</p>;
   }
   const max = Math.max(1, ...list.map((r) => Number(r[valueKey]) || 0));
   return (
@@ -77,15 +80,15 @@ function SoftMetricGrid({ items, columns = 4 }) {
   );
 }
 
-function PlanGroupCard({ group }) {
+function PlanGroupCard({ group, t }) {
   const topPlan = group.topPlans?.[0];
   const metrics = [
-    { label: "إجمالي الاشتراكات", value: group.totalSubscriptions },
-    { label: "مدفوعة", value: group.paidSubscriptions },
-    { label: "إسناد إداري", value: group.adminAssignedSubscriptions },
-    { label: "مجانية", value: group.freeNotRequiredSubscriptions },
-    { label: "نشطة", value: group.activeSubscriptions },
-    { label: "قيمة مدفوعة", value: group.paidRevenueJod, money: true },
+    { label: t("analysis.kpi.totalSubscriptions"), value: group.totalSubscriptions },
+    { label: t("analysis.kpi.paid"), value: group.paidSubscriptions },
+    { label: t("analysis.kpi.adminAssignedShort"), value: group.adminAssignedSubscriptions },
+    { label: t("analysis.kpi.free"), value: group.freeNotRequiredSubscriptions },
+    { label: t("analysis.kpi.active"), value: group.activeSubscriptions },
+    { label: t("analysis.kpi.paidValue"), value: group.paidRevenueJod, money: true },
   ];
 
   return (
@@ -103,10 +106,12 @@ function PlanGroupCard({ group }) {
       <SoftMetricGrid items={metrics.map((m, i) => ({ ...m, key: `${group.groupKey}-${i}` }))} columns={3} />
       {topPlan ? (
         <footer className="aan-group-footer">
-          <span className="aan-group-footer__label">أشهر باقة</span>
+          <span className="aan-group-footer__label">{t("analysis.planGroup.topPlan")}</span>
           <span className="aan-group-footer__value">
             {topPlan.planTitle}
-            <em className="aan-group-footer__count">{formatInt(topPlan.totalSubscribers)} مشترك</em>
+            <em className="aan-group-footer__count">
+              {t("analysis.planGroup.subscribers", { count: formatInt(topPlan.totalSubscribers) })}
+            </em>
           </span>
         </footer>
       ) : null}
@@ -119,6 +124,7 @@ function SoftPill({ tone = "muted", children }) {
 }
 
 export default function SuperAdminAnalysisPage() {
+  const { t } = useTranslation();
   const [range, setRange] = useState("all");
   const [currentOnly, setCurrentOnly] = useState(true);
   const [data, setData] = useState(null);
@@ -140,13 +146,13 @@ export default function SuperAdminAnalysisPage() {
         setData(res?.data || null);
         setError("");
       } catch (e) {
-        setError(e?.response?.data?.message || e?.message || "تعذر تحميل بيانات التحليل.");
+        setError(getSafeApiErrorMessage(e, t("analysis.errors.loadAnalysis")));
       } finally {
         setLoading(false);
         setRefreshing(false);
       }
     },
-    [range, currentOnly],
+    [range, currentOnly, t],
   );
 
   useEffect(() => {
@@ -168,12 +174,12 @@ export default function SuperAdminAnalysisPage() {
     [data?.subscriptionsByCountry],
   );
 
-  const topUserCountry = userCountries.find((r) => r.countryName !== "غير معروف") || userCountries[0];
+  const topUserCountry = userCountries.find((r) => !isUnknownCountryRow(r)) || userCountries[0];
 
   const topUserBars = useMemo(
     () =>
       userCountries
-        .filter((r) => r.countryName !== "غير معروف")
+        .filter((r) => !isUnknownCountryRow(r))
         .slice(0, 8)
         .map((r) => ({
           countryCode: r.countryCode,
@@ -186,7 +192,7 @@ export default function SuperAdminAnalysisPage() {
   const topSubBars = useMemo(
     () =>
       subCountries
-        .filter((r) => r.countryName !== "غير معروف")
+        .filter((r) => !isUnknownCountryRow(r))
         .slice(0, 8)
         .map((r) => ({
           countryCode: r.countryCode,
@@ -200,75 +206,99 @@ export default function SuperAdminAnalysisPage() {
     () => [
       {
         key: "users",
-        label: "إجمالي المستخدمين",
+        label: t("analysis.kpi.totalUsers"),
         value: usersByCountry?.totalUsers,
-        hint: "عملاء ومستقلون",
+        hint: t("analysis.kpi.clientsAndFreelancers"),
       },
       {
         key: "topCountry",
-        label: "أكثر دولة",
+        label: t("analysis.kpi.topCountry"),
         value: topUserCountry?.countryName || "—",
-        hint: topUserCountry ? `${formatInt(topUserCountry.totalUsers)} مستخدم` : null,
+        hint: topUserCountry
+          ? t("analysis.kpi.usersCount", { count: formatInt(topUserCountry.totalUsers) })
+          : null,
         textValue: true,
       },
       {
         key: "subs",
-        label: "إجمالي الاشتراكات الحالية",
+        label: t("analysis.kpi.totalCurrentSubscriptions"),
         value: subOverview?.totalCurrent,
       },
       {
         key: "paid",
-        label: "الاشتراكات المدفوعة",
+        label: t("analysis.kpi.paidSubscriptions"),
         value: subOverview?.paid,
       },
       {
         key: "admin",
-        label: "الإسناد الإداري",
+        label: t("analysis.kpi.adminAssigned"),
         value: subOverview?.adminAssigned,
       },
       {
         key: "revenue",
-        label: "إجمالي قيمة الاشتراكات المدفوعة",
+        label: t("analysis.kpi.paidRevenueTotal"),
         value: subOverview?.paidRevenueJod,
         money: true,
       },
     ],
-    [usersByCountry?.totalUsers, topUserCountry, subOverview],
+    [usersByCountry?.totalUsers, topUserCountry, subOverview, t],
   );
 
   const subscriptionCards = useMemo(
     () => [
-      { key: "total", label: "إجمالي الاشتراكات الحالية", value: subOverview?.totalCurrent },
-      { key: "paid", label: "مدفوعة", value: subOverview?.paid },
+      {
+        key: "total",
+        label: t("analysis.kpi.totalCurrentSubscriptions"),
+        value: subOverview?.totalCurrent,
+      },
+      { key: "paid", label: t("analysis.kpi.paid"), value: subOverview?.paid },
       {
         key: "admin",
-        label: "إسناد إداري",
+        label: t("analysis.kpi.adminAssignedShort"),
         value: subOverview?.adminAssigned,
-        hint: "اشتراكات تم إسنادها من الإدارة",
+        hint: t("analysis.kpi.adminAssignedHint"),
       },
-      { key: "free", label: "مجانية / لا تتطلب دفعاً", value: subOverview?.freeNotRequired },
-      { key: "pendingAct", label: "بانتظار تفعيل الشركة", value: subOverview?.pendingCompanyActivation },
-      { key: "notStarted", label: "لم تبدأ بعد", value: subOverview?.assignedNotStarted },
-      { key: "active", label: "نشطة", value: subOverview?.active },
-      { key: "inactive", label: "منتهية / ملغاة", value: subOverview?.inactiveCancelled },
+      {
+        key: "free",
+        label: t("analysis.kpi.freeNotRequired"),
+        value: subOverview?.freeNotRequired,
+      },
+      {
+        key: "pendingAct",
+        label: t("analysis.kpi.pendingCompanyActivation"),
+        value: subOverview?.pendingCompanyActivation,
+      },
+      {
+        key: "notStarted",
+        label: t("analysis.kpi.assignedNotStarted"),
+        value: subOverview?.assignedNotStarted,
+      },
+      { key: "active", label: t("analysis.kpi.active"), value: subOverview?.active },
+      {
+        key: "inactive",
+        label: t("analysis.kpi.inactiveCancelled"),
+        value: subOverview?.inactiveCancelled,
+      },
     ],
-    [subOverview],
+    [subOverview, t],
   );
 
   const handleRefresh = () => void load({ isRefresh: true });
   const isInitialLoad = loading && !data;
   const hasData = Boolean(data);
-  const rangeLabel = RANGE_OPTIONS.find((o) => o.value === range)?.label || range;
+  const rangeLabel =
+    t(RANGE_OPTION_KEYS.find((o) => o.value === range)?.labelKey || "analysis.range.7d") || range;
+
+  const chartEmpty = t("analysis.chart.emptyInsufficient");
+  const loadingGeneric = t("analysis.loading.generic");
 
   return (
     <DashboardShell>
       <div className={`aos-page aan-page${refreshing ? " aan-page--refreshing" : ""}`}>
         <header className="aos-dash-head">
           <div className="aos-dash-head__titles">
-            <h1 className="aos-dash-head__title">التحليلات</h1>
-            <p className="aos-dash-head__desc">
-              نظرة تحليلية على توزيع المستخدمين والاشتراكات حسب الدولة والباقة
-            </p>
+            <h1 className="aos-dash-head__title">{t("analysis.page.title")}</h1>
+            <p className="aos-dash-head__desc">{t("analysis.page.subtitle")}</p>
           </div>
           <div className="aos-dash-head__tools">
             <label className="aos-tool aan-tool-select" htmlFor="aan-range">
@@ -277,11 +307,11 @@ export default function SuperAdminAnalysisPage() {
                 id="aan-range"
                 value={range}
                 onChange={(e) => setRange(e.target.value)}
-                aria-label="الفترة"
+                aria-label={t("analysis.range.ariaLabel")}
               >
-                {RANGE_OPTIONS.map((opt) => (
+                {RANGE_OPTION_KEYS.map((opt) => (
                   <option key={opt.value} value={opt.value}>
-                    {opt.label}
+                    {t(opt.labelKey)}
                   </option>
                 ))}
               </select>
@@ -292,7 +322,7 @@ export default function SuperAdminAnalysisPage() {
                 checked={currentOnly}
                 onChange={(e) => setCurrentOnly(e.target.checked)}
               />
-              الاشتراكات الحالية فقط
+              {t("analysis.filter.currentSubscriptionsOnly")}
             </label>
             <button
               type="button"
@@ -301,7 +331,7 @@ export default function SuperAdminAnalysisPage() {
               disabled={refreshing || isInitialLoad}
             >
               <RefreshCw size={14} strokeWidth={2} className={refreshing ? "aos-spin" : undefined} aria-hidden />
-              {refreshing ? "تحديث…" : "تحديث"}
+              {refreshing ? t("analysis.actions.refreshing") : t("analysis.actions.refresh")}
             </button>
           </div>
         </header>
@@ -310,7 +340,7 @@ export default function SuperAdminAnalysisPage() {
           <p className="aos-notice aos-notice--error" role="alert">
             {error}{" "}
             <button type="button" className="aos-notice__btn" onClick={handleRefresh}>
-              إعادة المحاولة
+              {t("analysis.actions.retry")}
             </button>
           </p>
         ) : null}
@@ -319,7 +349,7 @@ export default function SuperAdminAnalysisPage() {
           <p className="aos-notice" role="status">
             {error}{" "}
             <button type="button" className="aos-notice__btn" onClick={handleRefresh}>
-              إعادة المحاولة
+              {t("analysis.actions.retry")}
             </button>
           </p>
         ) : null}
@@ -328,13 +358,13 @@ export default function SuperAdminAnalysisPage() {
           <header className="aos-card__head">
             <div>
               <h2 id="aan-summary-title" className="aos-card__title">
-                ملخص سريع
+                {t("analysis.summary.title")}
               </h2>
-              <p className="aos-card__desc">أهم المؤشرات في لمحة — {rangeLabel}</p>
+              <p className="aos-card__desc">{t("analysis.summary.desc", { range: rangeLabel })}</p>
             </div>
           </header>
           {isInitialLoad ? (
-            <p className="aos-chart__empty">جارٍ تحميل الإحصائيات…</p>
+            <p className="aos-chart__empty">{t("analysis.loading.stats")}</p>
           ) : (
             <div className="aos-kpi-grid aan-kpi-grid--6">
               {heroCards.map((card) => (
@@ -351,19 +381,19 @@ export default function SuperAdminAnalysisPage() {
           )}
         </section>
 
-        <section className="aos-bot-grid" aria-label="تحليل المستخدمين حسب الدولة">
+        <section className="aos-bot-grid" aria-label={t("analysis.usersByCountry.sectionAria")}>
           <article className="aos-card">
             <header className="aos-card__head">
               <div>
-                <h2 className="aos-card__title">أعلى الدول (مستخدمون)</h2>
-                <p className="aos-card__desc">توزيع العملاء والمستقلين</p>
+                <h2 className="aos-card__title">{t("analysis.usersByCountry.topCountriesTitle")}</h2>
+                <p className="aos-card__desc">{t("analysis.usersByCountry.topCountriesDesc")}</p>
               </div>
-              <span className="aos-chip">أعلى 8</span>
+              <span className="aos-chip">{t("analysis.usersByCountry.topEight")}</span>
             </header>
             {isInitialLoad ? (
-              <p className="aos-chart__empty">جارٍ التحميل…</p>
+              <p className="aos-chart__empty">{loadingGeneric}</p>
             ) : (
-              <SoftHBars rows={topUserBars} />
+              <SoftHBars rows={topUserBars} emptyMessage={chartEmpty} />
             )}
           </article>
 
@@ -371,34 +401,46 @@ export default function SuperAdminAnalysisPage() {
             <header className="aos-list-head">
               <div className="aos-list-head__top">
                 <div>
-                  <h2 className="aos-list-head__title">تحليل المستخدمين حسب الدولة</h2>
-                  <p className="aos-list-head__desc">حسب الدولة المسجّلة في الحساب</p>
+                  <h2 className="aos-list-head__title">{t("analysis.usersByCountry.tableTitle")}</h2>
+                  <p className="aos-list-head__desc">{t("analysis.usersByCountry.tableDesc")}</p>
                 </div>
               </div>
               {!isInitialLoad ? (
                 <SoftMetricGrid
                   columns={3}
                   items={[
-                    { key: "known", label: "بدولة معروفة", value: usersByCountry?.totalKnown },
-                    { key: "unknown", label: "دولة غير معروفة", value: usersByCountry?.totalUnknown },
-                    { key: "total", label: "إجمالي العملاء والمستقلين", value: usersByCountry?.totalUsers },
+                    {
+                      key: "known",
+                      label: t("analysis.usersByCountry.knownCountry"),
+                      value: usersByCountry?.totalKnown,
+                    },
+                    {
+                      key: "unknown",
+                      label: t("analysis.usersByCountry.unknownCountry"),
+                      value: usersByCountry?.totalUnknown,
+                    },
+                    {
+                      key: "total",
+                      label: t("analysis.usersByCountry.totalClientsFreelancers"),
+                      value: usersByCountry?.totalUsers,
+                    },
                   ]}
                 />
               ) : null}
             </header>
 
             {isInitialLoad ? (
-              <p className="aos-empty">جارٍ التحميل…</p>
+              <p className="aos-empty">{loadingGeneric}</p>
             ) : userCountries.length ? (
               <div className="aos-table-wrap">
                 <table className="aos-table">
                   <thead>
                     <tr>
-                      <th>الدولة</th>
-                      <th>إجمالي المستخدمين</th>
-                      <th className="aan-col--clients">العملاء</th>
-                      <th className="aan-col--freelancers">المستقلون</th>
-                      <th className="aan-col--share">النسبة</th>
+                      <th>{t("analysis.usersByCountry.colCountry")}</th>
+                      <th>{t("analysis.usersByCountry.colTotalUsers")}</th>
+                      <th className="aan-col--clients">{t("analysis.usersByCountry.colClients")}</th>
+                      <th className="aan-col--freelancers">{t("analysis.usersByCountry.colFreelancers")}</th>
+                      <th className="aan-col--share">{t("analysis.usersByCountry.colShare")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -418,7 +460,9 @@ export default function SuperAdminAnalysisPage() {
                         </td>
                         <td className="aan-col--share">
                           <span className="aos-stack__sub">
-                            {row.sharePct != null ? `${row.sharePct}٪` : "—"}
+                            {row.sharePct != null
+                              ? t("analysis.sharePercent", { value: row.sharePct })
+                              : "—"}
                           </span>
                         </td>
                       </tr>
@@ -427,7 +471,7 @@ export default function SuperAdminAnalysisPage() {
                 </table>
               </div>
             ) : (
-              <p className="aos-empty">لا توجد بيانات مستخدمين</p>
+              <p className="aos-empty">{t("analysis.usersByCountry.empty")}</p>
             )}
           </article>
         </section>
@@ -436,13 +480,13 @@ export default function SuperAdminAnalysisPage() {
           <header className="aos-card__head">
             <div>
               <h2 id="aan-subs-overview-title" className="aos-card__title">
-                تحليل اشتراكات المستقلين
+                {t("analysis.freelancerSubscriptions.title")}
               </h2>
-              <p className="aos-card__desc">حسب حالة الدفع والتفعيل</p>
+              <p className="aos-card__desc">{t("analysis.freelancerSubscriptions.desc")}</p>
             </div>
           </header>
           {isInitialLoad ? (
-            <p className="aos-chart__empty">جارٍ التحميل…</p>
+            <p className="aos-chart__empty">{loadingGeneric}</p>
           ) : (
             <SoftMetricGrid items={subscriptionCards} columns={4} />
           )}
@@ -453,31 +497,31 @@ export default function SuperAdminAnalysisPage() {
             <div className="aos-list-head__top">
               <div>
                 <h2 id="aan-by-plan-title" className="aos-list-head__title">
-                  الاشتراكات حسب الباقة
+                  {t("analysis.byPlan.title")}
                 </h2>
-                <p className="aos-list-head__desc">مرتبة حسب عدد المشتركين الحاليين</p>
+                <p className="aos-list-head__desc">{t("analysis.byPlan.desc")}</p>
               </div>
             </div>
           </header>
 
           {isInitialLoad ? (
-            <p className="aos-empty">جارٍ التحميل…</p>
+            <p className="aos-empty">{loadingGeneric}</p>
           ) : byPlan.length ? (
             <div className="aos-table-wrap aan-table-scroll">
               <table className="aos-table aan-table--plans">
                 <thead>
                   <tr>
-                    <th>الباقة</th>
-                    <th>السعر</th>
-                    <th className="aan-col--duration">المدة</th>
-                    <th>الإجمالي</th>
-                    <th className="aan-col--paid">مدفوعة</th>
-                    <th className="aan-col--admin">إسناد</th>
-                    <th className="aan-col--free">مجانية</th>
-                    <th className="aan-col--active">نشطة</th>
-                    <th className="aan-col--pending">بانتظار التفعيل</th>
-                    <th className="aan-col--notstarted">لم تبدأ</th>
-                    <th>قيمة مدفوعة</th>
+                    <th>{t("analysis.byPlan.colPlan")}</th>
+                    <th>{t("analysis.byPlan.colPrice")}</th>
+                    <th className="aan-col--duration">{t("analysis.byPlan.colDuration")}</th>
+                    <th>{t("analysis.byPlan.colTotal")}</th>
+                    <th className="aan-col--paid">{t("analysis.byPlan.colPaid")}</th>
+                    <th className="aan-col--admin">{t("analysis.byPlan.colAdmin")}</th>
+                    <th className="aan-col--free">{t("analysis.byPlan.colFree")}</th>
+                    <th className="aan-col--active">{t("analysis.byPlan.colActive")}</th>
+                    <th className="aan-col--pending">{t("analysis.byPlan.colPendingActivation")}</th>
+                    <th className="aan-col--notstarted">{t("analysis.byPlan.colNotStarted")}</th>
+                    <th>{t("analysis.byPlan.colPaidValue")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -489,13 +533,23 @@ export default function SuperAdminAnalysisPage() {
                           <span className="aos-stack__sub">#{plan.planId}</span>
                           <div className="aan-plan-badges">
                             {plan.paidSubscribers > 0 ? (
-                              <SoftPill tone="ok">{formatInt(plan.paidSubscribers)} مدفوع</SoftPill>
+                              <SoftPill tone="ok">
+                                {t("analysis.byPlan.pillPaid", { count: formatInt(plan.paidSubscribers) })}
+                              </SoftPill>
                             ) : null}
                             {plan.adminAssignedSubscribers > 0 ? (
-                              <SoftPill tone="info">{formatInt(plan.adminAssignedSubscribers)} إسناد</SoftPill>
+                              <SoftPill tone="info">
+                                {t("analysis.byPlan.pillAdmin", {
+                                  count: formatInt(plan.adminAssignedSubscribers),
+                                })}
+                              </SoftPill>
                             ) : null}
                             {plan.freeNotRequiredSubscribers > 0 ? (
-                              <SoftPill tone="muted">{formatInt(plan.freeNotRequiredSubscribers)} مجاني</SoftPill>
+                              <SoftPill tone="muted">
+                                {t("analysis.byPlan.pillFree", {
+                                  count: formatInt(plan.freeNotRequiredSubscribers),
+                                })}
+                              </SoftPill>
                             ) : null}
                           </div>
                         </div>
@@ -506,13 +560,15 @@ export default function SuperAdminAnalysisPage() {
                             {plan.priceJod != null ? formatMoneyJod(plan.priceJod) : "—"}
                           </span>
                           {plan.paidSubscribers > 0 ? (
-                            <span className="aos-stack__sub">يشمل رسوم التفعيل التاريخية عند وجودها</span>
+                            <span className="aos-stack__sub">{t("analysis.byPlan.activationFeesNote")}</span>
                           ) : null}
                         </div>
                       </td>
                       <td className="aan-col--duration">
                         <span className="aos-stack__sub">
-                          {plan.durationDays != null ? `${formatInt(plan.durationDays)} يوم` : "—"}
+                          {plan.durationDays != null
+                            ? t("analysis.byPlan.durationDays", { count: formatInt(plan.durationDays) })
+                            : "—"}
                         </span>
                       </td>
                       <td>
@@ -543,10 +599,14 @@ export default function SuperAdminAnalysisPage() {
                             <span className="aos-stack__sub">
                               {[
                                 plan.paidPlanRevenueJod > 0
-                                  ? `${formatMoneyJod(plan.paidPlanRevenueJod)} باقة`
+                                  ? t("analysis.byPlan.revenuePlan", {
+                                      amount: formatMoneyJod(plan.paidPlanRevenueJod),
+                                    })
                                   : null,
                                 plan.paidActivationFeeRevenueJod > 0
-                                  ? `${formatMoneyJod(plan.paidActivationFeeRevenueJod)} تفعيل`
+                                  ? t("analysis.byPlan.revenueActivation", {
+                                      amount: formatMoneyJod(plan.paidActivationFeeRevenueJod),
+                                    })
                                   : null,
                               ]
                                 .filter(Boolean)
@@ -561,37 +621,37 @@ export default function SuperAdminAnalysisPage() {
               </table>
             </div>
           ) : (
-            <p className="aos-empty">لا توجد اشتراكات على الباقات</p>
+            <p className="aos-empty">{t("analysis.byPlan.empty")}</p>
           )}
         </section>
 
-        <section className="aos-extra-grid" aria-label="تحليل الاشتراكات حسب نوع الباقة">
+        <section className="aos-extra-grid" aria-label={t("analysis.planGroup.sectionAria")}>
           {isInitialLoad ? (
             <article className="aos-card">
-              <p className="aos-chart__empty">جارٍ التحميل…</p>
+              <p className="aos-chart__empty">{loadingGeneric}</p>
             </article>
           ) : byPlanGroup.length ? (
-            byPlanGroup.map((group) => <PlanGroupCard key={group.groupKey} group={group} />)
+            byPlanGroup.map((group) => <PlanGroupCard key={group.groupKey} group={group} t={t} />)
           ) : (
             <article className="aos-card">
-              <p className="aos-chart__empty">لا توجد بيانات مجموعات باقات</p>
+              <p className="aos-chart__empty">{t("analysis.planGroup.empty")}</p>
             </article>
           )}
         </section>
 
-        <section className="aos-bot-grid" aria-label="الدول الأكثر اشتراكاً">
+        <section className="aos-bot-grid" aria-label={t("analysis.subsByCountry.sectionAria")}>
           <article className="aos-card">
             <header className="aos-card__head">
               <div>
-                <h2 className="aos-card__title">أعلى الدول (اشتراكات)</h2>
-                <p className="aos-card__desc">توزيع الاشتراكات حسب دولة المستقل</p>
+                <h2 className="aos-card__title">{t("analysis.subsByCountry.topCountriesTitle")}</h2>
+                <p className="aos-card__desc">{t("analysis.subsByCountry.topCountriesDesc")}</p>
               </div>
-              <span className="aos-chip">أعلى 8</span>
+              <span className="aos-chip">{t("analysis.usersByCountry.topEight")}</span>
             </header>
             {isInitialLoad ? (
-              <p className="aos-chart__empty">جارٍ التحميل…</p>
+              <p className="aos-chart__empty">{loadingGeneric}</p>
             ) : (
-              <SoftHBars rows={topSubBars} />
+              <SoftHBars rows={topSubBars} emptyMessage={chartEmpty} />
             )}
           </article>
 
@@ -599,25 +659,25 @@ export default function SuperAdminAnalysisPage() {
             <header className="aos-list-head">
               <div className="aos-list-head__top">
                 <div>
-                  <h2 className="aos-list-head__title">الدول الأكثر اشتراكاً</h2>
-                  <p className="aos-list-head__desc">مدفوع، إسناد، وأشهر باقة لكل دولة</p>
+                  <h2 className="aos-list-head__title">{t("analysis.subsByCountry.tableTitle")}</h2>
+                  <p className="aos-list-head__desc">{t("analysis.subsByCountry.tableDesc")}</p>
                 </div>
               </div>
             </header>
 
             {isInitialLoad ? (
-              <p className="aos-empty">جارٍ التحميل…</p>
+              <p className="aos-empty">{loadingGeneric}</p>
             ) : subCountries.length ? (
               <div className="aos-table-wrap">
                 <table className="aos-table">
                   <thead>
                     <tr>
-                      <th>الدولة</th>
-                      <th>الاشتراكات</th>
-                      <th className="aan-col--paid">مدفوعة</th>
-                      <th className="aan-col--admin">إسناد إداري</th>
-                      <th className="aan-col--plan">أشهر باقة</th>
-                      <th>قيمة مدفوعة</th>
+                      <th>{t("analysis.subsByCountry.colCountry")}</th>
+                      <th>{t("analysis.subsByCountry.colSubscriptions")}</th>
+                      <th className="aan-col--paid">{t("analysis.subsByCountry.colPaid")}</th>
+                      <th className="aan-col--admin">{t("analysis.subsByCountry.colAdmin")}</th>
+                      <th className="aan-col--plan">{t("analysis.subsByCountry.colTopPlan")}</th>
+                      <th>{t("analysis.subsByCountry.colPaidValue")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -647,7 +707,7 @@ export default function SuperAdminAnalysisPage() {
                 </table>
               </div>
             ) : (
-              <p className="aos-empty">لا توجد بيانات اشتراكات حسب الدولة</p>
+              <p className="aos-empty">{t("analysis.subsByCountry.empty")}</p>
             )}
           </article>
         </section>

@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useTranslation } from "../../i18n/LanguageProvider";
 import { JodMoneyDisplay } from "../money/JodMoneyDisplay";
 
 function typeLabel(projectType) {
@@ -7,16 +8,18 @@ function typeLabel(projectType) {
   return "—";
 }
 
-function summaryText(text, max = 140) {
+function summaryText(text, emptyLabel, max = 140) {
   const s = String(text || "").trim();
-  if (!s) return "لا يوجد وصف.";
+  if (!s) return emptyLabel;
   if (s.length <= max) return s;
   return `${s.slice(0, max).trim()}…`;
 }
 
 export default function AssignedOrderCardCompact({ order, onOpenDetails }) {
+  const { t } = useTranslation();
+  const emptyDesc = t("orders.marketplace.card.noDescription");
   const typeText = useMemo(() => typeLabel(order?.projectType), [order?.projectType]);
-  const description = summaryText(order?.description);
+  const description = summaryText(order?.description, emptyDesc);
 
   return (
     <article

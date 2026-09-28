@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Button from "../../components/ui/Button";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/planAdminResources";
 import { formatPlanPagePath } from "./planFormLinkingUtils";
 
 function planPageToForm(page) {
@@ -32,7 +34,9 @@ function normalizePlanPagePatch(form) {
  *   onSave: (patch: Record<string, unknown>) => Promise<void> | void;
  * }} p
  */
-export default function PlanPageMetadataPanel({ page, isEn = false, submitting = false, onSave }) {
+export default function PlanPageMetadataPanel({ page, submitting = false, onSave }) {
+  const { t } = useTranslation();
+  const pm = "planAdmin.pageMetadata";
   const [form, setForm] = useState(() => planPageToForm(page));
   const [expanded, setExpanded] = useState(true);
 
@@ -51,13 +55,9 @@ export default function PlanPageMetadataPanel({ page, isEn = false, submitting =
       <header className="oh-sapl-page-metadata__head">
         <div>
           <h3 id="oh-sapl-page-metadata-title" className="oh-sapl-page-metadata__title">
-            {isEn ? "Page metadata" : "بيانات صفحة العرض"}
+            {t(`${pm}.title`)}
           </h3>
-          <p className="oh-sapl-page-metadata__hint">
-            {isEn
-              ? `Hero title and subtitle on ${publicPath}`
-              : `عنوان ووصف الصفحة على ${publicPath}`}
-          </p>
+          <p className="oh-sapl-page-metadata__hint">{t(`${pm}.subtitle`, { path: publicPath })}</p>
         </div>
         <button
           type="button"
@@ -65,7 +65,7 @@ export default function PlanPageMetadataPanel({ page, isEn = false, submitting =
           aria-expanded={expanded}
           onClick={() => setExpanded((v) => !v)}
         >
-          {expanded ? (isEn ? "Collapse" : "طي") : isEn ? "Expand" : "فتح"}
+          {expanded ? t(`${pm}.collapse`) : t(`${pm}.expand`)}
         </button>
       </header>
 
@@ -73,14 +73,14 @@ export default function PlanPageMetadataPanel({ page, isEn = false, submitting =
         <div className="oh-sapl-page-metadata__body">
           {page.slug ? (
             <p className="oh-sapl-page-metadata__slug">
-              <span>{isEn ? "URL slug (read-only)" : "رابط الصفحة (للقراءة فقط)"}</span>
+              <span>{t(`${pm}.slug`)}</span>
               <code dir="ltr">{String(page.slug)}</code>
             </p>
           ) : null}
 
           <div className="oh-sapl-page-metadata__grid">
             <label className="oh-sapl-page-metadata__field">
-              <span>{isEn ? "Title (Arabic)" : "العنوان (عربي)"}</span>
+              <span>{t(`${pm}.titleAr`)}</span>
               <input
                 className="oh-sapl-input"
                 value={form.title}
@@ -89,7 +89,7 @@ export default function PlanPageMetadataPanel({ page, isEn = false, submitting =
               />
             </label>
             <label className="oh-sapl-page-metadata__field">
-              <span>{isEn ? "Title (English)" : "العنوان (إنجليزي)"}</span>
+              <span>{t(`${pm}.titleEn`)}</span>
               <input
                 className="oh-sapl-input"
                 dir="ltr"
@@ -99,7 +99,7 @@ export default function PlanPageMetadataPanel({ page, isEn = false, submitting =
               />
             </label>
             <label className="oh-sapl-page-metadata__field oh-sapl-page-metadata__field--wide">
-              <span>{isEn ? "Subtitle (Arabic)" : "الوصف (عربي)"}</span>
+              <span>{t(`${pm}.subtitleAr`)}</span>
               <textarea
                 className="oh-sapl-input oh-sapl-input--textarea"
                 rows={2}
@@ -109,7 +109,7 @@ export default function PlanPageMetadataPanel({ page, isEn = false, submitting =
               />
             </label>
             <label className="oh-sapl-page-metadata__field oh-sapl-page-metadata__field--wide">
-              <span>{isEn ? "Subtitle (English)" : "الوصف (إنجليزي)"}</span>
+              <span>{t(`${pm}.subtitleEn`)}</span>
               <textarea
                 className="oh-sapl-input oh-sapl-input--textarea"
                 dir="ltr"
@@ -127,13 +127,7 @@ export default function PlanPageMetadataPanel({ page, isEn = false, submitting =
               disabled={submitting || !canSave}
               onClick={() => void onSave(normalizePlanPagePatch(form))}
             >
-              {submitting
-                ? isEn
-                  ? "Saving…"
-                  : "جارٍ الحفظ…"
-                : isEn
-                  ? "Save page metadata"
-                  : "حفظ بيانات الصفحة"}
+              {submitting ? t("planAdmin.common.saving") : t(`${pm}.save`)}
             </Button>
           </div>
         </div>

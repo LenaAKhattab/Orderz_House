@@ -1,20 +1,19 @@
 import { useEffect, useState } from "react";
 import Button from "../../components/ui/Button";
 import {
-  FAIR_OVERRIDE_REASON_HELPER_AR,
-  FAIR_OVERRIDE_REASON_LABEL_AR,
   FAIR_OVERRIDE_REASON_MAX,
   isValidFairOverrideReason,
 } from "./fairOverrideReason";
+import { useArticlesT } from "./useArticlesT";
 
 export default function FairSelectionOverrideDialog({
   open,
-  isEn = false,
   submitting = false,
   activationOverride = false,
   onCancel,
   onConfirm,
 }) {
+  const { t } = useArticlesT();
   const [reason, setReason] = useState("");
 
   useEffect(() => {
@@ -34,17 +33,11 @@ export default function FairSelectionOverrideDialog({
         aria-modal="true"
         className="max-h-[90vh] w-full max-w-[480px] overflow-y-auto rounded-lg bg-white p-4"
       >
-        <h3 className="mb-2 mt-0">{FAIR_OVERRIDE_REASON_LABEL_AR}</h3>
-        <p className="mb-3 mt-0 text-[0.92rem]">
-          {isEn
-            ? "This applicant is not rank #1 in fair ranking. Please explain why before continuing."
-            : FAIR_OVERRIDE_REASON_HELPER_AR}
-        </p>
+        <h3 className="mb-2 mt-0">{t("fairOverride.title")}</h3>
+        <p className="mb-3 mt-0 text-[0.92rem]">{t("fairOverride.helper")}</p>
         {activationOverride ? (
           <p data-testid="activation-fair-override-note" className="mb-3 mt-0 text-[0.85rem]" style={{ opacity: 0.8 }}>
-            {isEn
-              ? "This is an override of the preferred activation candidate. Selection is still allowed."
-              : "هذا تجاوز للمرشح المفضل للتفعيل، ويمكن المتابعة."}
+            {t("fairOverride.activationNote")}
           </p>
         ) : null}
         <textarea
@@ -57,14 +50,14 @@ export default function FairSelectionOverrideDialog({
         />
         <div className="flex justify-end gap-2">
           <Button type="button" variant="secondary" onClick={onCancel} disabled={submitting}>
-            {isEn ? "Cancel" : "إلغاء"}
+            {t("common.cancel")}
           </Button>
           <Button
             type="button"
             onClick={() => onConfirm(reason.trim())}
             disabled={!valid || submitting}
           >
-            {isEn ? "Confirm selection" : "تأكيد الاختيار"}
+            {t("fairOverride.confirmSelection")}
           </Button>
         </div>
       </div>

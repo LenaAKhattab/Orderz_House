@@ -1,5 +1,5 @@
-import { resources, DEFAULT_LOCALE } from "../../i18n/resources";
-import { resolveTranslation, interpolate } from "../../i18n/resolveTranslation";
+import { resources, DEFAULT_LOCALE } from "../../i18n/resources.js";
+import { resolveTranslation, interpolate } from "../../i18n/resolveTranslation.js";
 
 /**
  * Non-hook lookup for static locale strings (e.g. utilities, tests).

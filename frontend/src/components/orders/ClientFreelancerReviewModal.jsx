@@ -4,8 +4,10 @@ import {
   submitClientOrderReviewRequest,
   updateClientOrderReviewRequest,
 } from "../../services/api";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/clientAreaResources";
 
-function StarRow({ value, onChange, label }) {
+function StarRow({ value, onChange, label, starAriaLabel }) {
   return (
     <div className="oh-review-stars" role="group" aria-label={label}>
       <span className="oh-review-stars__label">{label}</span>
@@ -16,7 +18,7 @@ function StarRow({ value, onChange, label }) {
             type="button"
             className={`oh-review-stars__btn${value >= n ? " is-on" : ""}`}
             onClick={() => onChange(n)}
-            aria-label={`${n} من 5`}
+            aria-label={starAriaLabel(n)}
           >
             ★
           </button>
@@ -38,6 +40,8 @@ const overlayStyle = {
 };
 
 export default function ClientFreelancerReviewModal({ open, orderId, orderTitle, onClose, onSubmitted }) {
+  const { t, dir } = useTranslation();
+  const fr = "clientArea.freelancerReview";
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -65,11 +69,11 @@ export default function ClientFreelancerReviewModal({ open, orderId, orderTitle,
         setWouldRecommend(data.existingReview.wouldRecommend !== false);
       }
     } catch (e) {
-      setError(e?.response?.data?.message || e?.message || "تعذر تحميل حالة التقييم.");
+      setError(e?.response?.data?.message || e?.message || t(`${fr}.loadError`));
     } finally {
       setLoading(false);
     }
-  }, [open, orderId]);
+  }, [open, orderId, t]);
 
   useEffect(() => {
     if (open) void load();
@@ -78,7 +82,7 @@ export default function ClientFreelancerReviewModal({ open, orderId, orderTitle,
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (rating < 1) {
-      setError("اختر تقييماً بالنجوم.");
+      setError(t(`${fr}.ratingRequired`));
       return;
     }
     setSubmitting(true);
@@ -99,7 +103,7 @@ export default function ClientFreelancerReviewModal({ open, orderId, orderTitle,
       onSubmitted?.();
       onClose?.();
     } catch (err) {
-      setError(err?.response?.data?.message || err?.message || "تعذر إرسال التقييم.");
+      setError(err?.response?.data?.message || err?.message || t(`${fr}.submitError`));
     } finally {
       setSubmitting(false);
     }
@@ -107,9 +111,10 @@ export default function ClientFreelancerReviewModal({ open, orderId, orderTitle,
 
   if (!open) return null;
 
-  const title = orderTitle || status?.orderTitle || "المشروع";
-  const freelancerName = status?.freelancerName || "المستقل";
+  const title = orderTitle || status?.orderTitle || t("clientArea.common.projectFallback");
+  const freelancerName = status?.freelancerName || t("clientArea.common.freelancerFallback");
   const readOnly = status?.existingReview && !status?.existingReview?.canEdit;
+  const starAriaLabel = (n) => t(`${fr}.starOfFive`, { n });
 
   return (
     <div style={overlayStyle} role="presentation" onClick={onClose}>
@@ -120,35 +125,40 @@ export default function ClientFreelancerReviewModal({ open, orderId, orderTitle,
         aria-labelledby="oh-review-title"
         onMouseDown={(ev) => ev.stopPropagation()}
         style={{ maxWidth: 480, width: "100%", maxHeight: "90vh", overflow: "auto" }}
-        dir="rtl"
+        dir={dir}
       >
         <h2 id="oh-review-title" style={{ marginTop: 0 }}>
-          قيّم تجربتك مع المستقل
+          {t(`${fr}.title`)}
         </h2>
 
         {loading ? (
-          <p className="help">جارٍ التحميل…</p>
+          <p className="help">{t("clientArea.common.loading")}</p>
         ) : (
           <form className="oh-review-form" onSubmit={handleSubmit}>
             <p className="help" style={{ marginTop: 0 }}>
               {readOnly
-                ? `تقييمك لمشروع «${title}»`
-                : `كيف كانت تجربتك مع ${freelancerName} في «${title}»؟`}
+                ? t(`${fr}.promptReadOnly`, { title })
+                : t(`${fr}.promptEditable`, { freelancer: freelancerName, title })}
             </p>
 
-            <StarRow value={rating} onChange={setRating} label="التقييم العام" />
+            <StarRow
+              value={rating}
+              onChange={setRating}
+              label={t(`${fr}.overallRating`)}
+              starAriaLabel={starAriaLabel}
+            />
 
             {!readOnly ? (
               <>
                 <label className="oh-review-form__field">
-                  <span className="oh-account-label">ملاحظاتك (اختياري)</span>
+                  <span className="oh-account-label">{t(`${fr}.notesOptional`)}</span>
                   <textarea
                     className="input"
                     value={reviewText}
                     onChange={(e) => setReviewText(e.target.value)}
                     rows={4}
                     maxLength={2000}
-                    placeholder="شارك تجربتك باختصار."
+                    placeholder={t(`${fr}.notesPlaceholder`)}
                     style={{ width: "100%", marginTop: 6 }}
                   />
                 </label>
@@ -158,13 +168,23 @@ export default function ClientFreelancerReviewModal({ open, orderId, orderTitle,
                   className="btn btn-secondary btn-sm"
                   onClick={() => setShowDetails((v) => !v)}
                 >
-                  {showDetails ? "إخفاء التفاصيل" : "تقييمات تفصيلية (اختياري)"}
+                  {showDetails ? t(`${fr}.hideDetails`) : t(`${fr}.showDetails`)}
                 </button>
 
                 {showDetails ? (
                   <div className="oh-review-form__details" style={{ marginTop: 12 }}>
-                    <StarRow value={communicationRating} onChange={setCommunicationRating} label="التواصل" />
-                    <StarRow value={deliveryRating} onChange={setDeliveryRating} label="التسليم" />
+                    <StarRow
+                      value={communicationRating}
+                      onChange={setCommunicationRating}
+                      label={t(`${fr}.communication`)}
+                      starAriaLabel={starAriaLabel}
+                    />
+                    <StarRow
+                      value={deliveryRating}
+                      onChange={setDeliveryRating}
+                      label={t(`${fr}.delivery`)}
+                      starAriaLabel={starAriaLabel}
+                    />
                   </div>
                 ) : null}
 
@@ -174,7 +194,7 @@ export default function ClientFreelancerReviewModal({ open, orderId, orderTitle,
                     checked={wouldRecommend}
                     onChange={(e) => setWouldRecommend(e.target.checked)}
                   />
-                  أوصي بهذا المستقل
+                  {t(`${fr}.recommend`)}
                 </label>
               </>
             ) : status?.existingReview?.reviewText ? (
@@ -191,11 +211,15 @@ export default function ClientFreelancerReviewModal({ open, orderId, orderTitle,
 
             <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 16, flexWrap: "wrap" }}>
               <button type="button" className="btn btn-secondary" onClick={onClose} disabled={submitting}>
-                {readOnly ? "إغلاق" : "لاحقاً"}
+                {readOnly ? t("clientArea.common.close") : t(`${fr}.later`)}
               </button>
               {!readOnly && status?.canSubmit !== false ? (
                 <button type="submit" className="btn btn-primary" disabled={submitting || rating < 1}>
-                  {submitting ? "جارٍ الإرسال…" : status?.existingReview?.canEdit ? "حفظ التعديل" : "إرسال التقييم"}
+                  {submitting
+                    ? t("clientArea.common.busy.sending")
+                    : status?.existingReview?.canEdit
+                      ? t(`${fr}.saveEdit`)
+                      : t(`${fr}.submitReview`)}
                 </button>
               ) : null}
             </div>

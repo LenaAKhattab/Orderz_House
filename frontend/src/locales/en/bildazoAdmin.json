@@ -1,0 +1,50 @@
+{
+  "page": {
+    "title": "Bildazo author links",
+    "description": "Review author link requests and mark requests after manual verification. Bildazo accounts are not created from here.",
+    "schemaMissing": "Link table is not ready yet (migration 164). You can open this page but cannot link until the migration is applied.",
+    "searchLabel": "Search",
+    "searchPlaceholder": "Name / email / public ID",
+    "searchSubmit": "Search",
+    "emptyTitle": "No requests",
+    "emptyDesc": "No link requests match the current filter.",
+    "loadSchemaError": "Bildazo link table is not ready.",
+    "loadFailed": "Could not load link requests.",
+    "freelancerFallback": "Freelancer #{{id}}",
+    "linkedBadge": "Author account linked",
+    "emailMatches": " — email matches OrderzHouse",
+    "flowLabel": "Flow:",
+    "flowNew": "New account",
+    "flowExisting": "Existing account",
+    "termsLabel": "Terms:",
+    "existingAccount": "Existing account:",
+    "linkAccount": "Link account",
+    "manualLinkSaved": "Manual author link saved.",
+    "manualLinkFailed": "Could not save manual link.",
+    "statusUpdated": "Request status updated.",
+    "statusUpdateFailed": "Could not update status.",
+    "reviewReasonPrompt": "Review reason (required):",
+    "reviewReasonRequired": "Review reason is required for failed or blocked status."
+  },
+  "filters": {
+    "all": "All",
+    "pending_new_account": "New account request",
+    "pending_existing_account": "Existing account request",
+    "pending_external_verification": "External verification",
+    "needs_manual_review": "Manual review",
+    "linked": "Linked",
+    "failed": "Failed",
+    "blocked": "Blocked"
+  },
+  "dialog": {
+    "title": "Link account",
+    "lede": "Manual link inside OrderzHouse after external verification. Bildazo accounts are not created from this page.",
+    "bildazoUserId": "Bildazo User ID (optional)",
+    "bildazoPublicId": "Bildazo Public ID",
+    "bildazoProfileUrl": "Bildazo Profile URL",
+    "reviewNote": "Review note (optional)",
+    "confirmVerified": "I confirm I verified Bildazo account ownership before linking.",
+    "cancel": "Cancel",
+    "submit": "Link account"
+  }
+}

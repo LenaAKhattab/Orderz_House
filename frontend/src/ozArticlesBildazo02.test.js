@@ -21,20 +21,26 @@ const srcRoot = path.dirname(fileURLToPath(import.meta.url));
 function read(rel) {
   return fs.readFileSync(path.join(srcRoot, rel), "utf8");
 }
+function readArticlesLocale(locale) {
+  return JSON.parse(read(`locales/${locale}/articles.json`));
+}
 
 describe("OZ-Articles-Bildazo-02 inventory form", () => {
   it("form fields include title/description/category/writingMode/targetPlan and hide per-article words", () => {
     const modal = read("admin/marketplaceArticles/MarketplaceArticleFormModal.jsx");
     const utils = read("admin/marketplaceArticles/marketplaceArticleFormUtils.js");
+    const ar = readArticlesLocale("ar");
     assert.match(modal, /article-form-title/);
     assert.match(modal, /article-form-description/);
-    assert.match(modal, /الوصف \/ التعليمات/);
+    assert.match(modal, /form\.description/);
+    assert.match(ar.form.description, /الوصف \/ التعليمات/);
     assert.match(modal, /bildazo-category-select/);
     assert.match(modal, /article-form-writing-mode/);
     assert.match(modal, /article-form-target-plan/);
     assert.match(modal, /article-form-derived-requirements/);
-    assert.match(modal, /الخطة المستهدفة/);
-    assert.match(modal, /ARTICLE_WRITING_MODE_LABELS_AR/);
+    assert.match(modal, /form\.targetPlan/);
+    assert.match(ar.form.targetPlan, /الخطة المستهدفة/);
+    assert.match(modal, /writingModes\.\$\{mode\}/);
     assert.doesNotMatch(modal, /مستوى المقال/);
     assert.doesNotMatch(modal, /عدد الكلمات المطلوب/);
     assert.doesNotMatch(modal, /عدد المراجع المطلوب/);
@@ -45,6 +51,7 @@ describe("OZ-Articles-Bildazo-02 inventory form", () => {
     assert.equal(ARTICLE_WRITING_MODE_LABELS_AR.ai, "بالذكاء الاصطناعي");
     assert.equal(ARTICLE_WRITING_MODE_LABELS_AR.manual, "يدوي");
     assert.equal(ARTICLE_WRITING_MODE_LABELS_AR.either, "لا يفرق");
+    assert.equal(ar.writingModes.ai, ARTICLE_WRITING_MODE_LABELS_AR.ai);
   });
 
   it("requires bildazoCategoryId + writingMode + targetPlan; derives words from plan", () => {
@@ -77,7 +84,10 @@ describe("OZ-Articles-Bildazo-02 inventory form", () => {
   it("declares derivedSummary and stays null-safe for missing plan/requirements", () => {
     const modal = read("admin/marketplaceArticles/MarketplaceArticleFormModal.jsx");
     assert.match(modal, /const derivedSummary = useMemo/);
-    assert.match(modal, /formatDerivedPlanRequirementsSummaryAr\(form\.targetPlanCode, packageRequirements\)/);
+    assert.match(
+      modal,
+      /formatDerivedPlanRequirementsSummary\(form\.targetPlanCode, packageRequirements, locale\)/,
+    );
     assert.match(modal, /packageRequirements = null/);
     assert.match(modal, /inventorySimplified = false/);
     assert.doesNotMatch(modal, /valueLabel = deriveArticleValueJodFromLevel/);
@@ -115,24 +125,27 @@ describe("OZ-Articles-Bildazo-02 package requirements section", () => {
   it("admin panel exposes متطلبات الباقات accordion + STARTER/SILVER/PRO/ELITE editors", () => {
     const panel = read("components/admin/MarketplaceArticlesAdminPanel.jsx");
     const utils = read("admin/marketplaceArticles/marketplaceArticleFormUtils.js");
-    assert.match(panel, /متطلبات الباقات/);
+    const ar = readArticlesLocale("ar");
+    assert.match(panel, /adminPanel\.packageReqsTitle/);
+    assert.match(ar.adminPanel.packageReqsTitle, /متطلبات الباقات/);
     assert.match(panel, /package-requirements-section/);
     assert.match(panel, /ARTICLE_PACKAGE_PLAN_CODES/);
-    assert.match(panel, /ARTICLE_PACKAGE_PLAN_LABELS_AR/);
+    assert.match(panel, /planLabels\.\$\{row\.planCode\}/);
     assert.match(panel, /package-req-words-/);
     assert.match(panel, /package-req-refs-/);
     assert.match(utils, /STARTER/);
     assert.match(utils, /SILVER/);
     assert.match(utils, /PRO/);
     assert.match(utils, /ELITE/);
-    assert.match(utils, /تجربة \/ مجاني/);
+    assert.match(ar.planLabels.STARTER, /تجربة \/ مجاني/);
     assert.match(panel, /updateAdminArticlePackageRequirementsRequest/);
     assert.match(panel, /isSuperAdminUser/);
     assert.match(panel, /listAdminBildazoCategoriesRequest/);
     assert.match(panel, /inventoryHub/);
     assert.match(panel, /variant="inline"/);
-    assert.match(panel, /حفظ في المخزون/);
-    assert.match(panel, /BILDAZO_CATEGORIES_LOAD_ERROR_AR/);
+    assert.match(panel, /adminPanel\.saveToInventory/);
+    assert.match(ar.adminPanel.saveToInventory, /حفظ في المخزون/);
+    assert.match(panel, /form\.bildazoLoadError/);
   });
 });
 
@@ -141,6 +154,7 @@ describe("OZ-Articles-Bildazo-02 Super Admin hub inventory wiring", () => {
     const hub = read("pages/dashboard/SuperAdminArticlesHubPage.jsx");
     const panel = read("components/admin/MarketplaceArticlesAdminPanel.jsx");
     const modal = read("admin/marketplaceArticles/MarketplaceArticleFormModal.jsx");
+    const ar = readArticlesLocale("ar");
     assert.match(hub, /articles-hub-panel-inventory/);
     assert.match(hub, /articles-marketplace-create-panel/);
     assert.match(hub, /MarketplaceArticlesAdminPanel inventoryHub/);
@@ -148,20 +162,24 @@ describe("OZ-Articles-Bildazo-02 Super Admin hub inventory wiring", () => {
     assert.match(hub, /SHOW_LEGACY_ACTIVATION_INVENTORY_UI\s*=\s*false/);
     assert.match(hub, /ARTICLE_CANONICAL_PLAN_TIER_OPTIONS/);
     assert.doesNotMatch(hub, /FREELANCER_ACTIVATION_PLAN_TIER_OPTIONS/);
-    assert.match(modal, /صنف بلدازو/);
-    assert.match(modal, /نمط الكتابة/);
-    assert.match(modal, /ARTICLE_WRITING_MODE_LABELS_AR/);
+    assert.match(modal, /common\.bildazoCategory/);
+    assert.match(ar.common.bildazoCategory, /صنف بلدازو/);
+    assert.match(modal, /form\.writingMode/);
+    assert.match(modal, /writingModes\.\$\{mode\}/);
     assert.match(modal, /ARTICLE_TARGET_PLAN_OPTIONS/);
-    assert.match(modal, /o\.labelAr/);
+    assert.match(modal, /planLabels\.\$\{o\.value\}/);
     assert.doesNotMatch(modal, /FREELANCER_ACTIVATION_PLAN_TIER_OPTIONS/);
-    assert.match(panel, /متطلبات الباقات/);
+    assert.match(panel, /adminPanel\.packageReqsTitle/);
     assert.match(panel, /package-requirements-auto-hint/);
-    assert.match(panel, /هذه القيم تُطبّق تلقائياً حسب الخطة المستهدفة/);
+    assert.match(panel, /adminPanel\.packageReqsHint/);
+    assert.match(ar.adminPanel.packageReqsHint, /هذه القيم تُطبّق تلقائياً حسب الخطة المستهدفة/);
     assert.match(panel, /ARTICLE_PACKAGE_PLAN_CODES/);
-    assert.match(panel, /ARTICLE_PACKAGE_PLAN_LABELS_AR/);
-    assert.match(panel, /إضافة مقال إلى المخزون/);
-    assert.match(panel, /قائمة مقالات المخزون/);
-    assert.match(modal, /الوصف \/ التعليمات/);
+    assert.match(panel, /planLabels\.\$\{row\.planCode\}/);
+    assert.match(panel, /adminPanel\.inventoryAddTitle/);
+    assert.match(ar.adminPanel.inventoryAddTitle, /إضافة مقال إلى المخزون/);
+    assert.match(panel, /adminPanel\.inventoryListTitle/);
+    assert.match(ar.adminPanel.inventoryListTitle, /قائمة مقالات المخزون/);
+    assert.match(modal, /form\.description/);
     assert.match(panel, /createMarketplaceArticleRequest/);
     assert.match(panel, /onSubmit=\{handleCreate\}/);
     assert.match(panel, /inventorySimplified/);
@@ -173,7 +191,7 @@ describe("OZ-Articles-Bildazo-02 Super Admin hub inventory wiring", () => {
     assert.match(utils, /SILVER/);
     assert.match(utils, /PRO/);
     assert.match(utils, /ELITE/);
-    assert.match(utils, /تجربة \/ مجاني/);
+    assert.match(ar.planLabels.STARTER, /تجربة \/ مجاني/);
   });
 
   it("single visible add-article form; legacy title-only activation form gated off", () => {
@@ -181,26 +199,29 @@ describe("OZ-Articles-Bildazo-02 Super Admin hub inventory wiring", () => {
     const panel = read("components/admin/MarketplaceArticlesAdminPanel.jsx");
     const modal = read("admin/marketplaceArticles/MarketplaceArticleFormModal.jsx");
     const card = read("admin/marketplaceArticles/MarketplaceArticleCard.jsx");
+    const ar = readArticlesLocale("ar");
 
     assert.equal((hub.match(/MarketplaceArticlesAdminPanel inventoryHub/g) || []).length, 1);
     assert.match(hub, /SHOW_LEGACY_ACTIVATION_INVENTORY_UI\s*=\s*false/);
     assert.match(hub, /SHOW_LEGACY_ACTIVATION_INVENTORY_UI\s*\?\s*\(/);
     assert.match(hub, /data-testid="articles-inventory-add-form"/);
-    assert.match(hub, /حفظ في مخزون التفعيل/);
+    assert.match(hub, /hub\.inventory\.saveLegacy/);
+    assert.match(ar.hub.inventory.saveLegacy, /حفظ في مخزون التفعيل/);
 
     assert.match(panel, /data-testid="inventory-add-section"/);
-    assert.match(panel, /titleOverride="إضافة مقال إلى المخزون"/);
-    assert.match(panel, /submitLabel="حفظ في المخزون"/);
+    assert.match(panel, /titleOverride=\{t\("adminPanel\.inventoryAddTitle"\)\}/);
+    assert.match(panel, /submitLabel=\{t\("adminPanel\.saveToInventory"\)\}/);
     assert.match(panel, /variant="inline"/);
-    assert.match(modal, /العنوان/);
-    assert.match(modal, /الوصف \/ التعليمات/);
-    assert.match(modal, /صنف بلدازو/);
-    assert.match(modal, /نمط الكتابة/);
-    assert.match(modal, /الخطة المستهدفة/);
+    assert.match(modal, /form\.title/);
+    assert.match(modal, /form\.description/);
+    assert.match(modal, /common\.bildazoCategory/);
+    assert.match(modal, /form\.writingMode/);
+    assert.match(modal, /form\.targetPlan/);
     assert.match(modal, /article-form-derived-requirements/);
-    assert.match(modal, /formatDerivedPlanRequirementsSummaryAr/);
-    assert.match(modal, /حفظ في المخزون|submitLabel/);
-    assert.match(card, /غير محدد/);
+    assert.match(modal, /formatDerivedPlanRequirementsSummary/);
+    assert.match(modal, /adminPanel\.saveToInventory|submitLabel/);
+    assert.match(card, /common\.notSet/);
+    assert.match(ar.common.notSet, /غير محدد/);
     assert.match(card, /article-card-bildazo-category/);
     assert.match(card, /article-card-writing-mode/);
   });

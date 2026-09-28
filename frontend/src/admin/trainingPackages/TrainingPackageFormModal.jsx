@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import Button from "../../components/ui/Button";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/planAdminResources";
 import {
   canSubmitTrainingPackage,
   getInitialTrainingPackageForm,
@@ -15,11 +17,12 @@ export default function TrainingPackageFormModal({
   open,
   mode = "edit",
   initialPackage = null,
-  isEn = false,
   submitting = false,
   onClose,
   onSubmit,
 }) {
+  const { t, locale } = useTranslation();
+  const isEn = locale === "en";
   const [form, setForm] = useState(() => getInitialTrainingPackageForm(initialPackage));
 
   useEffect(() => {
@@ -37,7 +40,7 @@ export default function TrainingPackageFormModal({
     onSubmit(normalizeTrainingPackagePayload(form));
   };
 
-  const label = (ar, en) => (isEn ? en : ar);
+  const p = (key) => t(`planAdmin.trainingPackage.${key}`);
 
   return (
     <div className="oh-sapl-modal-root" role="presentation">
@@ -50,9 +53,7 @@ export default function TrainingPackageFormModal({
       >
         <header className="oh-sapl-modal__head">
           <h2 className="oh-sapl-modal__title">
-            {mode === "create"
-              ? label("إضافة باقة تدريب", "Add training package")
-              : label("تعديل", "Edit")}
+            {mode === "create" ? p("modalCreate") : p("modalEdit")}
           </h2>
           <button type="button" className="oh-sapl-modal__close" onClick={onClose} disabled={submitting}>
             ×
@@ -60,15 +61,15 @@ export default function TrainingPackageFormModal({
         </header>
         <form className="oh-sapl-modal__scroll" onSubmit={submit}>
           <label className={FIELD_CLASS}>
-            <span>{label("اسم الباقة", "Package name")}</span>
+            <span>{p("packageName")}</span>
             <input className={CONTROL_CLASS} value={form.nameAr} onChange={(e) => setField("nameAr", e.target.value)} required />
           </label>
           <label className={FIELD_CLASS}>
-            <span>{label("الاسم بالإنجليزية", "English name")}</span>
+            <span>{p("nameEn")}</span>
             <input className={CONTROL_CLASS} value={form.nameEn} onChange={(e) => setField("nameEn", e.target.value)} />
           </label>
           <label className={FIELD_CLASS}>
-            <span>{label("رمز الباقة", "Package code")}</span>
+            <span>{p("packageCode")}</span>
             <input
               className={CONTROL_CLASS}
               value={form.code}
@@ -78,15 +79,15 @@ export default function TrainingPackageFormModal({
             />
           </label>
           <label className={FIELD_CLASS}>
-            <span>{label("الوصف", "Description")}</span>
+            <span>{p("description")}</span>
             <textarea className={CONTROL_CLASS} rows={2} value={form.shortDescAr} onChange={(e) => setField("shortDescAr", e.target.value)} />
           </label>
           <label className={FIELD_CLASS}>
-            <span>{label("الوصف بالإنجليزية", "English description")}</span>
+            <span>{p("descriptionEn")}</span>
             <textarea className={CONTROL_CLASS} rows={2} value={form.shortDescEn} onChange={(e) => setField("shortDescEn", e.target.value)} />
           </label>
           <label className={FIELD_CLASS}>
-            <span>{label("السعر بالدينار الأردني", "Price in JOD")}</span>
+            <span>{p("priceJod")}</span>
             <input
               className={CONTROL_CLASS}
               type="number"
@@ -98,7 +99,7 @@ export default function TrainingPackageFormModal({
             />
           </label>
           <label className={FIELD_CLASS}>
-            <span>{label("مدة الباقة", "Duration (months)")}</span>
+            <span>{p("durationMonths")}</span>
             <input
               className={CONTROL_CLASS}
               type="number"
@@ -109,17 +110,17 @@ export default function TrainingPackageFormModal({
             />
           </label>
           <label className={FIELD_CLASS}>
-            <span>{label("مميزات الباقة", "Package features")}</span>
+            <span>{p("features")}</span>
             <textarea
               className={CONTROL_CLASS}
               rows={6}
               value={form.featuresAr}
               onChange={(e) => setField("featuresAr", e.target.value)}
-              placeholder={label("سطر لكل ميزة", "One feature per line")}
+              placeholder={p("featuresPlaceholder")}
             />
           </label>
           <label className={FIELD_CLASS}>
-            <span>{label("المميزات بالإنجليزية", "English features")}</span>
+            <span>{p("featuresEn")}</span>
             <textarea
               className={CONTROL_CLASS}
               rows={4}
@@ -128,7 +129,7 @@ export default function TrainingPackageFormModal({
             />
           </label>
           <label className={FIELD_CLASS}>
-            <span>{label("شارة مميزة", "Badge")}</span>
+            <span>{p("badge")}</span>
             <input className={CONTROL_CLASS} value={form.badgeAr} onChange={(e) => setField("badgeAr", e.target.value)} />
           </label>
           <label className={CHECK_CLASS}>
@@ -138,7 +139,7 @@ export default function TrainingPackageFormModal({
               checked={form.featured}
               onChange={(e) => setField("featured", e.target.checked)}
             />
-            <span>{label("الأكثر طلبًا", "Most requested")}</span>
+            <span>{p("mostRequested")}</span>
           </label>
           <label className={CHECK_CLASS}>
             <input
@@ -147,10 +148,10 @@ export default function TrainingPackageFormModal({
               checked={form.isVisible}
               onChange={(e) => setField("isVisible", e.target.checked)}
             />
-            <span>{label("ظاهرة", "Visible")}</span>
+            <span>{p("visible")}</span>
           </label>
           <label className={FIELD_CLASS}>
-            <span>{label("رسالة واتساب", "WhatsApp message")}</span>
+            <span>{p("whatsappMessage")}</span>
             <textarea
               className={CONTROL_CLASS}
               rows={3}
@@ -160,10 +161,10 @@ export default function TrainingPackageFormModal({
           </label>
           <footer className="oh-sapl-modal__footer">
             <Button type="button" variant="secondary" onClick={onClose} disabled={submitting}>
-              {label("إلغاء", "Cancel")}
+              {t("planAdmin.common.cancel")}
             </Button>
             <Button type="submit" disabled={!canSave}>
-              {label("حفظ", "Save")}
+              {t("planAdmin.common.save")}
             </Button>
           </footer>
         </form>

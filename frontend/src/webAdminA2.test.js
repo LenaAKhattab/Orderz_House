@@ -19,12 +19,13 @@ describe("Web-Admin-A2 — deprecate manual membership activation", () => {
     const home = read("pages/dashboard/AdminDashboardHome.jsx");
     assert.doesNotMatch(home, /طلبات تفعيل الاشتراك/);
     assert.doesNotMatch(home, /membershipActivations|CreditCard|countKey: "membership"/);
-    assert.match(home, /طلبات توثيق الهوية/);
-    assert.match(home, /إسناد الباقات/);
-    assert.match(home, /بيت المونة/);
-    assert.match(home, /المقالات/);
-    assert.match(home, /المشاكل والاقتراحات/);
-    assert.match(home, /الإشعارات/);
+    assert.match(home, /opsAdmin\.adminHome\.cards\.\$\{def\.id\}/);
+    assert.match(home, /id: "identity"/);
+    assert.match(home, /id: "packages"/);
+    assert.match(home, /id: "pantry"/);
+    assert.match(home, /id: "articles"/);
+    assert.match(home, /id: "feedback"/);
+    assert.match(home, /id: "notifications"/);
     assert.match(home, /acc-actions-grid--admin-center/);
   });
 
@@ -63,12 +64,12 @@ describe("Web-Admin-A2 — deprecate manual membership activation", () => {
     assert.equal(canRoleAccessPath("/dashboard/super-admin/subscriptions/activation", ROLE.ADMIN), true);
 
     const page = read("pages/dashboard/AdminSubscriptionsActivationPage.jsx");
+    const copy = read("locales/ar/subscriptions.json");
     assert.match(page, /membership-activation-deprecated/);
-    assert.match(
-      page,
-      /لم تعد هذه الصفحة مستخدمة في النظام الجديد\. الاشتراكات المدفوعة تُفعّل تلقائيًا عبر\s*Stripe/,
-    );
-    assert.match(page, /لم تعد هذه الصفحة مستخدمة؛ يتم تفعيل الاشتراكات المدفوعة تلقائيًا عبر الدفع/);
+    assert.match(page, /subscriptions\.activationPage\.body1/);
+    assert.match(page, /subscriptions\.activationPage\.body2/);
+    assert.match(copy, /لم تعد هذه الصفحة مستخدمة في النظام الجديد/);
+    assert.match(copy, /يتم تفعيل الاشتراكات المدفوعة تلقائيًا عبر الدفع/);
     assert.doesNotMatch(page, /listActivationQueueRequest/);
     assert.doesNotMatch(page, /activateSubscriptionCompanyRequest/);
   });

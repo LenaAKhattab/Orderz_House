@@ -12,6 +12,9 @@ export const PRIORITY_OPTIONS = /** @type {const} */ ([
   { value: 100, label: "عالية" },
 ]);
 
+/** @type {readonly number[]} */
+export const PRIORITY_VALUES = PRIORITY_OPTIONS.map((o) => o.value);
+
 /** Stored in `theme_preset` — layout template for public cards. */
 export const BANNER_TEMPLATES = /** @type {const} */ ([
   "classic_split",
@@ -142,8 +145,27 @@ export function isSafePhoneLike(s) {
 /**
  * @param {number | string | null | undefined} p
  */
-export function priorityLabel(p) {
+/**
+ * @param {number | string | null | undefined} p
+ * @param {((key: string) => string) | null | undefined} [t]
+ */
+export function priorityLabel(p, t) {
   const n = Number(p);
   const row = PRIORITY_OPTIONS.find((o) => o.value === n);
-  return row ? row.label : "عادية";
+  const fallback = row ? row.label : PRIORITY_OPTIONS[0].label;
+  if (typeof t === "function") {
+    const key = row ? String(row.value) : "0";
+    return t(`ads.priorityOptions.${key}`);
+  }
+  return fallback;
+}
+
+/**
+ * @param {((key: string) => string) | null | undefined} [t]
+ */
+export function getPriorityOptionsForSelect(t) {
+  return PRIORITY_OPTIONS.map((o) => ({
+    value: o.value,
+    label: priorityLabel(o.value, t),
+  }));
 }

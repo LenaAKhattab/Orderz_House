@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import Button from "../../components/ui/Button";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/planAdminResources";
 import {
   getInitialMarketplacePlanFormState,
   normalizeMarketplacePlanPayload,
@@ -11,11 +13,12 @@ export default function MarketplaceMembershipPlanFormModal({
   open,
   mode = "create",
   initialPlan = null,
-  isEn = false,
   submitting = false,
   onClose,
   onSubmit,
 }) {
+  const { t, locale } = useTranslation();
+  const isEn = locale === "en";
   const isCreate = mode === "create";
   const [form, setForm] = useState(getInitialMarketplacePlanFormState);
   const [errors, setErrors] = useState({});
@@ -34,7 +37,7 @@ export default function MarketplaceMembershipPlanFormModal({
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const nextErrors = validateMarketplacePlanForm(form, { isCreate });
+    const nextErrors = validateMarketplacePlanForm(form, { isCreate, t });
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) return;
     onSubmit?.(normalizeMarketplacePlanPayload(form, { isCreate }));
@@ -42,10 +45,15 @@ export default function MarketplaceMembershipPlanFormModal({
 
   return (
     <div className="oh-mmp-modal" role="dialog" aria-modal="true">
-      <button type="button" className="oh-mmp-modal__backdrop" aria-label="Close" onClick={onClose} />
+      <button
+        type="button"
+        className="oh-mmp-modal__backdrop"
+        aria-label={t("planAdmin.common.close")}
+        onClick={onClose}
+      />
       <div className="oh-mmp-modal__panel">
         <div className="oh-mmp-modal__header">
-          <h2>{isCreate ? (isEn ? "Add membership plan" : "إضافة باقة عمل") : isEn ? "Edit membership plan" : "تعديل باقة عمل"}</h2>
+          <h2>{isCreate ? t("planAdmin.marketplace.createTitle") : t("planAdmin.marketplace.editTitle")}</h2>
           <button type="button" className="oh-mmp-modal__close" onClick={onClose} disabled={submitting}>
             ×
           </button>
@@ -54,7 +62,7 @@ export default function MarketplaceMembershipPlanFormModal({
         <form className="oh-mmp-form" onSubmit={handleSubmit}>
           {isCreate ? (
             <label>
-              {isEn ? "Tier code" : "رمز الباقة"} *
+              {t("planAdmin.marketplace.tierCode")} *
               <input
                 value={form.tierCode}
                 onChange={(e) => setField("tierCode", e.target.value)}
@@ -66,24 +74,24 @@ export default function MarketplaceMembershipPlanFormModal({
             </label>
           ) : (
             <p className="oh-mmp-form__hint">
-              {isEn ? "Tier code" : "رمز الباقة"}: <strong>{form.tierCode}</strong> ({isEn ? "immutable" : "ثابت"})
+              {t("planAdmin.marketplace.tierCode")}: <strong>{form.tierCode}</strong> ({t("planAdmin.marketplace.tierImmutable")})
             </p>
           )}
 
           <div className="oh-mmp-form__row">
             <label>
-              {isEn ? "Name (AR)" : "الاسم (عربي)"} *
+              {t("planAdmin.marketplace.nameAr")} *
               <input value={form.nameAr} onChange={(e) => setField("nameAr", e.target.value)} disabled={submitting} />
               {errors.nameAr ? <span className="oh-mmp-form__error">{errors.nameAr}</span> : null}
             </label>
             <label>
-              {isEn ? "Name (EN)" : "الاسم (إنجليزي)"}
+              {t("planAdmin.marketplace.nameEn")}
               <input value={form.nameEn} onChange={(e) => setField("nameEn", e.target.value)} disabled={submitting} />
             </label>
           </div>
 
           <label>
-            {isEn ? "Description (AR)" : "الوصف (عربي)"}
+            {t("planAdmin.marketplace.descAr")}
             <textarea
               value={form.descriptionAr}
               onChange={(e) => setField("descriptionAr", e.target.value)}
@@ -92,7 +100,7 @@ export default function MarketplaceMembershipPlanFormModal({
             />
           </label>
           <label>
-            {isEn ? "Description (EN)" : "الوصف (إنجليزي)"}
+            {t("planAdmin.marketplace.descEn")}
             <textarea
               value={form.descriptionEn}
               onChange={(e) => setField("descriptionEn", e.target.value)}
@@ -103,7 +111,7 @@ export default function MarketplaceMembershipPlanFormModal({
 
           <div className="oh-mmp-form__row">
             <label>
-              {isEn ? "Monthly price (JOD)" : "السعر الشهري (د.أ)"} *
+              {t("planAdmin.marketplace.monthlyPrice")} *
               <input
                 type="number"
                 min="0"
@@ -115,7 +123,7 @@ export default function MarketplaceMembershipPlanFormModal({
               {errors.monthlyPriceJod ? <span className="oh-mmp-form__error">{errors.monthlyPriceJod}</span> : null}
             </label>
             <label>
-              {isEn ? "Sort order" : "ترتيب الظهور"}
+              {t("planAdmin.marketplace.sortOrder")}
               <input
                 type="number"
                 value={form.sortOrder}
@@ -126,7 +134,7 @@ export default function MarketplaceMembershipPlanFormModal({
           </div>
 
           <fieldset className="oh-mmp-form__fieldset">
-            <legend>{isEn ? "Real-order access" : "وصول الطلبات الحقيقية فقط"}</legend>
+            <legend>{t("planAdmin.marketplace.realOrderLegend")}</legend>
             <label className="oh-mmp-form__check">
               <input
                 type="checkbox"
@@ -134,11 +142,11 @@ export default function MarketplaceMembershipPlanFormModal({
                 onChange={(e) => setField("unlimitedRealOrderValue", e.target.checked)}
                 disabled={submitting}
               />
-              {isEn ? "Unlimited real-order value" : "قيمة غير محدودة للطلبات الحقيقية"}
+              {t("planAdmin.marketplace.unlimitedReal")}
             </label>
             {!form.unlimitedRealOrderValue ? (
               <label>
-                {isEn ? "Max real order value (JOD)" : "أقصى قيمة طلب حقيقي (د.أ)"} *
+                {t("planAdmin.marketplace.maxReal")} *
                 <input
                   type="number"
                   min="0"
@@ -156,7 +164,7 @@ export default function MarketplaceMembershipPlanFormModal({
 
           <div className="oh-mmp-form__row">
             <label>
-              {isEn ? "Bids per cycle" : "العروض / دورة"}
+              {t("planAdmin.marketplace.bidsPerCycle")}
               <input
                 type="number"
                 min="0"
@@ -170,7 +178,7 @@ export default function MarketplaceMembershipPlanFormModal({
               ) : null}
             </label>
             <label>
-              {isEn ? "Daily Bid spend limit" : "الحد اليومي للعروض"}
+              {t("planAdmin.marketplace.dailyBidLimit")}
               <input
                 type="number"
                 min="0"
@@ -184,7 +192,7 @@ export default function MarketplaceMembershipPlanFormModal({
 
           <div className="oh-mmp-form__row">
             <label>
-              {isEn ? "Cycle duration (days)" : "مدة الدورة (أيام)"}
+              {t("planAdmin.marketplace.cycleDays")}
               <input
                 type="number"
                 min="1"
@@ -195,7 +203,7 @@ export default function MarketplaceMembershipPlanFormModal({
               />
             </label>
             <label>
-              {isEn ? "Project min value (JOD)" : "أدنى قيمة مشروع (د.أ)"}
+              {t("planAdmin.marketplace.projectMin")}
               <input
                 type="number"
                 min="0"
@@ -215,10 +223,10 @@ export default function MarketplaceMembershipPlanFormModal({
                 onChange={(e) => setField("withdrawalEnabled", e.target.checked)}
                 disabled={submitting}
               />
-              {isEn ? "Withdrawal enabled" : "السحب مفعّل"}
+              {t("planAdmin.marketplace.withdrawal")}
             </label>
             <label>
-              {isEn ? "Bid distribution mode" : "نمط توزيع العروض"}
+              {t("planAdmin.marketplace.bidDistribution")}
               <select
                 value={form.bidDistributionMode || "full_cycle"}
                 onChange={(e) => setField("bidDistributionMode", e.target.value)}
@@ -232,7 +240,7 @@ export default function MarketplaceMembershipPlanFormModal({
 
           <div className="oh-mmp-form__row">
             <label>
-              {isEn ? "Starter earnings mode" : "وضع أرباح الستارتر"}
+              {t("planAdmin.marketplace.starterEarnings")}
               <select
                 value={form.starterEarningsMode || "standard"}
                 onChange={(e) => setField("starterEarningsMode", e.target.value)}
@@ -249,13 +257,13 @@ export default function MarketplaceMembershipPlanFormModal({
                 onChange={(e) => setField("isOneTimeStarter", e.target.checked)}
                 disabled={submitting}
               />
-              {isEn ? "One-time Starter entitlement" : "ستارتر لمرة واحدة فقط"}
+              {t("planAdmin.marketplace.starterOnce")}
             </label>
           </div>
 
           <div className="oh-mmp-form__row">
             <label>
-              {isEn ? "Article access level (1–5)" : "مستوى الوصول للمقالات (1–5)"}
+              {t("planAdmin.marketplace.articleAccess")}
               <input
                 type="number"
                 min="1"
@@ -279,7 +287,7 @@ export default function MarketplaceMembershipPlanFormModal({
                 onChange={(e) => setField("eliteDirectOrdersEnabled", e.target.checked)}
                 disabled={submitting}
               />
-              {isEn ? "Elite Direct Orders capability" : "قدرة الطلب المباشر (Elite)"}
+              {t("planAdmin.marketplace.eliteDirect")}
             </label>
           </div>
 
@@ -291,12 +299,10 @@ export default function MarketplaceMembershipPlanFormModal({
                 onChange={(e) => setField("priorityBidEnabled", e.target.checked)}
                 disabled={submitting}
               />
-              {isEn ? "Priority Bid capability (Priority Uses)" : "قدرة عرض الأولوية (استخدامات الأولوية)"}
+              {t("planAdmin.marketplace.priorityBid")}
             </label>
             <label>
-              {isEn
-                ? "Priority Uses per cycle (separate from Bids / month)"
-                : "استخدامات الأولوية / دورة (منفصلة عن العروض / شهر)"}
+              {t("planAdmin.marketplace.priorityUsesHint")}
               <input
                 type="number"
                 min="0"
@@ -313,7 +319,7 @@ export default function MarketplaceMembershipPlanFormModal({
           </div>
 
           <fieldset className="oh-mmp-form__fieldset">
-            <legend>{isEn ? "Cash / prepaid" : "نقدي / مسبق"}</legend>
+            <legend>{t("planAdmin.marketplace.cashLegend")}</legend>
             <label className="oh-mmp-form__check">
               <input
                 type="checkbox"
@@ -321,11 +327,11 @@ export default function MarketplaceMembershipPlanFormModal({
                 onChange={(e) => setField("cashAllowed", e.target.checked)}
                 disabled={submitting}
               />
-              {isEn ? "Cash allowed" : "الدفع النقدي مسموح"}
+              {t("planAdmin.marketplace.cashAllowed")}
             </label>
             <div className="oh-mmp-form__row">
               <label>
-                {isEn ? "Min cash months" : "أدنى أشهر نقدية"}
+                {t("planAdmin.marketplace.minCashMonths")}
                 <input
                   type="number"
                   min="1"
@@ -338,7 +344,7 @@ export default function MarketplaceMembershipPlanFormModal({
                 ) : null}
               </label>
               <label>
-                {isEn ? "Max prepaid months" : "أقصى أشهر مسبقة"}
+                {t("planAdmin.marketplace.maxPrepaidMonths")}
                 <input
                   type="number"
                   min="1"
@@ -354,7 +360,7 @@ export default function MarketplaceMembershipPlanFormModal({
           </fieldset>
 
           <fieldset className="oh-mmp-form__fieldset">
-            <legend>{isEn ? "Sale" : "تخفيض"}</legend>
+            <legend>{t("planAdmin.marketplace.saleLegend")}</legend>
             <label className="oh-mmp-form__check">
               <input
                 type="checkbox"
@@ -362,13 +368,13 @@ export default function MarketplaceMembershipPlanFormModal({
                 onChange={(e) => setField("saleEnabled", e.target.checked)}
                 disabled={submitting}
               />
-              {isEn ? "Sale enabled" : "تفعيل التخفيض"}
+              {t("planAdmin.marketplace.saleEnabled")}
             </label>
             {form.saleEnabled ? (
               <>
                 <div className="oh-mmp-form__row">
                   <label>
-                    {isEn ? "Sale %" : "نسبة الخصم"}
+                    {t("planAdmin.marketplace.salePct")}
                     <input
                       type="number"
                       min="0.01"
@@ -384,7 +390,7 @@ export default function MarketplaceMembershipPlanFormModal({
                   </label>
                 </div>
                 <label>
-                  {isEn ? "Sale reason (AR)" : "سبب الخصم (عربي)"} *
+                  {t("planAdmin.marketplace.saleReasonAr")} *
                   <input
                     value={form.saleReason}
                     onChange={(e) => setField("saleReason", e.target.value)}
@@ -393,7 +399,7 @@ export default function MarketplaceMembershipPlanFormModal({
                   {errors.saleReason ? <span className="oh-mmp-form__error">{errors.saleReason}</span> : null}
                 </label>
                 <label>
-                  {isEn ? "Sale reason (EN)" : "سبب الخصم (إنجليزي)"}
+                  {t("planAdmin.marketplace.saleReasonEn")}
                   <input
                     value={form.saleReasonEn}
                     onChange={(e) => setField("saleReasonEn", e.target.value)}
@@ -411,15 +417,15 @@ export default function MarketplaceMembershipPlanFormModal({
               onChange={(e) => setField("isActive", e.target.checked)}
               disabled={submitting}
             />
-            {isEn ? "Visible / active" : "ظاهرة / مفعّلة"}
+            {t("planAdmin.marketplace.visibleActive")}
           </label>
 
           <div className="oh-mmp-form__actions">
             <Button type="button" variant="secondary" onClick={onClose} disabled={submitting}>
-              {isEn ? "Cancel" : "إلغاء"}
+              {t("planAdmin.common.cancel")}
             </Button>
             <Button type="submit" disabled={submitting}>
-              {submitting ? (isEn ? "Saving…" : "جاري الحفظ…") : isEn ? "Save" : "حفظ"}
+              {submitting ? t("planAdmin.common.saving") : t("planAdmin.common.save")}
             </Button>
           </div>
         </form>

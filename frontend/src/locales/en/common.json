@@ -1,5 +1,20 @@
 {
-  "brand": "Orderz House",
+  "brand": "OrderzHouse",
+  "brandWordmark": "OrderzHouse",
+  "titles": {
+    "users": "Users",
+    "institutions": "Institutions",
+    "legacy": "Legacy Freelancer Management Center",
+    "analysis": "Analytics",
+    "financialCenter": "Financial Center",
+    "claims": "Financial Claims",
+    "settlements": "Settlements",
+    "courses": "Courses",
+    "articles": "Articles",
+    "orders": "Orders",
+    "subscriptions": "Subscriptions",
+    "plans": "Plans"
+  },
   "language": {
     "ar": "العربية",
     "en": "English",
@@ -36,11 +51,39 @@
     "loadSubSubcategories": "Could not load detailed categories.",
     "loadOrders": "Could not load requests. Please try again.",
     "loadPage": "Could not load this page",
-    "generic": "Something went wrong. Please try again."
+    "generic": "Something went wrong. Please try again.",
+    "timeout": "The request took too long. Check your connection and try again.",
+    "network": "Could not reach the server. Check your connection and try again.",
+    "unavailable": "This action is not available.",
+    "pricingChanged": "The approved price changed. Refresh the page and review the amount in JOD before submitting again.",
+    "rateLimited": "Too many requests were sent. Wait a moment and try again.",
+    "orderCreateFailed": "Could not create the request. Please try again."
+  },
+  "pagination": {
+    "navAria": "Pagination",
+    "next": "Next",
+    "previous": "Previous",
+    "pageOf": "Page {{current}} of {{total}}"
   },
   "notFound": {
     "title": "Page unavailable",
     "text": "This page may be hidden or the link is incorrect."
   },
-  "copyright": "© {{year}} Orderz House. All rights reserved."
+  "copyright": "© {{year}} Orderz House. All rights reserved.",
+  "toast": {
+    "success": "Success",
+    "error": "Error",
+    "warning": "Warning",
+    "info": "Info",
+    "closeAria": "Dismiss notification"
+  },
+  "skeleton": {
+    "loading": "Loading…",
+    "loadingPage": "Loading page…",
+    "loadingOrders": "Loading orders…"
+  },
+  "a11y": {
+    "explain": "Explanation: {{label}}",
+    "dataScope": "Data scope: {{scope}}"
+  }
 }

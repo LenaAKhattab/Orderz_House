@@ -1,4 +1,6 @@
+import "../../i18n/financeResources";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "../../i18n/LanguageProvider";
 import {
   createSuperAdminFreelancerPaymentRequest,
   getSuperAdminFinancialClaimByIdRequest,
@@ -19,36 +21,33 @@ import DashboardLoadingState from "../../components/dashboard/DashboardLoadingSt
 import StatusBadge from "../../components/dashboard/StatusBadge";
 import DashboardModal from "../../components/dashboard/DashboardModal";
 
-function formatDate(value) {
+function formatDate(value, locale) {
   if (!value) return "—";
   const d = new Date(value);
   if (!Number.isFinite(d.getTime())) return "—";
-  return new Intl.DateTimeFormat("ar-JO-u-nu-latn", { dateStyle: "medium", timeStyle: "short" }).format(d);
+  const tag = locale === "en" ? "en-GB" : "ar-JO-u-nu-latn";
+  return new Intl.DateTimeFormat(tag, { dateStyle: "medium", timeStyle: "short" }).format(d);
 }
 
-function formatMoney(value) {
+function formatMoney(value, locale = "ar") {
   if (value === null || value === undefined || Number.isNaN(Number(value))) return "—";
-  return `${new Intl.NumberFormat("ar-JO-u-nu-latn", { maximumFractionDigits: 2 }).format(Number(value))} د.أ`;
+  const suffix = locale === "en" ? "JOD" : "د.أ";
+  return `${new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(Number(value))} ${suffix}`;
 }
 
-function statusAr(s) {
+function claimStatusLabel(s, t) {
   const v = String(s || "");
-  if (v === "pending") return "قيد المراجعة";
-  if (v === "accepted") return "مقبولة";
-  if (v === "rejected") return "مرفوضة";
-  if (v === "frozen") return "مجمدة";
-  if (v === "requires_in_person_review") return "تحتاج مراجعة حضورية";
-  if (v === "paid") return "مدفوعة";
+  const key = `finance.claimStatus.${v}`;
+  const label = v ? t(key) : "";
+  if (label && label !== key) return label;
   return v || "—";
 }
 
-function payoutAr(s) {
+function payoutStatusLabel(s, t) {
   const v = String(s || "");
-  if (v === "missing_completion_date") return "بدون تاريخ إنجاز";
-  if (v === "not_due_yet") return "غير مستحقة بعد";
-  if (v === "within_payout_window") return "داخل نافذة الاستحقاق";
-  if (v === "late_after_payout_window") return "متأخرة";
-  if (v === "paid") return "مدفوعة";
+  const key = `finance.payoutStatus.${v}`;
+  const label = v ? t(key) : "";
+  if (label && label !== key) return label;
   return v || "—";
 }
 
@@ -92,36 +91,49 @@ function formatPct(value) {
   return `${new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(n)}%`;
 }
 
-const CLAIM_STATUS_OPTIONS = [
-  { value: "", label: "كل الحالات" },
-  { value: "pending", label: "قيد المراجعة" },
-  { value: "accepted", label: "مقبولة" },
-  { value: "rejected", label: "مرفوضة" },
-  { value: "frozen", label: "مجمدة" },
-  { value: "requires_in_person_review", label: "تحتاج مراجعة حضورية" },
-  { value: "paid", label: "مدفوعة" },
-];
-
-/** Statuses editable via generic PATCH — paid requires payment ledger modal. */
-const CLAIM_STATUS_CHANGE_OPTIONS = [
-  { value: "pending", label: "قيد المراجعة" },
-  { value: "accepted", label: "مقبولة" },
-  { value: "rejected", label: "مرفوضة" },
-  { value: "frozen", label: "مجمدة" },
-  { value: "requires_in_person_review", label: "تحتاج مراجعة حضورية" },
-];
-
-const PAYOUT_STATUS_OPTIONS = [
-  { value: "", label: "كل حالات الاستحقاق" },
-  { value: "missing_completion_date", label: "بدون تاريخ إنجاز" },
-  { value: "not_due_yet", label: "غير مستحقة بعد" },
-  { value: "within_payout_window", label: "داخل نافذة الاستحقاق" },
-  { value: "late_after_payout_window", label: "متأخرة بعد نافذة الاستحقاق" },
-  { value: "paid", label: "مدفوعة" },
+const CLAIM_STATUS_VALUES = ["", "pending", "accepted", "rejected", "frozen", "requires_in_person_review", "paid"];
+const CLAIM_STATUS_CHANGE_VALUES = ["pending", "accepted", "rejected", "frozen", "requires_in_person_review"];
+const PAYOUT_STATUS_VALUES = [
+  "",
+  "missing_completion_date",
+  "not_due_yet",
+  "within_payout_window",
+  "late_after_payout_window",
+  "paid",
 ];
 
 export default function SuperAdminFinancialClaimsPage() {
+  const { t, locale } = useTranslation();
+  const money = (value) => formatMoney(value, locale);
   const { push } = useToast();
+  const sc = "finance.superAdminClaims";
+
+  const claimStatusOptions = useMemo(
+    () =>
+      CLAIM_STATUS_VALUES.map((value) => ({
+        value,
+        label: value ? claimStatusLabel(value, t) : t(`${sc}.filterAllStatuses`),
+      })),
+    [t, sc],
+  );
+
+  const claimStatusChangeOptions = useMemo(
+    () =>
+      CLAIM_STATUS_CHANGE_VALUES.map((value) => ({
+        value,
+        label: claimStatusLabel(value, t),
+      })),
+    [t],
+  );
+
+  const payoutStatusOptions = useMemo(
+    () =>
+      PAYOUT_STATUS_VALUES.map((value) => ({
+        value,
+        label: value ? payoutStatusLabel(value, t) : t(`${sc}.filterAllPayoutStatuses`),
+      })),
+    [t, sc],
+  );
   const [claims, setClaims] = useState([]);
   const [busy, setBusy] = useState(true);
   const [filters, setFilters] = useState({ q: "", status: "", payoutStatus: "" });
@@ -155,7 +167,7 @@ export default function SuperAdminFinancialClaimsPage() {
       const res = await listSuperAdminFinancialClaimsRequest(params);
       setClaims(res?.data?.claims || []);
     } catch (e) {
-      push({ type: "error", title: "تعذر تحميل المطالبات", message: getSafeApiErrorMessage(e) });
+      push({ type: "error", title: t(`${sc}.toastLoadClaimsError`), message: getSafeApiErrorMessage(e) });
     } finally {
       setBusy(false);
     }
@@ -166,7 +178,7 @@ export default function SuperAdminFinancialClaimsPage() {
       const res = await getSuperAdminFinancialClaimByIdRequest(id);
       setDetail(res?.data?.claim || null);
     } catch (e) {
-      push({ type: "error", title: "تعذر تحميل التفاصيل", message: getSafeApiErrorMessage(e) });
+      push({ type: "error", title: t(`${sc}.toastLoadDetailError`), message: getSafeApiErrorMessage(e) });
     }
   };
 
@@ -185,8 +197,8 @@ export default function SuperAdminFinancialClaimsPage() {
     if (String(statusModal.status) === "paid") {
       push({
         type: "error",
-        title: "تعذر تحديث الحالة",
-        message: "لا يمكن تعليم المطالبة كمدفوعة من هنا. يجب تسجيل دفعة مالية.",
+        title: t(`${sc}.toastStatusUpdateError`),
+        message: t(`${sc}.toastCannotMarkPaidHere`),
       });
       return;
     }
@@ -196,8 +208,8 @@ export default function SuperAdminFinancialClaimsPage() {
     ) {
       push({
         type: "error",
-        title: "الملاحظة مطلوبة",
-        message: "أدخل سبب الرفض أو التجميد (3 أحرف على الأقل).",
+        title: t(`${sc}.toastNoteRequiredTitle`),
+        message: t(`${sc}.toastNoteRequiredMessage`),
       });
       return;
     }
@@ -210,9 +222,9 @@ export default function SuperAdminFinancialClaimsPage() {
       setStatusModal({ open: false, claim: null, status: "", adminNote: "" });
       await load();
       if (selectedId) await loadDetail(selectedId);
-      push({ type: "success", title: "تم تحديث الحالة" });
+      push({ type: "success", title: t(`${sc}.toastStatusUpdated`) });
     } catch (e) {
-      push({ type: "error", title: "تعذر تحديث الحالة", message: getSafeApiErrorMessage(e) });
+      push({ type: "error", title: t(`${sc}.toastStatusUpdateError`), message: getSafeApiErrorMessage(e) });
     } finally {
       setActionBusy(false);
     }
@@ -236,9 +248,9 @@ export default function SuperAdminFinancialClaimsPage() {
       });
       await load();
       if (selectedId) await loadDetail(selectedId);
-      push({ type: "success", title: "تم تحديث التسعير" });
+      push({ type: "success", title: t(`${sc}.toastPricingUpdated`) });
     } catch (e) {
-      push({ type: "error", title: "تعذر تحديث التسعير", message: getSafeApiErrorMessage(e) });
+      push({ type: "error", title: t(`${sc}.toastPricingUpdateError`), message: getSafeApiErrorMessage(e) });
     } finally {
       setActionBusy(false);
     }
@@ -258,9 +270,9 @@ export default function SuperAdminFinancialClaimsPage() {
       setPaymentModal({ open: false, claim: null, paymentMethod: "bank_transfer", paymentReference: "", paidAt: "" });
       await load();
       if (selectedId) await loadDetail(selectedId);
-      push({ type: "success", title: "تم تسجيل الدفع" });
+      push({ type: "success", title: t(`${sc}.toastPaymentRegistered`) });
     } catch (e) {
-      push({ type: "error", title: "تعذر تسجيل الدفع", message: getSafeApiErrorMessage(e) });
+      push({ type: "error", title: t(`${sc}.toastPaymentRegisterError`), message: getSafeApiErrorMessage(e) });
     } finally {
       setActionBusy(false);
     }
@@ -281,24 +293,24 @@ export default function SuperAdminFinancialClaimsPage() {
   return (
     <DashboardShell>
       <DashboardPageHeader
-        eyebrow="لوحة المدير الأعلى"
-        title="إدارة المطالبات المالية"
-        description="مراجعة المطالبات، تحديث الحالة والتسعير، وتسجيل الدفعات."
+        eyebrow={t(`${sc}.eyebrow`)}
+        title={t(`${sc}.title`)}
+        description={t(`${sc}.description`)}
         breadcrumbs={superAdminBreadcrumbs("dashboard.breadcrumbs.financialClaims")}
       />
 
-      <DashboardSection title="البحث والتصفية" description="ابحث وصفِّ المطالبات حسب الحالة واستحقاق الدفع.">
+      <DashboardSection title={t(`${sc}.filtersTitle`)} description={t(`${sc}.filtersDescription`)}>
         <DashboardToolbar>
           <div className="oh-row-2col min-w-0 w-full">
             <input
               className="input"
-              placeholder="بحث برقم الطلب أو اسم/إيميل المستقل..."
+              placeholder={t(`${sc}.searchPlaceholder`)}
               value={filters.q}
               onChange={(e) => setFilters((p) => ({ ...p, q: e.target.value }))}
             />
             <div className="oh-row-2col">
               <select className="input" value={filters.status} onChange={(e) => setFilters((p) => ({ ...p, status: e.target.value }))}>
-                {CLAIM_STATUS_OPTIONS.map((opt) => (
+                {claimStatusOptions.map((opt) => (
                   <option key={opt.value || "all"} value={opt.value}>
                     {opt.label}
                   </option>
@@ -309,7 +321,7 @@ export default function SuperAdminFinancialClaimsPage() {
                 value={filters.payoutStatus}
                 onChange={(e) => setFilters((p) => ({ ...p, payoutStatus: e.target.value }))}
               >
-                {PAYOUT_STATUS_OPTIONS.map((opt) => (
+                {payoutStatusOptions.map((opt) => (
                   <option key={opt.value || "all"} value={opt.value}>
                     {opt.label}
                   </option>
@@ -320,15 +332,15 @@ export default function SuperAdminFinancialClaimsPage() {
         </DashboardToolbar>
       </DashboardSection>
 
-      <DashboardSection title="المطالبات" description="بطاقات لكل مطالبة مع إجراءات سريعة.">
+      <DashboardSection title={t(`${sc}.listTitle`)} description={t(`${sc}.listDescription`)}>
         {busy ? (
-          <DashboardLoadingState label="جارٍ تحميل المطالبات…">
+          <DashboardLoadingState label={t(`${sc}.loading`)}>
             <AdminInlineGridSkeleton count={3} />
           </DashboardLoadingState>
         ) : null}
 
         {!busy && filteredClaims.length === 0 ? (
-          <DashboardEmptyState title="لا توجد مطالبات" description="لا توجد مطالبات مطابقة للمعايير الحالية، أو القائمة فارغة بعد آخر تحديث." />
+          <DashboardEmptyState title={t(`${sc}.emptyTitle`)} description={t(`${sc}.emptyDescription`)} />
         ) : null}
 
         {!busy && filteredClaims.length > 0 ? (
@@ -337,20 +349,34 @@ export default function SuperAdminFinancialClaimsPage() {
             {filteredClaims.map((claim) => (
               <article key={claim.id} className="card">
                 <h3 style={{ marginTop: 0 }}>{claim.requestTitle}</h3>
-                <p>رقم الطلب: {claim.orderNumber}</p>
-                <p>المستقل: {freelancerDisplay(claim.freelancer)}</p>
-                <p style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
-                  <span>الحالة:</span>
-                  <StatusBadge tone={claimStatusTone(claim.status)}>{statusAr(claim.status)}</StatusBadge>
+                <p>
+                  {t(`${sc}.orderNumber`)}: {claim.orderNumber}
+                </p>
+                <p>
+                  {t(`${sc}.freelancer`)}: {freelancerDisplay(claim.freelancer)}
                 </p>
                 <p style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
-                  <span>الاستحقاق:</span>
-                  <StatusBadge tone={payoutStatusTone(claim.payoutStatus)}>{payoutAr(claim.payoutStatus)}</StatusBadge>
+                  <span>{t(`${sc}.statusLabel`)}:</span>
+                  <StatusBadge tone={claimStatusTone(claim.status)}>{claimStatusLabel(claim.status, t)}</StatusBadge>
                 </p>
-                <p>نسبة المستقل: {formatPct(claim.userPercentageSnapshot)}</p>
-                <p>نسبة الشركة: {formatPct(claim.companyPercentageSnapshot)}</p>
-                <p>مستحق المستقل: {formatMoney(claim.userAmountSnapshot)}</p>
-                <p>المتبقي: {formatMoney(claim.remainingAmount)}</p>
+                <p style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
+                  <span>{t(`${sc}.payoutLabel`)}:</span>
+                  <StatusBadge tone={payoutStatusTone(claim.payoutStatus)}>
+                    {payoutStatusLabel(claim.payoutStatus, t)}
+                  </StatusBadge>
+                </p>
+                <p>
+                  {t(`${sc}.freelancerSharePct`)}: {formatPct(claim.userPercentageSnapshot)}
+                </p>
+                <p>
+                  {t(`${sc}.companySharePct`)}: {formatPct(claim.companyPercentageSnapshot)}
+                </p>
+                <p>
+                  {t(`${sc}.freelancerDue`)}: {money(claim.userAmountSnapshot)}
+                </p>
+                <p>
+                  {t(`${sc}.remaining`)}: {money(claim.remainingAmount)}
+                </p>
                 <div className="actions-row">
                   <button
                     type="button"
@@ -360,7 +386,7 @@ export default function SuperAdminFinancialClaimsPage() {
                       loadDetail(claim.id);
                     }}
                   >
-                    التفاصيل
+                    {t(`${sc}.details`)}
                   </button>
                   <button
                     type="button"
@@ -377,7 +403,7 @@ export default function SuperAdminFinancialClaimsPage() {
                       })
                     }
                   >
-                    تغيير الحالة
+                    {t(`${sc}.changeStatus`)}
                   </button>
                   <button
                     type="button"
@@ -392,14 +418,14 @@ export default function SuperAdminFinancialClaimsPage() {
                       })
                     }
                   >
-                    تعديل التسعير
+                    {t(`${sc}.editPricing`)}
                   </button>
                   <button
                     type="button"
                     className="btn btn-primary"
                     onClick={() => setPaymentModal({ open: true, claim, paymentMethod: "bank_transfer", paymentReference: "", paidAt: "" })}
                   >
-                    تسجيل الدفع
+                    {t(`${sc}.registerPayment`)}
                   </button>
                 </div>
               </article>
@@ -410,37 +436,63 @@ export default function SuperAdminFinancialClaimsPage() {
       </DashboardSection>
 
       {detail ? (
-        <DashboardSection title={`تفاصيل المطالبة #${detail.id}`} description="بيانات المطالبة المختارة وسجل تغيّر الحالة.">
+        <DashboardSection
+          title={t(`${sc}.detailTitle`, { id: detail.id })}
+          description={t(`${sc}.detailDescription`)}
+        >
           <div className="card">
-            <p>العنوان: {detail.requestTitle}</p>
-            <p>رقم الطلب: {detail.orderNumber}</p>
-            <p>المستقل: {freelancerDisplay(detail.freelancer)}</p>
-            <p style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
-              <span>الحالة:</span>
-              <StatusBadge tone={claimStatusTone(detail.status)}>{statusAr(detail.status)}</StatusBadge>
+            <p>
+              {t(`${sc}.requestTitle`)}: {detail.requestTitle}
+            </p>
+            <p>
+              {t(`${sc}.orderNumber`)}: {detail.orderNumber}
+            </p>
+            <p>
+              {t(`${sc}.freelancer`)}: {freelancerDisplay(detail.freelancer)}
             </p>
             <p style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
-              <span>الاستحقاق:</span>
-              <StatusBadge tone={payoutStatusTone(detail.payoutStatus)}>{payoutAr(detail.payoutStatus)}</StatusBadge>
+              <span>{t(`${sc}.statusLabel`)}:</span>
+              <StatusBadge tone={claimStatusTone(detail.status)}>{claimStatusLabel(detail.status, t)}</StatusBadge>
             </p>
-            <p>نسبة المستقل: {formatPct(detail.userPercentageSnapshot)}</p>
-            <p>نسبة الشركة: {formatPct(detail.companyPercentageSnapshot)}</p>
-            <p>السعر الإجمالي: {formatMoney(detail.totalPriceSnapshot)}</p>
-            <p>مستحق المستقل: {formatMoney(detail.userAmountSnapshot)}</p>
-            <p>مدفوع: {formatMoney(detail.paidAmount)}</p>
-            <p>المتبقي: {formatMoney(detail.remainingAmount)}</p>
-            <p>تاريخ الإنجاز الفعلي: {formatDate(detail.actualCompletionDate)}</p>
+            <p style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
+              <span>{t(`${sc}.payoutLabel`)}:</span>
+              <StatusBadge tone={payoutStatusTone(detail.payoutStatus)}>
+                {payoutStatusLabel(detail.payoutStatus, t)}
+              </StatusBadge>
+            </p>
+            <p>
+              {t(`${sc}.freelancerSharePct`)}: {formatPct(detail.userPercentageSnapshot)}
+            </p>
+            <p>
+              {t(`${sc}.companySharePct`)}: {formatPct(detail.companyPercentageSnapshot)}
+            </p>
+            <p>
+              {t(`${sc}.totalPrice`)}: {money(detail.totalPriceSnapshot)}
+            </p>
+            <p>
+              {t(`${sc}.freelancerDue`)}: {money(detail.userAmountSnapshot)}
+            </p>
+            <p>
+              {t(`${sc}.paidAmount`)}: {money(detail.paidAmount)}
+            </p>
+            <p>
+              {t(`${sc}.remaining`)}: {money(detail.remainingAmount)}
+            </p>
+            <p>
+              {t(`${sc}.actualCompletionDate`)}: {formatDate(detail.actualCompletionDate, locale)}
+            </p>
           </div>
           <div className="card" style={{ marginTop: 10 }}>
-            <h3 style={{ marginTop: 0 }}>سجل الحالة (Timeline)</h3>
+            <h3 style={{ marginTop: 0 }}>{t(`${sc}.timelineTitle`)}</h3>
             {(detail.statusHistory || []).length === 0 ? (
-              <p>لا يوجد سجل.</p>
+              <p>{t(`${sc}.timelineEmpty`)}</p>
             ) : (
               <ul className="simple-list">
                 {detail.statusHistory.map((h) => (
                   <li key={h.id}>
-                    {statusAr(h.oldStatus || "—")} ← {statusAr(h.newStatus)} | {formatDate(h.changedAt)}
-                    {h.adminNote ? ` | ملاحظة: ${h.adminNote}` : ""}
+                    {claimStatusLabel(h.oldStatus || "—", t)} ← {claimStatusLabel(h.newStatus, t)} |{" "}
+                    {formatDate(h.changedAt, locale)}
+                    {h.adminNote ? ` | ${t(`${sc}.timelineNote`)}: ${h.adminNote}` : ""}
                   </li>
                 ))}
               </ul>
@@ -451,33 +503,31 @@ export default function SuperAdminFinancialClaimsPage() {
 
       <DashboardModal
         open={statusModal.open}
-        title="تحديث حالة المطالبة"
+        title={t(`${sc}.statusModalTitle`)}
         onClose={closeStatusModal}
         footer={
           <>
             <button type="button" className="btn btn-primary" disabled={actionBusy} onClick={applyStatus}>
-              حفظ
+              {t("finance.actions.save")}
             </button>
             <button type="button" className="btn btn-secondary" disabled={actionBusy} onClick={closeStatusModal}>
-              إلغاء
+              {t("finance.actions.cancel")}
             </button>
           </>
         }
       >
         <div className="dash-ui-modal__form">
           <select className="input" value={statusModal.status} onChange={(e) => setStatusModal((p) => ({ ...p, status: e.target.value }))}>
-            {CLAIM_STATUS_CHANGE_OPTIONS.map((opt) => (
+            {claimStatusChangeOptions.map((opt) => (
               <option key={opt.value} value={opt.value}>
                 {opt.label}
               </option>
             ))}
           </select>
-          <p className="text-sm text-slate-500 m-0">
-            لتعليم المطالبة كمدفوعة استخدم زر تسجيل دفعة مالية (لا يمكن تعيين «مدفوعة» من هنا).
-          </p>
+          <p className="text-sm text-slate-500 m-0">{t(`${sc}.paidStatusHint`)}</p>
           <textarea
             className="textarea"
-            placeholder="ملاحظة الإدارة (مطلوبة عند الرفض أو التجميد)..."
+            placeholder={t(`${sc}.adminNotePlaceholder`)}
             value={statusModal.adminNote}
             onChange={(e) => setStatusModal((p) => ({ ...p, adminNote: e.target.value }))}
           />
@@ -486,15 +536,15 @@ export default function SuperAdminFinancialClaimsPage() {
 
       <DashboardModal
         open={pricingModal.open}
-        title="تعديل التسعير"
+        title={t(`${sc}.pricingModalTitle`)}
         onClose={closePricingModal}
         footer={
           <>
             <button type="button" className="btn btn-primary" disabled={actionBusy} onClick={applyPricing}>
-              حفظ
+              {t("finance.actions.save")}
             </button>
             <button type="button" className="btn btn-secondary" disabled={actionBusy} onClick={closePricingModal}>
-              إلغاء
+              {t("finance.actions.cancel")}
             </button>
           </>
         }
@@ -504,7 +554,7 @@ export default function SuperAdminFinancialClaimsPage() {
             className="input"
             type="number"
             min="0"
-            placeholder="إجمالي السعر"
+            placeholder={t(`${sc}.totalPricePlaceholder`)}
             value={pricingModal.totalPriceSnapshot}
             onChange={(e) => setPricingModal((p) => ({ ...p, totalPriceSnapshot: e.target.value }))}
           />
@@ -513,7 +563,7 @@ export default function SuperAdminFinancialClaimsPage() {
             type="number"
             min="0"
             max="100"
-            placeholder="نسبة المستقل"
+            placeholder={t(`${sc}.freelancerPctPlaceholder`)}
             value={pricingModal.userPercentageSnapshot}
             onChange={(e) => setPricingModal((p) => ({ ...p, userPercentageSnapshot: e.target.value }))}
           />
@@ -522,7 +572,7 @@ export default function SuperAdminFinancialClaimsPage() {
             type="number"
             min="0"
             max="100"
-            placeholder="نسبة الشركة"
+            placeholder={t(`${sc}.companyPctPlaceholder`)}
             value={pricingModal.companyPercentageSnapshot}
             onChange={(e) => setPricingModal((p) => ({ ...p, companyPercentageSnapshot: e.target.value }))}
           />
@@ -531,31 +581,35 @@ export default function SuperAdminFinancialClaimsPage() {
 
       <DashboardModal
         open={paymentModal.open}
-        title="تسجيل دفعة"
+        title={t(`${sc}.paymentModalTitle`)}
         onClose={closePaymentModal}
         footer={
           <>
             <button type="button" className="btn btn-primary" disabled={actionBusy} onClick={registerPayment}>
-              تأكيد الدفع
+              {t(`${sc}.confirmPayment`)}
             </button>
             <button type="button" className="btn btn-secondary" disabled={actionBusy} onClick={closePaymentModal}>
-              إلغاء
+              {t("finance.actions.cancel")}
             </button>
           </>
         }
       >
         <div className="dash-ui-modal__form">
-          <p className="dash-ui-modal__lead">المطالبة: #{paymentModal.claim?.id}</p>
-          <p className="dash-ui-modal__hint">المبلغ المتبقي: {formatMoney(paymentModal.claim?.remainingAmount)}</p>
+          <p className="dash-ui-modal__lead">
+            {t(`${sc}.claimRef`)}: #{paymentModal.claim?.id}
+          </p>
+          <p className="dash-ui-modal__hint">
+            {t(`${sc}.remainingAmount`)}: {money(paymentModal.claim?.remainingAmount)}
+          </p>
           <input
             className="input"
-            placeholder="طريقة الدفع"
+            placeholder={t(`${sc}.paymentMethodPlaceholder`)}
             value={paymentModal.paymentMethod}
             onChange={(e) => setPaymentModal((p) => ({ ...p, paymentMethod: e.target.value }))}
           />
           <input
             className="input"
-            placeholder="مرجع الدفع"
+            placeholder={t(`${sc}.paymentReferencePlaceholder`)}
             value={paymentModal.paymentReference}
             onChange={(e) => setPaymentModal((p) => ({ ...p, paymentReference: e.target.value }))}
           />

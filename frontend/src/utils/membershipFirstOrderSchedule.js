@@ -15,7 +15,7 @@ export function durationMonthsLabel(months) {
   return `${n} شهرًا`;
 }
 
-export function membershipScheduleView(subscription) {
+export function membershipScheduleView(subscription, copy = null) {
   if (!subscription) {
     return { awaitingFirstOrder: false, durationLabel: null };
   }
@@ -28,11 +28,12 @@ export function membershipScheduleView(subscription) {
     !subscription.actualStartDate &&
     !subscription.expiryDate;
 
+  const months = subscription.entitlementDurationMonths;
   return {
     awaitingFirstOrder,
-    statusLabel: awaitingFirstOrder ? "بانتظار أول طلب" : null,
-    durationLabel: durationMonthsLabel(subscription.entitlementDurationMonths),
-    startLabel: awaitingFirstOrder ? "تبدأ عند أول طلب" : null,
-    expiryLabel: awaitingFirstOrder ? "يُحسب بعد بدء الاشتراك" : null,
+    statusLabel: awaitingFirstOrder ? copy?.waiting || "بانتظار أول طلب" : null,
+    durationLabel: copy?.duration ? copy.duration(months) : durationMonthsLabel(months),
+    startLabel: awaitingFirstOrder ? copy?.starts || "تبدأ عند أول طلب" : null,
+    expiryLabel: awaitingFirstOrder ? copy?.expiry || "يُحسب بعد بدء الاشتراك" : null,
   };
 }

@@ -1012,6 +1012,41 @@
     "financialUserPanel": "My bonuses",
     "default": "Dashboard"
   },
+  "ui": {
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "close": "Close",
+    "tabsAria": "Sections",
+    "executing": "Working…"
+  },
+  "comingSoon": {
+    "sectionTitle": "Coming soon",
+    "title": "This page is being prepared",
+    "subtitle": "Dashboard content by role will be added soon."
+  },
+  "gettingStartedPage": {
+    "title": "Getting started",
+    "description": "Short guides on how Orderz House works. Content is managed from the admin dashboard.",
+    "loadError": "Could not load Getting started.",
+    "emptyTitle": "No articles yet",
+    "emptyDescription": "Guides will appear here after getting-started content is enabled in admin. If migration is not applied yet, complete training and request activation from your dashboard."
+  },
+  "homeAside": {
+    "aria": "Quick summary",
+    "activityCompletion": "Activity completion",
+    "clientHint": "Based on your completed request rate.",
+    "freelancerHint": "A quick indicator of your activity on the platform.",
+    "todayNumbers": "Today's numbers",
+    "totalOrders": "Total requests",
+    "pendingPayment": "Awaiting payment",
+    "totalPaid": "Total paid",
+    "workStatus": "Work status",
+    "subscription": "Subscription",
+    "poolPreview": "Marketplace opportunities (preview)",
+    "assignedOrders": "Assigned requests",
+    "claimsPending": "Claims under review",
+    "weeklyActivity": "Weekly activity"
+  },
   "freelancer": {
     "accountReadiness": {
       "completeCoursesTitle": "Complete the required courses first",

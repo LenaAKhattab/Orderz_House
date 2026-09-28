@@ -24,6 +24,7 @@ function read(...parts) {
 describe("Phase A7.2 Super Admin KPI dashboard UI", () => {
   it("KPI dashboard renders filters, funnel, rates, timing, quality, financial, notes", () => {
     const dash = read("components/admin/FreelancerActivationKpiDashboard.jsx");
+    const ar = JSON.parse(read("locales/ar/activation.json"));
     assert.match(dash, /activation-kpi-dashboard/);
     assert.match(dash, /activation-kpi-filters/);
     assert.match(dash, /kpi-filter-campaign/);
@@ -38,23 +39,28 @@ describe("Phase A7.2 Super Admin KPI dashboard UI", () => {
     assert.match(dash, /activation-kpi-quality-cards/);
     assert.match(dash, /activation-kpi-financial-cards/);
     assert.match(dash, /activation-kpi-notes/);
-    assert.match(dash, /FUNNEL_CARD_LABELS_AR/);
-    assert.equal(FUNNEL_CARD_LABELS_AR.trialActivatedUsers, "تم تفعيل التجربة");
-    assert.equal(FUNNEL_CARD_LABELS_AR.silverPaidUsers, "مشترك Silver");
+    assert.match(dash, /activation\.kpi\.funnel\.\$\{key\}/);
+    assert.equal(ar.kpi.funnel.trialActivatedUsers, FUNNEL_CARD_LABELS_AR.trialActivatedUsers);
+    assert.equal(ar.kpi.funnel.trialActivatedUsers, "تم تفعيل التجربة");
+    assert.equal(ar.kpi.funnel.silverPaidUsers, "مشترك Silver");
 
     const page = read("pages/dashboard/SuperAdminFreelancerActivationPage.jsx");
     assert.match(page, /FreelancerActivationKpiDashboard/);
-    assert.match(page, /مؤشرات محرك التفعيل \(KPI\)/);
+    assert.match(page, /activation\.page\.kpiSectionTitle/);
+    assert.match(ar.page.kpiSectionTitle, /مؤشرات التفعيل/);
   });
 
   it("loading, error, and schemaReady false states render safe Arabic copy", () => {
     const dash = read("components/admin/FreelancerActivationKpiDashboard.jsx");
+    const ar = JSON.parse(read("locales/ar/activation.json"));
     assert.match(dash, /activation-kpi-loading/);
     assert.match(dash, /activation-kpi-error/);
     assert.match(dash, /activation-kpi-schema-not-ready/);
-    assert.match(dash, /KPI_LOAD_ERROR_AR/);
-    assert.match(dash, /KPI_SCHEMA_NOT_READY_AR/);
+    assert.match(dash, /activation\.kpi\.loadError/);
+    assert.match(dash, /activation\.kpi\.schemaNotReady/);
+    assert.equal(ar.kpi.loadError, KPI_LOAD_ERROR_AR);
     assert.equal(KPI_LOAD_ERROR_AR, "تعذر تحميل مؤشرات محرك التفعيل حاليًا.");
+    assert.match(ar.kpi.schemaNotReady, /قاعدة بيانات محرك التفعيل غير جاهزة بعد/);
     assert.match(KPI_SCHEMA_NOT_READY_AR, /قاعدة بيانات محرك التفعيل غير جاهزة بعد/);
   });
 
@@ -67,8 +73,8 @@ describe("Phase A7.2 Super Admin KPI dashboard UI", () => {
     assert.equal(formatKpiDays(null), KPI_UNAVAILABLE_AR);
     assert.equal(formatKpiDays(2.4), "2.4 يوم");
     const dash = read("components/admin/FreelancerActivationKpiDashboard.jsx");
-    assert.match(dash, /KPI_UNAVAILABLE_AR/);
-    assert.match(dash, /formatKpiRate\(value, \{ shortUnavailable: true \}\)/);
+    assert.match(dash, /activation\.kpi\.unavailable/);
+    assert.match(dash, /shortUnavailable: true/);
   });
 
   it("campaign, wave, and date filters call KPI API with params", () => {
@@ -87,14 +93,14 @@ describe("Phase A7.2 Super Admin KPI dashboard UI", () => {
     assert.equal(formatKpiJod("19.000"), "19.000 JOD");
     assert.equal(formatKpiJod(null), KPI_UNAVAILABLE_AR);
     const dash = read("components/admin/FreelancerActivationKpiDashboard.jsx");
-    assert.match(dash, /formatKpiJod/);
+    assert.match(dash, /const formatJod = \(value\) =>/);
     assert.match(dash, /kpi-financial-card-\$\{key\}/);
-    assert.match(dash, /FINANCIAL_CARD_LABELS_AR/);
+    assert.match(dash, /activation\.kpi\.financial\.\$\{key\}/);
     assert.doesNotMatch(dash, /\bemail\b|\bphone\b|\bpassword\b|ledger.?row|raw.?ledger/i);
     assert.doesNotMatch(dash, /freelancer_user_id|beneficiary_user_id/);
-    const labels = read("constants/freelancerActivationKpi.js");
-    assert.match(labels, /campaignBudgetTotalJod/);
-    assert.match(labels, /pendingFreelancerEarnedJod/);
-    assert.match(labels, /subscriptionRevenueJod/);
+    const ar = JSON.parse(read("locales/ar/activation.json"));
+    assert.ok(ar.kpi.financial.campaignBudgetTotalJod);
+    assert.ok(ar.kpi.financial.pendingFreelancerEarnedJod);
+    assert.ok(ar.kpi.financial.subscriptionRevenueJod);
   });
 });

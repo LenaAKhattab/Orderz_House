@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "../../i18n/LanguageProvider";
 import { formatHomePublicStat } from "../../utils/homePublicStatFormat";
 import { getAnalyticsRawNumber, isAnalyticsMetricLoading, resolveNumber } from "./heroHomeStatUtils";
 
@@ -71,6 +72,7 @@ function useAnimatedCount(target) {
  * @param {{ statsPayload: object | null, metricKey: 'views' | 'active' | 'availableOrders' | 'completedOrders', className?: string }} p
  */
 export default function HeroStatValue({ statsPayload, metricKey, className = "" }) {
+  const { t } = useTranslation();
   const loading = isAnalyticsMetricLoading(statsPayload, metricKey);
   const raw = getAnalyticsRawNumber(statsPayload, metricKey);
   const formatted = resolveNumber(statsPayload, metricKey);
@@ -83,7 +85,7 @@ export default function HeroStatValue({ statsPayload, metricKey, className = "" 
       <span
         className={`home-hero-stat-value home-hero-stat-value--loading ${className}`.trim()}
         aria-busy="true"
-        aria-label="جاري تحميل الإحصائية"
+        aria-label={t("home.heroStrip.loadingStat")}
       >
         <span className="home-hero-stat-value__skeleton" aria-hidden="true" />
       </span>

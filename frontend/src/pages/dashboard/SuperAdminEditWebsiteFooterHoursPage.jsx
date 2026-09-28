@@ -12,6 +12,8 @@ import {
   FOOTER_WORKING_HOURS_FALLBACKS,
   coalesceFooterVisible,
 } from "../../constants/footerSettings";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/siteEditorResources";
 import {
   getSuperAdminFooterSettingsRequest,
   updateSuperAdminFooterWorkingHoursRequest,
@@ -19,11 +21,7 @@ import {
 import { useToast } from "../../components/ui/toastContext";
 import "./superAdminSitePages.css";
 
-function errorMessage(err) {
-  return err?.response?.data?.message || "تعذر تنفيذ العملية. حاول مجدداً.";
-}
-
-function VisibilityToggle({ label, checked, onChange, disabled }) {
+function VisibilityToggle({ label, checked, onChange, disabled, t }) {
   return (
     <label className="oh-site-page-form__visibility" data-on={checked ? "true" : "false"}>
       <input
@@ -35,21 +33,22 @@ function VisibilityToggle({ label, checked, onChange, disabled }) {
         aria-checked={checked}
         aria-label={label}
       />
-      <span>{checked ? "ظاهر" : "مخفي"}</span>
+      <span>{checked ? t("siteEditor.common.visible") : t("siteEditor.common.hidden")}</span>
     </label>
   );
 }
 
-function FormField({ label, visible, onVisibleChange, visibilityLabel, children, disabled }) {
+function FormField({ label, visible, onVisibleChange, visibilityLabel, children, disabled, t }) {
   return (
     <div className="oh-site-page-form__field">
       <div className="oh-site-page-form__field-head">
         <span className="oh-site-page-form__label">{label}</span>
         <VisibilityToggle
-          label={visibilityLabel || `إظهار ${label} في الموقع`}
+          label={visibilityLabel || t("siteEditor.common.showFieldOnSite", { label })}
           checked={visible}
           onChange={onVisibleChange}
           disabled={disabled}
+          t={t}
         />
       </div>
       {children}
@@ -58,6 +57,7 @@ function FormField({ label, visible, onVisibleChange, visibilityLabel, children,
 }
 
 export default function SuperAdminEditWebsiteFooterHoursPage() {
+  const { t } = useTranslation();
   const { showToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -69,6 +69,11 @@ export default function SuperAdminEditWebsiteFooterHoursPage() {
   const [visible, setVisible] = useState(true);
   const [titleVisible, setTitleVisible] = useState(true);
   const [textVisible, setTextVisible] = useState(true);
+
+  const operationError = useCallback(
+    (err) => err?.response?.data?.message || t("siteEditor.errors.operationFailed"),
+    [t],
+  );
 
   const applyHours = useCallback((next) => {
     const snapshot = {
@@ -94,12 +99,12 @@ export default function SuperAdminEditWebsiteFooterHoursPage() {
       const res = await getSuperAdminFooterSettingsRequest();
       applyHours(res?.data?.settings?.workingHours || null);
     } catch (err) {
-      setError(errorMessage(err));
+      setError(operationError(err));
       setLoaded(false);
     } finally {
       setLoading(false);
     }
-  }, [applyHours]);
+  }, [applyHours, operationError]);
 
   useEffect(() => {
     loadSettings();
@@ -126,9 +131,9 @@ export default function SuperAdminEditWebsiteFooterHoursPage() {
         textVisible,
       });
       applyHours(res?.data?.workingHours || null);
-      showToast({ type: "success", message: "تم حفظ ساعات العمل بنجاح." });
+      showToast({ type: "success", message: t("siteEditor.footerHours.toastSaved") });
     } catch (err) {
-      setError(errorMessage(err));
+      setError(operationError(err));
     } finally {
       setSaving(false);
     }
@@ -137,22 +142,22 @@ export default function SuperAdminEditWebsiteFooterHoursPage() {
   return (
     <DashboardShell>
       <DashboardPageHeader
-        title="ساعات العمل"
-        description="عدّل عنوان ونص ساعات العمل في تذييل الموقع."
+        title={t("siteEditor.footerHours.pageTitle")}
+        description={t("siteEditor.footerHours.pageDescription")}
         breadcrumbs={editWebsiteFooterBreadcrumbs("dashboard.breadcrumbs.footerWorkingHours")}
       />
 
-      <DashboardSection title="ساعات العمل">
+      <DashboardSection title={t("siteEditor.footerHours.sectionTitle")}>
         <p className="oh-site-pages-toolbar__hint" style={{ marginBottom: 12 }}>
-          <Link to={FOOTER_EDIT_BASE}>← العودة إلى أقسام التذييل</Link>
+          <Link to={FOOTER_EDIT_BASE}>{t("siteEditor.common.backToFooterSections")}</Link>
         </p>
-        {loading ? <DashboardLoadingState label="جاري تحميل الإعدادات…" /> : null}
+        {loading ? <DashboardLoadingState label={t("siteEditor.common.loadingSettings")} /> : null}
         {!loading && error && !loaded ? (
           <DashboardErrorState
             message={error}
             actions={
               <Button type="button" variant="secondary" onClick={loadSettings}>
-                إعادة المحاولة
+                {t("siteEditor.common.retry")}
               </Button>
             }
           />
@@ -165,21 +170,23 @@ export default function SuperAdminEditWebsiteFooterHoursPage() {
 
               <div className="oh-site-page-form__field oh-site-page-form__section-toggle">
                 <div className="oh-site-page-form__field-head">
-                  <span className="oh-site-page-form__label">إظهار القسم في تذييل الموقع</span>
+                  <span className="oh-site-page-form__label">{t("siteEditor.footerHours.showSectionInFooter")}</span>
                   <VisibilityToggle
-                    label='إظهار قسم "ساعات العمل" في تذييل الموقع'
+                    label={t("siteEditor.footerHours.showWorkingHoursSectionInFooter")}
                     checked={visible}
                     onChange={(e) => setVisible(e.target.checked)}
                     disabled={saving}
+                    t={t}
                   />
                 </div>
               </div>
 
               <FormField
-                label="عنوان القسم"
+                label={t("siteEditor.footerHours.sectionTitleField")}
                 visible={titleVisible}
                 onVisibleChange={(e) => setTitleVisible(e.target.checked)}
                 disabled={saving}
+                t={t}
               >
                 <input
                   className="oh-site-page-form__input"
@@ -192,11 +199,12 @@ export default function SuperAdminEditWebsiteFooterHoursPage() {
               </FormField>
 
               <FormField
-                label="النص"
+                label={t("siteEditor.footerHours.textField")}
                 visible={textVisible}
                 onVisibleChange={(e) => setTextVisible(e.target.checked)}
-                visibilityLabel="إظهار نص ساعات العمل في الموقع"
+                visibilityLabel={t("siteEditor.footerHours.showHoursTextOnSite")}
                 disabled={saving}
+                t={t}
               >
                 <textarea
                   className="oh-site-page-form__textarea"
@@ -211,7 +219,7 @@ export default function SuperAdminEditWebsiteFooterHoursPage() {
 
               <div className="oh-site-page-form__actions">
                 <Button type="submit" disabled={saving || !isDirty}>
-                  {saving ? "جاري الحفظ…" : "حفظ التعديلات"}
+                  {saving ? t("siteEditor.common.saving") : t("siteEditor.common.saveChanges")}
                 </Button>
               </div>
             </div>

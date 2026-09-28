@@ -9,14 +9,16 @@ import {
 } from "../../services/notificationsApi";
 import { useAuth } from "../../context/useAuth";
 import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/notificationsUiResources";
 import { getNotificationDetails } from "../../utils/notificationDisplay";
 import { resolveSafeInternalNavPath } from "../../utils/safeInternalNavPath";
 
-function fmtDate(value) {
+function fmtDate(value, locale) {
   if (!value) return "";
   const d = new Date(value);
   if (!Number.isFinite(d.getTime())) return "";
-  return new Intl.DateTimeFormat("ar", { dateStyle: "short", timeStyle: "short" }).format(d);
+  const tag = locale === "en" ? "en-JO-u-nu-latn" : "ar-JO-u-nu-latn";
+  return new Intl.DateTimeFormat(tag, { dateStyle: "short", timeStyle: "short" }).format(d);
 }
 
 export default function NotificationsBell({ notificationsPagePath, variant = "navbar" }) {
@@ -129,7 +131,7 @@ export default function NotificationsBell({ notificationsPagePath, variant = "na
       <button
         type="button"
         className={`notif-bell__btn ${variant === "superadmin" ? "oh-sa-icon-btn" : ""}`.trim()}
-        aria-label="الإشعارات"
+        aria-label={t("notificationsUi.bell.ariaLabel")}
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
       >
@@ -157,15 +159,15 @@ export default function NotificationsBell({ notificationsPagePath, variant = "na
       {open ? (
         <div className={`notif-bell__menu ${variant === "superadmin" ? "notif-bell__menu--superadmin" : ""}`.trim()}>
           <div className="notif-bell__head">
-            <strong>الإشعارات</strong>
+            <strong>{t("notificationsUi.bell.title")}</strong>
             <button type="button" onClick={handleMarkAll} disabled={!unreadInDropdown}>
-              تعليم الكل كمقروء
+              {t("notificationsUi.bell.markAllRead")}
             </button>
           </div>
 
           <div className="notif-bell__body">
             {loading ? (
-              <div className="notif-bell__empty">جاري التحميل…</div>
+              <div className="notif-bell__empty">{t("notificationsUi.bell.loading")}</div>
             ) : items.length ? (
               items.map((n) => {
                 const details = getNotificationDetails(n, canShowOrderReference, {
@@ -183,16 +185,16 @@ export default function NotificationsBell({ notificationsPagePath, variant = "na
                   >
                     <div className="notif-bell__item-top">
                       <span className="notif-bell__item-dot" aria-hidden />
-                      <div className="notif-bell__item-title">{n.title || "إشعار جديد"}</div>
+                      <div className="notif-bell__item-title">{n.title || t("notificationsUi.bell.newNotification")}</div>
                     </div>
                     {details ? <div className="notif-bell__item-actor">{details}</div> : null}
                     {n.message ? <div className="notif-bell__item-msg">{n.message}</div> : null}
-                    <div className="notif-bell__item-time">{fmtDate(n.createdAt)}</div>
+                    <div className="notif-bell__item-time">{fmtDate(n.createdAt, locale)}</div>
                   </button>
                 );
               })
             ) : (
-              <div className="notif-bell__empty">لا توجد إشعارات حالياً.</div>
+              <div className="notif-bell__empty">{t("notificationsUi.bell.empty")}</div>
             )}
           </div>
 
@@ -204,7 +206,7 @@ export default function NotificationsBell({ notificationsPagePath, variant = "na
               navigate(notificationsPagePath);
             }}
           >
-            عرض كل الإشعارات
+            {t("notificationsUi.bell.viewAll")}
           </button>
         </div>
       ) : null}

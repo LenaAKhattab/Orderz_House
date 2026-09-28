@@ -7,6 +7,7 @@ import {
   listFreelancerBidCreditPurchasesRequest,
 } from "../../services/api";
 import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/economyResources";
 import Button from "../ui/Button";
 
 /**
@@ -15,7 +16,6 @@ import Button from "../ui/Button";
  */
 export default function FreelancerBidCreditsCard() {
   const { t, locale } = useTranslation();
-  const isEn = locale === "en";
   const [state, setState] = useState({ loading: true, error: null, data: null });
   const [packages, setPackages] = useState([]);
   const [purchases, setPurchases] = useState([]);
@@ -72,26 +72,22 @@ export default function FreelancerBidCreditsCard() {
     if (!sessionId) return;
     if (params.get("bid_credits_paid") === "1") {
       setPurchaseMsg(
-        isEn
-          ? "Payment received — confirming Bid grant…"
-          : "تم استلام الدفع — جارٍ تأكيد إضافة العروض…",
+        t("economy.bidCreditsCard.paymentConfirming"),
       );
       (async () => {
         try {
           const res = await confirmFreelancerBidCreditPurchaseRequest({ sessionId });
           if (res?.data?.fulfilled) {
             setPurchaseMsg(
-              isEn ? "Bids added to your balance." : "تمت إضافة العروض إلى رصيدك.",
+              t("economy.bidCreditsCard.bidsAdded"),
             );
           } else if (res?.data?.paid) {
             setPurchaseMsg(
-              isEn
-                ? "Payment received — Bids are processing."
-                : "تم استلام الدفع — العروض قيد المعالجة.",
+              t("economy.bidCreditsCard.paymentProcessing"),
             );
           } else {
             setPurchaseMsg(
-              isEn ? "Payment not completed yet." : "لم يكتمل الدفع بعد.",
+              t("economy.bidCreditsCard.paymentIncomplete"),
             );
           }
           await refresh();
@@ -100,9 +96,9 @@ export default function FreelancerBidCreditsCard() {
         }
       })();
     } else if (params.get("bid_credits_cancelled") === "1") {
-      setPurchaseMsg(isEn ? "Checkout cancelled." : "تم إلغاء الدفع.");
+      setPurchaseMsg(t("economy.bidCreditsCard.checkoutCancelled"));
     }
-  }, [isEn, refresh]);
+  }, [t, refresh]);
 
   const buy = async (pkg) => {
     setBusyId(pkg.id);
@@ -113,7 +109,7 @@ export default function FreelancerBidCreditsCard() {
         packageId: Number(pkg.id),
       });
       const url = res?.data?.checkoutUrl;
-      if (!url) throw new Error(isEn ? "Checkout unavailable." : "الدفع غير متاح.");
+      if (!url) throw new Error(t("economy.bidCreditsCard.checkoutUnavailable"));
       window.location.href = url;
     } catch (err) {
       setPurchaseMsg(err?.response?.data?.message || err?.message || "error");
@@ -126,7 +122,7 @@ export default function FreelancerBidCreditsCard() {
       <section className="fp-surface" style={{ marginTop: 16 }} aria-busy="true">
         <p style={{ margin: 0 }}>
           {t("freelancerDashboard.bidCredits.loading", {
-            defaultValue: isEn ? "Loading Bids…" : "جارٍ تحميل العروض المتاحة…",
+            defaultValue: t("economy.bidCreditsCard.loading"),
           })}
         </p>
       </section>
@@ -145,21 +141,19 @@ export default function FreelancerBidCreditsCard() {
     <section className="fp-surface" style={{ marginTop: 16 }}>
       <h2 style={{ margin: "0 0 8px", fontSize: "1.05rem" }}>
         {t("freelancerDashboard.bidCredits.title", {
-          defaultValue: isEn ? "Available Bids" : "العروض المتاحة",
+          defaultValue: t("economy.bidCreditsCard.title"),
         })}
       </h2>
       <p style={{ margin: "0 0 12px", opacity: 0.85, fontSize: "0.92rem" }}>
         {t("freelancerDashboard.bidCredits.subtitle", {
-          defaultValue: isEn
-            ? "1 Bid = 1 normal marketplace offer. Edits do not consume another Bid."
-            : "عرض واحد = تقديم عادي واحد. تعديل العرض لا يستهلك عرضاً إضافياً.",
+          defaultValue: t("economy.bidCreditsCard.oneBidHint"),
         })}
       </p>
       <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
         <div>
           <div style={{ fontSize: "0.8rem", opacity: 0.75 }}>
             {t("freelancerDashboard.bidCredits.available", {
-              defaultValue: isEn ? "Available" : "المتاح",
+              defaultValue: t("economy.bidCreditsCard.available"),
             })}
           </div>
           <div style={{ fontSize: "1.4rem", fontWeight: 700 }}>{available}</div>
@@ -167,7 +161,7 @@ export default function FreelancerBidCreditsCard() {
         <div>
           <div style={{ fontSize: "0.8rem", opacity: 0.75 }}>
             {t("freelancerDashboard.bidCredits.fromMembership", {
-              defaultValue: isEn ? "From membership" : "من العضوية",
+              defaultValue: t("economy.bidCreditsCard.fromMembership"),
             })}
           </div>
           <div style={{ fontSize: "1.1rem", fontWeight: 600 }}>
@@ -177,7 +171,7 @@ export default function FreelancerBidCreditsCard() {
         <div>
           <div style={{ fontSize: "0.8rem", opacity: 0.75 }}>
             {t("freelancerDashboard.bidCredits.fromAdmin", {
-              defaultValue: isEn ? "Admin grants" : "منح إدارية",
+              defaultValue: t("economy.bidCreditsCard.adminGrants"),
             })}
           </div>
           <div style={{ fontSize: "1.1rem", fontWeight: 600 }}>
@@ -189,7 +183,7 @@ export default function FreelancerBidCreditsCard() {
             <div>
               <div style={{ fontSize: "0.8rem", opacity: 0.75 }}>
                 {t("freelancerDashboard.bidCredits.monthlyAllowance", {
-                  defaultValue: isEn ? "Monthly allowance" : "الحد الشهري",
+                  defaultValue: t("economy.bidCreditsCard.monthlyAllowance"),
                 })}
               </div>
               <div style={{ fontSize: "1.1rem", fontWeight: 600 }}>{month.monthlyAllowance}</div>
@@ -197,7 +191,7 @@ export default function FreelancerBidCreditsCard() {
             <div>
               <div style={{ fontSize: "0.8rem", opacity: 0.75 }}>
                 {t("freelancerDashboard.bidCredits.unlockedThisMonth", {
-                  defaultValue: isEn ? "Unlocked this month" : "المفتوح هذا الشهر",
+                  defaultValue: t("economy.bidCreditsCard.unlockedMonth"),
                 })}
               </div>
               <div style={{ fontSize: "1.1rem", fontWeight: 600 }}>{month.unlockedThisMonth}</div>
@@ -208,7 +202,7 @@ export default function FreelancerBidCreditsCard() {
       {data.nextExpiringAt ? (
         <p style={{ margin: "12px 0 0", fontSize: "0.85rem", opacity: 0.8 }}>
           {t("freelancerDashboard.bidCredits.nextExpiry", {
-            defaultValue: isEn ? "Next expiry" : "أقرب انتهاء",
+            defaultValue: t("economy.bidCreditsCard.nextExpiry"),
           })}
           : {String(data.nextExpiringAt).slice(0, 10)}
         </p>
@@ -223,7 +217,7 @@ export default function FreelancerBidCreditsCard() {
       {packages.length > 0 ? (
         <div style={{ marginTop: 16 }}>
           <h3 style={{ margin: "0 0 8px", fontSize: "0.95rem" }}>
-            {isEn ? "Buy Bid packages" : "شراء باقات العروض"}
+            {t("economy.bidCreditsCard.buyPackages")}
           </h3>
           <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 8 }}>
             {packages.map((pkg) => (
@@ -238,11 +232,11 @@ export default function FreelancerBidCreditsCard() {
                 }}
               >
                 <span>
-                  <strong>{isEn ? pkg.nameEn || pkg.nameAr : pkg.nameAr}</strong>
+                  <strong>{locale === "en" ? pkg.nameEn || pkg.nameAr : pkg.nameAr}</strong>
                   {" — "}
-                  {pkg.bidQuantity} {isEn ? "Bids" : "عرض"} / {pkg.priceJod} JOD
+                  {pkg.bidQuantity} {t("economy.bidCreditsCard.bidUnit")} / {pkg.priceJod} JOD
                   {pkg.validityDays
-                    ? ` · ${pkg.validityDays} ${isEn ? "days" : "يوم"}`
+                    ? ` · ${pkg.validityDays} ${t("economy.bidCreditsCard.days")}`
                     : ""}
                 </span>
                 <Button
@@ -253,7 +247,7 @@ export default function FreelancerBidCreditsCard() {
                   }
                   onClick={() => buy(pkg)}
                 >
-                  {isEn ? "Buy" : "شراء"}
+                  {t("economy.bidCreditsCard.buy")}
                 </Button>
               </li>
             ))}
@@ -264,36 +258,24 @@ export default function FreelancerBidCreditsCard() {
       {purchases.length > 0 ? (
         <div style={{ marginTop: 14 }}>
           <h3 style={{ margin: "0 0 6px", fontSize: "0.9rem" }}>
-            {isEn ? "Recent purchases" : "عمليات الشراء الأخيرة"}
+            {t("economy.bidCreditsCard.recentPurchases")}
           </h3>
           <ul style={{ margin: 0, paddingInlineStart: 18, fontSize: "0.85rem", opacity: 0.9 }}>
             {purchases.map((p) => (
               <li key={p.id}>
-                {p.bidQuantitySnapshot} {isEn ? "Bids" : "عرض"} · {p.priceJodSnapshot} JOD ·{" "}
+                {p.bidQuantitySnapshot} {t("economy.bidCreditsCard.bidUnit")} · {p.priceJodSnapshot} JOD ·{" "}
                 <strong>
                   {p.displayStatus === "completed"
-                    ? isEn
-                      ? "Completed"
-                      : "مكتمل"
+                    ? t("economy.bidCreditsCard.statusCompleted")
                     : p.displayStatus === "payment_disputed"
-                      ? isEn
-                        ? "Payment disputed"
-                        : "دفع متنازع عليه"
+                      ? t("economy.bidCreditsCard.statusDisputed")
                       : p.displayStatus === "under_payment_review"
-                        ? isEn
-                          ? "Under payment review"
-                          : "قيد مراجعة الدفع"
+                        ? t("economy.bidCreditsCard.statusReview")
                         : p.displayStatus === "refunded"
-                          ? isEn
-                            ? "Refunded"
-                            : "مسترد"
+                          ? t("economy.bidCreditsCard.statusRefunded")
                           : p.status}
                 </strong>
-                {p.remainingBidsTemporarilyUnavailable
-                  ? isEn
-                    ? " — remaining Bids from this purchase temporarily unavailable"
-                    : " — العروض المتبقية من هذه العملية غير متاحة مؤقتاً"
-                  : ""}
+                {p.remainingBidsTemporarilyUnavailable ? t("economy.bidCreditsCard.frozenNote") : ""}
               </li>
             ))}
           </ul>
@@ -303,12 +285,10 @@ export default function FreelancerBidCreditsCard() {
       <p style={{ margin: "10px 0 0", fontSize: "0.85rem", opacity: 0.75 }}>
         {data.engineEnabled
           ? t("freelancerDashboard.bidCredits.engineOn", {
-              defaultValue: isEn ? "Bid Credits engine is available." : "محرك العروض المتاحة مفعّل.",
+              defaultValue: t("economy.bidCreditsCard.engineOn"),
             })
           : t("freelancerDashboard.bidCredits.engineComingSoon", {
-              defaultValue: isEn
-                ? "Coming soon — Bid Credits engine is not active yet."
-                : "قريبًا — محرك العروض المتاحة غير مفعّل بعد.",
+              defaultValue: t("economy.bidCreditsCard.engineOff"),
             })}
       </p>
     </section>

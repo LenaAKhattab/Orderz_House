@@ -1,0 +1,578 @@
+{
+  "common": {
+    "preview": "Preview",
+    "cancel": "Cancel",
+    "close": "Close",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "enable": "Enable",
+    "disable": "Disable",
+    "next": "Next",
+    "previous": "Previous",
+    "retry": "Retry",
+    "refresh": "Refresh",
+    "reset": "Reset",
+    "fullPreview": "Full preview",
+    "noTitle": "Untitled",
+    "emDash": "—",
+    "uploading": "Uploading…",
+    "saving": "Saving…",
+    "savingEllipsis": "Saving...",
+    "deleting": "Deleting…",
+    "working": "Working…",
+    "loading": "Loading…",
+    "guidelines": "Guidelines",
+    "selected": "Selected",
+    "summary": "Summary",
+    "enabledSuffix": " · Enabled",
+    "disabledSuffix": " · Disabled"
+  },
+  "page": {
+    "eyebrow": "Dashboard",
+    "title": "Ad management",
+    "description": "Fast building, live preview, and clear publish steps.",
+    "breadcrumbHome": "Home",
+    "breadcrumbAds": "Ads",
+    "newAd": "New ad",
+    "popupAds": "Popup ads",
+    "editAd": "Edit ad",
+    "buildNew": "Build a new ad",
+    "draftUnsaved": "Unsaved draft · {{relative}}",
+    "synced": "Synced",
+    "previewAria": "Ad preview",
+    "actionsTitle": "Ad actions",
+    "saveDraft": "Save as draft",
+    "publish": "Publish ad",
+    "allAdsTitle": "All ads",
+    "allAdsDescription": "Quick edits, stats, and status management.",
+    "emptyAds": "No ads yet.",
+    "loadErrorFallback": "Try again.",
+    "dragReorderHint": "Drag cards to reorder",
+    "discardConfirm": "Unsaved changes will be lost. Continue?",
+    "deleteConfirm": "Delete this ad permanently?",
+    "relativeNow": "Now",
+    "relativeSeconds": "{{sec}}s ago",
+    "relativeMinutes": "{{min}}m ago",
+    "adminNotePrompt": "{{action}}\nReason for this action (at least 3 characters):"
+  },
+  "toast": {
+    "fixFieldsTitle": "Check the fields",
+    "fixFieldsMessage": "Fix the highlighted errors and try again.",
+    "savedTitle": "Saved",
+    "createdTitle": "Created",
+    "publishedMessage": "The ad was published.",
+    "draftSavedMessage": "Draft saved.",
+    "saveFailedTitle": "Save failed",
+    "checkFields": "Check the fields.",
+    "reasonRequiredTitle": "Reason required",
+    "reasonRequiredMessage": "Enter a reason of at least 3 characters.",
+    "updatedTitle": "Updated",
+    "enabledMessage": "The ad was enabled.",
+    "disabledMessage": "The ad was disabled.",
+    "errorTitle": "Error",
+    "deletedTitle": "Deleted",
+    "deleteFailedTitle": "Could not delete",
+    "reorderSuccessTitle": "Order updated",
+    "reorderFailedTitle": "Could not reorder",
+    "loadFailedTitle": "Could not load",
+    "uploadSuccessTitle": "Image uploaded",
+    "uploadFailedTitle": "Upload failed"
+  },
+  "actions": {
+    "enableAd": "Enable ad",
+    "disableAd": "Disable ad",
+    "deleteAd": "Delete ad",
+    "reorderAds": "Reorder ads"
+  },
+  "validation": {
+    "companyNameRequired": "Company name is required.",
+    "titleRequired": "Title is required.",
+    "ctaTextRequired": "Call-to-action button text is required.",
+    "openModeInvalid": "Invalid link open mode.",
+    "whatsappInvalid": "Enter a valid WhatsApp number (at least 6 digits).",
+    "ctaUrlRequired": "Action link is required.",
+    "ctaUrlInvalid": "Action link is invalid.",
+    "ctaUrlInternal": "Internal paths must start with /",
+    "imageUrlInvalid": "Image URL is invalid.",
+    "logoUrlInvalid": "Logo URL is invalid.",
+    "backgroundImageUrlInvalid": "Background image URL is invalid.",
+    "selectedAssetRequired": "Choose a ready-made image from the list.",
+    "backgroundImageRequired": "Upload a background image or paste a valid URL.",
+    "imageRequired": "Upload an image or paste a valid URL.",
+    "salePercentInteger": "Enter a whole number between 0 and 100.",
+    "salePercentRange": "Enter a discount percentage between 0 and 100.",
+    "phoneInvalid": "Phone number contains invalid characters.",
+    "whatsappCharsInvalid": "WhatsApp number contains invalid characters.",
+    "endBeforeStart": "End date must be after start date.",
+    "adminNoteRequired": "Action reason is required (at least 3 characters)."
+  },
+  "status": {
+    "draft": {
+      "label": "Draft",
+      "description": "The ad is unpublished and will not appear to visitors."
+    },
+    "expired": {
+      "label": "Expired",
+      "description": "The display period has ended."
+    },
+    "scheduled": {
+      "label": "Scheduled",
+      "description": "Will appear at the start time."
+    },
+    "live": {
+      "label": "Live now",
+      "description": "The ad is visible to visitors per its schedule."
+    }
+  },
+  "builderSteps": {
+    "content": {
+      "label": "Content",
+      "short": "1"
+    },
+    "design": {
+      "label": "Design",
+      "short": "2"
+    },
+    "offer": {
+      "label": "Offer & discount",
+      "short": "3"
+    },
+    "images": {
+      "label": "Images",
+      "short": "4"
+    },
+    "publish": {
+      "label": "Publish",
+      "short": "5"
+    },
+    "orderStats": {
+      "label": "Order & stats",
+      "short": "6"
+    },
+    "navAria": "Ad builder steps"
+  },
+  "layouts": {
+    "image_top": {
+      "label": "Image on top",
+      "description": "Best when a clear hero image sits above the text."
+    },
+    "image_background": {
+      "label": "Image background",
+      "description": "For visual ads with text over the image."
+    },
+    "text_only": {
+      "label": "Text only",
+      "description": "For alerts and text-only offers."
+    },
+    "split": {
+      "label": "Split image & text",
+      "description": "Shows an image beside the text."
+    },
+    "minimal_banner": {
+      "label": "Minimal banner",
+      "description": "Compact ad for small spaces."
+    },
+    "carousel": {
+      "label": "Multiple images",
+      "description": "For more than one image in a single ad."
+    }
+  },
+  "layoutHints": {
+    "image_top": "Add at least one image to make this ad stand out.",
+    "image_background": "This layout needs at least one image.",
+    "text_only": "Focus on title and description; images are optional.",
+    "split": "At least one image is recommended for balance.",
+    "minimal_banner": "Keep copy short; the banner is designed for small space.",
+    "carousel": "Add two or more images for a good carousel experience."
+  },
+  "placements": {
+    "home_right_panel": {
+      "label": "Home page right column"
+    },
+    "home_after_hero": {
+      "label": "Below hero",
+      "note": "Note: this placement may not be enabled on the public site yet."
+    },
+    "services_page": {
+      "label": "Services page",
+      "note": "Note: this placement may not be enabled on the public site yet."
+    },
+    "global_sidebar": {
+      "label": "Global sidebar",
+      "note": "Note: this placement may not be enabled on the public site yet."
+    }
+  },
+  "positions": {
+    "imageTop": "Top of ad",
+    "imageBottom": "Bottom of ad",
+    "left": "Left",
+    "right": "Right",
+    "background": "Background",
+    "textTop": "Top",
+    "textMiddle": "Middle",
+    "textBottom": "Bottom"
+  },
+  "fontSize": {
+    "small": "Small",
+    "normal": "Regular",
+    "medium": "Medium",
+    "large": "Large"
+  },
+  "fontWeight": {
+    "normal": "Regular",
+    "medium": "Medium",
+    "bold": "Bold"
+  },
+  "stylePresets": {
+    "classic_navy": "Classic blue",
+    "soft_sky": "Soft sky",
+    "clean_white": "Clean white",
+    "premium_dark": "Premium dark",
+    "warm_offer": "Warm offer",
+    "success_green": "Success green"
+  },
+  "bannerColorPresets": {
+    "blue_white": "Professional blue",
+    "cream_navy": "Modern dark",
+    "red_sale": "Sale red",
+    "navy_gold": "Luxury gold",
+    "green_nature": "Clean light"
+  },
+  "bannerTemplates": {
+    "classic_split": {
+      "label": "Classic split",
+      "hint": "Text right + image left — general offers"
+    },
+    "product_focus": {
+      "label": "Product focus",
+      "hint": "Large image + discount on image"
+    },
+    "luxury_center": {
+      "label": "Luxury center",
+      "hint": "Centered headline — premium feel"
+    },
+    "ribbon_strip": {
+      "label": "Ribbon strip",
+      "hint": "Horizontal strip — quick alert"
+    },
+    "business_partner": {
+      "label": "Business promo",
+      "hint": "Partnership / B2B — handshake image"
+    },
+    "minimal_clean": {
+      "label": "Minimal clean",
+      "hint": "Large headline — no heavy decoration"
+    }
+  },
+  "visualAssets": {
+    "handshake": { "label": "Handshake / partnership" },
+    "gold_confetti": { "label": "Gold celebration" },
+    "smiley_face": { "label": "Smiley face" },
+    "red_gift": { "label": "Red gift box" },
+    "gold_gifts": { "label": "Gold gifts" }
+  },
+  "priorityOptions": {
+    "0": "Normal",
+    "50": "Featured",
+    "100": "High"
+  },
+  "openModes": {
+    "NEW_TAB": "Open in new tab",
+    "SAME_TAB": "Open in same page",
+    "INTERNAL_ROUTE": "Internal route",
+    "WHATSAPP": "WhatsApp"
+  },
+  "form": {
+    "advancedOptions": "Advanced options",
+    "companyName": "Company name *",
+    "companyPlaceholder": "e.g. Gift shop",
+    "adTitle": "Ad title *",
+    "titlePlaceholder": "e.g. Special discount",
+    "subtitle": "Subtitle",
+    "subtitlePlaceholder": "e.g. Limited offer",
+    "description": "Ad description",
+    "descriptionPlaceholder": "Short description for display",
+    "themeHint": "Pick a color theme — applied to background, text, buttons, and badges.",
+    "salePercent": "Discount %",
+    "badgeText": "Badge text",
+    "badgePlaceholder": "Exclusive",
+    "ctaText": "Button text *",
+    "ctaPlaceholder": "Get the offer",
+    "openLink": "Open link",
+    "ctaUrl": "Button link *",
+    "whatsapp": "WhatsApp *",
+    "phoneDisplay": "Display phone",
+    "logoUrl": "Logo URL",
+    "publishState": "Status",
+    "draftPill": "Draft",
+    "publishedPill": "Published",
+    "priority": "Priority",
+    "start": "Start",
+    "end": "End",
+    "adminNote": "Action reason *",
+    "adminNotePlaceholder": "Required when saving",
+    "internalNotesTitle": "Internal notes",
+    "teamNotes": "Team notes",
+    "statsHint": "Save the ad first to see detailed stats in the table.",
+    "impressions": "Impressions",
+    "clicks": "Clicks",
+    "quickTheme": "Quick theme",
+    "quickThemeAria": "Quick themes",
+    "designTemplateTitle": "Design & template",
+    "designTemplateHint": "Choose banner shape (layout), then a color theme below",
+    "colorTheme": "Color theme",
+    "pickBannerShape": "Choose banner shape",
+    "pickBannerSub": "Horizontal preview per layout — colors can be changed later.",
+    "savedFontSize": "Previously saved size",
+    "savedFontWeight": "Previously saved weight"
+  },
+  "colors": {
+    "sectionTitle": "Colors",
+    "sectionHint": "Tune horizontal banner colors — layout is fixed; only colors change.",
+    "quickPick": "Quick color pick (optional)",
+    "quickPickAria": "Quick color pick",
+    "bgPrimary": "Primary background",
+    "bgSecondary": "Secondary background",
+    "mainText": "Main text color",
+    "subText": "Secondary text color",
+    "ctaButton": "CTA button color",
+    "ctaButtonText": "Button text color",
+    "badge": "Badge color",
+    "badgeText": "Badge text color",
+    "saleCircle": "Discount circle color",
+    "saleCircleText": "Discount circle text color",
+    "controlsHint": "Text and badge colors are in step 1. Here: card style, background, button, and optional gradient.",
+    "pickPreset": "Choose a preset style",
+    "resetColors": "Reset colors",
+    "customizeCard": "Customize card",
+    "adBackground": "Ad background",
+    "buttonColor": "Button color",
+    "advancedSummary": "Advanced options",
+    "advancedBorderHint": "Card border, manual button text, or background gradient — optional.",
+    "cardBorder": "Card border color",
+    "buttonTextOverride": "Button text (override auto)",
+    "autoFromButton": "Auto from button color",
+    "gradientTitle": "Background gradient",
+    "gradientHint": "Optional — leave empty or choose no gradient.",
+    "gradientQuickAria": "Preset gradients",
+    "gradientStart": "Gradient start",
+    "gradientEnd": "Gradient end",
+    "colorPicker": "Color picker",
+    "customColorHint": "Fine-tune the color, then pick a matching swatch above if needed.",
+    "savedNotInList": "Saved color not in the list — still shown in preview and on the public site.",
+    "savedNotInListCompact": "Saved color not listed above — shown in preview; adjust via advanced options.",
+    "pickColorAria": "Pick color"
+  },
+  "gradients": {
+    "none": "No gradient",
+    "sky": "Sky gradient",
+    "dark": "Dark gradient",
+    "warm": "Warm gradient",
+    "green": "Green gradient",
+    "purple": "Purple gradient"
+  },
+  "palette": {
+    "default": "Default",
+    "navy": "Navy",
+    "blue": "Blue",
+    "sky": "Sky blue",
+    "green": "Green",
+    "gold": "Gold",
+    "red": "Red",
+    "purple": "Purple",
+    "gray": "Gray",
+    "black": "Black",
+    "white": "White",
+    "orange": "Orange",
+    "pink": "Pink",
+    "darkGray": "Dark gray",
+    "light": "Light",
+    "blueGray": "Blue gray",
+    "dark": "Dark",
+    "nearTransparent": "Near transparent",
+    "offWhite": "Off-white",
+    "cream": "Cream",
+    "auto": "Auto",
+    "lightSky": "Light sky",
+    "lightBlue": "Light blue",
+    "lightGreen": "Light green",
+    "lightGold": "Light gold",
+    "lightPurple": "Light purple",
+    "lightPink": "Light pink",
+    "lightGray": "Light gray",
+    "none": "None",
+    "unset": "Not set",
+    "customColor": "Custom color",
+    "savedColor": "Saved color"
+  },
+  "images": {
+    "sectionTitle": "Images",
+    "sectionHint": "Ready side image or custom background",
+    "pickReadyImage": "Choose a ready-made image",
+    "optionalBackground": "Background image (optional)",
+    "backgroundHint": "Used as banner background with a light overlay so text stays readable.",
+    "backgroundLabel": "Background",
+    "removeBackground": "Remove background",
+    "uploadFromDevice": "Upload from device",
+    "orPasteUrl": "Or paste an image URL (https)",
+    "noServerUrl": "Server did not return a URL.",
+    "uploadFailed": "Image upload failed.",
+    "managerHint": "Add one image URL for the ad. Stored as URL only (no file upload here).",
+    "adImage": "Ad image",
+    "addUrlForPreview": "Add a URL to preview the image",
+    "imageUrl": "Image URL",
+    "urlHint": "URL must start with https:// or a path starting with /",
+    "altText": "Alt text",
+    "altHint": "Used for accessibility and preview when the image fails to load",
+    "addImage": "+ Add image"
+  },
+  "textBlocks": {
+    "hint": "Use extra text blocks for features or notes; set each block color beside it.",
+    "blockIndex": "Block {{index}}",
+    "duplicate": "Duplicate block",
+    "extraText": "Extra text",
+    "textPosition": "Text position",
+    "fontSize": "Font size",
+    "fontWeight": "Font weight",
+    "addBlock": "+ Add text block"
+  },
+  "table": {
+    "image": "Image",
+    "title": "Title",
+    "company": "Company",
+    "status": "Status",
+    "start": "Start",
+    "end": "End",
+    "impressions": "Impressions",
+    "clicks": "Clicks",
+    "ctr": "CTR",
+    "lastClick": "Last click",
+    "actions": "Actions",
+    "impressionsAbbr": "imp",
+    "clicksAbbr": "click",
+    "impressionsTitle": "Impressions",
+    "clicksTitle": "Clicks"
+  },
+  "reorder": {
+    "empty": "No ads yet.",
+    "dragTitle": "Drag to reorder"
+  },
+  "preview": {
+    "liveTitle": "Live preview",
+    "syncing": "Updating…",
+    "emptyHint": "Sample text for empty fields.",
+    "fallbacks": {
+      "companyName": "Gift shop",
+      "title": "Exclusive ad",
+      "subtitle": "Grab attention",
+      "description": "Add a short description to attract attention…",
+      "ctaText": "Get the offer now",
+      "badgeText": "Limited offer"
+    },
+    "templateDemo": {
+      "title": "40% off today",
+      "subtitle": "Limited offer",
+      "companyName": "Gift shop",
+      "badgeText": "Exclusive offer",
+      "ctaText": "Get the offer"
+    }
+  },
+  "reschedule": {
+    "title": "Manage ad visibility",
+    "subtitle": "Choose how the ad appears to users; you can change scheduling anytime.",
+    "adLabel": "Ad:",
+    "currentStatus": "Current status:",
+    "howToShow": "How should this ad appear?",
+    "optionsAria": "Visibility options",
+    "modes": {
+      "immediate": {
+        "label": "Go live immediately (no schedule)",
+        "description": "Visible to visitors while enabled here, with no start or end time."
+      },
+      "scheduled": {
+        "label": "Schedule specific times",
+        "description": "Set a start and/or end time for visibility."
+      },
+      "paused": {
+        "label": "Pause ad",
+        "description": "Hidden from users until you turn it on again."
+      }
+    },
+    "outcomeImmediate": "Result: The ad will appear immediately and stay visible while enabled, with no start or end schedule.",
+    "outcomeHidden": "Result: The ad will be hidden from users.",
+    "outcomeRange": "Result: The ad will show from {{start}} until {{end}}.",
+    "outcomeFrom": "Result: The ad will start on {{start}} with no end date.",
+    "outcomeUntil": "Result: The ad will appear immediately and end on {{end}}.",
+    "outcomeDefault": "Result: The ad will appear immediately with no end date.",
+    "shortcuts": "Shortcuts:",
+    "shortcutsAria": "Date shortcuts",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "nextWeek": "In one week",
+    "noEnd": "No end date",
+    "startLabel": "Visibility start",
+    "startHint": "Leave start empty to begin immediately.",
+    "endLabel": "Visibility end",
+    "endHint": "Leave end empty for no end date.",
+    "endBeforeStart": "End date cannot be before start date.",
+    "endInPast": "Warning: end date is in the past, so the ad will show as expired and will not appear to users.",
+    "saveChanges": "Save changes"
+  },
+  "popup": {
+    "modalTitle": "Popup ad management",
+    "loading": "Loading popup ads…",
+    "currentList": "Current ads",
+    "newAd": "New ad",
+    "empty": "No popup ads yet. Create a new one.",
+    "selectHint": "Select an ad from the list or click New ad to create one.",
+    "enable": "Enable popup ad",
+    "titleAr": "Title (Arabic)",
+    "titleEn": "Title (English, optional)",
+    "bodyAr": "Body (Arabic)",
+    "bodyEn": "Body (English, optional)",
+    "imageField": "Image (URL or upload)",
+    "uploadImage": "Upload image",
+    "buttonText": "Button text",
+    "buttonUrl": "Button URL",
+    "openNewTab": "Open link in new tab",
+    "audience": "Audience",
+    "pageScope": "Page scope",
+    "frequency": "Display frequency",
+    "audienceOptions": {
+      "all": "Everyone",
+      "guests": "Guests only",
+      "freelancer": "Freelancers",
+      "client": "Clients",
+      "staff": "Staff"
+    },
+    "pageScopeOptions": {
+      "all": "All pages",
+      "home": "Home page",
+      "public": "Public site (no dashboard)",
+      "dashboard": "Dashboards"
+    },
+    "frequencyOptions": {
+      "session": "Once per session",
+      "day": "Once per day",
+      "every_visit": "Every page visit",
+      "first_login_only": "First login only",
+      "every_login": "Every login"
+    },
+    "firstLoginHint": "For signed-in users only. Shown once after login; not shown again after dismiss or view. Not shown to guests.",
+    "firstLoginGuests": " With audience \"Guests only\", this ad will not appear.",
+    "everyLoginHint": "For signed-in users only. Shown after each login, not again in the same session after dismiss. Not shown to guests.",
+    "scheduleStart": "Display start (optional)",
+    "scheduleEnd": "Display end (optional)",
+    "deleteConfirm": "Delete this popup ad?",
+    "updatedMessage": "Popup ad updated.",
+    "createdMessage": "Popup ad created.",
+    "hintTitle": "How popup ads work",
+    "hint1": "Only one ad is shown at a time, by order.",
+    "hint2": "After close, the display frequency setting is respected (session / day / visit / first login / every login).",
+    "hint3": "With \"First login only\", the ad shows once after the user's first login and never again after dismiss or view.",
+    "hint4": "With \"Every login\", the ad shows after each login and not again in the same session after dismiss.",
+    "hint5": "Audience is based on user role or guest status.",
+    "hint6": "Display can be scheduled with start and end dates."
+  }
+}

@@ -1,5 +1,7 @@
 ﻿import { useRef, useState } from "react";
-import { AD_VISUAL_ASSETS } from "../../components/ads/adVisualAssets";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/adsResources";
+import { AD_VISUAL_ASSETS, resolveAdVisualAssetLabel } from "../../components/ads/adVisualAssets";
 import { adminUploadAdImageRequest } from "../../services/adsService";
 import AdUrlThumb from "./AdUrlThumb";
 
@@ -18,6 +20,7 @@ export default function AdVisualImagePicker({
   attemptedSave = false,
   bare = false,
 }) {
+  const { t } = useTranslation();
   const patch = (p) => onChange({ ...data, ...p });
   const err = (key) => (attemptedSave && fieldErrors[key] ? fieldErrors[key] : null);
   const bgInputRef = useRef(/** @type {HTMLInputElement | null} */ (null));
@@ -46,10 +49,10 @@ export default function AdVisualImagePicker({
     try {
       const res = await adminUploadAdImageRequest(file, "background");
       const url = res?.data?.url;
-      if (!url) throw new Error("لم يُرجع الخادم رابطًا.");
+      if (!url) throw new Error(t("ads.images.noServerUrl"));
       setBackgroundUrl(url);
     } catch (e) {
-      setUploadError(e?.response?.data?.message || e?.message || "فشل رفع الصورة.");
+      setUploadError(e?.response?.data?.message || e?.message || t("ads.images.uploadFailed"));
     } finally {
       setUploading(false);
     }
@@ -58,7 +61,7 @@ export default function AdVisualImagePicker({
   const inner = (
     <>
       <div className="oh-admin-ads__field oh-admin-ads__field--full">
-        <span className="oh-admin-ads__field-label-spaced">اختر صورة جاهزة</span>
+        <span className="oh-admin-ads__field-label-spaced">{t("ads.images.pickReadyImage")}</span>
         <div className="oh-admin-ads__asset-grid">
           {AD_VISUAL_ASSETS.map((asset) => {
             const selected = data.selectedAssetKey === asset.key;
@@ -76,7 +79,7 @@ export default function AdVisualImagePicker({
                 <span className={`oh-admin-ads__asset-tile-thumb${isCorner ? " oh-admin-ads__asset-tile-thumb--corner" : ""}`}>
                   <img src={thumbSrc} alt="" loading="lazy" decoding="async" />
                 </span>
-                <span className="oh-admin-ads__asset-tile-label">{asset.label}</span>
+                <span className="oh-admin-ads__asset-tile-label">{resolveAdVisualAssetLabel(asset, t)}</span>
               </button>
             );
           })}
@@ -87,19 +90,17 @@ export default function AdVisualImagePicker({
       </div>
 
       <div className="oh-admin-ads__field oh-admin-ads__field--full oh-admin-ads__bg-upload">
-        <span className="oh-admin-ads__field-label-spaced">صورة خلفية (اختياري)</span>
-        <p className="oh-admin-ads__field-hint">
-          تُستخدم كخلفية للبانر مع طبقة بيضاء شفافة حتى يظهر النص بوضوح.
-        </p>
+        <span className="oh-admin-ads__field-label-spaced">{t("ads.images.optionalBackground")}</span>
+        <p className="oh-admin-ads__field-hint">{t("ads.images.backgroundHint")}</p>
 
         {bgUrl ? (
           <div className="oh-admin-ads__bg-preview-row">
             <div className="oh-admin-ads__bg-preview-frame" aria-hidden>
               <span className="oh-admin-ads__bg-preview-overlay" />
-              <AdUrlThumb url={bgUrl} label="خلفية" className="oh-admin-ads__bg-preview-thumb" />
+              <AdUrlThumb url={bgUrl} label={t("ads.images.backgroundLabel")} className="oh-admin-ads__bg-preview-thumb" />
             </div>
             <button type="button" className="btn btn-secondary btn-sm" onClick={clearBackground}>
-              إزالة الخلفية
+              {t("ads.images.removeBackground")}
             </button>
           </div>
         ) : null}
@@ -121,11 +122,11 @@ export default function AdVisualImagePicker({
           disabled={uploading}
           onClick={() => bgInputRef.current?.click()}
         >
-          {uploading ? "جارٍ الرفع…" : "رفع صورة من الجهاز"}
+          {uploading ? t("ads.common.uploading") : t("ads.images.uploadFromDevice")}
         </button>
 
         <label htmlFor="ad-bg-url" className="oh-admin-ads__bg-url-label">
-          أو ألصق رابط صورة (https)
+          {t("ads.images.orPasteUrl")}
         </label>
         <input
           id="ad-bg-url"
@@ -148,7 +149,7 @@ export default function AdVisualImagePicker({
   }
 
   return (
-    <FormCard title="الصور" hint="صورة جانبية جاهزة أو خلفية مخصصة">
+    <FormCard title={t("ads.images.sectionTitle")} hint={t("ads.images.sectionHint")}>
       {inner}
     </FormCard>
   );

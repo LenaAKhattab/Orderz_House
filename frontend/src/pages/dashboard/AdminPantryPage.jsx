@@ -16,7 +16,6 @@ import {
 import { useToast } from "../../components/ui/toastContext";
 import {
   ARTICLE_ALLOWED_REQUIRED_BID_COUNTS,
-  ARTICLE_FAIR_RANKING_PENDING_AR,
   canSelectArticleApplicant,
   canRelistBidCollection,
   formatArticleBidCollectionLabel,
@@ -30,27 +29,9 @@ import {
   isAdminListAbortError,
 } from "../../lib/staff/adminListLoad";
 import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/pantryResources";
 import "./pantryPages.css";
-
-const STATUS_LABELS = {
-  draft: "مسودة",
-  open_for_bids: "مفتوح للعروض",
-  assigned: "مُسند",
-  in_progress: "قيد التنفيذ",
-  submitted: "بانتظار المراجعة",
-  revision_requested: "طلب تعديل",
-  approved: "جاهز في بيت المونة",
-  archived: "مؤرشف",
-};
-
-const PANTRY_MIN_REQUIRED_BIDS_WARNING_AR =
-  "العدد الذي تحدده يمثل الحد الأدنى المطلوب لإتمام المناقصة. إذا انتهت مدة طلب بيت المونة دون الوصول إلى هذا العدد، فلن يتم إسناده لأي Freelancer، وسيتم إرجاع المناقصات المستخدمة للمتقدمين، ثم يمكن إعادة طرح الطلب مرة أخرى.";
-
-const PANTRY_FAIR_RANKING_DISCLAIMER_AR =
-  "هذا الترتيب إرشادي مبني على قواعد التوزيع العادل، والإسناد ما زال يتطلب تأكيد الإدارة.";
-
-const PANTRY_MIN_REQUIRED_BIDS_ACK_AR =
-  "أقر بأن العدد المحدد يمثل الحد الأدنى المطلوب لإتمام مناقصة بيت المونة، وأنه في حال عدم اكتمال العدد لن يتم الإسناد وسيتم إرجاع المناقصات للمتقدمين.";
 
 const EMPTY_FORM = {
   title: "",
@@ -95,7 +76,22 @@ function apiErrorMessage(err, fallback) {
 }
 
 export default function AdminPantryPage() {
+  const { t, locale, dir } = useTranslation();
   const toast = useToast();
+  const statusLabels = useMemo(
+    () => ({
+      draft: t("pantry.status.draft"),
+      open_for_bids: t("pantry.status.open_for_bids"),
+      assigned: t("pantry.status.assigned"),
+      in_progress: t("pantry.status.in_progress"),
+      submitted: t("pantry.status.submitted"),
+      revision_requested: t("pantry.status.revision_requested"),
+      approved: t("pantry.status.approved"),
+      archived: t("pantry.status.archived"),
+    }),
+    [t],
+  );
+  const dateLocale = locale === "en" ? "en-JO-u-nu-latn" : "ar-JO-u-nu-latn";
   const [tab, setTab] = useState("requests");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -150,7 +146,7 @@ export default function AdminPantryPage() {
         if (!hasExisting) {
           setRequests([]);
           setStats(null);
-          const msg = apiErrorMessage(err, "تعذر تحميل طلبات بيت المونة");
+          const msg = apiErrorMessage(err, t("pantry.errors.loadRequests"));
           setRequestsError(msg);
           toast?.error?.(msg);
         }
@@ -167,7 +163,7 @@ export default function AdminPantryPage() {
         delFailed = true;
         if (!hasExisting) {
           setDeliveries([]);
-          const msg = apiErrorMessage(err, "تعذر تحميل منجزات بيت المونة");
+          const msg = apiErrorMessage(err, t("pantry.errors.loadDeliveries"));
           setDeliveriesError(msg);
         }
       });
@@ -234,7 +230,7 @@ export default function AdminPantryPage() {
         setIntegrationActive(Boolean(res.data.pantryMembershipBidIntegrationActive));
       }
     } catch (err) {
-      toast?.error?.(apiErrorMessage(err, "تعذر فتح الطلب"));
+      toast?.error?.(apiErrorMessage(err, t("pantry.errors.openRequest")));
     }
   };
 
@@ -244,10 +240,10 @@ export default function AdminPantryPage() {
     try {
       const res = await relistAdminPantryBidCollectionRequest(detail.request.id);
       setDetail(res?.data || null);
-      toast?.success?.("تم فتح جولة مناقصات جديدة.");
+      toast?.success?.(t("pantry.toast.relistSuccess"));
       await loadList();
     } catch (err) {
-      toast?.error?.(apiErrorMessage(err, "تعذر إعادة طرح المناقصة"));
+      toast?.error?.(apiErrorMessage(err, t("pantry.errors.relist")));
     } finally {
       setRelisting(false);
     }
@@ -256,35 +252,35 @@ export default function AdminPantryPage() {
   const validateClient = () => {
     const errors = {};
     if (String(form.title || "").trim().length < 2) {
-      errors.title = "عنوان المشروع مطلوب (حرفان على الأقل).";
+      errors.title = t("pantry.errors.titleRequired");
     }
     if (String(form.description || "").trim().length < 10) {
-      errors.description = "وصف المشروع مطلوب (10 أحرف على الأقل).";
+      errors.description = t("pantry.errors.descriptionRequired");
     }
     if (!String(form.categoryId || "").trim()) {
-      errors.categoryId = "يرجى اختيار التصنيف.";
+      errors.categoryId = t("pantry.errors.categoryRequired");
     }
     if (!["fixed", "bidding"].includes(form.pricingType)) {
-      errors.pricingType = "اختر نوع الطلب.";
+      errors.pricingType = t("pantry.errors.pricingTypeRequired");
     }
     if (form.pricingType === "fixed") {
       if (!(Number(form.fixedBudget) > 0)) {
-        errors.fixedBudget = "يرجى إدخال ميزانية ثابتة صحيحة أكبر من 0.";
+        errors.fixedBudget = t("pantry.errors.fixedBudgetRequired");
       }
       if (!(Number(form.deliveryDays) > 0)) {
-        errors.deliveryDays = "مدة التنفيذ مطلوبة لطلبات الميزانية الثابتة.";
+        errors.deliveryDays = t("pantry.errors.deliveryDaysRequired");
       }
     } else {
       const min = form.budgetMin === "" ? null : Number(form.budgetMin);
       const max = form.budgetMax === "" ? null : Number(form.budgetMax);
       if (min != null && !(Number.isFinite(min) && min >= 0)) {
-        errors.budgetMin = "الحد الأدنى للميزانية غير صالح.";
+        errors.budgetMin = t("pantry.errors.budgetMinInvalid");
       }
       if (max != null && !(Number.isFinite(max) && max >= 0)) {
-        errors.budgetMax = "الحد الأعلى للميزانية غير صالح.";
+        errors.budgetMax = t("pantry.errors.budgetMaxInvalid");
       }
       if (min != null && max != null && min > max) {
-        errors.budgetMax = "الحد الأعلى يجب أن يكون أكبر من أو يساوي الحد الأدنى.";
+        errors.budgetMax = t("pantry.errors.budgetMaxLessThanMin");
       }
     }
     return errors;
@@ -350,7 +346,7 @@ export default function AdminPantryPage() {
     setSaving(true);
     try {
       await createAdminPantryRequestRequest(payload);
-      toast?.success?.("تم إنشاء الطلب");
+      toast?.success?.(t("pantry.toast.created"));
       setShowCreate(false);
       setForm(EMPTY_FORM);
       setFieldErrors({});
@@ -358,7 +354,7 @@ export default function AdminPantryPage() {
     } catch (err) {
       const fe = err?.response?.data?.fieldErrors;
       if (fe && typeof fe === "object") setFieldErrors(fe);
-      toast?.error?.(apiErrorMessage(err, "فشل الإنشاء"));
+      toast?.error?.(apiErrorMessage(err, t("pantry.errors.createFailed")));
     } finally {
       setSaving(false);
     }
@@ -367,11 +363,11 @@ export default function AdminPantryPage() {
   const onPublish = async (id) => {
     try {
       await publishAdminPantryRequestRequest(id);
-      toast?.success?.("تم نشر الطلب للعروض");
+      toast?.success?.(t("pantry.toast.published"));
       await loadList();
       if (selectedId === id) await openDetail(id);
     } catch (err) {
-      toast?.error?.(apiErrorMessage(err, "فشل النشر"));
+      toast?.error?.(apiErrorMessage(err, t("pantry.errors.publishFailed")));
     }
   };
 
@@ -393,11 +389,11 @@ export default function AdminPantryPage() {
         bidId,
         overrideReason ? { overrideReason } : {},
       );
-      toast?.success?.("تم قبول العرض");
+      toast?.success?.(t("pantry.toast.bidAccepted"));
       await loadList();
       await openDetail(selectedId);
     } catch (err) {
-      toast?.error?.(apiErrorMessage(err, "فشل قبول العرض"));
+      toast?.error?.(apiErrorMessage(err, t("pantry.errors.acceptBidFailed")));
     } finally {
       acceptingRef.current = false;
     }
@@ -406,44 +402,44 @@ export default function AdminPantryPage() {
   const onRejectBid = async (bidId) => {
     try {
       await rejectAdminPantryBidRequest(selectedId, bidId);
-      toast?.success?.("تم رفض العرض");
+      toast?.success?.(t("pantry.toast.bidRejected"));
       await openDetail(selectedId);
     } catch (err) {
-      toast?.error?.(apiErrorMessage(err, "فشل رفض العرض"));
+      toast?.error?.(apiErrorMessage(err, t("pantry.errors.rejectBidFailed")));
     }
   };
 
   const onApproveDelivery = async (deliveryId, archive = false) => {
     try {
       await approveAdminPantryDeliveryRequest(deliveryId, { archive });
-      toast?.success?.(archive ? "تمت الأرشفة" : "تم الاعتماد — جاهز في بيت المونة");
+      toast?.success?.(archive ? t("pantry.toast.approvedArchived") : t("pantry.toast.approvedReady"));
       await loadList();
       if (selectedId) await openDetail(selectedId);
     } catch (err) {
-      toast?.error?.(apiErrorMessage(err, "فشل الاعتماد"));
+      toast?.error?.(apiErrorMessage(err, t("pantry.errors.approveFailed")));
     }
   };
 
   const onRequestRevision = async (deliveryId) => {
-    const feedback = window.prompt("ملاحظات التعديل للأدمن:") || "";
+    const feedback = window.prompt(t("pantry.prompt.revisionFeedback")) || "";
     try {
       await requestRevisionAdminPantryDeliveryRequest(deliveryId, { feedback });
-      toast?.success?.("تم طلب التعديل");
+      toast?.success?.(t("pantry.toast.revisionRequested"));
       await loadList();
       if (selectedId) await openDetail(selectedId);
     } catch (err) {
-      toast?.error?.(apiErrorMessage(err, "فشل طلب التعديل"));
+      toast?.error?.(apiErrorMessage(err, t("pantry.errors.revisionFailed")));
     }
   };
 
   const statsCards = useMemo(
     () => [
-      { label: "مفتوحة للعروض", value: stats?.openCount ?? 0 },
-      { label: "قيد التنفيذ", value: stats?.inProgressCount ?? 0 },
-      { label: "بانتظار المراجعة", value: stats?.pendingReviewCount ?? 0 },
-      { label: "منجزات معتمدة", value: stats?.approvedCount ?? 0 },
+      { label: t("pantry.stats.open"), value: stats?.openCount ?? 0 },
+      { label: t("pantry.stats.inProgress"), value: stats?.inProgressCount ?? 0 },
+      { label: t("pantry.stats.pendingReview"), value: stats?.pendingReviewCount ?? 0 },
+      { label: t("pantry.stats.approved"), value: stats?.approvedCount ?? 0 },
     ],
-    [stats],
+    [stats, t],
   );
 
   const categoryOptions = useMemo(
@@ -456,20 +452,20 @@ export default function AdminPantryPage() {
   );
 
   return (
-    <div className="pantry-page" dir="rtl">
+    <div className="pantry-page" dir={dir}>
       <header className="pantry-page__header">
         <div>
-          <h1>بيت المونة</h1>
-          <p>طلبات داخلية متكررة تُخزَّن بعد الاعتماد لاستخدامها لاحقاً. بدون دفع Stripe وبدون طلب عميل.</p>
+          <h1>{t("pantry.title")}</h1>
+          <p>{t("pantry.subtitle")}</p>
         </div>
         <button type="button" className="btn btn-primary" onClick={() => setShowCreate(true)}>
-          إنشاء طلب جديد
+          {t("pantry.createNew")}
         </button>
       </header>
 
       {listSoftNote || refreshing ? (
         <p className="mb-3 text-sm" style={{ color: listSoftNote ? "#b45309" : "#64748b" }} role="status">
-          {refreshing ? "جاري التحديث..." : listSoftNote}
+          {refreshing ? t("pantry.refreshing") : listSoftNote}
         </p>
       ) : null}
 
@@ -483,7 +479,7 @@ export default function AdminPantryPage() {
           }
           onClick={() => setTab("requests")}
         >
-          طلبات بيت المونة
+          {t("pantry.tabRequests")}
         </button>
         <button
           type="button"
@@ -494,7 +490,7 @@ export default function AdminPantryPage() {
           }
           onClick={() => setTab("deliveries")}
         >
-          منجزات بيت المونة
+          {t("pantry.tabDeliveries")}
         </button>
       </div>
 
@@ -516,48 +512,48 @@ export default function AdminPantryPage() {
           )}
 
           {loading && requests.length === 0 ? (
-            <p>جاري التحميل…</p>
+            <p>{t("pantry.loading")}</p>
           ) : (
             <div className="pantry-table-wrap">
               <table className="pantry-table">
                 <thead>
                   <tr>
-                    <th>العنوان</th>
-                    <th>النوع</th>
-                    <th>الحالة</th>
-                    <th>الميزانية</th>
-                    <th>عدد العروض</th>
-                    {integrationActive ? <th>تكلفة التقديم</th> : null}
-                    <th>الفريلانسر</th>
-                    <th>تاريخ الإنشاء</th>
-                    <th>الإجراءات</th>
+                    <th>{t("pantry.table.title")}</th>
+                    <th>{t("pantry.table.type")}</th>
+                    <th>{t("pantry.table.status")}</th>
+                    <th>{t("pantry.table.budget")}</th>
+                    <th>{t("pantry.table.bidsCount")}</th>
+                    {integrationActive ? <th>{t("pantry.table.applicationCost")}</th> : null}
+                    <th>{t("pantry.table.freelancer")}</th>
+                    <th>{t("pantry.table.createdAt")}</th>
+                    <th>{t("pantry.table.actions")}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {requests.map((row) => (
                     <tr key={row.id}>
                       <td>{row.title}</td>
-                      <td>{row.pricingType === "bidding" ? "عروض" : "ثابت"}</td>
-                      <td>{STATUS_LABELS[row.status] || row.status}</td>
+                      <td>{row.pricingType === "bidding" ? t("pantry.pricingType.bidding") : t("pantry.pricingType.fixed")}</td>
+                      <td>{statusLabels[row.status] || row.status}</td>
                       <td>{formatBudget(row)}</td>
                       <td>
                         {row.bidCollection?.label ||
                           (row.requiredBidCount
-                            ? `${row.validApplicantCount ?? 0} من ${row.requiredBidCount} متقدمين مطلوبين`
+                            ? t("pantry.applicantsRequired", { current: row.validApplicantCount ?? 0, required: row.requiredBidCount })
                             : integrationActive && row.targetApplicantCount != null
                             ? `${row.validApplicantCount ?? 0} / ${row.targetApplicantCount}`
                             : row.bidsCount ?? 0)}
                       </td>
                       {integrationActive ? <td>{row.applicationBidCost ?? 1}</td> : null}
                       <td>{row.assignedFreelancerName || "—"}</td>
-                      <td>{row.createdAt ? new Date(row.createdAt).toLocaleDateString("ar") : "—"}</td>
+                      <td>{row.createdAt ? new Date(row.createdAt).toLocaleDateString(dateLocale) : "—"}</td>
                       <td className="pantry-actions">
                         <button type="button" className="btn btn-secondary btn-sm" onClick={() => openDetail(row.id)}>
-                          عرض
+                          {t("pantry.view")}
                         </button>
                         {row.status === "draft" && (
                           <button type="button" className="btn btn-primary btn-sm" onClick={() => onPublish(row.id)}>
-                            نشر
+                            {t("pantry.publish")}
                           </button>
                         )}
                       </td>
@@ -565,7 +561,7 @@ export default function AdminPantryPage() {
                   ))}
                   {!requests.length && (
                     <tr>
-                      <td colSpan={integrationActive ? 9 : 8}>{requestsError ? "—" : "لا توجد طلبات بعد."}</td>
+                      <td colSpan={integrationActive ? 9 : 8}>{requestsError ? "—" : t("pantry.emptyRequests")}</td>
                     </tr>
                   )}
                 </tbody>
@@ -586,13 +582,13 @@ export default function AdminPantryPage() {
             <table className="pantry-table">
               <thead>
                 <tr>
-                  <th>عنوان الطلب</th>
-                  <th>الفريلانسر</th>
-                  <th>الحالة</th>
-                  <th>تاريخ التسليم</th>
-                  <th>الملفات</th>
-                  <th>ملاحظات الأدمن</th>
-                  <th>الإجراءات</th>
+                  <th>{t("pantry.table.requestTitle")}</th>
+                  <th>{t("pantry.table.freelancer")}</th>
+                  <th>{t("pantry.table.status")}</th>
+                  <th>{t("pantry.table.deliveredAt")}</th>
+                  <th>{t("pantry.table.files")}</th>
+                  <th>{t("pantry.table.adminNotes")}</th>
+                  <th>{t("pantry.table.actions")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -600,8 +596,8 @@ export default function AdminPantryPage() {
                   <tr key={d.id}>
                     <td>{d.requestTitle}</td>
                     <td>{d.freelancerName || d.freelancerId}</td>
-                    <td>{STATUS_LABELS[d.status] || d.status}</td>
-                    <td>{d.createdAt ? new Date(d.createdAt).toLocaleString("ar") : "—"}</td>
+                    <td>{statusLabels[d.status] || d.status}</td>
+                    <td>{d.createdAt ? new Date(d.createdAt).toLocaleString(dateLocale) : "—"}</td>
                     <td>
                       {(d.files || []).map((f) => (
                         <a key={f.id} href={f.fileUrl} target="_blank" rel="noreferrer">
@@ -615,16 +611,16 @@ export default function AdminPantryPage() {
                       {d.status === "submitted" && (
                         <>
                           <button type="button" className="btn btn-primary btn-sm" onClick={() => onApproveDelivery(d.id)}>
-                            اعتماد التسليم
+                            {t("pantry.approveDelivery")}
                           </button>
                           <button type="button" className="btn btn-secondary btn-sm" onClick={() => onRequestRevision(d.id)}>
-                            طلب تعديل
+                            {t("pantry.requestRevision")}
                           </button>
                         </>
                       )}
                       {d.status === "approved" && (
                         <button type="button" className="btn btn-secondary btn-sm" onClick={() => onApproveDelivery(d.id, true)}>
-                          أرشفة المنجز
+                          {t("pantry.archiveDelivery")}
                         </button>
                       )}
                     </td>
@@ -632,7 +628,7 @@ export default function AdminPantryPage() {
                 ))}
                 {!deliveries.length && (
                   <tr>
-                    <td colSpan={7}>{deliveriesError ? "—" : "لا توجد منجزات بعد."}</td>
+                    <td colSpan={7}>{deliveriesError ? "—" : t("pantry.emptyDeliveries")}</td>
                   </tr>
                 )}
               </tbody>
@@ -644,20 +640,20 @@ export default function AdminPantryPage() {
       {showCreate && (
         <div className="pantry-modal" role="dialog">
           <form className="pantry-modal__card pantry-modal__card--wide" onSubmit={createRequest}>
-            <h2>إنشاء طلب بيت المونة</h2>
-            <p className="muted">نفس بيانات طلب العميل الأساسية — بدون دفع وبدون عميل حقيقي.</p>
+            <h2>{t("pantry.create.title")}</h2>
+            <p className="muted">{t("pantry.create.subtitle")}</p>
 
             <section className="pantry-form-section">
-              <h3>بيانات الخدمة</h3>
+              <h3>{t("pantry.create.serviceSection")}</h3>
               <label>
-                التصنيف
+                {t("pantry.create.category")}
                 <select
                   value={form.categoryId}
                   onChange={(e) =>
                     setForm((f) => ({ ...f, categoryId: e.target.value, subSubcategoryId: "" }))
                   }
                 >
-                  <option value="">اختر التصنيف</option>
+                  <option value="">{t("pantry.create.chooseCategory")}</option>
                   {categoryOptions.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.label}
@@ -667,13 +663,13 @@ export default function AdminPantryPage() {
                 {fieldErrors.categoryId && <span className="pantry-field-error">{fieldErrors.categoryId}</span>}
               </label>
               <label>
-                التصنيف الفرعي (اختياري)
+                {t("pantry.create.subCategory")}
                 <select
                   value={form.subSubcategoryId}
                   onChange={(e) => setForm((f) => ({ ...f, subSubcategoryId: e.target.value }))}
                   disabled={!form.categoryId}
                 >
-                  <option value="">بدون</option>
+                  <option value="">{t("pantry.create.none")}</option>
                   {subSubs.map((ss) => (
                     <option key={ss.id} value={ss.id}>
                       {ss.nameAr || ss.name_ar || ss.name || `#${ss.id}`}
@@ -684,9 +680,9 @@ export default function AdminPantryPage() {
             </section>
 
             <section className="pantry-form-section">
-              <h3>تفاصيل الطلب</h3>
+              <h3>{t("pantry.create.detailsSection")}</h3>
               <label>
-                العنوان
+                {t("pantry.create.orderTitle")}
                 <input
                   value={form.title}
                   onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
@@ -694,7 +690,7 @@ export default function AdminPantryPage() {
                 {fieldErrors.title && <span className="pantry-field-error">{fieldErrors.title}</span>}
               </label>
               <label>
-                الوصف
+                {t("pantry.create.description")}
                 <textarea
                   rows={4}
                   value={form.description}
@@ -705,15 +701,15 @@ export default function AdminPantryPage() {
                 )}
               </label>
               <label>
-                المهارات المطلوبة (افصل بفاصلة)
+                {t("pantry.create.skills")}
                 <input
                   value={form.skillsText}
                   onChange={(e) => setForm((f) => ({ ...f, skillsText: e.target.value }))}
-                  placeholder="مثال: كتابة، ترجمة، تصميم"
+                  placeholder={t("pantry.create.skillsPh")}
                 />
               </label>
               <label>
-                متطلبات إضافية
+                {t("pantry.create.requirements")}
                 <textarea
                   rows={3}
                   value={form.requirements}
@@ -722,7 +718,7 @@ export default function AdminPantryPage() {
               </label>
               <div className="pantry-form-row">
                 <label>
-                  رابط مرفق (اختياري)
+                  {t("pantry.create.attachmentUrl")}
                   <input
                     value={form.attachmentUrl}
                     onChange={(e) => setForm((f) => ({ ...f, attachmentUrl: e.target.value }))}
@@ -730,7 +726,7 @@ export default function AdminPantryPage() {
                   />
                 </label>
                 <label>
-                  اسم المرفق
+                  {t("pantry.create.attachmentName")}
                   <input
                     value={form.attachmentName}
                     onChange={(e) => setForm((f) => ({ ...f, attachmentName: e.target.value }))}
@@ -740,26 +736,26 @@ export default function AdminPantryPage() {
             </section>
 
             <section className="pantry-form-section">
-              <h3>الميزانية والمدة</h3>
+              <h3>{t("pantry.create.budgetSection")}</h3>
               <div className="pantry-type-row">
                 <button
                   type="button"
                   className={form.pricingType === "fixed" ? "is-active" : ""}
                   onClick={() => setForm((f) => ({ ...f, pricingType: "fixed" }))}
                 >
-                  ميزانية ثابتة
+                  {t("pantry.create.fixedBudget")}
                 </button>
                 <button
                   type="button"
                   className={form.pricingType === "bidding" ? "is-active" : ""}
                   onClick={() => setForm((f) => ({ ...f, pricingType: "bidding" }))}
                 >
-                  استقبال عروض
+                  {t("pantry.create.acceptBids")}
                 </button>
               </div>
               {form.pricingType === "fixed" ? (
                 <label>
-                  الميزانية الثابتة
+                  {t("pantry.create.fixedBudgetLabel")}
                   <input
                     type="number"
                     min="0"
@@ -774,7 +770,7 @@ export default function AdminPantryPage() {
               ) : (
                 <div className="pantry-form-row">
                   <label>
-                    الحد الأدنى للميزانية
+                    {t("pantry.create.budgetMin")}
                     <input
                       type="number"
                       min="0"
@@ -787,7 +783,7 @@ export default function AdminPantryPage() {
                     )}
                   </label>
                   <label>
-                    الحد الأعلى للميزانية
+                    {t("pantry.create.budgetMax")}
                     <input
                       type="number"
                       min="0"
@@ -802,7 +798,7 @@ export default function AdminPantryPage() {
                 </div>
               )}
               <label>
-                مدة التنفيذ (أيام)
+                {t("pantry.create.deliveryDays")}
                 <input
                   type="number"
                   min="1"
@@ -818,10 +814,10 @@ export default function AdminPantryPage() {
 
             {integrationActive ? (
             <section className="pantry-form-section">
-              <h3>شروط التقديم</h3>
+              <h3>{t("pantry.create.applicationSection")}</h3>
               <div className="pantry-form-row">
                 <label>
-                  تكلفة التقديم (عروض متاحة)
+                  {t("pantry.create.applicationCost")}
                   <input
                     type="number"
                     min="1"
@@ -831,19 +827,19 @@ export default function AdminPantryPage() {
                   />
                 </label>
                 <label>
-                  العدد المستهدف للمتقدمين
+                  {t("pantry.create.targetApplicants")}
                   <input
                     type="number"
                     min="1"
                     step="1"
                     value={form.targetApplicantCount}
                     onChange={(e) => setForm((f) => ({ ...f, targetApplicantCount: e.target.value }))}
-                    placeholder="اختياري"
+                    placeholder={t("pantry.create.optional")}
                   />
                 </label>
               </div>
               <label>
-                موعد إغلاق التقديم (اختياري)
+                {t("pantry.create.applicationDeadline")}
                 <input
                   type="datetime-local"
                   value={form.applicationDeadlineAt}
@@ -851,7 +847,7 @@ export default function AdminPantryPage() {
                 />
               </label>
               <div>
-                <span className="muted">الباقات المؤهلة (اتركها فارغة للكل)</span>
+                <span className="muted">{t("pantry.create.eligibleTiers")}</span>
                 <div className="pantry-type-row">
                   {["starter", "silver", "pro", "elite"].map((code) => (
                     <label key={code} className="pantry-check">
@@ -874,10 +870,10 @@ export default function AdminPantryPage() {
             ) : null}
 
             <section className="pantry-form-section">
-              <h3>الحد الأدنى للمناقصات</h3>
-              <p className="muted">اترك الحقل فارغًا للإبقاء على القبول اليدوي الحالي بدون حد أدنى.</p>
+              <h3>{t("pantry.create.minBidsSection")}</h3>
+              <p className="muted">{t("pantry.create.minBidsHint")}</p>
               <label>
-                العدد الأدنى المطلوب للمتقدمين
+                {t("pantry.create.minBidsLabel")}
                 <select
                   value={form.requiredBidCount}
                   onChange={(e) =>
@@ -888,7 +884,7 @@ export default function AdminPantryPage() {
                     }))
                   }
                 >
-                  <option value="">بدون حد أدنى (الوضع الحالي)</option>
+                  <option value="">{t("pantry.create.noMinBids")}</option>
                   {ARTICLE_ALLOWED_REQUIRED_BID_COUNTS.map((n) => (
                     <option key={n} value={String(n)}>
                       {n}
@@ -899,7 +895,7 @@ export default function AdminPantryPage() {
               {form.requiredBidCount !== "" ? (
                 <>
                   <p className="pantry-field-error" role="note">
-                    {PANTRY_MIN_REQUIRED_BIDS_WARNING_AR}
+                    {t("pantry.create.minBidsWarning")}
                   </p>
                   <label className="pantry-check">
                     <input
@@ -909,16 +905,16 @@ export default function AdminPantryPage() {
                         setForm((f) => ({ ...f, minRequiredBidsAcknowledged: e.target.checked }))
                       }
                     />
-                    {PANTRY_MIN_REQUIRED_BIDS_ACK_AR}
+                    {t("pantry.create.minBidsAck")}
                   </label>
                 </>
               ) : null}
             </section>
 
             <section className="pantry-form-section">
-              <h3>ملاحظات داخلية</h3>
+              <h3>{t("pantry.create.internalSection")}</h3>
               <label>
-                ملاحظات للأدمن فقط
+                {t("pantry.create.internalLabel")}
                 <textarea
                   rows={2}
                   value={form.internalNotes}
@@ -928,20 +924,20 @@ export default function AdminPantryPage() {
             </section>
 
             <section className="pantry-form-section">
-              <h3>النشر</h3>
+              <h3>{t("pantry.create.publishSection")}</h3>
               <label className="pantry-check">
                 <input
                   type="checkbox"
                   checked={form.publish}
                   onChange={(e) => setForm((f) => ({ ...f, publish: e.target.checked }))}
                 />
-                نشر فوراً للعروض
+                {t("pantry.create.publishNow")}
               </label>
             </section>
 
             <div className="pantry-actions">
               <button type="submit" className="btn btn-primary" disabled={saving}>
-                {saving ? "جاري الحفظ…" : "حفظ"}
+                {saving ? t("pantry.create.saving") : t("pantry.create.save")}
               </button>
               <button
                 type="button"
@@ -951,7 +947,7 @@ export default function AdminPantryPage() {
                   setFieldErrors({});
                 }}
               >
-                إلغاء
+                {t("pantry.create.cancel")}
               </button>
             </div>
           </form>
@@ -964,13 +960,25 @@ export default function AdminPantryPage() {
             <h2>{detail.request.title}</h2>
             <p>{detail.request.description}</p>
             <p className="muted">
-              النوع: {detail.request.pricingType === "bidding" ? "استقبال عروض" : "ميزانية ثابتة"}
-              {detail.request.deliveryDays != null ? ` · المدة: ${detail.request.deliveryDays} يوم` : ""}
-              {detail.request.skills?.length ? ` · مهارات: ${detail.request.skills.join("، ")}` : ""}
+              {t("pantry.detail.typeLine", {
+                type:
+                  detail.request.pricingType === "bidding"
+                    ? t("pantry.pricingType.biddingLong")
+                    : t("pantry.pricingType.fixedLong"),
+                duration:
+                  detail.request.deliveryDays != null
+                    ? t("pantry.detail.durationPart", { days: detail.request.deliveryDays })
+                    : "",
+                skills: detail.request.skills?.length
+                  ? t("pantry.detail.skillsPart", {
+                      skills: detail.request.skills.join(locale === "en" ? ", " : "، "),
+                    })
+                  : "",
+              })}
             </p>
-            {detail.request.requirements && <p className="muted">متطلبات: {detail.request.requirements}</p>}
+            {detail.request.requirements && <p className="muted">{t("pantry.detail.requirements", { text: detail.request.requirements })}</p>}
             <p>
-              الحالة: <strong>{STATUS_LABELS[detail.request.status] || detail.request.status}</strong>
+              {t("pantry.detail.statusLine")} <strong>{statusLabels[detail.request.status] || detail.request.status}</strong>
             </p>
             {detail.request.bidCollection ? (
               <p>
@@ -984,41 +992,49 @@ export default function AdminPantryPage() {
             ) : null}
             {canRelistBidCollection(detail.request.bidCollection) ? (
               <div data-testid="pantry-relist-bid-collection">
-                <p className="muted">
-                  سيتم فتح جولة جديدة لطلب بيت المونة بنفس البيانات، ولن يتم احتساب المتقدمين السابقين ضمن الجولة الجديدة.
-                  سيبقى الحد الأدنى للمناقصات كما هو.
-                </p>
+                <p className="muted">{t("pantry.detail.relistNote")}</p>
                 <button type="button" className="btn-primary" onClick={relistBidCollection} disabled={relisting}>
-                  إعادة طرح المناقصة
+                  {t("pantry.detail.relistBtn")}
                 </button>
               </div>
             ) : null}
             {integrationActive ? (
             <p className="muted">
-              تكلفة التقديم: {detail.request.applicationBidCost ?? 1} مناقصة
+              {t("pantry.detail.applicationCostLine", { cost: detail.request.applicationBidCost ?? 1 })}
               {detail.request.targetApplicantCount != null
-                ? ` · سقف المتقدمين: ${detail.request.validApplicantCount ?? 0} / ${detail.request.targetApplicantCount}`
-                : ` · المتقدمون: ${detail.request.validApplicantCount ?? detail.bids?.length ?? 0}`}
+                ? t("pantry.detail.applicantCap", {
+                    current: detail.request.validApplicantCount ?? 0,
+                    target: detail.request.targetApplicantCount,
+                  })
+                : t("pantry.detail.applicants", {
+                    count: detail.request.validApplicantCount ?? detail.bids?.length ?? 0,
+                  })}
               {detail.request.remainingApplicantSlots != null
-                ? ` · المتبقي: ${detail.request.remainingApplicantSlots}`
+                ? t("pantry.detail.remainingSlots", { count: detail.request.remainingApplicantSlots })
                 : ""}
             </p>
             ) : null}
             {integrationActive && !!detail.request.eligibleTierCodes?.length && (
               <p className="muted">
-                الباقات المؤهلة: {detail.request.eligibleTierCodes.map((t) => String(t).toUpperCase()).join("، ")}
+                {t("pantry.detail.eligibleTiers", {
+                  tiers: detail.request.eligibleTierCodes
+                    .map((code) => String(code).toUpperCase())
+                    .join(locale === "en" ? ", " : "، "),
+                })}
               </p>
             )}
             {detail.request.requiredBidCount != null ? (
               <section className="pantry-form-section" data-testid="pantry-fair-ranking">
-                <h3>ترتيب التوزيع العادل</h3>
+                <h3>{t("pantry.detail.fairRankingTitle")}</h3>
                 {!isFairRankingEligible(detail.fairRanking) ? (
                   <p className="muted">
-                    {detail.fairRanking?.messageAr || ARTICLE_FAIR_RANKING_PENDING_AR}
+                    {(locale === "en"
+                      ? detail.fairRanking?.messageEn
+                      : detail.fairRanking?.messageAr) || t("pantry.detail.fairRankingPending")}
                   </p>
                 ) : (
                   <>
-                    <p className="muted">{PANTRY_FAIR_RANKING_DISCLAIMER_AR}</p>
+                    <p className="muted">{t("pantry.detail.fairRankingDisclaimer")}</p>
                     <ol className="pantry-bid-list">
                       {(detail.fairRanking?.candidates || []).map((c) => (
                         <li key={c.bidId}>
@@ -1026,7 +1042,7 @@ export default function AdminPantryPage() {
                             <strong>
                               #{c.rank} {c.freelancerName || c.freelancerUserId}
                               {isRecommendedPantryBid(c.bidId, detail.fairRanking)
-                                ? " (المرشح الأول)"
+                                ? t("pantry.detail.topCandidate")
                                 : ""}
                             </strong>
                             {c.amount != null ? ` — ${c.amount}` : ""}
@@ -1042,13 +1058,13 @@ export default function AdminPantryPage() {
                 )}
               </section>
             ) : null}
-            <h3>العروض</h3>
+            <h3>{t("pantry.detail.bidsTitle")}</h3>
             <ul className="pantry-bid-list">
               {(detail.bids || []).map((b) => (
                 <li key={b.id}>
                   <div>
                     <strong>{b.freelancerName || b.freelancerId}</strong> — {b.amount}
-                    {b.durationDays ? ` / ${b.durationDays} يوم` : ""}
+                    {b.durationDays ? ` / ${b.durationDays}${t("pantry.detail.dayUnit")}` : ""}
                     <div className="muted">{b.message || ""}</div>
                     <span className="muted">{b.status}</span>
                   </div>
@@ -1064,28 +1080,28 @@ export default function AdminPantryPage() {
                         title={
                           detail.request.requiredBidCount != null &&
                           !canSelectArticleApplicant(detail.request.bidCollection)
-                            ? "لا يمكن الإسناد قبل اكتمال الحد الأدنى للمناقصات"
+                            ? t("pantry.detail.cannotAssignMinBids")
                             : undefined
                         }
                         onClick={() => onAcceptBid(b.id)}
                       >
-                        قبول العرض
+                        {t("pantry.detail.acceptBid")}
                       </button>
                       <button type="button" className="btn btn-secondary btn-sm" onClick={() => onRejectBid(b.id)}>
-                        رفض العرض
+                        {t("pantry.detail.rejectBid")}
                       </button>
                     </div>
                   )}
                 </li>
               ))}
-              {!detail.bids?.length && <li>لا توجد عروض.</li>}
+              {!detail.bids?.length && <li>{t("pantry.detail.noBids")}</li>}
             </ul>
-            <h3>التسليمات</h3>
+            <h3>{t("pantry.detail.deliveriesTitle")}</h3>
             <ul className="pantry-bid-list">
               {(detail.deliveries || []).map((d) => (
                 <li key={d.id}>
                   <div>
-                    {STATUS_LABELS[d.status] || d.status}
+                    {statusLabels[d.status] || d.status}
                     <div className="muted">{d.message}</div>
                     {(d.files || []).map((f) => (
                       <div key={f.id}>
@@ -1098,16 +1114,16 @@ export default function AdminPantryPage() {
                   {d.status === "submitted" && (
                     <div className="pantry-actions">
                       <button type="button" className="btn btn-primary btn-sm" onClick={() => onApproveDelivery(d.id)}>
-                        اعتماد التسليم
+                        {t("pantry.approveDelivery")}
                       </button>
                       <button type="button" className="btn btn-secondary btn-sm" onClick={() => onRequestRevision(d.id)}>
-                        طلب تعديل
+                        {t("pantry.requestRevision")}
                       </button>
                     </div>
                   )}
                 </li>
               ))}
-              {!detail.deliveries?.length && <li>لا توجد تسليمات.</li>}
+              {!detail.deliveries?.length && <li>{t("pantry.detail.noDeliveries")}</li>}
             </ul>
             <button
               type="button"
@@ -1117,7 +1133,7 @@ export default function AdminPantryPage() {
                 setSelectedId(null);
               }}
             >
-              إغلاق
+              {t("pantry.detail.close")}
             </button>
           </div>
         </div>

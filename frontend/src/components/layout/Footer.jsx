@@ -6,6 +6,8 @@ import { pickFooterAppDownloadTitle, shouldRenderFooterAppDownload } from "../..
 import {
   buildFooterTelHref,
   buildFooterWhatsAppHref,
+  FOOTER_CONTACT_CENTER_FALLBACKS,
+  FOOTER_CONTACT_FALLBACKS,
   getVisibleFooterContactItems,
   resolveFooterContactCenterDestination,
   shouldRenderFooterContactCenter,
@@ -16,6 +18,12 @@ import { useTranslation } from "../../i18n/LanguageProvider";
 import { getFooterImportantLinkLabel } from "../../lib/i18n/footerImportantLinkLabel";
 import { useAuth } from "../../context/useAuth";
 import "../../styles/publicChrome.css";
+
+function englishIfCanonical(isEn, stored, canonicalAr, english) {
+  if (!isEn) return stored;
+  const norm = (value) => String(value || "").replace(/\s+/g, " ").trim();
+  return norm(stored) === norm(canonicalAr) ? english : stored;
+}
 
 const linkClass =
   "site-footer__link text-[#202020] no-underline transition-colors hover:text-[#475569]";
@@ -140,7 +148,24 @@ const Footer = ({ homeBlend = false }) => {
   const contactPhone = contact.phone;
   const contactEmail = contact.email;
   const contactWhatsapp = contact.whatsapp;
-  const contactLocation = contact.location;
+  const contactLocation = englishIfCanonical(
+    isEn,
+    contact.location,
+    FOOTER_CONTACT_FALLBACKS.location,
+    t("footer.locationValue"),
+  );
+  const contactCenterHelper = englishIfCanonical(
+    isEn,
+    contactCenter.helperText,
+    FOOTER_CONTACT_CENTER_FALLBACKS.helperText,
+    t("footer.contactCenterHelper"),
+  );
+  const contactCenterButton = englishIfCanonical(
+    isEn,
+    contactCenter.buttonText,
+    FOOTER_CONTACT_CENTER_FALLBACKS.buttonText,
+    t("footer.contactCenterButton"),
+  );
   const hoursTitle = isEn ? t("footer.workingHours") : workingHours.title;
   const hoursText = isEn ? t("footer.workingHoursValue") : workingHours.text;
   const phoneHref = buildFooterTelHref(contactPhone);
@@ -404,7 +429,7 @@ const Footer = ({ homeBlend = false }) => {
                   .join(" ")}
               >
                 {showContactCenterHelper ? (
-                  <p className="site-footer__contact-center-helper">{contactCenter.helperText}</p>
+                  <p className="site-footer__contact-center-helper">{contactCenterHelper}</p>
                 ) : null}
                 {showContactCenterButton ? (
                   contactCenterDest.kind === "pending" ? (
@@ -413,7 +438,7 @@ const Footer = ({ homeBlend = false }) => {
                       aria-busy="true"
                       aria-disabled="true"
                     >
-                      {contactCenter.buttonText}
+                      {contactCenterButton}
                     </span>
                   ) : contactCenterDest.kind === "login" ? (
                     <Link
@@ -421,14 +446,14 @@ const Footer = ({ homeBlend = false }) => {
                       state={contactCenterDest.state}
                       className="site-footer__contact-center-btn btn btn-primary btn-sm"
                     >
-                      {contactCenter.buttonText}
+                      {contactCenterButton}
                     </Link>
                   ) : (
                     <Link
                       to={contactCenterDest.to}
                       className="site-footer__contact-center-btn btn btn-primary btn-sm"
                     >
-                      {contactCenter.buttonText}
+                      {contactCenterButton}
                     </Link>
                   )
                 ) : null}

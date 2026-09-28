@@ -1,14 +1,11 @@
-import { PLAN_CATALOG, PLAN_CATALOG_LABELS, isPlanCatalog } from "../../constants/planCatalogs.js";
+import { PLAN_CATALOG, isPlanCatalog } from "../../constants/planCatalogs.js";
 import { PLAN_ADMIN_SECTION, parsePlanAdminSection } from "./planAdminSections.js";
 
 /** Nav-only id — not a default_plan_catalog / checkout source. */
 export const TRAINING_PACKAGES_NAV_ID = "training_packages";
 export const SPECIAL_OFFER_NAV_ID = "special_offer_package";
 
-export const PLAN_CATALOG_ADMIN_TITLE = Object.freeze({
-  ar: "إدارة الباقات والاشتراكات",
-  en: "Plan and subscription management",
-});
+export const PLAN_CATALOG_ADMIN_TITLE_KEY = "planAdmin.catalog.adminTitle";
 
 export const PLAN_CATALOG_ADMIN_HREF = Object.freeze({
   [PLAN_CATALOG.MAIN_PLANS]: "/dashboard/super-admin/plans?section=core",
@@ -18,45 +15,32 @@ export const PLAN_CATALOG_ADMIN_HREF = Object.freeze({
   [SPECIAL_OFFER_NAV_ID]: "/dashboard/super-admin/special-offer-package",
 });
 
-export const DEFAULT_PLAN_CATALOG_TAB_BADGE = Object.freeze({
-  ar: "معروض الآن",
-  en: "Shown now",
-  titleAr: "هذا هو قسم الباقات المعروض للمستخدمين حاليًا",
-  titleEn: "This is the plan catalog currently shown to users",
-});
-
 export const PLAN_CATALOG_NAV = Object.freeze([
   {
     id: PLAN_CATALOG.MAIN_PLANS,
-    labelAr: PLAN_CATALOG_LABELS[PLAN_CATALOG.MAIN_PLANS].ar,
-    labelEn: PLAN_CATALOG_LABELS[PLAN_CATALOG.MAIN_PLANS].en,
+    labelKey: "planAdmin.catalog.nav.main_plans",
     href: PLAN_CATALOG_ADMIN_HREF[PLAN_CATALOG.MAIN_PLANS],
   },
   {
     id: PLAN_CATALOG.PAGE_PLANS,
-    labelAr: PLAN_CATALOG_LABELS[PLAN_CATALOG.PAGE_PLANS].ar,
-    labelEn: PLAN_CATALOG_LABELS[PLAN_CATALOG.PAGE_PLANS].en,
+    labelKey: "planAdmin.catalog.nav.page_plans",
     href: PLAN_CATALOG_ADMIN_HREF[PLAN_CATALOG.PAGE_PLANS],
   },
   {
     id: PLAN_CATALOG.MARKETPLACE_PLANS,
-    labelAr: PLAN_CATALOG_LABELS[PLAN_CATALOG.MARKETPLACE_PLANS].ar,
-    labelEn: PLAN_CATALOG_LABELS[PLAN_CATALOG.MARKETPLACE_PLANS].en,
+    labelKey: "planAdmin.catalog.nav.marketplace_plans",
     href: PLAN_CATALOG_ADMIN_HREF[PLAN_CATALOG.MARKETPLACE_PLANS],
   },
   {
     id: TRAINING_PACKAGES_NAV_ID,
-    labelAr: "باقات التدريب",
-    labelEn: "Training packages",
+    labelKey: "planAdmin.catalog.nav.training",
     href: PLAN_CATALOG_ADMIN_HREF[TRAINING_PACKAGES_NAV_ID],
   },
   {
     id: SPECIAL_OFFER_NAV_ID,
-    labelAr: "باقة العرض",
-    labelEn: "Special offer",
+    labelKey: "planAdmin.catalog.nav.specialOffer",
     href: PLAN_CATALOG_ADMIN_HREF[SPECIAL_OFFER_NAV_ID],
-    tabBadgeAr: "خاص",
-    tabBadgeEn: "Special",
+    tabBadgeKey: "planAdmin.catalog.tabBadgeSpecial",
   },
 ]);
 

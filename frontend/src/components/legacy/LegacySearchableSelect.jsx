@@ -1,4 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useTranslation } from "../../i18n/LanguageProvider";
 import "./legacySmartFields.css";
 
 /**
@@ -14,16 +15,20 @@ export default function LegacySearchableSelect({
   extraOptions = [],
   allowOther = false,
   otherValue = "__other__",
-  otherLabel = "أخرى",
-  otherInputLabel = "اكتب القيمة",
+  otherLabel,
+  otherInputLabel,
   required = false,
   disabled = false,
-  placeholder = "— اختر —",
+  placeholder,
   className = "",
   inputClassName = "",
   dir = "rtl",
   "aria-label": ariaLabel,
 }) {
+  const { t } = useTranslation();
+  const resolvedOtherLabel = otherLabel ?? t("legacy.common.other");
+  const resolvedOtherInputLabel = otherInputLabel ?? t("legacy.common.writeValue");
+  const resolvedPlaceholder = placeholder ?? t("legacy.common.select");
   const autoId = useId();
   const inputId = id || `legacy-select-${autoId}`;
   const listId = `${inputId}-list`;
@@ -38,9 +43,9 @@ export default function LegacySearchableSelect({
       if (!map.has(v)) map.set(v, { value: v, label: o.label || v });
     }
     const list = [...map.values()];
-    if (allowOther) list.push({ value: otherValue, label: otherLabel });
+    if (allowOther) list.push({ value: otherValue, label: resolvedOtherLabel });
     return list;
-  }, [options, extraOptions, allowOther, otherValue, otherLabel]);
+  }, [options, extraOptions, allowOther, otherValue, resolvedOtherLabel]);
 
   const valueInOptions = mergedOptions.some(
     (o) => o.value !== otherValue && o.value === String(value ?? ""),
@@ -79,12 +84,12 @@ export default function LegacySearchableSelect({
     if (!q) return mergedOptions;
     return mergedOptions.filter((o) => {
       const hay = `${o.label} ${o.value}`.toLowerCase();
-      return hay.includes(q) || (o.value === otherValue && otherLabel.includes(query.trim()));
+      return hay.includes(q) || (o.value === otherValue && resolvedOtherLabel.includes(query.trim()));
     });
-  }, [mergedOptions, query, otherValue, otherLabel]);
+  }, [mergedOptions, query, otherValue, resolvedOtherLabel]);
 
   const displayLabel = otherMode
-    ? otherLabel
+    ? resolvedOtherLabel
     : mergedOptions.find((o) => o.value === String(value ?? ""))?.label || "";
 
   const pick = (opt) => {
@@ -136,8 +141,8 @@ export default function LegacySearchableSelect({
           dir={dir}
           required={required && !otherMode && !value}
           disabled={disabled}
-          placeholder={placeholder}
-          value={open ? query : displayLabel || (otherMode ? otherLabel : "")}
+          placeholder={resolvedPlaceholder}
+          value={open ? query : displayLabel || (otherMode ? resolvedOtherLabel : "")}
           aria-label={ariaLabel}
           aria-autocomplete="list"
           aria-controls={listId}
@@ -155,14 +160,13 @@ export default function LegacySearchableSelect({
           }}
           onKeyDown={onKeyDown}
         />
-        {/* Hidden mirror so HTML5 required works when closed with a value */}
         <input type="hidden" value={otherMode ? value || "" : value || ""} required={required} readOnly tabIndex={-1} />
       </div>
       {open ? (
         <ul id={listId} className="oh-legacy-smart__list" role="listbox" dir={dir}>
           {filtered.length === 0 ? (
             <li className="oh-legacy-smart__empty" role="presentation">
-              لا توجد نتائج
+              {t("legacy.common.noResults")}
             </li>
           ) : (
             filtered.map((o, idx) => (
@@ -191,7 +195,7 @@ export default function LegacySearchableSelect({
       ) : null}
       {otherMode ? (
         <label className="oh-legacy-smart__other">
-          <span className="oh-legacy-smart__other-label">{otherInputLabel}</span>
+          <span className="oh-legacy-smart__other-label">{resolvedOtherInputLabel}</span>
           <input
             className={["oh-legacy-smart__input", inputClassName].filter(Boolean).join(" ")}
             type="text"

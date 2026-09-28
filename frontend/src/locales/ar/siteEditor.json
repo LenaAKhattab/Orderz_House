@@ -1,0 +1,242 @@
+{
+  "errors": {
+    "operationFailed": "تعذر تنفيذ العملية. حاول مجدداً.",
+    "loadPagesFailed": "تعذر تحميل الصفحات. حاول مجدداً.",
+    "noServerUrl": "لم يُرجع الخادم رابطًا.",
+    "imageUploadFailed": "فشل رفع الصورة.",
+    "enterQuestionAndAnswer": "أدخل السؤال والإجابة.",
+    "enterBlockTitle": "أدخل عنوانًا للكتلة.",
+    "enterTitleOrText": "أدخل عنوانًا أو نصًا.",
+    "addImageOrUrl": "أضف صورة أو رابطًا.",
+    "addTitleTextOrImage": "أضف عنوانًا أو نصًا أو صورة.",
+    "enterPageTitle": "أدخل عنوان الصفحة."
+  },
+  "common": {
+    "close": "إغلاق",
+    "cancel": "إلغاء",
+    "add": "إضافة",
+    "edit": "تعديل",
+    "delete": "حذف",
+    "retry": "إعادة المحاولة",
+    "saving": "جاري الحفظ…",
+    "saveChanges": "حفظ التعديلات",
+    "saveEdit": "حفظ التعديل",
+    "saveTitle": "حفظ العنوان",
+    "visible": "ظاهر",
+    "hidden": "مخفي",
+    "visiblePage": "ظاهرة",
+    "hiddenPage": "مخفية",
+    "show": "إظهار",
+    "hide": "إخفاء",
+    "busy": "جاري…",
+    "back": "رجوع",
+    "backToFooterSections": "← العودة إلى أقسام التذييل",
+    "yes": "نعم",
+    "no": "لا",
+    "published": "منشورة",
+    "draft": "مسودة",
+    "enabled": "مفعّل",
+    "disabled": "غير مفعّل",
+    "moveUp": "تحريك لأعلى",
+    "moveDown": "تحريك لأسفل",
+    "showFieldOnSite": "إظهار {{label}} في الموقع",
+    "loadingSettings": "جاري تحميل الإعدادات…",
+    "loadingPages": "جاري تحميل الصفحات…",
+    "loadingQuestions": "جاري تحميل الأسئلة…",
+    "loadingContent": "جاري تحميل المحتوى…",
+    "loadingPage": "جاري تحميل الصفحة…",
+    "loadingSectionStatus": "جاري تحميل حالة الأقسام…",
+    "editSection": "تعديل القسم",
+    "editSectionShort": "تعديل"
+  },
+  "imagePicker": {
+    "uploading": "جاري الرفع…",
+    "changeImage": "تغيير الصورة",
+    "uploadImage": "رفع صورة",
+    "remove": "إزالة",
+    "pasteUrlLabel": "أو ألصق رابط الصورة"
+  },
+  "blockTypes": {
+    "title": "عنوان",
+    "text": "نص",
+    "image": "صورة",
+    "text_image": "نص + صورة",
+    "content": "محتوى"
+  },
+  "howItWorksPages": {
+    "freelancer": "طريقة العمل كمستقل",
+    "client": "طريقة الطلب للعميل"
+  },
+  "sections": {
+    "faq": {
+      "title": "الأسئلة الشائعة",
+      "description": "تعديل الأسئلة والأجوبة المعروضة في الصفحة الرئيسية",
+      "editLabel": "تعديل القسم"
+    },
+    "howItWorks": {
+      "title": "طريقة العمل",
+      "description": "تعديل صفحات طريقة العمل للمستقل والعميل",
+      "editLabel": "تعديل القسم"
+    },
+    "sitePages": {
+      "title": "الصفحات العامة",
+      "description": "تعديل صفحات الموقع العامة (الخصوصية، الشروط، مركز المساعدة، وغيرها)",
+      "editLabel": "تعديل القسم"
+    },
+    "footerHub": {
+      "title": "تعديل تذييل الموقع",
+      "description": "تعديل بيانات التواصل وساعات العمل وقسم تحميل التطبيق في تذييل الموقع.",
+      "editLabel": "تعديل القسم"
+    }
+  },
+  "footerSections": {
+    "contact": {
+      "title": "تواصل معنا",
+      "description": "تعديل رقم الهاتف والبريد الإلكتروني وواتساب والموقع.",
+      "editLabel": "تعديل"
+    },
+    "workingHours": {
+      "title": "ساعات العمل",
+      "description": "تعديل النص الظاهر في قسم ساعات العمل.",
+      "editLabel": "تعديل"
+    },
+    "appDownloads": {
+      "title": "تحميل التطبيق",
+      "description": "تعديل عنوان قسم تحميل التطبيق وروابط App Store وGoogle Play.",
+      "editLabel": "تعديل"
+    },
+    "contactCenter": {
+      "title": "مركز التواصل",
+      "description": "تعديل نص ورابط مركز التواصل وخيارات ظهوره في تذييل الموقع.",
+      "editLabel": "تعديل"
+    }
+  },
+  "editWebsiteHub": {
+    "pageTitle": "تعديل الموقع",
+    "pageDescription": "اختر القسم الذي تريد تعديله من محتوى الموقع العام.",
+    "sectionTitle": "أقسام الموقع القابلة للتعديل"
+  },
+  "faq": {
+    "pageTitle": "الأسئلة الشائعة",
+    "pageDescription": "إدارة الأسئلة والأجوبة المعروضة في قسم «الأسئلة الشائعة» على الصفحة الرئيسية.",
+    "sectionTitle": "قائمة الأسئلة",
+    "toolbarHint": "التغييرات تظهر مباشرة في قسم «الأسئلة الشائعة» على الصفحة الرئيسية.",
+    "addQuestion": "إضافة سؤال",
+    "emptyTitle": "لا توجد أسئلة",
+    "emptyDescription": "أضف أول سؤال شائع ليظهر في الصفحة الرئيسية.",
+    "modalEditTitle": "تعديل سؤال",
+    "modalAddTitle": "إضافة سؤال",
+    "fieldQuestion": "السؤال",
+    "fieldAnswer": "الإجابة",
+    "deleteConfirm": "حذف السؤال: «{{preview}}…»?"
+  },
+  "howItWorksHub": {
+    "pageTitle": "طريقة العمل",
+    "pageDescription": "إدارة صفحات طريقة العمل للمستقل والعميل.",
+    "sectionTitle": "صفحات طريقة العمل"
+  },
+  "howItWorksEditor": {
+    "pageDescription": "أضف وعدّل ورتّب محتوى الصفحة. التصميم ثابت ولا يمكن تغييره من هنا.",
+    "unknownPage": "صفحة غير معروفة.",
+    "pageSettingsTitle": "إعدادات الصفحة",
+    "pageTitleLabel": "عنوان الصفحة",
+    "contentSectionTitle": "محتوى الصفحة",
+    "contentHint": "أضف كتل محتوى (عنوان، نص، صورة، نص + صورة) ورتّبها كما تظهر للزائر.",
+    "addContent": "إضافة محتوى",
+    "emptyTitle": "لا يوجد محتوى",
+    "emptyDescription": "أضف أول كتلة محتوى لهذه الصفحة.",
+    "modalEditTitle": "تعديل محتوى",
+    "modalAddTitle": "إضافة محتوى",
+    "contentType": "نوع المحتوى",
+    "fieldTitle": "العنوان",
+    "fieldText": "النص",
+    "fieldImage": "الصورة",
+    "deleteConfirm": "حذف: «{{preview}}»?"
+  },
+  "footerHub": {
+    "pageTitle": "تعديل تذييل الموقع",
+    "pageDescription": "اختر القسم الذي تريد تعديله من تذييل الموقع.",
+    "sectionTitle": "أقسام التذييل"
+  },
+  "footerContact": {
+    "pageTitle": "تواصل معنا",
+    "pageDescription": "عدّل بيانات التواصل الظاهرة في تذييل الموقع.",
+    "sectionTitle": "بيانات التواصل",
+    "toastSaved": "تم حفظ بيانات التواصل بنجاح.",
+    "showSectionInFooter": "إظهار القسم في تذييل الموقع",
+    "showContactSectionInFooter": "إظهار قسم \"تواصل معنا\" في تذييل الموقع",
+    "phone": "رقم الهاتف",
+    "email": "البريد الإلكتروني",
+    "whatsapp": "رقم واتساب",
+    "location": "الموقع"
+  },
+  "footerHours": {
+    "pageTitle": "ساعات العمل",
+    "pageDescription": "عدّل عنوان ونص ساعات العمل في تذييل الموقع.",
+    "sectionTitle": "ساعات العمل",
+    "toastSaved": "تم حفظ ساعات العمل بنجاح.",
+    "showSectionInFooter": "إظهار القسم في تذييل الموقع",
+    "showWorkingHoursSectionInFooter": "إظهار قسم \"ساعات العمل\" في تذييل الموقع",
+    "sectionTitleField": "عنوان القسم",
+    "textField": "النص",
+    "showHoursTextOnSite": "إظهار نص ساعات العمل في الموقع"
+  },
+  "footerApps": {
+    "pageTitle": "تحميل التطبيق",
+    "pageDescription": "عدّل عنوان قسم تحميل التطبيق وروابط المتاجر في تذييل الموقع.",
+    "sectionTitle": "إعدادات تحميل التطبيق",
+    "toastSaved": "تم حفظ إعدادات تحميل التطبيق بنجاح.",
+    "showSectionInFooter": "إظهار القسم في تذييل الموقع",
+    "showAppDownloadsSectionInFooter": "إظهار قسم \"تحميل التطبيق\" في تذييل الموقع",
+    "sectionTitleField": "عنوان القسم",
+    "sectionTitleHint": "يظهر في تذييل الموقع.",
+    "showSectionTitleOnSite": "إظهار عنوان القسم في الموقع",
+    "googlePlayUrl": "رابط Google Play",
+    "showGooglePlayOnSite": "إظهار زر Google Play في الموقع",
+    "appStoreUrl": "رابط App Store",
+    "showAppStoreOnSite": "إظهار زر App Store في الموقع"
+  },
+  "footerContactCenter": {
+    "pageTitle": "مركز التواصل",
+    "pageDescription": "تعديل محتوى مركز التواصل الظاهر في تذييل الموقع.",
+    "sectionTitle": "مركز التواصل",
+    "toastSaved": "تم حفظ مركز التواصل بنجاح.",
+    "showContactCenterInFooter": "إظهار مركز التواصل في تذييل الموقع",
+    "helperTextLabel": "النص التوضيحي",
+    "showHelperText": "إظهار النص التوضيحي",
+    "buttonTextLabel": "نص الزر",
+    "showContactCenterButton": "إظهار زر مركز التواصل",
+    "buttonBehaviorHint": "زر مركز التواصل يوجّه دائماً إلى صفحة المشاكل والاقتراحات حسب دور المستخدم، أو إلى تسجيل الدخول للزائر."
+  },
+  "sitePages": {
+    "pageTitle": "الصفحات العامة",
+    "pageDescription": "إدارة صفحات الموقع العامة (الفوتر وقائمة الموبايل).",
+    "sectionTitle": "قائمة الصفحات",
+    "toolbarHint": "الصفحات المنشورة تظهر في «روابط مهمة» بالفوتر (سطح المكتب) وقائمة الموبايل حسب الإعدادات.",
+    "tableTitle": "العنوان",
+    "tableLink": "الرابط",
+    "tablePublish": "النشر",
+    "tableMobile": "الموبايل",
+    "tableFooter": "الفوتر",
+    "tableAction": "إجراء"
+  },
+  "sitePageEdit": {
+    "editPageFallback": "تعديل الصفحة",
+    "pageDescription": "عدّل محتوى الصفحة وإعدادات ظهورها في الفوتر وقائمة الهاتف.",
+    "sectionTitle": "محتوى الصفحة",
+    "toastSaved": "تم حفظ الصفحة.",
+    "pagePathLabel": "رابط الصفحة:",
+    "pageTitle": "عنوان الصفحة",
+    "menuLabel": "اسم الرابط في القائمة",
+    "sortOrder": "ترتيب الظهور",
+    "publishedToggle": "منشورة",
+    "showMobile": "إظهار في قائمة الهاتف",
+    "showFooter": "إظهار في الفوتر",
+    "contentLabel": "المحتوى",
+    "contentHint": "اكتب النص بشكل عادي. افصل الفقرات بسطر فارغ. استخدم ## قبل العنوان الفرعي.",
+    "seoOptional": "إعدادات SEO اختيارية",
+    "metaTitle": "عنوان SEO (اختياري)",
+    "metaDescription": "وصف SEO (اختياري)",
+    "backToList": "العودة للقائمة"
+  }
+}

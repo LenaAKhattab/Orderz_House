@@ -103,9 +103,7 @@ export default function FreelancerPlansPage() {
   const renewalFrozen = eligibility?.reason === "account_hold_payment_failed";
   const freezeTitle =
     eligibility?.freezeMessage?.title ||
-    t("freelancerDashboard.status.eligibility.subscriptionRenewalFailedTitle", {
-      defaultValue: "تعذر تجديد الاشتراك",
-    });
+    t("freelancerDashboard.status.eligibility.subscriptionRenewalFailedTitle");
 
   const catalogAria =
     catalog === PLAN_CATALOG.MARKETPLACE_PLANS

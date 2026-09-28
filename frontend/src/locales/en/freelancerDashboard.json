@@ -166,7 +166,13 @@
       "statusNotStarted": "Not started yet",
       "testCompleted": "Final test completed",
       "testPending": "Final test pending",
-      "testIncluded": "Includes final test"
+      "testIncluded": "Includes final test",
+      "lockedByPlan": "This course is available on higher plans",
+      "upgradePlan": "Upgrade plan",
+      "tierFromSilver": "Available from Silver and above",
+      "tierFromPro": "Available from Pro and above",
+      "tierFromElite": "Available on Elite",
+      "activateOrUpgrade": "Activate or upgrade your plan to access this course"
     },
     "loadError": "Could not load courses."
   },
@@ -499,6 +505,8 @@
     },
     "security": {
       "title": "Security",
+      "mustChangeTitle": "Password change required",
+      "mustChangeBody": "Your account was created with a temporary password. Set a new password below before continuing. Use your national ID as the current password if you have not changed it before.",
       "currentPassword": "Current password",
       "newPassword": "New password",
       "confirmPassword": "Confirm password",
@@ -510,6 +518,7 @@
       "success": "Password updated.",
       "error": "Could not change password."
     },
+    "preferredCurrencyTitle": "Preferred display currency",
     "notifications": {
       "title": "Notification settings",
       "orders": "Order notifications",
@@ -676,6 +685,12 @@
     "empty": {
       "loadFailed": "Could not display the course. Return to the course list and try again.",
       "backToCourses": "Training courses"
+    },
+    "planLocked": {
+      "title": "Course locked",
+      "message": "This course is available on higher plans.",
+      "upgrade": "Upgrade plan",
+      "activateOrUpgrade": "Activate or upgrade your plan to access this course"
     },
     "exam": {
       "lockedTitle": "Final test locked",
@@ -1173,5 +1188,16 @@
       "goDashboard": "Go to dashboard",
       "goArticles": "Marketplace articles"
     }
+  },
+  "onboardingPanel": {
+    "completeNow": "Complete now",
+    "gettingStarted": "Getting started",
+    "remindLater": "Remind me later"
+  },
+  "silverConversion": {
+    "defaultTitle": "Keep receiving work opportunities with Silver",
+    "starting": "Starting…",
+    "earnedBalanceLink": "View earned balance details",
+    "openPlans": "View plans"
   }
 }

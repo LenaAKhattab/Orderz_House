@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useArticlesT } from "../../admin/marketplaceArticles/useArticlesT";
 import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
 import { sharesSumToTotal } from "../../constants/freelancerActivationCampaign";
 import {
@@ -33,49 +34,64 @@ const emptyInventory = {
   minimumBiddersPerArticle: 10,
 };
 
-function fundEntryTypeAr(type) {
-  const t = String(type || "").toLowerCase();
-  if (t.includes("deposit") || t === "credit") return "إيداع";
-  if (t.includes("withdraw") || t === "debit") return "سحب";
-  if (t === "daily_allocation") return "خصم إنزال مقال";
-  if (t === "daily_allocation_released") return "إرجاع تمويل مقال";
-  if (t === "manual_adjustment") return "تعديل يدوي";
+function fundEntryTypeLabel(type, t) {
+  const key = String(type || "").toLowerCase();
+  if (key.includes("deposit") || key === "credit") return t("fundEntry.deposit");
+  if (key.includes("withdraw") || key === "debit") return t("fundEntry.withdraw");
+  if (key === "daily_allocation") return t("fundEntry.deductRelease");
+  if (key === "daily_allocation_released") return t("fundEntry.refundArticle");
+  if (key === "manual_adjustment") return t("fundEntry.manualAdjustment");
   return type || "—";
 }
 
-function fundEntryReasonAr(entry) {
+function fundEntryReasonLabel(entry, t) {
   const reason = String(entry?.reason || "").trim();
   const metaReason = String(entry?.metadata?.reason || "").trim();
-  if (metaReason === "minimum_not_met_refund" || reason.includes("عدم اكتمال")) {
-    return "إرجاع تمويل بسبب عدم اكتمال عدد المتقدمين";
+  if (metaReason === "minimum_not_met_refund" || reason.includes("عدم اكتمال") || reason.includes("minimum")) {
+    return t("fundEntry.refundMinNotMet");
   }
   if (reason) return reason;
   return null;
 }
 
-function inventoryStatusAr(status) {
-  switch (String(status || "").toLowerCase()) {
-    case "draft":
-      return "مسودة";
-    case "ready":
-      return "جاهز";
-    case "released":
-      return "منزّل";
-    default:
-      return status || "—";
-  }
+function inventoryStatusLabel(status, t) {
+  const key = String(status || "").toLowerCase();
+  if (["draft", "ready", "released"].includes(key)) return t(`inventoryStatus.${key}`);
+  return status || "—";
 }
 
-function releaseModeAr(mode) {
-  switch (String(mode || "").toLowerCase()) {
-    case "manual":
-      return "يدوي";
-    case "auto":
-    case "automatic":
-      return "تلقائي";
-    default:
-      return mode || "—";
+function releaseModeLabel(mode, t) {
+  const key = String(mode || "").toLowerCase();
+  if (key === "manual") return t("publishMode.manual");
+  if (key === "auto" || key === "automatic") return t("publishMode.auto");
+  return mode || "—";
+}
+
+function activationPlanTierLabel(t, value) {
+  const key = String(value || "").toLowerCase();
+  if (key === "trial") return t("planLabels.trial");
+  const canonical = { starter: "STARTER", silver: "SILVER", pro: "PRO", elite: "ELITE" }[key];
+  if (canonical) return t(`planLabels.${canonical}`);
+  return value || "—";
+}
+
+function liveAutoAssignStatusLabel(item, t) {
+  const status = item.autoAssignStatus;
+  if (status === "waiting_for_bidders") return t("activationOps.monitor.waiting");
+  if (status === "ready") return t("activationOps.monitor.readyAssign");
+  if (status === "completed" || item.selectedBySystem) return t("activationOps.monitor.completed");
+  if (status === "skipped") {
+    return t("activationOps.monitor.skipped", {
+      reason: item.lastAutoAssignmentSkipReason || "—",
+    });
   }
+  if (status === "failed") {
+    return t("activationOps.monitor.failed", {
+      code: item.lastAutoAssignmentErrorCode || "—",
+    });
+  }
+  if (status === "disabled") return t("activationOps.monitor.disabled");
+  return status || "—";
 }
 
 /**
@@ -88,6 +104,7 @@ export default function FreelancerActivationArticleOpsPanel({
   hideTabBar = false,
   onSummaryChange,
 }) {
+  const { t } = useArticlesT();
   const [internalTab, setInternalTab] = useState("fund");
   const tab = controlledTab || internalTab;
   const setTab = (id) => {
@@ -153,7 +170,7 @@ export default function FreelancerActivationArticleOpsPanel({
       setLiveItems(liveRes?.data?.items || []);
       setLiveSummary(liveRes?.data?.summary || null);
     } catch (err) {
-      setError(getSafeApiErrorMessage(err) || "تعذر تحميل تشغيل المقالات.");
+      setError(getSafeApiErrorMessage(err) || t("activationOps.loadError"));
     }
   }, [campaignId, liveFilter.planTierCode, liveFilter.autoAssignStatus, liveFilter.search]);
 
@@ -197,7 +214,7 @@ export default function FreelancerActivationArticleOpsPanel({
   if (!campaignId) {
     return (
       <p data-testid="activation-ops-need-campaign">
-        اختر حملة لعرض صندوق المقالات والتوزيع والمخزن.
+        {t("activationOps.needCampaign")}
       </p>
     );
   }
@@ -213,7 +230,7 @@ export default function FreelancerActivationArticleOpsPanel({
       });
       await load();
     } catch (err) {
-      setError(getSafeApiErrorMessage(err) || "تعذر الإيداع.");
+      setError(getSafeApiErrorMessage(err) || t("activationOps.depositError"));
     } finally {
       setBusy(false);
     }
@@ -230,7 +247,7 @@ export default function FreelancerActivationArticleOpsPanel({
       });
       await load();
     } catch (err) {
-      setError(getSafeApiErrorMessage(err) || "تعذر السحب.");
+      setError(getSafeApiErrorMessage(err) || t("activationOps.withdrawError"));
     } finally {
       setBusy(false);
     }
@@ -247,7 +264,7 @@ export default function FreelancerActivationArticleOpsPanel({
         allocForm.reviewerShareJod,
       )
     ) {
-      setAllocError("يجب أن يساوي مجموع الحصص إجمالي قيمة المقال.");
+      setAllocError(t("activationOps.allocSharesError"));
       return;
     }
     setBusy(true);
@@ -255,7 +272,7 @@ export default function FreelancerActivationArticleOpsPanel({
       await createSuperAdminActivationPlanAllocationRequest(campaignId, allocForm);
       await load();
     } catch (err) {
-      setAllocError(getSafeApiErrorMessage(err) || "تعذر حفظ التوزيع.");
+      setAllocError(getSafeApiErrorMessage(err) || t("activationOps.allocSaveError"));
     } finally {
       setBusy(false);
     }
@@ -277,7 +294,7 @@ export default function FreelancerActivationArticleOpsPanel({
       setInvForm(emptyInventory);
       await load();
     } catch (err) {
-      setInvError(getSafeApiErrorMessage(err) || "تعذر إضافة المقال للمخزن.");
+      setInvError(getSafeApiErrorMessage(err) || t("activationOps.inventoryAddError"));
     } finally {
       setBusy(false);
     }
@@ -289,7 +306,7 @@ export default function FreelancerActivationArticleOpsPanel({
       await patchSuperAdminActivationArticleInventoryRequest(id, { status: "ready" });
       await load();
     } catch (err) {
-      setError(getSafeApiErrorMessage(err) || "تعذر التحديث.");
+      setError(getSafeApiErrorMessage(err) || t("activationOps.updateError"));
     } finally {
       setBusy(false);
     }
@@ -301,7 +318,7 @@ export default function FreelancerActivationArticleOpsPanel({
       await releaseSuperAdminActivationArticleInventoryRequest(id);
       await load();
     } catch (err) {
-      setError(getSafeApiErrorMessage(err) || "تعذر إنزال المقال.");
+      setError(getSafeApiErrorMessage(err) || t("activationOps.releaseError"));
     } finally {
       setBusy(false);
     }
@@ -317,7 +334,7 @@ export default function FreelancerActivationArticleOpsPanel({
       });
       setReleasePreview(res?.data || null);
     } catch (err) {
-      setReleaseError(getSafeApiErrorMessage(err) || "تعذر معاينة الإنزال.");
+      setReleaseError(getSafeApiErrorMessage(err) || t("activationOps.previewError"));
     } finally {
       setBusy(false);
     }
@@ -335,7 +352,7 @@ export default function FreelancerActivationArticleOpsPanel({
       setReleasePreview(null);
       await load();
     } catch (err) {
-      setReleaseError(getSafeApiErrorMessage(err) || "تعذر تشغيل الإنزال.");
+      setReleaseError(getSafeApiErrorMessage(err) || t("activationOps.runError"));
     } finally {
       setBusy(false);
     }
@@ -348,15 +365,17 @@ export default function FreelancerActivationArticleOpsPanel({
     try {
       const res = await runSuperAdminActivationLiveArticleAutoAssignmentRequest(articleId);
       if (res?.data?.autoAssigned) {
-        setLiveActionMsg("تم الإسناد تلقائيًا بنجاح.");
+        setLiveActionMsg(t("activationOps.autoAssignSuccess"));
       } else {
         setLiveActionMsg(
-          `تخطي/فشل: ${res?.data?.run?.skipReason || res?.data?.run?.errorCode || "غير معروف"}`,
+          t("activationOps.autoAssignSkip", {
+            reason: res?.data?.run?.skipReason || res?.data?.run?.errorCode || "—",
+          }),
         );
       }
       await load();
     } catch (err) {
-      setLiveError(getSafeApiErrorMessage(err) || "تعذر تشغيل التوزيع التلقائي.");
+      setLiveError(getSafeApiErrorMessage(err) || t("activationOps.autoAssignRunError"));
     } finally {
       setBusy(false);
     }
@@ -368,10 +387,10 @@ export default function FreelancerActivationArticleOpsPanel({
     setBusy(true);
     try {
       await releaseAnotherSuperAdminActivationLiveArticleRequest(articleId);
-      setLiveActionMsg("تم إنزال مقال آخر من نفس عنصر المخزن (بدون إسناد تلقائي إضافي من هذه الواجهة).");
+      setLiveActionMsg(t("activationOps.releaseAnotherSuccess"));
       await load();
     } catch (err) {
-      setLiveError(getSafeApiErrorMessage(err) || "تعذر إنزال مقال آخر من المخزن.");
+      setLiveError(getSafeApiErrorMessage(err) || t("activationOps.releaseAnotherError"));
     } finally {
       setBusy(false);
     }
@@ -385,20 +404,20 @@ export default function FreelancerActivationArticleOpsPanel({
       {!hideTabBar ? (
         <div className="flex flex-wrap gap-2" data-testid="activation-ops-tabs">
           {[
-            { id: "fund", label: "صندوق المقالات" },
-            { id: "alloc", label: "توزيع الخطط" },
-            { id: "inventory", label: "مخزن المقالات" },
-            { id: "release", label: "إنزال المقالات" },
-            { id: "monitor", label: "متابعة المقالات" },
-          ].map((t) => (
+            { id: "fund", label: t("activationOps.tabs.fund") },
+            { id: "alloc", label: t("activationOps.tabs.alloc") },
+            { id: "inventory", label: t("activationOps.tabs.inventory") },
+            { id: "release", label: t("activationOps.tabs.release") },
+            { id: "monitor", label: t("activationOps.tabs.monitor") },
+          ].map((tabItem) => (
             <button
-              key={t.id}
+              key={tabItem.id}
               type="button"
-              data-testid={`activation-ops-tab-${t.id}`}
+              data-testid={`activation-ops-tab-${tabItem.id}`}
               className="oh-account-btn-primary"
-              onClick={() => setTab(t.id)}
+              onClick={() => setTab(tabItem.id)}
             >
-              {t.label}
+              {tabItem.label}
             </button>
           ))}
         </div>
@@ -407,39 +426,44 @@ export default function FreelancerActivationArticleOpsPanel({
 
       {tab === "fund" ? (
         <div data-testid="activation-fund-tab" className="grid gap-3 max-w-2xl">
-          <p className="oh-am-helper">أضف أو اسحب رصيد تمويل مقالات التفعيل لهذه الحملة.</p>
+          <p className="oh-am-helper">{t("activationOps.fund.helper")}</p>
           <p data-testid="activation-fund-balance">
-            الرصيد الحالي: {fund?.currentBalanceJod ?? "0.000"} JOD
+            {t("activationOps.fund.currentBalance", {
+              amount: fund?.currentBalanceJod ?? "0.000",
+            })}
           </p>
           <p>
-            إيداعات {fund?.totalDepositsJod ?? "0.000"} · سحوبات {fund?.totalWithdrawalsJod ?? "0.000"}
+            {t("activationOps.fund.totals", {
+              deposits: fund?.totalDepositsJod ?? "0.000",
+              withdrawals: fund?.totalWithdrawalsJod ?? "0.000",
+            })}
           </p>
           <form onSubmit={onDeposit} data-testid="activation-fund-deposit-form" className="grid gap-2">
             <label>
-              إضافة رصيد
+              {t("activationOps.fund.addBalance")}
               <input value={depositAmount} onChange={(e) => setDepositAmount(e.target.value)} />
             </label>
             <button type="submit" disabled={busy}>
-              إضافة رصيد
+              {t("activationOps.fund.addBalance")}
             </button>
           </form>
           <form onSubmit={onWithdraw} data-testid="activation-fund-withdraw-form" className="grid gap-2">
             <label>
-              سحب من الصندوق
+              {t("activationOps.fund.withdraw")}
               <input value={withdrawAmount} onChange={(e) => setWithdrawAmount(e.target.value)} />
             </label>
             <button type="submit" disabled={busy}>
-              سحب من الصندوق
+              {t("activationOps.fund.withdraw")}
             </button>
           </form>
           <div data-testid="activation-fund-ledger">
-            <h3>آخر العمليات</h3>
+            <h3>{t("activationOps.fund.recentOps")}</h3>
             <ul>
               {(fund?.recentEntries || []).map((e) => {
-                const reasonAr = fundEntryReasonAr(e);
+                const reasonAr = fundEntryReasonLabel(e, t);
                 return (
                   <li key={e.id} data-testid={`activation-fund-entry-${e.id}`}>
-                    {fundEntryTypeAr(e.entryType)}: {e.amountJod} JOD
+                    {fundEntryTypeLabel(e.entryType, t)}: {e.amountJod} JOD
                     {reasonAr ? (
                       <span data-testid="fund-entry-reason-ar"> — {reasonAr}</span>
                     ) : null}
@@ -453,10 +477,10 @@ export default function FreelancerActivationArticleOpsPanel({
 
       {tab === "alloc" ? (
         <div data-testid="activation-alloc-tab" className="grid gap-3 max-w-4xl">
-          <p className="oh-am-helper">حدّد قيمة المقال وعدد المقالات اليومية لكل خطة.</p>
+          <p className="oh-am-helper">{t("activationOps.alloc.helper")}</p>
           <form onSubmit={onSaveAllocation} data-testid="activation-alloc-form" className="grid gap-2">
             <label>
-              الخطة
+              {t("common.plan")}
               <select
                 value={allocForm.planTierCode}
                 onChange={(e) => {
@@ -470,48 +494,48 @@ export default function FreelancerActivationArticleOpsPanel({
               >
                 {FREELANCER_ACTIVATION_PLAN_TIER_OPTIONS.map((o) => (
                   <option key={o.value} value={o.value}>
-                    {o.labelAr}
+                    {activationPlanTierLabel(t, o.value)}
                   </option>
                 ))}
               </select>
             </label>
             <label>
-              إجمالي قيمة المقال
+              {t("activationOps.alloc.totalValue")}
               <input
                 value={allocForm.totalArticleValueJod}
                 onChange={(e) => setAllocForm({ ...allocForm, totalArticleValueJod: e.target.value })}
               />
             </label>
             <label>
-              حصة المستقل
+              {t("activationOps.alloc.freelancerShare")}
               <input
                 value={allocForm.freelancerShareJod}
                 onChange={(e) => setAllocForm({ ...allocForm, freelancerShareJod: e.target.value })}
               />
             </label>
             <label>
-              حصة المنصة
+              {t("activationOps.alloc.platformShare")}
               <input
                 value={allocForm.companyShareJod}
                 onChange={(e) => setAllocForm({ ...allocForm, companyShareJod: e.target.value })}
               />
             </label>
             <label>
-              حصة التدقيق
+              {t("activationOps.alloc.reviewerShare")}
               <input
                 value={allocForm.reviewerShareJod}
                 onChange={(e) => setAllocForm({ ...allocForm, reviewerShareJod: e.target.value })}
               />
             </label>
             <label>
-              الحد اليومي بالدينار
+              {t("activationOps.alloc.dailyJod")}
               <input
                 value={allocForm.dailyBudgetJod}
                 onChange={(e) => setAllocForm({ ...allocForm, dailyBudgetJod: e.target.value })}
               />
             </label>
             <label>
-              الحد اليومي بعدد المقالات
+              {t("activationOps.alloc.dailyCount")}
               <input
                 type="number"
                 value={allocForm.maxDailyArticles}
@@ -521,7 +545,7 @@ export default function FreelancerActivationArticleOpsPanel({
               />
             </label>
             <label>
-              عدد المتقدمين المطلوب
+              {t("activationOps.alloc.minApplicants")}
               <input
                 type="number"
                 value={allocForm.minimumBiddersPerArticle}
@@ -534,7 +558,7 @@ export default function FreelancerActivationArticleOpsPanel({
               />
             </label>
             <label>
-              تكرار إنزال المقالات
+              {t("activationOps.alloc.releaseInterval")}
               <input
                 type="number"
                 min={1}
@@ -548,9 +572,7 @@ export default function FreelancerActivationArticleOpsPanel({
                   })
                 }
               />
-              <span className="oh-am-helper">
-                يحدد كل كم يوم يتم إنزال دفعة جديدة من المقالات.
-              </span>
+              <span className="oh-am-helper">{t("activationOps.alloc.releaseIntervalHint")}</span>
             </label>
             <label>
               <input
@@ -560,19 +582,19 @@ export default function FreelancerActivationArticleOpsPanel({
                   setAllocForm({ ...allocForm, autoAssignEnabled: e.target.checked })
                 }
               />{" "}
-              تفعيل التوزيع التلقائي
+              {t("activationOps.alloc.enableAutoAssign")}
             </label>
             <details className="oh-am-advanced">
-              <summary>إعدادات متقدمة</summary>
+              <summary>{t("activationOps.alloc.advanced")}</summary>
               <div className="grid gap-2 mt-2">
                 <label>
-                  وضع الإنزال
+                  {t("activationOps.alloc.releaseMode")}
                   <select
                     value={allocForm.releaseMode}
                     onChange={(e) => setAllocForm({ ...allocForm, releaseMode: e.target.value })}
                   >
-                    <option value="manual">يدوي</option>
-                    <option value="auto">تلقائي</option>
+                    <option value="manual">{t("publishMode.manual")}</option>
+                    <option value="auto">{t("publishMode.auto")}</option>
                   </select>
                 </label>
                 <label>
@@ -586,28 +608,28 @@ export default function FreelancerActivationArticleOpsPanel({
                       })
                     }
                   />{" "}
-                  إعادة التدوير عند نفاد المخزون
+                  {t("activationOps.alloc.recycleEmpty")}
                 </label>
               </div>
             </details>
             {allocError ? <p data-testid="activation-alloc-error">{allocError}</p> : null}
             <button type="submit" disabled={busy}>
-              حفظ توزيع الخطة
+              {t("activationOps.alloc.save")}
             </button>
           </form>
           <table data-testid="activation-alloc-table">
             <thead>
               <tr>
-                <th>الخطة</th>
-                <th>الحد اليومي بالدينار</th>
-                <th>الحد اليومي بعدد المقالات</th>
-                <th>إجمالي قيمة المقال</th>
-                <th>حصة المستقل</th>
-                <th>حصة التدقيق</th>
-                <th>حصة المنصة</th>
-                <th>عدد المتقدمين المطلوب</th>
-                <th>تكرار الإنزال (يوم)</th>
-                <th>تفعيل التوزيع التلقائي</th>
+                <th>{t("activationOps.alloc.table.plan")}</th>
+                <th>{t("activationOps.alloc.table.dailyJod")}</th>
+                <th>{t("activationOps.alloc.table.dailyCount")}</th>
+                <th>{t("activationOps.alloc.table.totalValue")}</th>
+                <th>{t("activationOps.alloc.table.freelancerShare")}</th>
+                <th>{t("activationOps.alloc.table.reviewerShare")}</th>
+                <th>{t("activationOps.alloc.table.platformShare")}</th>
+                <th>{t("activationOps.alloc.table.minApplicants")}</th>
+                <th>{t("activationOps.alloc.table.intervalDays")}</th>
+                <th>{t("activationOps.alloc.table.autoAssign")}</th>
               </tr>
             </thead>
             <tbody>
@@ -622,7 +644,7 @@ export default function FreelancerActivationArticleOpsPanel({
                   <td>{a.companyShareJod}</td>
                   <td>{a.minimumBiddersPerArticle ?? "—"}</td>
                   <td>{a.releaseIntervalDays ?? 1}</td>
-                  <td>{a.autoAssignEnabled ? "نعم" : "لا"}</td>
+                  <td>{a.autoAssignEnabled ? t("common.yes") : t("common.no")}</td>
                 </tr>
               ))}
             </tbody>
@@ -632,10 +654,10 @@ export default function FreelancerActivationArticleOpsPanel({
 
       {tab === "inventory" ? (
         <div data-testid="activation-inventory-tab" className="grid gap-3 max-w-2xl">
-          <p className="oh-am-helper">ضع هنا المقالات الجاهزة ليتم إنزالها لاحقاً للمستقلين.</p>
+          <p className="oh-am-helper">{t("activationOps.inventory.helper")}</p>
           <form onSubmit={onCreateInventory} data-testid="activation-inventory-form" className="grid gap-2">
             <label>
-              إضافة مقال للمخزن
+              {t("activationOps.inventory.addLabel")}
               <input
                 required
                 value={invForm.title}
@@ -643,20 +665,20 @@ export default function FreelancerActivationArticleOpsPanel({
               />
             </label>
             <label>
-              الخطة المستهدفة
+              {t("activationOps.inventory.targetPlan")}
               <select
                 value={invForm.planTierCode}
                 onChange={(e) => setInvForm({ ...invForm, planTierCode: e.target.value })}
               >
                 {FREELANCER_ACTIVATION_PLAN_TIER_OPTIONS.map((o) => (
                   <option key={o.value} value={o.value}>
-                    {o.labelAr}
+                    {activationPlanTierLabel(t, o.value)}
                   </option>
                 ))}
               </select>
             </label>
             <label>
-              عدد المتقدمين المطلوب
+              {t("activationOps.alloc.minApplicants")}
               <input
                 type="number"
                 min={1}
@@ -671,7 +693,7 @@ export default function FreelancerActivationArticleOpsPanel({
               />
             </label>
             <label>
-              مدة ظهور المقال للمستقلين
+              {t("activationOps.inventory.visibility")}
               <input
                 type="number"
                 min={1}
@@ -685,27 +707,26 @@ export default function FreelancerActivationArticleOpsPanel({
                   })
                 }
               />
-              <span className="oh-am-helper">
-                إذا لم يحصل المقال على عدد العروض المطلوب خلال هذه المدة، يُغلق المقال
-                وتُعاد العروض للمستقلين ويعود المقال لجولة لاحقة.
-              </span>
+              <span className="oh-am-helper">{t("activationOps.inventory.visibilityHint")}</span>
             </label>
             {invError ? <p data-testid="activation-inventory-error">{invError}</p> : null}
             <button type="submit" disabled={busy}>
-              إضافة مقال للمخزن
+              {t("activationOps.inventory.addBtn")}
             </button>
           </form>
           <ul data-testid="activation-inventory-list">
             {inventory.map((item) => (
               <li key={item.id}>
-                {item.title} · {item.planTierCode} · {inventoryStatusAr(item.status)} · إنزال{" "}
-                {item.releasedCount}
+                {item.title} · {item.planTierCode} · {inventoryStatusLabel(item.status, t)} ·{" "}
+                {t("activationOps.inventory.releaseCount", { count: item.releasedCount })}
                 {item.visibilityDurationHours != null
-                  ? ` · ظهور ${item.visibilityDurationHours} ساعة`
+                  ? t("activationOps.inventory.visibilityHours", {
+                      hours: item.visibilityDurationHours,
+                    })
                   : ""}
                 {item.status === "draft" ? (
                   <button type="button" onClick={() => void onMarkReady(item.id)} disabled={busy}>
-                    جاهز للإنزال
+                    {t("activationOps.inventory.readyForRelease")}
                   </button>
                 ) : null}
                 {item.status === "ready" || item.status === "released" ? (
@@ -715,23 +736,23 @@ export default function FreelancerActivationArticleOpsPanel({
                     onClick={() => void onRelease(item.id)}
                     disabled={busy}
                   >
-                    إنزال مقال
+                    {t("activationOps.inventory.releaseArticle")}
                   </button>
                 ) : null}
               </li>
             ))}
           </ul>
           <p data-testid="activation-no-auto-assign-note">
-            ملاحظة: الإسناد التلقائي للفائز يُدار من تبويب المتابعة عند تفعيله للخطة.
+            {t("activationOps.inventory.noAutoAssignNote")}
           </p>
         </div>
       ) : null}
 
       {tab === "release" ? (
         <div data-testid="activation-release-tab" className="grid gap-3 max-w-3xl">
-          <p className="oh-am-helper">استخدم هذه الصفحة لإنزال مقالات من المخزن حسب التوزيع المحدد.</p>
+          <p className="oh-am-helper">{t("activationOps.release.helper")}</p>
           <label>
-            الخطة
+            {t("activationOps.release.plan")}
             <select
               data-testid="activation-release-tier"
               value={releaseTier}
@@ -742,29 +763,51 @@ export default function FreelancerActivationArticleOpsPanel({
             >
               {FREELANCER_ACTIVATION_PLAN_TIER_OPTIONS.map((o) => (
                 <option key={o.value} value={o.value}>
-                  {o.labelAr}
+                  {activationPlanTierLabel(t, o.value)}
                 </option>
               ))}
             </select>
           </label>
           <div data-testid="activation-release-stats" className="grid gap-1">
-            <p>الميزانية اليومية: {releaseStats.alloc?.dailyBudgetJod ?? "—"} JOD</p>
-            <p>الحد اليومي بعدد المقالات: {releaseStats.alloc?.maxDailyArticles ?? "—"}</p>
+            <p>
+              {t("activationOps.release.dailyBudget", {
+                amount: releaseStats.alloc?.dailyBudgetJod ?? "—",
+              })}
+            </p>
+            <p>
+              {t("activationOps.release.dailyCount", {
+                count: releaseStats.alloc?.maxDailyArticles ?? "—",
+              })}
+            </p>
             <p data-testid="activation-release-fund">
-              الرصيد المتاح في الصندوق: {fund?.currentBalanceJod ?? "0.000"} JOD
+              {t("activationOps.release.fundAvailable", {
+                amount: fund?.currentBalanceJod ?? "0.000",
+              })}
             </p>
-            <p data-testid="activation-release-ready-count">المخزون الجاهز: {releaseStats.ready}</p>
+            <p data-testid="activation-release-ready-count">
+              {t("activationOps.release.readyStock", { count: releaseStats.ready })}
+            </p>
             <p data-testid="activation-release-reusable-count">
-              المخزون القابل لإعادة التدوير: {releaseStats.reusable}
+              {t("activationOps.release.reusableStock", { count: releaseStats.reusable })}
             </p>
-            <p>إعادة التدوير مفعّلة: {releaseStats.alloc?.recycleWhenInventoryEmpty ? "نعم" : "لا"}</p>
+            <p>
+              {t("activationOps.release.recycleEnabled", {
+                value: releaseStats.alloc?.recycleWhenInventoryEmpty
+                  ? t("common.yes")
+                  : t("common.no"),
+              })}
+            </p>
             <p data-testid="activation-release-planned-count">
-              عدد المقالات المتوقع إنزالها:{" "}
-              {releaseStats.plannedCount != null ? releaseStats.plannedCount : "—"}
+              {t("activationOps.release.plannedRelease", {
+                count:
+                  releaseStats.plannedCount != null ? releaseStats.plannedCount : "—",
+              })}
             </p>
             {releaseStats.capacity ? (
               <p data-testid="activation-release-already-today">
-                تم إنزال اليوم: {releaseStats.capacity.alreadyReleasedToday ?? 0}
+                {t("activationOps.release.releasedToday", {
+                  count: releaseStats.capacity.alreadyReleasedToday ?? 0,
+                })}
               </p>
             ) : null}
           </div>
@@ -775,7 +818,7 @@ export default function FreelancerActivationArticleOpsPanel({
               onClick={() => void onPreviewRelease()}
               disabled={busy}
             >
-              معاينة الإنزال
+              {t("activationOps.release.preview")}
             </button>
             <button
               type="button"
@@ -783,90 +826,109 @@ export default function FreelancerActivationArticleOpsPanel({
               onClick={() => void onRunRelease()}
               disabled={busy}
             >
-              تشغيل الإنزال الآن
+              {t("activationOps.release.runNow")}
             </button>
           </div>
           {releaseError ? <p data-testid="activation-release-error">{releaseError}</p> : null}
           {releasePreview ? (
             <div data-testid="activation-release-preview-json" className="oh-am-advanced">
               <p>
-                المتوقع: {releasePreview.plannedCount ?? "—"} مقال · قيمة{" "}
-                {releasePreview.plannedValueJod ?? "—"} JOD · رصيد الصندوق{" "}
-                {releasePreview.fundBalanceJod ?? "—"} JOD
+                {t("activationOps.release.expected", {
+                  count: releasePreview.plannedCount ?? "—",
+                  value: releasePreview.plannedValueJod ?? "—",
+                  balance: releasePreview.fundBalanceJod ?? "—",
+                })}
               </p>
             </div>
           ) : null}
           <div data-testid="activation-release-runs">
-            <h3>آخر عمليات الإنزال</h3>
+            <h3>{t("activationOps.release.recentRuns")}</h3>
             <ul>
               {releaseRuns.map((r) => (
                 <li key={r.id} data-testid={`activation-release-run-${r.id}`}>
-                  {r.runDate} · {releaseModeAr(r.runType)} · {r.status} · {r.releasedCount} مقال ·{" "}
+                  {r.runDate} · {releaseModeLabel(r.runType, t)} · {r.status} ·{" "}
+                  {t("activationOps.release.articleCount", { count: r.releasedCount })} ·{" "}
                   {r.totalReservedValueJod} JOD
                 </li>
               ))}
             </ul>
           </div>
           <p data-testid="activation-release-no-auto-assign">
-            الإنزال من هذا التبويب لا يختار فائزًا تلقائيًا — استخدم المتابعة عند الحاجة.
+            {t("activationOps.release.noAutoAssign")}
           </p>
         </div>
       ) : null}
 
       {tab === "monitor" ? (
         <div data-testid="activation-monitor-tab" className="grid gap-3">
-          <p className="oh-am-helper">تابع المقالات التي ظهرت للمستقلين وحالة التقديم والتوزيع.</p>
+          <p className="oh-am-helper">{t("activationOps.monitor.helper")}</p>
           <div data-testid="activation-monitor-summary" className="flex flex-wrap gap-3 text-sm">
-            <span>المقالات المنزلة: {liveSummary?.totalReleased ?? 0}</span>
-            <span>بانتظار المتقدمين: {liveSummary?.waitingForBidders ?? 0}</span>
-            <span>جاهزة للتوزيع: {liveSummary?.readyForAssignment ?? 0}</span>
-            <span>تم إسنادها تلقائيًا: {liveSummary?.autoAssigned ?? 0}</span>
-            <span>قيد التنفيذ: {liveSummary?.submitted ?? 0}</span>
-            <span>تحت المراجعة: {liveSummary?.underReview ?? 0}</span>
-            <span>مقبولة: {liveSummary?.accepted ?? 0}</span>
-            <span>منشورة على Bildazo: {liveSummary?.published ?? 0}</span>
+            <span>
+              {t("activationOps.monitor.summary.released")}: {liveSummary?.totalReleased ?? 0}
+            </span>
+            <span>
+              {t("activationOps.monitor.summary.waiting")}: {liveSummary?.waitingForBidders ?? 0}
+            </span>
+            <span>
+              {t("activationOps.monitor.summary.ready")}: {liveSummary?.readyForAssignment ?? 0}
+            </span>
+            <span>
+              {t("activationOps.monitor.summary.autoAssigned")}: {liveSummary?.autoAssigned ?? 0}
+            </span>
+            <span>
+              {t("activationOps.monitor.summary.inProgress")}: {liveSummary?.submitted ?? 0}
+            </span>
+            <span>
+              {t("activationOps.monitor.summary.underReview")}: {liveSummary?.underReview ?? 0}
+            </span>
+            <span>
+              {t("activationOps.monitor.summary.accepted")}: {liveSummary?.accepted ?? 0}
+            </span>
+            <span>
+              {t("activationOps.monitor.summary.publishedBildazo")}: {liveSummary?.published ?? 0}
+            </span>
           </div>
 
           <div data-testid="activation-monitor-filters" className="flex flex-wrap gap-2 items-end">
             <label>
-              الخطة
+              {t("common.plan")}
               <select
                 value={liveFilter.planTierCode}
                 onChange={(e) => setLiveFilter({ ...liveFilter, planTierCode: e.target.value })}
               >
-                <option value="">الكل</option>
+                <option value="">{t("common.all")}</option>
                 {FREELANCER_ACTIVATION_PLAN_TIER_OPTIONS.map((o) => (
                   <option key={o.value} value={o.value}>
-                    {o.labelAr}
+                    {activationPlanTierLabel(t, o.value)}
                   </option>
                 ))}
               </select>
             </label>
             <label>
-              حالة الإسناد
+              {t("activationOps.monitor.assignFilter")}
               <select
                 value={liveFilter.autoAssignStatus}
                 onChange={(e) => setLiveFilter({ ...liveFilter, autoAssignStatus: e.target.value })}
               >
-                <option value="">الكل</option>
-                <option value="disabled">معطّل</option>
-                <option value="waiting_for_bidders">بانتظار المتقدمين</option>
-                <option value="ready">جاهز للتوزيع</option>
-                <option value="completed">تم الإسناد تلقائيًا</option>
-                <option value="skipped">متخطى</option>
-                <option value="failed">فشل</option>
+                <option value="">{t("common.all")}</option>
+                <option value="disabled">{t("activationOps.monitor.disabled")}</option>
+                <option value="waiting_for_bidders">{t("activationOps.monitor.waiting")}</option>
+                <option value="ready">{t("activationOps.monitor.readyAssign")}</option>
+                <option value="completed">{t("activationOps.monitor.completed")}</option>
+                <option value="skipped">{t("activationOps.monitor.filterSkipped")}</option>
+                <option value="failed">{t("activationOps.monitor.filterFailed")}</option>
               </select>
             </label>
             <label>
-              بحث
+              {t("common.search")}
               <input
                 value={liveFilter.search}
                 onChange={(e) => setLiveFilter({ ...liveFilter, search: e.target.value })}
-                placeholder="عنوان المقال"
+                placeholder={t("activationOps.monitor.searchPlaceholder")}
               />
             </label>
             <button type="button" disabled={busy} onClick={() => void load()}>
-              تحديث
+              {t("activationOps.monitor.refresh")}
             </button>
           </div>
 
@@ -883,41 +945,37 @@ export default function FreelancerActivationArticleOpsPanel({
                 <div className="font-bold">{item.title}</div>
                 <div className="text-sm opacity-80">
                   {item.campaignName || item.campaignId} · {item.waveName || "—"} ·{" "}
-                  {item.planTierCode || "—"} · قيمة {item.totalArticleValueJod ?? "—"} JOD
+                  {item.planTierCode || "—"} ·{" "}
+                  {t("activationOps.monitor.value", {
+                    amount: item.totalArticleValueJod ?? "—",
+                  })}
                 </div>
                 <div data-testid="activation-monitor-applicants" className="text-sm">
-                  عدد المتقدمين: {item.currentApplicationsCount} / العدد المطلوب: {item.requiredBidders}
+                  {t("activationOps.monitor.applicants", {
+                    current: item.currentApplicationsCount,
+                    required: item.requiredBidders,
+                  })}
                 </div>
                 <div data-testid="activation-monitor-auto-status" className="text-sm">
-                  الإسناد:{" "}
-                  {item.autoAssignStatus === "waiting_for_bidders"
-                    ? "بانتظار المتقدمين"
-                    : item.autoAssignStatus === "ready"
-                      ? "جاهز للتوزيع"
-                      : item.autoAssignStatus === "completed" || item.selectedBySystem
-                        ? "تم الإسناد تلقائيًا"
-                        : item.autoAssignStatus === "skipped"
-                          ? `متخطى (${item.lastAutoAssignmentSkipReason || "—"})`
-                          : item.autoAssignStatus === "failed"
-                            ? `فشل (${item.lastAutoAssignmentErrorCode || "—"})`
-                            : item.autoAssignStatus || "—"}
+                  {t("activationOps.monitor.assignStatus")}: {liveAutoAssignStatusLabel(item, t)}
                 </div>
                 <div className="text-sm">
-                  المختار: {item.selectedFreelancerDisplayName || "—"} · مراجعة:{" "}
-                  {item.reviewStatus || "—"} · نشر Bildazo: {item.bildazoPublishStatus || "—"}
+                  {t("activationOps.monitor.selected")}: {item.selectedFreelancerDisplayName || "—"} ·{" "}
+                  {t("activationOps.monitor.review")}: {item.reviewStatus || "—"} ·{" "}
+                  {t("activationOps.monitor.bildazoPublish")}: {item.bildazoPublishStatus || "—"}
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <a
                     data-testid="activation-monitor-open-article"
                     href={articleDetailHref(item.articleId)}
                   >
-                    فتح التفاصيل
+                    {t("activationOps.monitor.openDetails")}
                   </a>
                   <a
                     data-testid="activation-monitor-view-apps"
                     href={articleDetailHref(item.articleId)}
                   >
-                    عرض المتقدمين
+                    {t("activationOps.monitor.viewApplicants")}
                   </a>
                   {item.actions?.canRunAutoAssignment ? (
                     <button
@@ -926,7 +984,7 @@ export default function FreelancerActivationArticleOpsPanel({
                       disabled={busy}
                       onClick={() => void onLiveRunAutoAssign(item.articleId)}
                     >
-                      تشغيل التوزيع الآن
+                      {t("activationOps.monitor.runAssign")}
                     </button>
                   ) : null}
                   {item.actions?.canReleaseAnotherFromInventory ? (
@@ -936,7 +994,7 @@ export default function FreelancerActivationArticleOpsPanel({
                       disabled={busy}
                       onClick={() => void onLiveReleaseAnother(item.articleId)}
                     >
-                      إنزال آخر من المخزن
+                      {t("activationOps.monitor.releaseAnother")}
                     </button>
                   ) : null}
                 </div>
@@ -944,10 +1002,10 @@ export default function FreelancerActivationArticleOpsPanel({
             ))}
           </ul>
           {!liveItems.length ? (
-            <p data-testid="activation-monitor-empty">لا توجد مقالات منزلة ضمن الفلاتر الحالية.</p>
+            <p data-testid="activation-monitor-empty">{t("activationOps.monitor.empty")}</p>
           ) : null}
           <p data-testid="activation-monitor-privacy-note" className="text-xs opacity-70">
-            هذه المتابعة للمشرف فقط — لا تُعرض للمستقلين أوزان أو أرصدة الصندوق أو إجراءات الإدارة.
+            {t("activationOps.monitor.privacy")}
           </p>
         </div>
       ) : null}

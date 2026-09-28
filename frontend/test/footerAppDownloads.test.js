@@ -202,12 +202,18 @@ describe("edit-website footer hub cards", () => {
     const ids = SUPER_ADMIN_WEBSITE_SECTIONS.map((s) => s.id);
     assert.ok(ids.includes("footer"));
     assert.equal(ids.includes("footer-app-downloads"), false);
-    assert.equal(SUPER_ADMIN_WEBSITE_SECTIONS.find((s) => s.id === "footer")?.title, "تعديل تذييل الموقع");
+    assert.equal(
+      SUPER_ADMIN_WEBSITE_SECTIONS.find((s) => s.id === "footer")?.titleKey,
+      "siteEditor.sections.footerHub.title",
+    );
   });
 
   it("footer editor exposes four subsections including contact center", () => {
     const ids = SUPER_ADMIN_FOOTER_SECTIONS.map((s) => s.id);
     assert.deepEqual(ids, ["contact", "working-hours", "app-downloads", "contact-center"]);
-    assert.equal(SUPER_ADMIN_FOOTER_SECTIONS.find((s) => s.id === "contact-center")?.title, "مركز التواصل");
+    assert.equal(
+      SUPER_ADMIN_FOOTER_SECTIONS.find((s) => s.id === "contact-center")?.titleKey,
+      "siteEditor.footerSections.contactCenter.title",
+    );
   });
 });

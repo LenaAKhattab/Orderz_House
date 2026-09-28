@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import usePublicSitePage from "../hooks/usePublicSitePage";
+import { useTranslation } from "../i18n/LanguageProvider";
 import "../styles/publicSitePage.css";
 
 function renderContentBlock(block, index) {
@@ -17,12 +18,14 @@ function renderContentBlock(block, index) {
  * @param {{ slug: string }} props
  */
 export default function PublicSitePage({ slug }) {
+  const { t } = useTranslation();
+  const ps = "home.publicSite";
   const { page, loading, unavailable, error } = usePublicSitePage(slug);
 
   if (loading) {
     return (
       <main className="container public-site-page__state" aria-busy="true">
-        <p>جاري تحميل الصفحة…</p>
+        <p>{t(`${ps}.loading`)}</p>
       </main>
     );
   }
@@ -30,10 +33,10 @@ export default function PublicSitePage({ slug }) {
   if (unavailable) {
     return (
       <main className="container public-site-page__state">
-        <h1>الصفحة غير متاحة</h1>
-        <p>قد تكون هذه الصفحة غير منشورة أو الرابط غير صحيح.</p>
+        <h1>{t(`${ps}.unavailableTitle`)}</h1>
+        <p>{t(`${ps}.unavailableText`)}</p>
         <Link to="/" className="btn btn-primary">
-          العودة للرئيسية
+          {t("common.actions.backHome")}
         </Link>
       </main>
     );
@@ -42,10 +45,10 @@ export default function PublicSitePage({ slug }) {
   if (error) {
     return (
       <main className="container public-site-page__state">
-        <h1>تعذر تحميل الصفحة</h1>
+        <h1>{t(`${ps}.loadFailedTitle`)}</h1>
         <p>{error}</p>
         <Link to="/" className="btn btn-primary">
-          العودة للرئيسية
+          {t("common.actions.backHome")}
         </Link>
       </main>
     );
@@ -56,7 +59,7 @@ export default function PublicSitePage({ slug }) {
   return (
     <main className="container page-content public-site-page">
       <section className="card legal-card public-site-page__card">
-        <h1 className="public-site-page__title">{page?.title || "صفحة عامة"}</h1>
+        <h1 className="public-site-page__title">{page?.title || t(`${ps}.fallbackTitle`)}</h1>
         <div className="public-site-page__content">
           {blocks.map((block, index) => renderContentBlock(block, index))}
         </div>

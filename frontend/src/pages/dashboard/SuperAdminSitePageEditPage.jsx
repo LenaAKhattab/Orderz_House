@@ -9,13 +9,11 @@ import DashboardErrorState from "../../components/dashboard/DashboardErrorState"
 import { editWebsiteBreadcrumbs } from "../../components/dashboard/dashboardBreadcrumbs";
 import { EDIT_WEBSITE_BASE } from "../../constants/superAdminWebsiteSections";
 import { getPublicSitePagePath } from "../../constants/publicSitePages";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/siteEditorResources";
 import { getSuperAdminSitePageRequest, updateSuperAdminSitePageRequest } from "../../services/api";
 import { useToast } from "../../components/ui/toastContext";
 import "./superAdminSitePages.css";
-
-function errorMessage(err) {
-  return err?.response?.data?.message || "تعذر تنفيذ العملية. حاول مجدداً.";
-}
 
 function FormField({ label, hint, children, className = "" }) {
   return (
@@ -27,19 +25,20 @@ function FormField({ label, hint, children, className = "" }) {
   );
 }
 
-function ToggleField({ label, checked, onChange, disabled }) {
+function ToggleField({ label, checked, onChange, disabled, onLabel, offLabel }) {
   return (
     <label className="oh-site-page-form__field oh-site-page-form__field--toggle">
       <span className="oh-site-page-form__label">{label}</span>
       <span className="oh-site-page-form__toggle">
         <input type="checkbox" checked={checked} onChange={onChange} disabled={disabled} />
-        <span>{checked ? "مفعّل" : "غير مفعّل"}</span>
+        <span>{checked ? onLabel : offLabel}</span>
       </span>
     </label>
   );
 }
 
 export default function SuperAdminSitePageEditPage() {
+  const { t } = useTranslation();
   const { id } = useParams();
   const { showToast } = useToast();
   const [loading, setLoading] = useState(true);
@@ -55,6 +54,11 @@ export default function SuperAdminSitePageEditPage() {
   const [showInMobileMenu, setShowInMobileMenu] = useState(true);
   const [showInFooter, setShowInFooter] = useState(true);
   const [sortOrder, setSortOrder] = useState(0);
+
+  const operationError = useCallback(
+    (err) => err?.response?.data?.message || t("siteEditor.errors.operationFailed"),
+    [t],
+  );
 
   const applyPage = useCallback((next) => {
     setPage(next);
@@ -76,12 +80,12 @@ export default function SuperAdminSitePageEditPage() {
       const res = await getSuperAdminSitePageRequest(id);
       applyPage(res?.data?.page || null);
     } catch (err) {
-      setError(errorMessage(err));
+      setError(operationError(err));
       setPage(null);
     } finally {
       setLoading(false);
     }
-  }, [applyPage, id]);
+  }, [applyPage, id, operationError]);
 
   useEffect(() => {
     loadPage();
@@ -104,35 +108,36 @@ export default function SuperAdminSitePageEditPage() {
         sortOrder: Number(sortOrder) || 0,
       });
       applyPage(res?.data?.page || null);
-      showToast({ type: "success", message: "تم حفظ الصفحة." });
+      showToast({ type: "success", message: t("siteEditor.sitePageEdit.toastSaved") });
     } catch (err) {
-      setError(errorMessage(err));
+      setError(operationError(err));
     } finally {
       setSaving(false);
     }
   };
 
+  const editFallback = t("siteEditor.sitePageEdit.editPageFallback");
   const breadcrumbs = [
     ...editWebsiteBreadcrumbs("dashboard.breadcrumbs.websitePages").slice(0, -1),
-    { label: page?.title || "تعديل الصفحة" },
+    { label: page?.title || editFallback },
   ];
 
   return (
     <DashboardShell>
       <DashboardPageHeader
-        title={page?.title || "تعديل الصفحة"}
-        description="عدّل محتوى الصفحة وإعدادات ظهورها في الفوتر وقائمة الهاتف."
+        title={page?.title || editFallback}
+        description={t("siteEditor.sitePageEdit.pageDescription")}
         breadcrumbs={breadcrumbs}
       />
 
-      <DashboardSection title="محتوى الصفحة">
-        {loading ? <DashboardLoadingState label="جاري تحميل الصفحة…" /> : null}
+      <DashboardSection title={t("siteEditor.sitePageEdit.sectionTitle")}>
+        {loading ? <DashboardLoadingState label={t("siteEditor.common.loadingPage")} /> : null}
         {!loading && error && !page ? (
           <DashboardErrorState
             message={error}
             actions={
               <Button type="button" variant="secondary" onClick={loadPage}>
-                إعادة المحاولة
+                {t("siteEditor.common.retry")}
               </Button>
             }
           />
@@ -143,7 +148,7 @@ export default function SuperAdminSitePageEditPage() {
             <div className="oh-site-page-form__card">
               {page.slug ? (
                 <p className="oh-site-page-form__path-hint">
-                  رابط الصفحة:{" "}
+                  {t("siteEditor.sitePageEdit.pagePathLabel")}{" "}
                   <span className="oh-site-page-form__path-value" dir="ltr">
                     {getPublicSitePagePath(page.slug)}
                   </span>
@@ -151,10 +156,10 @@ export default function SuperAdminSitePageEditPage() {
               ) : null}
 
               <div className="oh-site-page-form__grid oh-site-page-form__grid--2">
-                <FormField label="عنوان الصفحة">
+                <FormField label={t("siteEditor.sitePageEdit.pageTitle")}>
                   <input value={title} onChange={(e) => setTitle(e.target.value)} disabled={saving} required />
                 </FormField>
-                <FormField label="اسم الرابط في القائمة">
+                <FormField label={t("siteEditor.sitePageEdit.menuLabel")}>
                   <input
                     value={menuLabel}
                     onChange={(e) => setMenuLabel(e.target.value)}
@@ -165,7 +170,7 @@ export default function SuperAdminSitePageEditPage() {
               </div>
 
               <div className="oh-site-page-form__grid oh-site-page-form__grid--2">
-                <FormField label="ترتيب الظهور">
+                <FormField label={t("siteEditor.sitePageEdit.sortOrder")}>
                   <input
                     type="number"
                     min="0"
@@ -176,31 +181,37 @@ export default function SuperAdminSitePageEditPage() {
                   />
                 </FormField>
                 <ToggleField
-                  label="منشورة"
+                  label={t("siteEditor.sitePageEdit.publishedToggle")}
                   checked={isPublished}
                   onChange={(e) => setIsPublished(e.target.checked)}
                   disabled={saving}
+                  onLabel={t("siteEditor.common.enabled")}
+                  offLabel={t("siteEditor.common.disabled")}
                 />
               </div>
 
               <div className="oh-site-page-form__grid oh-site-page-form__grid--2">
                 <ToggleField
-                  label="إظهار في قائمة الهاتف"
+                  label={t("siteEditor.sitePageEdit.showMobile")}
                   checked={showInMobileMenu}
                   onChange={(e) => setShowInMobileMenu(e.target.checked)}
                   disabled={saving}
+                  onLabel={t("siteEditor.common.enabled")}
+                  offLabel={t("siteEditor.common.disabled")}
                 />
                 <ToggleField
-                  label="إظهار في الفوتر"
+                  label={t("siteEditor.sitePageEdit.showFooter")}
                   checked={showInFooter}
                   onChange={(e) => setShowInFooter(e.target.checked)}
                   disabled={saving}
+                  onLabel={t("siteEditor.common.enabled")}
+                  offLabel={t("siteEditor.common.disabled")}
                 />
               </div>
 
               <FormField
-                label="المحتوى"
-                hint="اكتب النص بشكل عادي. افصل الفقرات بسطر فارغ. استخدم ## قبل العنوان الفرعي."
+                label={t("siteEditor.sitePageEdit.contentLabel")}
+                hint={t("siteEditor.sitePageEdit.contentHint")}
                 className="oh-site-page-form__field--full"
               >
                 <textarea
@@ -212,16 +223,16 @@ export default function SuperAdminSitePageEditPage() {
               </FormField>
 
               <details className="oh-site-page-form__seo">
-                <summary className="oh-site-page-form__seo-summary">إعدادات SEO اختيارية</summary>
+                <summary className="oh-site-page-form__seo-summary">{t("siteEditor.sitePageEdit.seoOptional")}</summary>
                 <div className="oh-site-page-form__seo-body">
-                  <FormField label="عنوان SEO (اختياري)">
+                  <FormField label={t("siteEditor.sitePageEdit.metaTitle")}>
                     <input
                       value={metaTitle}
                       onChange={(e) => setMetaTitle(e.target.value)}
                       disabled={saving}
                     />
                   </FormField>
-                  <FormField label="وصف SEO (اختياري)">
+                  <FormField label={t("siteEditor.sitePageEdit.metaDescription")}>
                     <textarea
                       className="oh-site-page-form__seo-desc"
                       value={metaDescription}
@@ -237,10 +248,10 @@ export default function SuperAdminSitePageEditPage() {
 
               <div className="oh-site-page-form__actions">
                 <Button type="submit" disabled={saving}>
-                  {saving ? "جاري الحفظ…" : "حفظ التعديلات"}
+                  {saving ? t("siteEditor.common.saving") : t("siteEditor.common.saveChanges")}
                 </Button>
                 <Link to={`${EDIT_WEBSITE_BASE}/pages`} className="btn btn-secondary">
-                  العودة للقائمة
+                  {t("siteEditor.sitePageEdit.backToList")}
                 </Link>
               </div>
             </div>

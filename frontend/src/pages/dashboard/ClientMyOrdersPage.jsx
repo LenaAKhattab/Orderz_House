@@ -22,6 +22,8 @@ import {
 } from "../../utils/clientMyOrdersPaymentReturn";
 import { orderHasAssignment } from "../../utils/orderPrivacyUi";
 import { trackEvent } from "../../services/analytics";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/clientAreaResources";
 import "../../styles/dashboardHub.css";
 import "./freelancerMyOrders.css";
 
@@ -41,19 +43,15 @@ function StatSegment({ tone, label, value, loading }) {
 
 export default function ClientMyOrdersPage() {
   const { push } = useToast();
+  const { t, locale } = useTranslation();
+  const m = "clientArea.myOrders";
+  const isArabicUi = locale === "ar";
   const location = useLocation();
   const navigate = useNavigate();
   const { openModal: openCreateOrder } = useClientCreateOrderModal();
   const [orders, setOrders] = useState([]);
   const [busy, setBusy] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-
-  const isArabicUi = useMemo(() => {
-    if (typeof document === "undefined") return true;
-    const lang = String(document.documentElement?.lang || "").toLowerCase();
-    const dir = String(document.documentElement?.dir || "").toLowerCase();
-    return lang.startsWith("ar") || dir === "rtl";
-  }, []);
 
   const load = useCallback(async () => {
     const res = await listClientMyOrdersRequest({ limit: 50, offset: 0 });
@@ -72,9 +70,9 @@ export default function ClientMyOrdersPage() {
           const status = e?.response?.status;
           const msg =
             status === 403
-              ? "لا صلاحية لعرض طلبات العميل (تحقق من ربط الأدوار في الحساب). إن استمرّت المشكلة، أعد تسجيل الدخول."
+              ? t(`${m}.loadForbidden`)
               : e?.response?.data?.message || e?.message;
-          push({ type: "error", title: "تعذر تحميل طلباتك", message: msg });
+          push({ type: "error", title: t(`${m}.loadErrorTitle`), message: msg });
         }
       } finally {
         if (!cancelled) setBusy(false);
@@ -83,7 +81,7 @@ export default function ClientMyOrdersPage() {
     return () => {
       cancelled = true;
     };
-  }, [load, push]);
+  }, [load, push, t]);
 
   const loadSilent = useCallback(async () => {
     try {
@@ -112,19 +110,15 @@ export default function ClientMyOrdersPage() {
             });
             push({
               type: "success",
-              title: isArabicUi ? "تم الدفع بنجاح" : "Payment successful",
-              message: isArabicUi
-                ? "تم تأكيد دفع العرض وربطه بالطلب."
-                : "Bid payment was confirmed successfully.",
+              title: t(`${m}.paymentSuccessTitle`),
+              message: t(`${m}.paymentSuccessBid`),
             });
           } else if (orderId) {
             await confirmClientFixedOrderPaidRequest(orderId);
             push({
               type: "success",
-              title: isArabicUi ? "تم الدفع بنجاح" : "Payment successful",
-              message: isArabicUi
-                ? "تم إنشاء/تفعيل الطلب وإتاحته بحسب نوعه."
-                : "Your order was activated according to its type.",
+              title: t(`${m}.paymentSuccessTitle`),
+              message: t(`${m}.paymentSuccessFixed`),
             });
           }
         } catch (e) {
@@ -164,11 +158,11 @@ export default function ClientMyOrdersPage() {
         navigate(location.pathname, { replace: true });
       })();
     }
-  }, [isArabicUi, location.pathname, location.search, loadSilent, navigate, push]);
+  }, [isArabicUi, location.pathname, location.search, loadSilent, navigate, push, t]);
 
   useEffect(() => {
     if (busy) return undefined;
-    const t = setInterval(() => {
+    const timer = setInterval(() => {
       void loadSilent();
     }, 20_000);
     const onVis = () => {
@@ -176,7 +170,7 @@ export default function ClientMyOrdersPage() {
     };
     document.addEventListener("visibilitychange", onVis);
     return () => {
-      clearInterval(t);
+      clearInterval(timer);
       document.removeEventListener("visibilitychange", onVis);
     };
   }, [busy, loadSilent]);
@@ -189,9 +183,9 @@ export default function ClientMyOrdersPage() {
       const status = e?.response?.status;
       const msg =
         status === 403
-          ? "لا صلاحية لتحديث القائمة. تحقق من أن حسابك مسجّل كعميل أو أعد تسجيل الدخول."
+          ? t(`${m}.refreshForbidden`)
           : e?.response?.data?.message || e?.message;
-      push({ type: "error", title: "تعذر التحديث", message: msg });
+      push({ type: "error", title: t(`${m}.refreshErrorTitle`), message: msg });
     } finally {
       setRefreshing(false);
     }
@@ -214,16 +208,14 @@ export default function ClientMyOrdersPage() {
     <DashboardHubPage className="fdash-page--my-orders">
       <header className="fmo-surface fmo-header">
         <div className="fmo-header__copy">
-          <h1 className="fmo-header__title">طلباتي</h1>
-          <p className="fmo-header__subtitle">
-            تتبّع طلباتك، حالة الدفع، واستقبال العروض للمزايدة، ثم اختيار العرض والدفع لبدء التنفيذ.
-          </p>
+          <h1 className="fmo-header__title">{t(`${m}.title`)}</h1>
+          <p className="fmo-header__subtitle">{t(`${m}.subtitle`)}</p>
           <div className="fmo-header__actions">
             <button type="button" className="fmo-empty__cta" style={{ border: "none", cursor: "pointer" }} onClick={() => openCreateOrder()}>
-              + طلب جديد
+              {t(`${m}.newOrder`)}
             </button>
             <Link className="fmo-toolbar__refresh fmo-toolbar__refresh--label" to="/dashboard/freelancer/orders">
-              استكشاف المعرض
+              {t(`${m}.exploreMarketplace`)}
             </Link>
           </div>
         </div>
@@ -234,30 +226,30 @@ export default function ClientMyOrdersPage() {
         </div>
       </header>
 
-      <div className="fmo-surface fmo-stats-bar" aria-label="ملخص الطلبات">
-        <StatSegment tone="slate" label="إجمالي الطلبات" value={stats.total} loading={busy} />
-        <StatSegment tone="amber" label="في المعرض" value={stats.inPool} loading={busy} />
-        <StatSegment tone="green" label="مُسندة" value={stats.assigned} loading={busy} />
+      <div className="fmo-surface fmo-stats-bar" aria-label={t(`${m}.statsAria`)}>
+        <StatSegment tone="slate" label={t(`${m}.statsTotal`)} value={stats.total} loading={busy} />
+        <StatSegment tone="amber" label={t(`${m}.statsInPool`)} value={stats.inPool} loading={busy} />
+        <StatSegment tone="green" label={t(`${m}.statsAssigned`)} value={stats.assigned} loading={busy} />
       </div>
 
       <div className="fmo-surface fmo-toolbar">
-        <p className="fmo-toolbar__hint">القائمة مرتبة من الأحدث إلى الأقدم. يمكنك التحديث دورياً لمزامنة الحالة.</p>
+        <p className="fmo-toolbar__hint">{t(`${m}.toolbarHint`)}</p>
         <div className="fmo-toolbar__actions">
           <button
             type="button"
             className={`fmo-toolbar__refresh fmo-toolbar__refresh--label${refreshing || busy ? " is-spinning" : ""}`}
             onClick={onRefresh}
             disabled={refreshing || busy}
-            aria-label="تحديث القائمة"
-            title="تحديث القائمة"
+            aria-label={t(`${m}.refreshList`)}
+            title={t(`${m}.refreshList`)}
           >
             <RefreshCw size={17} strokeWidth={2.2} aria-hidden />
-            <span className="fmo-toolbar__refresh-label">تحديث القائمة</span>
+            <span className="fmo-toolbar__refresh-label">{t(`${m}.refreshList`)}</span>
           </button>
         </div>
       </div>
 
-      <section className="fmo-surface fmo-content fmo-content--client-cards" aria-busy={busy} aria-label="قائمة الطلبات">
+      <section className="fmo-surface fmo-content fmo-content--client-cards" aria-busy={busy} aria-label={t(`${m}.ordersListAria`)}>
         {busy ? (
           <OrderCardsGridSkeleton count={3} />
         ) : orders.length === 0 ? (
@@ -265,14 +257,14 @@ export default function ClientMyOrdersPage() {
             <span className="fmo-empty__icon-chip" aria-hidden>
               <Inbox size={36} strokeWidth={1.6} />
             </span>
-            <h3 className="fmo-empty__title">لا توجد طلبات بعد</h3>
-            <p className="fmo-empty__sub">أنشئ أول طلب ليظهر هنا مع حالته وتفاصيله.</p>
+            <h3 className="fmo-empty__title">{t(`${m}.emptyTitle`)}</h3>
+            <p className="fmo-empty__sub">{t(`${m}.emptySub`)}</p>
             <div className="fmo-empty__actions">
               <button type="button" className="fmo-empty__cta" onClick={() => openCreateOrder()}>
-                إنشاء طلب
+                {t(`${m}.createOrder`)}
               </button>
               <Link className="fmo-empty__cta fmo-empty__cta--muted" to="/dashboard/freelancer/orders">
-                تصفّح المعرض
+                {t(`${m}.browseMarketplace`)}
               </Link>
             </div>
           </div>

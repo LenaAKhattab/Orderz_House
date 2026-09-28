@@ -5,37 +5,44 @@
  */
 
 export const SCOPE_LABELS = {
-  platform_total: "إجمالي المنصة",
-  current_status: "الوضع الحالي",
-  this_month: "هذا الشهر",
-  month_compare: "مقارنة شهرية",
-  realtime: "تحديث مباشر",
-  today: "اليوم",
-  last_7_days: "آخر 7 أيام",
-  last_30_days: "آخر 30 يوماً",
-  estimate_month: "تقدير لهذا الشهر",
-  lifetime_ranking: "ترتيب تاريخي",
-  activity_analytics: "من بيانات النشاط",
+  platform_total: "analysis.scope.platformTotal",
+  current_status: "analysis.scope.currentStatus",
+  this_month: "analysis.scope.thisMonth",
+  month_compare: "analysis.scope.monthCompare",
+  realtime: "analysis.scope.realtime",
+  today: "analysis.scope.today",
+  last_7_days: "analysis.scope.last7Days",
+  last_30_days: "analysis.scope.last30Days",
+  estimate_month: "analysis.scope.estimateMonth",
+  lifetime_ranking: "analysis.scope.lifetimeRanking",
+  activity_analytics: "analysis.scope.activityAnalytics",
 };
 
 export const INSIGHT_SOURCES = {
-  orders: "من بيانات الطلبات",
-  subscriptions: "من بيانات الاشتراكات",
-  financial: "من بيانات المطالبات",
-  freelancers: "من بيانات المستقلين",
-  categories: "من بيانات الفئات",
-  courses: "من بيانات الدورات",
-  growth: "من مؤشرات النمو",
-  quality: "من بيانات الطلبات",
-  supply: "من بيانات العرض والطلب",
-  ops: "من بيانات التشغيل",
-  risk: "من بيانات المخاطر",
-  meta: "من بيانات النشاط",
+  orders: "analysis.insightSource.orders",
+  subscriptions: "analysis.insightSource.subscriptions",
+  financial: "analysis.insightSource.financial",
+  freelancers: "analysis.insightSource.freelancers",
+  categories: "analysis.insightSource.categories",
+  courses: "analysis.insightSource.courses",
+  growth: "analysis.insightSource.growth",
+  quality: "analysis.insightSource.quality",
+  supply: "analysis.insightSource.supply",
+  ops: "analysis.insightSource.ops",
+  risk: "analysis.insightSource.risk",
+  meta: "analysis.insightSource.meta",
 };
 
+/** @param {(key: string, params?: Record<string, unknown>) => string} t */
+export function resolveAnalysisScopeLabel(t, scope) {
+  if (!scope) return undefined;
+  if (typeof scope === "string" && scope.startsWith("analysis.")) return t(scope);
+  return scope;
+}
+
 export function periodScopeLabel(period) {
-  if (!period?.label) return SCOPE_LABELS.last_7_days;
-  return period.label;
+  if (period?.labelKey) return period.labelKey;
+  return "analysis.range.7d";
 }
 
 export function periodBannerText(period) {
@@ -117,22 +124,38 @@ export function ordersMetricScope(key, period) {
 
 export function chartMetaForKey(key, periodLabel) {
   const meta = {
-    orders: { title: "عدد الطلبات", unit: "طلب", scope: "آخر 30 يوماً (يومي)" },
-    subscriptions: { title: "عدد الاشتراكات", unit: "اشتراك", scope: "شهري — تاريخي" },
-    financial: { title: "المطالبات المالية", unit: "د.أ", scope: "شهري — تاريخي" },
-    courses: { title: "تسجيلات الدورات", unit: "تسجيل", scope: "شهري — تاريخي" },
-    revenue: { title: "الإيرادات", unit: "د.أ", scope: periodLabel },
-    visitors: { title: "الزيارات", unit: "زيارة", scope: periodLabel },
-    ordersChart: { title: "الطلبات الجديدة", unit: "طلب", scope: periodLabel },
+    orders: {
+      titleKey: "analysis.charts.ordersCount",
+      unitKey: "analysis.charts.unitOrder",
+      scopeKey: "analysis.charts.scopeLast30Daily",
+    },
+    subscriptions: {
+      titleKey: "analysis.charts.subscriptionsCount",
+      unitKey: "analysis.charts.unitSubscription",
+      scopeKey: "analysis.charts.scopeMonthlyHistorical",
+    },
+    financial: {
+      titleKey: "analysis.charts.financialClaims",
+      unitKey: "analysis.charts.unitJod",
+      scopeKey: "analysis.charts.scopeMonthlyHistorical",
+    },
+    courses: {
+      titleKey: "analysis.charts.courseEnrollments",
+      unitKey: "analysis.charts.unitEnrollment",
+      scopeKey: "analysis.charts.scopeMonthlyHistorical",
+    },
+    revenue: { titleKey: "analysis.charts.revenue", unitKey: "analysis.charts.unitJod", scope: periodLabel },
+    visitors: { titleKey: "analysis.charts.visitors", unitKey: "analysis.charts.unitVisit", scope: periodLabel },
+    ordersChart: { titleKey: "analysis.charts.newOrders", unitKey: "analysis.charts.unitOrder", scope: periodLabel },
   };
-  return meta[key] || { title: key, unit: "", scope: periodLabel };
+  return meta[key] || { titleKey: key, unitKey: "", scope: periodLabel };
 }
 
 export const LEADERBOARD_CRITERIA = {
-  freelancers: "بحسب عدد الطلبات المكتملة",
-  clients: "بحسب إجمالي الإنفاق",
-  courses: "بحسب عدد المسجلين",
-  categories: "بحسب إجمالي الطلبات",
+  freelancers: "analysis.leaderboard.byCompletedOrders",
+  clients: "analysis.leaderboard.bySpend",
+  courses: "analysis.leaderboard.byEnrolled",
+  categories: "analysis.leaderboard.byTotalOrders",
 };
 
 export const LEADERBOARD_SCOPES = {

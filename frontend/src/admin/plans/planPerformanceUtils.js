@@ -1,23 +1,25 @@
 import { formatPriceJod } from "./planDisplayUtils";
 import {
-  ALERT_LABELS,
-  BADGE_LABELS,
   concentrationPlatformPhrase,
-  HEALTH_LABELS,
-  PAGE_COPY,
-  RECOMMENDATION_LABELS,
+  planMetricT,
   revenueSharePhrase,
-  STRIP_LABELS,
 } from "./planMetricTerminology";
 
-export const LABEL_UNAVAILABLE = "غير متاح";
-export const LABEL_LOAD_FAILED = "تعذر تحميل البيانات";
-export const LABEL_EMPTY_NO_SUBS = "لا اشتراكات سارية بعد";
-export const LABEL_EMPTY_NO_REVENUE = "لا قيمة مدفوعة بعد";
+export const LABEL_UNAVAILABLE = planMetricT(undefined, "unavailable");
+export const LABEL_LOAD_FAILED = planMetricT(undefined, "loadFailed");
+export const LABEL_EMPTY_NO_SUBS = planMetricT(undefined, "emptyNoSubs");
+export const LABEL_EMPTY_NO_REVENUE = planMetricT(undefined, "emptyNoRevenue");
 
 /** Admin-safe message when subscription KPI analytics fail — never expose raw API/SQL errors. */
-export function planStatsLoadFailedMessage(isEn = false) {
-  return isEn ? PAGE_COPY.analyticsFailedEn : PAGE_COPY.analyticsFailedAr;
+export function planStatsLoadFailedMessage(t) {
+  return planMetricT(t, "analyticsFailed");
+}
+
+function healthEntry(key, t) {
+  return {
+    label: planMetricT(t, `health.${key}.label`),
+    title: planMetricT(t, `health.${key}.title`),
+  };
 }
 export const SUMMARY_VALUE_PLACEHOLDER = "—";
 
@@ -32,7 +34,7 @@ export function formatPlanKpiFallback(perf, { money = false } = {}) {
     return SUMMARY_VALUE_PLACEHOLDER;
   }
   if (perf.state === "ok") {
-    return money ? formatPriceJod(0) ?? "0 د.أ" : formatInt(0);
+    return money ? formatPriceJod(0) ?? "0" : formatInt(0);
   }
   return SUMMARY_VALUE_PLACEHOLDER;
 }
@@ -64,10 +66,10 @@ function toMoneyMetric(value, state) {
     return { value: null, display: SUMMARY_VALUE_PLACEHOLDER };
   }
   if (value === null || value === undefined || Number.isNaN(Number(value))) {
-    return { value: 0, display: formatPriceJod(0) ?? "0 د.أ" };
+    return { value: 0, display: formatPriceJod(0) ?? "0" };
   }
   const n = Number(value);
-  return { value: n, display: formatPriceJod(n) ?? "0 د.أ" };
+  return { value: n, display: formatPriceJod(n) ?? "0" };
 }
 
 /** Show concentration warning on card when plan revenue share ≥ this (percent). */
@@ -99,15 +101,15 @@ export function formatInt(value) {
 function formatPctAr(pct) {
   const n = Math.round(Number(pct));
   if (!Number.isFinite(n)) return null;
-  return `${formatInt(n)}٪`;
+  return `${formatInt(n)}%`;
 }
 
 export function formatTrendDisplay(trendObj) {
   if (!trendObj || trendObj.trend == null) return null;
   const pct = Math.abs(Math.round(Number(trendObj.changePct) || 0));
-  if (trendObj.trend === "up") return { display: `↑ +${formatInt(pct)}٪`, trend: "up" };
-  if (trendObj.trend === "down") return { display: `↓ -${formatInt(pct)}٪`, trend: "down" };
-  return { display: "→ 0٪", trend: "flat" };
+  if (trendObj.trend === "up") return { display: `↑ +${formatInt(pct)}%`, trend: "up" };
+  if (trendObj.trend === "down") return { display: `↓ -${formatInt(pct)}%`, trend: "down" };
+  return { display: "→ 0%", trend: "flat" };
 }
 
 function quartileValue(sortedValues, q) {
@@ -130,7 +132,7 @@ function buildComparisonContext(okPlans) {
   };
 }
 
-function computeComparisonAlerts(plan, cmp) {
+function computeComparisonAlerts(plan, cmp, t) {
   if (plan.performance?.state !== "ok") return [];
   const subs = plan.performance.subscribers.value ?? 0;
   const rev = plan.performance.revenueJod.value ?? 0;
@@ -139,22 +141,22 @@ function computeComparisonAlerts(plan, cmp) {
   const alerts = [];
 
   if (cmp.p75Subs != null && cmp.p25Rev != null && subs >= cmp.p75Subs && (rev <= cmp.p25Rev || rev === 0)) {
-    alerts.push({ key: "high_subs_low_rev", label: ALERT_LABELS.high_subs_low_rev });
+    alerts.push({ key: "high_subs_low_rev", label: planMetricT(t, "alerts.high_subs_low_rev") });
   }
   if (cmp.p75Rev != null && cmp.p25Subs != null && rev >= cmp.p75Rev && subs > 0 && subs <= cmp.p25Subs) {
-    alerts.push({ key: "high_rev_low_subs", label: ALERT_LABELS.high_rev_low_subs });
+    alerts.push({ key: "high_rev_low_subs", label: planMetricT(t, "alerts.high_rev_low_subs") });
   }
   if (share >= 0.8 && cmp.maxSubs > 0 && subs < cmp.maxSubs * 0.35) {
-    alerts.push({ key: "high_act_low_adopt", label: ALERT_LABELS.high_act_low_adopt });
+    alerts.push({ key: "high_act_low_adopt", label: planMetricT(t, "alerts.high_act_low_adopt") });
   }
   if (share < 0.5 && cmp.p75Subs != null && subs >= cmp.p75Subs) {
-    alerts.push({ key: "low_act_high_adopt", label: ALERT_LABELS.low_act_high_adopt });
+    alerts.push({ key: "low_act_high_adopt", label: planMetricT(t, "alerts.low_act_high_adopt") });
   }
 
   return alerts;
 }
 
-function computeRecommendations(plan, health, alerts, platformContext) {
+function computeRecommendations(plan, health, alerts, platformContext, t) {
   const recs = [];
   if (plan.performance?.state !== "ok") return recs;
 
@@ -164,9 +166,9 @@ function computeRecommendations(plan, health, alerts, platformContext) {
   const share = subs > 0 ? active / subs : 0;
   const revPct = plan.performance.revenueContribution?.pct ?? 0;
 
-  if (health?.key === "excellent") recs.push({ key: "promote", label: RECOMMENDATION_LABELS.promote });
-  if (health?.key === "weak") recs.push({ key: "review", label: RECOMMENDATION_LABELS.review });
-  if (health?.key === "unused") recs.push({ key: "rethink", label: RECOMMENDATION_LABELS.rethink });
+  if (health?.key === "excellent") recs.push({ key: "promote", label: planMetricT(t, "recommendations.promote") });
+  if (health?.key === "weak") recs.push({ key: "review", label: planMetricT(t, "recommendations.review") });
+  if (health?.key === "unused") recs.push({ key: "rethink", label: planMetricT(t, "recommendations.rethink") });
 
   if (
     plan.isActive &&
@@ -174,12 +176,16 @@ function computeRecommendations(plan, health, alerts, platformContext) {
     share >= 0.75 &&
     (revPct >= 25 || active >= (platformContext?.strongActiveFloor ?? 5))
   ) {
-    recs.push({ key: "strategic", label: RECOMMENDATION_LABELS.strategic });
+    recs.push({ key: "strategic", label: planMetricT(t, "recommendations.strategic") });
   }
 
   for (const alert of alerts) {
-    if (alert.key === "high_subs_low_rev") recs.push({ key: "fix_revenue", label: RECOMMENDATION_LABELS.fix_revenue });
-    if (alert.key === "low_act_high_adopt") recs.push({ key: "fix_activation", label: RECOMMENDATION_LABELS.fix_activation });
+    if (alert.key === "high_subs_low_rev") {
+      recs.push({ key: "fix_revenue", label: planMetricT(t, "recommendations.fix_revenue") });
+    }
+    if (alert.key === "low_act_high_adopt") {
+      recs.push({ key: "fix_activation", label: planMetricT(t, "recommendations.fix_activation") });
+    }
   }
 
   const seen = new Set();
@@ -204,7 +210,7 @@ function computeAttentionScore(plan, health, alerts) {
   return score;
 }
 
-function enrichPlanPortfolioFields(plan, platformContext, cmp) {
+function enrichPlanPortfolioFields(plan, platformContext, cmp, t) {
   if (plan.performance.state !== "ok") return;
 
   const subs = plan.performance.subscribers.value;
@@ -223,30 +229,31 @@ function enrichPlanPortfolioFields(plan, platformContext, cmp) {
     const pct = Math.round((active / subs) * 100);
     plan.performance.activeShare = {
       value: active / subs,
-      display: `${formatInt(pct)}٪ من السارية`,
+      display: planMetricT(t, "phrases.activeShareOfCurrent", { pct: `${formatInt(pct)}%` }),
     };
   }
 
   plan.performance.subscriberTrendDisplay = formatTrendDisplay(plan.performance.subscriberPeriodTrend);
   plan.performance.revenueTrendDisplay = formatTrendDisplay(plan.performance.revenuePeriodTrend);
 
-  const health = computePlanHealth(plan, platformContext);
+  const health = computePlanHealth(plan, platformContext, t);
   plan.portfolioHealth = health;
-  plan.performance.comparisonAlerts = computeComparisonAlerts(plan, cmp);
+  plan.performance.comparisonAlerts = computeComparisonAlerts(plan, cmp, t);
   plan.performance.recommendations = computeRecommendations(
     plan,
     health,
     plan.performance.comparisonAlerts,
     platformContext,
+    t,
   );
   plan.performance.attentionScore = computeAttentionScore(plan, health, plan.performance.comparisonAlerts);
 }
 
-function enrichAllPlansPortfolio(plans, platformContext) {
+function enrichAllPlansPortfolio(plans, platformContext, t) {
   const okPlans = plans.filter((p) => p.performance?.state === "ok");
   const cmp = buildComparisonContext(okPlans);
   for (const plan of plans) {
-    enrichPlanPortfolioFields(plan, platformContext, cmp);
+    enrichPlanPortfolioFields(plan, platformContext, cmp, t);
   }
 }
 
@@ -311,7 +318,7 @@ export function normalizeSubscriptionsIntelligenceResponse(apiBody) {
   return { intel, sectionError };
 }
 
-export function mergePlansWithPerformanceStats(plans, intelligencePayload, { statsFailed = false } = {}) {
+export function mergePlansWithPerformanceStats(plans, intelligencePayload, { statsFailed = false, t } = {}) {
   const intelData = extractSubscriptionsIntelligenceData(intelligencePayload);
   const byPlan = intelData?.byPlan;
   const statsAvailable = !statsFailed && Array.isArray(byPlan);
@@ -361,17 +368,17 @@ export function mergePlansWithPerformanceStats(plans, intelligencePayload, { sta
       const pct = (rev / platform.totalRevenue) * 100;
       plan.performance.revenueContribution = {
         pct,
-        display: revenueSharePhrase(formatPctAr(pct)),
+        display: revenueSharePhrase(formatPctAr(pct), t),
       };
     }
   }
 
-  enrichAllPlansPortfolio(merged, platform);
+  enrichAllPlansPortfolio(merged, platform, t);
 
   return { plans: merged, statsAvailable, statsFailed, platformContext: platform };
 }
 
-export function computePlanBadges(plansWithStats) {
+export function computePlanBadges(plansWithStats, t) {
   const badges = new Map();
   const list = (plansWithStats || []).filter((p) => p.performance?.state === "ok");
   if (!list.length) return badges;
@@ -393,22 +400,22 @@ export function computePlanBadges(plansWithStats) {
     }
   }
 
-  if (topSubs) badges.set(String(topSubs.plan.id), { key: "popular", label: BADGE_LABELS.popular });
-  if (topRev) badges.set(String(topRev.plan.id), { key: "revenue", label: BADGE_LABELS.revenue });
-  if (topPrice) badges.set(String(topPrice.plan.id), { key: "premium", label: BADGE_LABELS.premium });
+  if (topSubs) badges.set(String(topSubs.plan.id), { key: "popular", label: planMetricT(t, "badges.popular") });
+  if (topRev) badges.set(String(topRev.plan.id), { key: "revenue", label: planMetricT(t, "badges.revenue") });
+  if (topPrice) badges.set(String(topPrice.plan.id), { key: "premium", label: planMetricT(t, "badges.premium") });
 
   return badges;
 }
 
-export function computePlanHealth(plan, platformContext) {
+export function computePlanHealth(plan, platformContext, t) {
   if (plan.performance?.state !== "ok") return null;
 
   const subs = plan.performance.subscribers.value;
   const active = plan.performance.activeSubscribers.value;
   if (subs == null || active == null) return null;
 
-  if (subs === 0) return { key: "unused", ...HEALTH_LABELS.unused };
-  if (!plan.isActive) return { key: "catalog_off", ...HEALTH_LABELS.catalog_off };
+  if (subs === 0) return { key: "unused", ...healthEntry("unused", t) };
+  if (!plan.isActive) return { key: "catalog_off", ...healthEntry("catalog_off", t) };
 
   const ratio = subs > 0 ? active / subs : 0;
   const floor = platformContext?.strongActiveFloor ?? HEALTH_THRESHOLDS.excellentMinActive;
@@ -418,15 +425,18 @@ export function computePlanHealth(plan, platformContext) {
     ratio >= HEALTH_THRESHOLDS.excellentMinActiveRatio &&
     active >= floor
   ) {
-    return { key: "excellent", ...HEALTH_LABELS.excellent };
+    return { key: "excellent", ...healthEntry("excellent", t) };
   }
   if (active >= HEALTH_THRESHOLDS.goodMinActive && ratio >= HEALTH_THRESHOLDS.goodMinActiveRatio) {
-    return { key: "good", ...HEALTH_LABELS.good };
+    return { key: "good", ...healthEntry("good", t) };
   }
-  return { key: "weak", ...HEALTH_LABELS.weak };
+  return { key: "weak", ...healthEntry("weak", t) };
 }
 
-export function computePortfolioInsightStrip(plansWithStats, { statsAvailable, statsFailed, platformContext } = {}) {
+export function computePortfolioInsightStrip(
+  plansWithStats,
+  { statsAvailable, statsFailed, platformContext, t } = {},
+) {
   if (statsFailed || !statsAvailable) {
     return { items: [], concentrationPlatform: null };
   }
@@ -449,23 +459,35 @@ export function computePortfolioInsightStrip(plansWithStats, { statsAvailable, s
   if (fastestGrowth) {
     items.push({
       key: "growth",
-      label: STRIP_LABELS.growth,
-      value: `${fastestGrowth.plan.title} ${fastestGrowth.plan.performance.subscriberTrendDisplay.display} (شهري)`,
+      label: planMetricT(t, "strip.growth"),
+      value: planMetricT(t, "phrases.monthlyGrowth", {
+        title: fastestGrowth.plan.title,
+        display: fastestGrowth.plan.performance.subscriberTrendDisplay.display,
+      }),
     });
   }
   if (topRev) {
     const pct = platformContext?.totalRevenue > 0 ? (topRev.val / platformContext.totalRevenue) * 100 : null;
     items.push({
       key: "revenue",
-      label: STRIP_LABELS.revenue,
-      value: pct != null ? `${topRev.plan.title} (${formatPctAr(pct)} من المدفوع)` : topRev.plan.title,
+      label: planMetricT(t, "strip.revenue"),
+      value:
+        pct != null
+          ? planMetricT(t, "phrases.paidShareOfTop", {
+              title: topRev.plan.title,
+              pct: formatPctAr(pct),
+            })
+          : topRev.plan.title,
     });
   }
   if (topSubs) {
     items.push({
       key: "usage",
-      label: STRIP_LABELS.usage,
-      value: `${topSubs.plan.title} (${formatInt(topSubs.val)} اشتراك ساري)`,
+      label: planMetricT(t, "strip.usage"),
+      value: planMetricT(t, "phrases.currentSubsCount", {
+        title: topSubs.plan.title,
+        count: formatInt(topSubs.val),
+      }),
     });
   }
 
@@ -474,10 +496,10 @@ export function computePortfolioInsightStrip(plansWithStats, { statsAvailable, s
     const pct = (topRev.val / platformContext.totalRevenue) * 100;
     if (pct >= CONCENTRATION_RISK_THRESHOLD) {
       concentrationPlatform = {
-        display: concentrationPlatformPhrase(topRev.plan.title, formatPctAr(pct)),
+        display: concentrationPlatformPhrase(topRev.plan.title, formatPctAr(pct), t),
         pct,
       };
-      items.push({ key: "risk", label: STRIP_LABELS.risk, value: concentrationPlatform.display });
+      items.push({ key: "risk", label: planMetricT(t, "strip.risk"), value: concentrationPlatform.display });
     }
   }
 
@@ -519,7 +541,13 @@ export function sortPlansForDisplay(plans, sortMode = SORT_MODES.display) {
   }
 }
 
-export function computePlansBusinessSummary(plansWithStats, { statsAvailable, statsFailed, statsLoading = false, platformContext } = {}) {
+export function computePlansBusinessSummary(
+  plansWithStats,
+  { statsAvailable, statsFailed, statsLoading = false, platformContext, t } = {},
+) {
+  const loadFailed = planMetricT(t, "loadFailed");
+  const emptyNoSubs = planMetricT(t, "emptyNoSubs");
+  const emptyNoRevenue = planMetricT(t, "emptyNoRevenue");
   if (statsLoading) {
     return {
       loading: true,
@@ -535,11 +563,11 @@ export function computePlansBusinessSummary(plansWithStats, { statsAvailable, st
     return {
       loading: false,
       failed: true,
-      totalSubscribers: { display: SUMMARY_VALUE_PLACEHOLDER, helper: LABEL_LOAD_FAILED },
-      totalRevenue: { display: SUMMARY_VALUE_PLACEHOLDER, helper: LABEL_LOAD_FAILED },
-      topPlanByUsage: { display: SUMMARY_VALUE_PLACEHOLDER, helper: LABEL_LOAD_FAILED },
-      topPlanByRevenue: { display: SUMMARY_VALUE_PLACEHOLDER, helper: LABEL_LOAD_FAILED },
-      topRevenueShare: { display: null, helper: LABEL_LOAD_FAILED },
+      totalSubscribers: { display: SUMMARY_VALUE_PLACEHOLDER, helper: loadFailed },
+      totalRevenue: { display: SUMMARY_VALUE_PLACEHOLDER, helper: loadFailed },
+      topPlanByUsage: { display: SUMMARY_VALUE_PLACEHOLDER, helper: loadFailed },
+      topPlanByRevenue: { display: SUMMARY_VALUE_PLACEHOLDER, helper: loadFailed },
+      topRevenueShare: { display: null, helper: loadFailed },
     };
   }
 
@@ -547,11 +575,11 @@ export function computePlansBusinessSummary(plansWithStats, { statsAvailable, st
     return {
       loading: false,
       failed: false,
-      totalSubscribers: { display: SUMMARY_VALUE_PLACEHOLDER, helper: LABEL_LOAD_FAILED },
-      totalRevenue: { display: SUMMARY_VALUE_PLACEHOLDER, helper: LABEL_LOAD_FAILED },
-      topPlanByUsage: { display: SUMMARY_VALUE_PLACEHOLDER, helper: LABEL_LOAD_FAILED },
-      topPlanByRevenue: { display: SUMMARY_VALUE_PLACEHOLDER, helper: LABEL_LOAD_FAILED },
-      topRevenueShare: { display: null, helper: LABEL_LOAD_FAILED },
+      totalSubscribers: { display: SUMMARY_VALUE_PLACEHOLDER, helper: loadFailed },
+      totalRevenue: { display: SUMMARY_VALUE_PLACEHOLDER, helper: loadFailed },
+      topPlanByUsage: { display: SUMMARY_VALUE_PLACEHOLDER, helper: loadFailed },
+      topPlanByRevenue: { display: SUMMARY_VALUE_PLACEHOLDER, helper: loadFailed },
+      topRevenueShare: { display: null, helper: loadFailed },
     };
   }
 
@@ -571,26 +599,33 @@ export function computePlansBusinessSummary(plansWithStats, { statsAvailable, st
   if (topRevenue && ctx.totalRevenue > 0) {
     const pct = (topRevenue.val / ctx.totalRevenue) * 100;
     topRevenueShare = {
-      display: `${topRevenue.plan.title} — ${revenueSharePhrase(formatPctAr(pct))}`,
+      display: `${topRevenue.plan.title} — ${revenueSharePhrase(formatPctAr(pct), t)}`,
       title: topRevenue.plan.title,
       pct,
     };
   } else if (topRevenue && ctx.totalRevenue === 0) {
-    topRevenueShare = { display: `${topRevenue.plan.title} — ${LABEL_EMPTY_NO_REVENUE}` };
+    topRevenueShare = { display: `${topRevenue.plan.title} — ${emptyNoRevenue}` };
   }
 
   return {
     loading: false,
     failed: false,
     totalSubscribers: { display: formatInt(totalSubscribers) },
-    totalRevenue: { display: formatPriceJod(ctx.totalRevenue) ?? "0 د.أ" },
+    totalRevenue: { display: formatPriceJod(ctx.totalRevenue) ?? "0" },
     topPlanByUsage: {
-      display: topUsage ? `${topUsage.plan.title} (${formatInt(topUsage.val)} ساري)` : LABEL_EMPTY_NO_SUBS,
+      display: topUsage
+        ? planMetricT(t, "phrases.currentSubsCount", {
+            title: topUsage.plan.title,
+            count: formatInt(topUsage.val),
+          })
+        : emptyNoSubs,
     },
     topPlanByRevenue: {
       display: topRevenue
-        ? `${topRevenue.plan.title} (${formatPriceJod(topRevenue.val) ?? "0 د.أ"} مدفوع)`
-        : LABEL_EMPTY_NO_REVENUE,
+        ? `${topRevenue.plan.title} (${planMetricT(t, "phrases.paidAmount", {
+            amount: formatPriceJod(topRevenue.val) ?? "0",
+          })})`
+        : emptyNoRevenue,
     },
     topRevenueShare,
   };

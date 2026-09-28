@@ -43,6 +43,7 @@ import {
 } from "../utils/freelancerCoursesFocusCache";
 
 import { useTranslation } from "../i18n/LanguageProvider";
+import LanguageSwitcher from "../components/layout/LanguageSwitcher";
 import { resolveNavLabel } from "../lib/i18n/resolveNavLabel";
 import { getInstitutionMembershipRequest } from "../services/api";
 
@@ -584,6 +585,8 @@ export default function FreelancerDashboardLayout() {
 
 
             <div className="fdl-topbar__actions">
+
+              <LanguageSwitcher />
 
               <div className="fdl-topbar__icon-slot">
 

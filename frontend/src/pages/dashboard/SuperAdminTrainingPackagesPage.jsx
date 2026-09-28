@@ -14,7 +14,7 @@ import {
 import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
 import PlanCatalogAdminShell from "../../admin/plans/PlanCatalogAdminShell";
 import { PlanCardsGridSkeleton } from "../../admin/plans/PlanCatalogSkeletons";
-import { SECTION_COPY } from "../../admin/plans/planMetricTerminology";
+import "../../i18n/planAdminResources";
 import { TRAINING_PACKAGES_NAV_ID } from "../../admin/plans/planCatalogNav";
 import TrainingPackageAdminCard from "../../admin/trainingPackages/TrainingPackageAdminCard";
 import TrainingPackageFormModal from "../../admin/trainingPackages/TrainingPackageFormModal";
@@ -22,10 +22,8 @@ import { buildTrainingReorderCodes } from "../../admin/trainingPackages/training
 import "../../admin/marketplaceMembership/marketplace-membership-plans.css";
 
 export default function SuperAdminTrainingPackagesPage() {
-  const { locale } = useTranslation();
-  const isEn = locale === "en";
+  const { t } = useTranslation();
   const { push } = useToast();
-  const sectionCopy = SECTION_COPY.training;
 
   const [packages, setPackages] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -42,12 +40,12 @@ export default function SuperAdminTrainingPackagesPage() {
       const res = await listAdminTrainingPackagesRequest();
       setPackages(Array.isArray(res?.data?.packages) ? res.data.packages : []);
     } catch (err) {
-      setError(getSafeApiErrorMessage(err) || (isEn ? "Could not load training packages." : "تعذر تحميل باقات التدريب"));
+      setError(getSafeApiErrorMessage(err) || t("planAdmin.sections.training.loadFailed"));
       setPackages([]);
     } finally {
       setLoading(false);
     }
-  }, [isEn]);
+  }, [t]);
 
   useEffect(() => {
     void refresh();
@@ -59,10 +57,10 @@ export default function SuperAdminTrainingPackagesPage() {
     try {
       await createAdminTrainingPackageRequest(payload);
       setCreateOpen(false);
-      push({ type: "success", message: isEn ? "Package created." : "تم إنشاء الباقة." });
+      push({ type: "success", message: t("planAdmin.trainingActions.created") });
       await refresh();
     } catch (err) {
-      push({ type: "error", message: getSafeApiErrorMessage(err) || (isEn ? "Create failed." : "فشل الإنشاء.") });
+      push({ type: "error", message: getSafeApiErrorMessage(err) || t("planAdmin.page.marketplaceCreateFailed") });
     } finally {
       setSubmitting(false);
     }
@@ -74,10 +72,10 @@ export default function SuperAdminTrainingPackagesPage() {
     try {
       await updateAdminTrainingPackageRequest(editPkg.code, payload);
       setEditPkg(null);
-      push({ type: "success", message: isEn ? "Package updated." : "تم تحديث الباقة." });
+      push({ type: "success", message: t("planAdmin.trainingActions.updated") });
       await refresh();
     } catch (err) {
-      push({ type: "error", message: getSafeApiErrorMessage(err) || (isEn ? "Update failed." : "فشل التحديث.") });
+      push({ type: "error", message: getSafeApiErrorMessage(err) || t("planAdmin.page.marketplaceUpdateFailed") });
     } finally {
       setSubmitting(false);
     }
@@ -89,7 +87,7 @@ export default function SuperAdminTrainingPackagesPage() {
       await updateAdminTrainingPackageRequest(pkg.code, { isVisible: nextVisible });
       await refresh();
     } catch (err) {
-      push({ type: "error", message: getSafeApiErrorMessage(err) || (isEn ? "Update failed." : "فشل التحديث.") });
+      push({ type: "error", message: getSafeApiErrorMessage(err) || t("planAdmin.page.marketplaceUpdateFailed") });
     } finally {
       setSubmitting(false);
     }
@@ -104,7 +102,7 @@ export default function SuperAdminTrainingPackagesPage() {
       if (Array.isArray(res?.data?.packages)) setPackages(res.data.packages);
       else await refresh();
     } catch (err) {
-      push({ type: "error", message: getSafeApiErrorMessage(err) || (isEn ? "Reorder failed." : "فشل إعادة الترتيب.") });
+      push({ type: "error", message: getSafeApiErrorMessage(err) || t("planAdmin.page.marketplaceReorderFailed") });
     } finally {
       setReorderingCode(null);
     }
@@ -114,29 +112,28 @@ export default function SuperAdminTrainingPackagesPage() {
     <PlanCatalogAdminShell
       className="oh-mmp-page"
       activeCatalog={TRAINING_PACKAGES_NAV_ID}
-      isEn={isEn}
-      hint={isEn ? sectionCopy.hintEn : sectionCopy.hintAr}
+      hint={t("planAdmin.sections.training.hint")}
     >
       {error ? <DashboardErrorState message={error} onRetry={refresh} /> : null}
 
       <DashboardSection
-        title={isEn ? sectionCopy.en : sectionCopy.ar}
+        title={t("planAdmin.sections.training.title")}
         className="oh-sapl-section--plans oh-sapl-section--tight"
-        description={isEn ? sectionCopy.hintEn : sectionCopy.hintAr}
+        description={t("planAdmin.sections.training.hint")}
         actions={
           <div className="oh-sapl-section-heading-actions">
             <Button type="button" onClick={() => setCreateOpen(true)}>
-              {isEn ? "+ Add package" : "+ إضافة باقة"}
+              {t("planAdmin.trainingActions.createPackage")}
             </Button>
           </div>
         }
       >
-        {loading ? <PlanCardsGridSkeleton count={3} className="oh-mmp-grid" variant="marketplace" isEn={isEn} /> : null}
+        {loading ? <PlanCardsGridSkeleton count={3} className="oh-mmp-grid" variant="marketplace" /> : null}
 
         {!loading && !error && packages.length === 0 ? (
           <DashboardEmptyState
-            title={isEn ? sectionCopy.emptyTitleEn : sectionCopy.emptyTitleAr}
-            description={isEn ? sectionCopy.emptyDescEn : sectionCopy.emptyDescAr}
+            title={t("planAdmin.sections.training.emptyTitle")}
+            description={t("planAdmin.sections.training.emptyDesc")}
           />
         ) : null}
 
@@ -146,7 +143,6 @@ export default function SuperAdminTrainingPackagesPage() {
               <TrainingPackageAdminCard
                 key={pkg.code}
                 pkg={pkg}
-                isEn={isEn}
                 busy={submitting}
                 reordering={reorderingCode === pkg.code}
                 canMoveUp={index > 0}
@@ -163,7 +159,6 @@ export default function SuperAdminTrainingPackagesPage() {
       <TrainingPackageFormModal
         open={createOpen}
         mode="create"
-        isEn={isEn}
         submitting={submitting}
         onClose={() => setCreateOpen(false)}
         onSubmit={handleCreate}
@@ -172,7 +167,6 @@ export default function SuperAdminTrainingPackagesPage() {
         open={Boolean(editPkg)}
         mode="edit"
         initialPackage={editPkg}
-        isEn={isEn}
         submitting={submitting}
         onClose={() => setEditPkg(null)}
         onSubmit={handleUpdate}

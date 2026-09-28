@@ -1,33 +1,33 @@
-/** Editable public website sections (Super Admin → تعديل الموقع). */
+/** Editable public website sections (Super Admin → edit website). */
 export const EDIT_WEBSITE_BASE = "/dashboard/super-admin/edit-website";
 
 export const SUPER_ADMIN_WEBSITE_SECTIONS = [
   {
     id: "faq",
-    title: "الأسئلة الشائعة",
-    description: "تعديل الأسئلة والأجوبة المعروضة في الصفحة الرئيسية",
-    editLabel: "تعديل القسم",
+    titleKey: "siteEditor.sections.faq.title",
+    descriptionKey: "siteEditor.sections.faq.description",
+    editLabelKey: "siteEditor.sections.faq.editLabel",
     path: `${EDIT_WEBSITE_BASE}/faq`,
   },
   {
     id: "how-it-works",
-    title: "طريقة العمل",
-    description: "تعديل صفحات طريقة العمل للمستقل والعميل",
-    editLabel: "تعديل القسم",
+    titleKey: "siteEditor.sections.howItWorks.title",
+    descriptionKey: "siteEditor.sections.howItWorks.description",
+    editLabelKey: "siteEditor.sections.howItWorks.editLabel",
     path: `${EDIT_WEBSITE_BASE}/how-it-works`,
   },
   {
     id: "site-pages",
-    title: "الصفحات العامة",
-    description: "تعديل صفحات الموقع العامة (الخصوصية، الشروط، مركز المساعدة، وغيرها)",
-    editLabel: "تعديل القسم",
+    titleKey: "siteEditor.sections.sitePages.title",
+    descriptionKey: "siteEditor.sections.sitePages.description",
+    editLabelKey: "siteEditor.sections.sitePages.editLabel",
     path: `${EDIT_WEBSITE_BASE}/pages`,
   },
   {
     id: "footer",
-    title: "تعديل تذييل الموقع",
-    description: "تعديل بيانات التواصل وساعات العمل وقسم تحميل التطبيق في تذييل الموقع.",
-    editLabel: "تعديل القسم",
+    titleKey: "siteEditor.sections.footerHub.title",
+    descriptionKey: "siteEditor.sections.footerHub.description",
+    editLabelKey: "siteEditor.sections.footerHub.editLabel",
     path: `${EDIT_WEBSITE_BASE}/footer`,
   },
 ];
@@ -38,30 +38,30 @@ export const FOOTER_EDIT_BASE = `${EDIT_WEBSITE_BASE}/footer`;
 export const SUPER_ADMIN_FOOTER_SECTIONS = [
   {
     id: "contact",
-    title: "تواصل معنا",
-    description: "تعديل رقم الهاتف والبريد الإلكتروني وواتساب والموقع.",
-    editLabel: "تعديل",
+    titleKey: "siteEditor.footerSections.contact.title",
+    descriptionKey: "siteEditor.footerSections.contact.description",
+    editLabelKey: "siteEditor.footerSections.contact.editLabel",
     path: `${FOOTER_EDIT_BASE}/contact`,
   },
   {
     id: "working-hours",
-    title: "ساعات العمل",
-    description: "تعديل النص الظاهر في قسم ساعات العمل.",
-    editLabel: "تعديل",
+    titleKey: "siteEditor.footerSections.workingHours.title",
+    descriptionKey: "siteEditor.footerSections.workingHours.description",
+    editLabelKey: "siteEditor.footerSections.workingHours.editLabel",
     path: `${FOOTER_EDIT_BASE}/working-hours`,
   },
   {
     id: "app-downloads",
-    title: "تحميل التطبيق",
-    description: "تعديل عنوان قسم تحميل التطبيق وروابط App Store وGoogle Play.",
-    editLabel: "تعديل",
+    titleKey: "siteEditor.footerSections.appDownloads.title",
+    descriptionKey: "siteEditor.footerSections.appDownloads.description",
+    editLabelKey: "siteEditor.footerSections.appDownloads.editLabel",
     path: `${FOOTER_EDIT_BASE}/app-downloads`,
   },
   {
     id: "contact-center",
-    title: "مركز التواصل",
-    description: "تعديل نص ورابط مركز التواصل وخيارات ظهوره في تذييل الموقع.",
-    editLabel: "تعديل",
+    titleKey: "siteEditor.footerSections.contactCenter.title",
+    descriptionKey: "siteEditor.footerSections.contactCenter.description",
+    editLabelKey: "siteEditor.footerSections.contactCenter.editLabel",
     path: `${FOOTER_EDIT_BASE}/contact-center`,
   },
 ];

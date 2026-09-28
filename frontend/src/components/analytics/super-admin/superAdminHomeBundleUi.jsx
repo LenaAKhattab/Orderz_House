@@ -12,10 +12,16 @@ import {
 import DashboardStatCard, { DashboardStatCardSkeleton } from "../../dashboard/DashboardStatCard";
 import DashboardChartCard from "../../dashboard/DashboardChartCard";
 import DashboardEmptyState from "../../dashboard/DashboardEmptyState";
+import { useTranslation } from "../../../i18n/LanguageProvider";
 import { resolveSuperAdminDashboardHomeLink } from "./superAdminHomeDataUtils";
+import { resolveAnalysisScopeLabel } from "./dashboardMetricScope";
+import { formatJodMoney } from "../../../utils/formatJodMoney";
+import "./registerAnalysisLocale";
 
-export const LABEL_UNAVAILABLE = "غير متاح";
-export const LABEL_LOAD_FAILED = "تعذر تحميل البيانات";
+/** @deprecated Prefer t("analysis.labels.unavailable") at render sites */
+export const LABEL_UNAVAILABLE = "analysis.labels.unavailable";
+/** @deprecated Prefer t("analysis.labels.loadFailed") at render sites */
+export const LABEL_LOAD_FAILED = "analysis.labels.loadFailed";
 
 const CHART_TOOLTIP_STYLE = {
   borderRadius: 10,
@@ -28,48 +34,53 @@ export function formatInt(value) {
   return new Intl.NumberFormat("ar-JO-u-nu-latn").format(Math.trunc(Number(value)));
 }
 
-export function formatMoneyJod(value) {
+export function formatMoneyJod(value, locale = "ar") {
   if (value === null || value === undefined || Number.isNaN(Number(value))) return "—";
-  return `${new Intl.NumberFormat("ar-JO-u-nu-latn", { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(Number(value))} د.أ`;
+  return formatJodMoney(value, { locale });
 }
 
-export function formatPctChange(value) {
+export function formatPctChange(value, locale = "ar") {
   if (value === null || value === undefined || Number.isNaN(Number(value))) return "—";
   const n = Number(value);
   const sign = n > 0 ? "+" : "";
-  return `${sign}${new Intl.NumberFormat("ar-JO-u-nu-latn", { maximumFractionDigits: 1 }).format(n)}٪`;
+  const suffix = locale === "en" ? "%" : "٪";
+  return `${sign}${new Intl.NumberFormat("en-US", { maximumFractionDigits: 1 }).format(n)}${suffix}`;
 }
 
 export function isMetricMissing(value) {
   return value === null || value === undefined || Number.isNaN(Number(value));
 }
 
-function formatChartDay(isoDate) {
+function formatChartDay(isoDate, locale = "ar") {
   try {
     const d = new Date(isoDate);
-    return d.toLocaleDateString("ar-JO-u-nu-latn", { month: "short", day: "numeric" });
+    const tag = locale === "en" ? "en-US" : "en-GB";
+    return d.toLocaleDateString(tag, locale === "en" ? { month: "short", day: "numeric" } : { day: "2-digit", month: "2-digit" });
   } catch {
     return String(isoDate || "");
   }
 }
 
-function formatChartMonth(isoDate) {
+function formatChartMonth(isoDate, locale = "ar") {
   try {
     const d = new Date(isoDate);
-    return d.toLocaleDateString("ar-JO-u-nu-latn", { month: "short", year: "2-digit" });
+    const tag = locale === "en" ? "en-US" : "en-GB";
+    return d.toLocaleDateString(tag, locale === "en" ? { month: "short", year: "2-digit" } : { month: "2-digit", year: "2-digit" });
   } catch {
     return String(isoDate || "");
   }
 }
 
-export function trendBadge(trend, changePct) {
+export function trendBadge(trend, changePct, t, locale = "ar") {
   if (changePct === null || changePct === undefined || trend == null) return null;
   const cls =
     trend === "up" ? "text-emerald-700" : trend === "down" ? "text-rose-700" : "text-slate-500";
   const arrow = trend === "up" ? "↑" : trend === "down" ? "↓" : "→";
+  const vsPrevious = t ? t("analysis.labels.vsPrevious") : "";
   return (
     <span className={cls}>
-      {arrow} {formatPctChange(changePct)} <span className="font-normal text-slate-400">عن الفترة السابقة</span>
+      {arrow} {formatPctChange(changePct, locale)}{" "}
+      {vsPrevious ? <span className="font-normal text-slate-400">{vsPrevious}</span> : null}
     </span>
   );
 }
@@ -84,20 +95,21 @@ export function StatCardLink({ to, children, className = "" }) {
   );
 }
 
-function formatStatValue(item) {
-  if (item.missing) return item.failed ? LABEL_LOAD_FAILED : LABEL_UNAVAILABLE;
-  if (item.money) return formatMoneyJod(item.value);
-  if (item.percent) return `${formatInt(item.value)}٪`;
+function formatStatValue(item, t, locale = "ar") {
+  if (item.missing) return item.failed ? t(LABEL_LOAD_FAILED) : t(LABEL_UNAVAILABLE);
+  if (item.money) return formatMoneyJod(item.value, locale);
+  if (item.percent) return `${formatInt(item.value)}${locale === "en" ? "%" : "٪"}`;
   return formatInt(item.value);
 }
 
 export function SectionFailedBlock({ message, onRetry }) {
+  const { t } = useTranslation();
   return (
     <div className="sa-section-failed" role="alert">
-      <p className="sa-section-failed__text m-0">{message || LABEL_LOAD_FAILED}</p>
+      <p className="sa-section-failed__text m-0">{message || t(LABEL_LOAD_FAILED)}</p>
       {onRetry ? (
         <button type="button" className="btn btn-secondary btn-sm sa-section-failed__retry" onClick={onRetry}>
-          إعادة المحاولة
+          {t("analysis.labels.retry")}
         </button>
       ) : null}
     </div>
@@ -105,13 +117,20 @@ export function SectionFailedBlock({ message, onRetry }) {
 }
 
 export function SectionHighlights({ items }) {
+  const { t } = useTranslation();
   const visible = (items || []).filter(Boolean);
   if (!visible.length) return null;
   return (
     <ul className="sa-section-highlights">
-      {visible.map((text) => (
-        <li key={text}>{text}</li>
-      ))}
+      {visible.map((entry) => {
+        const text =
+          typeof entry === "string"
+            ? entry
+            : entry?.key
+              ? t(entry.key, entry.params)
+              : "";
+        return text ? <li key={text}>{text}</li> : null;
+      })}
     </ul>
   );
 }
@@ -161,36 +180,56 @@ export function CollapsibleBlock({
 }
 
 export function MetricScopeLabel({ children, className = "" }) {
+  const { t } = useTranslation();
   if (!children) return null;
+  const label = resolveAnalysisScopeLabel(t, children);
   return (
-    <span className={`sa-metric-scope ${className}`.trim()} aria-label={`نطاق البيانات: ${children}`}>
-      {children}
+    <span className={`sa-metric-scope ${className}`.trim()} aria-label={t("analysis.labels.dataScope", { scope: label })}>
+      {label}
     </span>
   );
 }
 
 export function PeriodAwarenessBanner({ period }) {
-  if (!period?.label) return null;
+  const { t } = useTranslation();
+  if (!period?.labelKey) return null;
   return (
     <p className="sa-period-banner m-0" role="status">
-      يتم عرض البيانات بناءً على: <strong>{period.label}</strong>
+      {t("analysis.periodBanner.basedOn")} <strong>{t(period.labelKey)}</strong>
       {period.posthogLimited ? (
-        <span className="sa-period-banner__note"> — بعض اتجاهات النشاط محدودة بـ 30 يوماً.</span>
+        <span className="sa-period-banner__note">{t("analysis.periodBanner.activityLimited")}</span>
       ) : null}
     </p>
   );
 }
 
+function resolvePlatformInsightText(t, item, locale = "ar") {
+  if (item.textKey) {
+    const params = { ...(item.textParams || {}) };
+    if (params.labelKey) {
+      params.label = t(params.labelKey);
+      delete params.labelKey;
+    }
+    if (params.pct != null) params.pct = formatPctChange(params.pct, locale);
+    if (params.count != null) params.count = formatInt(params.count);
+    return t(item.textKey, params);
+  }
+  return item.text || "";
+}
+
 export function PlatformInsightsList({ insights }) {
+  const { t, locale } = useTranslation();
   if (!insights?.length) {
-    return <p className="help m-0">لا توجد رؤى كافية من البيانات الحالية — حدّث اللوحة لاحقاً.</p>;
+    return <p className="help m-0">{t("analysis.bundle.insightsEmpty")}</p>;
   }
   return (
     <ul className="sa-insights-list">
       {insights.map((item) => (
         <li key={item.id} className="sa-insights-list__item">
-          <p className="sa-insights-list__text m-0">{item.text}</p>
-          {item.source ? <MetricScopeLabel className="sa-insights-list__source">{item.source}</MetricScopeLabel> : null}
+          <p className="sa-insights-list__text m-0">{resolvePlatformInsightText(t, item, locale)}</p>
+          {item.sourceKey || item.source ? (
+            <MetricScopeLabel className="sa-insights-list__source">{item.sourceKey || item.source}</MetricScopeLabel>
+          ) : null}
         </li>
       ))}
     </ul>
@@ -198,6 +237,7 @@ export function PlatformInsightsList({ insights }) {
 }
 
 export function MiniStatGrid({ items, loading = false, dense = false, showCardScope = true }) {
+  const { t, locale } = useTranslation();
   const gridClass = dense ? "sa-kpi-grid sa-kpi-grid--dense" : "sa-kpi-grid sa-kpi-grid--platform";
   return (
     <div className={gridClass}>
@@ -209,10 +249,12 @@ export function MiniStatGrid({ items, loading = false, dense = false, showCardSc
             <DashboardStatCard
               className={`sa-stat-card--platform sa-stat-card--dense${item.to ? " sa-stat-card--clickable" : ""}${item.missing ? " sa-stat-card--unavailable" : ""}`}
               label={item.label}
-              scopeLabel={showCardScope ? item.scopeLabel : undefined}
-              value={formatStatValue(item)}
+              scopeLabel={showCardScope ? resolveAnalysisScopeLabel(t, item.scopeLabel) : undefined}
+              value={formatStatValue(item, t, locale)}
               hint={item.hint}
-              trend={item.comparable !== false && item.trend != null ? trendBadge(item.trend, item.changePct) : undefined}
+              trend={
+                item.comparable !== false && item.trend != null ? trendBadge(item.trend, item.changePct, t, locale) : undefined
+              }
             />
           </StatCardLink>
         ),
@@ -222,11 +264,12 @@ export function MiniStatGrid({ items, loading = false, dense = false, showCardSc
 }
 
 export function KpiComparisonGrid({ metrics, loading = false, dense = false, period, resolveScope, showCardScope = true }) {
+  const { t } = useTranslation();
   if (loading) {
     return <MiniStatGrid loading dense={dense} items={(metrics || []).map((m) => ({ key: m.key, label: m.label }))} />;
   }
   if (!Array.isArray(metrics) || metrics.length === 0) {
-    return <p className="help m-0">لا تتوفر مؤشرات مقارنة.</p>;
+    return <p className="help m-0">{t("analysis.bundle.noCompareMetrics")}</p>;
   }
   return (
     <MiniStatGrid
@@ -241,8 +284,11 @@ export function KpiComparisonGrid({ metrics, loading = false, dense = false, per
         comparable: m.comparable,
         hint:
           m.comparable === false
-            ? m.hint || "بدون مقارنة زمنية"
-            : m.hint || `السابق: ${m.money ? formatMoneyJod(m.previous) : formatInt(m.previous)}`,
+            ? m.hint || t("analysis.labels.noComparison")
+            : m.hint ||
+              t("analysis.labels.previous", {
+                value: m.money ? formatMoneyJod(m.previous) : formatInt(m.previous),
+              }),
         trend: m.comparable !== false ? m.trend : null,
         changePct: m.comparable !== false ? m.changePct : null,
         to: m.to,
@@ -257,13 +303,15 @@ export function TopList({
   valueKey,
   labelKey = "name",
   money = false,
-  emptyLabel = "لا توجد بيانات",
+  emptyLabel,
   scopeLabel,
 }) {
+  const { t, locale } = useTranslation();
+  const resolvedEmpty = emptyLabel || t("analysis.labels.noData");
   if (!Array.isArray(rows) || rows.length === 0) {
-    return <p className="help m-0">{emptyLabel}</p>;
+    return <p className="help m-0">{resolvedEmpty}</p>;
   }
-  const formatVal = money ? formatMoneyJod : formatInt;
+  const formatVal = money ? (value) => formatMoneyJod(value, locale) : formatInt;
   const rowLabel = (row) => {
     if (labelKey && row[labelKey]) return row[labelKey];
     return row.name || row.title || row.fullName || row.countryCode || "—";
@@ -283,18 +331,19 @@ export function TopList({
   );
 }
 
-export function normalizeTrendRows(rows, { dateKey, valueKeys }) {
+export function normalizeTrendRows(rows, { dateKey, valueKeys, locale = "ar" }) {
   if (!Array.isArray(rows)) return [];
   return rows.map((row) => {
     const dateVal = row[dateKey] ?? row.day ?? row.monthStart ?? row.weekStart;
     const value =
       valueKeys.reduce((acc, key) => (acc != null ? acc : row[key]), null) ?? 0;
-    const label = dateKey === "monthStart" || dateKey === "month_start" ? formatChartMonth(dateVal) : formatChartDay(dateVal);
+    const label = dateKey === "monthStart" || dateKey === "month_start" ? formatChartMonth(dateVal, locale) : formatChartDay(dateVal, locale);
     return { label, value: Number(value) || 0, rawDate: dateVal };
   });
 }
 
 export function IntelligenceTrendCharts({ charts, loading, periodLabel }) {
+  const { t, locale } = useTranslation();
   if (loading) {
     return (
       <div className="sa-charts-layout sa-charts-layout--intel">
@@ -309,19 +358,28 @@ export function IntelligenceTrendCharts({ charts, loading, periodLabel }) {
   if (!hasAny) {
     return (
       <DashboardEmptyState
-        title="لا توجد اتجاهات كافية"
-        description="ستظهر الرسوم عند توفر بيانات تاريخية كافية."
+        title={t("analysis.charts.noTrendsTitle")}
+        description={t("analysis.charts.noTrendsDesc")}
       />
     );
   }
 
   return (
     <div className="sa-charts-layout sa-charts-layout--intel">
-      {charts.map((chart) => (
+      {charts.map((chart) => {
+        const title = chart.titleKey ? t(chart.titleKey) : chart.title;
+        const unit = chart.unitKey ? t(chart.unitKey) : chart.unit;
+        const scope = chart.scopeLabelKey
+          ? t(chart.scopeLabelKey)
+          : resolveAnalysisScopeLabel(t, chart.scopeLabel);
+        const subtitle = chart.subtitleKey ? t(chart.subtitleKey) : chart.subtitle;
+        const description =
+          subtitle || (periodLabel ? `${unit || ""} — ${scope || periodLabel}` : unit);
+        return (
         <DashboardChartCard
           key={chart.key}
-          title={chart.title}
-          description={chart.subtitle || (periodLabel ? `${chart.unit || ""} — ${chart.scopeLabel || periodLabel}` : chart.unit)}
+          title={title}
+          description={description}
           className="sa-chart--intel"
         >
           <div className="sa-chart__canvas sa-chart__canvas--secondary" dir="ltr">
@@ -339,7 +397,7 @@ export function IntelligenceTrendCharts({ charts, loading, periodLabel }) {
                   <YAxis width={36} tick={{ fontSize: 10 }} stroke="var(--text-muted, #64748b)" />
                   <Tooltip
                     contentStyle={CHART_TOOLTIP_STYLE}
-                    formatter={(v) => (chart.money ? formatMoneyJod(v) : formatInt(v))}
+                    formatter={(v) => (chart.money ? formatMoneyJod(v, locale) : formatInt(v))}
                   />
                   <Area
                     type="monotone"
@@ -352,16 +410,17 @@ export function IntelligenceTrendCharts({ charts, loading, periodLabel }) {
                 </AreaChart>
               </ResponsiveContainer>
             ) : (
-              <p className="help m-0 p-4 text-center">لا توجد نقاط لهذه الفترة.</p>
+              <p className="help m-0 p-4 text-center">{t("analysis.charts.noPointsForPeriod")}</p>
             )}
           </div>
         </DashboardChartCard>
-      ))}
+        );
+      })}
     </div>
   );
 }
 
-export function buildOperationalCharts(intelligence, _periodLabel) {
+export function buildOperationalCharts(intelligence, _periodLabel, locale = "ar") {
   const orders = intelligence?.orders?.data;
   const subscriptions = intelligence?.subscriptions?.data;
   const financial = intelligence?.financial?.data;
@@ -370,54 +429,58 @@ export function buildOperationalCharts(intelligence, _periodLabel) {
   return [
     {
       key: "orders",
-      title: "عدد الطلبات",
-      subtitle: `طلب — آخر 30 يوماً (يومي)`,
-      unit: "طلب",
-      scopeLabel: "آخر 30 يوماً",
+      titleKey: "analysis.charts.ordersCount",
+      subtitleKey: "analysis.charts.ordersTrendSubtitle",
+      unitKey: "analysis.charts.unitOrder",
+      scopeLabelKey: "analysis.scope.last30Days",
       color: "#2563eb",
       money: false,
       data: normalizeTrendRows(orders?.timing?.trendByDay, {
         dateKey: "day",
         valueKeys: ["ordersCount", "orders_count"],
+        locale,
       }),
     },
     {
       key: "subscriptions",
-      title: "عدد الاشتراكات",
-      subtitle: "اشتراك — شهري (تاريخي)",
-      unit: "اشتراك",
-      scopeLabel: "شهري — تاريخي",
+      titleKey: "analysis.charts.subscriptionsCount",
+      subtitleKey: "analysis.charts.subscriptionsTrendSubtitle",
+      unitKey: "analysis.charts.unitSubscription",
+      scopeLabelKey: "analysis.charts.scopeMonthlyHistorical",
       color: "#7c3aed",
       money: false,
       data: normalizeTrendRows(subscriptions?.trendByMonth, {
         dateKey: "monthStart",
         valueKeys: ["subscriptionsCount", "subscriptions_count"],
+        locale,
       }),
     },
     {
       key: "financial",
-      title: "المطالبات المالية",
-      subtitle: "د.أ — شهري (تاريخي)",
-      unit: "د.أ",
-      scopeLabel: "شهري — تاريخي",
+      titleKey: "analysis.charts.financialClaims",
+      subtitleKey: "analysis.charts.financialTrendSubtitle",
+      unitKey: "analysis.charts.unitJod",
+      scopeLabelKey: "analysis.charts.scopeMonthlyHistorical",
       color: "#ca8a04",
       money: true,
       data: normalizeTrendRows(financial?.paymentTrendByMonth, {
         dateKey: "monthStart",
         valueKeys: ["amountJod", "amount_jod"],
+        locale,
       }),
     },
     {
       key: "courses",
-      title: "تسجيلات الدورات",
-      subtitle: "تسجيل — شهري (تاريخي)",
-      unit: "تسجيل",
-      scopeLabel: "شهري — تاريخي",
+      titleKey: "analysis.charts.courseEnrollments",
+      subtitleKey: "analysis.charts.coursesTrendSubtitle",
+      unitKey: "analysis.charts.unitEnrollment",
+      scopeLabelKey: "analysis.charts.scopeMonthlyHistorical",
       color: "#166534",
       money: false,
       data: normalizeTrendRows(courses?.enrollmentTrendByMonth, {
         dateKey: "monthStart",
         valueKeys: ["enrollments"],
+        locale,
       }),
     },
   ];

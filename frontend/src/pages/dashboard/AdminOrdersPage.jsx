@@ -15,6 +15,7 @@ import { OrderCardsGridSkeleton } from "../../components/ui/Skeleton";
 import { getOrderDeliveryTiming } from "../../utils/orderDeliveryTiming";
 import { getOrderStatusLabel } from "../../utils/orderFlowUi";
 import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/ordersAdminResources";
 import { trackEvent } from "../../services/analytics";
 import DashboardPageHeader from "../../components/dashboard/DashboardPageHeader";
 import { breadcrumbHomeFromUser } from "../../components/dashboard/dashboardBreadcrumbs";
@@ -46,7 +47,7 @@ function isPricedInternalBidding(o) {
 export default function AdminOrdersPage() {
   const { user } = useAuth();
   const { push } = useToast();
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const location = useLocation();
   const role = user?.primaryRole || user?.role;
   const createPath = role === "super_admin" ? "/dashboard/super-admin/orders/create" : "/dashboard/admin/orders/create";
@@ -78,9 +79,9 @@ export default function AdminOrdersPage() {
       const list = res?.data?.orders ?? res?.orders;
       setOrders(Array.isArray(list) ? list : []);
     } catch (e) {
-      push({ type: "error", title: "تعذر تحديث القائمة", message: e?.response?.data?.message || e?.message });
+      push({ type: "error", title: t("ordersAdmin.listPage.toast.reloadFailed"), message: e?.response?.data?.message || e?.message });
     }
-  }, [push]);
+  }, [push, t]);
 
   useEffect(() => {
     let cancelled = false;
@@ -91,7 +92,7 @@ export default function AdminOrdersPage() {
         const list = res?.data?.orders ?? res?.orders;
         if (!cancelled) setOrders(Array.isArray(list) ? list : []);
       } catch (e) {
-        if (!cancelled) push({ type: "error", title: "تعذر تحميل الطلبات", message: e?.response?.data?.message || e?.message });
+        if (!cancelled) push({ type: "error", title: t("ordersAdmin.listPage.toast.loadFailed"), message: e?.response?.data?.message || e?.message });
       } finally {
         if (!cancelled) setBusy(false);
       }
@@ -99,7 +100,7 @@ export default function AdminOrdersPage() {
     return () => {
       cancelled = true;
     };
-  }, [location.pathname, location.key, push]);
+  }, [location.pathname, location.key, push, t]);
 
   useEffect(() => {
     window.addEventListener(INTERNAL_ORDERS_LIST_REFRESH, reloadOrders);
@@ -148,7 +149,7 @@ export default function AdminOrdersPage() {
         /* ignore */
       }
     }
-    const t = setInterval(() => {
+    const intervalId = setInterval(() => {
       void tick();
     }, 25_000);
     const onVis = () => {
@@ -156,7 +157,7 @@ export default function AdminOrdersPage() {
     };
     document.addEventListener("visibilitychange", onVis);
     return () => {
-      clearInterval(t);
+      clearInterval(intervalId);
       document.removeEventListener("visibilitychange", onVis);
     };
   }, [busy]);
@@ -167,12 +168,12 @@ export default function AdminOrdersPage() {
     try {
       const res = await adminGetInternalOrderRequest(orderId);
       const order = res?.data?.order ?? res?.order;
-      if (!order) throw new Error("تعذّر تحميل بيانات الطلب.");
+      if (!order) throw new Error(t("ordersAdmin.listPage.toast.orderLoadFailed"));
       setDeliveryModal({ open: true, order, variant });
     } catch (e) {
       push({
         type: "error",
-        title: "تعذّر فتح الاستلام",
+        title: t("ordersAdmin.listPage.toast.deliveryOpenFailed"),
         message: e?.response?.data?.message || e?.message || String(e?.message || ""),
       });
     } finally {
@@ -189,12 +190,12 @@ export default function AdminOrdersPage() {
         bid_id: String(bidId),
         source: "admin_internal",
       });
-      push({ type: "success", title: "تم اعتماد العرض", message: "تم إسناد المشروع للمستقل دون دفع عبر المنصة." });
+      push({ type: "success", title: t("ordersAdmin.listPage.toast.bidApprovedTitle"), message: t("ordersAdmin.listPage.toast.bidApprovedMessage") });
       setBidsModalOrderId(null);
       await reloadOrders();
       await loadBids(orderId);
     } catch (e) {
-      push({ type: "error", title: "تعذر اعتماد العرض", message: e?.response?.data?.message || e?.message });
+      push({ type: "error", title: t("ordersAdmin.listPage.toast.bidApproveFailed"), message: e?.response?.data?.message || e?.message });
     } finally {
       setApprovingBidId(null);
     }
@@ -204,12 +205,12 @@ export default function AdminOrdersPage() {
     <>
       <DashboardShell className="oh-internal-orders">
         <DashboardPageHeader
-          eyebrow="لوحة التحكم"
-          title="الطلبات الداخلية"
-          description="طلبات تم إنشاؤها بواسطة الإدارة/السوبر أدمن (بدون دفع)."
+          eyebrow={t("ordersAdmin.listPage.header.eyebrow")}
+          title={t("ordersAdmin.listPage.header.title")}
+          description={t("ordersAdmin.listPage.header.description")}
           breadcrumbs={[
-            { label: "الرئيسية", href: breadcrumbHomeFromUser(user) },
-            { label: "الطلبات" },
+            { label: t("ordersAdmin.listPage.header.breadcrumbHome"), href: breadcrumbHomeFromUser(user) },
+            { label: t("ordersAdmin.listPage.header.breadcrumbOrders") },
           ]}
           actions={
             <>
@@ -218,17 +219,17 @@ export default function AdminOrdersPage() {
                 className={`btn btn-secondary ${view === "cards" ? "nav-link-active" : ""}`.trim()}
                 onClick={() => setView("cards")}
               >
-                عرض بطاقات
+                {t("ordersAdmin.listPage.header.viewCards")}
               </button>
               <button
                 type="button"
                 className={`btn btn-secondary ${view === "table" ? "nav-link-active" : ""}`.trim()}
                 onClick={() => setView("table")}
               >
-                عرض جدول
+                {t("ordersAdmin.listPage.header.viewTable")}
               </button>
               <Link className="btn btn-primary" to={createPath}>
-                إنشاء طلب
+                {t("ordersAdmin.listPage.header.createOrder")}
               </Link>
             </>
           }
@@ -237,14 +238,14 @@ export default function AdminOrdersPage() {
         <DashboardSection>
           <div className="oh-internal-orders__list" aria-busy={busy}>
             {busy ? (
-              <DashboardLoadingState label="جارٍ تحميل الطلبات…">
+              <DashboardLoadingState label={t("ordersAdmin.listPage.loading")}>
                 <OrderCardsGridSkeleton count={4} />
               </DashboardLoadingState>
             ) : orders.length === 0 ? (
               <DashboardEmptyState
                 className="oh-internal-orders__empty"
-                title="لا توجد طلبات داخلية بعد"
-                description="ابدأ بإنشاء طلب إداري وسيظهر هنا فوراً، ويمكنك إسناده لفريلانسر أو نشره في المعرض."
+                title={t("ordersAdmin.listPage.empty.title")}
+                description={t("ordersAdmin.listPage.empty.description")}
                 descriptionClassName="oh-internal-orders__empty-desc"
                 icon={
                   <span className="text-3xl" aria-hidden>
@@ -253,7 +254,7 @@ export default function AdminOrdersPage() {
                 }
                 actions={
                   <Link className="btn btn-primary" to={createPath}>
-                    إنشاء أول طلب
+                    {t("ordersAdmin.listPage.empty.createFirst")}
                   </Link>
                 }
               />
@@ -296,12 +297,12 @@ export default function AdminOrdersPage() {
                   <>
                     {o?.isInstitutionalOrder || o?.visibilityScope === "institution" ? (
                       <span className="oh-mini-chip oh-mini-chip--emph" title={o.institutionalStorageName || ""}>
-                        طلب مؤسسي
+                        {t("ordersAdmin.listPage.card.institutionalOrder")}
                         {o.institutionalStorageName ? ` · ${o.institutionalStorageName}` : ""}
                       </span>
                     ) : null}
                     {shouldShowApplicants ? (
-                      <span className="help">تدفق المطالبات غير متاح للطلبات الثابتة.</span>
+                      <span className="help">{t("ordersAdmin.listPage.card.claimsNotForFixed")}</span>
                     ) : null}
                     {shouldShowBidAward ? (
                       <button
@@ -312,7 +313,8 @@ export default function AdminOrdersPage() {
                           void loadBids(o.id);
                         }}
                       >
-                        عروض الأسعار{bidsCountSuffix}
+                        {t("ordersAdmin.listPage.card.priceBids")}
+                        {bidsCountSuffix}
                       </button>
                     ) : null}
                     {showDeliveryReceive ? (
@@ -322,7 +324,7 @@ export default function AdminOrdersPage() {
                         disabled={deliveryOpeningId === String(o.id)}
                         onClick={() => void openAdminDeliveryModal(o.id, "workflow")}
                       >
-                        {deliveryOpeningId === String(o.id) ? "جارٍ التحميل…" : "استلام الطلب"}
+                        {deliveryOpeningId === String(o.id) ? t("ordersAdmin.listPage.card.loading") : t("ordersAdmin.listPage.card.receiveOrder")}
                       </button>
                     ) : null}
                     {showDeliveryArchive ? (
@@ -332,7 +334,7 @@ export default function AdminOrdersPage() {
                         disabled={deliveryOpeningId === String(o.id)}
                         onClick={() => void openAdminDeliveryModal(o.id, "archive")}
                       >
-                        {deliveryOpeningId === String(o.id) ? "جارٍ التحميل…" : "ملفات تسليم المستقل"}
+                        {deliveryOpeningId === String(o.id) ? t("ordersAdmin.listPage.card.loading") : t("ordersAdmin.listPage.card.freelancerDeliveryFiles")}
                       </button>
                     ) : null}
                   </>
@@ -346,28 +348,27 @@ export default function AdminOrdersPage() {
               <thead>
                 <tr>
                   {[
-                    "رقم الطلب",
-                    "العنوان",
-                    "النطاق",
-                    "الوصف",
-                    "التصنيف",
-                    "التصنيف التفصيلي",
-                    "تصنيفات إضافية",
-                    "النوع",
-                    "الميزانية",
-                    "العملة",
-                    "المدة",
-                    "الحالة",
-                    "التسليم مقابل الموعد",
-                    "في المعرض",
-                    "مؤرشف",
+                    t("ordersAdmin.listPage.table.orderCode"),
+                    t("ordersAdmin.listPage.table.title"),
+                    t("ordersAdmin.listPage.table.scope"),
+                    t("ordersAdmin.listPage.table.description"),
+                    t("ordersAdmin.listPage.table.category"),
+                    t("ordersAdmin.listPage.table.subSubcategory"),
+                    t("ordersAdmin.listPage.table.extraCategories"),
+                    t("ordersAdmin.listPage.table.type"),
+                    t("ordersAdmin.listPage.table.budget"),
+                    t("ordersAdmin.listPage.table.currency"),
+                    t("ordersAdmin.listPage.table.duration"),
+                    t("ordersAdmin.listPage.table.status"),
+                    t("ordersAdmin.listPage.table.deliveryTiming"),
+                    t("ordersAdmin.listPage.table.inPool"),
+                    t("ordersAdmin.listPage.table.archived"),
                     "assignedFreelancerId",
                     "createdAt",
                     "files",
                     "skills",
-                  ]
-                    .concat(["إجراءات"])
-                    .map((h) => (
+                    t("ordersAdmin.listPage.table.actions"),
+                  ].map((h) => (
                     <th key={h} style={{ textAlign: "right", padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.18)", whiteSpace: "nowrap" }}>
                       {h}
                     </th>
@@ -398,7 +399,7 @@ export default function AdminOrdersPage() {
                     : "";
                   const files = Array.isArray(o.files) ? o.files.map((f) => f.originalName || f.filePath).filter(Boolean).join(" | ") : "";
                   const skills = Array.isArray(o.preferredSkills) ? o.preferredSkills.map((s) => s.name).filter(Boolean).join(" | ") : "";
-                  const deliveryTiming = getOrderDeliveryTiming(o);
+                  const deliveryTiming = getOrderDeliveryTiming(o, t, locale);
                   return (
                     <tr key={o.id}>
                       <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>{o.orderCode || "—"}</td>
@@ -406,11 +407,11 @@ export default function AdminOrdersPage() {
                       <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>
                         {o?.isInstitutionalOrder || o?.visibilityScope === "institution" ? (
                           <span title={[o.institutionalStorageName, ...(o.institutionalInstitutionNames || [])].filter(Boolean).join(" · ")}>
-                            طلب مؤسسي
+                            {t("ordersAdmin.listPage.card.institutionalOrder")}
                             {o.institutionalStoredOrderId ? ` (#${o.institutionalStoredOrderId})` : ""}
                           </span>
                         ) : (
-                          "عام"
+                          t("ordersAdmin.listPage.table.scopeGeneral")
                         )}
                       </td>
                       <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)", maxWidth: 420 }}>{o.description || "—"}</td>
@@ -439,13 +440,13 @@ export default function AdminOrdersPage() {
                       <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>{o.assignedFreelancerId || "—"}</td>
                       <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>{o.createdAt || "—"}</td>
                       <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)", maxWidth: 420 }}>
-                        {files || "لا توجد ملفات مضافة"}
+                        {files || t("ordersAdmin.listPage.table.noFiles")}
                       </td>
                       <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)", maxWidth: 320 }}>{skills || "—"}</td>
                       <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)", whiteSpace: "nowrap" }}>
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                           {tableShowClaims ? (
-                            <span className="help">المتقدمون</span>
+                            <span className="help">{t("ordersAdmin.listPage.table.applicants")}</span>
                           ) : null}
                           {tableShowBids ? (
                             <button
@@ -457,7 +458,7 @@ export default function AdminOrdersPage() {
                                 void loadBids(o.id);
                               }}
                             >
-                              العروض
+                              {t("ordersAdmin.listPage.table.bids")}
                             </button>
                           ) : null}
                           {!tableShowClaims && !tableShowBids ? "—" : null}
@@ -476,7 +477,7 @@ export default function AdminOrdersPage() {
 
       <DashboardModal
         open={Boolean(bidsModalOrder)}
-        title="عروض الأسعار (مزايدة داخلية)"
+        title={t("ordersAdmin.listPage.bidsModal.title")}
         className="dash-ui-modal--bids"
         onClose={() => {
           if (!approvingBidId) setBidsModalOrderId(null);
@@ -490,7 +491,7 @@ export default function AdminOrdersPage() {
                 disabled={bidsModalBusy || Boolean(approvingBidId)}
                 onClick={() => loadBids(bidsModalOrder.id)}
               >
-                {bidsModalBusy ? "جارٍ التحميل…" : "تحديث القائمة"}
+                {bidsModalBusy ? t("ordersAdmin.listPage.card.loading") : t("ordersAdmin.listPage.bidsModal.refresh")}
               </button>
               <button
                 type="button"
@@ -498,7 +499,7 @@ export default function AdminOrdersPage() {
                 disabled={Boolean(approvingBidId)}
                 onClick={() => setBidsModalOrderId(null)}
               >
-                إغلاق
+                {t("ordersAdmin.listPage.bidsModal.close")}
               </button>
             </>
           ) : null
@@ -510,7 +511,7 @@ export default function AdminOrdersPage() {
               {bidsModalOrder.orderCode ? `${bidsModalOrder.orderCode} — ` : ""}
               {bidsModalOrder.title || "—"}
             </p>
-            <p className="dash-ui-modal__hint">اعتماد عرض واحد يُسند المشروع دون دفع عبر Stripe (طلب إداري).</p>
+            <p className="dash-ui-modal__hint">{t("ordersAdmin.listPage.bidsModal.hint")}</p>
 
             {bidsModalList === null && bidsModalBusy ? <ClaimsSkeleton /> : null}
 
@@ -518,12 +519,13 @@ export default function AdminOrdersPage() {
               bidsModalBusy ? (
                 <ClaimsSkeleton />
               ) : bidsModalList.length === 0 ? (
-                <p className="dash-ui-modal__empty">لا توجد عروض بعد.</p>
+                <p className="dash-ui-modal__empty">{t("ordersAdmin.listPage.bidsModal.empty")}</p>
               ) : (
                 <div className="admin-dash-modal__bid-list">
                   {bidsModalList.map((b) => {
                     const name = fullNameAr(b?.freelancer) || b?.freelancer?.email || `#${b?.freelancerUserId || ""}`;
                     const status = String(b?.status || "").trim();
+                    const statusLabel = status ? getOrderStatusLabel(status, t) : "";
                     const canApprove = status === "pending";
                     const cur = bidsModalOrder.currencyCode || "JOD";
                     return (
@@ -531,18 +533,20 @@ export default function AdminOrdersPage() {
                         <div className="admin-dash-modal__bid-copy">
                           <div className="admin-dash-modal__bid-name">{name}</div>
                           <p className="admin-dash-modal__bid-meta">
-                            المبلغ: {b?.amount != null ? `${b.amount} ${cur}` : "—"}
-                            {status ? ` • الحالة: ${status}` : ""}
+                            {b?.amount != null
+                              ? t("ordersAdmin.listPage.bidsModal.amount", { amount: `${b.amount} ${cur}` })
+                              : t("ordersAdmin.listPage.bidsModal.amount", { amount: "—" })}
+                            {statusLabel ? ` • ${t("ordersAdmin.listPage.bidsModal.status", { status: statusLabel })}` : ""}
                           </p>
                         </div>
                         <button
                           type="button"
                           className="btn btn-primary"
                           disabled={!canApprove || approvingBidId === String(b.id)}
-                          title={!canApprove ? "لا يمكن اعتماد هذا العرض" : ""}
+                          title={!canApprove ? t("ordersAdmin.listPage.bidsModal.cannotApprove") : ""}
                           onClick={() => approveInternalBid({ orderId: bidsModalOrder.id, bidId: b.id })}
                         >
-                          {approvingBidId === String(b.id) ? "جارٍ الاعتماد…" : "اعتماد"}
+                          {approvingBidId === String(b.id) ? t("ordersAdmin.listPage.bidsModal.approving") : t("ordersAdmin.listPage.bidsModal.approve")}
                         </button>
                       </div>
                     );
@@ -566,7 +570,11 @@ export default function AdminOrdersPage() {
             void reloadOrders();
           }}
           onRevised={() => {
-            push({ type: "success", title: "تم إرسال طلب التعديل", message: "سيظهر للمستقل ويمكنه إعادة التسليم بعد التعديل." });
+            push({
+              type: "success",
+              title: t("ordersAdmin.listPage.toast.revisionSentTitle"),
+              message: t("ordersAdmin.listPage.toast.revisionSentMessage"),
+            });
             void reloadOrders();
           }}
         />

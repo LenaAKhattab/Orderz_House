@@ -1,0 +1,578 @@
+{
+  "common": {
+    "preview": "معاينة",
+    "cancel": "إلغاء",
+    "close": "إغلاق",
+    "save": "حفظ",
+    "delete": "حذف",
+    "edit": "تعديل",
+    "enable": "تفعيل",
+    "disable": "تعطيل",
+    "next": "التالي",
+    "previous": "السابق",
+    "retry": "إعادة المحاولة",
+    "refresh": "تحديث",
+    "reset": "إعادة تعيين",
+    "fullPreview": "معاينة كاملة",
+    "noTitle": "بدون عنوان",
+    "emDash": "—",
+    "uploading": "جارٍ الرفع…",
+    "saving": "جارٍ الحفظ…",
+    "savingEllipsis": "جارٍ الحفظ...",
+    "deleting": "جارٍ الحذف…",
+    "working": "جارٍ…",
+    "loading": "جارٍ التحميل…",
+    "guidelines": "إرشادات",
+    "selected": "محدد",
+    "summary": "ملخص",
+    "enabledSuffix": " · مفعّل",
+    "disabledSuffix": " · معطّل"
+  },
+  "page": {
+    "eyebrow": "لوحة التحكم",
+    "title": "إدارة الإعلانات",
+    "description": "بناء سريع، معاينة فورية، ونشر بخطوات واضحة.",
+    "breadcrumbHome": "الرئيسية",
+    "breadcrumbAds": "الإعلانات",
+    "newAd": "إعلان جديد",
+    "popupAds": "الإعلانات المنبثقة",
+    "editAd": "تعديل إعلان",
+    "buildNew": "بناء إعلان جديد",
+    "draftUnsaved": "مسودة غير محفوظة · {{relative}}",
+    "synced": "متزامن",
+    "previewAria": "معاينة الإعلان",
+    "actionsTitle": "إجراءات الإعلان",
+    "saveDraft": "حفظ كمسودة",
+    "publish": "نشر الإعلان",
+    "allAdsTitle": "جميع الإعلانات",
+    "allAdsDescription": "تعديل سريع، إحصاءات، وإدارة الحالة.",
+    "emptyAds": "لا توجد إعلانات بعد.",
+    "loadErrorFallback": "حاول مرة أخرى.",
+    "dragReorderHint": "اسحب البطاقات لإعادة الترتيب",
+    "discardConfirm": "سيتم مسح التغييرات غير المحفوظة. متابعة؟",
+    "deleteConfirm": "حذف هذا الإعلان نهائيًا؟",
+    "relativeNow": "الآن",
+    "relativeSeconds": "منذ {{sec}} ث",
+    "relativeMinutes": "منذ {{min}} د",
+    "adminNotePrompt": "{{action}}\nسبب الإجراء (3 أحرف على الأقل):"
+  },
+  "toast": {
+    "fixFieldsTitle": "تأكد من الحقول",
+    "fixFieldsMessage": "صحّح الأخطاء المشار إليها ثم أعد المحاولة.",
+    "savedTitle": "تم الحفظ",
+    "createdTitle": "تم الإنشاء",
+    "publishedMessage": "تم نشر الإعلان.",
+    "draftSavedMessage": "تم حفظ المسودة.",
+    "saveFailedTitle": "فشل الحفظ",
+    "checkFields": "تحقق من الحقول.",
+    "reasonRequiredTitle": "سبب مطلوب",
+    "reasonRequiredMessage": "أدخل سببًا من 3 أحرف على الأقل.",
+    "updatedTitle": "تم التحديث",
+    "enabledMessage": "تم تفعيل الإعلان.",
+    "disabledMessage": "تم تعطيل الإعلان.",
+    "errorTitle": "خطأ",
+    "deletedTitle": "تم الحذف",
+    "deleteFailedTitle": "تعذر الحذف",
+    "reorderSuccessTitle": "تم تحديث الترتيب",
+    "reorderFailedTitle": "تعذر الترتيب",
+    "loadFailedTitle": "تعذر التحميل",
+    "uploadSuccessTitle": "تم رفع الصورة",
+    "uploadFailedTitle": "فشل الرفع"
+  },
+  "actions": {
+    "enableAd": "تفعيل الإعلان",
+    "disableAd": "تعطيل الإعلان",
+    "deleteAd": "حذف الإعلان",
+    "reorderAds": "إعادة ترتيب الإعلانات"
+  },
+  "validation": {
+    "companyNameRequired": "اسم الشركة مطلوب.",
+    "titleRequired": "العنوان مطلوب.",
+    "ctaTextRequired": "نص زر الإجراء مطلوب.",
+    "openModeInvalid": "نوع فتح الرابط غير صالح.",
+    "whatsappInvalid": "أدخل رقم واتساب صالحًا (6 أرقام على الأقل).",
+    "ctaUrlRequired": "رابط الإجراء مطلوب.",
+    "ctaUrlInvalid": "رابط الإجراء غير صحيح.",
+    "ctaUrlInternal": "المسار الداخلي يجب أن يبدأ بـ /",
+    "imageUrlInvalid": "رابط الصورة غير صحيح.",
+    "logoUrlInvalid": "رابط الشعار غير صحيح.",
+    "backgroundImageUrlInvalid": "رابط صورة الخلفية غير صحيح.",
+    "selectedAssetRequired": "اختر صورة جاهزة من القائمة.",
+    "backgroundImageRequired": "ارفع صورة خلفية أو ألصق رابطًا صالحًا.",
+    "imageRequired": "ارفع صورة أو ألصق رابطًا صالحًا.",
+    "salePercentInteger": "أدخل عددًا صحيحًا بين 0 و 100.",
+    "salePercentRange": "أدخل نسبة خصم بين 0 و 100.",
+    "phoneInvalid": "رقم الهاتف يحتوي على رموز غير مسموحة.",
+    "whatsappCharsInvalid": "رقم واتساب يحتوي على رموز غير مسموحة.",
+    "endBeforeStart": "تاريخ النهاية يجب أن يكون بعد تاريخ البداية.",
+    "adminNoteRequired": "سبب الإجراء مطلوب (3 أحرف على الأقل)."
+  },
+  "status": {
+    "draft": {
+      "label": "مسودة",
+      "description": "الإعلان غير منشور ولن يظهر للزوار."
+    },
+    "expired": {
+      "label": "منتهي",
+      "description": "انتهى وقت العرض."
+    },
+    "scheduled": {
+      "label": "مجدول",
+      "description": "سيظهر عند وقت البداية."
+    },
+    "live": {
+      "label": "يعرض الآن",
+      "description": "الإعلان ظاهر للزوار ضمن الجدولة."
+    }
+  },
+  "builderSteps": {
+    "content": {
+      "label": "المحتوى",
+      "short": "١"
+    },
+    "design": {
+      "label": "التصميم",
+      "short": "٢"
+    },
+    "offer": {
+      "label": "العرض والخصم",
+      "short": "٣"
+    },
+    "images": {
+      "label": "الصور",
+      "short": "٤"
+    },
+    "publish": {
+      "label": "النشر",
+      "short": "٥"
+    },
+    "orderStats": {
+      "label": "الترتيب والإحصاء",
+      "short": "٦"
+    },
+    "navAria": "خطوات بناء الإعلان"
+  },
+  "layouts": {
+    "image_top": {
+      "label": "صورة بالأعلى",
+      "description": "مناسب لإعلان يحتوي صورة واضحة بالأعلى ونص بالأسفل."
+    },
+    "image_background": {
+      "label": "صورة كخلفية",
+      "description": "مناسب للإعلانات البصرية مع نص فوق الصورة."
+    },
+    "text_only": {
+      "label": "نص فقط",
+      "description": "مناسب للتنبيهات والعروض النصية."
+    },
+    "split": {
+      "label": "تقسيم صورة ونص",
+      "description": "مناسب لعرض صورة بجانب النص."
+    },
+    "minimal_banner": {
+      "label": "بانر بسيط",
+      "description": "مناسب لإعلان صغير وخفيف."
+    },
+    "carousel": {
+      "label": "صور متعددة",
+      "description": "مناسب لأكثر من صورة داخل إعلان واحد."
+    }
+  },
+  "layoutHints": {
+    "image_top": "يُفضّل إضافة صورة واحدة على الأقل لإبراز الإعلان.",
+    "image_background": "هذا النوع يحتاج إلى صورة واحدة على الأقل.",
+    "text_only": "ركّز على العنوان والوصف؛ الصور اختيارية.",
+    "split": "يُفضّل صورة واحدة على الأقل لتوازن الشكل.",
+    "minimal_banner": "اختصر النص؛ البانر مصمّم لمساحة صغيرة.",
+    "carousel": "يُفضّل إضافة صورتين أو أكثر لعرض التمرير بشكل جيد."
+  },
+  "placements": {
+    "home_right_panel": {
+      "label": "يمين الصفحة الرئيسية"
+    },
+    "home_after_hero": {
+      "label": "أسفل الهيرو",
+      "note": "ملاحظة: هذا المكان قد لا يكون مفعّلًا في الواجهة العامة بعد."
+    },
+    "services_page": {
+      "label": "صفحة الخدمات",
+      "note": "ملاحظة: هذا المكان قد لا يكون مفعّلًا في الواجهة العامة بعد."
+    },
+    "global_sidebar": {
+      "label": "الشريط الجانبي العام",
+      "note": "ملاحظة: هذا المكان قد لا يكون مفعّلًا في الواجهة العامة بعد."
+    }
+  },
+  "positions": {
+    "imageTop": "أعلى الإعلان",
+    "imageBottom": "أسفل الإعلان",
+    "left": "يسار",
+    "right": "يمين",
+    "background": "خلفية",
+    "textTop": "أعلى",
+    "textMiddle": "وسط",
+    "textBottom": "أسفل"
+  },
+  "fontSize": {
+    "small": "صغير",
+    "normal": "عادي",
+    "medium": "متوسط",
+    "large": "كبير"
+  },
+  "fontWeight": {
+    "normal": "عادي",
+    "medium": "متوسط",
+    "bold": "عريض"
+  },
+  "stylePresets": {
+    "classic_navy": "أزرق كلاسيكي",
+    "soft_sky": "سماوي ناعم",
+    "clean_white": "أبيض نظيف",
+    "premium_dark": "داكن فاخر",
+    "warm_offer": "عرض دافئ",
+    "success_green": "أخضر نجاح"
+  },
+  "bannerColorPresets": {
+    "blue_white": "أزرق احترافي",
+    "cream_navy": "داكن حديث",
+    "red_sale": "أحمر عروض",
+    "navy_gold": "ذهبي فاخر",
+    "green_nature": "فاتح نظيف"
+  },
+  "bannerTemplates": {
+    "classic_split": {
+      "label": "عرض كلاسيكي",
+      "hint": "نص يمين + صورة يسار — عروض عامة"
+    },
+    "product_focus": {
+      "label": "تركيز المنتج",
+      "hint": "صورة كبيرة + خصم على الصورة"
+    },
+    "luxury_center": {
+      "label": "عرض فاخر",
+      "hint": "عنوان مركزي — إحساس راقٍ"
+    },
+    "ribbon_strip": {
+      "label": "شريط إعلان",
+      "hint": "شريط أفقي — تنبيه سريع"
+    },
+    "business_partner": {
+      "label": "ترويج أعمال",
+      "hint": "شراكة / أعمال — صورة مصافحة"
+    },
+    "minimal_clean": {
+      "label": "بسيط ونظيف",
+      "hint": "عنوان كبير — بدون زخرفة ثقيلة"
+    }
+  },
+  "visualAssets": {
+    "handshake": { "label": "مصافحة / شراكة" },
+    "gold_confetti": { "label": "احتفال ذهبي" },
+    "smiley_face": { "label": "وجه مبتسم" },
+    "red_gift": { "label": "صندوق هدية أحمر" },
+    "gold_gifts": { "label": "هدايا ذهبية" }
+  },
+  "priorityOptions": {
+    "0": "عادية",
+    "50": "مميزة",
+    "100": "عالية"
+  },
+  "openModes": {
+    "NEW_TAB": "فتح في تبويب جديد",
+    "SAME_TAB": "فتح في نفس الصفحة",
+    "INTERNAL_ROUTE": "رابط داخلي",
+    "WHATSAPP": "واتساب"
+  },
+  "form": {
+    "advancedOptions": "خيارات متقدمة",
+    "companyName": "اسم الشركة *",
+    "companyPlaceholder": "مثال: متجر هدايا",
+    "adTitle": "عنوان الإعلان *",
+    "titlePlaceholder": "مثال: خصم خاص",
+    "subtitle": "السطر الفرعي",
+    "subtitlePlaceholder": "مثال: عرض محدود",
+    "description": "وصف الإعلان",
+    "descriptionPlaceholder": "وصف قصير للعرض",
+    "themeHint": "اختر ثيم الألوان — يُطبَّق تلقائياً على الخلفية والنصوص والأزرار والشارات.",
+    "salePercent": "نسبة الخصم %",
+    "badgeText": "نص الشارة",
+    "badgePlaceholder": "حصري",
+    "ctaText": "نص الزر *",
+    "ctaPlaceholder": "احصل على العرض",
+    "openLink": "فتح الرابط",
+    "ctaUrl": "رابط الزر *",
+    "whatsapp": "واتساب *",
+    "phoneDisplay": "هاتف للعرض",
+    "logoUrl": "رابط الشعار",
+    "publishState": "الحالة",
+    "draftPill": "مسودة",
+    "publishedPill": "منشور",
+    "priority": "الأولوية",
+    "start": "البداية",
+    "end": "النهاية",
+    "adminNote": "سبب الإجراء *",
+    "adminNotePlaceholder": "مطلوب عند الحفظ",
+    "internalNotesTitle": "ملاحظات داخلية",
+    "teamNotes": "ملاحظات الفريق",
+    "statsHint": "احفظ الإعلان أولاً لعرض الإحصاءات التفصيلية في الجدول.",
+    "impressions": "ظهورات",
+    "clicks": "نقرات",
+    "quickTheme": "ثيم سريع",
+    "quickThemeAria": "ثيمات سريعة",
+    "designTemplateTitle": "التصميم والقالب",
+    "designTemplateHint": "اختر شكل البانر (تخطيط مختلف) ثم ثيم الألوان من القائمة أدناه",
+    "colorTheme": "ثيم الألوان",
+    "pickBannerShape": "اختر شكل البانر",
+    "pickBannerSub": "معاينة أفقية لكل تخطيط — الألوان قابلة للتغيير لاحقًا.",
+    "savedFontSize": "حجم محفوظ مسبقًا",
+    "savedFontWeight": "سمك محفوظ مسبقًا"
+  },
+  "colors": {
+    "sectionTitle": "الألوان",
+    "sectionHint": "اضبط ألوان البانر الأفقي — التخطيط ثابت، الألوان فقط تتغير.",
+    "quickPick": "اختيار سريع للألوان (اختياري)",
+    "quickPickAria": "اختيار سريع للألوان",
+    "bgPrimary": "لون الخلفية الأول",
+    "bgSecondary": "لون الخلفية الثاني",
+    "mainText": "لون النص الرئيسي",
+    "subText": "لون النص الفرعي",
+    "ctaButton": "لون زر CTA",
+    "ctaButtonText": "لون نص الزر",
+    "badge": "لون الشارة",
+    "badgeText": "لون نص الشارة",
+    "saleCircle": "لون دائرة الخصم",
+    "saleCircleText": "لون نص دائرة الخصم",
+    "controlsHint": "النصوص والشارة: اضبط ألوانها في القسم الأول. هنا نمط البطاقة والخلفية والزر والتدرج الاختياري.",
+    "pickPreset": "اختر نمطًا جاهزًا",
+    "resetColors": "إعادة تعيين الألوان",
+    "customizeCard": "تخصيص البطاقة",
+    "adBackground": "خلفية الإعلان",
+    "buttonColor": "لون الزر",
+    "advancedSummary": "خيارات متقدمة",
+    "advancedBorderHint": "إطار البطاقة، نص الزر يدويًا، أو التدرج اللوني للخلفية — اختياري.",
+    "cardBorder": "لون إطار البطاقة",
+    "buttonTextOverride": "نص الزر (تجاوز تلقائي)",
+    "autoFromButton": "تلقائي من لون الزر",
+    "gradientTitle": "التدرج اللوني للخلفية",
+    "gradientHint": "اختياري — إذا لم ترغب بتدرج، اتركه فارغًا أو اختر «بدون تدرج».",
+    "gradientQuickAria": "تدرجات جاهزة",
+    "gradientStart": "بداية التدرج",
+    "gradientEnd": "نهاية التدرج",
+    "colorPicker": "منتقي الألوان",
+    "customColorHint": "يمكنك ضبط اللون بدقة ثم العودة إلى السِلم أعلاه إذا يطابق أحد الخيارات.",
+    "savedNotInList": "لون محفوظ غير مدرج في القائمة — لا يزال يظهر في المعاينة والصفحة العامة كما هو.",
+    "savedNotInListCompact": "لون محفوظ غير مدرج أعلاه — يظهر في المعاينة؛ يمكن ضبطه من «خيارات متقدمة».",
+    "pickColorAria": "اختيار اللون"
+  },
+  "gradients": {
+    "none": "بدون تدرج",
+    "sky": "تدرج سماوي",
+    "dark": "تدرج داكن",
+    "warm": "تدرج دافئ",
+    "green": "تدرج أخضر",
+    "purple": "تدرج بنفسجي"
+  },
+  "palette": {
+    "default": "افتراضي",
+    "navy": "كحلي",
+    "blue": "أزرق",
+    "sky": "سماوي",
+    "green": "أخضر",
+    "gold": "ذهبي",
+    "red": "أحمر",
+    "purple": "بنفسجي",
+    "gray": "رمادي",
+    "black": "أسود",
+    "white": "أبيض",
+    "orange": "برتقالي",
+    "pink": "وردي",
+    "darkGray": "رمادي داكن",
+    "light": "فاتح",
+    "blueGray": "أزرق رمادي",
+    "dark": "داكن",
+    "nearTransparent": "شفاف تقريبًا",
+    "offWhite": "شبه أبيض",
+    "cream": "كريمي",
+    "auto": "تلقائي",
+    "lightSky": "سماوي فاتح",
+    "lightBlue": "أزرق فاتح",
+    "lightGreen": "أخضر فاتح",
+    "lightGold": "ذهبي فاتح",
+    "lightPurple": "بنفسجي فاتح",
+    "lightPink": "وردي فاتح",
+    "lightGray": "رمادي فاتح",
+    "none": "بدون",
+    "unset": "بدون تحديد",
+    "customColor": "لون مخصص",
+    "savedColor": "لون محفوظ"
+  },
+  "images": {
+    "sectionTitle": "الصور",
+    "sectionHint": "صورة جانبية جاهزة أو خلفية مخصصة",
+    "pickReadyImage": "اختر صورة جاهزة",
+    "optionalBackground": "صورة خلفية (اختياري)",
+    "backgroundHint": "تُستخدم كخلفية للبانر مع طبقة بيضاء شفافة حتى يظهر النص بوضوح.",
+    "backgroundLabel": "خلفية",
+    "removeBackground": "إزالة الخلفية",
+    "uploadFromDevice": "رفع صورة من الجهاز",
+    "orPasteUrl": "أو ألصق رابط صورة (https)",
+    "noServerUrl": "لم يُرجع الخادم رابطًا.",
+    "uploadFailed": "فشل رفع الصورة.",
+    "managerHint": "أضف رابط صورة واحدة للإعلان. تُخزَّن كرابط فقط (لا رفع ملفات من هنا).",
+    "adImage": "صورة الإعلان",
+    "addUrlForPreview": "أضف رابطًا لمعاينة الصورة",
+    "imageUrl": "رابط الصورة",
+    "urlHint": "يجب أن يبدأ الرابط بـ https:// أو مسارًا يبدأ بـ /",
+    "altText": "النص البديل",
+    "altHint": "يُستخدم لإتاحة الوصول وللمعاينة عند تعذّر تحميل الصورة",
+    "addImage": "+ إضافة صورة"
+  },
+  "textBlocks": {
+    "hint": "استخدم النصوص الإضافية لإضافة مميزات أو ملاحظات؛ ولون كل كتلة يُحدَّد بجانبها مباشرة.",
+    "blockIndex": "كتلة {{index}}",
+    "duplicate": "نسخ الكتلة",
+    "extraText": "نص إضافي",
+    "textPosition": "مكان النص",
+    "fontSize": "حجم الخط",
+    "fontWeight": "سمك الخط",
+    "addBlock": "+ إضافة كتلة نصية"
+  },
+  "table": {
+    "image": "صورة",
+    "title": "العنوان",
+    "company": "الشركة",
+    "status": "الحالة",
+    "start": "البداية",
+    "end": "النهاية",
+    "impressions": "ظهورات",
+    "clicks": "نقرات",
+    "ctr": "CTR",
+    "lastClick": "آخر نقرة",
+    "actions": "إجراءات",
+    "impressionsAbbr": "ظ",
+    "clicksAbbr": "نقرة",
+    "impressionsTitle": "ظهورات",
+    "clicksTitle": "نقرات"
+  },
+  "reorder": {
+    "empty": "لا توجد إعلانات بعد.",
+    "dragTitle": "اسحب للترتيب"
+  },
+  "preview": {
+    "liveTitle": "معاينة مباشرة",
+    "syncing": "جاري التحديث…",
+    "emptyHint": "نص تجريبي للحقول الفارغة.",
+    "fallbacks": {
+      "companyName": "متجر هدايا",
+      "title": "إعلان حصري",
+      "subtitle": "ربح الانتباه",
+      "description": "أضف وصفاً قصيراً لجذب الانتباه…",
+      "ctaText": "احصل على العرض الآن",
+      "badgeText": "عرض محدود"
+    },
+    "templateDemo": {
+      "title": "خصم 40% اليوم",
+      "subtitle": "عرض محدود",
+      "companyName": "متجر هدايا",
+      "badgeText": "عرض حصري",
+      "ctaText": "احصل على العرض"
+    }
+  },
+  "reschedule": {
+    "title": "إدارة ظهور الإعلان",
+    "subtitle": "اختر طريقة ظهور الإعلان للمستخدمين، ويمكنك تعديل الجدولة في أي وقت.",
+    "adLabel": "الإعلان:",
+    "currentStatus": "الحالة الحالية:",
+    "howToShow": "كيف تريد عرض الإعلان؟",
+    "optionsAria": "خيارات ظهور الإعلان",
+    "modes": {
+      "immediate": {
+        "label": "تشغيل فوري بدون جدولة",
+        "description": "يظهر الإعلان فورًا للزوار ويبقى ظاهرًا طالما أنه مفعّل هنا، دون وقت بداية أو نهاية."
+      },
+      "scheduled": {
+        "label": "جدولة بوقت محدد",
+        "description": "حدد وقت بداية أو نهاية لظهور الإعلان."
+      },
+      "paused": {
+        "label": "إيقاف الإعلان",
+        "description": "يتم إخفاء الإعلان عن المستخدمين حتى تقوم بتشغيله مرة أخرى."
+      }
+    },
+    "outcomeImmediate": "النتيجة: سيظهر الإعلان فورًا ويبقى ظاهرًا طالما أنه مفعّل، دون جدولة بتاريخ بداية أو نهاية.",
+    "outcomeHidden": "النتيجة: سيتم إخفاء الإعلان عن المستخدمين.",
+    "outcomeRange": "النتيجة: سيظهر الإعلان من {{start}} حتى {{end}}.",
+    "outcomeFrom": "النتيجة: سيبدأ الإعلان في {{start}} بدون تاريخ نهاية.",
+    "outcomeUntil": "النتيجة: سيظهر الإعلان فورًا وينتهي في {{end}}.",
+    "outcomeDefault": "النتيجة: الإعلان سيظهر فورًا بدون تاريخ نهاية.",
+    "shortcuts": "اختصارات:",
+    "shortcutsAria": "اختصارات التاريخ",
+    "today": "اليوم",
+    "tomorrow": "غدًا",
+    "nextWeek": "بعد أسبوع",
+    "noEnd": "بدون نهاية",
+    "startLabel": "بداية الظهور",
+    "startHint": "يمكنك ترك بداية الظهور فارغة ليبدأ الإعلان فورًا.",
+    "endLabel": "نهاية الظهور",
+    "endHint": "يمكنك ترك نهاية الظهور فارغة ليبقى الإعلان بدون نهاية.",
+    "endBeforeStart": "تاريخ النهاية لا يمكن أن يكون قبل تاريخ البداية.",
+    "endInPast": "تنبيه: تاريخ النهاية في الماضي، لذلك سيظهر الإعلان كمنتهي ولن يظهر للمستخدمين.",
+    "saveChanges": "حفظ التغييرات"
+  },
+  "popup": {
+    "modalTitle": "إدارة الإعلانات المنبثقة",
+    "loading": "جارٍ تحميل إعلانات النوافذ المنبثقة…",
+    "currentList": "الإعلانات الحالية",
+    "newAd": "إعلان جديد",
+    "empty": "لا توجد نوافذ منبثقة بعد. أنشئ إعلاناً جديداً.",
+    "selectHint": "اختر إعلاناً من القائمة لعرض التفاصيل أو اضغط إعلان جديد لإنشاء إعلان.",
+    "enable": "تفعيل الإعلان المنبثق",
+    "titleAr": "العنوان بالعربية",
+    "titleEn": "العنوان بالإنجليزية (اختياري)",
+    "bodyAr": "النص بالعربية",
+    "bodyEn": "النص بالإنجليزية (اختياري)",
+    "imageField": "صورة (رابط أو رفع)",
+    "uploadImage": "رفع صورة",
+    "buttonText": "نص الزر",
+    "buttonUrl": "رابط الزر",
+    "openNewTab": "فتح الرابط في تبويب جديد",
+    "audience": "الجمهور",
+    "pageScope": "نطاق الصفحات",
+    "frequency": "تكرار الظهور",
+    "audienceOptions": {
+      "all": "الجميع",
+      "guests": "الزوار فقط",
+      "freelancer": "المستقلون",
+      "client": "العملاء",
+      "staff": "الإدارة"
+    },
+    "pageScopeOptions": {
+      "all": "كل الصفحات",
+      "home": "الصفحة الرئيسية",
+      "public": "الموقع العام (بدون لوحة التحكم)",
+      "dashboard": "لوحات التحكم"
+    },
+    "frequencyOptions": {
+      "session": "مرة لكل جلسة",
+      "day": "مرة يومياً",
+      "every_visit": "كل زيارة لصفحة",
+      "first_login_only": "عند أول تسجيل دخول فقط",
+      "every_login": "عند كل تسجيل دخول"
+    },
+    "firstLoginHint": "يعمل هذا الخيار للمستخدمين المسجّلين فقط. يظهر الإعلان مرة واحدة بعد تسجيل الدخول ولن يُعرض مرة أخرى بعد إغلاقه أو مشاهدته. لن يظهر للزوار غير المسجّلين.",
+    "firstLoginGuests": " مع جمهور «الزوار فقط» لن يظهر هذا الإعلان.",
+    "everyLoginHint": "يعمل هذا الخيار للمستخدمين المسجّلين فقط. يظهر الإعلان بعد كل تسجيل دخول، ولا يُعرض مرة أخرى خلال نفس جلسة الدخول بعد إغلاقه. لن يظهر للزوار غير المسجّلين.",
+    "scheduleStart": "بداية العرض (اختياري)",
+    "scheduleEnd": "نهاية العرض (اختياري)",
+    "deleteConfirm": "حذف هذا الإعلان المنبثق؟",
+    "updatedMessage": "تم تحديث إعلان النافذة المنبثقة.",
+    "createdMessage": "تم إنشاء إعلان النافذة المنبثقة.",
+    "hintTitle": "كيف تعمل النوافذ المنبثقة؟",
+    "hint1": "يُعرض إعلان واحد فقط في كل مرة حسب الترتيب.",
+    "hint2": "بعد الإغلاق، يُحترم خيار «تكرار الظهور» (جلسة / يوم / زيارة / أول تسجيل دخول / كل تسجيل دخول).",
+    "hint3": "عند اختيار «عند أول تسجيل دخول فقط»، يظهر الإعلان مرة واحدة فقط للمستخدم بعد أول تسجيل دخول، ولن يظهر له مرة أخرى بعد إغلاقه أو مشاهدته.",
+    "hint4": "عند اختيار «عند كل تسجيل دخول»، يظهر الإعلان بعد كل تسجيل دخول ولا يُعرض مرة أخرى خلال نفس جلسة الدخول بعد إغلاقه.",
+    "hint5": "الجمهور يُحدَّد حسب دور المستخدم أو كونه زائراً.",
+    "hint6": "يمكن جدولة العرض بتواريخ البداية والنهاية."
+  }
+}

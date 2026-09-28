@@ -1,13 +1,15 @@
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/planAdminResources";
 import { DECISION_FILTERS } from "./planPortfolioActions";
 
-const DECISION_FILTER_OPTIONS = [
-  { key: DECISION_FILTERS.all, label: "الكل" },
-  { key: DECISION_FILTERS.promote, label: "مرشّحة للترويج" },
-  { key: DECISION_FILTERS.review, label: "تحتاج مراجعة" },
-  { key: DECISION_FILTERS.high_risk, label: "عالية المخاطر" },
-  { key: DECISION_FILTERS.no_subs, label: "بلا اشتراكات" },
-  { key: DECISION_FILTERS.top_revenue, label: "الأعلى قيمة مدفوعة" },
-  { key: DECISION_FILTERS.top_usage, label: "الأكثر اشتراكات سارية" },
+const DECISION_FILTER_KEYS = [
+  { key: DECISION_FILTERS.all, labelKey: "planAdmin.metrics.portfolio.filters.all" },
+  { key: DECISION_FILTERS.promote, labelKey: "planAdmin.metrics.portfolio.filters.promote" },
+  { key: DECISION_FILTERS.review, labelKey: "planAdmin.metrics.portfolio.filters.review" },
+  { key: DECISION_FILTERS.high_risk, labelKey: "planAdmin.metrics.portfolio.filters.high_risk" },
+  { key: DECISION_FILTERS.no_subs, labelKey: "planAdmin.metrics.portfolio.filters.no_subs" },
+  { key: DECISION_FILTERS.top_revenue, labelKey: "planAdmin.metrics.portfolio.filters.top_revenue" },
+  { key: DECISION_FILTERS.top_usage, labelKey: "planAdmin.metrics.portfolio.filters.top_usage" },
 ];
 
 /**
@@ -28,6 +30,8 @@ export default function PlanPortfolioActionBar({
   onChipClick,
   disabled = false,
 }) {
+  const { t } = useTranslation();
+
   return (
     <div className="oh-sapl-action-center">
       {summarySentence ? (
@@ -37,8 +41,10 @@ export default function PlanPortfolioActionBar({
       ) : null}
 
       {chips.length > 0 ? (
-        <div className="oh-sapl-action-center__strip" aria-label="ما يحتاج قراراً">
-          <span className="oh-sapl-action-center__strip-title">ما يحتاج قراراً</span>
+        <div className="oh-sapl-action-center__strip" aria-label={t("planAdmin.metrics.portfolio.stripTitle")}>
+          <span className="oh-sapl-action-center__strip-title">
+            {t("planAdmin.metrics.portfolio.stripTitle")}
+          </span>
           <div className="oh-sapl-action-center__chips">
             {chips.map((chip) => (
               <button
@@ -55,8 +61,8 @@ export default function PlanPortfolioActionBar({
         </div>
       ) : null}
 
-      <div className="oh-sapl-action-center__filters" role="group" aria-label="تصفية القرارات">
-        {DECISION_FILTER_OPTIONS.map((opt) => (
+      <div className="oh-sapl-action-center__filters" role="group" aria-label={t("planAdmin.metrics.portfolio.filtersAria")}>
+        {DECISION_FILTER_KEYS.map((opt) => (
           <button
             key={opt.key}
             type="button"
@@ -64,7 +70,7 @@ export default function PlanPortfolioActionBar({
             disabled={disabled}
             onClick={() => onDecisionFilterChange(opt.key)}
           >
-            {opt.label}
+            {t(opt.labelKey)}
           </button>
         ))}
       </div>

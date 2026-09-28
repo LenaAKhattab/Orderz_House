@@ -1,3 +1,4 @@
+import { useTranslation } from "../../i18n/LanguageProvider";
 import HomePromoOffersSection from "../ads/HomePromoOffersSection";
 import AdsBandSkeleton from "../skeletons/AdsBandSkeleton";
 import "../ads/home-promo-offers.css";
@@ -7,6 +8,7 @@ import "../ads/home-promo-offers.css";
  * @param {{ ads?: import("../../types/ad.js").Ad[]; loading?: boolean; variant?: "default"|"hero"; showTitle?: boolean }} p
  */
 export default function HomeAdsContainer({ ads = [], loading = false, variant = "default", showTitle = true }) {
+  const { t } = useTranslation();
   const hasAds = Array.isArray(ads) && ads.length > 0;
   const isHero = variant === "hero";
   const wrapClass = isHero ? "home-hero__ads hero-inline-ads w-full min-w-0" : "home-ads-band w-full min-w-0";
@@ -20,7 +22,7 @@ export default function HomeAdsContainer({ ads = [], loading = false, variant = 
       <div
         className={`${wrapClass}${isHero ? " hero-inline-ads--pending" : ""}`}
         aria-busy="true"
-        aria-label="جاري تحميل الإعلانات"
+        aria-label={t("home.promoAds.loadingAds")}
       >
         {isHero ? (
           <div className="hero-inline-ads__placeholder" aria-hidden />
