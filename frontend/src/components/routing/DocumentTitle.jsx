@@ -1,16 +1,20 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
-import { APP_NAME } from "../../constants/app";
+import { useTranslation } from "../../i18n/LanguageProvider";
 
-/**
- * Keeps the browser tab title fixed to the app name (never the route path).
- */
+const ROUTE_TITLES = [
+  ["/dashboard/super-admin/users", "common.titles.users"],
+];
+
 export default function DocumentTitle() {
   const { pathname, search, hash } = useLocation();
+  const { t, locale } = useTranslation();
 
   useEffect(() => {
-    document.title = APP_NAME;
-  }, [pathname, search, hash]);
+    const match = ROUTE_TITLES.find(([prefix]) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+    const brand = t("common.brandWordmark");
+    document.title = match ? `${t(match[1])} | ${brand}` : brand;
+  }, [pathname, search, hash, t, locale]);
 
   return null;
 }

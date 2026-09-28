@@ -39,8 +39,7 @@
 
 .oh-sa-shell__grid {
   display: grid;
-  direction: ltr;
-  grid-template-columns: minmax(0, 1fr) var(--oh-sa-sidebar-w);
+  grid-template-columns: var(--oh-sa-sidebar-w) minmax(0, 1fr);
   align-items: stretch;
   gap: 0;
   height: 100%;
@@ -56,7 +55,6 @@
   top: 0;
   z-index: 40;
   align-self: stretch;
-  order: 2;
   display: flex;
   flex-direction: column;
   width: var(--oh-sa-sidebar-w);
@@ -64,8 +62,7 @@
   min-height: var(--oh-sa-shell-pane-h);
   max-height: var(--oh-sa-shell-pane-h);
   transition: width 0.28s var(--oh-sa-ease);
-  direction: ltr;
-  border-inline-start: 1px solid var(--oh-sa-chrome-border);
+  border-inline-end: 1px solid var(--oh-sa-chrome-border);
   background: var(--oh-sa-chrome-bg);
 }
 
@@ -152,15 +149,11 @@
   gap: 0;
   padding: 0;
   overflow: hidden;
-  /* RTL content column — grid/sidebar-wrap stay LTR for sidebar-on-right layout (see .fdl-workspace) */
-  direction: rtl;
-  order: 1;
 }
 
 .oh-sa-nav {
   position: relative;
   z-index: 1;
-  direction: rtl;
   width: 100%;
   flex: 1 1 auto;
   height: 100%;
@@ -1010,8 +1003,8 @@ button.oh-sa-navlink.oh-sa-navlink--button {
 
   .oh-sa-sidebar-wrap {
     position: fixed;
-    left: auto;
-    right: 10px;
+    inset-inline-end: auto;
+    inset-inline-start: 10px;
     top: 10px;
     order: 0;
     width: min(300px, calc(100vw - 20px));
@@ -1023,7 +1016,12 @@ button.oh-sa-navlink.oh-sa-navlink--button {
     z-index: var(--oh-z-drawer, 45);
   }
 
-  .oh-sa-sidebar-wrap--open {
+  [dir="ltr"] .oh-sa-sidebar-wrap {
+    transform: translateX(calc(-100% - 20px));
+  }
+
+  .oh-sa-sidebar-wrap--open,
+  [dir="ltr"] .oh-sa-sidebar-wrap.oh-sa-sidebar-wrap--open {
     transform: translateX(0);
   }
 

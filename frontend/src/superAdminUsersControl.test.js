@@ -22,13 +22,12 @@ describe("Super Admin Users Control Center architecture", () => {
 
   it("page requires Arabic reason UI for sensitive actions", () => {
     const page = read("pages/dashboard/SuperAdminUsersPage.jsx");
-    assert.match(page, /المستخدمون/);
-    assert.match(page, /إدارة حسابات المستخدمين، الهويات، الباقات، والدورات من مكان واحد/);
-    assert.match(page, /سبب الإجراء/);
-    assert.match(page, /سبب الإجراء مطلوب/);
+    assert.match(page, /users\.listTitle/);
+    assert.match(page, /users\.actionReason/);
+    assert.match(page, /users\.reasonRequired/);
     assert.match(page, /protectedPath/);
-    assert.match(page, /نظرة عامة/);
-    assert.match(page, /سجل الإدارة/);
+    assert.match(page, /users\.tabs\.overview/);
+    assert.match(page, /users\.tabs\.audit/);
     assert.match(page, /oh-sa-users-/);
   });
 

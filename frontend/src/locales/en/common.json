@@ -1,5 +1,9 @@
 {
-  "brand": "Orderz House",
+  "brand": "OrderzHouse",
+  "brandWordmark": "OrderzHouse",
+  "titles": {
+    "users": "Users"
+  },
   "language": {
     "ar": "العربية",
     "en": "English",

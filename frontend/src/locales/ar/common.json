@@ -1,5 +1,9 @@
 {
   "brand": "أوردرز هاوس",
+  "brandWordmark": "أوردرز هاوس",
+  "titles": {
+    "users": "المستخدمون"
+  },
   "language": {
     "ar": "العربية",
     "en": "English",
