@@ -1,0 +1,49 @@
+{
+  "bell": {
+    "ariaLabel": "Notifications",
+    "title": "Notifications",
+    "markAllRead": "Mark all as read",
+    "loading": "Loading…",
+    "empty": "No notifications right now.",
+    "viewAll": "View all notifications",
+    "newNotification": "New notification"
+  },
+  "permission": {
+    "title": "Enable site notifications",
+    "body": "Get instant alerts for Orders, payments, and deliveries even when you are on another tab. You can change this later in settings.",
+    "enable": "Enable notifications",
+    "enableBusy": "Working…",
+    "notNow": "Not now"
+  },
+  "browser": {
+    "title": "Browser notifications",
+    "intro": "Desktop alerts appear when a new notification arrives while you are signed in. In-app notifications (the bell) always stay on.",
+    "unsupported": "Your browser does not support desktop notifications.",
+    "statusLabel": "Status:",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "notRequested": "Not requested yet",
+    "enableBtn": "Enable browser notifications",
+    "disableBtn": "Turn off in app",
+    "testBtn": "Test notification",
+    "toastUnsupported": "This browser does not support desktop notifications.",
+    "toastEnabled": "Browser notifications enabled.",
+    "toastDenied": "Permission was not granted. You can enable it in browser settings.",
+    "toastEnableFailed": "Could not enable notifications.",
+    "toastDisabled": "Browser notifications turned off in the app. You may also need to disable them in browser settings.",
+    "toastSaveFailed": "Could not save.",
+    "toastNeedPermission": "Allow notifications in the browser first.",
+    "testTitle": "Test notification",
+    "testBody": "If you see this alert, browser notifications are working.",
+    "toastTestSent": "Test notification sent.",
+    "toastTestFailed": "Could not send test notification."
+  },
+  "page": {
+    "deleteSelected": "Delete selected ({{count}})",
+    "selectAria": "Select: {{title}}",
+    "confirmDeleteTitle": "Delete selected notifications?",
+    "confirmDeleteBody": "{{count}} notification(s) will be permanently deleted. This cannot be undone.",
+    "delete": "Delete",
+    "cancel": "Cancel"
+  }
+}

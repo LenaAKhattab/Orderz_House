@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { NavLink } from "react-router-dom";
 import {
   Bell,
@@ -21,54 +21,44 @@ import {
   readActionCenterCountsCache,
   writeActionCenterCountsCache,
 } from "../../lib/staff/adminActionCenterCountsCache";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/opsAdminResources";
 import "../../styles/adminControlCenter.css";
 
-const ACTION_CARDS = [
+const ACTION_CARD_DEFS = [
   {
     id: "identity",
     to: ADMIN_ACTION_ROUTES.identity,
-    label: "طلبات توثيق الهوية",
-    description: "مراجعة صور الهوية والموافقة أو الرفض",
     icon: IdCard,
     countKey: "identity",
   },
   {
     id: "packages",
     to: ADMIN_ACTION_ROUTES.packageAssignment,
-    label: "إسناد الباقات",
-    description: "البحث عن المستقلين وإسناد الباقات",
     icon: Package,
     countKey: null,
   },
   {
     id: "pantry",
     to: ADMIN_ACTION_ROUTES.pantry,
-    label: "بيت المونة",
-    description: "مراجعة الطلبات والتسليمات",
     icon: ShoppingBasket,
     countKey: "pantry",
   },
   {
     id: "articles",
     to: ADMIN_ACTION_ROUTES.articles,
-    label: "المقالات",
-    description: "المقالات التي تحتاج متابعة",
     icon: BookOpen,
     countKey: "articles",
   },
   {
     id: "feedback",
     to: ADMIN_ACTION_ROUTES.feedback,
-    label: "المشاكل والاقتراحات",
-    description: "ملاحظات المستخدمين بانتظار المعالجة",
     icon: MessageSquareWarning,
     countKey: "feedback",
   },
   {
     id: "notifications",
     to: ADMIN_ACTION_ROUTES.notifications,
-    label: "الإشعارات",
-    description: "قراءة وحذف الإشعارات",
     icon: Bell,
     countKey: "notifications",
   },
@@ -76,10 +66,8 @@ const ACTION_CARDS = [
 
 const SUMMARY_TIMEOUT_MS = 15000;
 
-const SOFT_NOTE_PARTIAL = "بعض العدادات لم تُحدّث الآن";
-const SOFT_NOTE_TIMEOUT = "لم نتمكن من تحديث العدادات الآن";
-
 function ActionCard({ card, count, loading }) {
+  const { t } = useTranslation();
   const Icon = card.icon;
   const showCount = card.countKey != null;
   const display = count == null ? 0 : count;
@@ -94,7 +82,7 @@ function ActionCard({ card, count, loading }) {
         loading ? (
           <span className="acc-kpi-card__value-skeleton" aria-hidden data-testid="admin-action-count-skeleton" />
         ) : (
-          <strong className="acc-action-card__count" aria-label={`العدد: ${display}`}>
+          <strong className="acc-action-card__count" aria-label={t("opsAdmin.common.countAria", { count: display })}>
             {display}
           </strong>
         )
@@ -110,6 +98,7 @@ function ActionCard({ card, count, loading }) {
  * Web Admin Action Center — mirrors Flutter Super Admin مركز المهام.
  */
 export default function AdminDashboardHome() {
+  const { t } = useTranslation();
   const cached = typeof window !== "undefined" ? readActionCenterCountsCache() : null;
   const [loading, setLoading] = useState(!cached);
   const [refreshing, setRefreshing] = useState(false);
@@ -121,6 +110,16 @@ export default function AdminDashboardHome() {
   );
   const abortRef = useRef(null);
   const mountedRef = useRef(true);
+
+  const actionCards = useMemo(
+    () =>
+      ACTION_CARD_DEFS.map((def) => ({
+        ...def,
+        label: t(`opsAdmin.adminHome.cards.${def.id}.label`),
+        description: t(`opsAdmin.adminHome.cards.${def.id}.description`),
+      })),
+    [t],
+  );
 
   const load = useCallback(async ({ isRefresh = false } = {}) => {
     if (abortRef.current) {
@@ -155,7 +154,7 @@ export default function AdminDashboardHome() {
       });
       countsReadyRef.current = true;
       if (mapped.partialErrors.length) {
-        setSoftNote(SOFT_NOTE_PARTIAL);
+        setSoftNote(t("opsAdmin.adminHome.softNotePartial"));
       } else {
         setSoftNote("");
       }
@@ -164,10 +163,10 @@ export default function AdminDashboardHome() {
         return;
       }
       if (countsReadyRef.current) {
-        setSoftNote(SOFT_NOTE_TIMEOUT);
+        setSoftNote(t("opsAdmin.adminHome.softNoteTimeout"));
       } else {
         setCounts({ ...EMPTY_ACTION_CENTER_COUNTS });
-        setSoftNote(SOFT_NOTE_TIMEOUT);
+        setSoftNote(t("opsAdmin.adminHome.softNoteTimeout"));
       }
     } finally {
       if (!mountedRef.current) return;
@@ -175,7 +174,7 @@ export default function AdminDashboardHome() {
       setRefreshing(false);
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -194,7 +193,7 @@ export default function AdminDashboardHome() {
         <section className="acc-section" aria-labelledby="admin-action-cards-heading">
           <div className="acc-section__head">
             <h2 id="admin-action-cards-heading" className="acc-section__title">
-              المهام
+              {t("opsAdmin.adminHome.tasksTitle")}
             </h2>
             <div className="acc-section__head-actions">
               {softNote ? (
@@ -206,7 +205,7 @@ export default function AdminDashboardHome() {
                     onClick={() => void load({ isRefresh: true })}
                     disabled={refreshing}
                   >
-                    إعادة المحاولة
+                    {t("opsAdmin.common.retry")}
                   </button>
                 </p>
               ) : null}
@@ -224,12 +223,12 @@ export default function AdminDashboardHome() {
                   style={{ verticalAlign: "middle", marginInlineEnd: 4 }}
                   aria-hidden
                 />
-                {refreshing ? "جارٍ التحديث…" : "تحديث"}
+                {refreshing ? t("opsAdmin.adminHome.refreshing") : t("opsAdmin.adminHome.refresh")}
               </button>
             </div>
           </div>
           <div className="acc-actions-grid acc-actions-grid--admin-center">
-            {ACTION_CARDS.map((card) => (
+            {actionCards.map((card) => (
               <ActionCard
                 key={card.id}
                 card={card}

@@ -103,8 +103,8 @@ describe("Web-Admin-A1 routes and guards", () => {
     assert.match(home, /getAdminActionCenterSummaryRequest/);
     assert.match(home, /mapActionCenterSummary/);
     assert.match(home, /acc-counts-soft-note/);
-    assert.match(home, /لم نتمكن من تحديث العدادات الآن/);
-    assert.match(home, /بعض العدادات لم تُحدّث الآن/);
+    assert.match(home, /opsAdmin\.adminHome\.softNoteTimeout/);
+    assert.match(home, /opsAdmin\.adminHome\.softNotePartial/);
     assert.match(home, /AbortController/);
     assert.match(home, /readActionCenterCountsCache|writeActionCenterCountsCache/);
     assert.match(home, /SUMMARY_TIMEOUT_MS = 15000/);
@@ -116,12 +116,14 @@ describe("Web-Admin-A1 routes and guards", () => {
     assert.doesNotMatch(home, /err\?\.message/);
     assert.doesNotMatch(home, /طلبات تفعيل الاشتراك/);
     assert.doesNotMatch(home, /id: "membership"/);
-    assert.match(home, /طلبات توثيق الهوية/);
-    assert.match(home, /إسناد الباقات/);
-    assert.match(home, /بيت المونة/);
-    assert.match(home, /المقالات/);
-    assert.match(home, /المشاكل والاقتراحات/);
-    assert.match(home, /الإشعارات/);
+    assert.match(home, /opsAdmin\.adminHome\.cards\.\$\{def\.id\}/);
+    assert.match(home, /id: "identity"/);
+    assert.match(home, /id: "packages"/);
+    assert.match(home, /id: "pantry"/);
+    assert.match(home, /id: "articles"/);
+    assert.match(home, /id: "feedback"/);
+    assert.match(home, /id: "notifications"/);
+    assert.match(home, /opsAdminResources/);
   });
 
   it("action center styles use 3-column grid and red counts", () => {

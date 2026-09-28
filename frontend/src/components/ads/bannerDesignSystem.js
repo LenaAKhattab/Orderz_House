@@ -231,11 +231,44 @@ export function getTemplateConfig(id) {
  * @param {string} templateId
  * @param {string} [colorPreset]
  */
-export function getThemesForTemplate(_templateId, colorPreset) {
+/**
+ * @param {{ id: string; label: string; hint: string }} cfg
+ * @param {((key: string) => string) | null | undefined} [t]
+ */
+export function resolveBannerTemplateLabel(cfg, t) {
+  if (typeof t === "function") {
+    return t(`ads.bannerTemplates.${cfg.id}.label`);
+  }
+  return cfg.label;
+}
+
+/**
+ * @param {{ id: string; label: string; hint: string }} cfg
+ * @param {((key: string) => string) | null | undefined} [t]
+ */
+export function resolveBannerTemplateHint(cfg, t) {
+  if (typeof t === "function") {
+    return t(`ads.bannerTemplates.${cfg.id}.hint`);
+  }
+  return cfg.hint;
+}
+
+/**
+ * @param {string} presetKey
+ * @param {((key: string) => string) | null | undefined} [t]
+ */
+export function resolveBannerColorPresetLabel(presetKey, t) {
+  if (typeof t === "function") {
+    return t(`ads.bannerColorPresets.${presetKey}`);
+  }
+  return ADMIN_COLOR_PRESET_LABELS_AR[presetKey] || THEME_LABELS_AR[presetKey] || presetKey;
+}
+
+export function getThemesForTemplate(_templateId, colorPreset, t) {
   const active = (colorPreset ?? "").toString().trim();
   return ADMIN_COLOR_PRESET_KEYS.map((value) => ({
     value,
-    label: ADMIN_COLOR_PRESET_LABELS_AR[value] || THEME_LABELS_AR[value] || value,
+    label: resolveBannerColorPresetLabel(value, t),
     isActive: active === value,
   }));
 }

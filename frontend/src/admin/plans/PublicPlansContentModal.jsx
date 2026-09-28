@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import Button from "../../components/ui/Button";
 import { useToast } from "../../components/ui/toastContext";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/planAdminResources";
 import {
   getAdminPublicPlansContentRequest,
   updateAdminPublicPlansContentRequest,
@@ -39,8 +41,10 @@ function formFromPayload(data) {
   };
 }
 
-export default function PublicPlansContentModal({ open, isEn = false, onClose }) {
+export default function PublicPlansContentModal({ open, onClose }) {
   const { push } = useToast();
+  const { t, locale } = useTranslation();
+  const isEn = locale === "en";
   const [form, setForm] = useState(emptyForm);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -73,10 +77,7 @@ export default function PublicPlansContentModal({ open, isEn = false, onClose })
       .catch((err) => {
         if (cancelled) return;
         setForm(emptyForm());
-        setError(
-          getSafeApiErrorMessage(err) ||
-            (isEn ? "Could not load plans page content." : "تعذر تحميل محتوى صفحة الباقات."),
-        );
+        setError(getSafeApiErrorMessage(err) || t("planAdmin.publicContent.loadFailed"));
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -84,7 +85,7 @@ export default function PublicPlansContentModal({ open, isEn = false, onClose })
     return () => {
       cancelled = true;
     };
-  }, [open, isEn]);
+  }, [open, t]);
 
   if (!open) return null;
 
@@ -94,7 +95,7 @@ export default function PublicPlansContentModal({ open, isEn = false, onClose })
   const handleSave = async () => {
     const title = String(form.title || "").trim();
     if (!title) {
-      setError(isEn ? "Main heading is required." : "العنوان الرئيسي مطلوب.");
+      setError(t("planAdmin.publicContent.headingRequired"));
       return;
     }
     setSubmitting(true);
@@ -112,15 +113,10 @@ export default function PublicPlansContentModal({ open, isEn = false, onClose })
       onClose?.();
       push({
         type: "success",
-        message: isEn
-          ? "Plans page content updated successfully."
-          : "تم تحديث محتوى صفحة الباقات بنجاح.",
+        message: t("planAdmin.publicContent.saveSuccess"),
       });
     } catch (err) {
-      setError(
-        getSafeApiErrorMessage(err) ||
-          (isEn ? "Failed to save plans page content." : "تعذر حفظ محتوى صفحة الباقات."),
-      );
+      setError(getSafeApiErrorMessage(err) || t("planAdmin.publicContent.saveFailed"));
     } finally {
       setSubmitting(false);
     }
@@ -132,7 +128,7 @@ export default function PublicPlansContentModal({ open, isEn = false, onClose })
         type="button"
         className="oh-sapl-modal-backdrop"
         onClick={submitting ? undefined : onClose}
-        aria-label={isEn ? "Close dialog" : "إغلاق النافذة"}
+        aria-label={t("planAdmin.common.closeDialog")}
       />
       <div
         className="oh-sapl-modal"
@@ -144,7 +140,7 @@ export default function PublicPlansContentModal({ open, isEn = false, onClose })
         <header className="oh-sapl-modal__head">
           <div>
             <h2 id={titleId} className="oh-sapl-modal__title">
-              {isEn ? "Edit plans page content" : "تعديل محتوى صفحة الباقات"}
+              {t("planAdmin.publicContent.modalTitle")}
             </h2>
           </div>
           <button
@@ -152,7 +148,7 @@ export default function PublicPlansContentModal({ open, isEn = false, onClose })
             className="oh-sapl-modal__close"
             onClick={onClose}
             disabled={submitting}
-            aria-label={isEn ? "Close" : "إغلاق"}
+            aria-label={t("planAdmin.common.close")}
           >
             ×
           </button>
@@ -171,7 +167,7 @@ export default function PublicPlansContentModal({ open, isEn = false, onClose })
           ) : (
             <div className="oh-sapl-form">
               <label className="oh-sapl-field">
-                <span className="oh-sapl-field__label">{isEn ? "Short badge text" : "النص القصير"}</span>
+                <span className="oh-sapl-field__label">{t("planAdmin.publicContent.shortBadge")}</span>
                 <input
                   type="text"
                   className="oh-sapl-input"
@@ -182,7 +178,7 @@ export default function PublicPlansContentModal({ open, isEn = false, onClose })
                 />
               </label>
               <label className="oh-sapl-field">
-                <span className="oh-sapl-field__label">{isEn ? "Main heading" : "العنوان الرئيسي"}</span>
+                <span className="oh-sapl-field__label">{t("planAdmin.publicContent.mainHeading")}</span>
                 <input
                   type="text"
                   className="oh-sapl-input"
@@ -194,7 +190,7 @@ export default function PublicPlansContentModal({ open, isEn = false, onClose })
                 />
               </label>
               <label className="oh-sapl-field">
-                <span className="oh-sapl-field__label">{isEn ? "Description" : "الوصف"}</span>
+                <span className="oh-sapl-field__label">{t("planAdmin.publicContent.description")}</span>
                 <textarea
                   className="oh-sapl-input oh-sapl-input--textarea"
                   value={form.description}
@@ -206,11 +202,9 @@ export default function PublicPlansContentModal({ open, isEn = false, onClose })
               </label>
 
               <fieldset className="oh-sapl-field oh-sapl-public-content-section">
-                <legend className="oh-sapl-field__label">
-                  {isEn ? "Section shown first to the user" : "القسم الذي يظهر أولاً للمستخدم"}
-                </legend>
+                <legend className="oh-sapl-field__label">{t("planAdmin.publicContent.sectionFirst")}</legend>
                 <p className="oh-sapl-field__hint" style={{ marginTop: 0 }}>
-                  {isEn ? "Default section:" : "القسم الافتراضي:"}
+                  {t("planAdmin.publicContent.defaultSection")}
                 </p>
                 <div className="oh-sapl-radio-group" role="radiogroup">
                   <div className="oh-sapl-radio oh-sapl-radio--with-input">
@@ -220,7 +214,7 @@ export default function PublicPlansContentModal({ open, isEn = false, onClose })
                       value={PUBLIC_PLANS_DEFAULT_SECTION.TRAINING}
                       checked={form.defaultSection === PUBLIC_PLANS_DEFAULT_SECTION.TRAINING}
                       disabled={submitting}
-                      aria-label={isEn ? "Show training first" : "إظهار باقات التدريب أولاً"}
+                      aria-label={t("planAdmin.publicContent.trainingFirstAria")}
                       onChange={() =>
                         setForm((prev) => ({
                           ...prev,
@@ -234,7 +228,7 @@ export default function PublicPlansContentModal({ open, isEn = false, onClose })
                       value={form.trainingTabLabel}
                       maxLength={PUBLIC_PLANS_CONTENT_MAX_LENGTHS.trainingTabLabel}
                       disabled={submitting}
-                      aria-label={isEn ? "Training tab label" : "اسم تبويب باقات التدريب"}
+                      aria-label={t("planAdmin.publicContent.trainingTabAria")}
                       onChange={(event) =>
                         setForm((prev) => ({ ...prev, trainingTabLabel: event.target.value }))
                       }
@@ -247,7 +241,7 @@ export default function PublicPlansContentModal({ open, isEn = false, onClose })
                       value={PUBLIC_PLANS_DEFAULT_SECTION.WORK}
                       checked={form.defaultSection === PUBLIC_PLANS_DEFAULT_SECTION.WORK}
                       disabled={submitting}
-                      aria-label={isEn ? "Show marketplace membership first" : "إظهار عضوية سوق أوردرز هاوس أولاً"}
+                      aria-label={t("planAdmin.publicContent.membershipFirstAria")}
                       onChange={() =>
                         setForm((prev) => ({
                           ...prev,
@@ -261,7 +255,7 @@ export default function PublicPlansContentModal({ open, isEn = false, onClose })
                       value={form.workTabLabel}
                       maxLength={PUBLIC_PLANS_CONTENT_MAX_LENGTHS.workTabLabel}
                       disabled={submitting}
-                      aria-label={isEn ? "Membership tab label" : "اسم تبويب عضوية سوق أوردرز هاوس"}
+                      aria-label={t("planAdmin.publicContent.membershipTabAria")}
                       onChange={(event) =>
                         setForm((prev) => ({ ...prev, workTabLabel: event.target.value }))
                       }
@@ -281,10 +275,10 @@ export default function PublicPlansContentModal({ open, isEn = false, onClose })
 
         <footer className="oh-sapl-modal__foot">
           <Button type="button" variant="secondary" disabled={submitting} onClick={onClose}>
-            {isEn ? "Cancel" : "إلغاء"}
+            {t("planAdmin.common.cancel")}
           </Button>
           <Button type="button" disabled={!canSave} onClick={() => void handleSave()}>
-            {submitting ? (isEn ? "Saving…" : "جارٍ الحفظ…") : isEn ? "Save changes" : "حفظ التغييرات"}
+            {submitting ? t("planAdmin.common.saving") : t("planAdmin.common.saveChanges")}
           </Button>
         </footer>
       </div>

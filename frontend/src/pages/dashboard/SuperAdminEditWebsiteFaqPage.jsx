@@ -7,6 +7,8 @@ import DashboardEmptyState from "../../components/dashboard/DashboardEmptyState"
 import DashboardLoadingState from "../../components/dashboard/DashboardLoadingState";
 import DashboardErrorState from "../../components/dashboard/DashboardErrorState";
 import { editWebsiteBreadcrumbs } from "../../components/dashboard/dashboardBreadcrumbs";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/siteEditorResources";
 import {
   createSuperAdminWebsiteFaqRequest,
   deleteSuperAdminWebsiteFaqRequest,
@@ -16,11 +18,8 @@ import {
 } from "../../services/api";
 import "./superAdminEditWebsitePage.css";
 
-function errorMessage(err) {
-  return err?.response?.data?.message || "تعذر تنفيذ العملية. حاول مجدداً.";
-}
-
 function FaqFormModal({ mode, open, initial, onClose, onSaved }) {
+  const { t } = useTranslation();
   const isEdit = mode === "edit";
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
@@ -36,13 +35,15 @@ function FaqFormModal({ mode, open, initial, onClose, onSaved }) {
 
   if (!open) return null;
 
+  const operationError = (err) => err?.response?.data?.message || t("siteEditor.errors.operationFailed");
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     const q = question.trim();
     const a = answer.trim();
     if (!q || !a) {
-      setError("أدخل السؤال والإجابة.");
+      setError(t("siteEditor.errors.enterQuestionAndAnswer"));
       return;
     }
     setSubmitting(true);
@@ -55,7 +56,7 @@ function FaqFormModal({ mode, open, initial, onClose, onSaved }) {
       onSaved();
       onClose();
     } catch (err) {
-      setError(errorMessage(err));
+      setError(operationError(err));
     } finally {
       setSubmitting(false);
     }
@@ -63,30 +64,44 @@ function FaqFormModal({ mode, open, initial, onClose, onSaved }) {
 
   return (
     <div className="oh-website-faq-modal" role="dialog" aria-modal="true">
-      <button type="button" className="oh-website-faq-modal__backdrop" aria-label="إغلاق" onClick={onClose} />
+      <button
+        type="button"
+        className="oh-website-faq-modal__backdrop"
+        aria-label={t("siteEditor.common.close")}
+        onClick={onClose}
+      />
       <div className="oh-website-faq-modal__panel">
         <div className="oh-website-faq-modal__header">
-          <h2>{isEdit ? "تعديل سؤال" : "إضافة سؤال"}</h2>
-          <button type="button" className="oh-website-faq-modal__close" aria-label="إغلاق" onClick={onClose}>
+          <h2>{isEdit ? t("siteEditor.faq.modalEditTitle") : t("siteEditor.faq.modalAddTitle")}</h2>
+          <button
+            type="button"
+            className="oh-website-faq-modal__close"
+            aria-label={t("siteEditor.common.close")}
+            onClick={onClose}
+          >
             ×
           </button>
         </div>
         <form className="oh-website-faq-form" onSubmit={handleSubmit}>
           <label>
-            السؤال
+            {t("siteEditor.faq.fieldQuestion")}
             <textarea value={question} onChange={(e) => setQuestion(e.target.value)} disabled={submitting} rows={3} />
           </label>
           <label>
-            الإجابة
+            {t("siteEditor.faq.fieldAnswer")}
             <textarea value={answer} onChange={(e) => setAnswer(e.target.value)} disabled={submitting} rows={5} />
           </label>
           {error ? <p className="oh-website-faq-form__error">{error}</p> : null}
           <div className="oh-website-faq-form__actions">
             <Button type="button" variant="secondary" onClick={onClose} disabled={submitting}>
-              إلغاء
+              {t("siteEditor.common.cancel")}
             </Button>
             <Button type="submit" disabled={submitting}>
-              {submitting ? "جاري الحفظ…" : isEdit ? "حفظ التعديل" : "إضافة"}
+              {submitting
+                ? t("siteEditor.common.saving")
+                : isEdit
+                  ? t("siteEditor.common.saveEdit")
+                  : t("siteEditor.common.add")}
             </Button>
           </div>
         </form>
@@ -96,11 +111,17 @@ function FaqFormModal({ mode, open, initial, onClose, onSaved }) {
 }
 
 export default function SuperAdminEditWebsiteFaqPage() {
+  const { t } = useTranslation();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [busyId, setBusyId] = useState(null);
   const [modal, setModal] = useState({ open: false, mode: "create", item: null });
+
+  const operationError = useCallback(
+    (err) => err?.response?.data?.message || t("siteEditor.errors.operationFailed"),
+    [t],
+  );
 
   const loadItems = useCallback(async () => {
     setLoading(true);
@@ -109,25 +130,25 @@ export default function SuperAdminEditWebsiteFaqPage() {
       const res = await listSuperAdminWebsiteFaqRequest();
       setItems(Array.isArray(res?.data?.items) ? res.data.items : []);
     } catch (err) {
-      setError(errorMessage(err));
+      setError(operationError(err));
       setItems([]);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [operationError]);
 
   useEffect(() => {
     loadItems();
   }, [loadItems]);
 
   const handleDelete = async (item) => {
-    if (!window.confirm(`حذف السؤال: «${item.question.slice(0, 48)}…»؟`)) return;
+    if (!window.confirm(t("siteEditor.faq.deleteConfirm", { preview: item.question.slice(0, 48) }))) return;
     setBusyId(item.id);
     try {
       await deleteSuperAdminWebsiteFaqRequest(item.id);
       await loadItems();
     } catch (err) {
-      window.alert(errorMessage(err));
+      window.alert(operationError(err));
     } finally {
       setBusyId(null);
     }
@@ -144,7 +165,7 @@ export default function SuperAdminEditWebsiteFaqPage() {
       const res = await reorderSuperAdminWebsiteFaqRequest(next.map((x) => x.id));
       setItems(Array.isArray(res?.data?.items) ? res.data.items : next);
     } catch (err) {
-      window.alert(errorMessage(err));
+      window.alert(operationError(err));
     } finally {
       setBusyId(null);
     }
@@ -153,39 +174,37 @@ export default function SuperAdminEditWebsiteFaqPage() {
   return (
     <DashboardShell>
       <DashboardPageHeader
-        title="الأسئلة الشائعة"
-        description="إدارة الأسئلة والأجوبة المعروضة في قسم «الأسئلة الشائعة» على الصفحة الرئيسية."
+        title={t("siteEditor.faq.pageTitle")}
+        description={t("siteEditor.faq.pageDescription")}
         breadcrumbs={editWebsiteBreadcrumbs("dashboard.breadcrumbs.faq")}
       />
 
-      <DashboardSection title="قائمة الأسئلة">
+      <DashboardSection title={t("siteEditor.faq.sectionTitle")}>
         <div className="oh-website-faq-toolbar">
-          <p className="oh-website-faq-toolbar__hint">
-            التغييرات تظهر مباشرة في قسم «الأسئلة الشائعة» على الصفحة الرئيسية.
-          </p>
+          <p className="oh-website-faq-toolbar__hint">{t("siteEditor.faq.toolbarHint")}</p>
           <Button type="button" onClick={() => setModal({ open: true, mode: "create", item: null })}>
-            إضافة سؤال
+            {t("siteEditor.faq.addQuestion")}
           </Button>
         </div>
 
-        {loading ? <DashboardLoadingState label="جاري تحميل الأسئلة…" /> : null}
+        {loading ? <DashboardLoadingState label={t("siteEditor.common.loadingQuestions")} /> : null}
         {!loading && error ? (
           <DashboardErrorState
             message={error}
             actions={
               <Button type="button" variant="secondary" onClick={loadItems}>
-                إعادة المحاولة
+                {t("siteEditor.common.retry")}
               </Button>
             }
           />
         ) : null}
         {!loading && !error && items.length === 0 ? (
           <DashboardEmptyState
-            title="لا توجد أسئلة"
-            description="أضف أول سؤال شائع ليظهر في الصفحة الرئيسية."
+            title={t("siteEditor.faq.emptyTitle")}
+            description={t("siteEditor.faq.emptyDescription")}
             actions={
               <Button type="button" onClick={() => setModal({ open: true, mode: "create", item: null })}>
-                إضافة سؤال
+                {t("siteEditor.faq.addQuestion")}
               </Button>
             }
           />
@@ -207,7 +226,7 @@ export default function SuperAdminEditWebsiteFaqPage() {
                         disabled={busyId === item.id}
                         onClick={() => setModal({ open: true, mode: "edit", item })}
                       >
-                        تعديل
+                        {t("siteEditor.common.edit")}
                       </Button>
                       <Button
                         type="button"
@@ -215,14 +234,14 @@ export default function SuperAdminEditWebsiteFaqPage() {
                         disabled={busyId === item.id}
                         onClick={() => handleDelete(item)}
                       >
-                        حذف
+                        {t("siteEditor.common.delete")}
                       </Button>
                     </div>
                   </div>
                   <div className="oh-website-faq-item__reorder">
                     <button
                       type="button"
-                      aria-label="تحريك لأعلى"
+                      aria-label={t("siteEditor.common.moveUp")}
                       disabled={index === 0 || busyId === item.id}
                       onClick={() => moveItem(index, -1)}
                     >
@@ -230,7 +249,7 @@ export default function SuperAdminEditWebsiteFaqPage() {
                     </button>
                     <button
                       type="button"
-                      aria-label="تحريك لأسفل"
+                      aria-label={t("siteEditor.common.moveDown")}
                       disabled={index === items.length - 1 || busyId === item.id}
                       onClick={() => moveItem(index, 1)}
                     >

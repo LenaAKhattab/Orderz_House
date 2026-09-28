@@ -1,52 +1,60 @@
 /**
  * Hero iPad mini-app navigation (maps to real product areas).
  * @typedef {'layout' | 'layers' | 'plans' | 'orders' | 'user'} HeroIpadNavIcon
- * @typedef {{ id: string; label: string; icon: HeroIpadNavIcon; title: string; description: string }} HeroIpadNavItem
+ * @typedef {{ id: string; labelKey: string; icon: HeroIpadNavIcon; titleKey: string; descriptionKey: string }} HeroIpadNavItem
  */
 
 /** Same asset as `Navbar.jsx` (`/logo.png` in `frontend/public/`) */
 export const HERO_IPAD_LOGO_SRC = "/logo.png";
 
-/** Matches site copy (e.g. hero badge, AuthFormCard, Footer) */
-export const HERO_IPAD_BRAND_AR = "أوردرز هاوس";
-
 /** @type {HeroIpadNavItem[]} */
 export const HERO_IPAD_NAV = [
   {
     id: "overview",
-    label: "لوحة التحكم",
+    labelKey: "home.heroIpad.nav.overview.label",
     icon: "layout",
-    title: "لوحة التحكم",
-    description: "مؤشرات سريعة وملخص يتغيّر حسب دورك في المنصة.",
+    titleKey: "home.heroIpad.nav.overview.title",
+    descriptionKey: "home.heroIpad.nav.overview.description",
   },
   {
     id: "services",
-    label: "الخدمات",
+    labelKey: "home.heroIpad.nav.services.label",
     icon: "layers",
-    title: "الخدمات",
-    description: "تصنيفات الخدمات كما في صفحة الخدمات على الموقع.",
+    titleKey: "home.heroIpad.nav.services.title",
+    descriptionKey: "home.heroIpad.nav.services.description",
   },
   {
     id: "plans",
-    label: "الباقات",
+    labelKey: "home.heroIpad.nav.plans.label",
     icon: "plans",
-    title: "الباقات",
-    description: "باقات اشتراك المستقلين كما في صفحة الباقات.",
+    titleKey: "home.heroIpad.nav.plans.title",
+    descriptionKey: "home.heroIpad.nav.plans.description",
   },
   {
     id: "orders",
-    label: "الطلبات",
+    labelKey: "home.heroIpad.nav.orders.label",
     icon: "orders",
-    title: "الطلبات والسوق",
-    description: "قائمة طلبات مفتوحة وحالات التنفيذ للمستقلين.",
+    titleKey: "home.heroIpad.nav.orders.title",
+    descriptionKey: "home.heroIpad.nav.orders.description",
   },
   {
     id: "auth",
-    label: "الدخول",
+    labelKey: "home.heroIpad.nav.auth.label",
     icon: "user",
-    title: "تسجيل الدخول",
-    description: "مسار الدخول وإنشاء الحساب في المنصة.",
+    titleKey: "home.heroIpad.nav.auth.title",
+    descriptionKey: "home.heroIpad.nav.auth.description",
   },
 ];
 
 export const HERO_IPAD_DEFAULT_ID = "overview";
+
+/** @param {HeroIpadNavItem} item @param {(key: string) => string} t */
+export function resolveHeroIpadNavItem(item, t) {
+  return {
+    id: item.id,
+    icon: item.icon,
+    label: t(item.labelKey),
+    title: t(item.titleKey),
+    description: t(item.descriptionKey),
+  };
+}

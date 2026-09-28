@@ -15,6 +15,7 @@ import {
   SPECIAL_OFFER_PURCHASE_MODE,
 } from "../../constants/specialOfferPackage";
 import SpecialOfferRefundDetailsModal from "./SpecialOfferRefundDetailsModal";
+import { useTranslation } from "../../i18n/LanguageProvider";
 import "./specialOfferPackageCard.css";
 
 function formatAmount(value) {
@@ -45,6 +46,8 @@ export default function SpecialOfferPackageCard({
 }) {
   const [refundOpen, setRefundOpen] = useState(false);
   const refundTriggerRef = useRef(null);
+  const { t: tHook } = useTranslation();
+  const tr = (key, params) => (t ?? tHook)(key, params);
 
   if (!offer) return null;
 
@@ -57,10 +60,10 @@ export default function SpecialOfferPackageCard({
 
   const defaultCta =
     purchaseMode === SPECIAL_OFFER_PURCHASE_MODE.CHECKOUT
-      ? t?.("plans.specialOffer.cta") || "احصل على العرض الآن"
-      : t?.("plans.specialOffer.ctaWhatsapp") || "تواصل للحصول على العرض";
+      ? tr("plans.specialOffer.cta")
+      : tr("plans.specialOffer.ctaWhatsapp");
   const ctaLabel = offer.ctaLabel || defaultCta;
-  const jod = t?.("plans.currency.jod") || "د.أ";
+  const jod = tr("plans.currency.jod");
 
   const hasOriginal =
     offer.originalPriceJod != null &&
@@ -70,33 +73,33 @@ export default function SpecialOfferPackageCard({
   const features = [
     {
       key: "offers",
-      label: t?.("plans.specialOffer.totalOffers") || "عدد العروض",
-      value: `${formatAmount(offer.totalOffers)} ${t?.("plans.specialOffer.available") || "متاح"}`,
+      label: tr("plans.specialOffer.totalOffers"),
+      value: `${formatAmount(offer.totalOffers)} ${tr("plans.specialOffer.available")}`,
       Icon: Target,
     },
     {
       key: "daily",
-      label: t?.("plans.specialOffer.dailyLimit") || "حد يومي",
-      value: `${formatAmount(offer.dailyLimit)} ${t?.("plans.specialOffer.offersPerDay") || "عرض يومياً"}`,
+      label: tr("plans.specialOffer.dailyLimit"),
+      value: `${formatAmount(offer.dailyLimit)} ${tr("plans.specialOffer.offersPerDay")}`,
       Icon: CalendarDays,
     },
     offer.maxProjectValueJod != null
       ? {
           key: "max",
-          label: t?.("plans.specialOffer.maxProject") || "الحد الأقصى للمشروع",
-          value: `${t?.("plans.specialOffer.upTo") || "حتى"} ${formatAmount(offer.maxProjectValueJod)} ${jod} ${t?.("plans.specialOffer.perProject") || "للمشروع"}`,
+          label: tr("plans.specialOffer.maxProject"),
+          value: `${tr("plans.specialOffer.upTo")} ${formatAmount(offer.maxProjectValueJod)} ${jod} ${tr("plans.specialOffer.perProject")}`,
           Icon: Briefcase,
         }
       : {
           key: "max",
-          label: t?.("plans.specialOffer.maxProject") || "الحد الأقصى للمشروع",
-          value: t?.("plans.specialOffer.unlimitedProjects") || "بلا سقف للمشاريع",
+          label: tr("plans.specialOffer.maxProject"),
+          value: tr("plans.specialOffer.unlimitedProjects"),
           Icon: Briefcase,
         },
     {
       key: "duration",
-      label: t?.("plans.specialOffer.durationShort") || "المدة",
-      value: `${offer.durationDays} ${t?.("plans.specialOffer.days") || "يوم"}`,
+      label: tr("plans.specialOffer.durationShort"),
+      value: `${offer.durationDays} ${tr("plans.specialOffer.days")}`,
       Icon: Clock3,
     },
   ];
@@ -109,7 +112,7 @@ export default function SpecialOfferPackageCard({
 
   const ctaContent = (
     <>
-      <span>{checkoutBusy ? t?.("plans.specialOffer.checkoutBusy") || "جاري التحويل للدفع…" : ctaLabel}</span>
+      <span>{checkoutBusy ? tr("plans.specialOffer.checkoutBusy") : ctaLabel}</span>
       {!checkoutBusy ? <Sparkles className="oh-special-offer-card__cta-icon" aria-hidden size={16} strokeWidth={2.25} /> : null}
     </>
   );
@@ -135,12 +138,12 @@ export default function SpecialOfferPackageCard({
       aria-label={offer.title}
     >
       <div className="oh-special-offer-card__ribbon" aria-hidden="true">
-        <span>{offer.badgeText || "عرض خاص"}</span>
+        <span>{offer.badgeText || tr("plans.specialOffer.defaultBadge")}</span>
       </div>
 
       <div className="oh-special-offer-card__hero">
         <div className="oh-special-offer-card__limited">
-          {offer.ribbonText || "لفترة محدودة"}
+          {offer.ribbonText || tr("plans.specialOffer.defaultRibbon")}
         </div>
 
         <header className="oh-special-offer-card__head">
@@ -160,7 +163,7 @@ export default function SpecialOfferPackageCard({
               </span>
               {discount != null ? (
                 <span className="oh-special-offer-card__save">
-                  {t?.("plans.specialOffer.savePercent", { percent: discount }) || `وفر ${discount}%`}
+                  {tr("plans.specialOffer.savePercent", { percent: discount })}
                 </span>
               ) : null}
             </div>
@@ -225,7 +228,7 @@ export default function SpecialOfferPackageCard({
               data-special-offer-refund-details="true"
             >
               <ShieldCheck size={13} strokeWidth={2.1} aria-hidden />
-              <span>{t?.("plans.specialOffer.refundDetailsLink") || "تفاصيل استرداد مبلغ الباقة"}</span>
+              <span>{tr("plans.specialOffer.refundDetailsLink")}</span>
             </button>
           ) : null}
         </div>

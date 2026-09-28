@@ -9,12 +9,10 @@ import DashboardErrorState from "../../components/dashboard/DashboardErrorState"
 import { editWebsiteBreadcrumbs } from "../../components/dashboard/dashboardBreadcrumbs";
 import { EDIT_WEBSITE_BASE } from "../../constants/superAdminWebsiteSections";
 import { getPublicSitePagePath } from "../../constants/publicSitePages";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/siteEditorResources";
 import { listSuperAdminSitePagesRequest } from "../../services/api";
 import "./superAdminSitePages.css";
-
-function errorMessage(err) {
-  return err?.response?.data?.message || "تعذر تحميل الصفحات. حاول مجدداً.";
-}
 
 function StatusBadge({ active, onLabel, offLabel }) {
   return (
@@ -25,6 +23,7 @@ function StatusBadge({ active, onLabel, offLabel }) {
 }
 
 export default function SuperAdminSitePagesPage() {
+  const { t } = useTranslation();
   const [pages, setPages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -36,12 +35,12 @@ export default function SuperAdminSitePagesPage() {
       const res = await listSuperAdminSitePagesRequest();
       setPages(Array.isArray(res?.data?.pages) ? res.data.pages : []);
     } catch (err) {
-      setError(errorMessage(err));
+      setError(err?.response?.data?.message || t("siteEditor.errors.loadPagesFailed"));
       setPages([]);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     loadPages();
@@ -50,25 +49,23 @@ export default function SuperAdminSitePagesPage() {
   return (
     <DashboardShell>
       <DashboardPageHeader
-        title="الصفحات العامة"
-        description="إدارة صفحات الموقع العامة (الفوتر وقائمة الموبايل)."
+        title={t("siteEditor.sitePages.pageTitle")}
+        description={t("siteEditor.sitePages.pageDescription")}
         breadcrumbs={editWebsiteBreadcrumbs("dashboard.breadcrumbs.websitePages")}
       />
 
-      <DashboardSection title="قائمة الصفحات">
+      <DashboardSection title={t("siteEditor.sitePages.sectionTitle")}>
         <div className="oh-site-pages-toolbar">
-          <p className="oh-site-pages-toolbar__hint">
-            الصفحات المنشورة تظهر في «روابط مهمة» بالفوتر (سطح المكتب) وقائمة الموبايل حسب الإعدادات.
-          </p>
+          <p className="oh-site-pages-toolbar__hint">{t("siteEditor.sitePages.toolbarHint")}</p>
         </div>
 
-        {loading ? <DashboardLoadingState label="جاري تحميل الصفحات…" /> : null}
+        {loading ? <DashboardLoadingState label={t("siteEditor.common.loadingPages")} /> : null}
         {!loading && error ? (
           <DashboardErrorState
             message={error}
             actions={
               <Button type="button" variant="secondary" onClick={loadPages}>
-                إعادة المحاولة
+                {t("siteEditor.common.retry")}
               </Button>
             }
           />
@@ -79,12 +76,12 @@ export default function SuperAdminSitePagesPage() {
             <table className="oh-site-pages-table">
               <thead>
                 <tr>
-                  <th>العنوان</th>
-                  <th>الرابط</th>
-                  <th>النشر</th>
-                  <th>الموبايل</th>
-                  <th>الفوتر</th>
-                  <th>إجراء</th>
+                  <th>{t("siteEditor.sitePages.tableTitle")}</th>
+                  <th>{t("siteEditor.sitePages.tableLink")}</th>
+                  <th>{t("siteEditor.sitePages.tablePublish")}</th>
+                  <th>{t("siteEditor.sitePages.tableMobile")}</th>
+                  <th>{t("siteEditor.sitePages.tableFooter")}</th>
+                  <th>{t("siteEditor.sitePages.tableAction")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -98,20 +95,32 @@ export default function SuperAdminSitePagesPage() {
                       <div className="oh-site-pages-table__slug">{getPublicSitePagePath(page.slug)}</div>
                     </td>
                     <td>
-                      <StatusBadge active={page.isPublished} onLabel="منشورة" offLabel="مسودة" />
+                      <StatusBadge
+                        active={page.isPublished}
+                        onLabel={t("siteEditor.common.published")}
+                        offLabel={t("siteEditor.common.draft")}
+                      />
                     </td>
                     <td>
-                      <StatusBadge active={page.showInMobileMenu} onLabel="نعم" offLabel="لا" />
+                      <StatusBadge
+                        active={page.showInMobileMenu}
+                        onLabel={t("siteEditor.common.yes")}
+                        offLabel={t("siteEditor.common.no")}
+                      />
                     </td>
                     <td>
-                      <StatusBadge active={page.showInFooter} onLabel="نعم" offLabel="لا" />
+                      <StatusBadge
+                        active={page.showInFooter}
+                        onLabel={t("siteEditor.common.yes")}
+                        offLabel={t("siteEditor.common.no")}
+                      />
                     </td>
                     <td>
                       <Link
                         to={`${EDIT_WEBSITE_BASE}/pages/${page.id}`}
                         className="btn btn-secondary btn-sm"
                       >
-                        تعديل
+                        {t("siteEditor.common.edit")}
                       </Link>
                     </td>
                   </tr>

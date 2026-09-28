@@ -36,6 +36,8 @@ import {
   resolveAdminListFailure,
 } from "../../lib/staff/adminListLoad";
 import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/subscriptionsResources";
 import "./superAdminSubscriptionsPage.css";
 
 const PAGE_LIMIT = 20;
@@ -64,35 +66,36 @@ const EMPTY_AGGREGATES = {
   expiringSoon: 0,
 };
 
-function errorMessage(err) {
+function errorMessage(err, t) {
   const apiMsg = err?.response?.data?.message;
   if (apiMsg) return apiMsg;
   const status = err?.response?.status;
   if (status === 401 || status === 403) {
-    return "ليست لديك صلاحية لتنفيذ هذه العملية.";
+    return t("subscriptions.errors.forbidden");
   }
   if (status === 400 || status === 422) {
-    return "بيانات غير صالحة. تحقق من القيم المدخلة.";
+    return t("subscriptions.errors.invalidInput");
   }
   // Axios timeout / aborted request (no response) — common when a prior hang occurred.
   if (err?.code === "ECONNABORTED" || err?.code === "ERR_CANCELED" || !err?.response) {
-    return "انتهت مهلة الطلب. حاول مجددًا.";
+    return t("subscriptions.errors.timeout");
   }
-  return "تعذر تنفيذ العملية. حاول مجدداً.";
+  return t("subscriptions.errors.generic");
 }
 
 
-function formatDisplayRange(pagination) {
+function formatDisplayRange(pagination, t) {
   const total = Number(pagination?.total) || 0;
-  if (total <= 0) return "لا توجد اشتراكات مطابقة";
+  if (total <= 0) return t("subscriptions.page.displayRangeEmpty");
   const page = Number(pagination?.page) || 1;
   const limit = Number(pagination?.limit) || PAGE_LIMIT;
   const start = (page - 1) * limit + 1;
   const end = Math.min(page * limit, total);
-  return `عرض ${start}–${end} من أصل ${total} اشتراك`;
+  return t("subscriptions.page.displayRange", { start, end, total });
 }
 
 const SuperAdminSubscriptionsPage = () => {
+  const { t } = useTranslation();
   const [plans, setPlans] = useState([]);
   const [subs, setSubs] = useState([]);
   const [pagination, setPagination] = useState(EMPTY_PAGINATION);
@@ -169,14 +172,14 @@ const SuperAdminSubscriptionsPage = () => {
 
   const statItems = useMemo(
     () => [
-      { key: "total", label: "إجمالي الاشتراكات", value: aggregates.total },
-      { key: "active", label: "النشطة", value: aggregates.active },
-      { key: "pendingActivation", label: "بانتظار تفعيل الشركة", value: aggregates.pendingActivation },
-      { key: "notStarted", label: "لم يبدأ بعد", value: aggregates.notStarted },
-      { key: "expiringSoon", label: "تنتهي قريبًا", value: aggregates.expiringSoon },
-      { key: "inactiveCancelled", label: "المعلقة / المعطلة", value: aggregates.inactiveCancelled },
+      { key: "total", label: t("subscriptions.stats.total"), value: aggregates.total },
+      { key: "active", label: t("subscriptions.stats.active"), value: aggregates.active },
+      { key: "pendingActivation", label: t("subscriptions.stats.pendingActivation"), value: aggregates.pendingActivation },
+      { key: "notStarted", label: t("subscriptions.stats.notStarted"), value: aggregates.notStarted },
+      { key: "expiringSoon", label: t("subscriptions.stats.expiringSoon"), value: aggregates.expiringSoon },
+      { key: "inactiveCancelled", label: t("subscriptions.stats.inactiveCancelled"), value: aggregates.inactiveCancelled },
     ],
-    [aggregates],
+    [aggregates, t],
   );
 
   useEffect(() => {
@@ -220,7 +223,7 @@ const SuperAdminSubscriptionsPage = () => {
         const plansRes = await listAssignablePlansAdminRequest();
         if (!cancelled) setPlans(plansRes?.data?.plans || []);
       } catch (err) {
-        if (!cancelled) setError(errorMessage(err));
+        if (!cancelled) setError(errorMessage(err, t));
       } finally {
         if (!cancelled) setPlansLoading(false);
       }
@@ -275,7 +278,7 @@ const SuperAdminSubscriptionsPage = () => {
         const resolved = resolveAdminListFailure({
           hasExistingRows: hadRows,
           error: err,
-          mapError: (e) => getSafeApiErrorMessage(e) || errorMessage(e),
+          mapError: (e) => getSafeApiErrorMessage(e) || errorMessage(e, t),
         });
         if (resolved.softNote) {
           setRefreshError(ADMIN_LIST_REFRESH_SOFT_NOTE);
@@ -335,7 +338,7 @@ const SuperAdminSubscriptionsPage = () => {
       setNotifyEmail(res?.data?.email || "");
       setNotifyEnvFallback(res?.data?.envFallback || null);
     } catch (err) {
-      setNotifyError(errorMessage(err));
+      setNotifyError(errorMessage(err, t));
     } finally {
       setNotifyLoading(false);
     }
@@ -350,7 +353,7 @@ const SuperAdminSubscriptionsPage = () => {
     const email = notifyEmail.trim();
     if (email !== "" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setNotifySuccess("");
-      setNotifyError("يرجى إدخال بريد إلكتروني صحيح");
+      setNotifyError(t("subscriptions.errors.notifyInvalidEmail"));
       return;
     }
     setNotifyBusy(true);
@@ -360,9 +363,9 @@ const SuperAdminSubscriptionsPage = () => {
       const res = await updateSubscriptionNotificationEmailRequest(email);
       setNotifyEmail(res?.data?.email || "");
       setNotifyEnvFallback(res?.data?.envFallback || null);
-      setNotifySuccess("تم حفظ بريد إشعارات الاشتراكات بنجاح");
+      setNotifySuccess(t("subscriptions.errors.notifySaveSuccess"));
     } catch (err) {
-      setNotifyError(errorMessage(err) || "تعذر حفظ البريد الإلكتروني");
+      setNotifyError(errorMessage(err, t) || t("subscriptions.errors.notifySaveFailed"));
     } finally {
       setNotifyBusy(false);
     }
@@ -380,7 +383,7 @@ const SuperAdminSubscriptionsPage = () => {
       setFeeAmountJod(amount != null && Number.isFinite(Number(amount)) ? String(amount) : "25");
       setFeeValidityDays(Number(res?.data?.validityDays) || 365);
     } catch (err) {
-      setFeeError(errorMessage(err));
+      setFeeError(errorMessage(err, t));
     } finally {
       setFeeLoading(false);
     }
@@ -395,7 +398,7 @@ const SuperAdminSubscriptionsPage = () => {
     const amount = Number(String(feeAmountJod).trim());
     if (!Number.isFinite(amount) || amount <= 0) {
       setFeeSuccess("");
-      setFeeError("يرجى إدخال قيمة صحيحة أكبر من صفر لرسوم التفعيل");
+      setFeeError(t("subscriptions.errors.feeInvalid"));
       return;
     }
     setFeeBusy(true);
@@ -415,11 +418,11 @@ const SuperAdminSubscriptionsPage = () => {
       invalidatePublicPlansCache();
       setFeeSuccess(
         res?.data?.enabled
-          ? "تم حفظ إعدادات رسوم التفعيل بنجاح"
-          : "تم تعطيل رسوم التفعيل مع الإبقاء على القيمة المحفوظة",
+          ? t("subscriptions.errors.feeSaveSuccessEnabled")
+          : t("subscriptions.errors.feeSaveSuccessDisabled"),
       );
     } catch (err) {
-      setFeeError(errorMessage(err) || "تعذر حفظ إعدادات رسوم التفعيل");
+      setFeeError(errorMessage(err, t) || t("subscriptions.errors.feeSaveFailed"));
     } finally {
       setFeeBusy(false);
     }
@@ -474,7 +477,9 @@ const SuperAdminSubscriptionsPage = () => {
             const f = selectedFreelancersById[uid] || null;
             existing.push({
               freelancerUserId: uid,
-              freelancerLabel: f ? `${f.name || "مستقل"} • ${f.email || ""}`.trim() : `ID: ${uid}`,
+              freelancerLabel: f
+                ? t("subscriptions.assignModal.freelancerLabel", { name: f.name || t("subscriptions.assignModal.freelancerFallback"), email: f.email || "" }).trim()
+                : t("subscriptions.assignModal.freelancerId", { id: uid }),
               currentPlanId: String(sub.planId || ""),
               currentPlanTitle: planTitleById[String(sub.planId || "")] || String(sub.planId || ""),
             });
@@ -501,12 +506,18 @@ const SuperAdminSubscriptionsPage = () => {
         try {
           await assignPlanToFreelancerRequest({ freelancerUserId, planId, notes: null });
         } catch (e) {
-          failures.push({ freelancerUserId: String(freelancerUserId), message: errorMessage(e) });
+          failures.push({ freelancerUserId: String(freelancerUserId), message: errorMessage(e, t) });
         }
       }
 
       if (failures.length) {
-        setError(`تعذر إسناد الباقة لبعض المستخدمين: ${failures.map((f) => `ID ${f.freelancerUserId}`).join("، ")}`);
+        setError(
+          t("subscriptions.errors.assignPartial", {
+            details: failures
+              .map((f) => t("subscriptions.errors.assignPartialItem", { id: f.freelancerUserId }))
+              .join(", "),
+          }),
+        );
       } else {
         resetAssignForm();
         setAssignModalOpen(false);
@@ -516,7 +527,7 @@ const SuperAdminSubscriptionsPage = () => {
         setPage(1);
       }
     } catch (err) {
-      setError(errorMessage(err));
+      setError(errorMessage(err, t));
     } finally {
       setSubmitting(false);
     }
@@ -529,7 +540,7 @@ const SuperAdminSubscriptionsPage = () => {
       await updateSubscriptionRequest(sub.id, { hasFirstOrder: true, firstOrderDate: isoDate });
       await loadSubscriptions(page);
     } catch (err) {
-      setError(errorMessage(err));
+      setError(errorMessage(err, t));
     } finally {
       setSubmitting(false);
     }
@@ -542,7 +553,7 @@ const SuperAdminSubscriptionsPage = () => {
       await updateSubscriptionRequest(sub.id, { status });
       await loadSubscriptions(page);
     } catch (err) {
-      setError(errorMessage(err));
+      setError(errorMessage(err, t));
     } finally {
       setSubmitting(false);
     }
@@ -550,14 +561,11 @@ const SuperAdminSubscriptionsPage = () => {
 
   const companyActivate = async (sub) => {
     setError("");
-    const overrideReason = window.prompt(
-      "تفعيل الشركة يتطلب موافقة KYC. للمتابعة كتجاوز من مدير أعلى فقط، أدخل سبب التجاوز (اتركه فارغًا للإلغاء):",
-      "",
-    );
+    const overrideReason = window.prompt(t("subscriptions.kycPrompt"), "");
     if (overrideReason == null) return;
     const reason = String(overrideReason).trim();
     if (!reason) {
-      setError("سبب تجاوز KYC مطلوب لمدير أعلى، أو استخدم صفحة طلبات تفعيل المستقلين.");
+      setError(t("subscriptions.errors.kycOverrideRequired"));
       return;
     }
     setSubmitting(true);
@@ -565,7 +573,7 @@ const SuperAdminSubscriptionsPage = () => {
       await activateSubscriptionCompanyRequest(sub.id, { overrideReason: reason });
       await loadSubscriptions(page);
     } catch (err) {
-      setError(errorMessage(err));
+      setError(errorMessage(err, t));
     } finally {
       setSubmitting(false);
     }
@@ -580,14 +588,13 @@ const SuperAdminSubscriptionsPage = () => {
 
   const handleDisable = async (sub) => {
     const ok = await askConfirm({
-      title: "تأكيد تعطيل الاشتراك",
+      title: t("subscriptions.confirm.deactivateTitle"),
       body: (
         <p className="m-0 text-sm leading-relaxed text-slate-600">
-          سيتم تعطيل اشتراك <strong className="text-slate-900">#{sub.id}</strong>. هذا لا يعني استردادًا ماليًا — يغيّر حالة
-          الاشتراك فقط.
+          {t("subscriptions.confirm.deactivateBody", { id: sub.id })}
         </p>
       ),
-      confirmLabel: "نعم، عطّل",
+      confirmLabel: t("subscriptions.confirm.deactivateConfirm"),
     });
     if (!ok) return;
     await setStatus(sub, "inactive");
@@ -595,14 +602,13 @@ const SuperAdminSubscriptionsPage = () => {
 
   const handleCancel = async (sub) => {
     const ok = await askConfirm({
-      title: "تأكيد إلغاء الاشتراك",
+      title: t("subscriptions.confirm.cancelTitle"),
       body: (
         <p className="m-0 text-sm leading-relaxed text-slate-600">
-          سيتم إلغاء اشتراك <strong className="text-slate-900">#{sub.id}</strong>. هذا لا يعني استردادًا ماليًا تلقائيًا —
-          يغيّر حالة الاشتراك في النظام فقط.
+          {t("subscriptions.confirm.cancelBody", { id: sub.id })}
         </p>
       ),
-      confirmLabel: "نعم، ألغِ",
+      confirmLabel: t("subscriptions.confirm.cancelConfirm"),
     });
     if (!ok) return;
     await setStatus(sub, "cancelled");
@@ -610,14 +616,13 @@ const SuperAdminSubscriptionsPage = () => {
 
   const handleFirstOrder = async (sub) => {
     const ok = await askConfirm({
-      title: "تسجيل أول طلب",
+      title: t("subscriptions.confirm.firstOrderTitle"),
       body: (
         <p className="m-0 text-sm leading-relaxed text-slate-600">
-          سيتم تسجيل أول طلب لاشتراك <strong className="text-slate-900">#{sub.id}</strong> وبدء احتساب مدة الاشتراك من
-          الآن.
+          {t("subscriptions.confirm.firstOrderBody", { id: sub.id })}
         </p>
       ),
-      confirmLabel: "تسجيل أول طلب",
+      confirmLabel: t("subscriptions.confirm.firstOrderConfirm"),
     });
     if (!ok) return;
     await markFirstOrder(sub, new Date().toISOString());
@@ -626,12 +631,10 @@ const SuperAdminSubscriptionsPage = () => {
   const assignConfirmBody = (
     <>
       <p className="m-0 mb-3 text-sm leading-relaxed text-slate-600">
-        بعض المستقلين لديهم اشتراك حالي. إذا أكملت، سيتم <strong className="text-slate-900">تغيير باقتهم</strong> إلى:{" "}
+        {t("subscriptions.confirm.changePlanIntro")}{" "}
         <strong className="text-[color:var(--primary,#2f3b65)]">{confirmPlanTitle}</strong>
       </p>
-      <p className="m-0 mb-3 text-sm leading-relaxed text-amber-950">
-        سيُعتبر اشتراك الخطة ورسوم التفعيل مدفوعين أوفلاين، وسيتمكن المستقل من استلام الطلبات مباشرة وفق حدود الخطة.
-      </p>
+      <p className="m-0 mb-3 text-sm leading-relaxed text-amber-950">{t("subscriptions.confirm.changePlanOfflineNote")}</p>
       <div className="mt-1 grid gap-2.5">
         {confirmItems.map((x) => (
           <div
@@ -640,7 +643,7 @@ const SuperAdminSubscriptionsPage = () => {
           >
             <div className="text-sm font-bold text-[color:var(--primary,#2f3b65)]">{x.freelancerLabel}</div>
             <div className="text-xs font-bold text-slate-500">
-              الباقة الحالية:{" "}
+              {t("subscriptions.confirm.currentPlan")}{" "}
               <span className="font-bold text-slate-800 dark:text-slate-200">{x.currentPlanTitle || x.currentPlanId || "—"}</span>
             </div>
           </div>
@@ -665,10 +668,10 @@ const SuperAdminSubscriptionsPage = () => {
     <DashboardShell className="oh-sa-subs flex min-h-0 w-full min-w-0 flex-col text-start">
       <ConfirmDialog
         open={assignConfirmOpen}
-        title="تأكيد تغيير الباقة"
+        title={t("subscriptions.confirm.changePlanTitle")}
         body={assignConfirmBody}
-        confirmLabel="نعم، غيّر الباقة"
-        cancelLabel="إلغاء"
+        confirmLabel={t("subscriptions.confirm.changePlanConfirm")}
+        cancelLabel={t("subscriptions.confirm.cancel")}
         confirmFirst
         layerClassName="z-[1300]"
         onConfirm={() => closeAssignConfirm(true)}
@@ -679,8 +682,8 @@ const SuperAdminSubscriptionsPage = () => {
         open={Boolean(actionConfirm)}
         title={actionConfirm?.title || ""}
         body={actionConfirm?.body}
-        confirmLabel={actionConfirm?.confirmLabel || "تأكيد"}
-        cancelLabel="إلغاء"
+        confirmLabel={actionConfirm?.confirmLabel || t("subscriptions.confirm.genericConfirm")}
+        cancelLabel={t("subscriptions.confirm.cancel")}
         confirmFirst
         onConfirm={() => closeActionConfirm(true)}
         onCancel={() => closeActionConfirm(false)}
@@ -688,34 +691,34 @@ const SuperAdminSubscriptionsPage = () => {
 
       <DashboardModal
         open={assignModalOpen}
-        title="إسناد باقة لمستقل"
-        ariaLabel="Assign Package — إسناد باقة لمستقل"
+        title={t("subscriptions.assignModal.title")}
+        ariaLabel={t("subscriptions.assignModal.ariaLabel")}
         className="oh-sa-subs-assign-modal"
         onClose={closeAssignModal}
         footer={
           <>
             <Button type="button" variant="secondary" disabled={submitting} onClick={closeAssignModal}>
-              إلغاء
+              {t("subscriptions.assignModal.cancel")}
             </Button>
             <Button type="button" variant="primary" disabled={!canAssign || submitting} onClick={() => void assign()}>
-              إسناد الباقة
+              {t("subscriptions.assignModal.submit")}
             </Button>
           </>
         }
       >
         <div className="oh-sa-subs-assign">
           <p className="mb-3 rounded-xl border border-amber-200/80 bg-amber-50/90 px-3 py-2.5 text-sm font-semibold text-amber-950" role="note">
-            عند تعيين الخطة يدويًا، سيُعتبر اشتراك الخطة ورسوم التفعيل مدفوعين أوفلاين، وسيتمكن المستقل من استلام الطلبات مباشرة وفق حدود الخطة.
+            {t("subscriptions.assignModal.offlineNote")}
           </p>
           <div className="oh-sa-subs-assign__fields">
             <div className="flex min-w-0 flex-col gap-1.5">
-              <span className={fieldLabelClass}>البحث عن مستقل</span>
+              <span className={fieldLabelClass}>{t("subscriptions.assignModal.searchFreelancer")}</span>
               <div className="relative">
                 <input
                   className={controlClass}
                   type="text"
                   value={freelancerQuery}
-                  placeholder="ابحث بالاسم أو البريد أو رقم الحساب…"
+                  placeholder={t("subscriptions.assignModal.searchPlaceholder")}
                   onChange={(e) => {
                     setFreelancerQuery(e.target.value);
                     setFreelancerOpen(true);
@@ -727,11 +730,11 @@ const SuperAdminSubscriptionsPage = () => {
                 {freelancerOpen ? (
                   <div className="absolute end-0 start-0 top-full z-50 mt-2 overflow-hidden rounded-2xl border border-[color:var(--dash-card-border)] bg-white shadow-[var(--dash-card-shadow)]">
                     <div className="border-b border-slate-100 bg-slate-50/90 px-3 py-2 text-xs font-bold text-slate-500">
-                      {freelancerBusy ? "جارٍ البحث…" : "اختر من النتائج"}
+                      {freelancerBusy ? t("subscriptions.assignModal.searchBusy") : t("subscriptions.assignModal.pickFromResults")}
                     </div>
                     <div className="max-h-[220px] overflow-y-auto overscroll-contain">
                       {freelancerMatches.length === 0 && !freelancerBusy ? (
-                        <div className="px-3 py-3 text-sm font-bold text-slate-500">لا توجد نتائج.</div>
+                        <div className="px-3 py-3 text-sm font-bold text-slate-500">{t("subscriptions.assignModal.noResults")}</div>
                       ) : null}
                       {freelancerMatches.map((f) => (
                         <button
@@ -770,17 +773,17 @@ const SuperAdminSubscriptionsPage = () => {
             </div>
 
             <div className="flex min-w-0 flex-col gap-1.5">
-              <span className={fieldLabelClass}>اختيار الباقة</span>
+              <span className={fieldLabelClass}>{t("subscriptions.assignModal.pickPlan")}</span>
               <select
                 className={controlClass}
                 value={form.planId}
                 onChange={(e) => setForm((v) => ({ ...v, planId: e.target.value }))}
                 disabled={submitting || plansLoading}
               >
-                <option value="">اختر باقة…</option>
+                <option value="">{t("subscriptions.assignModal.pickPlanPlaceholder")}</option>
                 {plans.map((p) => (
                   <option key={p.id} value={p.id}>
-                    {p.title} ({p.durationDays} يوم)
+                    {t("subscriptions.page.planOptionDays", { title: p.title, days: p.durationDays })}
                   </option>
                 ))}
               </select>
@@ -789,13 +792,13 @@ const SuperAdminSubscriptionsPage = () => {
 
           {(form.freelancerUserIds || []).length > 0 ? (
             <div className="oh-sa-subs-assign__chips">
-              <div className="mb-2 text-xs font-bold text-slate-600">المستقلون المختارون:</div>
+              <div className="mb-2 text-xs font-bold text-slate-600">{t("subscriptions.assignModal.selectedFreelancers")}</div>
               <div className="flex flex-wrap gap-2">
                 {(form.freelancerUserIds || []).map((id) => {
                   const f = selectedFreelancersById[String(id)] || null;
                   const label = f
-                    ? `${f.name || "مستقل"}${f.accountId ? ` · ${f.accountId}` : ""}`.trim()
-                    : `ID: ${String(id)}`;
+                    ? `${f.name || t("subscriptions.assignModal.freelancerFallback")}${f.accountId ? ` · ${f.accountId}` : ""}`.trim()
+                    : t("subscriptions.assignModal.freelancerId", { id: String(id) });
                   return (
                     <span
                       key={String(id)}
@@ -805,7 +808,7 @@ const SuperAdminSubscriptionsPage = () => {
                       <button
                         type="button"
                         className="inline-flex h-5 shrink-0 items-center justify-center rounded-full border border-slate-200/80 bg-slate-50 px-1.5 text-xs font-bold leading-none text-slate-600"
-                        aria-label={`إزالة ${label}`}
+                        aria-label={t("subscriptions.assignModal.removeFreelancer", { label })}
                         onClick={() =>
                           setForm((v) => ({
                             ...v,
@@ -821,7 +824,7 @@ const SuperAdminSubscriptionsPage = () => {
               </div>
             </div>
           ) : (
-            <p className="m-0 text-xs text-slate-500">لم يتم اختيار مستقل بعد.</p>
+            <p className="m-0 text-xs text-slate-500">{t("subscriptions.assignModal.noFreelancerYet")}</p>
           )}
         </div>
       </DashboardModal>
@@ -835,30 +838,28 @@ const SuperAdminSubscriptionsPage = () => {
 
       <DashboardModal
         open={notifyModalOpen}
-        title="إعداد بريد إشعارات الاشتراكات"
-        ariaLabel="Subscription Notification Email — إعداد بريد إشعارات الاشتراكات"
+        title={t("subscriptions.notifyModal.title")}
+        ariaLabel={t("subscriptions.notifyModal.ariaLabel")}
         onClose={closeNotifyModal}
         footer={
           <>
             <Button type="button" variant="secondary" disabled={notifyBusy} onClick={closeNotifyModal}>
-              إلغاء
+              {t("subscriptions.notifyModal.cancel")}
             </Button>
             <Button type="button" variant="primary" disabled={notifyBusy || notifyLoading} onClick={() => void saveNotifyEmail()}>
-              {notifyBusy ? "جارٍ الحفظ…" : "حفظ"}
+              {notifyBusy ? t("subscriptions.notifyModal.saving") : t("subscriptions.notifyModal.save")}
             </Button>
           </>
         }
       >
         <div className="grid gap-4">
-          <p className="m-0 text-sm leading-relaxed text-slate-600">
-            هذا هو البريد الإلكتروني الذي يستقبل إشعار كل اشتراك مدفوع جديد تلقائياً.
-          </p>
+          <p className="m-0 text-sm leading-relaxed text-slate-600">{t("subscriptions.notifyModal.description")}</p>
           {notifyLoading ? (
-            <div className="text-sm text-slate-500">جارٍ تحميل البريد الحالي…</div>
+            <div className="text-sm text-slate-500">{t("subscriptions.notifyModal.loading")}</div>
           ) : (
             <div className="flex min-w-0 flex-col gap-1.5">
               <label className={fieldLabelClass} htmlFor="sa-subs-notify-email">
-                بريد الإشعارات الحالي
+                {t("subscriptions.notifyModal.currentLabel")}
               </label>
               <input
                 id="sa-subs-notify-email"
@@ -883,7 +884,7 @@ const SuperAdminSubscriptionsPage = () => {
               />
               {notifyEnvFallback ? (
                 <p className="m-0 text-xs text-slate-500">
-                  الإعداد الافتراضي (متغير البيئة): <span dir="ltr">{notifyEnvFallback}</span>
+                  {t("subscriptions.notifyModal.envFallback")} <span dir="ltr">{notifyEnvFallback}</span>
                 </p>
               ) : null}
             </div>
@@ -909,30 +910,30 @@ const SuperAdminSubscriptionsPage = () => {
 
       <DashboardModal
         open={feeModalOpen}
-        title="رسوم التفعيل"
-        ariaLabel="Subscription Activation Fee Settings"
+        title={t("subscriptions.feeModal.title")}
+        ariaLabel={t("subscriptions.feeModal.title")}
         onClose={closeFeeModal}
         footer={
           <>
             <Button type="button" variant="secondary" disabled={feeBusy} onClick={closeFeeModal}>
-              إلغاء
+              {t("subscriptions.feeModal.cancel")}
             </Button>
             <Button type="button" variant="primary" disabled={feeBusy || feeLoading} onClick={() => void saveFeeSettings()}>
-              {feeBusy ? "جارٍ الحفظ…" : "حفظ التغييرات"}
+              {feeBusy ? t("subscriptions.feeModal.saving") : t("subscriptions.feeModal.save")}
             </Button>
           </>
         }
       >
         <div className="grid gap-4">
           <p className="m-0 text-sm leading-relaxed text-slate-600">
-            تطبق على المستخدم عند الحاجة وفق سياسة الصلاحية الحالية ({feeValidityDays} يومًا). تعطيل الرسوم لا يغيّر السجلات التاريخية.
+            {t("subscriptions.feeModal.description", { days: feeValidityDays })}
           </p>
           {feeLoading ? (
-            <div className="text-sm text-slate-500">جارٍ تحميل الإعدادات…</div>
+            <div className="text-sm text-slate-500">{t("subscriptions.feeModal.loading")}</div>
           ) : (
             <>
               <label className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
-                <span className="text-sm font-bold text-slate-800">تفعيل رسوم التفعيل</span>
+                <span className="text-sm font-bold text-slate-800">{t("subscriptions.feeModal.enableLabel")}</span>
                 <input
                   type="checkbox"
                   className="h-5 w-5 accent-[color:var(--primary,#2f3b65)]"
@@ -947,7 +948,7 @@ const SuperAdminSubscriptionsPage = () => {
               </label>
               <div className="flex min-w-0 flex-col gap-1.5">
                 <label className={fieldLabelClass} htmlFor="sa-subs-activation-fee-amount">
-                  قيمة رسوم التفعيل
+                  {t("subscriptions.feeModal.amountLabel")}
                 </label>
                 <div className="flex items-center gap-2">
                   <input
@@ -967,14 +968,15 @@ const SuperAdminSubscriptionsPage = () => {
                       if (feeSuccess) setFeeSuccess("");
                     }}
                   />
-                  <span className="shrink-0 text-sm font-bold text-slate-600">د.أ</span>
+                  <span className="shrink-0 text-sm font-bold text-slate-600">{t("subscriptions.feeModal.currency")}</span>
                 </div>
                 {!feeEnabled ? (
-                  <p className="m-0 text-xs text-slate-500">الرسوم معطّلة حالياً — تُحفظ القيمة لاستخدامها عند إعادة التفعيل.</p>
+                  <p className="m-0 text-xs text-slate-500">{t("subscriptions.feeModal.disabledHint")}</p>
                 ) : null}
               </div>
               <div className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-600">
-                مدة الصلاحية: <strong>{feeValidityDays}</strong> يومًا (للقراءة فقط)
+                {t("subscriptions.feeModal.validityReadonly")}{" "}
+                <strong>{t("subscriptions.feeModal.validityDays", { days: feeValidityDays })}</strong>
               </div>
             </>
           )}
@@ -998,9 +1000,9 @@ const SuperAdminSubscriptionsPage = () => {
       </DashboardModal>
 
       <DashboardPageHeader
-        eyebrow="لوحة المدير الأعلى"
-        title="اشتراكات المستقلين"
-        description="إسناد الباقات ومتابعة حالة الاشتراك (للمدير الأعلى فقط)."
+        eyebrow={t("subscriptions.page.eyebrow")}
+        title={t("subscriptions.page.title")}
+        description={t("subscriptions.page.description")}
         breadcrumbs={superAdminBreadcrumbs("dashboard.breadcrumbs.subscriptions")}
       />
 
@@ -1009,14 +1011,14 @@ const SuperAdminSubscriptionsPage = () => {
           message={error}
           actions={
             <Button type="button" variant="secondary" onClick={() => void loadSubscriptions(page)}>
-              إعادة المحاولة
+              {t("subscriptions.page.retry")}
             </Button>
           }
         />
       ) : null}
 
       {(!listLoading || subs.length > 0) && !plansLoading ? (
-        <div className="oh-sa-subs-stats" aria-label="ملخص الاشتراكات">
+        <div className="oh-sa-subs-stats" aria-label={t("subscriptions.page.statsAria")}>
           {statItems.map((item) => (
             <article key={item.key} className="oh-sa-subs-stat">
               <p className="oh-sa-subs-stat__label">{item.label}</p>
@@ -1027,23 +1029,23 @@ const SuperAdminSubscriptionsPage = () => {
       ) : null}
 
       <DashboardSection
-        title="إدارة الاشتراكات"
-        description="استعرض سجلات الاشتراكات وابحث وفلتر النتائج."
+        title={t("subscriptions.page.sectionTitle")}
+        description={t("subscriptions.page.sectionDescription")}
         actions={
           <>
             <Button type="button" variant="secondary" disabled={submitting} onClick={() => void openFeeModal()}>
-              رسوم التفعيل
+              {t("subscriptions.page.activationFee")}
             </Button>
             <Button type="button" variant="secondary" disabled={submitting} onClick={() => void openNotifyModal()}>
-              إعداد بريد إشعارات الاشتراكات
+              {t("subscriptions.page.notifyEmail")}
             </Button>
             <Button type="button" variant="primary" disabled={submitting} onClick={() => setAssignModalOpen(true)}>
-              إسناد باقة لمستقل
+              {t("subscriptions.page.assignPlan")}
             </Button>
           </>
         }
       >
-        {initialLoading ? <DashboardLoadingState label="جارٍ تحميل الاشتراكات…" /> : null}
+        {initialLoading ? <DashboardLoadingState label={t("subscriptions.page.loading")} /> : null}
 
         {showListToolbar ? (
           <div
@@ -1054,7 +1056,7 @@ const SuperAdminSubscriptionsPage = () => {
             <div className="oh-sa-subs-toolbar__grid">
               <div className="oh-sa-subs-toolbar__field oh-sa-subs-toolbar__field--search">
                 <label className={fieldLabelClass} htmlFor="sa-subs-list-search">
-                  بحث في القائمة
+                  {t("subscriptions.page.searchLabel")}
                 </label>
                 <input
                   id="sa-subs-list-search"
@@ -1062,7 +1064,7 @@ const SuperAdminSubscriptionsPage = () => {
                   type="search"
                   value={listSearch}
                   onChange={(e) => setListSearch(e.target.value)}
-                  placeholder="اسم المستقل، الحساب، أو رقم الاشتراك"
+                  placeholder={t("subscriptions.page.searchPlaceholder")}
                   autoComplete="off"
                   disabled={listLoading}
                 />
@@ -1070,7 +1072,7 @@ const SuperAdminSubscriptionsPage = () => {
 
               <div className="oh-sa-subs-toolbar__field">
                 <label className={fieldLabelClass} htmlFor="sa-subs-filter-status">
-                  الحالة
+                  {t("subscriptions.page.statusFilter")}
                 </label>
                 <select
                   id="sa-subs-filter-status"
@@ -1079,18 +1081,18 @@ const SuperAdminSubscriptionsPage = () => {
                   onChange={(e) => setFilterStatus(e.target.value)}
                   disabled={listLoading}
                 >
-                  <option value="">كل الحالات</option>
-                  <option value="active">نشط</option>
-                  <option value="assigned_not_started">لم يبدأ بعد</option>
-                  <option value="inactive">غير نشط</option>
-                  <option value="expired">منتهي</option>
-                  <option value="cancelled">ملغي</option>
+                  <option value="">{t("subscriptions.page.allStatuses")}</option>
+                  <option value="active">{t("subscriptions.status.subscription.active")}</option>
+                  <option value="assigned_not_started">{t("subscriptions.status.subscription.assigned_not_started")}</option>
+                  <option value="inactive">{t("subscriptions.status.subscription.inactive")}</option>
+                  <option value="expired">{t("subscriptions.status.subscription.expired")}</option>
+                  <option value="cancelled">{t("subscriptions.status.subscription.cancelled")}</option>
                 </select>
               </div>
 
               <div className="oh-sa-subs-toolbar__field">
                 <label className={fieldLabelClass} htmlFor="sa-subs-filter-plan">
-                  الباقة
+                  {t("subscriptions.page.planFilter")}
                 </label>
                 <select
                   id="sa-subs-filter-plan"
@@ -1099,7 +1101,7 @@ const SuperAdminSubscriptionsPage = () => {
                   onChange={(e) => setFilterPlanId(e.target.value)}
                   disabled={listLoading}
                 >
-                  <option value="">كل الباقات</option>
+                  <option value="">{t("subscriptions.page.allPlans")}</option>
                   {plans.map((p) => (
                     <option key={p.id} value={String(p.id)}>
                       {p.title}
@@ -1111,11 +1113,11 @@ const SuperAdminSubscriptionsPage = () => {
               <div className="oh-sa-subs-toolbar__actions">
                 {hasActiveFilters ? (
                   <Button type="button" variant="secondary" disabled={listLoading || submitting} onClick={clearFilters}>
-                    مسح الفلاتر
+                    {t("subscriptions.page.clearFilters")}
                   </Button>
                 ) : null}
                 <Button type="button" variant="secondary" disabled={listLoading || submitting} onClick={() => void loadSubscriptions(page)}>
-                  تحديث
+                  {t("subscriptions.page.refresh")}
                 </Button>
               </div>
             </div>
@@ -1123,10 +1125,10 @@ const SuperAdminSubscriptionsPage = () => {
             <div className="oh-sa-subs-toolbar__meta">
               <StatusBadge tone="neutral" className="oh-sa-subs-toolbar__count">
                 {listLoading && subs.length > 0
-                  ? "جاري التحديث..."
+                  ? t("subscriptions.page.refreshing")
                   : listLoading
-                    ? "جارٍ التحميل…"
-                    : formatDisplayRange(pagination)}
+                    ? t("subscriptions.page.loadingList")
+                    : formatDisplayRange(pagination, t)}
               </StatusBadge>
             </div>
           </div>
@@ -1140,18 +1142,18 @@ const SuperAdminSubscriptionsPage = () => {
 
         {listLoading && !initialLoading && subs.length === 0 ? (
           <div className="oh-sa-subs-list-loading" aria-live="polite">
-            جارٍ تحميل الصفحة…
+            {t("subscriptions.page.loadingPage")}
           </div>
         ) : null}
 
         {!listLoading && !initialLoading && pagination.total === 0 && !hasFilters ? (
-          <DashboardEmptyState title="لا توجد اشتراكات حالياً" description="ستظهر الاشتراكات هنا بعد الإسناد أو عند توفر بيانات من الخادم." />
+          <DashboardEmptyState title={t("subscriptions.page.emptyTitle")} description={t("subscriptions.page.emptyDescription")} />
         ) : null}
 
         {!listLoading && !initialLoading && pagination.total === 0 && hasFilters ? (
           <DashboardEmptyState
-            title="لا توجد نتائج مطابقة"
-            description="جرّب تعديل البحث أو إعادة ضبط التصفية لعرض المزيد من الاشتراكات."
+            title={t("subscriptions.page.noResultsTitle")}
+            description={t("subscriptions.page.noResultsDescription")}
           />
         ) : null}
 

@@ -1,6 +1,6 @@
 /**
  * Admin ads table status (display only).
- * Priority: مسودة → منتهي → مجدول → يعرض الآن
+ * Priority: draft → expired → scheduled → live
  *
  * @param {object} ad
  * @param {Date} [now]
@@ -11,9 +11,7 @@ export function getAdAdminStatus(ad, now = new Date()) {
   if (!ad?.isActive) {
     return {
       key: "draft",
-      label: "مسودة",
       tone: "neutral",
-      description: "الإعلان غير منشور ولن يظهر للزوار.",
     };
   }
 
@@ -23,9 +21,7 @@ export function getAdAdminStatus(ad, now = new Date()) {
   if (endOk && endDate.getTime() < t) {
     return {
       key: "expired",
-      label: "منتهي",
       tone: "danger",
-      description: "انتهى وقت العرض.",
     };
   }
 
@@ -35,17 +31,13 @@ export function getAdAdminStatus(ad, now = new Date()) {
   if (startOk && startDate.getTime() > t) {
     return {
       key: "scheduled",
-      label: "مجدول",
       tone: "warning",
-      description: "سيظهر عند وقت البداية.",
     };
   }
 
   return {
     key: "live",
-    label: "يعرض الآن",
     tone: "success",
-    description: "الإعلان ظاهر للزوار ضمن الجدولة.",
   };
 }
 

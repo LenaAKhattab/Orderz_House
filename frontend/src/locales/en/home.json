@@ -1,4 +1,128 @@
 {
+  "heroIpad": {
+    "free": "Free",
+    "dayUnit": "days",
+    "brand": "OrderzHouse",
+    "sidebarNavAria": "Section navigation",
+    "menuOpen": "Open menu",
+    "menuClose": "Close menu",
+    "loading": "Loading",
+    "nav": {
+      "overview": {
+        "label": "Dashboard",
+        "title": "Dashboard",
+        "description": "Quick metrics and a summary that changes with your role on the platform."
+      },
+      "services": {
+        "label": "Services",
+        "title": "Services",
+        "description": "Service categories as on the public services page."
+      },
+      "plans": {
+        "label": "Plans",
+        "title": "Plans",
+        "description": "Freelancer subscription plans as on the public plans page."
+      },
+      "orders": {
+        "label": "Orders",
+        "title": "Orders & marketplace",
+        "description": "Open orders list and execution status for freelancers."
+      },
+      "auth": {
+        "label": "Sign in",
+        "title": "Sign in",
+        "description": "Sign-in and account creation flow on the platform."
+      }
+    },
+    "overview": {
+      "kicker": "Welcome to your dashboard",
+      "hint": "Content changes by role: client, freelancer, or admin."
+    },
+    "services": {
+      "kicker": "Service categories",
+      "loadError": "Could not load categories. Check your connection to the server.",
+      "empty": "No active categories right now.",
+      "footHint": "Data from the platform’s active categories table."
+    },
+    "plans": {
+      "loadError": "Could not load plans. Check your connection to the server.",
+      "empty": "No visible plans right now.",
+      "popularBadge": "Most popular",
+      "footHint": "Data from active plans shown on the platform."
+    },
+    "orders": {
+      "table": {
+        "order": "Order",
+        "status": "Status",
+        "budget": "Budget"
+      },
+      "loadError": "Could not load the orders gallery. Check your connection to the server.",
+      "empty": "No orders in the gallery right now.",
+      "footHint": "Same data as the public orders gallery (/orders).",
+      "projectType": {
+        "fixed": "Fixed price",
+        "bidding": "Bidding"
+      }
+    },
+    "auth": {
+      "title": "Start your journey on the platform",
+      "lede": "Choose the account type that fits you to continue.",
+      "roles": {
+        "client": {
+          "title": "Client",
+          "description": "Post requests and find the best freelancers."
+        },
+        "freelancer": {
+          "title": "Freelancer",
+          "description": "Receive orders and start working with ease."
+        }
+      },
+      "continue": "Continue",
+      "signIn": "Sign in",
+      "signUp": "Create account"
+    },
+    "analytics": {
+      "kpiVisits": "Visits",
+      "kpiVisitsValue": "12.4k",
+      "kpiVisitsDelta": "↑ 9%",
+      "kpiActiveOrders": "Active orders",
+      "kpiActiveOrdersValue": "124",
+      "kpiActiveOrdersDelta": "↑ 3%",
+      "kpiRevenue": "Revenue",
+      "kpiRevenueValue": "4,280 JOD",
+      "kpiRevenueDelta": "↑ 6%",
+      "weeklyOrdersTitle": "Weekly orders",
+      "weeklyOrdersCaption": "Last 10 days",
+      "topServicesTitle": "Most requested services",
+      "topServicesBarsAria": "Relative bar chart by category",
+      "completionRateTitle": "Completion rate",
+      "completionRateValue": "82%",
+      "completionRateSub": "On-time delivery",
+      "userActivityLabel": "User activity",
+      "serviceBars": {
+        "dev": "Development",
+        "design": "Design",
+        "content": "Content",
+        "biz": "Business",
+        "acad": "Academic"
+      }
+    },
+    "lite": {
+      "dashboard": "Dashboard",
+      "statActivity": "Activity",
+      "statActivityValue": "128",
+      "statOrders": "Orders",
+      "statOrdersValue": "24",
+      "statComplete": "Complete",
+      "statCompleteValue": "96%",
+      "quickGlance": "Quick glance",
+      "recentActivity": "Recent activity",
+      "rowDesign": "Design request",
+      "rowDev": "Development service",
+      "pillInProgress": "In progress",
+      "pillNew": "New"
+    }
+  },
   "hero": {
     "title": "One platform connecting you with the right services and freelancers",
     "lead": "Start your request easily, compare available services, and track every step in one place until you get the results you need.",

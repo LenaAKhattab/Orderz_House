@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import DashboardPageHeader from "../../components/dashboard/DashboardPageHeader";
 import DashboardShell from "../../components/dashboard/DashboardShell";
@@ -19,41 +19,37 @@ import { isAdminStaffShell, staffIdentityRequestsPath } from "../../lib/staff/st
 import { ADMIN_LIST_SEARCH_DEBOUNCE_MS } from "../../lib/staff/adminListLoad";
 import { useAdminListLoad } from "../../hooks/useAdminListLoad";
 import "./kycActivationReviewActions.css";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/activationResources";
 
-const STATUS_LABELS = {
-  pending_review: "قيد المراجعة",
-  approved: "مقبول",
-  rejected: "مرفوض",
-  draft: "مسودة",
-  cancelled: "ملغى",
-};
-
-function formatDate(value) {
+function formatDate(value, locale) {
   if (!value) return "—";
   try {
-    return new Date(value).toLocaleString("ar-JO");
+    const tag = locale === "en" ? "en-JO-u-nu-latn" : "ar-JO-u-nu-latn";
+    return new Date(value).toLocaleString(tag);
   } catch {
     return String(value);
   }
 }
 
-function kycImageErrorMessage(err) {
+function kycImageErrorMessage(err, t) {
   if (err?.code === "ERR_CANCELED" || err?.name === "CanceledError" || err?.name === "AbortError") {
     return "";
   }
   const status = err?.response?.status;
-  if (status === 404) return "لم يتم العثور على صورة الهوية.";
-  if (status === 401 || status === 403) return "ليست لديك صلاحية لعرض هذه الصورة.";
-  if (status === 502 || status === 503) return "تعذر تحميل صورة الهوية الآن. حاول مرة أخرى.";
+  if (status === 404) return t("activation.requests.kycNotFound");
+  if (status === 401 || status === 403) return t("activation.requests.kycForbidden");
+  if (status === 502 || status === 503) return t("activation.requests.kycLoadFailed");
   const fromApi = getSafeApiErrorMessage(err, "");
   if (fromApi && fromApi !== "تعذر الاتصال بالخادم. تحقق من الاتصال وحاول مجدداً.") {
     return fromApi;
   }
-  if (status >= 400) return "تعذر تحميل صورة الهوية الآن. حاول مرة أخرى.";
-  return "تعذر تحميل صورة الهوية الآن. حاول مرة أخرى.";
+  if (status >= 400) return t("activation.requests.kycLoadFailed");
+  return t("activation.requests.kycLoadFailed");
 }
 
 function KycImage({ requestId, side, label }) {
+  const { t } = useTranslation();
   const [src, setSrc] = useState("");
   const [err, setErr] = useState("");
 
@@ -79,7 +75,7 @@ function KycImage({ requestId, side, label }) {
         if (!active || e?.code === "ERR_CANCELED" || e?.name === "CanceledError" || e?.name === "AbortError") {
           return;
         }
-        setErr(kycImageErrorMessage(e));
+        setErr(kycImageErrorMessage(e, t));
       }
     })();
     return () => {
@@ -87,7 +83,7 @@ function KycImage({ requestId, side, label }) {
       controller.abort();
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [requestId, side]);
+  }, [requestId, side, t]);
 
   return (
     <div style={{ marginBottom: 16 }}>
@@ -100,13 +96,24 @@ function KycImage({ requestId, side, label }) {
           style={{ maxWidth: "100%", maxHeight: 360, borderRadius: 8, border: "1px solid #e5e7eb" }}
         />
       ) : !err ? (
-        <p style={{ color: "#6b7280" }}>جارٍ التحميل…</p>
+        <p style={{ color: "#6b7280" }}>{t("activation.requests.loading")}</p>
       ) : null}
     </div>
   );
 }
 
 function RequestDetail({ id, onBack }) {
+  const { t, locale } = useTranslation();
+  const statusLabels = useMemo(
+    () => ({
+      pending_review: t("activation.requests.statusLabels.pending_review"),
+      approved: t("activation.requests.statusLabels.approved"),
+      rejected: t("activation.requests.statusLabels.rejected"),
+      draft: t("activation.requests.statusLabels.draft"),
+      cancelled: t("activation.requests.statusLabels.cancelled"),
+    }),
+    [t],
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [payload, setPayload] = useState(null);
@@ -122,7 +129,7 @@ function RequestDetail({ id, onBack }) {
       const res = await getSuperAdminFreelancerActivationRequestRequest(id);
       setPayload(res?.data ?? null);
     } catch (err) {
-      setError(getSafeApiErrorMessage(err) || "تعذر تحميل الطلب.");
+      setError(getSafeApiErrorMessage(err) || t("activation.requests.errLoadRequest"));
       setPayload(null);
     } finally {
       setLoading(false);
@@ -145,7 +152,7 @@ function RequestDetail({ id, onBack }) {
       await approveSuperAdminFreelancerActivationRequestRequest(id);
       await load();
     } catch (err) {
-      setActionError(getSafeApiErrorMessage(err) || "تعذر قبول الطلب.");
+      setActionError(getSafeApiErrorMessage(err) || t("activation.requests.errApprove"));
     } finally {
       setBusy(false);
     }
@@ -154,7 +161,7 @@ function RequestDetail({ id, onBack }) {
   const handleReject = async () => {
     if (!pending || busy) return;
     if (!String(rejectionReason || "").trim()) {
-      setActionError("سبب الرفض مطلوب.");
+      setActionError(t("activation.requests.rejectReasonRequired"));
       return;
     }
     setBusy(true);
@@ -166,7 +173,7 @@ function RequestDetail({ id, onBack }) {
       });
       await load();
     } catch (err) {
-      setActionError(getSafeApiErrorMessage(err) || "تعذر رفض الطلب.");
+      setActionError(getSafeApiErrorMessage(err) || t("activation.requests.errReject"));
     } finally {
       setBusy(false);
     }
@@ -174,52 +181,52 @@ function RequestDetail({ id, onBack }) {
 
   if (loading) return <DashboardLoadingState />;
   if (error) return <DashboardErrorState message={error} onRetry={() => void load()} />;
-  if (!request) return <DashboardEmptyState title="الطلب غير موجود" />;
+  if (!request) return <DashboardEmptyState title={t("activation.requests.notFound")} />;
 
   return (
-    <DashboardSection title={`طلب #${request.id}`}>
+    <DashboardSection title={t("activation.requests.requestHeading", { id: request.id })}>
       <button type="button" className="oh-account-btn-ghost" onClick={onBack} style={{ marginBottom: 12 }}>
-        العودة للقائمة
+        {t("activation.requests.backToList")}
       </button>
 
       <div style={{ display: "grid", gap: 8, marginBottom: 16 }}>
         <div>
-          <strong>المستقل:</strong> {freelancer?.name || "—"} ({freelancer?.email || "—"})
+          <strong>{t("activation.requests.freelancer")}</strong> {freelancer?.name || "—"} ({freelancer?.email || "—"})
         </div>
         <div>
-          <strong>الحالة:</strong> {STATUS_LABELS[request.status] || request.status}
+          <strong>{t("activation.requests.status")}</strong> {statusLabels[request.status] || request.status}
         </div>
         <div>
-          <strong>تاريخ الإرسال:</strong> {formatDate(request.submittedAt)}
+          <strong>{t("activation.requests.submittedAt")}</strong> {formatDate(request.submittedAt, locale)}
         </div>
         <div>
-          <strong>الموافقة على الشروط:</strong> {formatDate(request.termsAcceptedAt)} —{" "}
+          <strong>{t("activation.requests.termsAccepted")}</strong> {formatDate(request.termsAcceptedAt, locale)} —{" "}
           {request.termsVersion || "—"}
         </div>
         {request.reviewedAt ? (
           <div>
-            <strong>تاريخ المراجعة:</strong> {formatDate(request.reviewedAt)}
+            <strong>{t("activation.requests.reviewedAt")}</strong> {formatDate(request.reviewedAt, locale)}
           </div>
         ) : null}
         {request.rejectionReason ? (
           <div>
-            <strong>سبب الرفض:</strong> {request.rejectionReason}
+            <strong>{t("activation.requests.rejectionReason")}</strong> {request.rejectionReason}
           </div>
         ) : null}
         {request.adminNotes ? (
           <div>
-            <strong>ملاحظات داخلية:</strong> {request.adminNotes}
+            <strong>{t("activation.requests.adminNotes")}</strong> {request.adminNotes}
           </div>
         ) : null}
       </div>
 
-      <KycImage requestId={request.id} side="front" label="صورة الهوية الأمامية" />
-      <KycImage requestId={request.id} side="back" label="صورة الهوية الخلفية" />
+      <KycImage requestId={request.id} side="front" label={t("activation.requests.idFront")} />
+      <KycImage requestId={request.id} side="back" label={t("activation.requests.idBack")} />
 
       {pending ? (
         <div style={{ marginTop: 16, display: "grid", gap: 12, maxWidth: 520 }}>
           <label>
-            سبب الرفض
+            {t("activation.requests.rejectReasonLabel")}
             <textarea
               value={rejectionReason}
               onChange={(e) => setRejectionReason(e.target.value)}
@@ -229,7 +236,7 @@ function RequestDetail({ id, onBack }) {
             />
           </label>
           <label>
-            ملاحظات داخلية
+            {t("activation.requests.adminNotesLabel")}
             <textarea
               value={adminNotes}
               onChange={(e) => setAdminNotes(e.target.value)}
@@ -246,7 +253,7 @@ function RequestDetail({ id, onBack }) {
               disabled={busy}
               onClick={() => void handleApprove()}
             >
-              قبول التفعيل
+              {t("activation.requests.approve")}
             </button>
             <button
               type="button"
@@ -254,7 +261,7 @@ function RequestDetail({ id, onBack }) {
               disabled={busy}
               onClick={() => void handleReject()}
             >
-              رفض التفعيل
+              {t("activation.requests.reject")}
             </button>
           </div>
         </div>
@@ -264,6 +271,17 @@ function RequestDetail({ id, onBack }) {
 }
 
 export default function SuperAdminFreelancerActivationRequestsPage() {
+  const { t } = useTranslation();
+  const statusLabels = useMemo(
+    () => ({
+      pending_review: t("activation.requests.statusLabels.pending_review"),
+      approved: t("activation.requests.statusLabels.approved"),
+      rejected: t("activation.requests.statusLabels.rejected"),
+      draft: t("activation.requests.statusLabels.draft"),
+      cancelled: t("activation.requests.statusLabels.cancelled"),
+    }),
+    [t],
+  );
   const { id } = useParams();
   const navigate = useNavigate();
   const { pathname } = useLocation();
@@ -285,12 +303,12 @@ export default function SuperAdminFreelancerActivationRequestsPage() {
     rateLimited,
     run: runListLoad,
   } = useAdminListLoad({
-    mapError: (err) => getSafeApiErrorMessage(err) || "تعذر تحميل طلبات التفعيل.",
+    mapError: (err) => getSafeApiErrorMessage(err) || t("activation.requests.errLoadList"),
   });
 
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedSearch(searchInput.trim()), ADMIN_LIST_SEARCH_DEBOUNCE_MS);
-    return () => clearTimeout(t);
+    const debounceTimer = setTimeout(() => setDebouncedSearch(searchInput.trim()), ADMIN_LIST_SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(debounceTimer);
   }, [searchInput]);
 
   const load = useCallback(async () => {
@@ -320,32 +338,32 @@ export default function SuperAdminFreelancerActivationRequestsPage() {
   return (
     <DashboardShell>
       <DashboardPageHeader
-        title={isAdminStaffShell(pathname) ? "طلبات توثيق الهوية" : "طلبات تفعيل المستقلين"}
-        subtitle="مراجعة صور الهوية والموافقة أو الرفض"
+        title={isAdminStaffShell(pathname) ? t("activation.requests.staffTitle") : t("activation.requests.title")}
+        subtitle={t("activation.requests.subtitle")}
         crumbs={crumbs}
       />
 
       {id ? (
         <RequestDetail id={id} onBack={() => navigate(listBase)} />
       ) : (
-        <DashboardSection title="القائمة">
+        <DashboardSection title={t("activation.requests.listTitle")}>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12, alignItems: "center" }}>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               disabled={controlsDisabled}
             >
-              <option value="pending_review">قيد المراجعة</option>
-              <option value="approved">مقبول</option>
-              <option value="rejected">مرفوض</option>
-              <option value="">الكل</option>
+              <option value="pending_review">{t("activation.requests.statusLabels.pending_review")}</option>
+              <option value="approved">{t("activation.requests.statusLabels.approved")}</option>
+              <option value="rejected">{t("activation.requests.statusLabels.rejected")}</option>
+              <option value="">{t("activation.requests.filterAll")}</option>
             </select>
             <input
               type="search"
-              placeholder="بحث بالاسم أو البريد"
+              placeholder={t("activation.requests.searchPlaceholder")}
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              aria-label="البحث عن مستقل"
+              aria-label={t("activation.requests.searchAria")}
               disabled={rateLimited}
               data-testid="admin-identity-search"
             />
@@ -355,16 +373,16 @@ export default function SuperAdminFreelancerActivationRequestsPage() {
               disabled={controlsDisabled || (initialLoading && items.length === 0)}
               data-testid="admin-identity-refresh"
             >
-              تحديث
+              {t("activation.requests.refresh")}
             </button>
             {refreshing ? (
               <span style={{ color: "#64748b", fontSize: "0.875rem" }} data-testid="admin-list-refreshing">
-                {searchInput.trim() ? "جاري البحث..." : "جاري التحديث..."}
+                {searchInput.trim() ? t("activation.requests.searching") : t("activation.requests.refreshing")}
               </span>
             ) : null}
             {rateLimited ? (
               <span style={{ color: "#b45309", fontSize: "0.875rem" }} data-testid="admin-list-rate-limit-cooldown">
-                انتظر قليلاً ثم حاول مجددًا…
+                {t("activation.requests.softWait")}
               </span>
             ) : null}
           </div>
@@ -384,19 +402,19 @@ export default function SuperAdminFreelancerActivationRequestsPage() {
             <DashboardErrorState message={initialLoadError} onRetry={() => void load()} />
           ) : null}
           {!initialLoading && !initialLoadError && items.length === 0 ? (
-            <DashboardEmptyState title="لا توجد طلبات" />
+            <DashboardEmptyState title={t("activation.requests.empty")} />
           ) : null}
           {items.length > 0 ? (
             <div style={{ overflowX: "auto" }} data-testid="admin-identity-table">
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr>
-                    <th align="right">المستقل</th>
-                    <th align="right">البريد</th>
-                    <th align="right">الحالة</th>
-                    <th align="right">تاريخ الإرسال</th>
-                    <th align="right">المراجعة</th>
-                    <th align="right">إجراء</th>
+                    <th align="right">{t("activation.requests.colFreelancer")}</th>
+                    <th align="right">{t("activation.requests.colEmail")}</th>
+                    <th align="right">{t("activation.requests.colStatus")}</th>
+                    <th align="right">{t("activation.requests.colSubmitted")}</th>
+                    <th align="right">{t("activation.requests.colReview")}</th>
+                    <th align="right">{t("activation.requests.colAction")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -404,11 +422,11 @@ export default function SuperAdminFreelancerActivationRequestsPage() {
                     <tr key={row.id}>
                       <td>{row.freelancerName || "—"}</td>
                       <td>{row.freelancerEmail || "—"}</td>
-                      <td>{STATUS_LABELS[row.status] || row.status}</td>
+                      <td>{statusLabels[row.status] || row.status}</td>
                       <td>{formatDate(row.submittedAt)}</td>
                       <td>{formatDate(row.reviewedAt)}</td>
                       <td>
-                        <Link to={`${listBase}/${row.id}`}>عرض</Link>
+                        <Link to={`${listBase}/${row.id}`}>{t("activation.requests.view")}</Link>
                       </td>
                     </tr>
                   ))}

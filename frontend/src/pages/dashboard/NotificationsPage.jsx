@@ -27,6 +27,7 @@ import DashboardHubPage from "../../components/dashboard/hub/DashboardHubPage";
 import HubMetricSkeleton from "../../components/dashboard/hub/HubMetricSkeleton";
 import NotificationListSkeleton from "../../components/dashboard/hub/NotificationListSkeleton";
 import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/notificationsUiResources";
 import { getNotificationDetails, getNotificationTypeIconKind } from "../../utils/notificationDisplay";
 import { resolveSafeInternalNavPath } from "../../utils/safeInternalNavPath";
 import { createAdminListRequestGate } from "../../lib/staff/adminListLoad";
@@ -355,7 +356,7 @@ export default function NotificationsPage() {
               data-testid="notifications-bulk-delete"
             >
               <Trash2 size={16} strokeWidth={1.75} aria-hidden />
-              <span>حذف المحدد ({selectedCount})</span>
+              <span>{t("notificationsUi.page.deleteSelected", { count: selectedCount })}</span>
             </button>
           ) : null}
           <button type="button" className="fn-toolbar__mark-all" onClick={handleReadAll} disabled={!unreadCount || showLoading}>
@@ -422,7 +423,7 @@ export default function NotificationsPage() {
                         type="checkbox"
                         checked={isSelected}
                         onChange={(e) => toggleSelected(n.id, e.target.checked)}
-                        aria-label={`تحديد: ${cardTitle}`}
+                        aria-label={t("notificationsUi.page.selectAria", { title: cardTitle })}
                         data-testid="notification-select"
                       />
                     </label>
@@ -484,10 +485,10 @@ export default function NotificationsPage() {
 
       <ConfirmDialog
         open={confirmDeleteOpen}
-        title="حذف الإشعارات المحددة؟"
-        body={`سيتم حذف ${selectedCount} إشعار بشكل نهائي. لا يمكن التراجع عن هذا الإجراء.`}
-        confirmLabel="حذف"
-        cancelLabel="إلغاء"
+        title={t("notificationsUi.page.confirmDeleteTitle")}
+        body={t("notificationsUi.page.confirmDeleteBody", { count: selectedCount })}
+        confirmLabel={t("notificationsUi.page.delete")}
+        cancelLabel={t("notificationsUi.page.cancel")}
         confirmVariant="danger"
         confirmBusy={deleting}
         onCancel={() => {

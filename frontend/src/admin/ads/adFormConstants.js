@@ -1,104 +1,60 @@
-/** UI constants for the admin ad builder (labels stay Arabic; values match backend). */
+/** UI constants for the admin ad builder (values match backend). */
 
 /** Single public placement for all ads — not editable in the builder. */
 export const FIXED_AD_PLACEMENT = "home_right_panel";
 
 export const LAYOUT_OPTIONS = [
-  {
-    value: "image_top",
-    label: "صورة بالأعلى",
-    description: "مناسب لإعلان يحتوي صورة واضحة بالأعلى ونص بالأسفل.",
-  },
-  {
-    value: "image_background",
-    label: "صورة كخلفية",
-    description: "مناسب للإعلانات البصرية مع نص فوق الصورة.",
-  },
-  {
-    value: "text_only",
-    label: "نص فقط",
-    description: "مناسب للتنبيهات والعروض النصية.",
-  },
-  {
-    value: "split",
-    label: "تقسيم صورة ونص",
-    description: "مناسب لعرض صورة بجانب النص.",
-  },
-  {
-    value: "minimal_banner",
-    label: "بانر بسيط",
-    description: "مناسب لإعلان صغير وخفيف.",
-  },
-  {
-    value: "carousel",
-    label: "صور متعددة",
-    description: "مناسب لأكثر من صورة داخل إعلان واحد.",
-  },
+  { value: "image_top", layoutKey: "image_top" },
+  { value: "image_background", layoutKey: "image_background" },
+  { value: "text_only", layoutKey: "text_only" },
+  { value: "split", layoutKey: "split" },
+  { value: "minimal_banner", layoutKey: "minimal_banner" },
+  { value: "carousel", layoutKey: "carousel" },
 ];
 
 /** Hint when layout changes — recommends assets for this layout. */
-export const LAYOUT_HINTS = {
-  image_top: "يُفضّل إضافة صورة واحدة على الأقل لإبراز الإعلان.",
-  image_background: "هذا النوع يحتاج إلى صورة واحدة على الأقل.",
-  text_only: "ركّز على العنوان والوصف؛ الصور اختيارية.",
-  split: "يُفضّل صورة واحدة على الأقل لتوازن الشكل.",
-  minimal_banner: "اختصر النص؛ البانر مصمّم لمساحة صغيرة.",
-  carousel: "يُفضّل إضافة صورتين أو أكثر لعرض التمرير بشكل جيد.",
+export const LAYOUT_HINT_KEYS = {
+  image_top: "layoutHints.image_top",
+  image_background: "layoutHints.image_background",
+  text_only: "layoutHints.text_only",
+  split: "layoutHints.split",
+  minimal_banner: "layoutHints.minimal_banner",
+  carousel: "layoutHints.carousel",
 };
 
 export const PLACEMENT_OPTIONS = [
-  {
-    value: "home_right_panel",
-    label: "يمين الصفحة الرئيسية",
-    publicActive: true,
-    note: null,
-  },
-  {
-    value: "home_after_hero",
-    label: "أسفل الهيرو",
-    publicActive: false,
-    note: "ملاحظة: هذا المكان قد لا يكون مفعّلًا في الواجهة العامة بعد.",
-  },
-  {
-    value: "services_page",
-    label: "صفحة الخدمات",
-    publicActive: false,
-    note: "ملاحظة: هذا المكان قد لا يكون مفعّلًا في الواجهة العامة بعد.",
-  },
-  {
-    value: "global_sidebar",
-    label: "الشريط الجانبي العام",
-    publicActive: false,
-    note: "ملاحظة: هذا المكان قد لا يكون مفعّلًا في الواجهة العامة بعد.",
-  },
+  { value: "home_right_panel", placementKey: "home_right_panel", publicActive: true, note: null },
+  { value: "home_after_hero", placementKey: "home_after_hero", publicActive: false, noteKey: "placements.home_after_hero.note" },
+  { value: "services_page", placementKey: "services_page", publicActive: false, noteKey: "placements.services_page.note" },
+  { value: "global_sidebar", placementKey: "global_sidebar", publicActive: false, noteKey: "placements.global_sidebar.note" },
 ];
 
 export const IMAGE_POSITION_OPTIONS = [
-  { value: "top", label: "أعلى الإعلان" },
-  { value: "bottom", label: "أسفل الإعلان" },
-  { value: "left", label: "يسار" },
-  { value: "right", label: "يمين" },
-  { value: "background", label: "خلفية" },
+  { value: "top", positionKey: "imageTop" },
+  { value: "bottom", positionKey: "imageBottom" },
+  { value: "left", positionKey: "left" },
+  { value: "right", positionKey: "right" },
+  { value: "background", positionKey: "background" },
 ];
 
 export const TEXT_POSITION_OPTIONS = [
-  { value: "top", label: "أعلى" },
-  { value: "middle", label: "وسط" },
-  { value: "bottom", label: "أسفل" },
+  { value: "top", positionKey: "textTop" },
+  { value: "middle", positionKey: "textMiddle" },
+  { value: "bottom", positionKey: "textBottom" },
 ];
 
-/** Maps friendly Arabic labels to stored CSS values (backend accepts string ≤16 chars). */
+/** Maps friendly labels to stored CSS values (backend accepts string ≤16 chars). */
 export const FONT_SIZE_PRESETS = [
-  { label: "صغير", value: "0.8125rem" },
-  { label: "عادي", value: "0.9375rem" },
-  { label: "متوسط", value: "1.0625rem" },
-  { label: "كبير", value: "1.25rem" },
+  { sizeKey: "small", value: "0.8125rem" },
+  { sizeKey: "normal", value: "0.9375rem" },
+  { sizeKey: "medium", value: "1.0625rem" },
+  { sizeKey: "large", value: "1.25rem" },
 ];
 
 export const FONT_WEIGHT_PRESETS = [
-  { label: "عادي", value: "400" },
-  { label: "متوسط", value: "600" },
-  { label: "عريض", value: "700" },
+  { weightKey: "normal", value: "400" },
+  { weightKey: "medium", value: "600" },
+  { weightKey: "bold", value: "700" },
 ];
 
 /**
@@ -107,7 +63,7 @@ export const FONT_WEIGHT_PRESETS = [
 export const STYLE_PRESETS = [
   {
     id: "classic_navy",
-    label: "أزرق كلاسيكي",
+    presetKey: "classic_navy",
     colors: {
       backgroundColor: "#0f172a",
       titleColor: "#f8fafc",
@@ -122,7 +78,7 @@ export const STYLE_PRESETS = [
   },
   {
     id: "soft_sky",
-    label: "سماوي ناعم",
+    presetKey: "soft_sky",
     colors: {
       backgroundColor: "#f0f9ff",
       titleColor: "#0c4a6e",
@@ -137,7 +93,7 @@ export const STYLE_PRESETS = [
   },
   {
     id: "clean_white",
-    label: "أبيض نظيف",
+    presetKey: "clean_white",
     colors: {
       backgroundColor: "#ffffff",
       titleColor: "#0f172a",
@@ -152,7 +108,7 @@ export const STYLE_PRESETS = [
   },
   {
     id: "premium_dark",
-    label: "داكن فاخر",
+    presetKey: "premium_dark",
     colors: {
       backgroundColor: "#18181b",
       titleColor: "#fafafa",
@@ -167,7 +123,7 @@ export const STYLE_PRESETS = [
   },
   {
     id: "warm_offer",
-    label: "عرض دافئ",
+    presetKey: "warm_offer",
     colors: {
       backgroundColor: "#fff7ed",
       titleColor: "#9a3412",
@@ -182,7 +138,7 @@ export const STYLE_PRESETS = [
   },
   {
     id: "success_green",
-    label: "أخضر نجاح",
+    presetKey: "success_green",
     colors: {
       backgroundColor: "#ecfdf5",
       titleColor: "#065f46",
@@ -197,10 +153,22 @@ export const STYLE_PRESETS = [
   },
 ];
 
-export function getLayoutOption(value) {
-  return LAYOUT_OPTIONS.find((o) => o.value === value) || LAYOUT_OPTIONS[0];
+/** @param {string} value @param {(key: string) => string} t */
+export function getLayoutOption(value, t) {
+  const o = LAYOUT_OPTIONS.find((item) => item.value === value) || LAYOUT_OPTIONS[0];
+  return {
+    ...o,
+    label: t(`ads.layouts.${o.layoutKey}.label`),
+    description: t(`ads.layouts.${o.layoutKey}.description`),
+  };
 }
 
-export function getPlacementOption(value) {
-  return PLACEMENT_OPTIONS.find((o) => o.value === value) || PLACEMENT_OPTIONS[0];
+/** @param {string} value @param {(key: string) => string} t */
+export function getPlacementOption(value, t) {
+  const o = PLACEMENT_OPTIONS.find((item) => item.value === value) || PLACEMENT_OPTIONS[0];
+  return {
+    ...o,
+    label: t(`ads.placements.${o.placementKey}.label`),
+    note: o.noteKey ? t(`ads.${o.noteKey}`) : null,
+  };
 }

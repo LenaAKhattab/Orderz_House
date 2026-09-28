@@ -6,7 +6,7 @@ export const HOW_IT_WORKS_PAGES = [
     path: "/how-it-works/freelancer",
     labelKey: "nav.howItWorksFreelancer",
     navLabel: "طريقة العمل كمستقل",
-    adminLabel: "طريقة العمل كمستقل",
+    adminLabelKey: "siteEditor.howItWorksPages.freelancer",
   },
   {
     slug: "how-it-works-client",
@@ -14,7 +14,7 @@ export const HOW_IT_WORKS_PAGES = [
     path: "/how-it-works/client",
     labelKey: "nav.howItWorksClient",
     navLabel: "طريقة الطلب للعميل",
-    adminLabel: "طريقة الطلب للعميل",
+    adminLabelKey: "siteEditor.howItWorksPages.client",
   },
 ];
 

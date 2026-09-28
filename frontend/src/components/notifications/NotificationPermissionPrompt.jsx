@@ -7,10 +7,13 @@ import {
   requestBrowserPermission,
 } from "../../services/browserNotifications";
 import { shouldPromptForBrowserNotifications } from "../../utils/notificationPreferenceRules";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/notificationsUiResources";
 import "./notification-permission.css";
 
 export default function NotificationPermissionPrompt() {
   const { user, refreshUser } = useAuth();
+  const { t } = useTranslation();
   const [busy, setBusy] = useState(false);
   const [dismissed, setDismissed] = useState(false);
 
@@ -69,17 +72,17 @@ export default function NotificationPermissionPrompt() {
           </svg>
         </div>
         <h2 id="notif-perm-title" className="notif-perm-modal__title">
-          تفعيل إشعارات الموقع
+          {t("notificationsUi.permission.title")}
         </h2>
         <p className="notif-perm-modal__text">
-          احصل على تنبيهات فورية للطلبات والدفع والتسليم حتى عندما تكون في تبويب آخر. يمكنك تغيير ذلك لاحقاً من الإعدادات.
+          {t("notificationsUi.permission.body")}
         </p>
         <div className="notif-perm-modal__actions">
           <button type="button" className="notif-perm-modal__btn notif-perm-modal__btn--primary" disabled={busy} onClick={handleAccept}>
-            {busy ? "جاري…" : "تفعيل الإشعارات"}
+            {busy ? t("notificationsUi.permission.enableBusy") : t("notificationsUi.permission.enable")}
           </button>
           <button type="button" className="notif-perm-modal__btn notif-perm-modal__btn--ghost" disabled={busy} onClick={handleDecline}>
-            ليس الآن
+            {t("notificationsUi.permission.notNow")}
           </button>
         </div>
       </div>

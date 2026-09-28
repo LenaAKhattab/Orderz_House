@@ -1,19 +1,26 @@
 /** Pure helpers for Marketplace Membership admin UI (no React). */
 
-export function formatMarketplaceAccessLabel(plan, isEn = false) {
+import { getTranslation } from "../../lib/translation/getTranslation";
+import "../../i18n/planAdminResources";
+
+const mp = (t, key, values) =>
+  typeof t === "function" ? t(`planAdmin.marketplace.${key}`, values) : getTranslation(`planAdmin.marketplace.${key}`, "ar", values);
+
+export function formatMarketplaceAccessLabel(plan, isEn = false, t) {
   if (!plan) return "—";
   if (plan.unlimitedRealOrderValue) {
-    return isEn ? "Unlimited real orders" : "غير محدود (طلبات حقيقية)";
+    return mp(t, "accessUnlimited");
   }
   const max = plan.maxRealOrderValueJod;
   if (max == null) return "—";
-  return isEn ? `Up to ${max} JOD (real)` : `حتى ${max} د.أ (حقيقية)`;
+  return mp(t, "accessUpTo", { max });
 }
 
-export function formatMarketplacePriceLabel(plan, isEn = false) {
+export function formatMarketplacePriceLabel(plan, isEn = false, t) {
   if (!plan) return "—";
   const sale = plan.sale;
-  const currency = isEn ? "JOD" : "د.أ";
+  const currency =
+    typeof t === "function" ? t("planAdmin.common.currencyJod") : getTranslation("planAdmin.common.currencyJod", isEn ? "en" : "ar");
   if (sale?.enabled && sale.effectivePriceJod != null) {
     return `${sale.effectivePriceJod} ${currency}`;
   }
@@ -94,63 +101,64 @@ export function planToMarketplaceFormState(plan) {
   });
 }
 
-export function validateMarketplacePlanForm(form, { isCreate = false } = {}) {
+export function validateMarketplacePlanForm(form, { isCreate = false, t } = {}) {
+  const v = (key) => mp(t, `validation.${key}`);
   const errors = {};
   if (isCreate) {
     const code = String(form.tierCode || "").trim();
     if (!/^[a-z][a-z0-9_]{1,62}$/.test(code)) {
-      errors.tierCode = "رمز الباقة يجب أن يكون snake_case صغير.";
+      errors.tierCode = v("tierCode");
     }
   }
   if (!String(form.nameAr || "").trim()) {
-    errors.nameAr = "الاسم بالعربية مطلوب.";
+    errors.nameAr = v("nameAr");
   }
   const price = Number(form.monthlyPriceJod);
   if (!Number.isFinite(price) || price < 0) {
-    errors.monthlyPriceJod = "السعر الشهري غير صالح.";
+    errors.monthlyPriceJod = v("monthlyPrice");
   }
   if (form.unlimitedRealOrderValue) {
     if (form.maxRealOrderValueJod !== "" && form.maxRealOrderValueJod != null) {
       const max = Number(form.maxRealOrderValueJod);
       if (Number.isFinite(max) && max > 0) {
-        errors.maxRealOrderValueJod = "اترك الحد فارغاً عند الوصول غير المحدود.";
+        errors.maxRealOrderValueJod = v("maxRealEmpty");
       }
     }
   } else {
     const max = Number(form.maxRealOrderValueJod);
     if (!Number.isFinite(max) || max <= 0) {
-      errors.maxRealOrderValueJod = "حد قيمة الطلب الحقيقي مطلوب.";
+      errors.maxRealOrderValueJod = v("maxRealRequired");
     }
   }
   const bids = Number(form.monthlyBidAllowance);
   if (!Number.isInteger(bids) || bids < 0) {
-    errors.monthlyBidAllowance = "عدد العروض الشهرية يجب أن يكون ≥ 0.";
+    errors.monthlyBidAllowance = v("monthlyBids");
   }
   const articleLevel = Number(form.articleAccessLevel);
   if (!Number.isInteger(articleLevel) || articleLevel < 1 || articleLevel > 5) {
-    errors.articleAccessLevel = "مستوى الوصول للمقالات يجب أن يكون بين 1 و 5.";
+    errors.articleAccessLevel = v("articleLevel");
   }
   const pbUses = Number(form.priorityBidUsesPerCycle);
   if (!Number.isInteger(pbUses) || pbUses < 0 || pbUses > 1000) {
-    errors.priorityBidUsesPerCycle = "استخدامات Priority Bid يجب أن تكون بين 0 و 1000.";
+    errors.priorityBidUsesPerCycle = v("priorityUses");
   }
   const minM = Number(form.minimumCashMonths);
   const maxM = Number(form.maximumPrepaidMonths);
   if (!Number.isInteger(minM) || minM < 1) {
-    errors.minimumCashMonths = "الحد الأدنى للأشهر ≥ 1.";
+    errors.minimumCashMonths = v("minCashMonths");
   }
   if (!Number.isInteger(maxM) || maxM < 1) {
-    errors.maximumPrepaidMonths = "الحد الأقصى للأشهر ≥ 1.";
+    errors.maximumPrepaidMonths = v("maxPrepaidMonths");
   } else if (Number.isInteger(minM) && maxM < minM) {
-    errors.maximumPrepaidMonths = "الأقصى يجب أن يكون ≥ الأدنى.";
+    errors.maximumPrepaidMonths = v("maxGteMin");
   }
   if (form.saleEnabled) {
     const pct = Number(form.salePercentage);
     if (!Number.isFinite(pct) || pct <= 0 || pct >= 100) {
-      errors.salePercentage = "نسبة الخصم بين 0 و 100.";
+      errors.salePercentage = v("salePct");
     }
     if (!String(form.saleReason || "").trim()) {
-      errors.saleReason = "سبب الخصم مطلوب.";
+      errors.saleReason = v("saleReason");
     }
   }
   return errors;
@@ -204,7 +212,7 @@ export function normalizeMarketplacePlanPayload(form, { isCreate = false } = {})
   return payload;
 }
 
-/** Same field as the Super Admin إظهار / إخفاء control (`plan.isActive`). */
+/** Same field as the Super Admin show/hide control (`plan.isActive`). */
 export function isMarketplacePlanShownToUsers(plan) {
   return Boolean(plan?.isActive);
 }

@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
 import { adminGetFreelancerRegistrationRequest } from "../../services/api";
 import { useToast } from "../ui/toastContext";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/opsAdminResources";
 
-function formatJoDateTime(value) {
+function formatJoDateTime(value, locale) {
   if (!value) return "—";
   const d = new Date(value);
   if (!Number.isFinite(d.getTime())) return "—";
-  return new Intl.DateTimeFormat("ar-JO-u-nu-latn", { dateStyle: "medium", timeStyle: "short" }).format(d);
+  const tag = locale === "ar" ? "ar-JO-u-nu-latn" : "en-GB";
+  return new Intl.DateTimeFormat(tag, { dateStyle: "medium", timeStyle: "short" }).format(d);
 }
 
 function Row({ label, value, dir }) {
@@ -24,6 +27,7 @@ function Row({ label, value, dir }) {
 
 export default function AdminFreelancerRegistrationModal({ open, freelancerUserId, onClose }) {
   const { push } = useToast();
+  const { t, locale } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [profile, setProfile] = useState(null);
 
@@ -44,8 +48,8 @@ export default function AdminFreelancerRegistrationModal({ open, freelancerUserI
           setProfile(null);
           push({
             type: "error",
-            title: "تعذر تحميل البيانات",
-            message: e?.response?.data?.message || e?.message || "حدث خطأ.",
+            title: t("opsAdmin.freelancerRegModal.loadErrorTitle"),
+            message: e?.response?.data?.message || e?.message || t("opsAdmin.freelancerRegModal.genericError"),
           });
         }
       } finally {
@@ -55,7 +59,7 @@ export default function AdminFreelancerRegistrationModal({ open, freelancerUserI
     return () => {
       cancelled = true;
     };
-  }, [open, freelancerUserId, push]);
+  }, [open, freelancerUserId, push, t]);
 
   if (!open) return null;
 
@@ -64,8 +68,10 @@ export default function AdminFreelancerRegistrationModal({ open, freelancerUserI
     : "";
 
   const categoriesText = Array.isArray(profile?.freelancerCategories)
-    ? profile.freelancerCategories.filter(Boolean).join("، ")
+    ? profile.freelancerCategories.filter(Boolean).join(t("opsAdmin.common.listJoiner"))
     : "";
+
+  const yesNo = (flag) => (flag ? t("opsAdmin.common.yes") : t("opsAdmin.common.no"));
 
   return (
     <div
@@ -79,34 +85,34 @@ export default function AdminFreelancerRegistrationModal({ open, freelancerUserI
         <header className="client-order-modal__head">
           <div>
             <h2 id="admin-fl-reg-title" className="client-order-modal__title">
-              بيانات تسجيل المستقل
+              {t("opsAdmin.freelancerRegModal.title")}
             </h2>
-            <p className="client-order-modal__lead">كما أدخلها عند إنشاء الحساب (للاطلاع الإداري فقط).</p>
+            <p className="client-order-modal__lead">{t("opsAdmin.freelancerRegModal.lead")}</p>
           </div>
           <button type="button" className="btn btn-secondary client-order-modal__close" onClick={() => !loading && onClose?.()} disabled={loading}>
-            إغلاق
+            {t("opsAdmin.common.close")}
           </button>
         </header>
 
         <div className="client-order-modal__body" style={{ maxHeight: "70vh", overflowY: "auto" }}>
           {loading ? (
-            <p className="help">جاري التحميل…</p>
+            <p className="help">{t("opsAdmin.freelancerRegModal.loading")}</p>
           ) : profile ? (
             <div className="oh-review" style={{ marginTop: 0 }}>
-              <Row label="رقم الحساب" value={profile.accountId} dir="ltr" />
-              <Row label="الاسم الكامل" value={fullName || "—"} />
-              <Row label="البريد الإلكتروني" value={profile.email} dir="ltr" />
-              <Row label="رمز الدولة" value={profile.country} dir="ltr" />
-              <Row label="الجوال" value={profile.phone} dir="ltr" />
-              <Row label="واتساب" value={profile.whatsapp} dir="ltr" />
-              <Row label="الجنس" value={profile.gender} />
-              <Row label="الموافقة على الشروط" value={profile.termsAccepted ? "نعم" : "لا"} />
-              <Row label="تصنيفات اختارها عند التسجيل" value={categoriesText || "—"} />
-              <Row label="الحساب نشط" value={profile.isActive ? "نعم" : "لا"} />
-              <Row label="تاريخ التسجيل" value={formatJoDateTime(profile.createdAt)} />
+              <Row label={t("opsAdmin.freelancerRegModal.accountId")} value={profile.accountId} dir="ltr" />
+              <Row label={t("opsAdmin.freelancerRegModal.fullName")} value={fullName || "—"} />
+              <Row label={t("opsAdmin.freelancerRegModal.email")} value={profile.email} dir="ltr" />
+              <Row label={t("opsAdmin.freelancerRegModal.country")} value={profile.country} dir="ltr" />
+              <Row label={t("opsAdmin.freelancerRegModal.phone")} value={profile.phone} dir="ltr" />
+              <Row label={t("opsAdmin.freelancerRegModal.whatsapp")} value={profile.whatsapp} dir="ltr" />
+              <Row label={t("opsAdmin.freelancerRegModal.gender")} value={profile.gender} />
+              <Row label={t("opsAdmin.freelancerRegModal.termsAccepted")} value={yesNo(profile.termsAccepted)} />
+              <Row label={t("opsAdmin.freelancerRegModal.categories")} value={categoriesText || "—"} />
+              <Row label={t("opsAdmin.freelancerRegModal.isActive")} value={yesNo(profile.isActive)} />
+              <Row label={t("opsAdmin.freelancerRegModal.registeredAt")} value={formatJoDateTime(profile.createdAt, locale)} />
             </div>
           ) : (
-            <p className="help">لا توجد بيانات للعرض.</p>
+            <p className="help">{t("opsAdmin.freelancerRegModal.noData")}</p>
           )}
         </div>
       </div>

@@ -2,46 +2,27 @@ import { useEffect, useState } from "react";
 import { Check } from "lucide-react";
 import Button from "../../components/ui/Button";
 import { useToast } from "../../components/ui/toastContext";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/planAdminResources";
 import { updateAdminDefaultPlanCatalogRequest } from "../../services/api";
 import { invalidatePublicPlansCache } from "../../services/freelancerSessionCache";
 import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
-import { PLAN_CATALOG_LABELS, isPlanCatalog } from "../../constants/planCatalogs";
-import { DEFAULT_PLAN_CATALOG_TAB_BADGE } from "./planCatalogNav";
+import { isPlanCatalog } from "../../constants/planCatalogs";
+import { PLAN_CATALOG_NAV } from "./planCatalogNav";
 import { useAdminDefaultPlanCatalog } from "./DefaultPlanCatalogAdminContext";
 import "./super-admin-plans.css";
 import { DefaultPlanControlSkeleton } from "./PlanCatalogSkeletons";
 
-const EMPTY_CATALOG_AR = "لا يمكن تعيين هذا القسم كافتراضي لأنه لا يحتوي على باقات مفعلة.";
-const EMPTY_CATALOG_EN = "This section cannot be set as default because it has no active plans.";
-const CONFIRM_TITLE_AR = "تعيين هذه الباقات كافتراضية؟";
-const CONFIRM_TITLE_EN = "Set these plans as default?";
-const CONFIRM_BODY_AR =
-  "سيتم عرض هذا القسم في صفحة الباقات العامة ولوحة المستقل بدل قسم الباقات الحالي.";
-const CONFIRM_BODY_EN =
-  "This section will be shown on the public plans page and the freelancer dashboard instead of the current default plans.";
-const SET_BUTTON_AR = "تعيين كافتراضي";
-const SET_BUTTON_EN = "Set as default";
-const BADGE_AR = DEFAULT_PLAN_CATALOG_TAB_BADGE.ar;
-const BADGE_EN = DEFAULT_PLAN_CATALOG_TAB_BADGE.en;
-const HELPER_AR = "عرض هذه الباقات للمستخدمين";
-const HELPER_EN = "Show these plans to users";
-const BADGE_TITLE_AR = DEFAULT_PLAN_CATALOG_TAB_BADGE.titleAr;
-const BADGE_TITLE_EN = DEFAULT_PLAN_CATALOG_TAB_BADGE.titleEn;
-
-function catalogLabel(catalogId, isEn) {
-  return isEn ? PLAN_CATALOG_LABELS[catalogId]?.en : PLAN_CATALOG_LABELS[catalogId]?.ar;
+function catalogLabel(catalogId, t) {
+  const item = PLAN_CATALOG_NAV.find((entry) => entry.id === catalogId);
+  return item ? t(item.labelKey) : "";
 }
 
-function successToastMessage(catalogId, isEn) {
-  const label = catalogLabel(catalogId, isEn);
-  return isEn
-    ? `"${label}" is now the default plans for users.`
-    : `تم تعيين "${label}" كباقات افتراضية للمستخدمين.`;
-}
-
-function DefaultPlanCatalogConfirmModal({ open, catalogId, isEn, submitting, error, onClose, onConfirm }) {
+function DefaultPlanCatalogConfirmModal({ open, catalogId, submitting, error, onClose, onConfirm }) {
+  const { t, locale } = useTranslation();
+  const isEn = locale === "en";
   if (!open || !catalogId) return null;
-  const label = catalogLabel(catalogId, isEn);
+  const label = catalogLabel(catalogId, t);
 
   return (
     <div className="oh-sapl-modal-root" role="presentation">
@@ -49,7 +30,7 @@ function DefaultPlanCatalogConfirmModal({ open, catalogId, isEn, submitting, err
         type="button"
         className="oh-sapl-modal-backdrop"
         onClick={submitting ? undefined : onClose}
-        aria-label={isEn ? "Close dialog" : "إغلاق النافذة"}
+        aria-label={t("planAdmin.common.closeDialog")}
       />
       <div
         className="oh-sapl-modal oh-sapl-default-catalog-modal"
@@ -61,7 +42,7 @@ function DefaultPlanCatalogConfirmModal({ open, catalogId, isEn, submitting, err
         <header className="oh-sapl-modal__head">
           <div>
             <h2 id="oh-default-catalog-confirm-title" className="oh-sapl-modal__title">
-              {isEn ? CONFIRM_TITLE_EN : CONFIRM_TITLE_AR}
+              {t("planAdmin.catalog.defaultControl.confirmTitle")}
             </h2>
           </div>
           <button
@@ -69,18 +50,18 @@ function DefaultPlanCatalogConfirmModal({ open, catalogId, isEn, submitting, err
             className="oh-sapl-modal__close"
             onClick={onClose}
             disabled={submitting}
-            aria-label={isEn ? "Close" : "إغلاق"}
+            aria-label={t("planAdmin.common.close")}
           >
             ×
           </button>
         </header>
         <div className="oh-sapl-modal__scroll">
           <p className="oh-sapl-modal__subtitle" style={{ margin: 0 }}>
-            {isEn ? CONFIRM_BODY_EN : CONFIRM_BODY_AR}
+            {t("planAdmin.catalog.defaultControl.confirmBody")}
           </p>
           {label ? (
             <p className="oh-sapl-default-catalog__confirm-target">
-              {isEn ? "Section:" : "القسم:"} <strong>{label}</strong>
+              {t("planAdmin.catalog.defaultControl.sectionLabel")} <strong>{label}</strong>
             </p>
           ) : null}
           {error ? (
@@ -91,16 +72,10 @@ function DefaultPlanCatalogConfirmModal({ open, catalogId, isEn, submitting, err
         </div>
         <footer className="oh-sapl-modal__foot">
           <Button type="button" variant="secondary" disabled={submitting} onClick={onClose}>
-            {isEn ? "Cancel" : "إلغاء"}
+            {t("planAdmin.common.cancel")}
           </Button>
           <Button type="button" disabled={submitting} onClick={() => void onConfirm()}>
-            {submitting
-              ? isEn
-                ? "Saving…"
-                : "جارٍ الحفظ…"
-              : isEn
-                ? SET_BUTTON_EN
-                : SET_BUTTON_AR}
+            {submitting ? t("planAdmin.common.saving") : t("planAdmin.catalog.defaultControl.setButton")}
           </Button>
         </footer>
       </div>
@@ -110,14 +85,15 @@ function DefaultPlanCatalogConfirmModal({ open, catalogId, isEn, submitting, err
 
 /**
  * Shared Super Admin control: set this catalog as default_plan_catalog.
- * Used in the same heading-row slot on الباقات الرئيسية, باقات الصفحات, and باقات العمل.
  *
  * @param {object} p
  * @param {string} [p.catalog]
  * @param {string} [p.catalogId]
  * @param {boolean} [p.isEn]
  */
-export default function DefaultPlanCatalogControl({ catalog, catalogId, isEn = false }) {
+export default function DefaultPlanCatalogControl({ catalog, catalogId, isEn: isEnProp = false }) {
+  const { t, locale } = useTranslation();
+  const isEn = isEnProp || locale === "en";
   const resolvedCatalogId = catalogId || catalog;
   const { push } = useToast();
   const adminDefault = useAdminDefaultPlanCatalog();
@@ -150,17 +126,16 @@ export default function DefaultPlanCatalogControl({ catalog, catalogId, isEn = f
       setConfirmOpen(false);
       push({
         type: "success",
-        message: successToastMessage(resolvedCatalogId, isEn),
+        message: t("planAdmin.catalog.defaultControl.success", {
+          label: catalogLabel(resolvedCatalogId, t),
+        }),
       });
     } catch (err) {
       const code = err?.response?.data?.code;
       if (code === "EMPTY_PLAN_CATALOG") {
-        setError(isEn ? EMPTY_CATALOG_EN : EMPTY_CATALOG_AR);
+        setError(t("planAdmin.catalog.defaultControl.emptyCatalog"));
       } else {
-        setError(
-          getSafeApiErrorMessage(err) ||
-            (isEn ? "Failed to save default catalog." : "تعذر حفظ الباقات الافتراضية."),
-        );
+        setError(getSafeApiErrorMessage(err) || t("planAdmin.catalog.defaultControl.saveFailed"));
       }
     } finally {
       setSubmitting(false);
@@ -168,13 +143,9 @@ export default function DefaultPlanCatalogControl({ catalog, catalogId, isEn = f
   };
 
   const setButtonHint = isEmpty
-    ? isEn
-      ? EMPTY_CATALOG_EN
-      : EMPTY_CATALOG_AR
-    : isEn
-      ? HELPER_EN
-      : HELPER_AR;
-  const setButtonLabel = isEn ? SET_BUTTON_EN : SET_BUTTON_AR;
+    ? t("planAdmin.catalog.defaultControl.emptyCatalog")
+    : t("planAdmin.catalog.defaultControl.helper");
+  const setButtonLabel = t("planAdmin.catalog.defaultControl.setButton");
 
   return (
     <div
@@ -190,20 +161,20 @@ export default function DefaultPlanCatalogControl({ catalog, catalogId, isEn = f
           type="button"
           variant="secondary"
           className="oh-sapl-default-control__retry"
-          title={loadError || error || (isEn ? "Could not load plan catalog data." : "تعذر تحميل بيانات الباقات")}
-          aria-label={loadError || error || (isEn ? "Retry loading default catalog" : "إعادة محاولة تحميل الباقات الافتراضية")}
+          title={loadError || error || t("planAdmin.catalog.defaultControl.loadFailed")}
+          aria-label={loadError || error || t("planAdmin.catalog.defaultControl.retryLoadAria")}
           onClick={() => void adminDefault?.reload?.()}
         >
-          {isEn ? "Retry" : "إعادة المحاولة"}
+          {t("planAdmin.catalog.defaultControl.retry")}
         </Button>
       ) : isCurrentDefault ? (
         <span
           className="oh-sapl-default-control__badge"
           data-default-catalog-state="current"
-          title={isEn ? BADGE_TITLE_EN : BADGE_TITLE_AR}
+          title={t("planAdmin.catalog.tabBadgeShownTitle")}
         >
           <Check size={14} strokeWidth={2.5} aria-hidden />
-          {isEn ? BADGE_EN : BADGE_AR}
+          {t("planAdmin.catalog.tabBadgeShown")}
         </span>
       ) : (
         <Button
@@ -226,7 +197,6 @@ export default function DefaultPlanCatalogControl({ catalog, catalogId, isEn = f
       <DefaultPlanCatalogConfirmModal
         open={confirmOpen}
         catalogId={resolvedCatalogId}
-        isEn={isEn}
         submitting={submitting}
         error={error}
         onClose={() => (submitting ? null : setConfirmOpen(false))}

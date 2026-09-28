@@ -1,6 +1,8 @@
 import { useCallback, useState } from "react";
 import { useAuth } from "../../context/useAuth";
 import { useToast } from "../../context/ToastContext.jsx";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/notificationsUiResources";
 import { patchBrowserNotificationsRequest, postBrowserNotificationTestRequest } from "../../services/api";
 import {
   getBrowserPermission,
@@ -13,6 +15,7 @@ import {
 export default function BrowserNotificationSettings() {
   const { user, refreshUser } = useAuth();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [busy, setBusy] = useState(false);
 
   const storedStatus = String(user?.browserNotificationStatus || "pending").toLowerCase();
@@ -21,7 +24,7 @@ export default function BrowserNotificationSettings() {
 
   const handleEnable = useCallback(async () => {
     if (!supported) {
-      toast.error("المتصفح لا يدعم إشعارات سطح المكتب.");
+      toast.error(t("notificationsUi.browser.toastUnsupported"));
       return;
     }
     setBusy(true);
@@ -31,83 +34,83 @@ export default function BrowserNotificationSettings() {
       if (status === "accepted") {
         await patchBrowserNotificationsRequest({ status: "accepted" });
         await refreshUser();
-        toast.success("تم تفعيل إشعارات المتصفح.");
+        toast.success(t("notificationsUi.browser.toastEnabled"));
       } else {
         await patchBrowserNotificationsRequest({ status: "rejected" });
         await refreshUser();
-        toast.error("لم يتم منح الإذن. يمكنك تفعيله من إعدادات المتصفح.");
+        toast.error(t("notificationsUi.browser.toastDenied"));
       }
     } catch (e) {
-      toast.error(e?.response?.data?.message || e?.message || "تعذّر التفعيل.");
+      toast.error(e?.response?.data?.message || e?.message || t("notificationsUi.browser.toastEnableFailed"));
     } finally {
       setBusy(false);
     }
-  }, [refreshUser, supported, toast]);
+  }, [refreshUser, supported, t, toast]);
 
   const handleDisable = useCallback(async () => {
     setBusy(true);
     try {
       await patchBrowserNotificationsRequest({ status: "rejected" });
       await refreshUser();
-      toast.success("تم إيقاف إشعارات المتصفح من التطبيق. قد تحتاج أيضاً لتعطيلها من إعدادات المتصفح.");
+      toast.success(t("notificationsUi.browser.toastDisabled"));
     } catch (e) {
-      toast.error(e?.response?.data?.message || e?.message || "تعذّر الحفظ.");
+      toast.error(e?.response?.data?.message || e?.message || t("notificationsUi.browser.toastSaveFailed"));
     } finally {
       setBusy(false);
     }
-  }, [refreshUser, toast]);
+  }, [refreshUser, t, toast]);
 
   const handleTest = useCallback(async () => {
     setBusy(true);
     try {
       if (perm !== "granted") {
-        toast.error("فعّل إذن الإشعارات من المتصفح أولاً.");
+        toast.error(t("notificationsUi.browser.toastNeedPermission"));
         return;
       }
       await postBrowserNotificationTestRequest();
       showBrowserNotification({
-        title: "إشعار تجريبي",
-        body: "إذا ظهر هذا التنبيه، فإشعارات المتصفح تعمل بشكل صحيح.",
+        title: t("notificationsUi.browser.testTitle"),
+        body: t("notificationsUi.browser.testBody"),
         link: window.location.pathname,
         tag: "test",
       });
-      toast.success("تم إرسال إشعار تجريبي.");
+      toast.success(t("notificationsUi.browser.toastTestSent"));
     } catch (e) {
-      toast.error(e?.response?.data?.message || e?.message || "تعذّر الإرسال.");
+      toast.error(e?.response?.data?.message || e?.message || t("notificationsUi.browser.toastTestFailed"));
     } finally {
       setBusy(false);
     }
-  }, [perm, toast]);
+  }, [perm, t, toast]);
 
   return (
     <div className="oh-account-card" style={{ marginBottom: 16 }}>
-      <h2 className="oh-account-card__title">إشعارات المتصفح</h2>
+      <h2 className="oh-account-card__title">{t("notificationsUi.browser.title")}</h2>
       <p className="oh-account-value" style={{ marginBottom: 12, fontSize: "0.88rem", color: "#5a6378" }}>
-        تظهر تنبيهات سطح المكتب عند وصول إشعار جديد وأنت مسجّل الدخول. الإشعارات داخل الموقع (الجرس) تبقى تعمل دائماً.
+        {t("notificationsUi.browser.intro")}
       </p>
       {!supported ? (
-        <p className="oh-account-value">متصفحك لا يدعم إشعارات سطح المكتب.</p>
+        <p className="oh-account-value">{t("notificationsUi.browser.unsupported")}</p>
       ) : (
         <>
           <p className="oh-account-value" style={{ marginBottom: 12 }}>
-            الحالة:{" "}
+            {t("notificationsUi.browser.statusLabel")}{" "}
             <strong>
               {storedStatus === "accepted" && perm === "granted"
-                ? "مفعّلة"
+                ? t("notificationsUi.browser.enabled")
                 : storedStatus === "rejected" || perm === "denied"
-                  ? "معطّلة"
-                  : "لم يُطلب بعد"}
+                  ? t("notificationsUi.browser.disabled")
+                  : t("notificationsUi.browser.notRequested")}
             </strong>
           </p>
           <div className="oh-account-actions" style={{ flexWrap: "wrap", gap: 8 }}>
             <button type="button" className="oh-account-btn-primary" disabled={busy} onClick={handleEnable}>
-              تفعيل إشعارات المتصفح
+              {t("notificationsUi.browser.enableBtn")}
             </button>
             <button type="button" className="oh-account-btn-ghost" disabled={busy} onClick={handleDisable}>
-              إيقاف من التطبيق
+              {t("notificationsUi.browser.disableBtn")}
             </button>
             <button type="button" className="oh-account-btn-ghost" disabled={busy} onClick={handleTest}>
-              إشعار تجريبي
+              {t("notificationsUi.browser.testBtn")}
             </button>
           </div>
         </>

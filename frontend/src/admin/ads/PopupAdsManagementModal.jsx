@@ -1,11 +1,14 @@
 import { useRef, useState } from "react";
 import DashboardModal from "../../components/dashboard/DashboardModal";
 import PopupAdsSettings from "./PopupAdsSettings";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/adsResources";
 
 /**
  * @param {{ open: boolean, onClose: () => void }} props
  */
 export default function PopupAdsManagementModal({ open, onClose }) {
+  const { t } = useTranslation();
   const actionHandlersRef = useRef({});
   const [actionMeta, setActionMeta] = useState({
     saving: false,
@@ -21,8 +24,8 @@ export default function PopupAdsManagementModal({ open, onClose }) {
   return (
     <DashboardModal
       open={open}
-      title="إدارة الإعلانات المنبثقة"
-      ariaLabel="إدارة الإعلانات المنبثقة"
+      title={t("ads.popup.modalTitle")}
+      ariaLabel={t("ads.popup.modalTitle")}
       onClose={onClose}
       className="oh-popup-ads-modal"
       footer={
@@ -35,7 +38,7 @@ export default function PopupAdsManagementModal({ open, onClose }) {
                 disabled={!actionMeta.canPreview}
                 onClick={() => actionHandlersRef.current.onPreview?.()}
               >
-                معاينة
+                {t("ads.common.preview")}
               </button>
               {actionMeta.editingId ? (
                 <button
@@ -44,7 +47,7 @@ export default function PopupAdsManagementModal({ open, onClose }) {
                   disabled={actionMeta.saving || actionMeta.deleting}
                   onClick={() => void actionHandlersRef.current.onDelete?.()}
                 >
-                  {actionMeta.deleting ? "جارٍ الحذف…" : "حذف"}
+                  {actionMeta.deleting ? t("ads.common.deleting") : t("ads.common.delete")}
                 </button>
               ) : null}
               <button
@@ -53,12 +56,12 @@ export default function PopupAdsManagementModal({ open, onClose }) {
                 disabled={actionMeta.saving || actionMeta.deleting}
                 onClick={() => void actionHandlersRef.current.onSave?.()}
               >
-                {actionMeta.saving ? "جارٍ الحفظ…" : "حفظ"}
+                {actionMeta.saving ? t("ads.common.saving") : t("ads.common.save")}
               </button>
             </>
           ) : null}
           <button type="button" className="btn btn-secondary" onClick={onClose}>
-            إغلاق
+            {t("ads.common.close")}
           </button>
         </div>
       }

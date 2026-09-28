@@ -1,0 +1,50 @@
+{
+  "page": {
+    "title": "ربط حسابات Bildazo",
+    "description": "مراجعة طلبات ربط حساب الكاتب وتمييز الطلبات بعد التحقق اليدوي. لا يتم إنشاء حساب Bildazo من هنا.",
+    "schemaMissing": "جدول الربط غير جاهز بعد (الترحيل 164). يمكن فتح الصفحة لكن لا يمكن الربط حتى يُطبَّق الترحيل.",
+    "searchLabel": "بحث",
+    "searchPlaceholder": "اسم / بريد / معرّف عام",
+    "searchSubmit": "بحث",
+    "emptyTitle": "لا توجد طلبات",
+    "emptyDesc": "لا توجد طلبات ربط مطابقة للتصفية الحالية.",
+    "loadSchemaError": "جدول ربط Bildazo غير جاهز.",
+    "loadFailed": "تعذر تحميل طلبات الربط.",
+    "freelancerFallback": "مستقل #{{id}}",
+    "linkedBadge": "حساب الكاتب مرتبط",
+    "emailMatches": " — البريد يطابق OrderzHouse",
+    "flowLabel": "التدفق:",
+    "flowNew": "حساب جديد",
+    "flowExisting": "حساب موجود",
+    "termsLabel": "الشروط:",
+    "existingAccount": "حساب موجود:",
+    "linkAccount": "ربط الحساب",
+    "manualLinkSaved": "تم حفظ الربط اليدوي لحساب الكاتب.",
+    "manualLinkFailed": "تعذر حفظ الربط اليدوي.",
+    "statusUpdated": "تم تحديث حالة الطلب.",
+    "statusUpdateFailed": "تعذر تحديث الحالة.",
+    "reviewReasonPrompt": "سبب المراجعة (مطلوب):",
+    "reviewReasonRequired": "سبب المراجعة مطلوب لحالة الفشل أو الإيقاف."
+  },
+  "filters": {
+    "all": "الكل",
+    "pending_new_account": "طلب حساب جديد",
+    "pending_existing_account": "طلب حساب موجود",
+    "pending_external_verification": "تحقق خارجي",
+    "needs_manual_review": "مراجعة يدوية",
+    "linked": "مرتبط",
+    "failed": "فشل",
+    "blocked": "موقوف"
+  },
+  "dialog": {
+    "title": "ربط الحساب",
+    "lede": "هذا ربط يدوي داخل OrderzHouse بعد التحقق الخارجي. لا يتم إنشاء حساب Bildazo من هذه الصفحة.",
+    "bildazoUserId": "Bildazo User ID (اختياري)",
+    "bildazoPublicId": "Bildazo Public ID",
+    "bildazoProfileUrl": "Bildazo Profile URL",
+    "reviewNote": "ملاحظة المراجعة (اختياري)",
+    "confirmVerified": "أؤكد أنني تحققت من ملكية حساب Bildazo قبل الربط.",
+    "cancel": "إلغاء",
+    "submit": "ربط الحساب"
+  }
+}

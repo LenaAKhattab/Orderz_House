@@ -34,6 +34,13 @@ export const DECISION_FILTERS = {
   top_usage: "top_usage",
 };
 
+const PRIORITY_EMOJI = {
+  high: "🔴",
+  medium: "🟡",
+  low: "🟢",
+};
+
+/** @deprecated Arabic-only fallbacks when `t` is omitted */
 export const ACTION_SIGNAL_LABELS = {
   promote: "⭐ مرشّحة للترويج",
   review: "🛠 تحتاج مراجعة",
@@ -41,11 +48,25 @@ export const ACTION_SIGNAL_LABELS = {
   concentration: "⚠️ تعتمد قيمة الاشتراكات المدفوعة بشكل كبير على هذه الباقة",
 };
 
+/** @deprecated Arabic-only fallbacks when `t` is omitted */
 export const PRIORITY_LABELS = {
-  high: { label: "أولوية عالية", emoji: "🔴" },
-  medium: { label: "أولوية متوسطة", emoji: "🟡" },
-  low: { label: "أولوية منخفضة", emoji: "🟢" },
+  high: { label: "أولوية عالية", emoji: PRIORITY_EMOJI.high },
+  medium: { label: "أولوية متوسطة", emoji: PRIORITY_EMOJI.medium },
+  low: { label: "أولوية منخفضة", emoji: PRIORITY_EMOJI.low },
 };
+
+function actionSignalLabel(key, t) {
+  if (t) return t(`planAdmin.metrics.portfolio.signals.${key}`);
+  return ACTION_SIGNAL_LABELS[key];
+}
+
+function priorityMeta(priorityKey, t) {
+  const emoji = PRIORITY_EMOJI[priorityKey];
+  const label = t
+    ? t(`planAdmin.metrics.portfolio.priority.${priorityKey}`)
+    : PRIORITY_LABELS[priorityKey].label;
+  return { label, emoji };
+}
 
 function quartileValue(sortedValues, q) {
   if (!sortedValues.length) return null;
@@ -137,9 +158,9 @@ function computePriorityScore(plan, { isPromote, isReview, isDeclining }) {
   return Math.max(0, score);
 }
 
-export function computeActionPriority(plan, flags = {}) {
+export function computeActionPriority(plan, flags = {}, t = null) {
   if (plan.performance?.state !== "ok") {
-    return { key: ACTION_PRIORITY.low, ...PRIORITY_LABELS.low, score: 0 };
+    return { key: ACTION_PRIORITY.low, ...priorityMeta(ACTION_PRIORITY.low, t), score: 0 };
   }
 
   const isPromote = flags.isPromote ?? plan.portfolioActions?.isPromotionCandidate;
@@ -147,12 +168,12 @@ export function computeActionPriority(plan, flags = {}) {
   const isDeclining = flags.isDeclining ?? hasDecliningMonthlyActivity(plan);
   const score = computePriorityScore(plan, { isPromote, isReview, isDeclining });
 
-  if (score >= 45) return { key: ACTION_PRIORITY.high, ...PRIORITY_LABELS.high, score };
-  if (score >= 15) return { key: ACTION_PRIORITY.medium, ...PRIORITY_LABELS.medium, score };
-  return { key: ACTION_PRIORITY.low, ...PRIORITY_LABELS.low, score };
+  if (score >= 45) return { key: ACTION_PRIORITY.high, ...priorityMeta(ACTION_PRIORITY.high, t), score };
+  if (score >= 15) return { key: ACTION_PRIORITY.medium, ...priorityMeta(ACTION_PRIORITY.medium, t), score };
+  return { key: ACTION_PRIORITY.low, ...priorityMeta(ACTION_PRIORITY.low, t), score };
 }
 
-function buildConcentrationRisk(plan) {
+function buildConcentrationRisk(plan, t) {
   const revPct = plan.performance?.revenueContribution?.pct;
   if (revPct == null || revPct < CONCENTRATION_RISK_THRESHOLD) return null;
 
@@ -160,28 +181,28 @@ function buildConcentrationRisk(plan) {
   return {
     pct: revPct,
     severity,
-    display: ACTION_SIGNAL_LABELS.concentration,
+    display: actionSignalLabel("concentration", t),
   };
 }
 
-function buildActionSignals(plan, { isPromote, isReview, isDeclining, concentration }) {
+function buildActionSignals(plan, { isPromote, isReview, isDeclining, concentration }, t) {
   const signals = [];
   if (concentration) {
     signals.push({ key: "concentration", label: concentration.display, severity: concentration.severity });
   }
   if (isDeclining) {
-    signals.push({ key: "declining", label: ACTION_SIGNAL_LABELS.declining });
+    signals.push({ key: "declining", label: actionSignalLabel("declining", t) });
   }
   if (isReview) {
-    signals.push({ key: "review", label: ACTION_SIGNAL_LABELS.review });
+    signals.push({ key: "review", label: actionSignalLabel("review", t) });
   }
   if (isPromote) {
-    signals.push({ key: "promote", label: ACTION_SIGNAL_LABELS.promote });
+    signals.push({ key: "promote", label: actionSignalLabel("promote", t) });
   }
   return signals;
 }
 
-export function enrichPlansWithPortfolioActions(plans, platformContext) {
+export function enrichPlansWithPortfolioActions(plans, platformContext, t = null) {
   const okPlans = (plans || []).filter((p) => p.performance?.state === "ok");
   const peer = buildPeerContext(okPlans);
 
@@ -194,14 +215,14 @@ export function enrichPlansWithPortfolioActions(plans, platformContext) {
     const isPromote = isPromotionCandidate(plan, platformContext);
     const isReview = isReviewCandidate(plan);
     const isDeclining = hasDecliningMonthlyActivity(plan);
-    const concentration = buildConcentrationRisk(plan);
+    const concentration = buildConcentrationRisk(plan, t);
 
     if (concentration) {
       plan.performance.concentrationRisk = concentration;
     }
 
-    const priority = computeActionPriority(plan, { isPromote, isReview, isDeclining });
-    const signals = buildActionSignals(plan, { isPromote, isReview, isDeclining, concentration });
+    const priority = computeActionPriority(plan, { isPromote, isReview, isDeclining }, t);
+    const signals = buildActionSignals(plan, { isPromote, isReview, isDeclining, concentration }, t);
 
     plan.portfolioActions = {
       priority,
@@ -255,7 +276,38 @@ export function filterPlansByDecision(plans, decisionFilter, _platformContext) {
   });
 }
 
-export function computePortfolioActionChips(plans, platformContext) {
+export function computePortfolioActionChips(plans, platformContext, t = null) {
+  const chip = (oneKey, manyKey, count) => {
+    const n = formatInt(count);
+    if (t) {
+      return count === 1 ? t(`planAdmin.metrics.portfolio.chips.${oneKey}`) : t(`planAdmin.metrics.portfolio.chips.${manyKey}`, { count: n });
+    }
+    if (count === 1) {
+      const oneFallback = {
+        reviewOne: "باقة واحدة تحتاج مراجعة",
+        promoteOne: "باقة واحدة مرشّحة للترويج",
+        noSubsOne: "باقة واحدة بلا اشتراكات سارية",
+        highRiskOne: "باقة واحدة عالية المخاطر",
+      };
+      return oneFallback[oneKey];
+    }
+    const manyFallback = {
+      reviewMany: `${n} باقات تحتاج مراجعة`,
+      promoteMany: `${n} باقات مرشّحة للترويج`,
+      noSubsMany: `${n} باقات بلا اشتراكات سارية`,
+      highRiskMany: `${n} باقات عالية المخاطر`,
+    };
+    return manyFallback[manyKey];
+  };
+
+  const concentrationLabel = (severe) => {
+    if (t) {
+      return severe
+        ? t("planAdmin.metrics.portfolio.chips.concentrationSevere")
+        : t("planAdmin.metrics.portfolio.chips.concentrationElevated");
+    }
+    return severe ? "تركّز شديد على باقة واحدة" : "باقة واحدة تحمل قيمة مدفوعة كبيرة";
+  };
   const okPlans = (plans || []).filter((p) => p.performance?.state === "ok");
   if (!okPlans.length) return [];
 
@@ -278,20 +330,14 @@ export function computePortfolioActionChips(plans, platformContext) {
   if (reviewCount > 0) {
     chips.push({
       key: DECISION_FILTERS.review,
-      label:
-        reviewCount === 1
-          ? "باقة واحدة تحتاج مراجعة"
-          : `${formatInt(reviewCount)} باقات تحتاج مراجعة`,
+      label: chip("reviewOne", "reviewMany", reviewCount),
       count: reviewCount,
     });
   }
   if (promoteCount > 0) {
     chips.push({
       key: DECISION_FILTERS.promote,
-      label:
-        promoteCount === 1
-          ? "باقة واحدة مرشّحة للترويج"
-          : `${formatInt(promoteCount)} باقات مرشّحة للترويج`,
+      label: chip("promoteOne", "promoteMany", promoteCount),
       count: promoteCount,
     });
   }
@@ -302,10 +348,7 @@ export function computePortfolioActionChips(plans, platformContext) {
     if (pct >= CONCENTRATION_RISK_THRESHOLD) {
       chips.push({
         key: DECISION_FILTERS.high_risk,
-        label:
-          pct >= CONCENTRATION_SEVERE_THRESHOLD
-            ? "تركّز شديد على باقة واحدة"
-            : "باقة واحدة تحمل قيمة مدفوعة كبيرة",
+        label: concentrationLabel(pct >= CONCENTRATION_SEVERE_THRESHOLD),
         count: 1,
       });
     }
@@ -314,10 +357,7 @@ export function computePortfolioActionChips(plans, platformContext) {
   if (noSubsCount > 0) {
     chips.push({
       key: DECISION_FILTERS.no_subs,
-      label:
-        noSubsCount === 1
-          ? "باقة واحدة بلا اشتراكات سارية"
-          : `${formatInt(noSubsCount)} باقات بلا اشتراكات سارية`,
+      label: chip("noSubsOne", "noSubsMany", noSubsCount),
       count: noSubsCount,
     });
   }
@@ -325,10 +365,7 @@ export function computePortfolioActionChips(plans, platformContext) {
   if (highRiskCount > 0 && !chips.some((c) => c.key === DECISION_FILTERS.high_risk)) {
     chips.push({
       key: DECISION_FILTERS.high_risk,
-      label:
-        highRiskCount === 1
-          ? "باقة واحدة عالية المخاطر"
-          : `${formatInt(highRiskCount)} باقات عالية المخاطر`,
+      label: chip("highRiskOne", "highRiskMany", highRiskCount),
       count: highRiskCount,
     });
   }
@@ -336,7 +373,24 @@ export function computePortfolioActionChips(plans, platformContext) {
   return chips;
 }
 
-export function computePortfolioSummarySentence(plans, platformContext) {
+export function computePortfolioSummarySentence(plans, platformContext, t = null) {
+  const summary = (key, params) => {
+    if (t) return t(`planAdmin.metrics.portfolio.summary.${key}`, params);
+    const ar = {
+      stable: "محفظة الباقات مستقرة.",
+      urgentOne: "باقة واحدة تحتاج قراراً عاجلاً.",
+      urgentMany: `${formatInt(params?.count)} باقات تحتاج قراراً عاجلاً.`,
+      reviewOne: "باقة واحدة تحتاج مراجعة.",
+      reviewMany: `${formatInt(params?.count)} باقات تحتاج مراجعة.`,
+      decliningOne: "باقة واحدة تشهد انخفاضاً شهرياً.",
+      decliningMany: `${formatInt(params?.count)} باقات تشهد انخفاضاً شهرياً.`,
+      needsAttention: "محفظة الباقات تحتاج متابعة.",
+      concentration: `تعتمد ${formatInt(params?.pct)}٪ من القيمة المدفوعة على باقة واحدة.`,
+      promoteOne: "باقة واحدة مرشّحة للترويج.",
+      promoteMany: `${formatInt(params?.count)} باقات مرشّحة للترويج.`,
+    };
+    return ar[key];
+  };
   const okPlans = (plans || []).filter((p) => p.performance?.state === "ok");
   if (!okPlans.length) return null;
 
@@ -357,42 +411,36 @@ export function computePortfolioSummarySentence(plans, platformContext) {
   const parts = [];
 
   if (highCount === 0 && reviewCount === 0 && decliningCount === 0) {
-    parts.push("محفظة الباقات مستقرة.");
+    parts.push(summary("stable"));
   } else if (highCount > 0) {
     parts.push(
-      highCount === 1
-        ? "باقة واحدة تحتاج قراراً عاجلاً."
-        : `${formatInt(highCount)} باقات تحتاج قراراً عاجلاً.`,
+      highCount === 1 ? summary("urgentOne") : summary("urgentMany", { count: highCount }),
     );
   } else if (reviewCount > 0) {
     parts.push(
-      reviewCount === 1
-        ? "باقة واحدة تحتاج مراجعة."
-        : `${formatInt(reviewCount)} باقات تحتاج مراجعة.`,
+      reviewCount === 1 ? summary("reviewOne") : summary("reviewMany", { count: reviewCount }),
     );
   } else if (decliningCount > 0) {
     parts.push(
       decliningCount === 1
-        ? "باقة واحدة تشهد انخفاضاً شهرياً."
-        : `${formatInt(decliningCount)} باقات تشهد انخفاضاً شهرياً.`,
+        ? summary("decliningOne")
+        : summary("decliningMany", { count: decliningCount }),
     );
   } else {
-    parts.push("محفظة الباقات تحتاج متابعة.");
+    parts.push(summary("needsAttention"));
   }
 
   const topRev = pickTopPlan(okPlans, (p) => p.performance.revenueJod.value);
   if (topRev && platformContext?.totalRevenue > 0) {
     const pct = Math.round((topRev.val / platformContext.totalRevenue) * 100);
     if (pct >= CONCENTRATION_RISK_THRESHOLD) {
-      parts.push(`تعتمد ${formatInt(pct)}٪ من القيمة المدفوعة على باقة واحدة.`);
+      parts.push(summary("concentration", { pct }));
     }
   }
 
   if (promoteCount > 0) {
     parts.push(
-      promoteCount === 1
-        ? "باقة واحدة مرشّحة للترويج."
-        : `${formatInt(promoteCount)} باقات مرشّحة للترويج.`,
+      promoteCount === 1 ? summary("promoteOne") : summary("promoteMany", { count: promoteCount }),
     );
   }
 

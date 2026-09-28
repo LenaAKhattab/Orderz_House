@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import Button from "../../components/ui/Button";
 
 import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/planAdminResources";
 
 import PlanFormModalBody from "./PlanFormModalBody";
 
@@ -47,15 +48,13 @@ export default function PlanCreateModal({
   canonicalPlans = [],
 }) {
 
-  const { dir, locale } = useTranslation();
+  const { dir, t } = useTranslation();
 
-  const isEn = locale === "en";
+  const title = t("planAdmin.modals.createTitle");
 
-  const title = isEn ? "Create New Plan" : "إنشاء باقة جديدة";
+  const closeLabel = t("planAdmin.common.close");
 
-  const closeLabel = isEn ? "Close" : "إغلاق";
-
-  const backdropLabel = isEn ? "Close dialog" : "إغلاق النافذة";
+  const backdropLabel = t("planAdmin.common.closeDialog");
 
 
 
@@ -148,7 +147,7 @@ export default function PlanCreateModal({
             </h2>
 
             <p className="oh-sapl-modal__subtitle">
-              {isEn ? "New subscription plan template." : "قالب اشتراك جديد."}
+              {t("planAdmin.modals.createSubtitle")}
             </p>
 
           </div>
@@ -195,24 +194,18 @@ export default function PlanCreateModal({
 
           <Button type="button" variant="secondary" disabled={submitting} onClick={onReset}>
 
-            {isEn ? "Clear fields" : "مسح الحقول"}
+            {t("planAdmin.modals.clearFields")}
 
           </Button>
 
           <Button type="button" variant="secondary" disabled={submitting} onClick={onClose}>
 
-            {isEn ? "Cancel" : "إلغاء"}
+            {t("planAdmin.common.cancel")}
 
           </Button>
 
           <Button type="button" disabled={submitting || !canCreate} onClick={() => void onCreate()}>
-            {submitting
-              ? isEn
-                ? "Saving…"
-                : "جارٍ الحفظ…"
-              : isEn
-                ? "Save and add plan"
-                : "حفظ وإضافة الباقة"}
+            {submitting ? t("planAdmin.common.saving") : t("planAdmin.modals.createSubmit")}
           </Button>
 
         </footer>

@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { STYLE_PRESETS } from "./adFormConstants";
 import ColorChoiceGroup from "./ColorChoiceGroup";
 import CompactSwatchRow from "./CompactSwatchRow";
@@ -9,8 +10,10 @@ import {
   MAIN_SIMPLE_SWATCHES,
   pickContrastButtonText,
 } from "./adColorPalette";
+import { mapGradientPresets, mapPaletteOptions } from "./adsLocaleHelpers";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/adsResources";
 
-/** شريط المعاينة على بطاقات النمط — خلفية + زر فقط (ألوان النص في القسم الأول). */
 const PRESET_STRIP_KEYS = ["backgroundColor", "buttonColor"];
 
 function norm(v) {
@@ -21,14 +24,15 @@ function matchesPreset(current, presetColors) {
   return Object.keys(presetColors).every((k) => norm(current[k]) === norm(presetColors[k]));
 }
 
-/**
- * ألوان البطاقة العامة: نمط جاهز، خلفية، زر، وتدرج/إطار في المتقدم.
- * ألوان العنوان والنص والشارة تُضبط في «معلومات الإعلان الأساسية».
- *
- * @param {{ value: object, onChange: (next: object) => void, disabled?: boolean }} props
- */
+/** @param {{ value: object, onChange: (next: object) => void, disabled?: boolean }} props */
 export default function AdColorControls({ value, onChange, disabled }) {
+  const { t } = useTranslation();
   const v = value || {};
+  const mainSwatches = useMemo(() => mapPaletteOptions(MAIN_SIMPLE_SWATCHES, t), [t]);
+  const borderSwatches = useMemo(() => mapPaletteOptions(COLOR_SWATCHES_BORDER, t), [t]);
+  const buttonTextSwatches = useMemo(() => mapPaletteOptions(COLOR_SWATCHES_BUTTON_TEXT, t), [t]);
+  const softBgSwatches = useMemo(() => mapPaletteOptions(COLOR_SWATCHES_SOFT_BG, t), [t]);
+  const gradientPresets = useMemo(() => mapGradientPresets(GRADIENT_QUICK_PRESETS, t), [t]);
 
   const patch = (partial) => onChange({ ...v, ...partial });
 
@@ -68,11 +72,9 @@ export default function AdColorControls({ value, onChange, disabled }) {
 
   return (
     <div className="oh-admin-ads__color-stack oh-admin-ads__color-stack--simple">
-      <p className="oh-admin-ads__helperText oh-admin-ads__helperText--tight">
-        النصوص والشارة: اضبط ألوانها في القسم الأول. هنا نمط البطاقة والخلفية والزر والتدرج الاختياري.
-      </p>
+      <p className="oh-admin-ads__helperText oh-admin-ads__helperText--tight">{t("ads.colors.controlsHint")}</p>
 
-      <p className="oh-admin-ads__color-section-label">اختر نمطًا جاهزًا</p>
+      <p className="oh-admin-ads__color-section-label">{t("ads.colors.pickPreset")}</p>
       <div className="oh-admin-preset-grid">
         {STYLE_PRESETS.map((p) => {
           const selected = matchesPreset(v, p.colors);
@@ -84,7 +86,7 @@ export default function AdColorControls({ value, onChange, disabled }) {
               disabled={disabled}
               onClick={() => applyPreset(p)}
             >
-              <span className="oh-admin-preset-card__name">{p.label}</span>
+              <span className="oh-admin-preset-card__name">{t(`ads.stylePresets.${p.presetKey}`)}</span>
               <div className="oh-admin-preset-card__strip" aria-hidden>
                 {PRESET_STRIP_KEYS.map((key) => (
                   <span key={key} className="oh-admin-preset-card__sw" style={{ background: p.colors[key] || "#e5e7eb" }} />
@@ -97,81 +99,74 @@ export default function AdColorControls({ value, onChange, disabled }) {
 
       <div className="oh-admin-ads__preset-actions">
         <button type="button" className="btn btn-secondary" disabled={disabled} onClick={resetColors}>
-          إعادة تعيين الألوان
+          {t("ads.colors.resetColors")}
         </button>
       </div>
 
-      <p className="oh-admin-ads__color-section-label">تخصيص البطاقة</p>
+      <p className="oh-admin-ads__color-section-label">{t("ads.colors.customizeCard")}</p>
       <div className="oh-admin-color-quick">
         <CompactSwatchRow
-          label="خلفية الإعلان"
+          label={t("ads.colors.adBackground")}
           value={v.backgroundColor}
           onChange={(hex) => patch({ backgroundColor: hex })}
-          options={MAIN_SIMPLE_SWATCHES}
+          options={mainSwatches}
           allowEmpty
-          emptyLabel="بدون تحديد"
           disabled={disabled}
         />
         <CompactSwatchRow
-          label="لون الزر"
+          label={t("ads.colors.buttonColor")}
           value={v.buttonColor}
           onChange={setButtonColor}
-          options={MAIN_SIMPLE_SWATCHES}
+          options={mainSwatches}
           allowEmpty
-          emptyLabel="بدون تحديد"
           disabled={disabled}
         />
       </div>
 
       <details className="oh-admin-colors-advanced-block">
-        <summary className="oh-admin-colors-advanced-block__summary">خيارات متقدمة</summary>
+        <summary className="oh-admin-colors-advanced-block__summary">{t("ads.form.advancedOptions")}</summary>
         <div className="oh-admin-colors-advanced-block__body">
-          <p className="oh-admin-ads__helperText oh-admin-ads__helperText--tight">
-            إطار البطاقة، نص الزر يدويًا، أو التدرج اللوني للخلفية — اختياري.
-          </p>
+          <p className="oh-admin-ads__helperText oh-admin-ads__helperText--tight">{t("ads.colors.advancedBorderHint")}</p>
 
           <div className="oh-admin-color-sections">
             <ColorChoiceGroup
-              label="لون إطار البطاقة"
+              label={t("ads.colors.cardBorder")}
               value={v.borderColor}
               onChange={(next) => patch({ borderColor: next })}
-              options={COLOR_SWATCHES_BORDER}
+              options={borderSwatches}
               allowEmpty
-              emptyLabel="بدون تحديد"
               disabled={disabled}
               showHex={false}
             />
             <ColorChoiceGroup
-              label="نص الزر (تجاوز تلقائي)"
+              label={t("ads.colors.buttonTextOverride")}
               value={v.buttonTextColor}
               onChange={(next) => patch({ buttonTextColor: next })}
-              options={COLOR_SWATCHES_BUTTON_TEXT}
+              options={buttonTextSwatches}
               allowEmpty
-              emptyLabel="تلقائي من لون الزر"
+              emptyLabel={t("ads.colors.autoFromButton")}
               disabled={disabled}
               showHex={false}
             />
           </div>
 
           <div className="oh-admin-gradient-block oh-admin-gradient-block--nested">
-            <h4 className="oh-admin-gradient-block__title">التدرج اللوني للخلفية</h4>
-            <p className="oh-admin-ads__helperText oh-admin-gradient-block__hint">
-              اختياري — إذا لم ترغب بتدرج، اتركه فارغًا أو اختر «بدون تدرج».
-            </p>
-            <div className="oh-admin-gradient-quick" role="group" aria-label="تدرجات جاهزة">
-              {GRADIENT_QUICK_PRESETS.map((g) => {
+            <h4 className="oh-admin-gradient-block__title">{t("ads.colors.gradientTitle")}</h4>
+            <p className="oh-admin-ads__helperText oh-admin-gradient-block__hint">{t("ads.colors.gradientHint")}</p>
+            <div className="oh-admin-gradient-quick" role="group" aria-label={t("ads.colors.gradientQuickAria")}>
+              {gradientPresets.map((g) => {
                 const sel = norm(v.gradientFrom) === norm(g.gradientFrom) && norm(v.gradientTo) === norm(g.gradientTo);
                 const isClear = !g.gradientFrom && !g.gradientTo;
                 return (
                   <button
-                    key={g.label}
+                    key={g.name}
                     type="button"
                     disabled={disabled}
                     className={`oh-admin-gradient-chip ${sel ? "oh-admin-gradient-chip--selected" : ""}`}
                     onClick={() => applyGradientPreset(g)}
                   >
                     {isClear ? (
-                      <span>بدون تدرج</span>
+                      <span>{g.label}</span>
                     ) : (
                       <>
                         <span className="oh-admin-gradient-chip__dots" aria-hidden>
@@ -188,22 +183,20 @@ export default function AdColorControls({ value, onChange, disabled }) {
 
             <div className="oh-admin-gradient-fine">
               <ColorChoiceGroup
-                label="بداية التدرج"
+                label={t("ads.colors.gradientStart")}
                 value={v.gradientFrom}
                 onChange={(next) => patch({ gradientFrom: next })}
-                options={COLOR_SWATCHES_SOFT_BG}
+                options={softBgSwatches}
                 allowEmpty
-                emptyLabel="بدون تحديد"
                 disabled={disabled}
                 showHex={false}
               />
               <ColorChoiceGroup
-                label="نهاية التدرج"
+                label={t("ads.colors.gradientEnd")}
                 value={v.gradientTo}
                 onChange={(next) => patch({ gradientTo: next })}
-                options={COLOR_SWATCHES_SOFT_BG}
+                options={softBgSwatches}
                 allowEmpty
-                emptyLabel="بدون تحديد"
                 disabled={disabled}
                 showHex={false}
               />

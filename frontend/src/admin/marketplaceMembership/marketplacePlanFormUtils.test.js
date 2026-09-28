@@ -184,7 +184,7 @@ describe("SuperAdminMarketplacePlansPage wiring", () => {
       path.join(__dirname, "MarketplaceMembershipPlanCard.jsx"),
       "utf8",
     );
-    assert.match(page, /SECTION_COPY\.marketplace/);
+    assert.match(page, /planAdmin\.sections\.marketplace/);
     assert.match(page, /PlanCatalogAdminShell/);
     assert.match(page, /MarketplaceMembershipPlanCard/);
     assert.match(page, /MarketplaceMembershipPlanFormModal/);

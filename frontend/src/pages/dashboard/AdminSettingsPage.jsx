@@ -1,11 +1,14 @@
 import StaffAccountSettingsPage from "./StaffAccountSettingsPage";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/opsAdminResources";
 
 export default function AdminSettingsPage() {
+  const { t } = useTranslation();
   return (
     <StaffAccountSettingsPage
-      heroKicker="لوحة الإدارة"
-      heroTitle="إعدادات الحساب"
-      heroLead="تحديث بيانات المسؤول، الصورة، كلمة المرور، وتفضيلات الإشعارات العامة."
+      heroKicker={t("opsAdmin.adminSettings.heroKicker")}
+      heroTitle={t("opsAdmin.adminSettings.heroTitle")}
+      heroLead={t("opsAdmin.adminSettings.heroLead")}
     />
   );
 }

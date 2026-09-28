@@ -1,4 +1,128 @@
 {
+  "heroIpad": {
+    "free": "مجانية",
+    "dayUnit": "يوم",
+    "brand": "أوردرز هاوس",
+    "sidebarNavAria": "التنقل بين الأقسام",
+    "menuOpen": "فتح القائمة",
+    "menuClose": "إغلاق القائمة",
+    "loading": "جاري التحميل",
+    "nav": {
+      "overview": {
+        "label": "لوحة التحكم",
+        "title": "لوحة التحكم",
+        "description": "مؤشرات سريعة وملخص يتغيّر حسب دورك في المنصة."
+      },
+      "services": {
+        "label": "الخدمات",
+        "title": "الخدمات",
+        "description": "تصنيفات الخدمات كما في صفحة الخدمات على الموقع."
+      },
+      "plans": {
+        "label": "الباقات",
+        "title": "الباقات",
+        "description": "باقات اشتراك المستقلين كما في صفحة الباقات."
+      },
+      "orders": {
+        "label": "الطلبات",
+        "title": "الطلبات والسوق",
+        "description": "قائمة طلبات مفتوحة وحالات التنفيذ للمستقلين."
+      },
+      "auth": {
+        "label": "الدخول",
+        "title": "تسجيل الدخول",
+        "description": "مسار الدخول وإنشاء الحساب في المنصة."
+      }
+    },
+    "overview": {
+      "kicker": "مرحبًا بك في لوحة التحكم",
+      "hint": "يتغيّر المحتوى حسب الدور: عميل، مستقل، أو إداري."
+    },
+    "services": {
+      "kicker": "تصنيفات الخدمات",
+      "loadError": "تعذر تحميل التصنيفات. تحقق من الاتصال بالخادم.",
+      "empty": "لا توجد تصنيفات مفعّلة حالياً.",
+      "footHint": "البيانات من جدول التصنيفات النشطة في المنصة."
+    },
+    "plans": {
+      "loadError": "تعذر تحميل الباقات. تحقق من الاتصال بالخادم.",
+      "empty": "لا توجد باقات ظاهرة حالياً.",
+      "popularBadge": "الأكثر شيوعًا",
+      "footHint": "البيانات من جدول الباقات النشطة الظاهرة في المنصة."
+    },
+    "orders": {
+      "table": {
+        "order": "الطلب",
+        "status": "الحالة",
+        "budget": "الميزانية"
+      },
+      "loadError": "تعذر تحميل معرض الطلبات. تحقق من الاتصال بالخادم.",
+      "empty": "لا توجد طلبات في المعرض حالياً.",
+      "footHint": "نفس بيانات صفحة معرض الطلبات العامة (`/orders`).",
+      "projectType": {
+        "fixed": "سعر ثابت",
+        "bidding": "مزايدة"
+      }
+    },
+    "auth": {
+      "title": "ابدأ رحلتك داخل المنصة",
+      "lede": "اختر نوع الحساب المناسب للمتابعة.",
+      "roles": {
+        "client": {
+          "title": "عميل",
+          "description": "أنشئ طلبات وابحث عن أفضل المستقلين."
+        },
+        "freelancer": {
+          "title": "مستقل",
+          "description": "استقبل الطلبات وابدأ العمل بسهولة."
+        }
+      },
+      "continue": "متابعة",
+      "signIn": "تسجيل الدخول",
+      "signUp": "إنشاء حساب"
+    },
+    "analytics": {
+      "kpiVisits": "الزيارات",
+      "kpiVisitsValue": "١٢٫٤k",
+      "kpiVisitsDelta": "↑ ٩٪",
+      "kpiActiveOrders": "الطلبات النشطة",
+      "kpiActiveOrdersValue": "١٢٤",
+      "kpiActiveOrdersDelta": "↑ ٣٪",
+      "kpiRevenue": "الإيرادات",
+      "kpiRevenueValue": "٤٬٢٨٠ د.أ",
+      "kpiRevenueDelta": "↑ ٦٪",
+      "weeklyOrdersTitle": "الطلبات الأسبوعية",
+      "weeklyOrdersCaption": "آخر ١٠ أيام",
+      "topServicesTitle": "الخدمات الأكثر طلبًا",
+      "topServicesBarsAria": "أعمدة نسبية للتصنيفات",
+      "completionRateTitle": "معدل الإنجاز",
+      "completionRateValue": "٨٢٪",
+      "completionRateSub": "تسليم في الموعد",
+      "userActivityLabel": "نشاط المستخدمين",
+      "serviceBars": {
+        "dev": "برمجة",
+        "design": "تصميم",
+        "content": "محتوى",
+        "biz": "أعمال",
+        "acad": "أكاديمي"
+      }
+    },
+    "lite": {
+      "dashboard": "لوحة التحكم",
+      "statActivity": "النشاط",
+      "statActivityValue": "١٢٨",
+      "statOrders": "طلبات",
+      "statOrdersValue": "٢٤",
+      "statComplete": "مكتمل",
+      "statCompleteValue": "٩٦٪",
+      "quickGlance": "نظرة سريعة",
+      "recentActivity": "آخر الحركة",
+      "rowDesign": "طلب تصميم",
+      "rowDev": "خدمة برمجة",
+      "pillInProgress": "قيد التنفيذ",
+      "pillNew": "جديد"
+    }
+  },
   "hero": {
     "title": "منصة واحدة تجمعك بالخدمات والمستقلين المناسبين",
     "lead": "ابدأ بطلبك بسهولة، قارن الخدمات المتاحة، وتابع كل خطوة من مكان واحد حتى تصل للنتيجة التي تحتاجها.",

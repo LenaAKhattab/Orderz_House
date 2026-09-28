@@ -1,3 +1,4 @@
+import { useTranslation } from "../../../i18n/LanguageProvider";
 import "./home-hero-ipad-overview-analytics.css";
 
 /** Mini spark SVGs (viewBox 0 0 40 14) — varied slopes, no flat lines */
@@ -61,44 +62,47 @@ const SPARK_TEAL = (
   </svg>
 );
 
-const SERVICE_BARS = [
-  { key: "dev", label: "برمجة", pct: 88, gradient: "linear-gradient(180deg, #6366f1 0%, #4f46b5 100%)" },
-  { key: "design", label: "تصميم", pct: 62, gradient: "linear-gradient(180deg, #76cfdf 0%, #3d8a9e 100%)" },
-  { key: "content", label: "محتوى", pct: 71, gradient: "linear-gradient(180deg, #5ba8a8 0%, #2f5c6a 100%)" },
-  { key: "biz", label: "أعمال", pct: 48, gradient: "linear-gradient(180deg, #e8873a 0%, #c56a1c 100%)" },
-  { key: "acad", label: "أكاديمي", pct: 36, gradient: "linear-gradient(180deg, #2f3b65 0%, #1a263f 100%)" },
+const SERVICE_BAR_KEYS = [
+  { key: "dev", pct: 88, gradient: "linear-gradient(180deg, #6366f1 0%, #4f46b5 100%)" },
+  { key: "design", pct: 62, gradient: "linear-gradient(180deg, #76cfdf 0%, #3d8a9e 100%)" },
+  { key: "content", pct: 71, gradient: "linear-gradient(180deg, #5ba8a8 0%, #2f5c6a 100%)" },
+  { key: "biz", pct: 48, gradient: "linear-gradient(180deg, #e8873a 0%, #c56a1c 100%)" },
+  { key: "acad", pct: 36, gradient: "linear-gradient(180deg, #2f3b65 0%, #1a263f 100%)" },
 ];
 
 const ACTIVITY_HEIGHTS = [42, 68, 55, 80, 52, 74, 48, 88, 62, 58, 72, 50];
 
 /**
- * Premium compact analytics for the hero iPad «لوحة التحكم» preview (SVG + CSS only).
+ * Premium compact analytics for the hero iPad dashboard preview (SVG + CSS only).
  */
 export default function HeroIpadOverviewAnalytics() {
+  const { t } = useTranslation();
+  const a = (suffix) => t(`home.heroIpad.analytics.${suffix}`);
+
   return (
     <div className="hi-oa">
       <div className="hi-oa__kpis">
         <article className="hi-oa__kpi hi-oa__kpi--navy">
-          <span className="hi-oa__kpi-label">الزيارات</span>
-          <span className="hi-oa__kpi-value">١٢٫٤k</span>
+          <span className="hi-oa__kpi-label">{a("kpiVisits")}</span>
+          <span className="hi-oa__kpi-value">{a("kpiVisitsValue")}</span>
           <div className="hi-oa__kpi-meta">
-            <span className="hi-oa__kpi-delta hi-oa__kpi-delta--up">↑ ٩٪</span>
+            <span className="hi-oa__kpi-delta hi-oa__kpi-delta--up">{a("kpiVisitsDelta")}</span>
             {SPARK_NAVY}
           </div>
         </article>
         <article className="hi-oa__kpi hi-oa__kpi--cyan">
-          <span className="hi-oa__kpi-label">الطلبات النشطة</span>
-          <span className="hi-oa__kpi-value">١٢٤</span>
+          <span className="hi-oa__kpi-label">{a("kpiActiveOrders")}</span>
+          <span className="hi-oa__kpi-value">{a("kpiActiveOrdersValue")}</span>
           <div className="hi-oa__kpi-meta">
-            <span className="hi-oa__kpi-delta hi-oa__kpi-delta--up">↑ ٣٪</span>
+            <span className="hi-oa__kpi-delta hi-oa__kpi-delta--up">{a("kpiActiveOrdersDelta")}</span>
             {SPARK_CYAN}
           </div>
         </article>
         <article className="hi-oa__kpi hi-oa__kpi--teal">
-          <span className="hi-oa__kpi-label">الإيرادات</span>
-          <span className="hi-oa__kpi-value">٤٬٢٨٠ د.أ</span>
+          <span className="hi-oa__kpi-label">{a("kpiRevenue")}</span>
+          <span className="hi-oa__kpi-value">{a("kpiRevenueValue")}</span>
           <div className="hi-oa__kpi-meta">
-            <span className="hi-oa__kpi-delta hi-oa__kpi-delta--up">↑ ٦٪</span>
+            <span className="hi-oa__kpi-delta hi-oa__kpi-delta--up">{a("kpiRevenueDelta")}</span>
             {SPARK_TEAL}
           </div>
         </article>
@@ -106,8 +110,8 @@ export default function HeroIpadOverviewAnalytics() {
 
       <div className="hi-oa__chart-card">
         <div className="hi-oa__chart-head">
-          <h3 className="hi-oa__chart-title">الطلبات الأسبوعية</h3>
-          <p className="hi-oa__chart-caption">آخر ١٠ أيام</p>
+          <h3 className="hi-oa__chart-title">{a("weeklyOrdersTitle")}</h3>
+          <p className="hi-oa__chart-caption">{a("weeklyOrdersCaption")}</p>
         </div>
         <div className="hi-oa__chart-svg-wrap" dir="ltr">
           <svg className="hi-oa__chart-svg" viewBox="0 0 100 34" preserveAspectRatio="none" aria-hidden>
@@ -123,7 +127,6 @@ export default function HeroIpadOverviewAnalytics() {
                 <stop offset="1" stopColor="#6366f1" />
               </linearGradient>
             </defs>
-            {/* subtle horizontal guides */}
             <line x1="0" y1="10" x2="100" y2="10" stroke="rgba(47,59,101,0.06)" strokeWidth="0.35" vectorEffect="nonScalingStroke" />
             <line x1="0" y1="20" x2="100" y2="20" stroke="rgba(47,59,101,0.05)" strokeWidth="0.35" vectorEffect="nonScalingStroke" />
             <path
@@ -145,20 +148,20 @@ export default function HeroIpadOverviewAnalytics() {
 
       <div className="hi-oa__row2">
         <div className="hi-oa__bars-card">
-          <h3 className="hi-oa__mini-title">الخدمات الأكثر طلبًا</h3>
-          <div className="hi-oa__bars" role="img" aria-label="أعمدة نسبية للتصنيفات">
-            {SERVICE_BARS.map((b) => (
+          <h3 className="hi-oa__mini-title">{a("topServicesTitle")}</h3>
+          <div className="hi-oa__bars" role="img" aria-label={a("topServicesBarsAria")}>
+            {SERVICE_BAR_KEYS.map((b) => (
               <div
                 key={b.key}
                 className="hi-oa__bar"
                 style={{ height: `${b.pct}%`, background: b.gradient }}
-                title={b.label}
+                title={t(`home.heroIpad.analytics.serviceBars.${b.key}`)}
               />
             ))}
           </div>
         </div>
         <div className="hi-oa__ring-card">
-          <h3 className="hi-oa__mini-title">معدل الإنجاز</h3>
+          <h3 className="hi-oa__mini-title">{a("completionRateTitle")}</h3>
           <div className="hi-oa__ring-body">
             <svg className="hi-oa__ring-svg" viewBox="0 0 36 36" aria-hidden>
               <defs>
@@ -182,15 +185,15 @@ export default function HeroIpadOverviewAnalytics() {
               />
             </svg>
             <div className="hi-oa__ring-legend">
-              <span className="hi-oa__ring-value">٨٢٪</span>
-              <p className="hi-oa__ring-sub">تسليم في الموعد</p>
+              <span className="hi-oa__ring-value">{a("completionRateValue")}</span>
+              <p className="hi-oa__ring-sub">{a("completionRateSub")}</p>
             </div>
           </div>
         </div>
       </div>
 
       <div className="hi-oa__activity">
-        <span className="hi-oa__activity-label">نشاط المستخدمين</span>
+        <span className="hi-oa__activity-label">{a("userActivityLabel")}</span>
         <div className="hi-oa__activity-bars" aria-hidden>
           {ACTIVITY_HEIGHTS.map((h, i) => (
             <span key={i} className="hi-oa__activity-bar" style={{ height: `${h}%` }} />

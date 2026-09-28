@@ -1,14 +1,8 @@
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/adsResources";
+
 /**
  * Compact horizontal swatches — short admin rows without hex emphasis.
- * @param {object} p
- * @param {string} p.label
- * @param {string} [p.value]
- * @param {(next: string) => void} p.onChange
- * @param {{ label: string, value: string }[]} p.options
- * @param {boolean} [p.allowEmpty]
- * @param {string} [p.emptyLabel]
- * @param {boolean} [p.disabled]
- * @param {'md' | 'sm'} [p.size]
  */
 export default function CompactSwatchRow({
   label,
@@ -16,14 +10,17 @@ export default function CompactSwatchRow({
   onChange,
   options,
   allowEmpty = false,
-  emptyLabel = "بدون تحديد",
+  emptyLabel,
   disabled = false,
   size = "md",
 }) {
+  const { t } = useTranslation();
+  const resolvedEmptyLabel = emptyLabel ?? t("ads.palette.unset");
   const trimmed = (value || "").trim();
   const lower = trimmed.toLowerCase();
   const matched = options.some((o) => o.value.toLowerCase() === lower);
-  const swatchClass = size === "sm" ? "oh-admin-color-swatch oh-admin-color-swatch--compact-sm" : "oh-admin-color-swatch oh-admin-color-swatch--compact";
+  const swatchClass =
+    size === "sm" ? "oh-admin-color-swatch oh-admin-color-swatch--compact-sm" : "oh-admin-color-swatch oh-admin-color-swatch--compact";
 
   const isLightSwatch = (hex) => {
     if (!hex || hex.toLowerCase() === "#ffffff") return true;
@@ -41,7 +38,7 @@ export default function CompactSwatchRow({
             disabled={disabled}
             onClick={() => onChange("")}
           >
-            {emptyLabel}
+            {resolvedEmptyLabel}
           </button>
         ) : null}
         {options.map((opt) => {
@@ -62,9 +59,7 @@ export default function CompactSwatchRow({
           );
         })}
       </div>
-      {trimmed && !matched ? (
-        <p className="oh-admin-color-compact-row__note">لون محفوظ غير مدرج أعلاه — يظهر في المعاينة؛ يمكن ضبطه من «خيارات متقدمة».</p>
-      ) : null}
+      {trimmed && !matched ? <p className="oh-admin-color-compact-row__note">{t("ads.colors.savedNotInListCompact")}</p> : null}
     </div>
   );
 }

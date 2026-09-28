@@ -53,6 +53,12 @@
     "loadPage": "Could not load this page",
     "generic": "Something went wrong. Please try again."
   },
+  "pagination": {
+    "navAria": "Pagination",
+    "next": "Next",
+    "previous": "Previous",
+    "pageOf": "Page {{current}} of {{total}}"
+  },
   "notFound": {
     "title": "Page unavailable",
     "text": "This page may be hidden or the link is incorrect."

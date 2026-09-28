@@ -1,0 +1,56 @@
+{
+  "orders": {
+    "published": "Published",
+    "open_for_freelancers": "Open for freelancers",
+    "open_for_bids": "Open for bids",
+    "assigned": "Assigned",
+    "in_progress": "In progress",
+    "ready_for_work": "Ready for work",
+    "pending_payment": "Pending payment",
+    "pending_client_review": "Pending client review",
+    "completed": "Completed",
+    "cancelled": "Cancelled",
+    "closed": "Closed",
+    "draft": "Draft",
+    "archived": "Archived"
+  },
+  "subscriptions": {
+    "assigned_not_started": "Waiting for First Order",
+    "active": "Active",
+    "expired": "Expired",
+    "cancelled": "Cancelled",
+    "pending": "Pending",
+    "company_approved": "Company approved",
+    "suspended": "Suspended"
+  },
+  "kyc": {
+    "pending": "Pending",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "resubmission_required": "Resubmission required",
+    "not_submitted": "Not submitted"
+  },
+  "bids": {
+    "pending": "Pending",
+    "accepted": "Accepted",
+    "rejected": "Rejected",
+    "withdrawn": "Withdrawn",
+    "submitted": "Submitted"
+  },
+  "payments": {
+    "paid": "Paid",
+    "unpaid": "Unpaid",
+    "pending": "Pending",
+    "failed": "Failed",
+    "refunded": "Refunded",
+    "not_required": "Not required"
+  },
+  "claims": {
+    "pending": "Pending",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "paid": "Paid",
+    "open": "Open",
+    "closed": "Closed"
+  }
+}

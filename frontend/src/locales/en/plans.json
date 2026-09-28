@@ -48,7 +48,15 @@
     "refundModalTitle": "Special offer package refund details",
     "refundModalGotIt": "Got it",
     "refundSummaryAria": "Offer value summary",
-    "refundSectionFallback": "Details"
+    "refundSectionFallback": "Details",
+    "defaultBadge": "Special offer",
+    "defaultRibbon": "Limited time",
+    "refundSections": {
+      "monthly": "Monthly refund",
+      "inactiveMonths": "Inactive months",
+      "orderIncome": "Order income",
+      "importantNotice": "Important notice"
+    }
   },
   "sectionAria": "Marketplace Membership plans",
   "membership": {

@@ -1,13 +1,13 @@
-import { useId } from "react";
+import { useId, useMemo } from "react";
 import { PREMIUM_COLOR_DROPDOWN_OPTIONS } from "./adColorPalette";
+import { mapPaletteOptions } from "./adsLocaleHelpers";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/adsResources";
 
 function normHex(v) {
   return (v ?? "").toString().trim().toLowerCase();
 }
 
-/**
- * Compact color dropdown: swatch + name (+ optional hex in list).
- */
 export default function AdFieldColorSelect({
   label,
   value = "",
@@ -16,17 +16,19 @@ export default function AdFieldColorSelect({
   disabled = false,
   showHexInList = true,
 }) {
+  const { t } = useTranslation();
   const id = useId();
+  const resolvedOptions = useMemo(() => mapPaletteOptions(options, t), [options, t]);
   const trimmed = (value || "").trim();
   const lower = normHex(trimmed);
-  const matched = options.find((o) => (o.value === "" ? !trimmed : normHex(o.value) === lower));
+  const matched = resolvedOptions.find((o) => (o.value === "" ? !trimmed : normHex(o.value) === lower));
   const displayHex = matched?.value || trimmed;
-  const displayLabel = matched?.label || (trimmed ? "لون محفوظ" : "افتراضي");
+  const displayLabel = matched?.label || (trimmed ? t("ads.palette.savedColor") : t("ads.palette.default"));
   const isLight = displayHex && /^#f|^#e[def]|^#ff/i.test(displayHex);
   const selectOptions =
     trimmed && !matched
-      ? [{ label: "لون محفوظ", value: trimmed }, ...options.filter((o) => normHex(o.value) !== lower)]
-      : options;
+      ? [{ label: t("ads.palette.savedColor"), value: trimmed }, ...resolvedOptions.filter((o) => normHex(o.value) !== lower)]
+      : resolvedOptions;
 
   return (
     <div className="oh-admin-field-color">
@@ -47,7 +49,7 @@ export default function AdFieldColorSelect({
           onChange={(e) => onChange(e.target.value)}
           disabled={disabled}
           aria-labelledby={label ? id : undefined}
-          aria-label={label || "اختيار اللون"}
+          aria-label={label || t("ads.colors.pickColorAria")}
           title={displayHex ? `${displayLabel} ${displayHex}` : displayLabel}
         >
           {selectOptions.map((opt) => (

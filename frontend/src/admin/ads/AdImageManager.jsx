@@ -1,19 +1,16 @@
 import SafeAdImage from "../../components/ads/SafeAdImage";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/adsResources";
 
 function uid() {
   return typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `i-${Date.now()}-${Math.random()}`;
 }
 
-/**
- * @param {object} p
- * @param {unknown[]} p.images
- * @param {(next: unknown[]) => void} p.onChange
- * @param {Record<number, string>} [p.urlErrors] — inline errors per row index after save attempt
- * @param {boolean} [p.showErrors]
- */
 const MAX_IMAGES = 1;
 
+/** @param {object} p */
 export default function AdImageManager({ images, onChange, urlErrors = {}, showErrors = false }) {
+  const { t } = useTranslation();
   const list = Array.isArray(images) ? images.slice(0, MAX_IMAGES) : [];
 
   const update = (idx, patch) => {
@@ -32,16 +29,14 @@ export default function AdImageManager({ images, onChange, urlErrors = {}, showE
 
   return (
     <div className="oh-admin-ads__image-stack">
-      <p className="oh-admin-ads__helperText">
-        أضف رابط صورة واحدة للإعلان. تُخزَّن كرابط فقط (لا رفع ملفات من هنا).
-      </p>
+      <p className="oh-admin-ads__helperText">{t("ads.images.managerHint")}</p>
       {list.map((img, idx) => (
         <div key={img.id || idx} className="oh-admin-ads__card oh-admin-ads__image-card">
           <div className="oh-admin-ads__image-card-head">
-            <span className="oh-admin-ads__image-index">صورة الإعلان</span>
+            <span className="oh-admin-ads__image-index">{t("ads.images.adImage")}</span>
             <div className="oh-admin-ads__image-card-actions">
               <button type="button" className="btn btn-secondary oh-admin-ads__mini-btn" onClick={() => remove(idx)}>
-                حذف
+                {t("ads.common.delete")}
               </button>
             </div>
           </div>
@@ -52,7 +47,7 @@ export default function AdImageManager({ images, onChange, urlErrors = {}, showE
                 <SafeAdImage src={img.url.trim()} alt={img.alt || ""} className="oh-admin-ads__image-thumb" imgClassName="oh-admin-ads__image-thumb-img" />
               ) : (
                 <div className="oh-admin-ads__image-placeholder" role="presentation">
-                  أضف رابطًا لمعاينة الصورة
+                  {t("ads.images.addUrlForPreview")}
                 </div>
               )}
             </div>
@@ -60,7 +55,7 @@ export default function AdImageManager({ images, onChange, urlErrors = {}, showE
 
           <div className="oh-admin-ads__form-grid">
             <div className="oh-admin-ads__field" style={{ gridColumn: "1 / -1" }}>
-              <label>رابط الصورة</label>
+              <label>{t("ads.images.imageUrl")}</label>
               <input
                 dir="ltr"
                 value={img.url || ""}
@@ -69,19 +64,19 @@ export default function AdImageManager({ images, onChange, urlErrors = {}, showE
                 className={showErrors && urlErrors[idx] ? "oh-admin-ads__input--error" : undefined}
               />
               {showErrors && urlErrors[idx] ? <span className="oh-admin-ads__field-error">{urlErrors[idx]}</span> : null}
-              <span className="oh-admin-ads__field-hint">يجب أن يبدأ الرابط بـ https:// أو مسارًا يبدأ بـ /</span>
+              <span className="oh-admin-ads__field-hint">{t("ads.images.urlHint")}</span>
             </div>
             <div className="oh-admin-ads__field">
-              <label>النص البديل</label>
+              <label>{t("ads.images.altText")}</label>
               <input value={img.alt || ""} onChange={(e) => update(idx, { alt: e.target.value })} />
-              <span className="oh-admin-ads__field-hint">يُستخدم لإتاحة الوصول وللمعاينة عند تعذّر تحميل الصورة</span>
+              <span className="oh-admin-ads__field-hint">{t("ads.images.altHint")}</span>
             </div>
           </div>
         </div>
       ))}
       {list.length < MAX_IMAGES ? (
         <button type="button" className="btn btn-secondary" onClick={add}>
-          + إضافة صورة
+          {t("ads.images.addImage")}
         </button>
       ) : null}
     </div>

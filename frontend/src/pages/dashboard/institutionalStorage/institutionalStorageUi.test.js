@@ -118,14 +118,14 @@ describe("institutional storage frontend wiring", () => {
 
   it("admin internal orders show institutional badge", () => {
     const src = read("src/pages/dashboard/AdminOrdersPage.jsx");
-    assert.match(src, /طلب مؤسسي/);
+    assert.match(src, /ordersAdmin\.listPage\.card\.institutionalOrder/);
     assert.match(src, /isInstitutionalOrder|visibilityScope === "institution"/);
   });
 
   it("institutional wizard assignment is informational only", () => {
     const src = read("src/components/orders/AdminInternalOrderWizard.jsx");
     assert.match(src, /isInstitutionalMode/);
-    assert.match(src, /بعد موافقة المدير الأعلى وإطلاق الطلب/);
+    assert.match(src, /ordersAdmin\.wizard\.assignment\.institutionalHelp2/);
     assert.match(src, /!isClientAudience && !isFakePoolMode && !isInstitutionalMode/);
   });
 

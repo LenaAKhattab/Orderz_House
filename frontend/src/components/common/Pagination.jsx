@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useTranslation } from "../../i18n/LanguageProvider";
 
 function buildPages(currentPage, totalPages, siblingCount) {
   const pages = [];
@@ -29,6 +30,7 @@ export default function Pagination({
   siblingCount = 1,
   className = "",
 }) {
+  const { t } = useTranslation();
   const safeCurrent = Math.max(1, Number(currentPage) || 1);
   const safeTotal = Math.max(1, Number(totalPages) || 1);
   const pageItems = useMemo(
@@ -41,7 +43,7 @@ export default function Pagination({
 
   return (
     <div className={`app-pagination ${className}`.trim()}>
-      <div className="app-pagination__controls" role="navigation" aria-label="الترقيم">
+      <div className="app-pagination__controls" role="navigation" aria-label={t("common.pagination.navAria")}>
         <button
           type="button"
           className="app-pagination__btn app-pagination__btn--next"
@@ -49,7 +51,7 @@ export default function Pagination({
           onClick={() => onPageChange(safeCurrent + 1)}
         >
           <span aria-hidden>←</span>
-          <span>التالي</span>
+          <span>{t("common.pagination.next")}</span>
         </button>
 
         <div className="app-pagination__numbers" aria-hidden={safeTotal <= 1}>
@@ -79,12 +81,14 @@ export default function Pagination({
           disabled={!canPrev}
           onClick={() => onPageChange(safeCurrent - 1)}
         >
-          <span>السابق</span>
+          <span>{t("common.pagination.previous")}</span>
           <span aria-hidden>→</span>
         </button>
       </div>
 
-      <div className="app-pagination__meta">الصفحة {safeCurrent} من {safeTotal}</div>
+      <div className="app-pagination__meta">
+        {t("common.pagination.pageOf", { current: safeCurrent, total: safeTotal })}
+      </div>
     </div>
   );
 }

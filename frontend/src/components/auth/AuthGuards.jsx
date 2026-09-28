@@ -4,6 +4,8 @@ import { ROLE } from "../../constants/authRoutes";
 import { getPostAuthHomePath, userHasPermission } from "../../constants/dashboardPermissions";
 import { AuthRouteSkeleton } from "../ui/AuthRouteSkeleton";
 import Unauthorized from "../../pages/Unauthorized";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/opsAdminResources";
 
 /**
  * `/dashboard` → redirects to the signed-in user’s role dashboard.
@@ -124,6 +126,7 @@ export function RequireRole({ allowedRoles, children }) {
  */
 export function RequirePermission({ permission, children }) {
   const { user, loading } = useAuth();
+  const { t } = useTranslation();
 
   if (loading) {
     return <AuthRouteLoading />;
@@ -144,8 +147,8 @@ export function RequirePermission({ permission, children }) {
 
   return (
     <Unauthorized
-      title="ليس لديك صلاحية"
-      message="ليس لديك صلاحية الوصول إلى هذه الصفحة"
+      title={t("opsAdmin.unauthorized.permissionTitle")}
+      message={t("opsAdmin.unauthorized.permissionMessage")}
     />
   );
 }

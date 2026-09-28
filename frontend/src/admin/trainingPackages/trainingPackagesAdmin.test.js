@@ -55,7 +55,7 @@ describe("training packages admin tab", () => {
     const card = read("../../components/plans/TrainingPlanCard.jsx");
     assert.match(nav, /باقات التدريب/);
     assert.match(nav, /training-packages/);
-    assert.match(page, /إدارة باقات التدريب|SECTION_COPY\.training/);
+    assert.match(page, /planAdmin\.sections\.training/);
     assert.match(page, /تتحكم هذه الباقات|sectionCopy\.hintAr/);
     assert.match(page, /TrainingPackageFormModal/);
     assert.match(app, /SuperAdminTrainingPackagesPage/);

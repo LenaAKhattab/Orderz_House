@@ -1,10 +1,15 @@
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/activationResources";
+
 export default function FreelancerActivationTrialStatusBlock({
   state,
-  isEn = false,
+  isEn: _legacyIsEn,
   activating = false,
   onActivate = null,
   activateError = "",
 }) {
+  const { t, locale } = useTranslation();
+
   if (!state || state.engineEnabled !== true) return null;
 
   const status = String(state.status || "not_started");
@@ -20,16 +25,17 @@ export default function FreelancerActivationTrialStatusBlock({
   const expired = status === "trial_expired_high_intent" || next === "convert_to_silver";
   const applyReady =
     status === "trial_active" && Boolean(state.trial?.trialBidGrantedAt || state.trial?.trialBidGrantReference);
-  const statusLabel = {
-    not_started: isEn ? "Trial not started" : "التجربة غير مفعّلة",
-    eligible: isEn ? "Eligible for trial" : "مؤهل للتجربة",
-    trial_active: isEn ? "Trial active" : "التجربة نشطة",
-    trial_expired_high_intent: isEn ? "Trial expired" : "انتهت التجربة",
-    dormant: isEn ? "Trial dormant" : "التجربة خاملة",
-    final_reactivation_window: isEn ? "Reactivation window" : "نافذة إعادة التفعيل",
-    archived: isEn ? "Trial archived" : "التجربة مؤرشفة",
-    paid_active: isEn ? "Paid membership active" : "اشتراك مدفوع نشط",
-  }[status] || status;
+  const statusLabel =
+    {
+      not_started: t("activation.trial.not_started"),
+      eligible: t("activation.trial.eligible"),
+      trial_active: t("activation.trial.trial_active"),
+      trial_expired_high_intent: t("activation.trial.trial_expired_high_intent"),
+      dormant: t("activation.trial.dormant"),
+      final_reactivation_window: t("activation.trial.final_reactivation_window"),
+      archived: t("activation.trial.archived"),
+      paid_active: t("activation.trial.paid_active"),
+    }[status] || status;
 
   return (
     <div
@@ -41,49 +47,43 @@ export default function FreelancerActivationTrialStatusBlock({
       </p>
       {status === "trial_active" && days != null ? (
         <p className="mb-1 text-[0.82rem] font-semibold text-[color:var(--dash-text-secondary,#4b5563)]">
-          {isEn ? `${days} day(s) remaining` : `${days} يوم متبقية`}
+          {t("activation.trial.daysRemaining", { days })}
         </p>
       ) : null}
       {trialBidLimit != null && trialBidsUsed != null ? (
         <p className="mb-1 text-[0.82rem] font-semibold text-[color:var(--dash-text-secondary,#4b5563)]" data-testid="trial-bid-usage">
-          {isEn
-            ? `Trial bids used ${trialBidsUsed} / ${trialBidLimit}`
-            : `عروض التجربة المستخدمة ${trialBidsUsed} / ${trialBidLimit}`}
+          {t("activation.trial.bidsUsed", { used: trialBidsUsed, limit: trialBidLimit })}
         </p>
       ) : null}
       {status === "trial_active" && (state.trial?.trialBidGrantedAmount != null || trialBidLimit != null) ? (
         <p className="mb-1 text-[0.82rem] font-semibold text-[color:var(--dash-text-secondary,#4b5563)]" data-testid="trial-bids-granted">
-          {isEn
-            ? `Trial bids granted ${state.trial?.trialBidGrantedAmount ?? 0} / ${trialBidLimit}`
-            : `عروض التجربة الممنوحة ${state.trial?.trialBidGrantedAmount ?? 0} / ${trialBidLimit}`}
+          {t("activation.trial.bidsGranted", {
+            granted: state.trial?.trialBidGrantedAmount ?? 0,
+            limit: trialBidLimit,
+          })}
         </p>
       ) : null}
       {trialBidLimit != null && trialBidsUsed != null ? (
         <p className="mb-1 text-[0.82rem] font-semibold text-[color:var(--dash-text-secondary,#4b5563)]" data-testid="trial-apply-allowance">
-          {isEn
-            ? `Remaining trial applies ${Math.max(0, Number(trialBidLimit) - Number(trialBidsUsed))} / ${trialBidLimit}`
-            : `متبقي من تقديمات التجربة ${Math.max(0, Number(trialBidLimit) - Number(trialBidsUsed))} / ${trialBidLimit}`}
+          {t("activation.trial.appliesRemaining", {
+            remaining: Math.max(0, Number(trialBidLimit) - Number(trialBidsUsed)),
+            limit: trialBidLimit,
+          })}
         </p>
       ) : null}
       {dailyLimit != null && dailyUsed != null ? (
         <p className="mb-1 text-[0.82rem] font-semibold text-[color:var(--dash-text-secondary,#4b5563)]" data-testid="trial-daily-usage">
-          {isEn
-            ? `Today ${dailyUsed} / ${dailyLimit}`
-            : `اليوم ${dailyUsed} / ${dailyLimit}`}
+          {t("activation.trial.dailyUsage", { used: dailyUsed, limit: dailyLimit })}
         </p>
       ) : null}
       {successfulWorkCap != null && acceptedWorkCount != null ? (
         <p className="mb-1 text-[0.82rem] font-semibold text-[color:var(--dash-text-secondary,#4b5563)]" data-testid="trial-work-cap">
-          {isEn
-            ? `Accepted ${acceptedWorkCount} / ${successfulWorkCap}`
-            : `المقبول ${acceptedWorkCount} / ${successfulWorkCap}`}
+          {t("activation.trial.acceptedWork", { count: acceptedWorkCount, cap: successfulWorkCap })}
         </p>
       ) : null}
       {applyReady ? (
         <p className="mb-1 text-[0.82rem] font-semibold text-[color:var(--dash-text-secondary,#4b5563)]" data-testid="trial-apply-ready">
-          {isEn
-            ? "Trial is active. You can apply to Mini Articles with trial Bids."
-            : "التجربة نشطة. يمكنك التقديم على مقالات Mini Article بعروض التجربة."}
+          {t("activation.trial.applyReady")}
         </p>
       ) : null}
       {activateError ? (
@@ -92,18 +92,16 @@ export default function FreelancerActivationTrialStatusBlock({
         </p>
       ) : null}
       <p className="mb-0 text-[0.82rem] font-semibold text-[color:var(--dash-text-secondary,#4b5563)]">
-        {isEn ? state.messageEn || state.message : state.message}
+        {locale === "en" ? state.messageEn || state.message : state.message}
       </p>
       {next && next !== "none" ? (
         <p className="mb-0 mt-1 text-[0.78rem] font-bold text-[color:var(--dash-primary,#2f3b65)]" data-next-action={next}>
-          {isEn ? `Next: ${next}` : `التالي: ${next}`}
+          {t("activation.trial.nextAction", { action: next })}
         </p>
       ) : null}
       {expired ? (
         <p className="mb-0 mt-2 text-[0.86rem] font-extrabold text-[color:var(--dash-primary,#2f3b65)]" data-testid="silver-cta-placeholder">
-          {isEn
-            ? "Your work trial has ended. Continue with Silver."
-            : "انتهت تجربة العمل. للمتابعة، انتقل إلى Silver."}
+          {t("activation.trial.expiredCta")}
         </p>
       ) : null}
       {state.canActivate && typeof onActivate === "function" ? (
@@ -113,13 +111,7 @@ export default function FreelancerActivationTrialStatusBlock({
           disabled={activating}
           onClick={() => void onActivate()}
         >
-          {activating
-            ? isEn
-              ? "Starting…"
-              : "جاري البدء…"
-            : isEn
-              ? "Start trial"
-              : "بدء التجربة"}
+          {activating ? t("activation.trial.starting") : t("activation.trial.startTrial")}
         </button>
       ) : null}
     </div>

@@ -12,6 +12,8 @@ import {
   FOOTER_CONTACT_CENTER_FALLBACKS,
   coalesceFooterVisible,
 } from "../../constants/footerSettings";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/siteEditorResources";
 import {
   getSuperAdminFooterSettingsRequest,
   updateSuperAdminFooterContactCenterRequest,
@@ -19,11 +21,7 @@ import {
 import { useToast } from "../../components/ui/toastContext";
 import "./superAdminSitePages.css";
 
-function errorMessage(err) {
-  return err?.response?.data?.message || "تعذر تنفيذ العملية. حاول مجدداً.";
-}
-
-function VisibilityToggle({ label, checked, onChange, disabled }) {
+function VisibilityToggle({ label, checked, onChange, disabled, t }) {
   return (
     <label className="oh-site-page-form__visibility" data-on={checked ? "true" : "false"}>
       <input
@@ -35,21 +33,22 @@ function VisibilityToggle({ label, checked, onChange, disabled }) {
         aria-checked={checked}
         aria-label={label}
       />
-      <span>{checked ? "ظاهر" : "مخفي"}</span>
+      <span>{checked ? t("siteEditor.common.visible") : t("siteEditor.common.hidden")}</span>
     </label>
   );
 }
 
-function FormField({ label, visible, onVisibleChange, visibilityLabel, children, disabled }) {
+function FormField({ label, visible, onVisibleChange, visibilityLabel, children, disabled, t }) {
   return (
     <div className="oh-site-page-form__field">
       <div className="oh-site-page-form__field-head">
         <span className="oh-site-page-form__label">{label}</span>
         <VisibilityToggle
-          label={visibilityLabel || `إظهار ${label} في الموقع`}
+          label={visibilityLabel || t("siteEditor.common.showFieldOnSite", { label })}
           checked={visible}
           onChange={onVisibleChange}
           disabled={disabled}
+          t={t}
         />
       </div>
       {children}
@@ -58,6 +57,7 @@ function FormField({ label, visible, onVisibleChange, visibilityLabel, children,
 }
 
 export default function SuperAdminEditWebsiteFooterContactCenterPage() {
+  const { t } = useTranslation();
   const { showToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -69,6 +69,11 @@ export default function SuperAdminEditWebsiteFooterContactCenterPage() {
   const [visible, setVisible] = useState(true);
   const [helperTextVisible, setHelperTextVisible] = useState(true);
   const [buttonVisible, setButtonVisible] = useState(true);
+
+  const operationError = useCallback(
+    (err) => err?.response?.data?.message || t("siteEditor.errors.operationFailed"),
+    [t],
+  );
 
   const applyContactCenter = useCallback((next) => {
     const snapshot = {
@@ -94,12 +99,12 @@ export default function SuperAdminEditWebsiteFooterContactCenterPage() {
       const res = await getSuperAdminFooterSettingsRequest();
       applyContactCenter(res?.data?.settings?.contactCenter || null);
     } catch (err) {
-      setError(errorMessage(err));
+      setError(operationError(err));
       setLoaded(false);
     } finally {
       setLoading(false);
     }
-  }, [applyContactCenter]);
+  }, [applyContactCenter, operationError]);
 
   useEffect(() => {
     loadSettings();
@@ -126,9 +131,9 @@ export default function SuperAdminEditWebsiteFooterContactCenterPage() {
         buttonVisible,
       });
       applyContactCenter(res?.data?.contactCenter || null);
-      showToast({ type: "success", message: "تم حفظ مركز التواصل بنجاح." });
+      showToast({ type: "success", message: t("siteEditor.footerContactCenter.toastSaved") });
     } catch (err) {
-      setError(errorMessage(err));
+      setError(operationError(err));
     } finally {
       setSaving(false);
     }
@@ -137,22 +142,22 @@ export default function SuperAdminEditWebsiteFooterContactCenterPage() {
   return (
     <DashboardShell>
       <DashboardPageHeader
-        title="مركز التواصل"
-        description="تعديل محتوى مركز التواصل الظاهر في تذييل الموقع."
+        title={t("siteEditor.footerContactCenter.pageTitle")}
+        description={t("siteEditor.footerContactCenter.pageDescription")}
         breadcrumbs={editWebsiteFooterBreadcrumbs("dashboard.breadcrumbs.footerContactCenter")}
       />
 
-      <DashboardSection title="مركز التواصل">
+      <DashboardSection title={t("siteEditor.footerContactCenter.sectionTitle")}>
         <p className="oh-site-pages-toolbar__hint" style={{ marginBottom: 12 }}>
-          <Link to={FOOTER_EDIT_BASE}>← العودة إلى أقسام التذييل</Link>
+          <Link to={FOOTER_EDIT_BASE}>{t("siteEditor.common.backToFooterSections")}</Link>
         </p>
-        {loading ? <DashboardLoadingState label="جاري تحميل الإعدادات…" /> : null}
+        {loading ? <DashboardLoadingState label={t("siteEditor.common.loadingSettings")} /> : null}
         {!loading && error && !loaded ? (
           <DashboardErrorState
             message={error}
             actions={
               <Button type="button" variant="secondary" onClick={loadSettings}>
-                إعادة المحاولة
+                {t("siteEditor.common.retry")}
               </Button>
             }
           />
@@ -165,22 +170,26 @@ export default function SuperAdminEditWebsiteFooterContactCenterPage() {
 
               <div className="oh-site-page-form__field oh-site-page-form__section-toggle">
                 <div className="oh-site-page-form__field-head">
-                  <span className="oh-site-page-form__label">إظهار مركز التواصل في تذييل الموقع</span>
+                  <span className="oh-site-page-form__label">
+                    {t("siteEditor.footerContactCenter.showContactCenterInFooter")}
+                  </span>
                   <VisibilityToggle
-                    label="إظهار مركز التواصل في تذييل الموقع"
+                    label={t("siteEditor.footerContactCenter.showContactCenterInFooter")}
                     checked={visible}
                     onChange={(e) => setVisible(e.target.checked)}
                     disabled={saving}
+                    t={t}
                   />
                 </div>
               </div>
 
               <FormField
-                label="النص التوضيحي"
+                label={t("siteEditor.footerContactCenter.helperTextLabel")}
                 visible={helperTextVisible}
                 onVisibleChange={(e) => setHelperTextVisible(e.target.checked)}
-                visibilityLabel="إظهار النص التوضيحي"
+                visibilityLabel={t("siteEditor.footerContactCenter.showHelperText")}
                 disabled={saving}
+                t={t}
               >
                 <input
                   className="oh-site-page-form__input"
@@ -193,11 +202,12 @@ export default function SuperAdminEditWebsiteFooterContactCenterPage() {
               </FormField>
 
               <FormField
-                label="نص الزر"
+                label={t("siteEditor.footerContactCenter.buttonTextLabel")}
                 visible={buttonVisible}
                 onVisibleChange={(e) => setButtonVisible(e.target.checked)}
-                visibilityLabel="إظهار زر مركز التواصل"
+                visibilityLabel={t("siteEditor.footerContactCenter.showContactCenterButton")}
                 disabled={saving}
+                t={t}
               >
                 <input
                   className="oh-site-page-form__input"
@@ -210,13 +220,12 @@ export default function SuperAdminEditWebsiteFooterContactCenterPage() {
               </FormField>
 
               <p className="oh-site-pages-toolbar__hint" style={{ marginTop: 4, marginBottom: 12 }}>
-                زر مركز التواصل يوجّه دائماً إلى صفحة المشاكل والاقتراحات حسب دور المستخدم، أو إلى تسجيل الدخول
-                للزائر.
+                {t("siteEditor.footerContactCenter.buttonBehaviorHint")}
               </p>
 
               <div className="oh-site-page-form__actions">
                 <Button type="submit" disabled={saving || !isDirty}>
-                  {saving ? "جاري الحفظ…" : "حفظ التعديلات"}
+                  {saving ? t("siteEditor.common.saving") : t("siteEditor.common.saveChanges")}
                 </Button>
               </div>
             </div>
@@ -226,4 +235,3 @@ export default function SuperAdminEditWebsiteFooterContactCenterPage() {
     </DashboardShell>
   );
 }
-

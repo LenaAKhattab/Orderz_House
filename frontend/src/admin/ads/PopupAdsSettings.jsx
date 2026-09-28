@@ -10,6 +10,8 @@ import { useToast } from "../../components/ui/toastContext";
 import DashboardLoadingState from "../../components/dashboard/DashboardLoadingState";
 import PopupAdModal from "../../components/ads/PopupAdModal";
 import "./popupAdsSettings.css";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/adsResources";
 
 const EMPTY_FORM = {
   enabled: false,
@@ -48,27 +50,6 @@ function mapAdToForm(ad) {
     startDate: ad.startDate ? String(ad.startDate).slice(0, 16) : "",
     endDate: ad.endDate ? String(ad.endDate).slice(0, 16) : "",
   };
-}
-
-function audienceLabel(value) {
-  const map = {
-    all: "الجميع",
-    guests: "الزوار فقط",
-    freelancer: "المستقلون",
-    client: "العملاء",
-    staff: "الإدارة",
-  };
-  return map[value] || value;
-}
-
-function pageScopeLabel(value) {
-  const map = {
-    all: "كل الصفحات",
-    home: "الصفحة الرئيسية",
-    public: "الموقع العام",
-    dashboard: "لوحات التحكم",
-  };
-  return map[value] || value;
 }
 
 function buildPayload(form) {
@@ -116,6 +97,7 @@ export default function PopupAdsSettings({
   actionHandlersRef,
   onActionMetaChange,
 }) {
+  const { t } = useTranslation();
   const toast = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -149,11 +131,11 @@ export default function PopupAdsSettings({
       }
       setFieldErrors({});
     } catch (err) {
-      toast.push({ type: "error", title: "تعذر التحميل", message: err?.response?.data?.message || "" });
+      toast.push({ type: "error", title: t("ads.toast.loadFailedTitle"), message: err?.response?.data?.message || "" });
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [toast, t]);
 
   useEffect(() => {
     if (!open) {
@@ -211,7 +193,7 @@ export default function PopupAdsSettings({
     try {
       if (editingId) {
         await adminUpdatePopupAdRequest(editingId, payload);
-        toast.push({ type: "success", title: "تم الحفظ", message: "تم تحديث إعلان النافذة المنبثقة." });
+        toast.push({ type: "success", title: t("ads.toast.savedTitle"), message: t("ads.popup.updatedMessage") });
       } else {
         const res = await adminCreatePopupAdRequest(payload);
         const created = res?.data?.ad;
@@ -219,7 +201,7 @@ export default function PopupAdsSettings({
           setEditingId(created.id);
           setIsCreating(false);
         }
-        toast.push({ type: "success", title: "تم الإنشاء", message: "تم إنشاء إعلان النافذة المنبثقة." });
+        toast.push({ type: "success", title: t("ads.toast.createdTitle"), message: t("ads.popup.createdMessage") });
       }
       await load();
     } catch (err) {
@@ -227,8 +209,8 @@ export default function PopupAdsSettings({
       if (errs && typeof errs === "object") setFieldErrors(errs);
       toast.push({
         type: "error",
-        title: "فشل الحفظ",
-        message: err?.response?.data?.message || "تحقق من الحقول.",
+        title: t("ads.toast.saveFailedTitle"),
+        message: err?.response?.data?.message || t("ads.toast.checkFields"),
       });
     } finally {
       setSaving(false);
@@ -237,17 +219,17 @@ export default function PopupAdsSettings({
 
   const onDelete = async () => {
     if (!editingId) return;
-    if (!window.confirm("حذف هذا الإعلان المنبثق؟")) return;
+    if (!window.confirm(t("ads.popup.deleteConfirm"))) return;
     setDeleting(true);
     try {
       await adminDeletePopupAdRequest(editingId);
-      toast.push({ type: "success", title: "تم الحذف", message: "" });
+      toast.push({ type: "success", title: t("ads.toast.deletedTitle"), message: "" });
       setEditingId(null);
       setIsCreating(false);
       setForm({ ...EMPTY_FORM });
       await load({ keepSelection: false });
     } catch (err) {
-      toast.push({ type: "error", title: "تعذر الحذف", message: err?.response?.data?.message || "" });
+      toast.push({ type: "error", title: t("ads.toast.deleteFailedTitle"), message: err?.response?.data?.message || "" });
     } finally {
       setDeleting(false);
     }
@@ -262,9 +244,9 @@ export default function PopupAdsSettings({
       const res = await adminUploadAdImageRequest(file, "main");
       const url = res?.data?.url;
       if (url) patch("imageUrl", url);
-      toast.push({ type: "success", title: "تم رفع الصورة", message: "" });
+      toast.push({ type: "success", title: t("ads.toast.uploadSuccessTitle"), message: "" });
     } catch (err) {
-      toast.push({ type: "error", title: "فشل الرفع", message: err?.response?.data?.message || "" });
+      toast.push({ type: "error", title: t("ads.toast.uploadFailedTitle"), message: err?.response?.data?.message || "" });
     } finally {
       setUploading(false);
     }
@@ -293,15 +275,15 @@ export default function PopupAdsSettings({
   if (!open) return null;
 
   if (loading) {
-    return <DashboardLoadingState label="جارٍ تحميل إعلانات النوافذ المنبثقة…" />;
+    return <DashboardLoadingState label={t("ads.popup.loading")} />;
   }
 
   return (
     <div className="oh-popup-ads-settings">
       <div className="oh-popup-ads-settings__list-head">
-        <span className="oh-popup-ads-settings__list-title">الإعلانات الحالية</span>
+        <span className="oh-popup-ads-settings__list-title">{t("ads.popup.currentList")}</span>
         <button type="button" className={`btn btn-secondary btn-sm${isCreating ? " is-active" : ""}`} onClick={startNew}>
-          إعلان جديد
+          {t("ads.popup.newAd")}
         </button>
       </div>
 
@@ -314,64 +296,61 @@ export default function PopupAdsSettings({
                 className={`oh-popup-ads-settings__list-item${editingId === ad.id ? " is-active" : ""}`}
                 onClick={() => selectAd(ad)}
               >
-                <span className="oh-popup-ads-settings__list-item-title">{ad.titleAr || ad.titleEn || "بدون عنوان"}</span>
+                <span className="oh-popup-ads-settings__list-item-title">
+                  {ad.titleAr || ad.titleEn || t("ads.common.noTitle")}
+                </span>
                 <span className="oh-popup-ads-settings__list-item-meta">
-                  {pageScopeLabel(ad.pageScope)} · {audienceLabel(ad.audience)}
-                  {ad.enabled ? " · مفعّل" : " · معطّل"}
+                  {t(`ads.popup.pageScopeOptions.${ad.pageScope}`)} · {t(`ads.popup.audienceOptions.${ad.audience}`)}
+                  {ad.enabled ? t("ads.common.enabledSuffix") : t("ads.common.disabledSuffix")}
                 </span>
               </button>
             </li>
           ))}
         </ul>
       ) : (
-        <p className="oh-popup-ads-settings__empty">لا توجد نوافذ منبثقة بعد. أنشئ إعلاناً جديداً.</p>
+        <p className="oh-popup-ads-settings__empty">{t("ads.popup.empty")}</p>
       )}
 
       {!detailOpen ? (
         <div className="oh-popup-ads-settings__placeholder" role="status">
-          <p className="oh-popup-ads-settings__placeholder-text">
-            اختر إعلاناً من القائمة لعرض التفاصيل أو اضغط إعلان جديد لإنشاء إعلان.
-          </p>
-          <p className="oh-popup-ads-settings__placeholder-text-en" lang="en" dir="ltr">
-            Select an ad from the list to view details, or click New Ad to create one.
-          </p>
+          <p className="oh-popup-ads-settings__placeholder-text">{t("ads.popup.selectHint")}</p>
         </div>
       ) : (
       <div className="oh-popup-ads-settings__grid">
         <div className="oh-popup-ads-settings__form">
           <label className="oh-popup-ads-settings__toggle">
             <input type="checkbox" checked={form.enabled} onChange={(e) => patch("enabled", e.target.checked)} />
-            <span>تفعيل الإعلان المنبثق</span>
+            <span>{t("ads.popup.enable")}</span>
           </label>
 
           <label className="oh-popup-ads-settings__field">
-            <span>العنوان بالعربية</span>
+            <span>{t("ads.popup.titleAr")}</span>
             <input type="text" maxLength={200} value={form.titleAr} onChange={(e) => patch("titleAr", e.target.value)} />
             {fieldErrors.titleAr ? <span className="oh-popup-ads-settings__error">{fieldErrors.titleAr}</span> : null}
           </label>
 
           <label className="oh-popup-ads-settings__field">
-            <span>العنوان بالإنجليزية (اختياري)</span>
+            <span>{t("ads.popup.titleEn")}</span>
             <input type="text" maxLength={200} value={form.titleEn} onChange={(e) => patch("titleEn", e.target.value)} />
             {fieldErrors.titleEn ? <span className="oh-popup-ads-settings__error">{fieldErrors.titleEn}</span> : null}
           </label>
 
           <label className="oh-popup-ads-settings__field">
-            <span>النص بالعربية</span>
+            <span>{t("ads.popup.bodyAr")}</span>
             <textarea rows={3} maxLength={2000} value={form.bodyAr} onChange={(e) => patch("bodyAr", e.target.value)} />
           </label>
 
           <label className="oh-popup-ads-settings__field">
-            <span>النص بالإنجليزية (اختياري)</span>
+            <span>{t("ads.popup.bodyEn")}</span>
             <textarea rows={3} maxLength={2000} value={form.bodyEn} onChange={(e) => patch("bodyEn", e.target.value)} />
           </label>
 
           <label className="oh-popup-ads-settings__field">
-            <span>صورة (رابط أو رفع)</span>
+            <span>{t("ads.popup.imageField")}</span>
             <input type="url" value={form.imageUrl} onChange={(e) => patch("imageUrl", e.target.value)} dir="ltr" placeholder="https://…" />
             <div className="oh-popup-ads-settings__upload-row">
               <label className="btn btn-secondary btn-sm oh-popup-ads-settings__upload-btn">
-                {uploading ? "جارٍ الرفع…" : "رفع صورة"}
+                {uploading ? t("ads.common.uploading") : t("ads.popup.uploadImage")}
                 <input type="file" accept="image/*" hidden disabled={uploading} onChange={(e) => void onImagePick(e)} />
               </label>
             </div>
@@ -380,12 +359,12 @@ export default function PopupAdsSettings({
 
           <div className="oh-popup-ads-settings__row">
             <label className="oh-popup-ads-settings__field">
-              <span>نص الزر</span>
+              <span>{t("ads.popup.buttonText")}</span>
               <input type="text" maxLength={120} value={form.ctaText} onChange={(e) => patch("ctaText", e.target.value)} />
               {fieldErrors.ctaText ? <span className="oh-popup-ads-settings__error">{fieldErrors.ctaText}</span> : null}
             </label>
             <label className="oh-popup-ads-settings__field">
-              <span>رابط الزر</span>
+              <span>{t("ads.popup.buttonUrl")}</span>
               <input type="url" value={form.ctaUrl} onChange={(e) => patch("ctaUrl", e.target.value)} dir="ltr" />
               {fieldErrors.ctaUrl ? <span className="oh-popup-ads-settings__error">{fieldErrors.ctaUrl}</span> : null}
             </label>
@@ -393,63 +372,61 @@ export default function PopupAdsSettings({
 
           <label className="oh-popup-ads-settings__toggle">
             <input type="checkbox" checked={form.openInNewTab} onChange={(e) => patch("openInNewTab", e.target.checked)} />
-            <span>فتح الرابط في تبويب جديد</span>
+            <span>{t("ads.popup.openNewTab")}</span>
           </label>
 
           <div className="oh-popup-ads-settings__row">
             <label className="oh-popup-ads-settings__field">
-              <span>الجمهور</span>
+              <span>{t("ads.popup.audience")}</span>
               <select value={form.audience} onChange={(e) => patch("audience", e.target.value)}>
-                <option value="all">الجميع</option>
-                <option value="guests">الزوار فقط</option>
-                <option value="freelancer">المستقلون</option>
-                <option value="client">العملاء</option>
-                <option value="staff">الإدارة</option>
+                <option value="all">{t("ads.popup.audienceOptions.all")}</option>
+                <option value="guests">{t("ads.popup.audienceOptions.guests")}</option>
+                <option value="freelancer">{t("ads.popup.audienceOptions.freelancer")}</option>
+                <option value="client">{t("ads.popup.audienceOptions.client")}</option>
+                <option value="staff">{t("ads.popup.audienceOptions.staff")}</option>
               </select>
             </label>
             <label className="oh-popup-ads-settings__field">
-              <span>نطاق الصفحات</span>
+              <span>{t("ads.popup.pageScope")}</span>
               <select value={form.pageScope} onChange={(e) => patch("pageScope", e.target.value)}>
-                <option value="all">كل الصفحات</option>
-                <option value="home">الصفحة الرئيسية</option>
-                <option value="public">الموقع العام (بدون لوحة التحكم)</option>
-                <option value="dashboard">لوحات التحكم</option>
+                <option value="all">{t("ads.popup.pageScopeOptions.all")}</option>
+                <option value="home">{t("ads.popup.pageScopeOptions.home")}</option>
+                <option value="public">{t("ads.popup.pageScopeOptions.public")}</option>
+                <option value="dashboard">{t("ads.popup.pageScopeOptions.dashboard")}</option>
               </select>
             </label>
           </div>
 
           <label className="oh-popup-ads-settings__field">
-            <span>تكرار الظهور</span>
+            <span>{t("ads.popup.frequency")}</span>
             <select value={form.frequency} onChange={(e) => patch("frequency", e.target.value)}>
-              <option value="session">مرة لكل جلسة</option>
-              <option value="day">مرة يومياً</option>
-              <option value="every_visit">كل زيارة لصفحة</option>
-              <option value="first_login_only">عند أول تسجيل دخول فقط</option>
-              <option value="every_login">عند كل تسجيل دخول</option>
+              <option value="session">{t("ads.popup.frequencyOptions.session")}</option>
+              <option value="day">{t("ads.popup.frequencyOptions.day")}</option>
+              <option value="every_visit">{t("ads.popup.frequencyOptions.every_visit")}</option>
+              <option value="first_login_only">{t("ads.popup.frequencyOptions.first_login_only")}</option>
+              <option value="every_login">{t("ads.popup.frequencyOptions.every_login")}</option>
             </select>
             {form.frequency === "first_login_only" ? (
               <span className="oh-popup-ads-settings__field-note">
-                يعمل هذا الخيار للمستخدمين المسجّلين فقط. يظهر الإعلان مرة واحدة بعد تسجيل الدخول ولن يُعرض مرة أخرى بعد
-                إغلاقه أو مشاهدته. لن يظهر للزوار غير المسجّلين.
-                {form.audience === "guests" ? " مع جمهور «الزوار فقط» لن يظهر هذا الإعلان." : ""}
+                {t("ads.popup.firstLoginHint")}
+                {form.audience === "guests" ? t("ads.popup.firstLoginGuests") : ""}
               </span>
             ) : null}
             {form.frequency === "every_login" ? (
               <span className="oh-popup-ads-settings__field-note">
-                يعمل هذا الخيار للمستخدمين المسجّلين فقط. يظهر الإعلان بعد كل تسجيل دخول، ولا يُعرض مرة أخرى خلال نفس
-                جلسة الدخول بعد إغلاقه. لن يظهر للزوار غير المسجّلين.
-                {form.audience === "guests" ? " مع جمهور «الزوار فقط» لن يظهر هذا الإعلان." : ""}
+                {t("ads.popup.everyLoginHint")}
+                {form.audience === "guests" ? t("ads.popup.firstLoginGuests") : ""}
               </span>
             ) : null}
           </label>
 
           <div className="oh-popup-ads-settings__row">
             <label className="oh-popup-ads-settings__field">
-              <span>بداية العرض (اختياري)</span>
+              <span>{t("ads.popup.scheduleStart")}</span>
               <input type="datetime-local" value={form.startDate} onChange={(e) => patch("startDate", e.target.value)} />
             </label>
             <label className="oh-popup-ads-settings__field">
-              <span>نهاية العرض (اختياري)</span>
+              <span>{t("ads.popup.scheduleEnd")}</span>
               <input type="datetime-local" value={form.endDate} onChange={(e) => patch("endDate", e.target.value)} />
             </label>
           </div>
@@ -457,35 +434,29 @@ export default function PopupAdsSettings({
           {actionsInFooter ? null : (
             <div className="oh-popup-ads-settings__actions">
               <button type="button" className="btn btn-secondary" disabled={!canPreview} onClick={() => setPreviewOpen(true)}>
-                معاينة
+                {t("ads.common.preview")}
               </button>
               {editingId ? (
                 <button type="button" className="btn btn-secondary" disabled={saving || deleting} onClick={() => void onDelete()}>
-                  {deleting ? "جارٍ الحذف…" : "حذف"}
+                  {deleting ? t("ads.common.deleting") : t("ads.common.delete")}
                 </button>
               ) : null}
               <button type="button" className="btn btn-primary" disabled={saving || deleting} onClick={() => void onSave()}>
-                {saving ? "جارٍ الحفظ…" : "حفظ"}
+                {saving ? t("ads.common.saving") : t("ads.common.save")}
               </button>
             </div>
           )}
         </div>
 
-        <aside className="oh-popup-ads-settings__hint" aria-label="إرشادات">
-          <p className="oh-popup-ads-settings__hint-title">كيف تعمل النوافذ المنبثقة؟</p>
+        <aside className="oh-popup-ads-settings__hint" aria-label={t("ads.common.guidelines")}>
+          <p className="oh-popup-ads-settings__hint-title">{t("ads.popup.hintTitle")}</p>
           <ul className="oh-popup-ads-settings__hint-list">
-            <li>يُعرض إعلان واحد فقط في كل مرة حسب الترتيب.</li>
-            <li>بعد الإغلاق، يُحترم خيار «تكرار الظهور» (جلسة / يوم / زيارة / أول تسجيل دخول / كل تسجيل دخول).</li>
-            <li>
-              عند اختيار «عند أول تسجيل دخول فقط»، يظهر الإعلان مرة واحدة فقط للمستخدم بعد أول تسجيل دخول، ولن يظهر له
-              مرة أخرى بعد إغلاقه أو مشاهدته.
-            </li>
-            <li>
-              عند اختيار «عند كل تسجيل دخول»، يظهر الإعلان بعد كل تسجيل دخول ولا يُعرض مرة أخرى خلال نفس جلسة الدخول
-              بعد إغلاقه.
-            </li>
-            <li>الجمهور يُحدَّد حسب دور المستخدم أو كونه زائراً.</li>
-            <li>يمكن جدولة العرض بتواريخ البداية والنهاية.</li>
+            <li>{t("ads.popup.hint1")}</li>
+            <li>{t("ads.popup.hint2")}</li>
+            <li>{t("ads.popup.hint3")}</li>
+            <li>{t("ads.popup.hint4")}</li>
+            <li>{t("ads.popup.hint5")}</li>
+            <li>{t("ads.popup.hint6")}</li>
           </ul>
         </aside>
       </div>

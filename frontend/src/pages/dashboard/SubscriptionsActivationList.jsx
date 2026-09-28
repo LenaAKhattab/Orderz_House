@@ -1,4 +1,6 @@
 import StatusBadge from "../../components/dashboard/StatusBadge";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/subscriptionsResources";
 import {
   activationStatusLabel,
   formatAssignedByAdminLabel,
@@ -24,20 +26,11 @@ function activationStatusTone(status) {
   return "neutral";
 }
 
-function subscriptionCountryHint(sub) {
-  const line = formatSubscriptionPaymentCountry({
-    countryCode: sub.paymentCountryCode,
-    paymentStatus: sub.paymentStatus,
-  });
-  if (!line || line === "غير معروف") return null;
-  return line;
-}
-
-function ActivationRowActions({ sub, submittingId, onActivate }) {
+function ActivationRowActions({ sub, submittingId, onActivate, t }) {
   if (isDashboardAdminAssignedSubscription(sub)) {
     return (
       <div className="oh-sa-subs-actions oh-sa-subs-actions--activation">
-        <StatusBadge tone="admin_assigned">تم الإسناد من الإدارة</StatusBadge>
+        <StatusBadge tone="admin_assigned">{t("subscriptions.activationList.adminAssignedBadge")}</StatusBadge>
       </div>
     );
   }
@@ -50,7 +43,7 @@ function ActivationRowActions({ sub, submittingId, onActivate }) {
   return (
     <div className="oh-sa-subs-actions oh-sa-subs-actions--activation">
       <button type="button" className="btn btn-secondary btn-sm" disabled={busy} onClick={() => onActivate(sub.id)}>
-        {busy ? "جارٍ التفعيل…" : "تفعيل الآن"}
+        {busy ? t("subscriptions.activationList.activating") : t("subscriptions.activationList.activateNow")}
       </button>
     </div>
   );
@@ -87,6 +80,17 @@ export default function SubscriptionsActivationList({
   onActivate,
   loading = false,
 }) {
+  const { t } = useTranslation();
+
+  function subscriptionCountryHint(sub) {
+    const line = formatSubscriptionPaymentCountry({
+      countryCode: sub.paymentCountryCode,
+      paymentStatus: sub.paymentStatus,
+    });
+    if (!line || line === t("subscriptions.common.unknownCountry")) return null;
+    return line;
+  }
+
   if (loading) {
     return view === "table" ? (
       <ActivationTableSkeleton />
@@ -105,7 +109,7 @@ export default function SubscriptionsActivationList({
   }
 
   const planTitle = (sub) => resolveSubscriptionPlanTitle(sub, planTitleById) || "—";
-  const assignedByLabel = (sub) => formatAssignedByAdminLabel(sub);
+  const assignedByLabel = (sub) => formatAssignedByAdminLabel(sub, t);
 
   if (view === "table") {
     return (
@@ -123,14 +127,14 @@ export default function SubscriptionsActivationList({
           </colgroup>
           <thead>
             <tr>
-              <th className="oh-sa-act-col-id">رقم الاشتراك</th>
-              <th className="oh-sa-act-col-freelancer">المستقل</th>
-              <th className="oh-sa-act-col-plan">الباقة</th>
-              <th className="oh-sa-act-col-payment">حالة الدفع</th>
-              <th className="oh-sa-act-col-activation">حالة التفعيل</th>
-              <th className="oh-sa-act-col-assigned">تاريخ الإسناد</th>
-              <th className="oh-sa-act-col-paid">تاريخ الدفع</th>
-              <th className="oh-sa-act-col-actions">إجراءات</th>
+              <th className="oh-sa-act-col-id">{t("subscriptions.activationList.colId")}</th>
+              <th className="oh-sa-act-col-freelancer">{t("subscriptions.activationList.colFreelancer")}</th>
+              <th className="oh-sa-act-col-plan">{t("subscriptions.activationList.colPlan")}</th>
+              <th className="oh-sa-act-col-payment">{t("subscriptions.activationList.colPayment")}</th>
+              <th className="oh-sa-act-col-activation">{t("subscriptions.activationList.colActivation")}</th>
+              <th className="oh-sa-act-col-assigned">{t("subscriptions.activationList.colAssigned")}</th>
+              <th className="oh-sa-act-col-paid">{t("subscriptions.activationList.colPaid")}</th>
+              <th className="oh-sa-act-col-actions">{t("subscriptions.activationList.colActions")}</th>
             </tr>
           </thead>
           <tbody>
@@ -139,6 +143,7 @@ export default function SubscriptionsActivationList({
               const subline = formatFreelancerDisplaySubline(s);
               const plan = planTitle(s);
               const adminAssigned = isDashboardAdminAssignedSubscription(s);
+              const byAdmin = assignedByLabel(s);
               return (
                 <tr key={s.id} className={adminAssigned ? "oh-sa-activation-row--admin" : undefined}>
                   <td className="oh-sa-act-col-id oh-sa-subs-table__id">#{s.id}</td>
@@ -151,9 +156,9 @@ export default function SubscriptionsActivationList({
                         {subline}
                       </span>
                     ) : null}
-                    {assignedByLabel(s) ? (
-                      <span className="oh-sa-subs-table__sub" title={assignedByLabel(s)}>
-                        إسناد: {assignedByLabel(s)}
+                    {byAdmin ? (
+                      <span className="oh-sa-subs-table__sub" title={byAdmin}>
+                        {t("subscriptions.activationList.assignedBy")} {byAdmin}
                       </span>
                     ) : null}
                     {subscriptionCountryHint(s) ? (
@@ -164,11 +169,13 @@ export default function SubscriptionsActivationList({
                     {plan}
                   </td>
                   <td className="oh-sa-act-col-payment oh-sa-subs-table__payment">
-                    <StatusBadge tone={subscriptionPaymentTone(s)}>{subscriptionPaymentLabel(s)}</StatusBadge>
+                    <StatusBadge tone={subscriptionPaymentTone(s)}>
+                      {subscriptionPaymentLabel(s, t)}
+                    </StatusBadge>
                   </td>
                   <td className="oh-sa-act-col-activation oh-sa-subs-table__status">
                     <StatusBadge tone={activationStatusTone(s.activationStatus)}>
-                      {activationStatusLabel(s.activationStatus)}
+                      {activationStatusLabel(s.activationStatus, t)}
                     </StatusBadge>
                   </td>
                   <td className="oh-sa-act-col-assigned oh-sa-subs-table__date">
@@ -178,7 +185,7 @@ export default function SubscriptionsActivationList({
                     {subscriptionPaymentDateTableCell(s, formatSubscriptionAdminDateTime)}
                   </td>
                   <td className="oh-sa-act-col-actions oh-sa-subs-table__actions">
-                    <ActivationRowActions sub={s} submittingId={submittingId} onActivate={onActivate} />
+                    <ActivationRowActions sub={s} submittingId={submittingId} onActivate={onActivate} t={t} />
                   </td>
                 </tr>
               );
@@ -206,11 +213,11 @@ export default function SubscriptionsActivationList({
           >
             <div className="oh-sa-activation-card__head">
               <span className="oh-sa-activation-card__id" dir="ltr">
-                اشتراك #{s.id}
+                {t("subscriptions.activationList.subscriptionLabel", { id: s.id })}
               </span>
               {adminAssigned ? (
                 <StatusBadge tone="admin_assigned" className="oh-sa-activation-card__kind">
-                  إسناد إداري
+                  {t("subscriptions.activationList.adminAssignTag")}
                 </StatusBadge>
               ) : null}
             </div>
@@ -219,35 +226,43 @@ export default function SubscriptionsActivationList({
               {subline ? <p className="oh-sa-activation-card__meta">{subline}</p> : null}
               {countryHint ? <p className="oh-sa-activation-card__meta sa-sub-country">{countryHint}</p> : null}
               <div className="oh-sa-activation-card__row">
-                <span>الباقة</span>
+                <span>{t("subscriptions.activationList.planLabel")}</span>
                 <strong>{plan}</strong>
               </div>
               <div className="oh-sa-activation-card__row">
-                <span>حالة الدفع</span>
-                <StatusBadge tone={subscriptionPaymentTone(s)}>{subscriptionPaymentLabel(s)}</StatusBadge>
+                <span>{t("subscriptions.activationList.paymentLabel")}</span>
+                <StatusBadge tone={subscriptionPaymentTone(s)}>{subscriptionPaymentLabel(s, t)}</StatusBadge>
               </div>
               <div className="oh-sa-activation-card__row">
-                <span>حالة الاشتراك</span>
-                <strong>{subscriptionStatusLabel(s.status)}</strong>
+                <span>{t("subscriptions.activationList.subscriptionStatusLabel")}</span>
+                <strong>{subscriptionStatusLabel(s.status, t)}</strong>
               </div>
               <div className="oh-sa-activation-card__row">
-                <span>حالة التفعيل</span>
-                <strong>{activationStatusLabel(s.activationStatus)}</strong>
+                <span>{t("subscriptions.activationList.activationStatusLabel")}</span>
+                <strong>{activationStatusLabel(s.activationStatus, t)}</strong>
               </div>
               {byAdmin ? (
                 <div className="oh-sa-activation-card__row">
-                  <span>إسناد بواسطة</span>
+                  <span>{t("subscriptions.activationList.assignedByLabel")}</span>
                   <strong>{byAdmin}</strong>
                 </div>
               ) : null}
               <div className="oh-sa-activation-card__dates">
-                <span dir="ltr">تاريخ الإسناد: {formatSubscriptionAdminDateTime(s.assignedAt)}</span>
-                <span dir="ltr">تاريخ الإنشاء: {formatSubscriptionAdminDateTime(s.createdAt)}</span>
-                {paymentDate ? <span dir="ltr">تاريخ الدفع: {paymentDate}</span> : null}
+                <span dir="ltr">
+                  {t("subscriptions.activationList.assignedAt")} {formatSubscriptionAdminDateTime(s.assignedAt)}
+                </span>
+                <span dir="ltr">
+                  {t("subscriptions.activationList.createdAt")} {formatSubscriptionAdminDateTime(s.createdAt)}
+                </span>
+                {paymentDate ? (
+                  <span dir="ltr">
+                    {t("subscriptions.activationList.paidAt")} {paymentDate}
+                  </span>
+                ) : null}
               </div>
             </div>
             <div className="oh-sa-activation-card__actions">
-              <ActivationRowActions sub={s} submittingId={submittingId} onActivate={onActivate} />
+              <ActivationRowActions sub={s} submittingId={submittingId} onActivate={onActivate} t={t} />
             </div>
           </article>
         );

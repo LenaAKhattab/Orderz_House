@@ -7,6 +7,7 @@ import DashboardLoadingState from "../../components/dashboard/DashboardLoadingSt
 import DashboardErrorState from "../../components/dashboard/DashboardErrorState";
 import { superAdminBreadcrumbs } from "../../components/dashboard/dashboardBreadcrumbs";
 import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/economyResources";
 import { useToast } from "../../components/ui/toastContext";
 import {
   getMarketplaceEconomySettingsRequest,
@@ -54,8 +55,7 @@ function Toggle({ id, label, checked, disabled, onChange }) {
 }
 
 export default function SuperAdminMarketplaceEconomyPage() {
-  const { locale } = useTranslation();
-  const isEn = locale === "en";
+  const { t } = useTranslation();
   const { push } = useToast();
 
   const [form, setForm] = useState(null);
@@ -77,15 +77,14 @@ export default function SuperAdminMarketplaceEconomyPage() {
       setFieldErrors({});
     } catch (err) {
       setError(
-        getSafeApiErrorMessage(err) ||
-          (isEn ? "Failed to load economy settings." : "تعذر تحميل إعدادات اقتصاد العمل."),
+        getSafeApiErrorMessage(err) || t("economy.page.loadError"),
       );
       setForm(null);
       setSavedSnapshot(null);
     } finally {
       setLoading(false);
     }
-  }, [isEn]);
+  }, [t]);
 
   useEffect(() => {
     void refresh();
@@ -109,12 +108,12 @@ export default function SuperAdminMarketplaceEconomyPage() {
 
   const handleSave = async () => {
     if (!form) return;
-    const { ok, errors, patch } = validateMarketplaceEconomyForm(form, { isEn });
+    const { ok, errors, patch } = validateMarketplaceEconomyForm(form, { translate: t });
     if (!ok || !patch) {
       setFieldErrors(errors);
       push({
         type: "error",
-        message: isEn ? "Fix invalid fields before saving." : "صحّح الحقول غير الصالحة قبل الحفظ.",
+        message: t("economy.page.fixFields"),
       });
       return;
     }
@@ -132,15 +131,14 @@ export default function SuperAdminMarketplaceEconomyPage() {
       setFieldErrors({});
       push({
         type: "success",
-        message: isEn ? "Economy settings saved." : "تم حفظ إعدادات اقتصاد العمل.",
+        message: t("economy.page.saved"),
       });
     } catch (err) {
       // Keep current form — no partial optimistic commit on failure
       push({
         type: "error",
         message:
-          getSafeApiErrorMessage(err) ||
-          (isEn ? "Save failed. Values were not changed." : "فشل الحفظ. لم تُغيَّر القيم."),
+          getSafeApiErrorMessage(err) || t("economy.page.saveFailed"),
       });
     } finally {
       setSaving(false);
@@ -152,45 +150,29 @@ export default function SuperAdminMarketplaceEconomyPage() {
   return (
     <DashboardShell className="oh-mes-page">
       <DashboardPageHeader
-        eyebrow={isEn ? "Super admin · باقات العمل" : "لوحة المدير الأعلى · باقات العمل"}
-        title={isEn ? "Work economy settings" : "إعدادات اقتصاد العمل"}
+        eyebrow={t("economy.page.eyebrow")}
+        title={t("economy.page.title")}
         breadcrumbs={superAdminBreadcrumbs("dashboard.breadcrumbs.marketplaceEconomy")}
         actions={
           <Link className="btn btn-secondary" to="/dashboard/super-admin/marketplace-plans">
-            {isEn ? "Work membership plans" : "باقات العمل"}
+            {t("economy.page.plansLink")}
           </Link>
         }
       />
 
       <p className="oh-mes-notice" role="note">
-        {isEn ? (
-          <>
-            These settings belong to <strong>Work memberships (باقات العمل)</strong> only. They do{" "}
-            <strong>not</strong> control Main packages or Plan pages. Fake/training orders are excluded —
-            economy policy applies to real customer-funded orders only. Changing values here does not
-            grant, deduct, or refund Bids and does not run commission or Elite engines.
-          </>
-        ) : (
-          <>
-            هذه الإعدادات تخص <strong>باقات العمل</strong> فقط، ولا تتحكم في{" "}
-            <strong>الباقات الرئيسية</strong> أو <strong>باقات الصفحات</strong>. الطلبات التجريبية
-            مستثناة — السياسة الاقتصادية للطلبات الحقيقية المموّلة من العملاء فقط. تغيير القيم هنا لا
-            يمنح ولا يخصم ولا يسترد العروض ولا يشغّل العمولة أو نظام Elite.
-          </>
-        )}
+        {t("economy.page.notice")}
       </p>
 
       {enginesOff ? (
         <div className="oh-mes-engine-badge" data-testid="mes-engines-off">
-          {isEn
-            ? "All economy execution engines are OFF (safe defaults)."
-            : "جميع محركات التنفيذ الاقتصادي متوقفة (وضع آمن)."}
+          {t("economy.page.enginesOff")}
         </div>
       ) : null}
 
       <div className="oh-mes-toolbar">
         <Link className="btn btn-secondary" to="/dashboard/super-admin/marketplace-plans">
-          {isEn ? "← Catalog" : "→ الكتالوج"}
+          {t("economy.page.catalog")}
         </Link>
       </div>
 
@@ -202,32 +184,22 @@ export default function SuperAdminMarketplaceEconomyPage() {
           <div className="oh-mes-sections">
             <section className="oh-mes-section" aria-labelledby="mes-priority-boost-title">
               <h2 id="mes-priority-boost-title" className="oh-mes-section__title">
-                {isEn
-                  ? "1. Priority Application Boost (active product — dormant)"
-                  : "أولاً: تعزيز عرض الأولوية (المنتج النشط — خامل)"}
+                {t("economy.sections.priorityBoost.title")}
               </h2>
               <p className="oh-mes-section__lede">
-                {isEn
-                  ? "Binary boost: 1 Bid + 1 Priority Use. No extra Bids and no automatic assignment. Keep OFF until migration review and cutover are approved."
-                  : "تعزيز ثنائي: عرض واحد + استخدام أولوية واحد. بلا عروض إضافية وبلا إسناد تلقائي. أبقِه متوقفاً حتى مراجعة الهجرة واعتماد التشغيل."}
+                {t("economy.sections.priorityBoost.lede")}
               </p>
               <div className="oh-mes-grid">
                 <div className="oh-mes-field oh-mes-field--full">
                   <Toggle
                     id="mes-flag-priority-boost"
-                    label={
-                      isEn
-                        ? "Enable Priority Application Boost engine"
-                        : "تفعيل محرك تعزيز عرض الأولوية"
-                    }
+                    label={t("economy.sections.priorityBoost.toggle")}
                     checked={Boolean(form.priorityApplicationBoostEnabled)}
                     disabled={saving}
                     onChange={(v) => setField("priorityApplicationBoostEnabled", v)}
                   />
                   <p className="oh-mes-help">
-                    {isEn
-                      ? "Uses Membership Priority Uses with the normal Bid cost. Default OFF / DORMANT."
-                      : "يستخدم مرات الأولوية من الباقة مع تكلفة العرض العادية. الافتراضي متوقف / خامل."}
+                    {t("economy.sections.priorityBoost.help")}
                   </p>
                 </div>
               </div>
@@ -235,20 +207,16 @@ export default function SuperAdminMarketplaceEconomyPage() {
 
             <section className="oh-mes-section" aria-labelledby="mes-bid-purchases-title">
               <h2 id="mes-bid-purchases-title" className="oh-mes-section__title">
-                {isEn
-                  ? "2. Bids + package purchases (dormant)"
-                  : "ثانياً: العروض المتاحة + شراء الباقات (خامل)"}
+                {t("economy.sections.bidPurchases.title")}
               </h2>
               <p className="oh-mes-section__lede">
-                {isEn
-                  ? "Commercial package Checkout requires BOTH Bid Credits and Bid purchases engines. Keep OFF until Migration 151 is reviewed and cutover is approved. Refund/chargeback Bid reversal is not implemented."
-                  : "شراء الباقات يتطلب تفعيل محرك العروض ومحرك الشراء معاً. أبقِهما متوقفين حتى مراجعة الهجرة 151. استرجاع العروض عند الاسترداد/النزاع غير منفّذ."}
+                {t("economy.sections.bidPurchases.lede")}
               </p>
               <div className="oh-mes-grid">
                 <div className="oh-mes-field oh-mes-field--full">
                   <Toggle
                     id="mes-flag-bid-credits"
-                    label={isEn ? "Enable Bid Credits engine" : "تفعيل محرك العروض المتاحة"}
+                    label={t("economy.sections.bidPurchases.bidCredits")}
                     checked={Boolean(form.bidCreditsEnabled)}
                     disabled={saving}
                     onChange={(v) => setField("bidCreditsEnabled", v)}
@@ -257,11 +225,7 @@ export default function SuperAdminMarketplaceEconomyPage() {
                 <div className="oh-mes-field oh-mes-field--full">
                   <Toggle
                     id="mes-flag-bid-purchases"
-                    label={
-                      isEn
-                        ? "Enable Bid Credit package purchases"
-                        : "تفعيل شراء باقات العروض"
-                    }
+                    label={t("economy.sections.bidPurchases.packagePurchases")}
                     checked={Boolean(form.bidCreditPurchasesEnabled)}
                     disabled={saving}
                     onChange={(v) => setField("bidCreditPurchasesEnabled", v)}
@@ -272,19 +236,15 @@ export default function SuperAdminMarketplaceEconomyPage() {
 
             <section className="oh-mes-section" aria-labelledby="mes-article-min-bids-title">
               <h2 id="mes-article-min-bids-title" className="oh-mes-section__title">
-                {isEn
-                  ? "2a. Mini Bid Article — minimum required applicants"
-                  : "٢أ: مقال Mini Bid — الحد الأدنى للمتقدمين"}
+                {t("economy.sections.articleMinBids.title")}
               </h2>
               <p className="oh-mes-section__lede">
-                {isEn
-                  ? "Creators cannot set a required applicant count below this minimum. Auto-assign stays off."
-                  : "لا يمكن إنشاء مقال بعدد أقل من هذا الحد. الإسناد التلقائي متوقف."}
+                {t("economy.sections.articleMinBids.lede")}
               </p>
               <div className="oh-mes-grid">
                 <Field
                   id="mes-art-min-bids"
-                  label={isEn ? "Minimum required bids" : "الحد الأدنى للمناقصات"}
+                  label={t("economy.sections.articleMinBids.minRequired")}
                 >
                   <input
                     id="mes-art-min-bids"
@@ -296,7 +256,7 @@ export default function SuperAdminMarketplaceEconomyPage() {
                 </Field>
                 <Field
                   id="mes-art-def-bids"
-                  label={isEn ? "Default required bids" : "العدد الافتراضي"}
+                  label={t("economy.sections.articleMinBids.defaultRequired")}
                 >
                   <input
                     id="mes-art-def-bids"
@@ -308,7 +268,7 @@ export default function SuperAdminMarketplaceEconomyPage() {
                 </Field>
                 <Field
                   id="mes-art-allowed"
-                  label={isEn ? "Allowed counts (comma-separated)" : "القيم المسموحة (مفصولة بفاصلة)"}
+                  label={t("economy.sections.articleMinBids.allowedCounts")}
                 >
                   <input
                     id="mes-art-allowed"
@@ -321,11 +281,7 @@ export default function SuperAdminMarketplaceEconomyPage() {
                 <div className="oh-mes-field oh-mes-field--full">
                   <Toggle
                     id="mes-art-autoclose"
-                    label={
-                      isEn
-                        ? "Auto-close applications when threshold is reached"
-                        : "إغلاق التقديم تلقائيًا عند اكتمال العدد"
-                    }
+                    label={t("economy.sections.articleMinBids.autoClose")}
                     checked={form.articleAutoCloseWhenThresholdReached !== false}
                     disabled={saving}
                     onChange={(v) => setField("articleAutoCloseWhenThresholdReached", v)}
@@ -336,17 +292,15 @@ export default function SuperAdminMarketplaceEconomyPage() {
 
             <section className="oh-mes-section" aria-labelledby="mes-pantry-bids-title">
               <h2 id="mes-pantry-bids-title" className="oh-mes-section__title">
-                {isEn ? "2c. Pantry House min required bids" : "٢ج: الحد الأدنى لمناقصات بيت المونة"}
+                {t("economy.sections.pantryMinBids.title")}
               </h2>
               <p className="oh-mes-section__lede">
-                {isEn
-                  ? "Minimum applicants for Pantry House مناقصات. Auto-assign stays off. Legacy requests with no required count keep the current manual accept flow."
-                  : "الحد الأدنى للمتقدمين في مناقصات بيت المونة. الإسناد التلقائي متوقف. الطلبات بدون حد أدنى تبقى على القبول اليدوي الحالي."}
+                {t("economy.sections.pantryMinBids.lede")}
               </p>
               <div className="oh-mes-grid">
                 <Field
                   id="mes-pantry-min-bids"
-                  label={isEn ? "Minimum required bids" : "الحد الأدنى للمناقصات"}
+                  label={t("economy.sections.articleMinBids.minRequired")}
                 >
                   <input
                     id="mes-pantry-min-bids"
@@ -358,7 +312,7 @@ export default function SuperAdminMarketplaceEconomyPage() {
                 </Field>
                 <Field
                   id="mes-pantry-def-bids"
-                  label={isEn ? "Default required bids" : "العدد الافتراضي"}
+                  label={t("economy.sections.articleMinBids.defaultRequired")}
                 >
                   <input
                     id="mes-pantry-def-bids"
@@ -370,7 +324,7 @@ export default function SuperAdminMarketplaceEconomyPage() {
                 </Field>
                 <Field
                   id="mes-pantry-allowed"
-                  label={isEn ? "Allowed counts (comma-separated)" : "القيم المسموحة (مفصولة بفاصلة)"}
+                  label={t("economy.sections.articleMinBids.allowedCounts")}
                 >
                   <input
                     id="mes-pantry-allowed"
@@ -383,11 +337,7 @@ export default function SuperAdminMarketplaceEconomyPage() {
                 <div className="oh-mes-field oh-mes-field--full">
                   <Toggle
                     id="mes-pantry-autoclose"
-                    label={
-                      isEn
-                        ? "Auto-close applications when threshold is reached"
-                        : "إغلاق التقديم تلقائيًا عند اكتمال العدد"
-                    }
+                    label={t("economy.sections.articleMinBids.autoClose")}
                     checked={form.pantryAutoCloseWhenThresholdReached !== false}
                     disabled={saving}
                     onChange={(v) => setField("pantryAutoCloseWhenThresholdReached", v)}
@@ -398,19 +348,15 @@ export default function SuperAdminMarketplaceEconomyPage() {
 
             <section className="oh-mes-section" aria-labelledby="mes-e3-orders-title">
               <h2 id="mes-e3-orders-title" className="oh-mes-section__title">
-                {isEn
-                  ? "2b. Normal Order Admin rules (E3)"
-                  : "٢ب: قواعد الطلبات العادية (E3)"}
+                {t("economy.sections.normalOrders.title")}
               </h2>
               <p className="oh-mes-section__lede">
-                {isEn
-                  ? "Global limits snapshotted onto new bidding Orders. Changing these does not rewrite published Orders. Bid Credits engine stays independent."
-                  : "حدود عامة تُحفظ لقطة على الطلبات الجديدة. تغييرها لا يعدّل الطلبات المنشورة. محرك العروض مستقل."}
+                {t("economy.sections.normalOrders.lede")}
               </p>
               <div className="oh-mes-grid">
                 <Field
                   id="mes-e3-min-value"
-                  label={isEn ? "Min order value (JOD)" : "حد أدنى لقيمة الطلب"}
+                  label={t("economy.sections.normalOrders.minOrder")}
                   error={null}
                 >
                   <input
@@ -423,7 +369,7 @@ export default function SuperAdminMarketplaceEconomyPage() {
                 </Field>
                 <Field
                   id="mes-e3-max-value"
-                  label={isEn ? "Max order value (JOD)" : "حد أقصى لقيمة الطلب"}
+                  label={t("economy.sections.normalOrders.maxOrder")}
                 >
                   <input
                     id="mes-e3-max-value"
@@ -435,7 +381,7 @@ export default function SuperAdminMarketplaceEconomyPage() {
                 </Field>
                 <Field
                   id="mes-e3-def-bid"
-                  label={isEn ? "Default Bid cost" : "تكلفة العرض الافتراضية"}
+                  label={t("economy.sections.normalOrders.defaultBidCost")}
                 >
                   <input
                     id="mes-e3-def-bid"
@@ -445,7 +391,7 @@ export default function SuperAdminMarketplaceEconomyPage() {
                     onChange={(e) => setField("normalOrderDefaultBidCost", e.target.value)}
                   />
                 </Field>
-                <Field id="mes-e3-min-bid" label={isEn ? "Min Bid cost" : "حد أدنى لتكلفة العرض"}>
+                <Field id="mes-e3-min-bid" label={t("economy.sections.normalOrders.minBidCost")}>
                   <input
                     id="mes-e3-min-bid"
                     className="oh-mes-input"
@@ -454,7 +400,7 @@ export default function SuperAdminMarketplaceEconomyPage() {
                     onChange={(e) => setField("normalOrderMinBidCost", e.target.value)}
                   />
                 </Field>
-                <Field id="mes-e3-max-bid" label={isEn ? "Max Bid cost" : "حد أقصى لتكلفة العرض"}>
+                <Field id="mes-e3-max-bid" label={t("economy.sections.normalOrders.maxBidCost")}>
                   <input
                     id="mes-e3-max-bid"
                     className="oh-mes-input"
@@ -465,7 +411,7 @@ export default function SuperAdminMarketplaceEconomyPage() {
                 </Field>
                 <Field
                   id="mes-e3-def-apps"
-                  label={isEn ? "Default target applicants" : "عدد المتقدمين الافتراضي"}
+                  label={t("economy.sections.normalOrders.defaultApplicants")}
                 >
                   <input
                     id="mes-e3-def-apps"
@@ -479,7 +425,7 @@ export default function SuperAdminMarketplaceEconomyPage() {
                 </Field>
                 <Field
                   id="mes-e3-min-apps"
-                  label={isEn ? "Min target applicants" : "حد أدنى للمتقدمين"}
+                  label={t("economy.sections.normalOrders.minApplicants")}
                 >
                   <input
                     id="mes-e3-min-apps"
@@ -491,7 +437,7 @@ export default function SuperAdminMarketplaceEconomyPage() {
                 </Field>
                 <Field
                   id="mes-e3-max-apps"
-                  label={isEn ? "Max target applicants" : "حد أقصى للمتقدمين"}
+                  label={t("economy.sections.normalOrders.maxApplicants")}
                 >
                   <input
                     id="mes-e3-max-apps"
@@ -503,11 +449,7 @@ export default function SuperAdminMarketplaceEconomyPage() {
                 </Field>
                 <Field
                   id="mes-e3-deadline-policy"
-                  label={
-                    isEn
-                      ? "Deadline before target policy"
-                      : "سياسة الموعد قبل اكتمال المتقدمين"
-                  }
+                  label={t("economy.sections.normalOrders.deadlinePolicy")}
                   full
                 >
                   <select
@@ -520,13 +462,13 @@ export default function SuperAdminMarketplaceEconomyPage() {
                     }
                   >
                     <option value="continue_with_received">
-                      {isEn ? "Continue with received" : "المتابعة بالمتقدمين الحاليين"}
+                      {t("economy.sections.normalOrders.continueReceived")}
                     </option>
                     <option value="cancel_and_refund">
-                      {isEn ? "Cancel and refund Bids" : "إلغاء واسترجاع العروض"}
+                      {t("economy.sections.normalOrders.cancelRefund")}
                     </option>
                     <option value="require_admin_review">
-                      {isEn ? "Require Admin review" : "مراجعة الإدارة"}
+                      {t("economy.sections.normalOrders.adminReview")}
                     </option>
                   </select>
                 </Field>
@@ -535,18 +477,16 @@ export default function SuperAdminMarketplaceEconomyPage() {
 
             <section className="oh-mes-section" aria-labelledby="mes-fair-title">
               <h2 id="mes-fair-title" className="oh-mes-section__title">
-                {isEn ? "3. Fair Work Distribution (internal)" : "ثالثاً: توزيع العمل العادل (داخلي)"}
+                {t("economy.sections.fair.title")}
               </h2>
               <p className="oh-mes-section__lede">
-                {isEn
-                  ? "INTERNAL ranking factor among already-eligible freelancers. Never exposed on Freelancer APIs. Eligibility always comes first."
-                  : "عامل ترتيب داخلي بين المستقلين المؤهلين أصلاً. لا يُعرَض في واجهات المستقل. الأهلية دائماً أولاً."}
+                {t("economy.sections.fair.lede")}
               </p>
               <div className="oh-mes-grid">
                 <div className="oh-mes-field oh-mes-field--full">
                   <Toggle
                     id="mes-flag-fair"
-                    label={isEn ? "Enable Fair Work Distribution engine" : "تفعيل محرك التوزيع العادل"}
+                    label={t("economy.sections.fair.toggle")}
                     checked={form.fairWorkDistributionEnabled}
                     disabled={saving}
                     onChange={(v) => setField("fairWorkDistributionEnabled", v)}
@@ -554,7 +494,7 @@ export default function SuperAdminMarketplaceEconomyPage() {
                 </div>
                 <Field
                   id="mes-assign-strategy"
-                  label={isEn ? "General assignment strategy" : "استراتيجية التعيين العامة"}
+                  label={t("economy.sections.fair.strategy")}
                   error={fieldErrors.assignmentStrategy}
                 >
                   <select
@@ -574,12 +514,8 @@ export default function SuperAdminMarketplaceEconomyPage() {
                 </Field>
                 <Field
                   id="mes-fair-lookback"
-                  label={isEn ? "Fair Distribution lookback (days)" : "نافذة التوزيع العادل (أيام)"}
-                  help={
-                    isEn
-                      ? "Lexicographic queue lookback. Approved default: 30. Source of truth for Phase 7 metrics."
-                      : "نافذة الطابور المعجمي. الافتراضي المعتمد: 30. مصدر الحقيقة لمقاييس المرحلة 7."
-                  }
+                  label={t("economy.sections.fair.lookback")}
+                  help={t("economy.sections.fair.lookbackHelp")}
                   error={fieldErrors.fairDistributionLookbackDays}
                 >
                   <input
@@ -611,7 +547,7 @@ export default function SuperAdminMarketplaceEconomyPage() {
                 </Field>
                 <Field
                   id="mes-w-token"
-                  label={isEn ? "Priority ranking weight" : "وزن ترتيب الأولوية"}
+                  label={t("economy.sections.fair.tokenWeight")}
                   error={fieldErrors.tokenWeight}
                 >
                   <input
@@ -629,7 +565,7 @@ export default function SuperAdminMarketplaceEconomyPage() {
                 </Field>
                 <Field
                   id="mes-award-reset"
-                  label={isEn ? "Award reset policy" : "سياسة إعادة المحاولات بعد الفوز"}
+                  label={t("economy.sections.fair.awardReset")}
                 >
                   <select
                     id="mes-award-reset"
@@ -645,31 +581,23 @@ export default function SuperAdminMarketplaceEconomyPage() {
                   </select>
                 </Field>
                 <p className="oh-mes-help oh-mes-field--full">
-                  {isEn
-                    ? "APPLIED_AND_LOST increases fairness; decline / freelancer-cancel after award do not get the same boost."
-                    : "APPLIED_AND_LOST يرفع الأولوية؛ الرفض أو إلغاء المستقل بعد التعيين لا يحصلان على نفس التعزيز."}
+                  {t("economy.sections.fair.awardResetHelp")}
                 </p>
               </div>
             </section>
 
             <section className="oh-mes-section" aria-labelledby="mes-commission-title">
               <h2 id="mes-commission-title" className="oh-mes-section__title">
-                {isEn ? "4. Commission" : "رابعاً: العمولة"}
+                {t("economy.sections.commission.title")}
               </h2>
               <p className="oh-mes-section__lede">
-                {isEn
-                  ? "Platform share of completed real work value — configuration only."
-                  : "حصة المنصة من قيمة العمل الحقيقي المنفّذ — إعداد فقط."}
+                {t("economy.sections.commission.lede")}
               </p>
               <div className="oh-mes-grid">
                 <Field
                   id="mes-commission"
-                  label={isEn ? "Platform commission %" : "نسبة عمولة المنصة"}
-                  help={
-                    isEn
-                      ? "Percent the platform earns from completed real work value."
-                      : "النسبة التي تحصل عليها المنصة من قيمة العمل المنفذ فعلياً."
-                  }
+                  label={t("economy.sections.commission.pct")}
+                  help={t("economy.sections.commission.pctHelp")}
                   error={fieldErrors.platformCommissionPercentage}
                 >
                   <input
@@ -688,7 +616,7 @@ export default function SuperAdminMarketplaceEconomyPage() {
                 <div className="oh-mes-field oh-mes-field--full">
                   <Toggle
                     id="mes-flag-commission"
-                    label={isEn ? "Enable marketplace commission engine" : "تفعيل نظام العمولة"}
+                    label={t("economy.sections.commission.toggle")}
                     checked={form.marketplaceCommissionEnabled}
                     disabled={saving}
                     onChange={(v) => setField("marketplaceCommissionEnabled", v)}
@@ -699,22 +627,16 @@ export default function SuperAdminMarketplaceEconomyPage() {
 
             <section className="oh-mes-section" aria-labelledby="mes-cash-title">
               <h2 id="mes-cash-title" className="oh-mes-section__title">
-                {isEn ? "5. Cash membership payments" : "خامساً: الدفع النقدي"}
+                {t("economy.sections.cash.title")}
               </h2>
               <p className="oh-mes-section__lede">
-                {isEn
-                  ? "Admin fee per cash TRANSACTION — not per month, not activation fee, not membership price."
-                  : "رسوم إدارية لكل عملية Cash — ليست عن كل شهر، وليست رسوم التفعيل، وليست سعر الباقة."}
+                {t("economy.sections.cash.lede")}
               </p>
               <div className="oh-mes-grid">
                 <Field
                   id="mes-cash-fee"
-                  label={isEn ? "Cash processing fee (JOD)" : "الرسوم الإدارية لكل عملية Cash (د.أ)"}
-                  help={
-                    isEn
-                      ? "Fixed admin fee per cash membership transaction (not per month)."
-                      : "رسوم إدارية ثابتة لكل عملية دفع نقدي، وليست عن كل شهر."
-                  }
+                  label={t("economy.sections.cash.fee")}
+                  help={t("economy.sections.cash.feeHelp")}
                   error={fieldErrors.cashProcessingFeeJod}
                 >
                   <input
@@ -732,7 +654,7 @@ export default function SuperAdminMarketplaceEconomyPage() {
                 <div className="oh-mes-field oh-mes-field--full">
                   <Toggle
                     id="mes-flag-cash"
-                    label={isEn ? "Enable cash membership payments" : "تفعيل الدفع النقدي لباقات العمل"}
+                    label={t("economy.sections.cash.toggle")}
                     checked={form.cashMembershipPaymentsEnabled}
                     disabled={saving}
                     onChange={(v) => setField("cashMembershipPaymentsEnabled", v)}
@@ -743,17 +665,15 @@ export default function SuperAdminMarketplaceEconomyPage() {
 
             <section className="oh-mes-section" aria-labelledby="mes-elite-title">
               <h2 id="mes-elite-title" className="oh-mes-section__title">
-                {isEn ? "6. Elite Direct Orders" : "سادساً: Elite"}
+                {t("economy.sections.elite.title")}
               </h2>
               <p className="oh-mes-section__lede">
-                {isEn
-                  ? "Global Elite engine policy. Tier eligibility remains on each marketplace plan."
-                  : "سياسة محرك Elite العامة. أهلية الباقة تبقى على كل باقة عمل."}
+                {t("economy.sections.elite.lede")}
               </p>
               <div className="oh-mes-grid">
                 <Field
                   id="mes-elite-per-cycle"
-                  label={isEn ? "Direct orders per cycle" : "طلبات مباشرة لكل دورة"}
+                  label={t("economy.sections.elite.perCycle")}
                   error={fieldErrors.eliteDirectOrdersPerCycle}
                 >
                   <input
@@ -770,7 +690,7 @@ export default function SuperAdminMarketplaceEconomyPage() {
                 </Field>
                 <Field
                   id="mes-elite-offer"
-                  label={isEn ? "Offer duration (minutes)" : "مدة العرض (دقائق)"}
+                  label={t("economy.sections.elite.offerMinutes")}
                   error={fieldErrors.eliteOfferDurationMinutes}
                 >
                   <input
@@ -788,20 +708,18 @@ export default function SuperAdminMarketplaceEconomyPage() {
                 <div className="oh-mes-field">
                   <Toggle
                     id="mes-elite-cf-on"
-                    label={isEn ? "Carry forward enabled" : "تفعيل الترحيل (Carry Forward)"}
+                    label={t("economy.sections.elite.carryForward")}
                     checked={form.eliteCarryForwardEnabled}
                     disabled={saving}
                     onChange={(v) => setField("eliteCarryForwardEnabled", v)}
                   />
                   <p className="oh-mes-help">
-                    {isEn
-                      ? "Carry one entitlement when no suitable real matching demand exists (future rules)."
-                      : "ترحيل استحقاق واحد عند عدم توفر طلب حقيقي مناسب وفق القواعد المستقبلية."}
+                    {t("economy.sections.elite.carryForwardHelp")}
                   </p>
                 </div>
                 <Field
                   id="mes-elite-cf-days"
-                  label={isEn ? "Carry-forward days" : "أيام الترحيل"}
+                  label={t("economy.sections.elite.carryDays")}
                   error={fieldErrors.eliteCarryForwardDays}
                 >
                   <input
@@ -818,7 +736,7 @@ export default function SuperAdminMarketplaceEconomyPage() {
                 </Field>
                 <Field
                   id="mes-elite-cf-max"
-                  label={isEn ? "Maximum carry-forward" : "الحد الأقصى للترحيل"}
+                  label={t("economy.sections.elite.carryMax")}
                   error={fieldErrors.eliteMaximumCarryForward}
                 >
                   <input
@@ -836,33 +754,25 @@ export default function SuperAdminMarketplaceEconomyPage() {
                 <div className="oh-mes-field oh-mes-field--full">
                   <Toggle
                     id="mes-elite-declines"
-                    label={
-                      isEn
-                        ? "Declines may affect carry-forward (future)"
-                        : "الرفض المتكرر قد يمنع الترحيل (مستقبلاً)"
-                    }
+                    label={t("economy.sections.elite.declinesFlag")}
                     checked={form.eliteDeclinesAffectCarryForward}
                     disabled={saving}
                     onChange={(v) => setField("eliteDeclinesAffectCarryForward", v)}
                   />
                   <p className="oh-mes-help">
-                    {isEn
-                      ? "Extensibility flag only. Fake/training demand never counts toward matching."
-                      : "علم توسعة فقط. الطلبات التجريبية لا تُحسب ضمن المطابقة الحقيقية."}
+                    {t("economy.sections.elite.declinesHelp")}
                   </p>
                 </div>
                 <div className="oh-mes-field oh-mes-field--full">
                   <Toggle
                     id="mes-flag-elite"
-                    label={isEn ? "Enable Elite engine (global)" : "تفعيل محرك Elite (عام)"}
+                    label={t("economy.sections.elite.toggle")}
                     checked={form.eliteEngineEnabled}
                     disabled={saving}
                     onChange={(v) => setField("eliteEngineEnabled", v)}
                   />
                   <p className="oh-mes-help">
-                    {isEn
-                      ? "Operational switch for the Elite system — distinct from plan-tier Elite capability."
-                      : "مفتاح تشغيل نظام Elite — مختلف عن أهلية باقة Elite في الكتالوج."}
+                    {t("economy.sections.elite.toggleHelp")}
                   </p>
                 </div>
               </div>
@@ -871,16 +781,10 @@ export default function SuperAdminMarketplaceEconomyPage() {
 
           <div className="oh-mes-footer">
             <Button type="button" variant="secondary" disabled={saving} onClick={handleReset}>
-              {isEn ? "Reset" : "إعادة القيم المحفوظة"}
+              {t("economy.page.reset")}
             </Button>
             <Button type="button" disabled={saving} onClick={() => void handleSave()}>
-              {saving
-                ? isEn
-                  ? "Saving…"
-                  : "جارٍ الحفظ…"
-                : isEn
-                  ? "Save settings"
-                  : "حفظ الإعدادات"}
+              {saving ? t("economy.page.saving") : t("economy.page.save")}
             </Button>
           </div>
         </>

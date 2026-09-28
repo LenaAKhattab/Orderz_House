@@ -1,9 +1,7 @@
 import { Link } from "react-router-dom";
-import {
-  DEFAULT_PLAN_CATALOG_TAB_BADGE,
-  PLAN_CATALOG_NAV,
-  orderPlanCatalogNav,
-} from "./planCatalogNav";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/planAdminResources";
+import { PLAN_CATALOG_NAV, orderPlanCatalogNav } from "./planCatalogNav";
 import { useAdminDefaultPlanCatalog } from "./DefaultPlanCatalogAdminContext";
 import { PlanCatalogNavSkeleton } from "./PlanCatalogSkeletons";
 import "./super-admin-plans.css";
@@ -11,10 +9,12 @@ import "./specialOfferAdmin.css";
 
 /**
  * Shared Super Admin catalog tabs — same three destinations on every plans page.
- * Default catalog (users' current catalog) is first/RTL-right and badged "معروض الآن".
+ * Default catalog (users' current catalog) is first/RTL-right and badged "Shown now".
  * Active/open tab highlighting stays independent of that default.
  */
-export default function PlanCatalogNavigation({ activeCatalog, isEn = false, hint }) {
+export default function PlanCatalogNavigation({ activeCatalog, hint }) {
+  const { t, locale } = useTranslation();
+  const isEn = locale === "en";
   const adminDefault = useAdminDefaultPlanCatalog();
   const resolvedDefault = adminDefault?.ready ? adminDefault.catalog : null;
   const showSkeleton = Boolean(adminDefault?.loading) && !resolvedDefault;
@@ -31,7 +31,7 @@ export default function PlanCatalogNavigation({ activeCatalog, isEn = false, hin
           className="oh-sapl-section-toggle__tabs"
           role="tablist"
           dir={isEn ? "ltr" : "rtl"}
-          aria-label={isEn ? "Plan catalogs" : "أقسام الباقات"}
+          aria-label={t("planAdmin.catalog.navAria")}
           data-default-plan-catalog={resolvedDefault || ""}
         >
           {items.map((item) => {
@@ -48,23 +48,19 @@ export default function PlanCatalogNavigation({ activeCatalog, isEn = false, hin
                 data-catalog-nav-id={item.id}
                 data-default-catalog-tab={isDefault ? "true" : undefined}
               >
-                <span>{isEn ? item.labelEn : item.labelAr}</span>
-                {item.tabBadgeAr || item.tabBadgeEn ? (
+                <span>{t(item.labelKey)}</span>
+                {item.tabBadgeKey ? (
                   <span className="oh-sapl-section-toggle__special-badge" data-special-tab-badge="true">
-                    {isEn ? item.tabBadgeEn || item.tabBadgeAr : item.tabBadgeAr || item.tabBadgeEn}
+                    {t(item.tabBadgeKey)}
                   </span>
                 ) : null}
                 {isDefault ? (
                   <span
                     className="oh-sapl-section-toggle__now-badge"
                     data-shown-now-badge="true"
-                    title={
-                      isEn
-                        ? DEFAULT_PLAN_CATALOG_TAB_BADGE.titleEn
-                        : DEFAULT_PLAN_CATALOG_TAB_BADGE.titleAr
-                    }
+                    title={t("planAdmin.catalog.tabBadgeShownTitle")}
                   >
-                    {isEn ? DEFAULT_PLAN_CATALOG_TAB_BADGE.en : DEFAULT_PLAN_CATALOG_TAB_BADGE.ar}
+                    {t("planAdmin.catalog.tabBadgeShown")}
                   </span>
                 ) : null}
               </Link>

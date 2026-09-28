@@ -62,6 +62,17 @@ export function getAdVisualAsset(key) {
 }
 
 /**
+ * @param {{ key: string; label: string }} asset
+ * @param {((key: string) => string) | null | undefined} [t]
+ */
+export function resolveAdVisualAssetLabel(asset, t) {
+  if (typeof t === "function") {
+    return t(`ads.visualAssets.${asset.key}.label`);
+  }
+  return asset.label;
+}
+
+/**
  * @param {string | null | undefined} key
  * @returns {string | null}
  */

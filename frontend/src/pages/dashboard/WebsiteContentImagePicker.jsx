@@ -1,10 +1,13 @@
 import { useRef, useState } from "react";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/siteEditorResources";
 import { uploadSuperAdminWebsiteImageRequest } from "../../services/api";
 
 /**
  * Simple image picker for Super Admin website content blocks.
  */
 export default function WebsiteContentImagePicker({ value, onChange, disabled = false }) {
+  const { t } = useTranslation();
   const inputRef = useRef(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
@@ -16,10 +19,10 @@ export default function WebsiteContentImagePicker({ value, onChange, disabled = 
     try {
       const res = await uploadSuperAdminWebsiteImageRequest(file);
       const url = res?.data?.url;
-      if (!url) throw new Error("لم يُرجع الخادم رابطًا.");
+      if (!url) throw new Error(t("siteEditor.errors.noServerUrl"));
       onChange(url);
     } catch (e) {
-      setError(e?.response?.data?.message || e?.message || "فشل رفع الصورة.");
+      setError(e?.response?.data?.message || e?.message || t("siteEditor.errors.imageUploadFailed"));
     } finally {
       setUploading(false);
     }
@@ -47,7 +50,11 @@ export default function WebsiteContentImagePicker({ value, onChange, disabled = 
           disabled={disabled || uploading}
           onClick={() => inputRef.current?.click()}
         >
-          {uploading ? "جاري الرفع…" : value ? "تغيير الصورة" : "رفع صورة"}
+          {uploading
+            ? t("siteEditor.imagePicker.uploading")
+            : value
+              ? t("siteEditor.imagePicker.changeImage")
+              : t("siteEditor.imagePicker.uploadImage")}
         </button>
         {value ? (
           <button
@@ -56,12 +63,12 @@ export default function WebsiteContentImagePicker({ value, onChange, disabled = 
             disabled={disabled || uploading}
             onClick={() => onChange("")}
           >
-            إزالة
+            {t("siteEditor.imagePicker.remove")}
           </button>
         ) : null}
       </div>
       <label className="oh-website-image-picker__url">
-        أو ألصق رابط الصورة
+        {t("siteEditor.imagePicker.pasteUrlLabel")}
         <input
           type="url"
           value={value || ""}

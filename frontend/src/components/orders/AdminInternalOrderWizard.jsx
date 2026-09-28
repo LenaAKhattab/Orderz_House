@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../../context/useAuth";
 import { useToast } from "../ui/toastContext";
 import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/ordersAdminResources";
 import {
   adminCreateInternalOrderRequest,
   createClientOrderRequest,
@@ -17,27 +18,36 @@ import { getDashboardPath } from "../../constants/authRoutes";
 import { SelectPanelBusySkeleton } from "../ui/Skeleton";
 import { CreateOrderReviewRow } from "./CreateOrderReviewRow";
 import { JodMoneyDisplay } from "../money/JodMoneyDisplay";
-import {
-  ORDER_UPLOAD_TOTAL_SIZE_HELPER_AR,
-  ORDER_UPLOAD_TOTAL_SIZE_MESSAGE_AR,
-  validateOrderFilesSize,
-} from "../../utils/orderUploadLimits";
+import { validateOrderFilesSize } from "../../utils/orderUploadLimits";
 import { getOrderCreateErrorMessage } from "../../utils/apiErrorMessage";
 import { isFixedBudgetInAllowedSpan, normalizeTemplateBudget } from "../../utils/fakeBudgetRanges";
 import { formatTrainingOrderBudget } from "../../pages/dashboard/trainingOrders/trainingOrdersDisplayUtils";
 
-const ADMIN_STEPS = [
-  { key: "core", label: "بيانات الطلب" },
-  { key: "assignment", label: "الإسناد" },
-  { key: "files", label: "الملفات" },
-  { key: "review", label: "مراجعة وإرسال" },
-];
+const ADMIN_STEP_KEYS = ["core", "assignment", "files", "review"];
+const CLIENT_STEP_KEYS = ["core", "files", "review"];
 
-const CLIENT_STEPS = [
-  { key: "core", label: "بيانات الطلب" },
-  { key: "files", label: "الملفات" },
-  { key: "review", label: "مراجعة وإرسال" },
-];
+/** @param {(key: string, values?: Record<string, string | number>) => string} t */
+function formatReviewDuration(value, unit, locale, t) {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  const du = "ordersAdmin.wizard.durationUnits";
+  if (locale === "en") {
+    let label;
+    if (unit === "days") label = n === 1 ? t(`${du}.day`) : t(`${du}.days`);
+    else if (unit === "hours") label = n === 1 ? t(`${du}.hour`) : t(`${du}.hours`);
+    else label = n === 1 ? t(`${du}.minute`) : t(`${du}.minutes`);
+    return `${n} ${label}`;
+  }
+  let label;
+  if (unit === "days") {
+    label = n >= 3 && n <= 10 ? t(`${du}.days`) : n === 2 ? t(`${du}.dayTwo`) : t(`${du}.day`);
+  } else if (unit === "hours") {
+    label = n >= 3 && n <= 10 ? t(`${du}.hours`) : n === 2 ? t(`${du}.hourTwo`) : t(`${du}.hour`);
+  } else {
+    label = n >= 3 && n <= 10 ? t(`${du}.minutes`) : n === 2 ? t(`${du}.minuteTwo`) : t(`${du}.minute`);
+  }
+  return `${n} ${label}`;
+}
 
 /** Training template wizard — no assignment step (templates are not assigned to freelancers). */
 const FAKE_TEMPLATE_STEP_KEYS = ["core", "files", "review"];
@@ -69,6 +79,7 @@ function readSkillHistoryFromStorage() {
 }
 
 function SkillsTagsInput({ value, onChange, placeholder, historySkills }) {
+  const { t: tr } = useTranslation();
   const [draft, setDraft] = useState("");
   const [suggestOpen, setSuggestOpen] = useState(false);
   const [highlightIdx, setHighlightIdx] = useState(0);
@@ -125,7 +136,7 @@ function SkillsTagsInput({ value, onChange, placeholder, historySkills }) {
           <span className="chip" key={t}>
             {t}
             <button type="button" className="btn btn-secondary" style={{ padding: "4px 10px" }} onClick={() => remove(t)}>
-              حذف
+              {tr("ordersAdmin.wizard.skills.remove")}
             </button>
           </span>
         ))}
@@ -135,7 +146,7 @@ function SkillsTagsInput({ value, onChange, placeholder, historySkills }) {
           <input
             className="input"
             value={draft}
-            placeholder={placeholder || "اكتب مهارة أو اختر من الاقتراحات…"}
+            placeholder={placeholder || tr("ordersAdmin.wizard.skills.placeholder")}
             onChange={(e) => {
               setDraft(e.target.value);
               setHighlightIdx(0);
@@ -204,10 +215,10 @@ function SkillsTagsInput({ value, onChange, placeholder, historySkills }) {
           ) : null}
         </div>
         <button type="button" className="btn btn-secondary" onClick={() => add(draft)}>
-          إضافة
+          {tr("ordersAdmin.wizard.skills.add")}
         </button>
       </div>
-      <div className="help">أثناء الكتابة تظهر مهارات مستخدمة سابقاً في نفس الحقل للاختيار السريع.</div>
+      <div className="help">{tr("ordersAdmin.wizard.skills.historyHelp")}</div>
     </div>
   );
 }
@@ -238,6 +249,7 @@ function SearchableSelect({
   searchPlaceholder,
   disabled = false,
 }) {
+  const { t: tr } = useTranslation();
   const [open, setOpen] = useState(false);
   const wrapRef = useRef(null);
 
@@ -292,7 +304,7 @@ function SearchableSelect({
             <input
               className="input"
               value={query}
-              placeholder={searchPlaceholder || "ابحث داخل القائمة…"}
+              placeholder={searchPlaceholder || tr("ordersAdmin.wizard.select.searchPlaceholder")}
               onChange={(e) => onQueryChange?.(e.target.value)}
               autoFocus
             />
@@ -300,7 +312,7 @@ function SearchableSelect({
           </div>
           <div className="oh-select__options">
             {filtered.length === 0 ? (
-              <div className="oh-select__empty">لا توجد نتائج</div>
+              <div className="oh-select__empty">{tr("ordersAdmin.wizard.select.empty")}</div>
             ) : (
               filtered.map((opt) => (
                 <button
@@ -370,7 +382,7 @@ export default function AdminInternalOrderWizard({
 } = {}) {
   const { user } = useAuth();
   const { push } = useToast();
-  const { t } = useTranslation();
+  const { t, locale, dir } = useTranslation();
   const isFakeTemplate = mode === "fake-template";
   const isFakeOrder = mode === "fake-order";
   const isInstitutionalMode = mode === "institutional";
@@ -388,7 +400,15 @@ export default function AdminInternalOrderWizard({
       })),
     [t, poolWizardNs],
   );
-  const steps = isFakePoolMode ? fakeTemplateSteps : isClientAudience ? CLIENT_STEPS : ADMIN_STEPS;
+  const adminSteps = useMemo(
+    () => ADMIN_STEP_KEYS.map((key) => ({ key, label: t(`ordersAdmin.wizard.steps.${key}`) })),
+    [t],
+  );
+  const clientSteps = useMemo(
+    () => CLIENT_STEP_KEYS.map((key) => ({ key, label: t(`ordersAdmin.wizard.steps.${key}`) })),
+    [t],
+  );
+  const steps = isFakePoolMode ? fakeTemplateSteps : isClientAudience ? clientSteps : adminSteps;
   const base = role ? getDashboardPath(role) : "/dashboard";
   const listPath = role === "super_admin" ? "/dashboard/super-admin/orders" : "/dashboard/admin/orders";
 
@@ -473,31 +493,37 @@ export default function AdminInternalOrderWizard({
 
     // Step 1: order details (type, classification, budget, duration)
     out.core = {};
-    if (!isClientAudience && !isFakePoolMode && String(form.orderCode || "").trim().length < 2) out.core.orderCode = "رقم الطلب مطلوب.";
+    if (!isClientAudience && !isFakePoolMode && String(form.orderCode || "").trim().length < 2) {
+      out.core.orderCode = t("ordersAdmin.wizard.errors.orderCode");
+    }
     if (form.title.trim().length < 2) {
-      out.core.title = isFakePoolMode ? tplErr("title") : "عنوان المشروع مطلوب.";
+      out.core.title = isFakePoolMode ? tplErr("title") : t("ordersAdmin.wizard.errors.title");
     }
     if (form.description.trim().length < 10) {
-      out.core.description = isFakePoolMode ? tplErr("description") : "وصف المشروع مطلوب (10 أحرف على الأقل).";
+      out.core.description = isFakePoolMode ? tplErr("description") : t("ordersAdmin.wizard.errors.description");
     }
     if (!String(form.categoryId).trim()) {
-      out.core.categoryId = isFakePoolMode ? tplErr("categoryId") : "يرجى اختيار التصنيف.";
+      out.core.categoryId = isFakePoolMode ? tplErr("categoryId") : t("ordersAdmin.wizard.errors.categoryId");
     }
     if (!["fixed", "bidding"].includes(form.projectType)) {
-      out.core.projectType = isFakePoolMode ? tplErr("projectType") : "يرجى اختيار نوع المشروع.";
+      out.core.projectType = isFakePoolMode ? tplErr("projectType") : t("ordersAdmin.wizard.errors.projectType");
     }
     if (form.projectType === "fixed") {
-      if (!(Number(form.budget) > 0)) out.core.budget = isFakePoolMode ? tplErr("budget") : "يرجى إدخال ميزانية صحيحة أكبر من 0.";
+      if (!(Number(form.budget) > 0)) out.core.budget = isFakePoolMode ? tplErr("budget") : t("ordersAdmin.wizard.errors.budget");
       else if (isFakePoolMode) {
         const b = Math.round(Number(String(form.budget).replace(/,/g, ".")));
         if (!Number.isInteger(b)) out.core.budget = tplErr("budgetInteger");
         else if (!isFixedBudgetInAllowedSpan(b)) out.core.budget = tplErr("budgetFixedRange");
       }
     } else {
-      if (!(Number(form.bidBudgetMin) > 0)) out.core.bidBudgetMin = isFakePoolMode ? tplErr("bidBudgetMin") : "يرجى إدخال حد أدنى صحيح.";
-      if (!(Number(form.bidBudgetMax) > 0)) out.core.bidBudgetMax = isFakePoolMode ? tplErr("bidBudgetMax") : "يرجى إدخال حد أعلى صحيح.";
+      if (!(Number(form.bidBudgetMin) > 0)) {
+        out.core.bidBudgetMin = isFakePoolMode ? tplErr("bidBudgetMin") : t("ordersAdmin.wizard.errors.bidBudgetMin");
+      }
+      if (!(Number(form.bidBudgetMax) > 0)) {
+        out.core.bidBudgetMax = isFakePoolMode ? tplErr("bidBudgetMax") : t("ordersAdmin.wizard.errors.bidBudgetMax");
+      }
       if (Number(form.bidBudgetMax) < Number(form.bidBudgetMin)) {
-        out.core.bidBudgetMax = isFakePoolMode ? tplErr("bidBudgetMaxOrder") : "الحد الأعلى يجب أن يكون >= الحد الأدنى.";
+        out.core.bidBudgetMax = isFakePoolMode ? tplErr("bidBudgetMaxOrder") : t("ordersAdmin.wizard.errors.bidBudgetMaxOrder");
       }
     }
     if (isFakePoolMode && form.projectType === "bidding") {
@@ -505,10 +531,10 @@ export default function AdminInternalOrderWizard({
       if (!(Number(form.durationMax) > 0)) out.core.durationMax = tplErr("durationMax");
       if (Number(form.durationMax) < Number(form.durationMin)) out.core.durationMax = tplErr("durationMaxOrder");
     } else if (!(Number(form.durationValue) > 0)) {
-      out.core.durationValue = isFakePoolMode ? tplErr("durationValue") : "يرجى إدخال مدة صحيحة أكبر من 0.";
+      out.core.durationValue = isFakePoolMode ? tplErr("durationValue") : t("ordersAdmin.wizard.errors.durationValue");
     }
     if (!["days", "hours", "minutes"].includes(form.durationUnit)) {
-      out.core.durationUnit = isFakePoolMode ? tplErr("durationUnit") : "يرجى اختيار وحدة الزمن.";
+      out.core.durationUnit = isFakePoolMode ? tplErr("durationUnit") : t("ordersAdmin.wizard.errors.durationUnit");
     }
 
     if (!isFakePoolMode && !isClientAudience) out.assignment = {};
@@ -516,8 +542,8 @@ export default function AdminInternalOrderWizard({
     // Step 2: files (real orders only — templates do not persist attachments)
     out.files = {};
     if (!isFakePoolMode) {
-      if (files.length > 5) out.files.files = "الحد الأقصى 5 ملفات.";
-      else if (!validateOrderFilesSize(files).ok) out.files.files = ORDER_UPLOAD_TOTAL_SIZE_MESSAGE_AR;
+      if (files.length > 5) out.files.files = t("ordersAdmin.wizard.errors.maxFiles");
+      else if (!validateOrderFilesSize(files).ok) out.files.files = t("ordersAdmin.wizard.upload.totalSizeMessage");
     }
 
     out.review = {};
@@ -539,7 +565,7 @@ export default function AdminInternalOrderWizard({
   const stepFirstErrorMessage = useMemo(() => {
     const keys = Object.keys(currentErrors);
     if (keys.length === 0) return "";
-    if (keys.length > 1) return isFakePoolMode ? tplErr("stepMultiple") : "يرجى إكمال جميع الحقول المطلوبة في هذه الخطوة.";
+    if (keys.length > 1) return isFakePoolMode ? tplErr("stepMultiple") : t("ordersAdmin.wizard.errors.stepMultiple");
     return currentErrors[keys[0]] || "";
   }, [currentErrors, isFakePoolMode, t]);
 
@@ -556,14 +582,20 @@ export default function AdminInternalOrderWizard({
         const res = await getCategoriesRequest();
         if (!cancelled) setCategories(res?.data || []);
       } catch (e) {
-        if (!cancelled) push({ type: "error", title: "تعذر تحميل التصنيفات", message: e?.response?.data?.message || e?.message });
+        if (!cancelled) {
+          push({
+            type: "error",
+            title: t("ordersAdmin.wizard.toast.categoriesLoadFailed"),
+            message: e?.response?.data?.message || e?.message,
+          });
+        }
       }
     }
     load();
     return () => {
       cancelled = true;
     };
-  }, [push]);
+  }, [push, t]);
 
   useEffect(() => {
     let cancelled = false;
@@ -609,12 +641,16 @@ export default function AdminInternalOrderWizard({
     const list = Array.from(incoming || []);
     const next = [...files, ...list].slice(0, 5);
     if (!validateOrderFilesSize(next).ok) {
-      push({ type: "error", title: "حجم الملفات", message: ORDER_UPLOAD_TOTAL_SIZE_MESSAGE_AR });
+      push({ type: "error", title: t("ordersAdmin.wizard.toast.fileSizeTitle"), message: t("ordersAdmin.wizard.upload.totalSizeMessage") });
       return;
     }
     setFiles(next);
     if (list.length + files.length > 5) {
-      push({ type: "error", title: "حد الملفات", message: "يمكنك رفع 5 ملفات كحد أقصى." });
+      push({
+        type: "error",
+        title: t("ordersAdmin.wizard.toast.fileLimitTitle"),
+        message: t("ordersAdmin.wizard.toast.fileLimitMessage"),
+      });
     }
   };
 
@@ -632,8 +668,8 @@ export default function AdminInternalOrderWizard({
     if (!canSubmit) {
       push({
         type: "error",
-        title: isFakePoolMode ? tpl("toast.validationTitle") : "تحقق من الحقول",
-        message: isFakePoolMode ? tpl("toast.validationMessage") : "يرجى إكمال البيانات المطلوبة بشكل صحيح.",
+        title: isFakePoolMode ? tpl("toast.validationTitle") : t("ordersAdmin.wizard.toast.validationTitle"),
+        message: isFakePoolMode ? tpl("toast.validationMessage") : t("ordersAdmin.wizard.toast.validationMessage"),
       });
       return;
     }
@@ -763,12 +799,12 @@ export default function AdminInternalOrderWizard({
       const created = res?.data?.order ?? res?.order;
       push({
         type: "success",
-        title: isInstitutionalMode ? "تم إنشاء الطلب المؤسسي" : "تم إنشاء الطلب",
+        title: isInstitutionalMode ? t("ordersAdmin.wizard.toast.createdInstitutionalTitle") : t("ordersAdmin.wizard.toast.createdTitle"),
         message: isInstitutionalMode
-          ? `تم إنشاء «${form.title.trim()}» داخل المخزن.`
+          ? t("ordersAdmin.wizard.toast.createdInstitutionalMessage", { title: form.title.trim() })
           : isClientAudience
-            ? `تم إنشاء الطلب «${form.title.trim()}».`
-            : `رقم الطلب: ${created?.orderCode || ""}`.trim(),
+            ? t("ordersAdmin.wizard.toast.createdClientMessage", { title: form.title.trim() })
+            : t("ordersAdmin.wizard.toast.createdAdminMessage", { orderCode: created?.orderCode || "" }),
       });
       if (typeof onCreated === "function") {
         onCreated(res);
@@ -787,7 +823,7 @@ export default function AdminInternalOrderWizard({
     } catch (e2) {
       push({
         type: "error",
-        title: "تعذر إنشاء الطلب",
+        title: t("ordersAdmin.wizard.toast.createFailedTitle"),
         message: getOrderCreateErrorMessage(e2),
       });
     } finally {
@@ -856,12 +892,12 @@ export default function AdminInternalOrderWizard({
   }, [subSubcategories]);
 
   const selectedFreelancerLabel = useMemo(() => {
-    if (!form.assignedFreelancerId) return "غير معين";
+    if (!form.assignedFreelancerId) return t("ordersAdmin.wizard.freelancer.unassigned");
     if (assignedFreelancer && String(assignedFreelancer.id) === String(form.assignedFreelancerId)) {
-      return assignedFreelancer.displayName || assignedFreelancer.fullName || "مستقل";
+      return assignedFreelancer.displayName || assignedFreelancer.fullName || t("ordersAdmin.wizard.freelancer.fallbackName");
     }
-    return `مستقل #${form.assignedFreelancerId}`;
-  }, [form.assignedFreelancerId, assignedFreelancer]);
+    return t("ordersAdmin.wizard.freelancer.fallbackId", { id: form.assignedFreelancerId });
+  }, [form.assignedFreelancerId, assignedFreelancer, t]);
 
   const goNext = () => {
     if (!stepValid) return;
@@ -888,24 +924,26 @@ export default function AdminInternalOrderWizard({
     <>
       {!isModal ? (
         <DashboardPageHeader
-          title={isClientAudience ? "إنشاء طلب" : "إنشاء طلب (إداري)"}
+          title={isClientAudience ? t("ordersAdmin.wizard.header.createClientTitle") : t("ordersAdmin.wizard.header.createAdminTitle")}
           description={
             isClientAudience
-              ? "نفس واجهة إنشاء الطلب مع صلاحيات العميل فقط وبدون تعيين مستقل."
-              : "سيتم نشر الطلب مباشرةً بدون دفع. ويمكن إسناده لفريلانسر أثناء الإنشاء."
+              ? t("ordersAdmin.wizard.header.createClientDescription")
+              : t("ordersAdmin.wizard.header.createAdminDescription")
           }
           breadcrumbs={[
-            { label: "الرئيسية", href: base },
-            { label: "الطلبات", href: listPath },
-            { label: isClientAudience ? "إنشاء طلب" : "إنشاء طلب (إداري)" },
+            { label: t("ordersAdmin.wizard.header.breadcrumbHome"), href: base },
+            { label: t("ordersAdmin.wizard.header.breadcrumbOrders"), href: listPath },
+            {
+              label: isClientAudience ? t("ordersAdmin.wizard.header.createClientTitle") : t("ordersAdmin.wizard.header.createAdminTitle"),
+            },
           ]}
           actions={
             <>
               <Link className="btn btn-secondary" to={base}>
-                العودة
+                {t("ordersAdmin.wizard.header.back")}
               </Link>
               <Link className="btn btn-secondary" to={listPath}>
-                كل الطلبات
+                {t("ordersAdmin.wizard.header.allOrders")}
               </Link>
             </>
           }
@@ -960,7 +998,7 @@ export default function AdminInternalOrderWizard({
               ) : null}
             <div className="admin-co-fields">
               <div className="field admin-co-fields__span2">
-                <span className="label">{isFakePoolMode ? tpl("projectTypeLabel") : "نوع الطلب"}</span>
+                <span className="label">{isFakePoolMode ? tpl("projectTypeLabel") : t("ordersAdmin.wizard.projectType.label")}</span>
                 <div className={`client-co-type-row${isModal ? " co-modal-ref__type-toggle" : ""}`.trim()}>
                   <button
                     type="button"
@@ -974,7 +1012,7 @@ export default function AdminInternalOrderWizard({
                     onClick={() => set("projectType", "fixed")}
                   >
                     {isModal ? <Tag size={18} strokeWidth={2.25} aria-hidden="true" /> : null}
-                    <span>{isFakePoolMode ? tpl("projectTypeFixed") : "سعر ثابت"}</span>
+                    <span>{isFakePoolMode ? tpl("projectTypeFixed") : t("ordersAdmin.wizard.projectType.fixed")}</span>
                   </button>
                   <button
                     type="button"
@@ -988,7 +1026,7 @@ export default function AdminInternalOrderWizard({
                     onClick={() => set("projectType", "bidding")}
                   >
                     {isModal ? <Gavel size={18} strokeWidth={2.25} aria-hidden="true" /> : null}
-                    <span>{isFakePoolMode ? tpl("projectTypeBidding") : "مزايدة"}</span>
+                    <span>{isFakePoolMode ? tpl("projectTypeBidding") : t("ordersAdmin.wizard.projectType.bidding")}</span>
                   </button>
                 </div>
                 <div className="help">
@@ -997,10 +1035,10 @@ export default function AdminInternalOrderWizard({
                       ? tpl("projectTypeHelpFixed")
                       : tpl("projectTypeHelpBidding")
                     : form.projectType === "fixed"
-                      ? "سعر ثابت: يُنشر في المعرض ويستلمه المستقل حسب تدفق الموافقات."
+                      ? t("ordersAdmin.wizard.projectType.helpFixedAdmin")
                       : isClientAudience
-                        ? "مزايدة: يُنشر الطلب لاستقبال العروض، والدفع يتم لاحقًا عند اختيار عرض."
-                        : "مزايدة: بدون نطاق سعر عند الإنشاء؛ المستقلون يقدّمون العروض وتدار العملية من لوحة الطلبات."}
+                        ? t("ordersAdmin.wizard.projectType.helpBiddingClient")
+                        : t("ordersAdmin.wizard.projectType.helpBiddingAdmin")}
                 </div>
                 <FieldError message={attempted.core ? errorsByStep.core.projectType : ""} />
               </div>
@@ -1008,13 +1046,13 @@ export default function AdminInternalOrderWizard({
               {!isClientAudience && !isFakePoolMode ? (
                 <div className="field admin-co-fields__span2">
                   <label className="label" htmlFor="adm-order-code">
-                    رقم الطلب
+                    {t("ordersAdmin.wizard.fields.orderCode")}
                   </label>
                   <input
                     id="adm-order-code"
                     className="input"
                     value={form.orderCode}
-                    placeholder="مثال: ORD-1001"
+                    placeholder={t("ordersAdmin.wizard.fields.orderCodePlaceholder")}
                     onChange={(e) => set("orderCode", e.target.value)}
                   />
                   <FieldError message={attempted.core ? errorsByStep.core.orderCode : ""} />
@@ -1023,14 +1061,14 @@ export default function AdminInternalOrderWizard({
 
               <div className="field admin-co-fields__span2">
                 <label className="label" htmlFor="adm-co-title">
-                  {isFakePoolMode ? tpl("titleLabel") : "عنوان المشروع"}
+                  {isFakePoolMode ? tpl("titleLabel") : t("ordersAdmin.wizard.fields.title")}
                 </label>
                 <input
                   id="adm-co-title"
                   className="input"
                   value={form.title}
                   placeholder={
-                    isFakePoolMode ? tpl("titlePlaceholder") : "أدخل عنوان المشروع"
+                    isFakePoolMode ? tpl("titlePlaceholder") : t("ordersAdmin.wizard.fields.titlePlaceholder")
                   }
                   maxLength={200}
                   onChange={(e) => set("title", e.target.value)}
@@ -1040,14 +1078,14 @@ export default function AdminInternalOrderWizard({
 
               <div className="field admin-co-fields__span2">
                 <label className="label" htmlFor="adm-co-desc">
-                  {isFakePoolMode ? tpl("descriptionLabel") : "وصف المطلوب"}
+                  {isFakePoolMode ? tpl("descriptionLabel") : t("ordersAdmin.wizard.fields.description")}
                 </label>
                 <textarea
                   id="adm-co-desc"
                   className="input"
                   rows={3}
                   value={form.description}
-                  placeholder={isFakePoolMode ? tpl("descriptionPlaceholder") : "اكتب وصف المشروع بشكل واضح ومفصل"}
+                  placeholder={isFakePoolMode ? tpl("descriptionPlaceholder") : t("ordersAdmin.wizard.fields.descriptionPlaceholder")}
                   onChange={(e) => set("description", e.target.value)}
                 />
                 <FieldError message={attempted.core ? errorsByStep.core.description : ""} />
@@ -1056,7 +1094,7 @@ export default function AdminInternalOrderWizard({
               <div className="admin-co-fields__row4 admin-co-fields__span2">
                 <div className="field" style={{ order: 10, gridColumn: "span 2" }}>
                   <label className="label" htmlFor="adm-co-cat">
-                    {isFakePoolMode ? tpl("categoryLabel") : "التصنيف"}
+                    {isFakePoolMode ? tpl("categoryLabel") : t("ordersAdmin.wizard.fields.category")}
                   </label>
                   <select
                     id="adm-co-cat"
@@ -1074,7 +1112,7 @@ export default function AdminInternalOrderWizard({
                       }));
                     }}
                   >
-                    <option value="">{isFakePoolMode ? tpl("categoryPlaceholder") : "— اختر —"}</option>
+                    <option value="">{isFakePoolMode ? tpl("categoryPlaceholder") : t("ordersAdmin.wizard.fields.categoryPlaceholder")}</option>
                     {categoryOptions.map((c) => (
                       <option key={c.value} value={c.value}>
                         {c.label}
@@ -1087,7 +1125,7 @@ export default function AdminInternalOrderWizard({
                 {!isFakePoolMode ? (
                   <div className="field admin-co-fields__row4-span4" style={{ order: 30 }}>
                     <label className="label" style={{ display: "block", marginBottom: 6 }}>
-                      تصنيفات إضافية (اختياري)
+                      {t("ordersAdmin.wizard.fields.extraCategories")}
                     </label>
 
                     <div style={{ display: "grid", gap: 12 }}>
@@ -1110,7 +1148,7 @@ export default function AdminInternalOrderWizard({
                           }}
                         >
                           <div className="field">
-                            <span className="label">التصنيف</span>
+                            <span className="label">{t("ordersAdmin.wizard.fields.categoryRow")}</span>
                             <div className="input" style={{ display: "flex", alignItems: "center", minHeight: 40, fontWeight: 700 }}>
                               {catLabel}
                             </div>
@@ -1118,7 +1156,7 @@ export default function AdminInternalOrderWizard({
                           <div className="field">
                             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
                               <span className="label" style={{ margin: 0 }}>
-                                التصنيف التفصيلي
+                                {t("ordersAdmin.wizard.fields.subSubcategory")}
                               </span>
                               <button
                                 type="button"
@@ -1131,7 +1169,7 @@ export default function AdminInternalOrderWizard({
                                   }))
                                 }
                               >
-                                إزالة
+                                {t("ordersAdmin.wizard.fields.remove")}
                               </button>
                             </div>
                             <SearchableSelect
@@ -1142,7 +1180,7 @@ export default function AdminInternalOrderWizard({
                                   [String(id)]: String(v || ""),
                                 }))
                               }
-                              placeholder="اختر التصنيف التفصيلي (اختياري)"
+                              placeholder={t("ordersAdmin.wizard.fields.subSubcategoryPlaceholder")}
                               options={detailOptions}
                               busy={Boolean(extraSubBusyByCat[String(id)])}
                               query={extraSubQueryByCat[String(id)] || ""}
@@ -1152,14 +1190,16 @@ export default function AdminInternalOrderWizard({
                                   [String(id)]: q,
                                 }))
                               }
-                              searchPlaceholder="ابحث عن التصنيف التفصيلي…"
+                              searchPlaceholder={t("ordersAdmin.wizard.fields.subSubcategorySearch")}
                               disabled={Boolean(extraSubBusyByCat[String(id)])}
                             />
                           </div>
                         </div>
                       );
                     })}
-                    {!(form.extraCategoryIds || []).length ? <span className="help">لا توجد تصنيفات إضافية.</span> : null}
+                    {!(form.extraCategoryIds || []).length ? (
+                      <span className="help">{t("ordersAdmin.wizard.fields.noExtraCategories")}</span>
+                    ) : null}
                   </div>
 
                   <div style={{ marginTop: 10, display: "grid", gap: 8, justifyItems: "stretch" }}>
@@ -1174,9 +1214,9 @@ export default function AdminInternalOrderWizard({
                       disabled={!form.categoryId || !extraCategoryOptions.length}
                       title={
                         !form.categoryId
-                          ? "اختر التصنيف الرئيسي أولاً"
+                          ? t("ordersAdmin.wizard.fields.pickPrimaryCategoryFirst")
                           : !extraCategoryOptions.length
-                            ? "لا يوجد تصنيف إضافي متاح"
+                            ? t("ordersAdmin.wizard.fields.noExtraCategoryAvailable")
                             : ""
                       }
                       onClick={() => setExtraCategoryPickerOpen((o) => !o)}
@@ -1184,7 +1224,7 @@ export default function AdminInternalOrderWizard({
                       {isModal && !extraCategoryPickerOpen ? (
                         <Plus size={16} strokeWidth={2.5} aria-hidden="true" />
                       ) : null}
-                      {extraCategoryPickerOpen ? "إغلاق" : "إضافة تصنيف إضافي"}
+                      {extraCategoryPickerOpen ? t("ordersAdmin.wizard.fields.close") : t("ordersAdmin.wizard.fields.addExtraCategory")}
                     </button>
                     {extraCategoryPickerOpen ? (
                       <div className="field" style={{ marginBottom: 0 }}>
@@ -1199,12 +1239,12 @@ export default function AdminInternalOrderWizard({
                             setExtraCategoryQuery("");
                             setExtraCategoryPickerOpen(false);
                           }}
-                          placeholder="اختر تصنيفاً إضافياً"
+                          placeholder={t("ordersAdmin.wizard.fields.extraCategoryPlaceholder")}
                           options={extraCategoryOptions}
                           busy={false}
                           query={extraCategoryQuery}
                           onQueryChange={setExtraCategoryQuery}
-                          searchPlaceholder="ابحث عن تصنيف…"
+                          searchPlaceholder={t("ordersAdmin.wizard.fields.extraCategorySearch")}
                           disabled={!form.categoryId}
                         />
                       </div>
@@ -1215,7 +1255,7 @@ export default function AdminInternalOrderWizard({
 
                 <div className="field" style={{ order: 11, gridColumn: "span 2" }}>
                   <label className="label" htmlFor="adm-co-ss">
-                    {isFakePoolMode ? tpl("subSubcategoryLabel") : "تفصيلي"}
+                    {isFakePoolMode ? tpl("subSubcategoryLabel") : t("ordersAdmin.wizard.fields.subSubcategoryShort")}
                   </label>
                   <select
                     id="adm-co-ss"
@@ -1231,7 +1271,7 @@ export default function AdminInternalOrderWizard({
                           : "…"
                         : isFakePoolMode
                           ? tpl("subSubcategoryNone")
-                          : "— بدون —"}
+                          : t("ordersAdmin.wizard.fields.subSubcategoryNone")}
                     </option>
                     {subSubcategoryOptions.map((ss) => (
                       <option key={ss.value} value={ss.value}>
@@ -1244,7 +1284,7 @@ export default function AdminInternalOrderWizard({
                 {form.projectType === "fixed" ? (
                   <div className="field" style={{ order: 41, gridColumn: "span 2" }}>
                     <label className="label" htmlFor="adm-co-budget">
-                      {isFakePoolMode ? tpl("budgetLabel") : "الميزانية"}
+                      {isFakePoolMode ? tpl("budgetLabel") : t("ordersAdmin.wizard.fields.budget")}
                     </label>
                     <div className="oh-price-with-unit">
                       <input
@@ -1266,7 +1306,7 @@ export default function AdminInternalOrderWizard({
                   </div>
                 ) : (
                   <div className="field" style={{ order: 41, gridColumn: "span 2" }}>
-                    <span className="label">{isFakePoolMode ? tpl("budgetRangeLabel") : "نطاق الميزانية"}</span>
+                    <span className="label">{isFakePoolMode ? tpl("budgetRangeLabel") : t("ordersAdmin.wizard.fields.budgetRange")}</span>
                     <div className="client-order-modal__bid-pair client-order-modal__bid-pair--with-currency">
                       <input
                         className="input"
@@ -1274,7 +1314,7 @@ export default function AdminInternalOrderWizard({
                         inputMode="decimal"
                         type="text"
                         value={form.bidBudgetMin}
-                        placeholder={isFakePoolMode ? tpl("budgetMinPlaceholder") : "الحد الأدنى"}
+                        placeholder={isFakePoolMode ? tpl("budgetMinPlaceholder") : t("ordersAdmin.wizard.fields.budgetMinPlaceholder")}
                         onChange={(e) => set("bidBudgetMin", e.target.value)}
                       />
                       <span className="client-order-modal__bid-sep">–</span>
@@ -1284,7 +1324,7 @@ export default function AdminInternalOrderWizard({
                         inputMode="decimal"
                         type="text"
                         value={form.bidBudgetMax}
-                        placeholder={isFakePoolMode ? tpl("budgetMaxPlaceholder") : "الحد الأعلى"}
+                        placeholder={isFakePoolMode ? tpl("budgetMaxPlaceholder") : t("ordersAdmin.wizard.fields.budgetMaxPlaceholder")}
                         onChange={(e) => set("bidBudgetMax", e.target.value)}
                       />
                       <span className="oh-price-with-unit__suffix" dir="ltr">
@@ -1352,7 +1392,7 @@ export default function AdminInternalOrderWizard({
                 <>
                   <div className="field">
                     <label className="label" htmlFor="adm-co-dur">
-                      {isFakePoolMode ? tpl("durationLabel") : "مدة التسليم"}
+                      {isFakePoolMode ? tpl("durationLabel") : t("ordersAdmin.wizard.fields.duration")}
                     </label>
                     <input
                       id="adm-co-dur"
@@ -1369,12 +1409,12 @@ export default function AdminInternalOrderWizard({
 
                   <div className="field">
                     <label className="label" htmlFor="adm-co-unit">
-                      {isFakePoolMode ? tpl("unitLabel") : "الوحدة"}
+                      {isFakePoolMode ? tpl("unitLabel") : t("ordersAdmin.wizard.fields.unit")}
                     </label>
                     <select id="adm-co-unit" className="input" value={form.durationUnit} onChange={(e) => set("durationUnit", e.target.value)}>
-                      <option value="days">{isFakePoolMode ? tpl("unitDays") : "أيام"}</option>
-                      <option value="hours">{isFakePoolMode ? tpl("unitHours") : "ساعات"}</option>
-                      <option value="minutes">{isFakePoolMode ? tpl("unitMinutes") : "دقائق"}</option>
+                      <option value="days">{isFakePoolMode ? tpl("unitDays") : t("ordersAdmin.wizard.fields.unitDays")}</option>
+                      <option value="hours">{isFakePoolMode ? tpl("unitHours") : t("ordersAdmin.wizard.fields.unitHours")}</option>
+                      <option value="minutes">{isFakePoolMode ? tpl("unitMinutes") : t("ordersAdmin.wizard.fields.unitMinutes")}</option>
                     </select>
                     <FieldError message={attempted.core ? errorsByStep.core.durationUnit : ""} />
                   </div>
@@ -1383,11 +1423,11 @@ export default function AdminInternalOrderWizard({
 
               {!isFakeOrder ? (
               <div className="field admin-co-fields__span2">
-                <span className="label">{isFakePoolMode ? tpl("skillsLabel") : "المهارات المطلوبة"}</span>
+                <span className="label">{isFakePoolMode ? tpl("skillsLabel") : t("ordersAdmin.wizard.fields.skills")}</span>
                 <SkillsTagsInput
                   value={form.preferredSkills}
                   onChange={(v) => set("preferredSkills", v)}
-                  placeholder={isFakePoolMode ? tpl("skillsPlaceholder") : "أضف المهارات المطلوبة"}
+                  placeholder={isFakePoolMode ? tpl("skillsPlaceholder") : t("ordersAdmin.wizard.fields.skillsPlaceholder")}
                   historySkills={skillHistory}
                 />
               </div>
@@ -1399,24 +1439,23 @@ export default function AdminInternalOrderWizard({
           {!isClientAudience && currentStepKey === "assignment" && !isFakePoolMode ? (
             <>
               <h2 style={{ marginBottom: 10 }}>
-                {isInstitutionalMode ? "2) الإسناد" : "5) الإسناد (اختياري)"}
+                {isInstitutionalMode ? t("ordersAdmin.wizard.assignment.headingInstitutional") : t("ordersAdmin.wizard.assignment.headingOptional")}
               </h2>
               {isInstitutionalMode ? (
                 <div className="oh-review" style={{ marginTop: 4 }}>
                   <p className="help" style={{ marginBottom: 8 }}>
-                    في مخزون الطلبات المؤسسية لا يتم إسناد الطلب لمستقل عند الإنشاء.
+                    {t("ordersAdmin.wizard.assignment.institutionalHelp1")}
                   </p>
                   <p className="help" style={{ marginBottom: 0 }}>
-                    بعد موافقة المدير الأعلى وإطلاق الطلب للمؤسسة، يتم التقديم والإسناد عبر مسار الطلب الحقيقي المعتاد.
+                    {t("ordersAdmin.wizard.assignment.institutionalHelp2")}
                   </p>
                 </div>
               ) : (
               <div className="form-grid">
                 <div className="field" style={{ gridColumn: "span 12" }}>
-                  <label>اختيار المستقل</label>
+                  <label>{t("ordersAdmin.wizard.assignment.pickFreelancer")}</label>
                   <div className="help" style={{ marginBottom: 8 }}>
-                    يتم عرض المستقلون النشطون وغير النشطين؛ يمكن الإسناد فقط للمستقل المؤهل (حساب نشط، بريد موثّق، اشتراك يسمح باستلام
-                    الطلبات).
+                    {t("ordersAdmin.wizard.assignment.pickFreelancerHelp")}
                   </div>
                   <AdminFreelancerSelector
                     active={currentStepKey === "assignment"}
@@ -1439,7 +1478,7 @@ export default function AdminInternalOrderWizard({
               <h2 style={{ marginBottom: 10 }}>
                 {isFakePoolMode
                   ? `${stepIdx + 1}) ${tpl("stepFilesOptional")}`
-                  : "6) الملفات (اختياري)"}
+                  : t("ordersAdmin.wizard.files.heading")}
               </h2>
               {isFakePoolMode ? (
                 <div className="oh-review" style={{ marginTop: 4 }}>
@@ -1468,12 +1507,10 @@ export default function AdminInternalOrderWizard({
                 }}
                 onClick={() => fileInputRef.current?.click()}
               >
-                <div className="co-dropzone-title">
-                  اسحب الملفات هنا أو اضغط للاختيار (حد أقصى 5 ملفات)
-                </div>
-                <div className="help">يمكنك إضافة ملفات المشروع (اختياري).</div>
+                <div className="co-dropzone-title">{t("ordersAdmin.wizard.files.dropzoneTitle")}</div>
+                <div className="help">{t("ordersAdmin.wizard.files.dropzoneHelp")}</div>
                 <div className="help" style={{ marginTop: 6 }}>
-                  {ORDER_UPLOAD_TOTAL_SIZE_HELPER_AR}
+                  {t("ordersAdmin.wizard.upload.totalSizeHelper")}
                 </div>
 
                 <input
@@ -1488,7 +1525,7 @@ export default function AdminInternalOrderWizard({
 
                 {files.length ? (
                   <div style={{ marginTop: 12 }}>
-                    <div className="help">الملفات المختارة:</div>
+                    <div className="help">{t("ordersAdmin.wizard.files.selectedLabel")}</div>
                     <ul className="co-dropzone-files">
                       {files.map((f, idx) => (
                         <li key={`${f.name}-${idx}`} className="co-dropzone-files__item">
@@ -1508,12 +1545,12 @@ export default function AdminInternalOrderWizard({
                           fileInputRef.current?.click();
                         }}
                         disabled={files.length >= 5}
-                        title={files.length >= 5 ? "وصلت إلى الحد الأقصى (5 ملفات)" : "إضافة ملفات أخرى"}
+                        title={files.length >= 5 ? t("ordersAdmin.wizard.files.maxFilesTitle") : t("ordersAdmin.wizard.files.addMoreTitle")}
                       >
-                        إضافة ملفات أخرى
+                        {t("ordersAdmin.wizard.files.addMore")}
                       </button>
                       <button type="button" className="btn btn-secondary" onClick={() => setFiles([])}>
-                        مسح الملفات
+                        {t("ordersAdmin.wizard.files.clearFiles")}
                       </button>
                     </div>
                   </div>
@@ -1526,47 +1563,47 @@ export default function AdminInternalOrderWizard({
           {currentStepKey === "review" ? (
             <>
               <h2 style={{ marginBottom: 10 }}>
-                {isFakePoolMode ? `${stepIdx + 1}) ${tpl("steps.review")}` : "7) مراجعة وإرسال"}
+                {isFakePoolMode ? `${stepIdx + 1}) ${tpl("steps.review")}` : t("ordersAdmin.wizard.review.heading")}
               </h2>
               <div className="oh-review">
-                <CreateOrderReviewRow label={isFakePoolMode ? tpl("reviewTitle") : "العنوان"}>
+                <CreateOrderReviewRow label={isFakePoolMode ? tpl("reviewTitle") : t("ordersAdmin.wizard.review.title")}>
                   {form.title.trim() || tpl("emDash")}
                 </CreateOrderReviewRow>
-                <CreateOrderReviewRow label={isFakePoolMode ? tpl("reviewDescription") : "الوصف"} multiline>
+                <CreateOrderReviewRow label={isFakePoolMode ? tpl("reviewDescription") : t("ordersAdmin.wizard.review.description")} multiline>
                   {form.description.trim() || tpl("emDash")}
                 </CreateOrderReviewRow>
                 <div className="oh-review__2col">
-                  <CreateOrderReviewRow label={isFakePoolMode ? tpl("reviewCategory") : "التصنيف"}>
+                  <CreateOrderReviewRow label={isFakePoolMode ? tpl("reviewCategory") : t("ordersAdmin.wizard.review.category")}>
                     {categories.find((c) => String(c.id) === String(form.categoryId))?.name || tpl("emDash")}
                   </CreateOrderReviewRow>
-                  <CreateOrderReviewRow label={isFakePoolMode ? tpl("reviewSubSubcategory") : "التصنيف التفصيلي"}>
+                  <CreateOrderReviewRow label={isFakePoolMode ? tpl("reviewSubSubcategory") : t("ordersAdmin.wizard.review.subSubcategory")}>
                     {form.subSubcategoryId
                       ? subSubcategories.find((ss) => String(ss.id) === String(form.subSubcategoryId))?.name || tpl("emDash")
                       : tpl("emDash")}
                   </CreateOrderReviewRow>
                 </div>
                 {!isFakeOrder ? (
-                <CreateOrderReviewRow label={isFakePoolMode ? tpl("reviewSkills") : "المهارات المطلوبة"}>
+                <CreateOrderReviewRow label={isFakePoolMode ? tpl("reviewSkills") : t("ordersAdmin.wizard.review.skills")}>
                   {Array.isArray(form.preferredSkills) && form.preferredSkills.length
-                    ? form.preferredSkills.join(isFakePoolMode ? ", " : "، ")
+                    ? form.preferredSkills.join(isFakePoolMode ? ", " : locale === "ar" ? "، " : ", ")
                     : isFakePoolMode
                       ? tpl("reviewSkillsNone")
-                      : "لا توجد مهارات محددة مطلوبة"}
+                      : t("ordersAdmin.wizard.review.skillsNone")}
                 </CreateOrderReviewRow>
                 ) : null}
                 <div className="oh-review__2col">
-                  <CreateOrderReviewRow label={isFakePoolMode ? tpl("reviewProjectType") : "نوع المشروع"}>
+                  <CreateOrderReviewRow label={isFakePoolMode ? tpl("reviewProjectType") : t("ordersAdmin.wizard.review.projectType")}>
                     {form.projectType === "fixed"
                       ? isFakePoolMode
                         ? tpl("projectTypeFixed")
-                        : "سعر ثابت"
+                        : t("ordersAdmin.wizard.projectType.fixed")
                       : form.projectType === "bidding"
                         ? isFakePoolMode
                           ? tpl("projectTypeBidding")
-                          : "مزايدة"
+                          : t("ordersAdmin.wizard.projectType.bidding")
                         : tpl("emDash")}
                   </CreateOrderReviewRow>
-                  <CreateOrderReviewRow label={isFakePoolMode ? tpl("reviewBudget") : "الميزانية"}>
+                  <CreateOrderReviewRow label={isFakePoolMode ? tpl("reviewBudget") : t("ordersAdmin.wizard.review.budget")}>
                     {isFakePoolMode ? (
                       <span dir="ltr" style={{ display: "inline-block", textAlign: "right", width: "100%" }}>
                         {formatTrainingOrderBudget({
@@ -1587,7 +1624,7 @@ export default function AdminInternalOrderWizard({
                     )}
                   </CreateOrderReviewRow>
                 </div>
-                <CreateOrderReviewRow label={isFakePoolMode ? tpl("reviewDuration") : "مدة التسليم"}>
+                <CreateOrderReviewRow label={isFakePoolMode ? tpl("reviewDuration") : t("ordersAdmin.wizard.review.duration")}>
                   {isFakePoolMode && form.projectType === "bidding"
                     ? form.durationMin && form.durationMax
                       ? `${form.durationMin} – ${form.durationMax} ${
@@ -1607,35 +1644,21 @@ export default function AdminInternalOrderWizard({
                               : tpl("unitMinutes")
                         }`
                     : form.durationValue
-                      ? `${form.durationValue} ${
-                          form.durationUnit === "days"
-                            ? form.durationValue >= 3 && form.durationValue <= 10
-                              ? "أيام"
-                              : form.durationValue === 2
-                                ? "يومين"
-                                : "يوم"
-                            : form.durationUnit === "hours"
-                              ? form.durationValue >= 3 && form.durationValue <= 10
-                                ? "ساعات"
-                                : form.durationValue === 2
-                                  ? "ساعتين"
-                                  : "ساعة"
-                              : form.durationValue >= 3 && form.durationValue <= 10
-                                ? "دقائق"
-                                : form.durationValue === 2
-                                  ? "دقيقتين"
-                                  : "دقيقة"
-                        }`
+                      ? formatReviewDuration(form.durationValue, form.durationUnit, locale, t)
                       : isFakePoolMode
                         ? tpl("emDash")
                         : "—"}
                 </CreateOrderReviewRow>
                 {!isClientAudience && !isFakePoolMode ? (
-                  <CreateOrderReviewRow label="المستقل">{selectedFreelancerLabel || "غير معين"}</CreateOrderReviewRow>
+                  <CreateOrderReviewRow label={t("ordersAdmin.wizard.review.freelancer")}>
+                    {selectedFreelancerLabel || t("ordersAdmin.wizard.freelancer.unassigned")}
+                  </CreateOrderReviewRow>
                 ) : null}
                 {!isFakePoolMode ? (
-                <CreateOrderReviewRow label="الملفات">
-                  {files.length ? `${files.length} ملفات` : "لا توجد ملفات مضافة"}
+                <CreateOrderReviewRow label={t("ordersAdmin.wizard.review.files")}>
+                  {files.length
+                    ? t("ordersAdmin.wizard.review.filesCount", { count: files.length })
+                    : t("ordersAdmin.wizard.review.noFiles")}
                 </CreateOrderReviewRow>
                 ) : null}
 
@@ -1644,13 +1667,13 @@ export default function AdminInternalOrderWizard({
                     ? tpl("reviewNote")
                     : isClientAudience
                       ? form.projectType === "fixed"
-                        ? "بعد المتابعة للدفع، سيتم تفعيل الطلب ونشره في المعرض."
-                        : "سيتم نشر الطلب لاستقبال العروض، والدفع يتم عند اختيار عرض."
+                        ? t("ordersAdmin.wizard.review.noteClientFixed")
+                        : t("ordersAdmin.wizard.review.noteClientBidding")
                       : form.assignedFreelancerId
-                        ? "سيتم تعيين الطلب مباشرة لهذا المستقل"
+                        ? t("ordersAdmin.wizard.review.noteAssigned")
                         : archiveOnCreate
-                          ? "سيتم حفظ الطلب في الأرشيف (غير نشط الآن). يمكنك تفعيله لاحقاً من لوحة التحكم."
-                          : "سيتم نشر الطلب في قائمة الطلبات المتاحة"}
+                          ? t("ordersAdmin.wizard.review.noteArchive")
+                          : t("ordersAdmin.wizard.review.notePublish")}
                 </div>
 
                 {!isClientAudience && !form.assignedFreelancerId && !isFakePoolMode ? (
@@ -1661,10 +1684,10 @@ export default function AdminInternalOrderWizard({
                         checked={archiveOnCreate}
                         onChange={(e) => setArchiveOnCreate(e.target.checked)}
                       />
-                      حفظ في الأرشيف (غير نشط الآن)
+                      {t("ordersAdmin.wizard.review.archiveCheckbox")}
                     </label>
                     <div className="help" style={{ marginTop: 6 }}>
-                      عند تفعيل هذا الخيار لن يظهر الطلب في قائمة الطلبات المتاحة. يمكنك تفعيله لاحقاً.
+                      {t("ordersAdmin.wizard.review.archiveHelp")}
                     </div>
                   </div>
                 ) : null}
@@ -1690,11 +1713,12 @@ export default function AdminInternalOrderWizard({
                 onClick={modalOnClose}
                 disabled={busy}
               >
-                {modalCloseLabel || (isInstitutionalMode ? "إلغاء" : "إغلاق")}
+                {modalCloseLabel ||
+                  (isInstitutionalMode ? t("ordersAdmin.wizard.nav.cancel") : t("ordersAdmin.wizard.nav.close"))}
               </button>
             ) : null}
             <button type="button" className="btn btn-secondary" onClick={goPrev} disabled={stepIdx === 0 || busy}>
-              {isFakePoolMode ? tpl("previous") : "السابق"}
+              {isFakePoolMode ? tpl("previous") : t("ordersAdmin.wizard.nav.previous")}
             </button>
             {currentStepKey !== "review" ? (
               <button
@@ -1707,7 +1731,7 @@ export default function AdminInternalOrderWizard({
                 }}
                 disabled={busy}
               >
-                {isFakePoolMode ? tpl("next") : "التالي"}
+                {isFakePoolMode ? tpl("next") : t("ordersAdmin.wizard.nav.next")}
               </button>
             ) : (
               <button
@@ -1722,14 +1746,14 @@ export default function AdminInternalOrderWizard({
                 {busy
                   ? isFakePoolMode
                     ? tpl("saving")
-                    : "جارٍ الإنشاء…"
+                    : t("ordersAdmin.wizard.nav.creating")
                   : isFakePoolMode
                     ? tpl("save")
                     : isClientAudience
                       ? form.projectType === "fixed"
-                        ? "المتابعة إلى الدفع"
-                        : "نشر الطلب لاستقبال العروض"
-                      : "إنشاء الطلب"}
+                        ? t("ordersAdmin.wizard.nav.continuePayment")
+                        : t("ordersAdmin.wizard.nav.publishForBids")
+                      : t("ordersAdmin.wizard.nav.createOrder")}
               </button>
             )}
           </div>
@@ -1737,7 +1761,7 @@ export default function AdminInternalOrderWizard({
           {!stepValid && currentStepKey !== "review" && attempted[currentStepKey] ? (
             <div className="oh-inline-alert" role="status" aria-live="polite">
               {stepFirstErrorMessage ||
-                (isFakePoolMode ? tplErr("stepIncomplete") : "أكمل الحقول المطلوبة في هذه الخطوة للمتابعة.")}
+                (isFakePoolMode ? tplErr("stepIncomplete") : t("ordersAdmin.wizard.errors.stepIncomplete"))}
             </div>
           ) : null}
         </section>
@@ -1750,7 +1774,7 @@ export default function AdminInternalOrderWizard({
   }
 
   return (
-    <DashboardShell className="admin-internal-wizard admin-internal-wizard--page co-create-order-page" dir="rtl">
+    <DashboardShell className="admin-internal-wizard admin-internal-wizard--page co-create-order-page" dir={dir}>
       {shell}
     </DashboardShell>
   );

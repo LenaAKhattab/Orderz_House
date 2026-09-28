@@ -9,6 +9,8 @@ import DashboardErrorState from "../../components/dashboard/DashboardErrorState"
 import { editWebsiteFooterBreadcrumbs } from "../../components/dashboard/dashboardBreadcrumbs";
 import { FOOTER_EDIT_BASE } from "../../constants/superAdminWebsiteSections";
 import { FOOTER_CONTACT_FALLBACKS, coalesceFooterVisible } from "../../constants/footerSettings";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/siteEditorResources";
 import {
   getSuperAdminFooterSettingsRequest,
   updateSuperAdminFooterContactRequest,
@@ -16,11 +18,7 @@ import {
 import { useToast } from "../../components/ui/toastContext";
 import "./superAdminSitePages.css";
 
-function errorMessage(err) {
-  return err?.response?.data?.message || "تعذر تنفيذ العملية. حاول مجدداً.";
-}
-
-function VisibilityToggle({ label, checked, onChange, disabled }) {
+function VisibilityToggle({ label, checked, onChange, disabled, t }) {
   return (
     <label className="oh-site-page-form__visibility" data-on={checked ? "true" : "false"}>
       <input
@@ -32,21 +30,22 @@ function VisibilityToggle({ label, checked, onChange, disabled }) {
         aria-checked={checked}
         aria-label={label}
       />
-      <span>{checked ? "ظاهر" : "مخفي"}</span>
+      <span>{checked ? t("siteEditor.common.visible") : t("siteEditor.common.hidden")}</span>
     </label>
   );
 }
 
-function FormField({ label, visible, onVisibleChange, visibilityLabel, children, disabled }) {
+function FormField({ label, visible, onVisibleChange, visibilityLabel, children, disabled, t }) {
   return (
     <div className="oh-site-page-form__field">
       <div className="oh-site-page-form__field-head">
         <span className="oh-site-page-form__label">{label}</span>
         <VisibilityToggle
-          label={visibilityLabel || `إظهار ${label} في الموقع`}
+          label={visibilityLabel || t("siteEditor.common.showFieldOnSite", { label })}
           checked={visible}
           onChange={onVisibleChange}
           disabled={disabled}
+          t={t}
         />
       </div>
       {children}
@@ -55,6 +54,7 @@ function FormField({ label, visible, onVisibleChange, visibilityLabel, children,
 }
 
 export default function SuperAdminEditWebsiteFooterContactPage() {
+  const { t } = useTranslation();
   const { showToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -70,6 +70,11 @@ export default function SuperAdminEditWebsiteFooterContactPage() {
   const [emailVisible, setEmailVisible] = useState(true);
   const [whatsappVisible, setWhatsappVisible] = useState(true);
   const [locationVisible, setLocationVisible] = useState(true);
+
+  const operationError = useCallback(
+    (err) => err?.response?.data?.message || t("siteEditor.errors.operationFailed"),
+    [t],
+  );
 
   const applyContact = useCallback((next) => {
     const snapshot = {
@@ -103,12 +108,12 @@ export default function SuperAdminEditWebsiteFooterContactPage() {
       const res = await getSuperAdminFooterSettingsRequest();
       applyContact(res?.data?.settings?.contact || null);
     } catch (err) {
-      setError(errorMessage(err));
+      setError(operationError(err));
       setLoaded(false);
     } finally {
       setLoading(false);
     }
-  }, [applyContact]);
+  }, [applyContact, operationError]);
 
   useEffect(() => {
     loadSettings();
@@ -143,9 +148,9 @@ export default function SuperAdminEditWebsiteFooterContactPage() {
         locationVisible,
       });
       applyContact(res?.data?.contact || null);
-      showToast({ type: "success", message: "تم حفظ بيانات التواصل بنجاح." });
+      showToast({ type: "success", message: t("siteEditor.footerContact.toastSaved") });
     } catch (err) {
-      setError(errorMessage(err));
+      setError(operationError(err));
     } finally {
       setSaving(false);
     }
@@ -154,22 +159,22 @@ export default function SuperAdminEditWebsiteFooterContactPage() {
   return (
     <DashboardShell>
       <DashboardPageHeader
-        title="تواصل معنا"
-        description="عدّل بيانات التواصل الظاهرة في تذييل الموقع."
+        title={t("siteEditor.footerContact.pageTitle")}
+        description={t("siteEditor.footerContact.pageDescription")}
         breadcrumbs={editWebsiteFooterBreadcrumbs("dashboard.breadcrumbs.footerContact")}
       />
 
-      <DashboardSection title="بيانات التواصل">
+      <DashboardSection title={t("siteEditor.footerContact.sectionTitle")}>
         <p className="oh-site-pages-toolbar__hint" style={{ marginBottom: 12 }}>
-          <Link to={FOOTER_EDIT_BASE}>← العودة إلى أقسام التذييل</Link>
+          <Link to={FOOTER_EDIT_BASE}>{t("siteEditor.common.backToFooterSections")}</Link>
         </p>
-        {loading ? <DashboardLoadingState label="جاري تحميل الإعدادات…" /> : null}
+        {loading ? <DashboardLoadingState label={t("siteEditor.common.loadingSettings")} /> : null}
         {!loading && error && !loaded ? (
           <DashboardErrorState
             message={error}
             actions={
               <Button type="button" variant="secondary" onClick={loadSettings}>
-                إعادة المحاولة
+                {t("siteEditor.common.retry")}
               </Button>
             }
           />
@@ -182,21 +187,23 @@ export default function SuperAdminEditWebsiteFooterContactPage() {
 
               <div className="oh-site-page-form__field oh-site-page-form__section-toggle">
                 <div className="oh-site-page-form__field-head">
-                  <span className="oh-site-page-form__label">إظهار القسم في تذييل الموقع</span>
+                  <span className="oh-site-page-form__label">{t("siteEditor.footerContact.showSectionInFooter")}</span>
                   <VisibilityToggle
-                    label='إظهار قسم "تواصل معنا" في تذييل الموقع'
+                    label={t("siteEditor.footerContact.showContactSectionInFooter")}
                     checked={visible}
                     onChange={(e) => setVisible(e.target.checked)}
                     disabled={saving}
+                    t={t}
                   />
                 </div>
               </div>
 
               <FormField
-                label="رقم الهاتف"
+                label={t("siteEditor.footerContact.phone")}
                 visible={phoneVisible}
                 onVisibleChange={(e) => setPhoneVisible(e.target.checked)}
                 disabled={saving}
+                t={t}
               >
                 <input
                   className="oh-site-page-form__input"
@@ -210,10 +217,11 @@ export default function SuperAdminEditWebsiteFooterContactPage() {
               </FormField>
 
               <FormField
-                label="البريد الإلكتروني"
+                label={t("siteEditor.footerContact.email")}
                 visible={emailVisible}
                 onVisibleChange={(e) => setEmailVisible(e.target.checked)}
                 disabled={saving}
+                t={t}
               >
                 <input
                   className="oh-site-page-form__input"
@@ -228,10 +236,11 @@ export default function SuperAdminEditWebsiteFooterContactPage() {
               </FormField>
 
               <FormField
-                label="رقم واتساب"
+                label={t("siteEditor.footerContact.whatsapp")}
                 visible={whatsappVisible}
                 onVisibleChange={(e) => setWhatsappVisible(e.target.checked)}
                 disabled={saving}
+                t={t}
               >
                 <input
                   className="oh-site-page-form__input"
@@ -245,10 +254,11 @@ export default function SuperAdminEditWebsiteFooterContactPage() {
               </FormField>
 
               <FormField
-                label="الموقع"
+                label={t("siteEditor.footerContact.location")}
                 visible={locationVisible}
                 onVisibleChange={(e) => setLocationVisible(e.target.checked)}
                 disabled={saving}
+                t={t}
               >
                 <input
                   className="oh-site-page-form__input"
@@ -262,7 +272,7 @@ export default function SuperAdminEditWebsiteFooterContactPage() {
 
               <div className="oh-site-page-form__actions">
                 <Button type="submit" disabled={saving || !isDirty}>
-                  {saving ? "جاري الحفظ…" : "حفظ التعديلات"}
+                  {saving ? t("siteEditor.common.saving") : t("siteEditor.common.saveChanges")}
                 </Button>
               </div>
             </div>

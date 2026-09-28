@@ -1,6 +1,8 @@
 import { useCallback, useState } from "react";
 import { downloadOrderFileForRole, viewOrderFileForRole } from "../../../services/api";
 import { formatJoDateTime } from "../order-details/orderDetailsUtils";
+import { useTranslation } from "../../../i18n/LanguageProvider";
+import "../../../i18n/ordersAdminResources";
 import "./submission-history.css";
 
 function badgeClass(titleBadgeAr) {
@@ -14,12 +16,13 @@ function badgeClass(titleBadgeAr) {
  * @param {{ submissionHistory?: { submissions?: unknown[] }; orderId: string; fileAccess: 'client' | 'freelancer' | 'admin' }} props
  */
 export default function SubmissionHistoryTimeline({ submissionHistory, orderId, fileAccess = "freelancer" }) {
+  const { t } = useTranslation();
   const subs = Array.isArray(submissionHistory?.submissions) ? submissionHistory.submissions : [];
   if (!subs.length) return null;
 
   return (
     <section className="oh-submission-history" dir="rtl">
-      <h3 className="oh-submission-history__title">سجل التسليمات والتعديلات</h3>
+      <h3 className="oh-submission-history__title">{t("ordersAdmin.orderDetails.submissionHistory.title")}</h3>
       {subs.map((s) => (
         <SubmissionTimelineItem key={s.id} submission={s} orderId={orderId} fileAccess={fileAccess} />
       ))}
@@ -28,8 +31,11 @@ export default function SubmissionHistoryTimeline({ submissionHistory, orderId, 
 }
 
 function SubmissionTimelineItem({ submission, orderId, fileAccess }) {
+  const { t } = useTranslation();
   const revisions = Array.isArray(submission.revisionRequests) ? submission.revisionRequests : [];
   const files = Array.isArray(submission.files) ? submission.files : [];
+  const submissionNumber =
+    submission.submissionNumber != null ? String(submission.submissionNumber) : "—";
 
   return (
     <article className="oh-submission-item">
@@ -37,7 +43,10 @@ function SubmissionTimelineItem({ submission, orderId, fileAccess }) {
         <span className={badgeClass(submission.titleBadgeAr)}>{submission.titleBadgeAr || "—"}</span>
         <span className="oh-submission-badge oh-submission-badge--status">{submission.statusBadgeAr || submission.status || "—"}</span>
         <span className="oh-submission-item__meta">
-          تسليم رقم {submission.submissionNumber != null ? String(submission.submissionNumber) : "—"} · {formatJoDateTime(submission.submittedAt)}
+          {t("ordersAdmin.orderDetails.submissionHistory.submissionMeta", {
+            number: submissionNumber,
+            date: formatJoDateTime(submission.submittedAt),
+          })}
         </span>
       </div>
       {submission.message ? <p className="oh-submission-item__msg">{submission.message}</p> : null}
@@ -50,7 +59,12 @@ function SubmissionTimelineItem({ submission, orderId, fileAccess }) {
 }
 
 function SubmissionFilesList({ files, orderId, fileAccess }) {
+  const { t } = useTranslation();
   const [busy, setBusy] = useState(null);
+  const loadingLabel = t("ordersAdmin.orderDetails.submissionHistory.loading");
+  const viewLabel = t("ordersAdmin.orderDetails.files.view");
+  const downloadLabel = t("ordersAdmin.orderDetails.files.download");
+  const fileDefault = t("ordersAdmin.orderDetails.submissionHistory.fileDefault");
 
   const onView = useCallback(
     async (f) => {
@@ -76,19 +90,25 @@ function SubmissionFilesList({ files, orderId, fileAccess }) {
     [orderId, fileAccess],
   );
 
-  if (!files.length) return <p className="help" style={{ margin: "6px 0 0" }}>لا توجد ملفات تسليم مسجّلة لهذا الإدخال.</p>;
+  if (!files.length) {
+    return (
+      <p className="help" style={{ margin: "6px 0 0" }}>
+        {t("ordersAdmin.orderDetails.submissionHistory.noSubmissionFiles")}
+      </p>
+    );
+  }
 
   return (
     <ul className="oh-submission-files">
       {files.map((f) => (
         <li key={f.id}>
-          <span style={{ flex: "1 1 140px", minWidth: 0 }}>{f.originalName || "ملف"}</span>
+          <span style={{ flex: "1 1 140px", minWidth: 0 }}>{f.originalName || fileDefault}</span>
           <span style={{ display: "inline-flex", gap: 6, flexShrink: 0 }}>
             <button type="button" className="btn btn-secondary" style={{ padding: "4px 10px", fontSize: 13 }} disabled={busy} onClick={() => void onView(f)}>
-              {busy === `v-${f.id}` ? "…" : "عرض"}
+              {busy === `v-${f.id}` ? loadingLabel : viewLabel}
             </button>
             <button type="button" className="btn btn-primary" style={{ padding: "4px 10px", fontSize: 13 }} disabled={busy} onClick={() => void onDownload(f)}>
-              {busy === `d-${f.id}` ? "…" : "تحميل"}
+              {busy === `d-${f.id}` ? loadingLabel : downloadLabel}
             </button>
           </span>
         </li>
@@ -98,8 +118,13 @@ function SubmissionFilesList({ files, orderId, fileAccess }) {
 }
 
 function RevisionRequestCard({ revision, orderId, fileAccess }) {
+  const { t } = useTranslation();
   const files = Array.isArray(revision.files) ? revision.files : [];
   const [busy, setBusy] = useState(null);
+  const loadingLabel = t("ordersAdmin.orderDetails.submissionHistory.loading");
+  const viewLabel = t("ordersAdmin.orderDetails.files.view");
+  const downloadLabel = t("ordersAdmin.orderDetails.files.download");
+  const attachmentDefault = t("ordersAdmin.orderDetails.submissionHistory.attachmentDefault");
 
   const onView = async (f) => {
     setBusy(`v-${f.id}`);
@@ -121,7 +146,7 @@ function RevisionRequestCard({ revision, orderId, fileAccess }) {
 
   return (
     <div className="oh-revision-card">
-      <div className="oh-revision-card__title">طلب تعديلات</div>
+      <div className="oh-revision-card__title">{t("ordersAdmin.orderDetails.submissionHistory.revisionTitle")}</div>
       <div className="oh-revision-card__role">{revision.requestedByRoleLabelAr || "—"}</div>
       <p className="oh-revision-card__note">{revision.note || "—"}</p>
       <div className="oh-revision-card__time">{formatJoDateTime(revision.createdAt)}</div>
@@ -129,13 +154,13 @@ function RevisionRequestCard({ revision, orderId, fileAccess }) {
         <ul className="oh-submission-files" style={{ marginTop: 8 }}>
           {files.map((f) => (
             <li key={f.id}>
-              <span style={{ flex: "1 1 140px", minWidth: 0 }}>{f.originalName || "مرفق"}</span>
+              <span style={{ flex: "1 1 140px", minWidth: 0 }}>{f.originalName || attachmentDefault}</span>
               <span style={{ display: "inline-flex", gap: 6, flexShrink: 0 }}>
                 <button type="button" className="btn btn-secondary" style={{ padding: "4px 10px", fontSize: 13 }} disabled={busy} onClick={() => void onView(f)}>
-                  {busy === `v-${f.id}` ? "…" : "عرض"}
+                  {busy === `v-${f.id}` ? loadingLabel : viewLabel}
                 </button>
                 <button type="button" className="btn btn-primary" style={{ padding: "4px 10px", fontSize: 13 }} disabled={busy} onClick={() => void onDownload(f)}>
-                  {busy === `d-${f.id}` ? "…" : "تحميل"}
+                  {busy === `d-${f.id}` ? loadingLabel : downloadLabel}
                 </button>
               </span>
             </li>

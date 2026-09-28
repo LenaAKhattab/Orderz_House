@@ -1,29 +1,35 @@
 import FileList from "./FileList";
 import OrderDetailsNeuIcon from "./OrderDetailsNeuIcon";
+import { useTranslation } from "../../../i18n/LanguageProvider";
+import "../../../i18n/ordersAdminResources";
 
 /**
  * @param {object} props
  * @param {string} [props.title]
  * @param {Array} props.files
- * @param {string} props.emptyText
+ * @param {string} [props.emptyText]
  * @param {string|null} [props.orderId]
  * @param {"client"|"freelancer"|"admin"|null} [props.fileAccess]
  */
 export default function OrderFilesCard({
-  title = "الملفات",
+  title,
   files = [],
-  emptyText = "لا توجد ملفات",
+  emptyText,
   orderId = null,
   fileAccess = null,
 }) {
+  const { t } = useTranslation();
+  const resolvedTitle = title ?? t("ordersAdmin.orderDetails.files.titleDefault");
+  const resolvedEmpty = emptyText ?? t("ordersAdmin.orderDetails.files.emptyDefault");
+
   return (
     <section className="od-files-card">
       <div className="od-section-head od-section-head--compact">
         <OrderDetailsNeuIcon name="files" variant="squircle" />
-        <h3 className="od-files-card__title">{title}</h3>
+        <h3 className="od-files-card__title">{resolvedTitle}</h3>
       </div>
       <div className="od-files-card__body">
-        <FileList files={files} emptyText={emptyText} orderId={orderId} fileAccess={fileAccess} />
+        <FileList files={files} emptyText={resolvedEmpty} orderId={orderId} fileAccess={fileAccess} />
       </div>
     </section>
   );

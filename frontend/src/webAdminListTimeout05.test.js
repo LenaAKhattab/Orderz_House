@@ -135,6 +135,6 @@ describe("Web-Admin-List-Timeout-05 — page/hook contracts", () => {
 
   it("3-column admin action center unaffected", () => {
     const home = read("pages/dashboard/AdminDashboardHome.jsx");
-    assert.match(home, /acc-actions-grid--admin-center|action-center|مركز المهام/);
+    assert.match(home, /acc-actions-grid--admin-center|action-center|opsAdmin\.adminHome\.tasksTitle/);
   });
 });

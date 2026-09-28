@@ -18,20 +18,28 @@ import {
 import {
   BILDAZO_ADMIN_REVIEW_STATUSES,
   BILDAZO_ADMIN_STATUS_FILTERS,
-  bildazoAdminStatusLabel,
   bildazoAdminStatusTone,
   canSubmitManualLink,
 } from "../../constants/bildazoAuthorAdmin";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/bildazoAdminResources";
 
-function formatJoDateTime(value) {
+function formatJoDateTime(value, locale) {
   if (!value) return "—";
   const d = new Date(value);
   if (!Number.isFinite(d.getTime())) return "—";
-  return new Intl.DateTimeFormat("ar-JO-u-nu-latn", {
+  const intlLocale = locale === "en" ? "en-JO-u-nu-latn" : "ar-JO-u-nu-latn";
+  return new Intl.DateTimeFormat(intlLocale, {
     timeZone: "Asia/Amman",
     dateStyle: "medium",
     timeStyle: "short",
   }).format(d);
+}
+
+function filterStatusLabel(status, t) {
+  const key = `bildazoAdmin.filters.${status}`;
+  const label = t(key);
+  return label === key ? status || "—" : label;
 }
 
 const emptyLinkForm = {
@@ -43,6 +51,7 @@ const emptyLinkForm = {
 };
 
 export default function SuperAdminBildazoAuthorLinksPage() {
+  const { t, locale } = useTranslation();
   const { push } = useToast();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -72,15 +81,15 @@ export default function SuperAdminBildazoAuthorLinksPage() {
       if (code === "BILDAZO_AUTHOR_GATE_SCHEMA_MISSING") {
         setSchemaReady(false);
         setItems([]);
-        setError(getSafeApiErrorMessage(err) || "جدول ربط Bildazo غير جاهز.");
+        setError(getSafeApiErrorMessage(err) || t("bildazoAdmin.page.loadSchemaError"));
       } else {
-        setError(getSafeApiErrorMessage(err) || "تعذر تحميل طلبات الربط.");
+        setError(getSafeApiErrorMessage(err) || t("bildazoAdmin.page.loadFailed"));
         setItems([]);
       }
     } finally {
       setLoading(false);
     }
-  }, [status, search]);
+  }, [status, search, t]);
 
   useEffect(() => {
     load();
@@ -121,11 +130,11 @@ export default function SuperAdminBildazoAuthorLinksPage() {
         manualReviewReason: form.manualReviewReason.trim() || undefined,
         confirmVerified: true,
       });
-      push({ type: "success", message: "تم حفظ الربط اليدوي لحساب الكاتب." });
+      push({ type: "success", message: t("bildazoAdmin.page.manualLinkSaved") });
       setDialogRow(null);
       await load();
     } catch (err) {
-      setFormError(getSafeApiErrorMessage(err) || "تعذر حفظ الربط اليدوي.");
+      setFormError(getSafeApiErrorMessage(err) || t("bildazoAdmin.page.manualLinkFailed"));
     } finally {
       setSaving(false);
     }
@@ -135,11 +144,11 @@ export default function SuperAdminBildazoAuthorLinksPage() {
     const needsReason = nextStatus === "failed" || nextStatus === "blocked";
     let reason = row.manualReviewReason || "";
     if (needsReason) {
-      const typed = window.prompt("سبب المراجعة (مطلوب):", reason);
+      const typed = window.prompt(t("bildazoAdmin.page.reviewReasonPrompt"), reason);
       if (typed == null) return;
       reason = String(typed).trim();
       if (!reason) {
-        push({ type: "error", message: "سبب المراجعة مطلوب لحالة الفشل أو الإيقاف." });
+        push({ type: "error", message: t("bildazoAdmin.page.reviewReasonRequired") });
         return;
       }
     }
@@ -149,10 +158,10 @@ export default function SuperAdminBildazoAuthorLinksPage() {
         status: nextStatus,
         manualReviewReason: reason || undefined,
       });
-      push({ type: "success", message: "تم تحديث حالة الطلب." });
+      push({ type: "success", message: t("bildazoAdmin.page.statusUpdated") });
       await load();
     } catch (err) {
-      push({ type: "error", message: getSafeApiErrorMessage(err) || "تعذر تحديث الحالة." });
+      push({ type: "error", message: getSafeApiErrorMessage(err) || t("bildazoAdmin.page.statusUpdateFailed") });
     } finally {
       setStatusBusyId(null);
     }
@@ -161,14 +170,14 @@ export default function SuperAdminBildazoAuthorLinksPage() {
   return (
     <DashboardShell>
       <DashboardPageHeader
-        title="ربط حسابات Bildazo"
-        description="مراجعة طلبات ربط حساب الكاتب وتمييز الطلبات بعد التحقق اليدوي. لا يتم إنشاء حساب Bildazo من هنا."
+        title={t("bildazoAdmin.page.title")}
+        description={t("bildazoAdmin.page.description")}
         breadcrumbs={superAdminBreadcrumbs("dashboard.breadcrumbs.bildazoAuthorLinks")}
       />
 
       {schemaReady === false ? (
         <p className="mb-4 rounded-[10px] border border-[color:var(--dash-warning-border,#f0d4a8)] bg-[color:var(--dash-warning-bg,#fff6e8)] px-3 py-2 text-[0.92rem]">
-          جدول الربط غير جاهز بعد (الترحيل 164). يمكن فتح الصفحة لكن لا يمكن الربط حتى يُطبَّق الترحيل.
+          {t("bildazoAdmin.page.schemaMissing")}
         </p>
       ) : null}
 
@@ -181,17 +190,17 @@ export default function SuperAdminBildazoAuthorLinksPage() {
           }}
         >
           <label className="grid min-w-[220px] flex-1 gap-1">
-            <span className="text-[0.85rem] font-bold">بحث</span>
+            <span className="text-[0.85rem] font-bold">{t("bildazoAdmin.page.searchLabel")}</span>
             <input
               className="rounded-[10px] border border-[color:var(--dash-border,#c9d0da)] bg-white p-2.5 font-inherit"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="اسم / بريد / معرّف عام"
+              placeholder={t("bildazoAdmin.page.searchPlaceholder")}
               data-testid="bildazo-admin-search"
             />
           </label>
           <Button type="submit" variant="secondary">
-            بحث
+            {t("bildazoAdmin.page.searchSubmit")}
           </Button>
         </form>
 
@@ -203,7 +212,7 @@ export default function SuperAdminBildazoAuthorLinksPage() {
               variant={status === item.value ? "primary" : "secondary"}
               onClick={() => setStatus(item.value)}
             >
-              {item.labelAr}
+              {filterStatusLabel(item.value, t)}
             </Button>
           ))}
         </div>
@@ -211,7 +220,10 @@ export default function SuperAdminBildazoAuthorLinksPage() {
         {loading ? <DashboardLoadingState /> : null}
         {error ? <DashboardErrorState message={error} onRetry={load} /> : null}
         {!loading && !error && items.length === 0 ? (
-          <DashboardEmptyState title="لا توجد طلبات" description="لا توجد طلبات ربط مطابقة للتصفية الحالية." />
+          <DashboardEmptyState
+            title={t("bildazoAdmin.page.emptyTitle")}
+            description={t("bildazoAdmin.page.emptyDesc")}
+          />
         ) : null}
 
         <div className="grid gap-3">
@@ -223,23 +235,32 @@ export default function SuperAdminBildazoAuthorLinksPage() {
             >
               <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                 <h2 className="m-0 text-[1.02rem] font-extrabold">
-                  {row.freelancerDisplayName || row.fullName || `مستقل #${row.freelancerUserId}`}
+                  {row.freelancerDisplayName ||
+                    row.fullName ||
+                    t("bildazoAdmin.page.freelancerFallback", { id: row.freelancerUserId })}
                 </h2>
                 <StatusBadge tone={bildazoAdminStatusTone(row.status)}>
-                  {row.status === "linked" ? "حساب الكاتب مرتبط" : bildazoAdminStatusLabel(row.status)}
+                  {row.status === "linked"
+                    ? t("bildazoAdmin.page.linkedBadge")
+                    : filterStatusLabel(row.status, t)}
                 </StatusBadge>
               </div>
               <p className="m-0 text-[0.9rem] text-[color:var(--dash-text-secondary,#4b5563)]">
                 {row.orderzVerifiedEmail}
-                {row.emailMatchesOrderz ? " — البريد يطابق OrderzHouse" : ""}
+                {row.emailMatchesOrderz ? t("bildazoAdmin.page.emailMatches") : ""}
               </p>
               <p className="mb-0 mt-1 text-[0.88rem]">
-                التدفق: {row.linkFlow === "new_account" ? "حساب جديد" : "حساب موجود"} · الشروط:{" "}
-                {row.acceptedTermsVersion || "—"} · {formatJoDateTime(row.acceptedAt)}
+                {t("bildazoAdmin.page.flowLabel")}{" "}
+                {row.linkFlow === "new_account"
+                  ? t("bildazoAdmin.page.flowNew")
+                  : t("bildazoAdmin.page.flowExisting")}{" "}
+                · {t("bildazoAdmin.page.termsLabel")}{" "}
+                {row.acceptedTermsVersion || "—"} · {formatJoDateTime(row.acceptedAt, locale)}
               </p>
               {row.existingBildazoEmail || row.existingBildazoPublicId || row.existingBildazoProfileUrl ? (
                 <p className="mb-0 mt-1 text-[0.88rem]">
-                  حساب موجود: {row.existingBildazoEmail || "—"} / {row.existingBildazoPublicId || "—"} /{" "}
+                  {t("bildazoAdmin.page.existingAccount")} {row.existingBildazoEmail || "—"} /{" "}
+                  {row.existingBildazoPublicId || "—"} /{" "}
                   {row.existingBildazoProfileUrl || "—"}
                 </p>
               ) : null}
@@ -260,7 +281,7 @@ export default function SuperAdminBildazoAuthorLinksPage() {
               <div className="mt-3 flex flex-wrap gap-2">
                 {row.status !== "blocked" ? (
                   <Button type="button" onClick={() => openManualLink(row)}>
-                    ربط الحساب
+                    {t("bildazoAdmin.page.linkAccount")}
                   </Button>
                 ) : null}
                 {row.status !== "linked"
@@ -272,7 +293,7 @@ export default function SuperAdminBildazoAuthorLinksPage() {
                         disabled={statusBusyId === row.id}
                         onClick={() => handleStatus(row, nextStatus)}
                       >
-                        {bildazoAdminStatusLabel(nextStatus)}
+                        {filterStatusLabel(nextStatus, t)}
                       </Button>
                     ))
                   : null}
@@ -293,12 +314,12 @@ export default function SuperAdminBildazoAuthorLinksPage() {
             className="grid w-full max-w-[520px] gap-3 rounded-[12px] bg-white p-4"
             onSubmit={handleManualLink}
           >
-            <h2 className="m-0 text-[1.1rem] font-extrabold">ربط الحساب</h2>
+            <h2 className="m-0 text-[1.1rem] font-extrabold">{t("bildazoAdmin.dialog.title")}</h2>
             <p className="m-0 text-[0.9rem] text-[color:var(--dash-text-secondary,#4b5563)]">
-              هذا ربط يدوي داخل OrderzHouse بعد التحقق الخارجي. لا يتم إنشاء حساب Bildazo من هذه الصفحة.
+              {t("bildazoAdmin.dialog.lede")}
             </p>
             <label className="grid gap-1 text-[0.9rem]">
-              Bildazo User ID (اختياري)
+              {t("bildazoAdmin.dialog.bildazoUserId")}
               <input
                 className="rounded-[10px] border border-[color:var(--dash-border,#c9d0da)] p-2.5 font-inherit"
                 value={form.bildazoUserId}
@@ -306,7 +327,7 @@ export default function SuperAdminBildazoAuthorLinksPage() {
               />
             </label>
             <label className="grid gap-1 text-[0.9rem]">
-              Bildazo Public ID
+              {t("bildazoAdmin.dialog.bildazoPublicId")}
               <input
                 className="rounded-[10px] border border-[color:var(--dash-border,#c9d0da)] p-2.5 font-inherit"
                 value={form.bildazoPublicId}
@@ -315,7 +336,7 @@ export default function SuperAdminBildazoAuthorLinksPage() {
               />
             </label>
             <label className="grid gap-1 text-[0.9rem]">
-              Bildazo Profile URL
+              {t("bildazoAdmin.dialog.bildazoProfileUrl")}
               <input
                 className="rounded-[10px] border border-[color:var(--dash-border,#c9d0da)] p-2.5 font-inherit"
                 value={form.bildazoProfileUrl}
@@ -325,7 +346,7 @@ export default function SuperAdminBildazoAuthorLinksPage() {
               />
             </label>
             <label className="grid gap-1 text-[0.9rem]">
-              ملاحظة المراجعة (اختياري)
+              {t("bildazoAdmin.dialog.reviewNote")}
               <textarea
                 className="rounded-[10px] border border-[color:var(--dash-border,#c9d0da)] p-2.5 font-inherit"
                 rows={3}
@@ -340,17 +361,17 @@ export default function SuperAdminBildazoAuthorLinksPage() {
                 onChange={(e) => setForm((f) => ({ ...f, confirmVerified: e.target.checked }))}
                 data-testid="bildazo-manual-confirm"
               />
-              <span>أؤكد أنني تحققت من ملكية حساب Bildazo قبل الربط.</span>
+              <span>{t("bildazoAdmin.dialog.confirmVerified")}</span>
             </label>
             {formError ? (
               <p className="m-0 text-[0.9rem] text-[color:var(--dash-danger,#c03535)]">{formError}</p>
             ) : null}
             <div className="flex justify-end gap-2">
               <Button type="button" variant="secondary" onClick={() => setDialogRow(null)}>
-                إلغاء
+                {t("bildazoAdmin.dialog.cancel")}
               </Button>
               <Button type="submit" disabled={!canSubmit || saving} data-testid="bildazo-manual-submit">
-                ربط الحساب
+                {t("bildazoAdmin.dialog.submit")}
               </Button>
             </div>
           </form>

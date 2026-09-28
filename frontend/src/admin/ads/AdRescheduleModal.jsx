@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/adsResources";
 
 /** @typedef {'simple' | 'schedule' | 'off'} RescheduleMode */
 
@@ -32,7 +34,8 @@ function inferInitialMode(ad) {
  * @param {{ ad: object, statusLabel: string, onClose: () => void, onSubmit: (payload: object) => Promise<void> }} props
  */
 export default function AdRescheduleModal({ ad, statusLabel, onClose, onSubmit }) {
-  const adTitle = ad?.title || "—";
+  const { t, locale } = useTranslation();
+  const adTitle = ad?.title || t("ads.common.emDash");
 
   const [mode, setMode] = useState(() => inferInitialMode(ad));
   const [startDate, setStartDate] = useState(() => dt(ad?.startDate));
@@ -83,30 +86,20 @@ export default function AdRescheduleModal({ ad, statusLabel, onClose, onSubmit }
   }, [mode, endDate]);
 
   const summaryText = useMemo(() => {
-    if (mode === "simple") {
-      return "النتيجة: سيظهر الإعلان فورًا ويبقى ظاهرًا طالما أنه مفعّل، دون جدولة بتاريخ بداية أو نهاية.";
-    }
-    if (mode === "off") {
-      return "النتيجة: سيتم إخفاء الإعلان عن المستخدمين.";
-    }
+    if (mode === "simple") return t("ads.reschedule.outcomeImmediate");
+    if (mode === "off") return t("ads.reschedule.outcomeHidden");
     const hasS = Boolean(startDate?.trim());
     const hasE = Boolean(endDate?.trim());
     const fmt = (v) => {
       if (!v?.trim()) return "";
       const d = new Date(v);
-      return Number.isNaN(d.getTime()) ? v : d.toLocaleString("ar");
+      return Number.isNaN(d.getTime()) ? v : d.toLocaleString(locale === "en" ? "en" : "ar");
     };
-    if (hasS && hasE) {
-      return `النتيجة: سيظهر الإعلان من ${fmt(startDate)} حتى ${fmt(endDate)}.`;
-    }
-    if (hasS && !hasE) {
-      return `النتيجة: سيبدأ الإعلان في ${fmt(startDate)} بدون تاريخ نهاية.`;
-    }
-    if (!hasS && hasE) {
-      return `النتيجة: سيظهر الإعلان فورًا وينتهي في ${fmt(endDate)}.`;
-    }
-    return "النتيجة: الإعلان سيظهر فورًا بدون تاريخ نهاية.";
-  }, [mode, startDate, endDate]);
+    if (hasS && hasE) return t("ads.reschedule.outcomeRange", { start: fmt(startDate), end: fmt(endDate) });
+    if (hasS && !hasE) return t("ads.reschedule.outcomeFrom", { start: fmt(startDate) });
+    if (!hasS && hasE) return t("ads.reschedule.outcomeUntil", { end: fmt(endDate) });
+    return t("ads.reschedule.outcomeDefault");
+  }, [mode, startDate, endDate, t, locale]);
 
   const buildPayload = () => {
     if (mode === "simple") {
@@ -139,11 +132,12 @@ export default function AdRescheduleModal({ ad, statusLabel, onClose, onSubmit }
     }
   };
 
-  const cards = [
+  const cards = useMemo(
+    () => [
     {
       id: "simple",
-      label: "تشغيل فوري بدون جدولة",
-      description: "يظهر الإعلان فورًا للزوار ويبقى ظاهرًا طالما أنه مفعّل هنا، دون وقت بداية أو نهاية.",
+      label: t("ads.reschedule.modes.immediate.label"),
+      description: t("ads.reschedule.modes.immediate.description"),
       icon: (
         <svg className="oh-ad-reschedule-card__icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden>
           <path
@@ -155,8 +149,8 @@ export default function AdRescheduleModal({ ad, statusLabel, onClose, onSubmit }
     },
     {
       id: "schedule",
-      label: "جدولة بوقت محدد",
-      description: "حدد وقت بداية أو نهاية لظهور الإعلان.",
+      label: t("ads.reschedule.modes.scheduled.label"),
+      description: t("ads.reschedule.modes.scheduled.description"),
       icon: (
         <svg className="oh-ad-reschedule-card__icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden>
           <path
@@ -168,15 +162,17 @@ export default function AdRescheduleModal({ ad, statusLabel, onClose, onSubmit }
     },
     {
       id: "off",
-      label: "إيقاف الإعلان",
-      description: "يتم إخفاء الإعلان عن المستخدمين حتى تقوم بتشغيله مرة أخرى.",
+      label: t("ads.reschedule.modes.paused.label"),
+      description: t("ads.reschedule.modes.paused.description"),
       icon: (
         <svg className="oh-ad-reschedule-card__icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden>
           <path fill="currentColor" d="M8 8h8v8H8z" />
         </svg>
       ),
     },
-  ];
+  ],
+    [t],
+  );
 
   return (
     <div
@@ -189,28 +185,28 @@ export default function AdRescheduleModal({ ad, statusLabel, onClose, onSubmit }
       <div className="oh-admin-ads__modal-card oh-admin-ads__modal-card--reschedule">
         <header className="oh-ad-reschedule__header">
           <h2 id="ad-reschedule-title" className="oh-ad-reschedule__title">
-            إدارة ظهور الإعلان
+            {t("ads.reschedule.title")}
           </h2>
           <p id="ad-reschedule-desc" className="oh-ad-reschedule__subtitle">
-            اختر طريقة ظهور الإعلان للمستخدمين، ويمكنك تعديل الجدولة في أي وقت.
+            {t("ads.reschedule.subtitle")}
           </p>
 
           <div className="oh-ad-reschedule__badges" aria-live="polite">
             <span className="oh-ad-reschedule__badge">
-              <span className="oh-ad-reschedule__badge-label">الإعلان:</span>{" "}
+              <span className="oh-ad-reschedule__badge-label">{t("ads.reschedule.adLabel")}</span>{" "}
               <span className="oh-ad-reschedule__badge-value">{adTitle}</span>
             </span>
             <span className="oh-ad-reschedule__badge">
-              <span className="oh-ad-reschedule__badge-label">الحالة الحالية:</span>{" "}
+              <span className="oh-ad-reschedule__badge-label">{t("ads.reschedule.currentStatus")}</span>{" "}
               <span className="oh-ad-reschedule__badge-status">{statusLabel}</span>
             </span>
           </div>
         </header>
 
         <div className="oh-ad-reschedule__body">
-          <h3 className="oh-ad-reschedule__section-title">كيف تريد عرض الإعلان؟</h3>
+          <h3 className="oh-ad-reschedule__section-title">{t("ads.reschedule.howToShow")}</h3>
 
-          <div className="oh-ad-reschedule__cards" role="group" aria-label="خيارات ظهور الإعلان">
+          <div className="oh-ad-reschedule__cards" role="group" aria-label={t("ads.reschedule.optionsAria")}>
             {cards.map((c) => {
               const selected = mode === c.id;
               return (
@@ -230,7 +226,7 @@ export default function AdRescheduleModal({ ad, statusLabel, onClose, onSubmit }
                         <span className="oh-ad-reschedule-card__check" aria-hidden>
                           ✓
                         </span>
-                        محدد
+                        {t("ads.common.selected")}
                       </span>
                     ) : (
                       <span className="oh-ad-reschedule-card__picked oh-ad-reschedule-card__picked--placeholder" aria-hidden>
@@ -247,25 +243,25 @@ export default function AdRescheduleModal({ ad, statusLabel, onClose, onSubmit }
           {mode === "schedule" ? (
             <div className="oh-ad-reschedule__schedule-block">
               <div className="oh-ad-reschedule__quick-dates" dir="rtl">
-                <span className="oh-ad-reschedule__quick-label">اختصارات:</span>
-                <div className="oh-ad-reschedule__quick-row" role="group" aria-label="اختصارات التاريخ">
+                <span className="oh-ad-reschedule__quick-label">{t("ads.reschedule.shortcuts")}</span>
+                <div className="oh-ad-reschedule__quick-row" role="group" aria-label={t("ads.reschedule.shortcutsAria")}>
                   <button type="button" className="btn btn-secondary oh-ad-reschedule__chip" disabled={saving} onClick={setStartToday}>
-                    اليوم
+                    {t("ads.reschedule.today")}
                   </button>
                   <button type="button" className="btn btn-secondary oh-ad-reschedule__chip" disabled={saving} onClick={setStartTomorrow}>
-                    غدًا
+                    {t("ads.reschedule.tomorrow")}
                   </button>
                   <button type="button" className="btn btn-secondary oh-ad-reschedule__chip" disabled={saving} onClick={setStartNextWeek}>
-                    بعد أسبوع
+                    {t("ads.reschedule.nextWeek")}
                   </button>
                   <button type="button" className="btn btn-secondary oh-ad-reschedule__chip" disabled={saving} onClick={clearEnd}>
-                    بدون نهاية
+                    {t("ads.reschedule.noEnd")}
                   </button>
                 </div>
               </div>
 
               <div className="oh-admin-ads__field oh-ad-reschedule__field">
-                <label htmlFor="ad-reschedule-start">بداية الظهور</label>
+                <label htmlFor="ad-reschedule-start">{t("ads.reschedule.startLabel")}</label>
                 <input
                   id="ad-reschedule-start"
                   type="datetime-local"
@@ -274,10 +270,10 @@ export default function AdRescheduleModal({ ad, statusLabel, onClose, onSubmit }
                   onChange={(e) => setStartDate(e.target.value)}
                   disabled={saving}
                 />
-                <p className="oh-ad-reschedule__hint">يمكنك ترك بداية الظهور فارغة ليبدأ الإعلان فورًا.</p>
+                <p className="oh-ad-reschedule__hint">{t("ads.reschedule.startHint")}</p>
               </div>
               <div className="oh-admin-ads__field oh-ad-reschedule__field">
-                <label htmlFor="ad-reschedule-end">نهاية الظهور</label>
+                <label htmlFor="ad-reschedule-end">{t("ads.reschedule.endLabel")}</label>
                 <input
                   id="ad-reschedule-end"
                   type="datetime-local"
@@ -286,30 +282,30 @@ export default function AdRescheduleModal({ ad, statusLabel, onClose, onSubmit }
                   onChange={(e) => setEndDate(e.target.value)}
                   disabled={saving}
                 />
-                <p className="oh-ad-reschedule__hint">يمكنك ترك نهاية الظهور فارغة ليبقى الإعلان بدون نهاية.</p>
+                <p className="oh-ad-reschedule__hint">{t("ads.reschedule.endHint")}</p>
               </div>
 
               {scheduleInvalid ? (
                 <p className="oh-ad-reschedule__error" role="alert">
-                  تاريخ النهاية لا يمكن أن يكون قبل تاريخ البداية.
+                  {t("ads.reschedule.endBeforeStart")}
                 </p>
               ) : null}
               {endInPastWarning && !scheduleInvalid ? (
                 <p className="oh-ad-reschedule__warn" role="status">
-                  تنبيه: تاريخ النهاية في الماضي، لذلك سيظهر الإعلان كمنتهي ولن يظهر للمستخدمين.
+                  {t("ads.reschedule.endInPast")}
                 </p>
               ) : null}
             </div>
           ) : null}
 
           <div className="oh-ad-reschedule__summary" aria-live="polite">
-            <span className="oh-ad-reschedule__summary-label">ملخص</span>
+            <span className="oh-ad-reschedule__summary-label">{t("ads.common.summary")}</span>
             <p className="oh-ad-reschedule__summary-text">{summaryText}</p>
           </div>
 
           <div className="oh-ad-reschedule__actions">
             <button type="button" className="btn btn-secondary" disabled={saving} onClick={onClose}>
-              إلغاء
+              {t("ads.common.cancel")}
             </button>
             <button
               type="button"
@@ -317,7 +313,7 @@ export default function AdRescheduleModal({ ad, statusLabel, onClose, onSubmit }
               disabled={saving || scheduleInvalid}
               onClick={() => void handleSave()}
             >
-              {saving ? "جارٍ الحفظ..." : "حفظ التغييرات"}
+              {saving ? t("ads.common.savingEllipsis") : t("ads.reschedule.saveChanges")}
             </button>
           </div>
         </div>

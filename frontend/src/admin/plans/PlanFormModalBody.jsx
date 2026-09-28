@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/planAdminResources";
 import PlanCollapsibleSection from "./PlanCollapsibleSection";
 import PlanFormSection from "./PlanFormSection";
 import PlanToggle from "./PlanToggle";
-import { PLAN_FORM_SECTIONS, getPlanFormCopy } from "./planFormUiCopy";
+import { PLAN_FORM_SECTIONS, getPlanFormCopy, planFormSectionLabel } from "./planFormUiCopy";
 import {
   formatCheckoutPlanOptionLabel,
   formatPlanPageOptionLabel,
@@ -68,9 +69,9 @@ export default function PlanFormModalBody({
   excludePlanId = null,
   readOnlyInternalName = "",
 }) {
-  const { locale } = useTranslation();
+  const { locale, t } = useTranslation();
   const isEn = locale === "en";
-  const copy = useMemo(() => getPlanFormCopy(isEn), [isEn]);
+  const copy = useMemo(() => getPlanFormCopy(t), [t]);
   const warnings = useMemo(() => getPlanFormWarnings(form), [form]);
   const mobileAccordion = useMobileAccordionLayout();
   const [activeTab, setActiveTab] = useState("basic");
@@ -87,7 +88,7 @@ export default function PlanFormModalBody({
     [canonicalPlans, excludePlanId],
   );
 
-  const sectionLabel = (section) => (isEn ? section.labelEn : section.labelAr);
+  const sectionLabel = (section) => planFormSectionLabel(t, section);
 
   const internalNamePreview =
     mode === "edit"
@@ -97,19 +98,13 @@ export default function PlanFormModalBody({
   const sections = {
     basic: (
       <PlanFormSection
-        hint={
-          isEn
-            ? "Title and description shown to freelancers."
-            : "العنوان والوصف كما يظهران للمستقلين."
-        }
+        hint={t("planAdmin.form.helpers.basicIntro")}
       >
         {internalNamePreview ? (
           <Field
-            label={isEn ? "Internal name (read-only)" : "الاسم الداخلي (للقراءة فقط)"}
+            label={t("planAdmin.form.helpers.internalName")}
             hint={
-              isEn
-                ? "Used by checkout and subscriptions. Cannot be changed after creation."
-                : "يُستخدم في الدفع والاشتراكات. لا يمكن تغييره بعد الإنشاء."
+              t("planAdmin.form.helpers.internalNameHint")
             }
           >
             <input
@@ -122,26 +117,26 @@ export default function PlanFormModalBody({
             />
           </Field>
         ) : null}
-        <Field label={isEn ? "Title" : "العنوان"}>
+        <Field label={t("planAdmin.form.fields.title")}>
           <input
             className="oh-sapl-input"
             value={form.title}
             onChange={(e) => set("title", e.target.value)}
-            placeholder={isEn ? "Professional freelancer plan" : "باقة احترافية للمستقلين"}
+            placeholder={t("planAdmin.form.fields.titlePlaceholder")}
             disabled={submitting}
           />
         </Field>
-        <Field label={isEn ? "Short description" : "وصف مختصر"}>
+        <Field label={t("planAdmin.form.fields.shortDesc")}>
           <textarea
             className="oh-sapl-input oh-sapl-input--textarea"
             rows={3}
             value={form.description}
             onChange={(e) => set("description", e.target.value)}
-            placeholder={isEn ? "Optional" : "اختياري"}
+            placeholder={t("planAdmin.common.optional")}
             disabled={submitting}
           />
         </Field>
-        <Field label={isEn ? "Duration (days)" : "المدة (أيام)"} style={{ marginTop: 12 }}>
+        <Field label={t("planAdmin.form.fields.durationDays")} style={{ marginTop: 12 }}>
           <input
             className="oh-sapl-input"
             type="number"
@@ -153,9 +148,9 @@ export default function PlanFormModalBody({
           />
         </Field>
         <p className="oh-sapl-form-subhint" style={{ marginTop: 16 }}>
-          {isEn ? "English copy (optional — shown on EN locale)" : "النسخة الإنجليزية (اختياري — تظهر عند اختيار الإنجليزية)"}
+          {t("planAdmin.form.helpers.enCopySection")}
         </p>
-        <Field label={isEn ? "Title (English)" : "العنوان (إنجليزي)"}>
+        <Field label={t("planAdmin.form.fields.titleEn")}>
           <input
             className="oh-sapl-input"
             dir="ltr"
@@ -165,14 +160,14 @@ export default function PlanFormModalBody({
             disabled={submitting}
           />
         </Field>
-        <Field label={isEn ? "Short description (English)" : "وصف مختصر (إنجليزي)"} style={{ marginTop: 12 }}>
+        <Field label={t("planAdmin.form.fields.shortDescEn")} style={{ marginTop: 12 }}>
           <textarea
             className="oh-sapl-input oh-sapl-input--textarea"
             dir="ltr"
             rows={3}
             value={form.descriptionEn}
             onChange={(e) => set("descriptionEn", e.target.value)}
-            placeholder={isEn ? "Optional" : "اختياري"}
+            placeholder={t("planAdmin.common.optional")}
             disabled={submitting}
           />
         </Field>
@@ -182,13 +177,11 @@ export default function PlanFormModalBody({
     pricing: (
       <PlanFormSection
         hint={
-          isEn
-            ? "Prices shown to freelancers and used for Stripe when applicable."
-            : "الأسعار كما تُعرض للمستقلين وتُستخدم في Stripe عند الحاجة."
+          t("planAdmin.form.helpers.pricingIntro")
         }
       >
         <Grid className="oh-sapl-grid--2">
-          <Field label={isEn ? "Total price (JOD)" : "السعر الإجمالي (د.أ)"}>
+          <Field label={t("planAdmin.form.fields.totalPrice")}>
             <input
               className="oh-sapl-input"
               type="number"
@@ -196,12 +189,12 @@ export default function PlanFormModalBody({
               step="0.01"
               value={form.priceJod}
               onChange={(e) => set("priceJod", e.target.value)}
-              placeholder={isEn ? "0 = free" : "0 = مجاني"}
+              placeholder={t("planAdmin.form.helpers.priceFreePlaceholder")}
               disabled={submitting}
             />
           </Field>
           <Field
-            label={isEn ? "Stripe checkout amount (JOD)" : "المبلغ المحصّل عبر Stripe (د.أ)"}
+            label={t("planAdmin.form.fields.stripeAmount")}
             hint={copy.stripeAmountHelper}
           >
             <input
@@ -211,13 +204,13 @@ export default function PlanFormModalBody({
               step="0.01"
               value={form.stripeCheckoutAmountJod}
               onChange={(e) => set("stripeCheckoutAmountJod", e.target.value)}
-              placeholder={isEn ? "Empty = total price" : "فارغ = السعر الإجمالي"}
+              placeholder={t("planAdmin.form.helpers.stripeEmptyPlaceholder")}
               disabled={submitting}
             />
           </Field>
         </Grid>
         <Grid className="oh-sapl-grid--2" style={{ marginTop: 12 }}>
-          <Field label={isEn ? "Currency" : "العملة"}>
+          <Field label={t("planAdmin.form.fields.currency")}>
             <input
               className="oh-sapl-input"
               dir="ltr"
@@ -230,11 +223,9 @@ export default function PlanFormModalBody({
           </Field>
         </Grid>
         <Field
-          label={isEn ? "Text between billing period and price" : "النص بين مدة الباقة والسعر"}
+          label={t("planAdmin.form.fields.billingGap")}
           hint={
-            isEn
-              ? "Shown on the public plan card between the billing period and the price."
-              : "يظهر في بطاقة الباقة العامة بين مدة الاشتراك والسعر."
+            t("planAdmin.form.helpers.billingGapHint")
           }
           style={{ marginTop: 12 }}
         >
@@ -244,15 +235,13 @@ export default function PlanFormModalBody({
             value={form.priceIntroText}
             onChange={(e) => set("priceIntroText", e.target.value)}
             placeholder={
-              isEn
-                ? "Example: Suitable for beginners or freelancers"
-                : "مثال: مناسب للمبتدئين أو مناسب للعمل الحر"
+              t("planAdmin.form.helpers.billingGapExample")
             }
             disabled={submitting}
           />
         </Field>
         <Field
-          label={isEn ? "Text between billing period and price (English)" : "النص بين مدة الباقة والسعر (إنجليزي)"}
+          label={t("planAdmin.form.fields.billingGapEn")}
           style={{ marginTop: 12 }}
         >
           <textarea
@@ -265,7 +254,7 @@ export default function PlanFormModalBody({
             disabled={submitting}
           />
         </Field>
-        <Field label={isEn ? "Payment notes" : "ملاحظات الدفع"} style={{ marginTop: 12 }}>
+        <Field label={t("planAdmin.form.fields.paymentNotes")} style={{ marginTop: 12 }}>
           <textarea
             className="oh-sapl-input oh-sapl-input--textarea"
             rows={2}
@@ -276,7 +265,7 @@ export default function PlanFormModalBody({
         </Field>
         <p className="oh-sapl-form-subhint">{copy.installmentsHint}</p>
         <Grid className="oh-sapl-grid--3" style={{ marginTop: 8 }}>
-          <Field label={isEn ? "Upfront installment (JOD)" : "قسط أول (د.أ)"}>
+          <Field label={t("planAdmin.form.fields.upfrontInstallment")}>
             <input
               className="oh-sapl-input"
               type="number"
@@ -287,7 +276,7 @@ export default function PlanFormModalBody({
               disabled={submitting}
             />
           </Field>
-          <Field label={isEn ? "Monthly installment (JOD)" : "قسط شهري (د.أ)"}>
+          <Field label={t("planAdmin.form.fields.monthlyInstallment")}>
             <input
               className="oh-sapl-input"
               type="number"
@@ -298,7 +287,7 @@ export default function PlanFormModalBody({
               disabled={submitting}
             />
           </Field>
-          <Field label={isEn ? "Number of months" : "عدد الأشهر"}>
+          <Field label={t("planAdmin.form.fields.installmentMonths")}>
             <input
               className="oh-sapl-input"
               type="number"
@@ -310,7 +299,7 @@ export default function PlanFormModalBody({
             />
           </Field>
         </Grid>
-        <Field label={isEn ? "Installment notes" : "ملاحظات الأقساط"} style={{ marginTop: 12 }}>
+        <Field label={t("planAdmin.form.fields.installmentNotes")} style={{ marginTop: 12 }}>
           <input
             className="oh-sapl-input"
             value={form.installmentNotes}
@@ -321,18 +310,18 @@ export default function PlanFormModalBody({
 
         <div className="oh-sapl-sale-block" style={{ marginTop: 20 }}>
           <h4 className="oh-sapl-sale-block__title">
-            {isEn ? "Plan discount" : "خصم على الباقة"}
+            {t("planAdmin.form.fields.planDiscount")}
           </h4>
           <PlanToggle
             checked={Boolean(form.saleEnabled)}
             onChange={(v) => set("saleEnabled", v)}
-            label={isEn ? "Enable discount" : "تفعيل الخصم"}
+            label={t("planAdmin.form.fields.enableDiscount")}
             disabled={submitting}
           />
           {form.saleEnabled ? (
             <>
               <Grid className="oh-sapl-grid--2" style={{ marginTop: 12 }}>
-                <Field label={isEn ? "Discount percentage (%)" : "نسبة الخصم (%)"}>
+                <Field label={t("planAdmin.form.fields.discountPct")}>
                   <input
                     className="oh-sapl-input"
                     type="number"
@@ -347,17 +336,17 @@ export default function PlanFormModalBody({
                   />
                 </Field>
               </Grid>
-              <Field label={isEn ? "Sale reason (Arabic)" : "سبب الخصم"} style={{ marginTop: 12 }}>
+              <Field label={t("planAdmin.form.fields.saleReason")} style={{ marginTop: 12 }}>
                 <input
                   className="oh-sapl-input"
                   value={form.saleReason}
                   onChange={(e) => set("saleReason", e.target.value)}
-                  placeholder={isEn ? "Limited-time offer" : "عرض خاص لفترة محدودة"}
+                  placeholder={t("planAdmin.form.fields.saleReasonPlaceholder")}
                   disabled={submitting}
                   required
                 />
               </Field>
-              <Field label={isEn ? "Sale reason (English)" : "سبب الخصم (إنجليزي)"} style={{ marginTop: 12 }}>
+              <Field label={t("planAdmin.form.fields.saleReasonEn")} style={{ marginTop: 12 }}>
                 <input
                   className="oh-sapl-input"
                   dir="ltr"
@@ -387,20 +376,12 @@ export default function PlanFormModalBody({
                 return (
                   <div className="oh-sapl-sale-preview" style={{ marginTop: 12 }}>
                     <p>
-                      {isEn
-                        ? `Original price: ${fmt(base)} JOD`
-                        : `السعر الأصلي: ${fmt(base)} د.أ`}
+                      {t("planAdmin.form.fields.originalPricePreview", { amount: fmt(base) })}
                     </p>
-                    <p>{isEn ? `Discount: ${pct}%` : `الخصم: ${pct}%`}</p>
-                    <p>
-                      {isEn
-                        ? `Price after discount: ${fmt(final)} JOD`
-                        : `السعر بعد الخصم: ${fmt(final)} د.أ`}
-                    </p>
+                    <p>{t("planAdmin.form.fields.discountPreview", { pct })}</p>
+                    <p>{t("planAdmin.form.fields.finalPricePreview", { amount: fmt(final) })}</p>
                     <p className="oh-sapl-field__hint">
-                      {isEn
-                        ? "Preview only. Backend calculates the charged amount."
-                        : "معاينة فقط. المبلغ المحصّل يُحسب في الخادم."}
+                      {t("planAdmin.form.helpers.salePreviewNote")}
                     </p>
                   </div>
                 );
@@ -414,13 +395,11 @@ export default function PlanFormModalBody({
     limits: (
       <PlanFormSection
         hint={
-          isEn
-            ? "Order value band and user-facing activation/refund text."
-            : "نطاق قيمة الطلبات ونصوص التفعيل والاسترداد للمستخدم."
+          t("planAdmin.form.helpers.limitsIntro")
         }
       >
         <Grid className="oh-sapl-grid--2">
-          <Field label={isEn ? "Minimum order value (JOD)" : "حد أدنى لقيمة الطلب (د.أ)"}>
+          <Field label={t("planAdmin.form.fields.minOrder")}>
             <input
               className="oh-sapl-input"
               type="number"
@@ -431,7 +410,7 @@ export default function PlanFormModalBody({
               disabled={submitting}
             />
           </Field>
-          <Field label={isEn ? "Maximum order value (JOD)" : "حد أقصى لقيمة الطلب (د.أ)"}>
+          <Field label={t("planAdmin.form.fields.maxOrder")}>
             <input
               className="oh-sapl-input"
               type="number"
@@ -439,13 +418,13 @@ export default function PlanFormModalBody({
               step="0.01"
               value={form.orderValueMaxJod}
               onChange={(e) => set("orderValueMaxJod", e.target.value)}
-              placeholder={isEn ? "Empty = no upper limit" : "فارغ = بدون حد أعلى"}
+              placeholder={t("planAdmin.form.helpers.maxOrderEmpty")}
               disabled={submitting}
             />
           </Field>
         </Grid>
         <Field
-          label={isEn ? "Activation conditions (display text)" : "شروط التفعيل المعروضة للمستخدم"}
+          label={t("planAdmin.form.fields.activationConditions")}
           hint={copy.activationHelper}
           style={{ marginTop: 12 }}
         >
@@ -457,7 +436,7 @@ export default function PlanFormModalBody({
             disabled={submitting}
           />
         </Field>
-        <Field label={isEn ? "Refund policy" : "سياسة الاسترداد"} style={{ marginTop: 12 }}>
+        <Field label={t("planAdmin.form.fields.refundPolicy")} style={{ marginTop: 12 }}>
           <textarea
             className="oh-sapl-input oh-sapl-input--textarea"
             rows={2}
@@ -472,51 +451,45 @@ export default function PlanFormModalBody({
     availability: (
       <PlanFormSection
         hint={
-          isEn
-            ? "Control assignment, public listing, self-checkout, and company visit."
-            : "التحكم في الإسناد، الظهور العام، الشراء الذاتي، والزيارة الميدانية."
+          t("planAdmin.form.helpers.availabilityIntro")
         }
       >
         <div className="oh-sapl-options">
           <PlanToggle
-            label={isEn ? "Plan is active" : "الباقة مفعّلة"}
+            label={t("planAdmin.form.fields.planActive")}
             description={
-              isEn ? "When disabled, not used for new assignments." : "عند التعطيل لن تُستخدم في إسناد جديد."
+              t("planAdmin.form.helpers.planInactiveHint")
             }
             checked={form.isActive}
             disabled={submitting}
             onChange={(v) => set("isActive", v)}
           />
           <PlanToggle
-            label={isEn ? "Show on public plans list" : "الظهور في قائمة الباقات العامة"}
+            label={t("planAdmin.form.fields.showPublic")}
             description={
-              isEn ? "Hide from the plans page without deleting." : "إخفاء الباقة عن صفحة الباقات دون حذفها."
+              t("planAdmin.form.helpers.hidePublicHint")
             }
             checked={form.isVisible}
             disabled={submitting}
             onChange={(v) => set("isVisible", v)}
           />
           <PlanToggle
-            label={isEn ? "Self-purchase via Stripe" : "متاحة للشراء الذاتي (Stripe)"}
-            description={
-              isEn
-                ? "Requires a payable amount (total price or Stripe amount) greater than zero."
-                : "يتطلب مبلغ دفع (السعر أو مبلغ Stripe) أكبر من صفر."
-            }
+            label={t("planAdmin.form.fields.selfPurchase")}
+            description={t("planAdmin.form.helpers.selfPurchaseHint")}
             checked={form.selfSubscribeAllowed}
             disabled={submitting}
             onChange={(v) => set("selfSubscribeAllowed", v)}
           />
           <PlanToggle
-            label={isEn ? "Requires company visit" : "يتطلب زيارة ميدانية للشركة"}
+            label={t("planAdmin.form.fields.requiresVisit")}
             checked={form.requiresCompanyVisit}
             disabled={submitting}
             onChange={(v) => set("requiresCompanyVisit", v)}
           />
         </div>
         <Field
-          label={isEn ? "Admin notes (internal)" : "ملاحظات إدارية (داخلية)"}
-          hint={isEn ? "Not shown on public plans page." : "لا تظهر في صفحة الباقات العامة."}
+          label={t("planAdmin.form.fields.adminNotes")}
+          hint={t("planAdmin.form.helpers.adminNotesHint")}
           style={{ marginTop: 12 }}
         >
           <textarea
@@ -531,19 +504,19 @@ export default function PlanFormModalBody({
     ),
 
     marketing: (
-      <PlanFormSection hint={isEn ? "One line per feature or training." : "سطر واحد لكل ميزة أو تدريب."}>
-        <Field label={isEn ? "Includes (feature list)" : "يشمل (قائمة المميزات)"}>
+      <PlanFormSection hint={t("planAdmin.form.helpers.featuresHint")}>
+        <Field label={t("planAdmin.form.fields.includes")}>
           <textarea
             className="oh-sapl-input oh-sapl-input--textarea"
             rows={5}
             value={form.featuresText}
             onChange={(e) => set("featuresText", e.target.value)}
-            placeholder={isEn ? "e.g. Contract signing at company office" : "مثال: توقيع العقد داخل مقر الشركة"}
+            placeholder={t("planAdmin.form.fields.includesPlaceholder")}
             disabled={submitting}
           />
         </Field>
         <Field
-          label={isEn ? "Includes (English, one per line)" : "يشمل (إنجليزي — سطر لكل ميزة)"}
+          label={t("planAdmin.form.fields.includesEn")}
           style={{ marginTop: 12 }}
         >
           <textarea
@@ -556,18 +529,18 @@ export default function PlanFormModalBody({
             disabled={submitting}
           />
         </Field>
-        <Field label={isEn ? "Included trainings" : "التدريبات المشمولة"} style={{ marginTop: 12 }}>
+        <Field label={t("planAdmin.form.fields.trainings")} style={{ marginTop: 12 }}>
           <textarea
             className="oh-sapl-input oh-sapl-input--textarea"
             rows={4}
             value={form.trainingsText}
             onChange={(e) => set("trainingsText", e.target.value)}
-            placeholder={isEn ? "One line per training" : "سطر لكل تدريب"}
+            placeholder={t("planAdmin.form.fields.trainingsPlaceholder")}
             disabled={submitting}
           />
         </Field>
         <Field
-          label={isEn ? "Included trainings (English, one per line)" : "التدريبات المشمولة (إنجليزي — سطر لكل تدريب)"}
+          label={t("planAdmin.form.fields.trainingsEn")}
           style={{ marginTop: 12 }}
         >
           <textarea
@@ -582,20 +555,20 @@ export default function PlanFormModalBody({
         </Field>
         <div className="oh-sapl-options" style={{ marginTop: 12 }}>
           <PlanToggle
-            label={isEn ? "Featured plan (visual highlight)" : "باقة مميزة (تمييز بصري)"}
+            label={t("planAdmin.form.fields.featured")}
             checked={form.isFeatured}
             disabled={submitting}
             onChange={(v) => set("isFeatured", v)}
           />
           <PlanToggle
-            label={isEn ? "Most popular (badge)" : "الأكثر شيوعاً (شارة)"}
+            label={t("planAdmin.form.fields.mostPopular")}
             checked={form.isPopular}
             disabled={submitting}
             onChange={(v) => set("isPopular", v)}
           />
         </div>
         <Grid className="oh-sapl-grid--2" style={{ marginTop: 12 }}>
-          <Field label={isEn ? "Badge label" : "نص الشارة"}>
+          <Field label={t("planAdmin.form.fields.badgeLabel")}>
             <input
               className="oh-sapl-input"
               value={form.label}
@@ -603,18 +576,18 @@ export default function PlanFormModalBody({
               disabled={submitting}
             />
           </Field>
-          <Field label={isEn ? "Billing text" : "نص الفوترة"}>
+          <Field label={t("planAdmin.form.fields.billingText")}>
             <input
               className="oh-sapl-input"
               value={form.billingText}
               onChange={(e) => set("billingText", e.target.value)}
-              placeholder={isEn ? "e.g. Full year" : "مثال: سنة كاملة"}
+              placeholder={t("planAdmin.form.fields.billingTextPlaceholder")}
               disabled={submitting}
             />
           </Field>
         </Grid>
         <Grid className="oh-sapl-grid--2" style={{ marginTop: 12 }}>
-          <Field label={isEn ? "Badge label (English)" : "نص الشارة (إنجليزي)"}>
+          <Field label={t("planAdmin.form.fields.badgeLabelEn")}>
             <input
               className="oh-sapl-input"
               dir="ltr"
@@ -623,7 +596,7 @@ export default function PlanFormModalBody({
               disabled={submitting}
             />
           </Field>
-          <Field label={isEn ? "Billing text (English)" : "نص الفوترة (إنجليزي)"}>
+          <Field label={t("planAdmin.form.fields.billingTextEn")}>
             <input
               className="oh-sapl-input"
               dir="ltr"
@@ -635,16 +608,16 @@ export default function PlanFormModalBody({
           </Field>
         </Grid>
         <Grid className="oh-sapl-grid--2" style={{ marginTop: 12 }}>
-          <Field label={isEn ? "Button label (Arabic)" : "نص زر الإجراء (عربي)"}>
+          <Field label={t("planAdmin.form.fields.buttonAr")}>
             <input
               className="oh-sapl-input"
               value={form.buttonText}
               onChange={(e) => set("buttonText", e.target.value)}
-              placeholder={isEn ? "e.g. Start now" : "مثال: ابدأ الآن"}
+              placeholder={t("planAdmin.form.fields.buttonArPlaceholder")}
               disabled={submitting}
             />
           </Field>
-          <Field label={isEn ? "Button label (English)" : "نص زر الإجراء (إنجليزي)"}>
+          <Field label={t("planAdmin.form.fields.buttonEn")}>
             <input
               className="oh-sapl-input"
               dir="ltr"
@@ -657,11 +630,9 @@ export default function PlanFormModalBody({
         </Grid>
         <Grid className="oh-sapl-grid--2" style={{ marginTop: 12 }}>
           <Field
-            label={isEn ? "Plans page" : "صفحة الباقات"}
+            label={t("planAdmin.form.fields.planPage")}
             hint={
-              isEn
-                ? "Which public plans URL shows this package."
-                : "صفحة العرض العامة التي تظهر فيها هذه الباقة."
+              t("planAdmin.form.helpers.planPageHint")
             }
           >
             <select
@@ -672,11 +643,11 @@ export default function PlanFormModalBody({
               required={showLinkedCheckout}
             >
               {planPages.length === 0 ? (
-                <option value="">{isEn ? "No pages available" : "لا توجد صفحات"}</option>
+                <option value="">{t("planAdmin.form.fields.noPages")}</option>
               ) : (
                 <>
                   {!form.planPageId ? (
-                    <option value="">{isEn ? "Select a page…" : "اختر صفحة…"}</option>
+                    <option value="">{t("planAdmin.form.fields.selectPage")}</option>
                   ) : null}
                   {planPages.map((page) => (
                     <option key={page.id} value={String(page.id)}>
@@ -689,11 +660,9 @@ export default function PlanFormModalBody({
           </Field>
           {showLinkedCheckout ? (
             <Field
-              label={isEn ? "Linked checkout plan" : "باقة الدفع المرتبطة"}
+              label={t("planAdmin.form.fields.linkedCheckout")}
               hint={
-                isEn
-                  ? "This plan is used for checkout and is not shown to customers as a technical ID."
-                  : "تُستخدم هذه الباقة عند الدفع، ولا تظهر للعميل كرقم تقني."
+                t("planAdmin.form.helpers.linkedCheckoutHint")
               }
             >
               <select
@@ -705,11 +674,11 @@ export default function PlanFormModalBody({
               >
                 {!linkedCheckoutRequired ? (
                   <option value="">
-                    {isEn ? "— Standalone checkout (this plan)" : "— دفع مباشر (هذه الباقة)"}
+                    {t("planAdmin.form.fields.standaloneCheckout")}
                   </option>
                 ) : (
                   <option value="">
-                    {isEn ? "Select linked checkout plan…" : "اختر باقة الدفع…"}
+                    {t("planAdmin.form.fields.selectLinkedCheckout")}
                   </option>
                 )}
                 {checkoutPlanOptions.map((plan) => (
@@ -722,7 +691,7 @@ export default function PlanFormModalBody({
           ) : null}
         </Grid>
         <Grid className="oh-sapl-grid--2" style={{ marginTop: 12 }}>
-          <Field label={isEn ? "Special offer label" : "نص العرض الخاص"}>
+          <Field label={t("planAdmin.form.fields.offerLabel")}>
             <input
               className="oh-sapl-input"
               value={form.offerLabel}
@@ -730,7 +699,7 @@ export default function PlanFormModalBody({
               disabled={submitting}
             />
           </Field>
-          <Field label={isEn ? "Offer expires" : "انتهاء العرض"}>
+          <Field label={t("planAdmin.form.fields.offerExpires")}>
             <input
               className="oh-sapl-input"
               type="date"
@@ -740,7 +709,7 @@ export default function PlanFormModalBody({
             />
           </Field>
         </Grid>
-        <Field label={isEn ? "Special offer label (English)" : "نص العرض الخاص (إنجليزي)"} style={{ marginTop: 12 }}>
+        <Field label={t("planAdmin.form.fields.offerLabelEn")} style={{ marginTop: 12 }}>
           <input
             className="oh-sapl-input"
             dir="ltr"
@@ -782,7 +751,7 @@ export default function PlanFormModalBody({
           <div
             className="oh-sapl-form-tabs__nav"
             role="tablist"
-            aria-label={isEn ? "Plan form sections" : "أقسام نموذج الباقة"}
+            aria-label={t("planAdmin.form.sectionsAria")}
           >
             {PLAN_FORM_SECTIONS.map((section) => {
               const selected = activeTab === section.id;

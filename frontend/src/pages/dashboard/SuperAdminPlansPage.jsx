@@ -19,7 +19,6 @@ import { PlanCardsGridSkeleton } from "../../admin/plans/PlanCatalogSkeletons";
 import { catalogIdForAdminSection } from "../../admin/plans/planCatalogNav";
 import { filterPlans } from "../../admin/plans/planDisplayUtils";
 import { getInitialPlanFormState } from "../../admin/plans/planFormConstants";
-import { SECTION_COPY } from "../../admin/plans/planMetricTerminology";
 import {
   PLAN_ADMIN_SECTION,
   buildPlanPagesIndex,
@@ -30,6 +29,7 @@ import {
   parsePlanAdminSection,
 } from "../../admin/plans/planAdminSections";
 import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/planAdminResources";
 import { suggestPlanInternalName } from "../../admin/plans/planNameAuto";
 import { canSubmitCreate, normalizeCreatePayload } from "../../admin/plans/planPayloadUtils";
 import {
@@ -43,27 +43,27 @@ import ConfirmDialog from "../../components/dashboard/ConfirmDialog";
 import StatusBadge from "../../components/dashboard/StatusBadge";
 import { useToast } from "../../components/ui/toastContext";
 
-const SALE_ERROR_MESSAGES = {
-  INVALID_SALE_PERCENTAGE: "نسبة الخصم يجب أن تكون أكبر من 0 وأقل من 100.",
-  SALE_REASON_REQUIRED: "يرجى إدخال سبب الخصم.",
-  SALE_NOT_ALLOWED_ON_FREE_PLAN: "لا يمكن تفعيل خصم نسبة مئوية على باقة مجانية أو بلا مبلغ مستحق.",
-  SALE_EFFECTIVE_AMOUNT_INVALID: "الخصم ينتج مبلغاً غير صالح للدفع.",
+const SALE_ERROR_KEYS = {
+  INVALID_SALE_PERCENTAGE: "planAdmin.errors.saleInvalidPct",
+  SALE_REASON_REQUIRED: "planAdmin.errors.saleReasonRequired",
+  SALE_NOT_ALLOWED_ON_FREE_PLAN: "planAdmin.errors.saleNotOnFree",
+  SALE_EFFECTIVE_AMOUNT_INVALID: "planAdmin.errors.saleInvalidAmount",
 };
 
-function errorMessage(err) {
+function errorMessage(err, t) {
   const code = err?.response?.data?.code;
-  if (code && SALE_ERROR_MESSAGES[code]) return SALE_ERROR_MESSAGES[code];
+  if (code && SALE_ERROR_KEYS[code]) return t(SALE_ERROR_KEYS[code]);
 
   const apiMsg = err?.response?.data?.message;
   if (apiMsg) return apiMsg;
 
   if (err?.code === "ECONNABORTED") {
-    return "انتهت مهلة الطلب، حاول مجددًا.";
+    return t("planAdmin.errors.timeout");
   }
   if (!err?.response) {
-    return "تعذر الاتصال بالخادم. تأكد أن الخادم يعمل ثم حاول مجددًا.";
+    return t("planAdmin.errors.offline");
   }
-  return "تعذر تنفيذ العملية. حاول مجدداً.";
+  return t("planAdmin.errors.generic");
 }
 
 function PlansEmptyIcon() {
@@ -76,7 +76,7 @@ function PlansEmptyIcon() {
 }
 
 const SuperAdminPlansPage = () => {
-  const { locale } = useTranslation();
+  const { locale, t } = useTranslation();
   const isEn = locale === "en";
   const { push } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -127,9 +127,8 @@ const SuperAdminPlansPage = () => {
     return sectionPlans.filter((plan) => String(plan.planPageId) === String(selectedPageId));
   }, [sectionPlans, activeSection, selectedPageId]);
 
-  const sectionCopy = SECTION_COPY[activeSection];
-  const sectionLabel = isEn ? sectionCopy.en : sectionCopy.ar;
-  const sectionHint = isEn ? sectionCopy.hintEn : sectionCopy.hintAr;
+  const sectionLabel = t(`planAdmin.sections.${activeSection}.title`);
+  const sectionHint = t(`planAdmin.sections.${activeSection}.hint`);
   const sectionCatalogId = catalogIdForAdminSection(activeSection);
 
   const filteredPlans = useMemo(() => {
@@ -156,7 +155,7 @@ const SuperAdminPlansPage = () => {
       setReservedPlanNames(allPlans.map((p) => p.name).filter(Boolean));
       setPlanPages(pagesRes?.data?.pages || []);
     } catch (err) {
-      setError(errorMessage(err));
+      setError(errorMessage(err, t));
     } finally {
       setLoading(false);
     }
@@ -214,7 +213,7 @@ const SuperAdminPlansPage = () => {
           : defaultPlanPage?.id || form.planPageId || null;
 
       if (activeSection === PLAN_ADMIN_SECTION.PAGES && !targetPageId) {
-        setError(isEn ? "Select a plan page before creating a page plan." : "اختر صفحة باقات قبل إنشاء باقة للصفحات.");
+        setError(t("planAdmin.page.selectPageBeforeCreate"));
         return;
       }
 
@@ -227,7 +226,7 @@ const SuperAdminPlansPage = () => {
       setCreateModalOpen(false);
       await refresh();
     } catch (err) {
-      setError(errorMessage(err));
+      setError(errorMessage(err, t));
     } finally {
       setSubmitting(false);
     }
@@ -241,7 +240,7 @@ const SuperAdminPlansPage = () => {
       await updatePlanRequest(plan.id, { isActive: Boolean(nextActive) });
       await refresh();
     } catch (err) {
-      setError(errorMessage(err));
+      setError(errorMessage(err, t));
     } finally {
       setSubmitting(false);
     }
@@ -258,7 +257,7 @@ const SuperAdminPlansPage = () => {
       setDeleteTarget(null);
       push({
         type: "success",
-        message: isEn ? "Package deactivated successfully." : "تم تعطيل الباقة بنجاح.",
+        message: t("planAdmin.page.deactivateSuccess"),
       });
     } catch (err) {
       const code = err?.response?.data?.code || err?.response?.data?.publicCode;
@@ -266,10 +265,10 @@ const SuperAdminPlansPage = () => {
         setError(
           isEn
             ? "This package cannot be removed because it is linked to users or current records. You can deactivate it instead of deleting it."
-            : "لا يمكن حذف هذه الباقة لأنها مرتبطة بمستخدمين أو سجلات حالية. يمكنك تعطيلها بدلاً من حذفها.",
+            : t("planAdmin.page.deactivateBlocked"),
         );
       } else {
-        setError(errorMessage(err));
+        setError(errorMessage(err, t));
       }
     } finally {
       setSubmitting(false);
@@ -285,7 +284,7 @@ const SuperAdminPlansPage = () => {
       setEditPlan(null);
       await refresh();
     } catch (err) {
-      setError(errorMessage(err));
+      setError(errorMessage(err, t));
     } finally {
       setSubmitting(false);
     }
@@ -299,7 +298,7 @@ const SuperAdminPlansPage = () => {
       await updatePlanPageRequest(selectedPlanPage.id, patch);
       await refresh();
     } catch (err) {
-      setError(errorMessage(err));
+      setError(errorMessage(err, t));
     } finally {
       setPageMetaSubmitting(false);
     }
@@ -318,7 +317,7 @@ const SuperAdminPlansPage = () => {
         await Promise.all(patches.map((patch) => updatePlanRequest(patch.id, { sortOrder: patch.sortOrder })));
         await refresh();
       } catch (err) {
-        setError(errorMessage(err));
+        setError(errorMessage(err, t));
       } finally {
         setReorderingPlanId(null);
       }
@@ -331,9 +330,9 @@ const SuperAdminPlansPage = () => {
       {activeSection === PLAN_ADMIN_SECTION.PAGES && specialPlanPages.length > 0 ? (
         <div className="oh-sapl-page-filter-inline">
           <label>
-            <span>{isEn ? SECTION_COPY.pages.pageFilterLabelEn : SECTION_COPY.pages.pageFilterLabelAr}</span>
+            <span>{t("planAdmin.sections.pages.pageFilterLabel")}</span>
             <select value={selectedPageId} onChange={handlePageFilterChange}>
-              <option value="">{isEn ? SECTION_COPY.pages.pageFilterAllEn : SECTION_COPY.pages.pageFilterAllAr}</option>
+              <option value="">{t("planAdmin.sections.pages.pageFilterAll")}</option>
               {specialPlanPages.map((page) => (
                 <option key={page.id} value={page.id}>
                   {page.title}
@@ -346,7 +345,7 @@ const SuperAdminPlansPage = () => {
             <p className="oh-sapl-section-toggle__hint" style={{ margin: 0 }}>
               {isEn
                 ? `Showing plans for: ${selectedPlanPage.title}`
-                : `تعرض باقات صفحة: ${selectedPlanPage.title}`}
+                : t("planAdmin.sections.pages.showingPage", { title: selectedPlanPage.title })}
             </p>
           ) : null}
         </div>
@@ -366,7 +365,7 @@ const SuperAdminPlansPage = () => {
           message={error}
           actions={
             <Button type="button" variant="secondary" onClick={() => void refresh()}>
-              إعادة المحاولة
+              {t("planAdmin.common.retry")}
             </Button>
           }
         />
@@ -380,7 +379,7 @@ const SuperAdminPlansPage = () => {
             isEn={isEn}
             catalog={sectionCatalogId}
             onCreate={openCreateModal}
-            createLabel={isEn ? "+ Create plan" : "+ إنشاء باقة جديدة"}
+            createLabel={t("planAdmin.page.createPlan")}
           />
         }
       >
@@ -390,9 +389,9 @@ const SuperAdminPlansPage = () => {
             className="oh-sapl-toolbar-compact__search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="بحث بعنوان الباقة…"
+            placeholder={t("planAdmin.page.searchPlaceholder")}
             disabled={loading}
-            aria-label="بحث"
+            aria-label={t("planAdmin.page.searchAria")}
           />
           <StatusBadge tone="neutral" className="oh-sapl-toolbar-compact__count">
             {loading ? (
@@ -407,25 +406,25 @@ const SuperAdminPlansPage = () => {
 
         {!loading && !canReorderPlans ? (
           <p className="oh-sapl-order-hint oh-sapl-order-hint--muted m-0">
-            امسح البحث لإظهار أسهم ترتيب الباقات.
+            {t("planAdmin.page.clearSearchHint")}
           </p>
         ) : null}
 
         {!loading && !error && scopedPlans.length === 0 ? (
           <DashboardEmptyState
-            title={isEn ? sectionCopy.emptyTitleEn : sectionCopy.emptyTitleAr}
-            description={isEn ? sectionCopy.emptyDescEn : sectionCopy.emptyDescAr}
+            title={t(`planAdmin.sections.${activeSection}.emptyTitle`)}
+            description={t(`planAdmin.sections.${activeSection}.emptyDesc`)}
             icon={<PlansEmptyIcon />}
             actions={
               <Button type="button" onClick={openCreateModal}>
-                {isEn ? "Create plan" : "إنشاء باقة جديدة"}
+                {t("planAdmin.page.createPlanShort")}
               </Button>
             }
           />
         ) : null}
 
         {!loading && !error && scopedPlans.length > 0 && filteredPlans.length === 0 ? (
-          <DashboardEmptyState title="لا توجد نتائج" description="جرّب تغيير البحث." />
+          <DashboardEmptyState title={t("planAdmin.page.noResultsTitle")} description={t("planAdmin.page.noResultsDesc")} />
         ) : null}
 
         {!loading && !error && filteredPlans.length > 0 ? (
@@ -456,14 +455,14 @@ const SuperAdminPlansPage = () => {
 
       <ConfirmDialog
         open={Boolean(deleteTarget)}
-        title={isEn ? "Confirm package removal" : "تأكيد حذف الباقة"}
+        title={t("planAdmin.page.confirmDeactivateTitle")}
         body={
           isEn
             ? "Are you sure? This package will be hidden from new use. Existing subscriptions and historical records will not be deleted."
-            : "هل أنت متأكد؟ سيتم إيقاف ظهور هذه الباقة للاستخدام الجديد، ولن يتم حذف الاشتراكات أو السجلات القديمة المرتبطة بها."
+            : t("planAdmin.page.confirmDeactivateBody")
         }
-        confirmLabel={isEn ? "Deactivate package" : "تعطيل الباقة"}
-        cancelLabel={isEn ? "Cancel" : "إلغاء"}
+        confirmLabel={t("planAdmin.page.deactivateConfirm")}
+        cancelLabel={t("planAdmin.common.cancel")}
         confirmVariant="danger"
         confirmBusy={submitting}
         onCancel={() => {

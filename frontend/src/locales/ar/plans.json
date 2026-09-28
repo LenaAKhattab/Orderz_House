@@ -48,7 +48,15 @@
     "refundModalTitle": "تفاصيل استرداد مبلغ باقة العرض",
     "refundModalGotIt": "فهمت",
     "refundSummaryAria": "ملخص قيم الباقة",
-    "refundSectionFallback": "تفاصيل"
+    "refundSectionFallback": "تفاصيل",
+    "defaultBadge": "عرض خاص",
+    "defaultRibbon": "لفترة محدودة",
+    "refundSections": {
+      "monthly": "الاسترداد الشهري",
+      "inactiveMonths": "الأشهر غير النشطة",
+      "orderIncome": "الدخل من الطلبات",
+      "importantNotice": "تنبيه مهم"
+    }
   },
   "sectionAria": "باقات عضوية السوق",
   "membership": {

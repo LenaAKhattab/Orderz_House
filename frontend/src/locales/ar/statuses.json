@@ -1,0 +1,56 @@
+{
+  "orders": {
+    "published": "منشور",
+    "open_for_freelancers": "مفتوح للمستقلين",
+    "open_for_bids": "مفتوح للعروض",
+    "assigned": "مسند",
+    "in_progress": "قيد التنفيذ",
+    "ready_for_work": "جاهز للعمل",
+    "pending_payment": "بانتظار الدفع",
+    "pending_client_review": "بانتظار مراجعة العميل",
+    "completed": "مكتمل",
+    "cancelled": "ملغى",
+    "closed": "مغلق",
+    "draft": "مسودة",
+    "archived": "مؤرشف"
+  },
+  "subscriptions": {
+    "assigned_not_started": "بانتظار أول طلب",
+    "active": "نشط",
+    "expired": "منتهٍ",
+    "cancelled": "ملغى",
+    "pending": "معلق",
+    "company_approved": "موافقة الشركة",
+    "suspended": "موقوف"
+  },
+  "kyc": {
+    "pending": "قيد المراجعة",
+    "approved": "موافق عليه",
+    "rejected": "مرفوض",
+    "resubmission_required": "يلزم إعادة التقديم",
+    "not_submitted": "لم يُقدَّم"
+  },
+  "bids": {
+    "pending": "قيد الانتظار",
+    "accepted": "مقبول",
+    "rejected": "مرفوض",
+    "withdrawn": "مسحوب",
+    "submitted": "مقدَّم"
+  },
+  "payments": {
+    "paid": "مدفوع",
+    "unpaid": "غير مدفوع",
+    "pending": "بانتظار الدفع",
+    "failed": "فشل",
+    "refunded": "مسترد",
+    "not_required": "لا يتطلب دفعاً"
+  },
+  "claims": {
+    "pending": "قيد المراجعة",
+    "approved": "موافق عليه",
+    "rejected": "مرفوض",
+    "paid": "مدفوع",
+    "open": "مفتوح",
+    "closed": "مغلق"
+  }
+}

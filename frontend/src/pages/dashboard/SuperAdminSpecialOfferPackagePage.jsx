@@ -12,15 +12,13 @@ import {
 } from "../../services/api";
 import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
 import PlanCatalogAdminShell from "../../admin/plans/PlanCatalogAdminShell";
-import { SECTION_COPY } from "../../admin/plans/planMetricTerminology";
+import "../../i18n/planAdminResources";
 import { SPECIAL_OFFER_NAV_ID } from "../../admin/plans/planCatalogNav";
 import SpecialOfferPackageCard from "../../components/plans/SpecialOfferPackageCard";
 import {
   SPECIAL_OFFER_DEFAULTS,
   SPECIAL_OFFER_PURCHASE_MODE,
   SPECIAL_OFFER_ACCESS_LEVEL_OPTIONS,
-  SPECIAL_OFFER_LOCKED_WARNING_AR,
-  SPECIAL_OFFER_LOCKED_WARNING_EN,
   formStateFromSpecialOffer,
   payloadFromSpecialOfferForm,
 } from "../../constants/specialOfferPackage";
@@ -28,10 +26,8 @@ import "../../admin/marketplaceMembership/marketplace-membership-plans.css";
 import "../../admin/plans/specialOfferAdmin.css";
 
 export default function SuperAdminSpecialOfferPackagePage() {
-  const { locale, t } = useTranslation();
-  const isEn = locale === "en";
+  const { t } = useTranslation();
   const { push } = useToast();
-  const sectionCopy = SECTION_COPY.specialOffer;
 
   const [form, setForm] = useState(() => formStateFromSpecialOffer(SPECIAL_OFFER_DEFAULTS));
   const [planSummary, setPlanSummary] = useState(null);
@@ -51,14 +47,11 @@ export default function SuperAdminSpecialOfferPackagePage() {
       setForm(formStateFromSpecialOffer(pkg));
       setPlanSummary(pkg?.planSummary || null);
     } catch (err) {
-      setError(
-        getSafeApiErrorMessage(err) ||
-          (isEn ? "Could not load special offer package." : "تعذر تحميل باقة العرض."),
-      );
+      setError(getSafeApiErrorMessage(err) || t("planAdmin.sections.specialOffer.loadFailed"));
     } finally {
       setLoading(false);
     }
-  }, [isEn]);
+  }, [t]);
 
   useEffect(() => {
     void refresh();
@@ -86,11 +79,11 @@ export default function SuperAdminSpecialOfferPackagePage() {
       const pkg = res?.data?.specialOfferPackage;
       setForm(formStateFromSpecialOffer(pkg));
       setPlanSummary(pkg?.planSummary || null);
-      push({ type: "success", message: isEn ? "Special offer saved." : "تم حفظ باقة العرض." });
+      push({ type: "success", message: t("planAdmin.sections.specialOffer.saved") });
     } catch (err) {
       push({
         type: "error",
-        message: getSafeApiErrorMessage(err) || (isEn ? "Save failed." : "فشل الحفظ."),
+        message: getSafeApiErrorMessage(err) || t("planAdmin.sections.specialOffer.saveFailed"),
       });
     } finally {
       setSaving(false);
@@ -108,18 +101,14 @@ export default function SuperAdminSpecialOfferPackagePage() {
       push({
         type: "success",
         message: nextVisible
-          ? isEn
-            ? "Special offer is now visible."
-            : "باقة العرض ظاهرة الآن للمستخدمين."
-          : isEn
-            ? "Special offer is hidden."
-            : "تم إخفاء باقة العرض.",
+          ? t("planAdmin.sections.specialOffer.visibleNow")
+          : t("planAdmin.sections.specialOffer.hiddenNow"),
       });
     } catch (err) {
       setField("isVisible", !nextVisible);
       push({
         type: "error",
-        message: getSafeApiErrorMessage(err) || (isEn ? "Visibility update failed." : "فشل تحديث الظهور."),
+        message: getSafeApiErrorMessage(err) || t("planAdmin.sections.specialOffer.visibilityFailed"),
       });
     } finally {
       setSaving(false);
@@ -128,11 +117,7 @@ export default function SuperAdminSpecialOfferPackagePage() {
 
   const handleCreateNewVersion = async () => {
     if (saving) return;
-    const ok = window.confirm(
-      isEn
-        ? "Create a new editable offer version? The purchased version stays locked for existing buyers."
-        : "إنشاء عرض جديد قابل للتعديل؟ سيبقى العرض المشترى مجمّداً للمشتركين الحاليين.",
-    );
+    const ok = window.confirm(t("planAdmin.sections.specialOffer.newVersionConfirm"));
     if (!ok) return;
     setSaving(true);
     try {
@@ -146,16 +131,14 @@ export default function SuperAdminSpecialOfferPackagePage() {
       setPreviewKey((k) => k + 1);
       push({
         type: "success",
-        message: isEn
-          ? "New special offer version created (hidden until you enable it)."
-          : "تم إنشاء عرض جديد (مخفي حتى تفعّله).",
+        message: t("planAdmin.sections.specialOffer.newVersionSuccess"),
       });
     } catch (err) {
       push({
         type: "error",
         message:
           getSafeApiErrorMessage(err) ||
-          (isEn ? "Could not create a new offer version." : "تعذر إنشاء عرض جديد."),
+          t("planAdmin.sections.specialOffer.newVersionFailed"),
       });
     } finally {
       setSaving(false);
@@ -172,24 +155,17 @@ export default function SuperAdminSpecialOfferPackagePage() {
     <PlanCatalogAdminShell
       className="oh-mmp-page oh-special-offer-admin"
       activeCatalog={SPECIAL_OFFER_NAV_ID}
-      isEn={isEn}
-      hint={isEn ? sectionCopy.hintEn : sectionCopy.hintAr}
+      hint={t("planAdmin.sections.specialOffer.hint")}
     >
       {error ? <DashboardErrorState message={error} onRetry={refresh} /> : null}
 
       <DashboardSection
-        title={isEn ? sectionCopy.en : sectionCopy.ar}
-        description={
-          isEn
-            ? "One promotional package shown on public pricing when enabled."
-            : "هذه باقة ترويجية واحدة تظهر في الصفحة الرئيسية وصفحة الباقات عند تفعيلها."
-        }
+        title={t("planAdmin.sections.specialOffer.title")}
+        description={t("planAdmin.sections.specialOffer.sectionDescription")}
       >
         {!form.isVisible ? (
           <p className="oh-special-offer-admin__hidden-note" role="status">
-            {isEn
-              ? "The special offer is currently hidden and will not appear to users."
-              : "باقة العرض مخفية حالياً ولن تظهر للمستخدمين."}
+            {t("planAdmin.sections.specialOffer.hiddenNote")}
           </p>
         ) : null}
 
@@ -199,24 +175,24 @@ export default function SuperAdminSpecialOfferPackagePage() {
             role="alert"
             data-special-offer-locked="true"
           >
-            {isEn ? SPECIAL_OFFER_LOCKED_WARNING_EN : SPECIAL_OFFER_LOCKED_WARNING_AR}
+{t("planAdmin.sections.specialOffer.lockedWarning")}
           </p>
         ) : null}
 
         {loading ? (
-          <p className="oh-special-offer-admin__loading">{isEn ? "Loading…" : "جاري التحميل…"}</p>
+<p className="oh-special-offer-admin__loading">{t("planAdmin.sections.specialOffer.loading")}</p>
         ) : (
           <div className="oh-special-offer-admin__layout" data-special-offer-admin="true">
             <div className="oh-special-offer-admin__preview">
               <h3 className="oh-special-offer-admin__panel-title">
-                {isEn ? "Live preview" : "معاينة الباقة"}
+{t("planAdmin.sections.specialOffer.livePreview")}
               </h3>
               <SpecialOfferPackageCard key={previewKey} offer={previewOffer} t={t} preview />
             </div>
 
             <div className="oh-special-offer-admin__editor">
               <h3 className="oh-special-offer-admin__panel-title">
-                {isEn ? "Edit offer" : "تعديل باقة العرض"}
+{t("planAdmin.sections.specialOffer.editOffer")}
                 {form.offerVersion ? (
                   <span className="oh-special-offer-admin__version" data-offer-version={form.offerVersion}>
                     {" "}
@@ -232,12 +208,12 @@ export default function SuperAdminSpecialOfferPackagePage() {
                   disabled={saving}
                   onChange={(e) => void handleVisibility(e.target.checked)}
                 />
-                <span>{isEn ? "Package visible on public pricing" : "حالة الباقة: ظاهرة في صفحة الباقات"}</span>
+<span>{t("planAdmin.sections.specialOffer.visibleOnPublic")}</span>
               </label>
 
               <div className="oh-special-offer-admin__fields">
                 <label className="oh-special-offer-admin__field--full">
-                  <span>{isEn ? "Purchase method" : "طريقة الشراء"}</span>
+<span>{t("planAdmin.sections.specialOffer.purchaseMethod")}</span>
                   <select
                     value={form.purchaseMode}
                     disabled={benefitsLocked || saving}
@@ -246,10 +222,10 @@ export default function SuperAdminSpecialOfferPackagePage() {
                     data-benefit-field="purchaseMode"
                   >
                     <option value={SPECIAL_OFFER_PURCHASE_MODE.CHECKOUT}>
-                      {isEn ? "Direct checkout (Stripe)" : "شراء مباشر"}
+{t("planAdmin.sections.specialOffer.directCheckout")}
                     </option>
                     <option value={SPECIAL_OFFER_PURCHASE_MODE.WHATSAPP}>
-                      {isEn ? "WhatsApp / manual" : "واتساب / تواصل يدوي"}
+{t("planAdmin.sections.specialOffer.whatsappManual")}
                     </option>
                   </select>
                 </label>
@@ -257,36 +233,32 @@ export default function SuperAdminSpecialOfferPackagePage() {
                 {form.purchaseMode === SPECIAL_OFFER_PURCHASE_MODE.CHECKOUT ? (
                   <>
                     <p className="oh-special-offer-admin__mode-note oh-special-offer-admin__mode-note--checkout" role="note">
-                      {isEn
-                        ? "Direct checkout creates an independent special-offer membership. Benefits come from the values below — not from SILVER/PRO/ELITE. They activate automatically after payment (pending-start until first real order)."
-                        : "عند الشراء المباشر تُنشأ عضوية مستقلة لباقة العرض. المزايا تُؤخذ من القيم أدناه وليس من SILVER/PRO/ELITE، وتُفعَّل تلقائياً بعد الدفع (بداية المدة عند أول طلب حقيقي)."}
+                      {t("planAdmin.sections.specialOffer.checkoutModeNote")}
                     </p>
                     {planSummary ? (
                       <p className="oh-special-offer-admin__linked-summary" data-independent-plan-summary="true">
-                        {isEn ? "Independent plan row:" : "سجل الباقة المستقلة:"}{" "}
+{t("planAdmin.sections.specialOffer.independentRow")}{" "}
                         {planSummary.tierCode || form.planTierCode || "special_offer"} · id{" "}
                         {planSummary.id || form.linkedMarketplacePlanId || "—"} ·{" "}
-                        {planSummary.monthlyPriceJod ?? "—"} {isEn ? "JOD" : "د.أ"} ·{" "}
-                        {planSummary.monthlyBidAllowance ?? "—"} {isEn ? "bids" : "عرض"} ·{" "}
-                        {planSummary.cycleDurationDays ?? "—"} {isEn ? "days" : "يوم"}
+{planSummary.monthlyPriceJod ?? "—"} {t("planAdmin.common.currencyJod")} ·{" "}
+{planSummary.monthlyBidAllowance ?? "—"} {t("planAdmin.sections.specialOffer.bids")} ·{" "}
+{planSummary.cycleDurationDays ?? "—"} {t("planAdmin.common.days")}
                         {benefitsLocked
-                          ? isEn
-                            ? ` · locked (${form.purchaseCount || 0} purchase(s))`
-                            : ` · مجمّد (${form.purchaseCount || 0} شراء)`
+                          ? t("planAdmin.sections.specialOffer.lockedSuffix", {
+                              count: form.purchaseCount || 0,
+                            })
                           : ""}
                       </p>
                     ) : null}
                   </>
                 ) : (
                   <p className="oh-special-offer-admin__mode-note oh-special-offer-admin__mode-note--whatsapp" role="note">
-                    {isEn
-                      ? "WhatsApp mode does not activate the package automatically and needs manual follow-up."
-                      : "هذا الوضع لا يفعّل الباقة تلقائياً، ويحتاج متابعة يدوية."}
+                    {t("planAdmin.sections.specialOffer.whatsappModeNote")}
                   </p>
                 )}
 
                 <label>
-                  <span>{isEn ? "Title" : "عنوان الباقة"}</span>
+<span>{t("planAdmin.sections.specialOffer.offerTitle")}</span>
                   <input
                     value={form.title}
                     disabled={benefitsLocked || saving}
@@ -294,7 +266,7 @@ export default function SuperAdminSpecialOfferPackagePage() {
                   />
                 </label>
                 <label>
-                  <span>{isEn ? "Short description" : "الوصف القصير"}</span>
+<span>{t("planAdmin.sections.specialOffer.shortDesc")}</span>
                   <textarea
                     rows={2}
                     value={form.subtitle}
@@ -303,7 +275,7 @@ export default function SuperAdminSpecialOfferPackagePage() {
                   />
                 </label>
                 <label>
-                  <span>{isEn ? "Badge" : "الشارة"}</span>
+<span>{t("planAdmin.sections.specialOffer.badge")}</span>
                   <input
                     value={form.badgeText}
                     disabled={benefitsLocked || saving}
@@ -311,7 +283,7 @@ export default function SuperAdminSpecialOfferPackagePage() {
                   />
                 </label>
                 <label>
-                  <span>{isEn ? "Ribbon" : "الشريط"}</span>
+<span>{t("planAdmin.sections.specialOffer.ribbon")}</span>
                   <input
                     value={form.ribbonText}
                     disabled={benefitsLocked || saving}
@@ -319,7 +291,7 @@ export default function SuperAdminSpecialOfferPackagePage() {
                   />
                 </label>
                 <label>
-                  <span>{isEn ? "Price (JOD)" : "السعر (د.أ)"}</span>
+<span>{t("planAdmin.sections.specialOffer.price")}</span>
                   <input
                     type="number"
                     min="0"
@@ -331,7 +303,7 @@ export default function SuperAdminSpecialOfferPackagePage() {
                   />
                 </label>
                 <label>
-                  <span>{isEn ? "Original price (optional)" : "السعر قبل الخصم (اختياري)"}</span>
+                  <span>{t("planAdmin.sections.specialOffer.originalPrice")}</span>
                   <input
                     type="number"
                     min="0"
@@ -342,7 +314,7 @@ export default function SuperAdminSpecialOfferPackagePage() {
                   />
                 </label>
                 <label>
-                  <span>{isEn ? "Total offers / bids" : "عدد العروض"}</span>
+<span>{t("planAdmin.sections.specialOffer.totalBids")}</span>
                   <input
                     type="number"
                     min="1"
@@ -354,7 +326,7 @@ export default function SuperAdminSpecialOfferPackagePage() {
                   />
                 </label>
                 <label>
-                  <span>{isEn ? "Daily limit" : "الحد اليومي"}</span>
+<span>{t("planAdmin.sections.specialOffer.dailyLimit")}</span>
                   <input
                     type="number"
                     min="1"
@@ -366,7 +338,7 @@ export default function SuperAdminSpecialOfferPackagePage() {
                   />
                 </label>
                 <label>
-                  <span>{isEn ? "Duration (days)" : "مدة الباقة بالأيام"}</span>
+<span>{t("planAdmin.sections.specialOffer.durationDays")}</span>
                   <input
                     type="number"
                     min="1"
@@ -378,7 +350,7 @@ export default function SuperAdminSpecialOfferPackagePage() {
                   />
                 </label>
                 <label>
-                  <span>{isEn ? "Max project value (optional)" : "الحد الأقصى لقيمة المشروع (اختياري)"}</span>
+<span>{t("planAdmin.sections.specialOffer.maxProject")}</span>
                   <input
                     type="number"
                     min="0"
@@ -390,7 +362,7 @@ export default function SuperAdminSpecialOfferPackagePage() {
                   />
                 </label>
                 <label>
-                  <span>{isEn ? "Access / article level" : "مستوى الوصول / المقالات"}</span>
+<span>{t("planAdmin.sections.specialOffer.accessLevel")}</span>
                   <select
                     value={form.accessLevelKey || "silver"}
                     disabled={benefitsLocked || saving}
@@ -400,13 +372,13 @@ export default function SuperAdminSpecialOfferPackagePage() {
                   >
                     {SPECIAL_OFFER_ACCESS_LEVEL_OPTIONS.map((opt) => (
                       <option key={opt.key} value={opt.key}>
-                        {isEn ? opt.labelEn : opt.labelAr}
+                        {t(`planAdmin.sections.specialOffer.accessLevels.${opt.key}`) || (opt.labelEn)}
                       </option>
                     ))}
                   </select>
                 </label>
                 <label>
-                  <span>{isEn ? "CTA label" : "نص زر الشراء"}</span>
+<span>{t("planAdmin.sections.specialOffer.cta")}</span>
                   <input
                     value={form.ctaLabel}
                     disabled={benefitsLocked || saving}
@@ -414,7 +386,7 @@ export default function SuperAdminSpecialOfferPackagePage() {
                   />
                 </label>
                 <label className="oh-special-offer-admin__field--full">
-                  <span>{isEn ? "Microcopy" : "نص توضيحي تحت الزر"}</span>
+<span>{t("planAdmin.sections.specialOffer.microcopy")}</span>
                   <input
                     value={form.microcopy}
                     disabled={benefitsLocked || saving}
@@ -422,22 +394,18 @@ export default function SuperAdminSpecialOfferPackagePage() {
                   />
                 </label>
                 <label className="oh-special-offer-admin__field--full">
-                  <span>{isEn ? "Refund / offer explanation" : "شرح الاسترداد / تفاصيل العرض"}</span>
+<span>{t("planAdmin.sections.specialOffer.refundExplain")}</span>
                   <textarea
                     rows={8}
                     value={form.refundExplanationAr}
                     disabled={benefitsLocked || saving}
                     data-refund-explanation-field="true"
                     onChange={(e) => setField("refundExplanationAr", e.target.value)}
-                    placeholder={
-                      isEn
-                        ? "Shown in the refund details popup on the public card. Leave empty to hide the link."
-                        : "يظهر في نافذة تفاصيل الاسترداد على بطاقة العرض. اتركه فارغاً لإخفاء الرابط."
-                    }
+                    placeholder={t("planAdmin.sections.specialOffer.refundPlaceholder")}
                   />
                 </label>
                 <label className="oh-special-offer-admin__field--full">
-                  <span>{isEn ? "WhatsApp message" : "رسالة واتساب"}</span>
+<span>{t("planAdmin.sections.specialOffer.whatsappMessage")}</span>
                   <textarea
                     rows={3}
                     value={form.whatsappMessageAr}
@@ -450,7 +418,7 @@ export default function SuperAdminSpecialOfferPackagePage() {
               <div className="oh-special-offer-admin__actions">
                 {!benefitsLocked ? (
                   <Button type="button" disabled={saving} onClick={() => void handleSave()}>
-                    {isEn ? "Save changes" : "حفظ التغييرات"}
+{t("planAdmin.sections.specialOffer.saveChanges")}
                   </Button>
                 ) : null}
                 {benefitsLocked || form.canCreateNewVersion ? (
@@ -460,7 +428,7 @@ export default function SuperAdminSpecialOfferPackagePage() {
                     onClick={() => void handleCreateNewVersion()}
                     data-create-new-offer="true"
                   >
-                    {isEn ? "Create new offer" : "إنشاء عرض جديد"}
+{t("planAdmin.sections.specialOffer.createNew")}
                   </Button>
                 ) : null}
                 <Button
@@ -469,11 +437,11 @@ export default function SuperAdminSpecialOfferPackagePage() {
                   disabled={saving}
                   onClick={() => setPreviewKey((k) => k + 1)}
                 >
-                  {isEn ? "Refresh preview" : "معاينة الباقة"}
+{t("planAdmin.sections.specialOffer.refreshPreview")}
                 </Button>
                 {!benefitsLocked ? (
                   <Button type="button" variant="secondary" disabled={saving} onClick={handleReset}>
-                    {isEn ? "Reset defaults" : "إعادة تعيين"}
+{t("planAdmin.sections.specialOffer.resetDefaults")}
                   </Button>
                 ) : null}
               </div>

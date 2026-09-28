@@ -2,6 +2,7 @@
 import OrderApplicantsCount from "./OrderApplicantsCount";
 import { useAuth } from "../../context/useAuth";
 import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/ordersAdminResources";
 import {
   formatOrderBudget,
   formatOrderDuration,
@@ -23,10 +24,10 @@ import {
 } from "../../utils/orderFlowUi";
 import { orderHasAssignment } from "../../utils/orderPrivacyUi";
 
-function priceLabel(order, locale) {
+function priceLabel(order, locale, t) {
   if (order?.projectType === "bidding" && (order?.paymentAmount != null || order?.paymentCurrency)) {
     const paid = order?.paymentAmount != null ? formatMoney(order.paymentAmount) : "—";
-    const cur = locale === "en" ? " JOD" : " د.أ";
+    const cur = t("ordersAdmin.orderCard.paidCurrencySuffix");
     return `${paid}${cur}`.trim();
   }
   return formatOrderBudget(order, locale);
@@ -75,35 +76,62 @@ function bidderDisplayName(bidUser) {
   return full || "—";
 }
 
-function timeLeftLabel(order) {
+function timeLeftLabel(order, t, locale) {
   const due = order?.dueAt ? new Date(order.dueAt) : null;
   if (!due || !Number.isFinite(due.getTime())) return null;
 
   const diffMs = due.getTime() - Date.now();
-  if (diffMs <= 0) return "انتهت مدة المشروع.";
+  if (diffMs <= 0) return t("ordersAdmin.orderCard.timeExpired");
 
   const totalMinutes = Math.floor(diffMs / (60 * 1000));
   const days = Math.floor(totalMinutes / (60 * 24));
   const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
   const minutes = totalMinutes % 60;
 
-  const nf = new Intl.NumberFormat("en-US");
+  const nf = new Intl.NumberFormat(locale === "en" ? "en-US" : "ar");
+  const du = "ordersAdmin.wizard.durationUnits";
+  const part = (n, unit) => {
+    if (locale === "en") {
+      const label = unit === "days" ? (n === 1 ? t(`${du}.day`) : t(`${du}.days`)) : unit === "hours" ? (n === 1 ? t(`${du}.hour`) : t(`${du}.hours`)) : n === 1 ? t(`${du}.minute`) : t(`${du}.minutes`);
+      return `${nf.format(n)} ${label}`;
+    }
+    const label =
+      unit === "days"
+        ? n >= 3 && n <= 10
+          ? t(`${du}.days`)
+          : n === 2
+            ? t(`${du}.dayTwo`)
+            : t(`${du}.day`)
+        : unit === "hours"
+          ? n >= 3 && n <= 10
+            ? t(`${du}.hours`)
+            : n === 2
+              ? t(`${du}.hourTwo`)
+              : t(`${du}.hour`)
+          : n >= 3 && n <= 10
+            ? t(`${du}.minutes`)
+            : n === 2
+              ? t(`${du}.minuteTwo`)
+              : t(`${du}.minute`);
+    return `${nf.format(n)} ${label}`;
+  };
+
   const parts = [];
-  if (days > 0) parts.push(`${nf.format(days)} يوم`);
-  if (hours > 0 || days > 0) parts.push(`${nf.format(hours)} ساعة`);
-  parts.push(`${nf.format(minutes)} دقيقة`);
-  return `متبقي ${parts.join(" و ")}.`;
+  if (days > 0) parts.push(part(days, "days"));
+  if (hours > 0 || days > 0) parts.push(part(hours, "hours"));
+  parts.push(part(minutes, "minutes"));
+  const joiner = t("ordersAdmin.orderCard.timePartJoiner");
+  const span = parts.join(joiner);
+  return t("ordersAdmin.orderCard.timeRemaining", { span });
 }
 
 export default function OrderCard({
   order,
   footer,
-  /** أزرار بجانب «عرض التفاصيل» (مثل استلام الطلب في صفحة الطلبات). */
   footerInline,
   showOrderCode = false,
   showAssignmentBadge = true,
   showAdminBadge = true,
-  /** لوحة الإدارة: يظهر العنوان + السعر + مدة التسليم فقط حتى فتح «عرض التفاصيل». */
   compactSummary = false,
 }) {
   const { user } = useAuth();
@@ -132,6 +160,7 @@ export default function OrderCard({
   const applicantPoolCount =
     Number(order?.applicantsCount ?? order?.bidsCount ?? 0) ||
     (bidUsers.length ? bidUsers.length : 0);
+  const applicantJoiner = locale === "ar" ? "، " : ", ";
 
   useEffect(() => {
     const id = setInterval(() => setNowMs(Date.now()), 60 * 1000);
@@ -140,8 +169,8 @@ export default function OrderCard({
 
   const remaining = useMemo(() => {
     void nowMs;
-    return timeLeftLabel(order);
-  }, [order, nowMs]);
+    return timeLeftLabel(order, t, locale);
+  }, [order, nowMs, t, locale]);
 
   const priceChipBody = showAdminBadge ? (
     <MoneyValue>{formatOrderBudget(order, locale)}</MoneyValue>
@@ -197,7 +226,7 @@ export default function OrderCard({
               {t("orders.card.applicants")}:{" "}
               {showAdminBadge && bidUsers.length ? (
                 <>
-                  {bidUsers.slice(0, 2).map((b) => bidderDisplayName(b)).join("، ")}
+                  {bidUsers.slice(0, 2).map((b) => bidderDisplayName(b)).join(applicantJoiner)}
                   {bidUsers.length > 2 ? ` +${bidUsers.length - 2}` : ""}
                 </>
               ) : (
@@ -212,7 +241,7 @@ export default function OrderCard({
         </div>
       ) : (
         <>
-          <div className="oh-pool-card__meta oh-pool-card__meta--keyonly" aria-label="ملخص الطلب">
+          <div className="oh-pool-card__meta oh-pool-card__meta--keyonly" aria-label={t("ordersAdmin.orderCard.summaryAria")}>
             <span className="oh-mini-chip oh-mini-chip--emph">
               {t("orders.card.price")}: {priceChipBody}
             </span>
@@ -239,7 +268,7 @@ export default function OrderCard({
       ) : null}
 
       {showFull && skillsClean.length ? (
-        <div className="oh-pool-card__meta" aria-label="المهارات">
+        <div className="oh-pool-card__meta" aria-label={t("ordersAdmin.orderCard.skillsAria")}>
           {skillsClean.slice(0, 8).map((s, idx) => (
             <span className="oh-mini-chip" key={s?.id || s?.name || String(idx)}>
               {typeof s === "string" ? s : s?.name || "—"}
@@ -253,19 +282,19 @@ export default function OrderCard({
         <>
           <section className="oh-order-card__meta" style={{ marginTop: 2 }}>
             <div className="oh-meta">
-              <div className="oh-meta__label">السعر (ملخص)</div>
+              <div className="oh-meta__label">{t("ordersAdmin.orderCard.priceSummary")}</div>
               <div className="oh-meta__value oh-meta__value--strong">
                 <MoneyValue>
-                  {showAdminBadge ? priceLabel(order, locale) : <JodOrderBudgetDisplay order={order} compact />}
+                  {showAdminBadge ? priceLabel(order, locale, t) : <JodOrderBudgetDisplay order={order} compact />}
                 </MoneyValue>
               </div>
             </div>
             <div className="oh-meta">
-              <div className="oh-meta__label">الحالة التقنية</div>
+              <div className="oh-meta__label">{t("ordersAdmin.orderCard.technicalStatus")}</div>
               <div className="oh-meta__value">{showValue(order?.orderStatus)}</div>
             </div>
             <div className="oh-meta">
-              <div className="oh-meta__label">منشور</div>
+              <div className="oh-meta__label">{t("ordersAdmin.orderCard.published")}</div>
               <div className="oh-meta__value">{yn(order?.isPublished, t)}</div>
             </div>
             <div className="oh-meta">
@@ -273,8 +302,8 @@ export default function OrderCard({
               <div className="oh-meta__value">{yn(order?.isOpenForPool, t)}</div>
             </div>
             <div className="oh-meta">
-              <div className="oh-meta__label">مؤرشف</div>
-              <div className="oh-meta__value">{yn(order?.isArchived)}</div>
+              <div className="oh-meta__label">{t("ordersAdmin.orderCard.archived")}</div>
+              <div className="oh-meta__value">{yn(order?.isArchived, t)}</div>
             </div>
             {showAdminBadge ? (
               <>
@@ -296,7 +325,7 @@ export default function OrderCard({
 
           {extraCats.length ? (
             <div style={{ display: "grid", gap: 8 }}>
-              <div style={{ fontWeight: 950, color: "#1b2341" }}>تصنيفات إضافية</div>
+              <div style={{ fontWeight: 950, color: "#1b2341" }}>{t("ordersAdmin.orderCard.extraCategories")}</div>
               <div className="chips">
                 {extraCats.map((x, idx) => {
                   const c = x?.category?.name || "—";
@@ -317,7 +346,7 @@ export default function OrderCard({
       <footer className="oh-pool-card__foot">
         <div className="oh-pool-card__actions">
           <button type="button" className="btn btn-secondary" onClick={() => setExpanded((v) => !v)}>
-            {expanded ? "إخفاء التفاصيل" : "عرض التفاصيل"}
+            {expanded ? t("ordersAdmin.orderCard.hideDetails") : t("ordersAdmin.orderCard.showDetails")}
           </button>
           {footerInline}
         </div>

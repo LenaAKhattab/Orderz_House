@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getAdminFreelancersForAssignment } from "../../services/api";
 import { SelectPanelBusySkeleton } from "../ui/Skeleton";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/ordersAdminResources";
 import "./AdminFreelancerSelector.css";
 
 function initialsFromName(name) {
@@ -14,12 +16,17 @@ function initialsFromName(name) {
   return (a + b).toUpperCase();
 }
 
-function subscriptionBadge(f) {
+function subscriptionBadge(f, t) {
   const sub = f?.subscription;
-  if (!sub?.status) return { label: "بدون اشتراك", tone: "warn" };
+  if (!sub?.status) return { label: t("ordersAdmin.freelancerSelector.noSubscription"), tone: "warn" };
   const st = String(sub.status);
-  if (st === "active" || st === "assigned_not_started") return { label: st === "active" ? "اشتراك نشط" : "اشتراك (لم يبدأ)", tone: "ok" };
-  return { label: `اشتراك: ${st}`, tone: "warn" };
+  if (st === "active" || st === "assigned_not_started") {
+    return {
+      label: st === "active" ? t("ordersAdmin.freelancerSelector.subscriptionActive") : t("ordersAdmin.freelancerSelector.subscriptionNotStarted"),
+      tone: "ok",
+    };
+  }
+  return { label: t("ordersAdmin.freelancerSelector.subscriptionStatus", { status: st }), tone: "warn" };
 }
 
 /**
@@ -32,6 +39,7 @@ function subscriptionBadge(f) {
  * }} props
  */
 export default function AdminFreelancerSelector({ active, value, selectedFreelancer, onChange, disabled = false }) {
+  const { t, dir } = useTranslation();
   const [searchInput, setSearchInput] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [freelancers, setFreelancers] = useState([]);
@@ -39,8 +47,8 @@ export default function AdminFreelancerSelector({ active, value, selectedFreelan
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const t = window.setTimeout(() => setDebouncedSearch(String(searchInput).trim()), 300);
-    return () => window.clearTimeout(t);
+    const timer = window.setTimeout(() => setDebouncedSearch(String(searchInput).trim()), 300);
+    return () => window.clearTimeout(timer);
   }, [searchInput]);
 
   const load = useCallback(async () => {
@@ -58,11 +66,11 @@ export default function AdminFreelancerSelector({ active, value, selectedFreelan
       setFreelancers(Array.isArray(list) ? list : []);
     } catch (e) {
       setFreelancers([]);
-      setError(e?.response?.data?.message || e?.message || "تعذر تحميل قائمة المستقلين.");
+      setError(e?.response?.data?.message || e?.message || t("ordersAdmin.freelancerSelector.loadFailed"));
     } finally {
       setLoading(false);
     }
-  }, [active, debouncedSearch]);
+  }, [active, debouncedSearch, t]);
 
   useEffect(() => {
     load();
@@ -87,7 +95,7 @@ export default function AdminFreelancerSelector({ active, value, selectedFreelan
   if (!active) return null;
 
   return (
-    <div className="oh-admin-fl-sel" dir="rtl">
+    <div className="oh-admin-fl-sel" dir={dir}>
       {displaySelected ? (
         <div className="oh-admin-fl-sel__selected">
           <div className="oh-admin-fl-sel__selected-avatar" aria-hidden="true">
@@ -112,18 +120,16 @@ export default function AdminFreelancerSelector({ active, value, selectedFreelan
           type="search"
           disabled={disabled}
           value={searchInput}
-          placeholder="ابحث باسم المستقل أو البريد أو رقم الحساب..."
+          placeholder={t("ordersAdmin.freelancerSelector.searchPlaceholder")}
           onChange={(e) => setSearchInput(e.target.value)}
           autoComplete="off"
         />
       </div>
 
-      <div className="help oh-admin-fl-sel__hint">
-        يمكن اختيار مستقل مؤهل فقط. المستقلون غير المؤهلين يظهرون مع السبب ولا يمكن اختيارهم.
-      </div>
+      <div className="help oh-admin-fl-sel__hint">{t("ordersAdmin.freelancerSelector.hint")}</div>
 
       <button type="button" className="btn btn-secondary oh-admin-fl-sel__unassign" disabled={disabled} onClick={pickUnassigned}>
-        بدون تعيين
+        {t("ordersAdmin.freelancerSelector.unassign")}
       </button>
 
       {loading ? (
@@ -139,13 +145,13 @@ export default function AdminFreelancerSelector({ active, value, selectedFreelan
       ) : null}
 
       {!loading && !error && freelancers.length === 0 ? (
-        <div className="oh-admin-fl-sel__empty">لا يوجد مستقلون مطابقون للبحث.</div>
+        <div className="oh-admin-fl-sel__empty">{t("ordersAdmin.freelancerSelector.empty")}</div>
       ) : null}
 
       {!loading && !error && freelancers.length > 0 ? (
-        <div className="oh-admin-fl-sel__panel" role="listbox" aria-label="نتائج المستقلين">
+        <div className="oh-admin-fl-sel__panel" role="listbox" aria-label={t("ordersAdmin.freelancerSelector.listAriaLabel")}>
           {freelancers.map((f) => {
-            const subBadge = subscriptionBadge(f);
+            const subBadge = subscriptionBadge(f, t);
             const activeRow = selectedId === String(f.id);
             return (
               <button
@@ -169,13 +175,18 @@ export default function AdminFreelancerSelector({ active, value, selectedFreelan
                 <div className="oh-admin-fl-sel__row-body">
                   <div className="oh-admin-fl-sel__row-name">{f.displayName || f.fullName}</div>
                   <div className="oh-admin-fl-sel__row-line" dir="ltr" style={{ textAlign: "right" }}>
-                    حساب: {f.accountId != null ? f.accountId : "—"} · {f.email || "—"}
+                    {t("ordersAdmin.freelancerSelector.accountLine", {
+                      accountId: f.accountId != null ? String(f.accountId) : "—",
+                      email: f.email || "—",
+                    })}
                   </div>
                   <div className="oh-admin-fl-sel__badges">
                     <span
                       className={`oh-admin-fl-sel__badge ${f.status === "active" ? "oh-admin-fl-sel__badge--ok" : "oh-admin-fl-sel__badge--err"}`.trim()}
                     >
-                      {f.status === "active" ? "حساب نشط" : "حساب غير نشط"}
+                      {f.status === "active"
+                        ? t("ordersAdmin.freelancerSelector.accountActive")
+                        : t("ordersAdmin.freelancerSelector.accountInactive")}
                     </span>
                     <span className={`oh-admin-fl-sel__badge oh-admin-fl-sel__badge--${subBadge.tone}`.trim()}>{subBadge.label}</span>
                     {!f.assignable && f.ineligibleReason ? (

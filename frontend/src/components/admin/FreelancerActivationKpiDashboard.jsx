@@ -3,24 +3,71 @@ import {
   getSuperAdminFreelancerActivationKpisRequest,
   getSuperAdminActivationCampaignRequest,
 } from "../../services/api";
-import {
-  FUNNEL_CARD_LABELS_AR,
-  FUNNEL_TABLE_STEPS_AR,
-  RATE_CARD_LABELS_AR,
-  TIMING_CARD_LABELS_AR,
-  QUALITY_CARD_LABELS_AR,
-  FINANCIAL_CARD_LABELS_AR,
-  KPI_SCHEMA_NOT_READY_AR,
-  KPI_LOAD_ERROR_AR,
-  KPI_NOTES_TITLE_AR,
-  KPI_NOTES_INTRO_AR,
-  KPI_UNAVAILABLE_AR,
-  formatKpiCount,
-  formatKpiRate,
-  formatKpiDays,
-  formatKpiJod,
-  reasonForMetric,
-} from "../../constants/freelancerActivationKpi";
+import { reasonForMetric } from "../../constants/freelancerActivationKpi";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/activationResources";
+
+const FUNNEL_CARD_KEYS = [
+  "trialActivatedUsers",
+  "firstBidUsers",
+  "firstAssignmentUsers",
+  "firstAcceptedWorkUsers",
+  "firstPublishedWorkUsers",
+  "silverCtaShownUsers",
+  "silverPaymentStartedUsers",
+  "silverPaidUsers",
+];
+
+const FUNNEL_TABLE_KEYS = [
+  "registeredUsers",
+  "verifiedUsers",
+  "trainingCompletedUsers",
+  "trialActivatedUsers",
+  "firstBidUsers",
+  "firstAssignmentUsers",
+  "firstAcceptedWorkUsers",
+  "firstPublishedWorkUsers",
+  "silverCtaShownUsers",
+  "silverPaymentStartedUsers",
+  "silverPaidUsers",
+];
+
+const RATE_CARD_KEYS = [
+  "trialActivatedToPaidRate",
+  "firstAcceptedToPaidRate",
+  "firstPublishedToPaidRate",
+  "ctaShownToPaymentStartedRate",
+  "paymentStartedToPaidRate",
+];
+
+const TIMING_CARD_KEYS = [
+  "averageTimeToFirstBid",
+  "averageTimeToFirstWin",
+  "averageTimeToFirstAccepted",
+  "averageTimeToFirstPublished",
+];
+
+const QUALITY_CARD_KEYS = [
+  "acceptedArticleCount",
+  "rejectedArticleCount",
+  "revisionRequestedCount",
+  "publishedArticleCount",
+  "articleAcceptanceRate",
+  "articleRejectionRate",
+  "revisionRate",
+];
+
+const FINANCIAL_CARD_KEYS = [
+  "campaignBudgetTotalJod",
+  "campaignBudgetReservedJod",
+  "campaignBudgetUsedJod",
+  "campaignBudgetRemainingJod",
+  "pendingFreelancerEarnedJod",
+  "costPerPaidFreelancer",
+  "subscriptionRevenueJod",
+  "workInventoryReserveAllocatedJod",
+  "workInventoryReserveActiveJod",
+];
 
 function KpiCard({ label, value, helper = null, testId }) {
   return (
@@ -62,6 +109,34 @@ function SimpleBar({ ratio }) {
  * Phase A7.2 — Super Admin Activation KPI dashboard (read-only, Arabic).
  */
 export default function FreelancerActivationKpiDashboard({ campaigns = [] }) {
+  const { t } = useTranslation();
+  const unavailableLabel = t("activation.kpi.unavailable");
+  const unavailableShort = t("activation.kpi.unavailableShort");
+  const formatCount = (value) => {
+    if (value == null) return unavailableLabel;
+    const n = Number(value);
+    if (!Number.isFinite(n)) return unavailableLabel;
+    return String(Math.trunc(n));
+  };
+  const formatRate = (value, { shortUnavailable = false } = {}) => {
+    if (value == null) return shortUnavailable ? unavailableShort : unavailableLabel;
+    const n = Number(value);
+    if (!Number.isFinite(n)) return shortUnavailable ? unavailableShort : unavailableLabel;
+    return `${(n * 100).toFixed(1)}%`;
+  };
+  const formatDays = (value) => {
+    if (value == null) return unavailableLabel;
+    const n = Number(value);
+    if (!Number.isFinite(n)) return unavailableLabel;
+    const rounded = Math.round(n * 10) / 10;
+    return t("activation.kpi.daysUnit", { value: rounded });
+  };
+  const formatJod = (value) => {
+    if (value == null) return unavailableLabel;
+    const raw = String(value).trim();
+    if (!raw) return unavailableLabel;
+    return `${raw} JOD`;
+  };
   const [campaignId, setCampaignId] = useState("");
   const [waveId, setWaveId] = useState("");
   const [dateFrom, setDateFrom] = useState("");
@@ -111,11 +186,11 @@ export default function FreelancerActivationKpiDashboard({ campaigns = [] }) {
       setKpis(res?.data || null);
     } catch {
       setKpis(null);
-      setError(KPI_LOAD_ERROR_AR);
+      setError(t("activation.kpi.loadError"));
     } finally {
       setLoading(false);
     }
-  }, [campaignId, waveId, dateFrom, dateTo]);
+  }, [campaignId, waveId, dateFrom, dateTo, t]);
 
   useEffect(() => {
     void loadKpis();
@@ -126,7 +201,7 @@ export default function FreelancerActivationKpiDashboard({ campaigns = [] }) {
   const timing = kpis?.timing || {};
   const quality = kpis?.articleQuality || {};
   const financial = kpis?.financial || {};
-  const unavailable = kpis?.metadata?.unavailableMetrics || [];
+  const unavailableMetrics = kpis?.metadata?.unavailableMetrics || [];
   const notes = kpis?.metadata?.notes || [];
 
   return (
@@ -136,7 +211,7 @@ export default function FreelancerActivationKpiDashboard({ campaigns = [] }) {
         data-testid="activation-kpi-filters"
       >
         <label className="grid gap-1 text-[0.82rem] font-semibold">
-          الحملة
+          {t("activation.kpi.campaign")}
           <select
             data-testid="kpi-filter-campaign"
             value={campaignId}
@@ -145,7 +220,7 @@ export default function FreelancerActivationKpiDashboard({ campaigns = [] }) {
               setWaveId("");
             }}
           >
-            <option value="">كل الحملات</option>
+            <option value="">{t("activation.kpi.allCampaigns")}</option>
             {campaignOptions.map((c) => (
               <option key={c.id} value={String(c.id)}>
                 {c.name || `Campaign ${c.id}`}
@@ -154,14 +229,14 @@ export default function FreelancerActivationKpiDashboard({ campaigns = [] }) {
           </select>
         </label>
         <label className="grid gap-1 text-[0.82rem] font-semibold">
-          الموجة
+          {t("activation.kpi.wave")}
           <select
             data-testid="kpi-filter-wave"
             value={waveId}
             disabled={!campaignId}
             onChange={(e) => setWaveId(e.target.value)}
           >
-            <option value="">كل الموجات</option>
+            <option value="">{t("activation.kpi.allWaves")}</option>
             {waves.map((w) => (
               <option key={w.id} value={String(w.id)}>
                 {w.name || `Wave ${w.id}`}
@@ -170,7 +245,7 @@ export default function FreelancerActivationKpiDashboard({ campaigns = [] }) {
           </select>
         </label>
         <label className="grid gap-1 text-[0.82rem] font-semibold">
-          من تاريخ
+          {t("activation.kpi.dateFrom")}
           <input
             type="date"
             data-testid="kpi-filter-date-from"
@@ -179,7 +254,7 @@ export default function FreelancerActivationKpiDashboard({ campaigns = [] }) {
           />
         </label>
         <label className="grid gap-1 text-[0.82rem] font-semibold">
-          إلى تاريخ
+          {t("activation.kpi.dateTo")}
           <input
             type="date"
             data-testid="kpi-filter-date-to"
@@ -195,14 +270,14 @@ export default function FreelancerActivationKpiDashboard({ campaigns = [] }) {
             disabled={loading}
             onClick={() => void loadKpis()}
           >
-            {loading ? "جاري التحديث…" : "تحديث"}
+            {loading ? t("activation.kpi.refreshing") : t("activation.kpi.refresh")}
           </button>
         </div>
       </div>
 
       {loading ? (
         <p data-testid="activation-kpi-loading" className="text-[0.9rem] font-semibold">
-          جاري تحميل المؤشرات…
+          {t("activation.kpi.loading")}
         </p>
       ) : null}
 
@@ -220,27 +295,27 @@ export default function FreelancerActivationKpiDashboard({ campaigns = [] }) {
           data-testid="activation-kpi-schema-not-ready"
           className="rounded-[var(--dash-radius-md,12px)] border border-[color:var(--dash-border,#c9d0da)] bg-[color:var(--dash-card,#fcfcfd)] p-3 text-[0.9rem] font-semibold"
         >
-          {KPI_SCHEMA_NOT_READY_AR}
+          {t("activation.kpi.schemaNotReady")}
         </p>
       ) : null}
 
       {!loading && !error && kpis && kpis.schemaReady !== false ? (
         <>
           <section>
-            <h3 className="mb-2 text-[0.95rem] font-extrabold">قمع التحويل</h3>
+            <h3 className="mb-2 text-[0.95rem] font-extrabold">{t("activation.kpi.funnelTitle")}</h3>
             <div
               className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4"
               data-testid="activation-kpi-funnel-cards"
             >
-              {Object.entries(FUNNEL_CARD_LABELS_AR).map(([key, label]) => (
+              {FUNNEL_CARD_KEYS.map((key) => (
                 <KpiCard
                   key={key}
                   testId={`kpi-funnel-card-${key}`}
-                  label={label}
-                  value={formatKpiCount(funnel[key])}
+                  label={t(`activation.kpi.funnel.${key}`)}
+                  value={formatCount(funnel[key])}
                   helper={
                     funnel[key] == null
-                      ? reasonForMetric(unavailable, `funnel.${key}`)
+                      ? reasonForMetric(unavailableMetrics, `funnel.${key}`)
                       : null
                   }
                 />
@@ -249,7 +324,7 @@ export default function FreelancerActivationKpiDashboard({ campaigns = [] }) {
           </section>
 
           <section>
-            <h3 className="mb-2 text-[0.95rem] font-extrabold">جدول القمع</h3>
+            <h3 className="mb-2 text-[0.95rem] font-extrabold">{t("activation.kpi.funnelTableTitle")}</h3>
             <div className="overflow-x-auto">
               <table
                 className="w-full min-w-[640px] border-collapse text-[0.82rem]"
@@ -257,27 +332,27 @@ export default function FreelancerActivationKpiDashboard({ campaigns = [] }) {
               >
                 <thead>
                   <tr className="border-b border-[color:var(--dash-border,#c9d0da)] text-right">
-                    <th className="p-2 font-bold">المرحلة</th>
-                    <th className="p-2 font-bold">العدد</th>
-                    <th className="p-2 font-bold">ملاحظة</th>
+                    <th className="p-2 font-bold">{t("activation.kpi.colStage")}</th>
+                    <th className="p-2 font-bold">{t("activation.kpi.colCount")}</th>
+                    <th className="p-2 font-bold">{t("activation.kpi.colNote")}</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {FUNNEL_TABLE_STEPS_AR.map((step) => {
-                    const value = funnel[step.key];
+                  {FUNNEL_TABLE_KEYS.map((stepKey) => {
+                    const value = funnel[stepKey];
                     const unavailableReason = reasonForMetric(
                       unavailable,
-                      `funnel.${step.key}`,
+                      `funnel.${stepKey}`,
                     );
                     return (
                       <tr
-                        key={step.key}
+                        key={stepKey}
                         className="border-b border-[color:var(--dash-border,#e5e7eb)]"
-                        data-testid={`kpi-funnel-row-${step.key}`}
+                        data-testid={`kpi-funnel-row-${stepKey}`}
                       >
-                        <td className="p-2 font-semibold">{step.label}</td>
+                        <td className="p-2 font-semibold">{t(`activation.kpi.funnelSteps.${stepKey}`)}</td>
                         <td className="p-2 font-extrabold">
-                          {value == null ? KPI_UNAVAILABLE_AR : formatKpiCount(value)}
+                          {value == null ? unavailableLabel : formatCount(value)}
                         </td>
                         <td className="p-2 text-[color:var(--dash-text-secondary,#6b7280)]">
                           {value == null ? unavailableReason || "—" : "—"}
@@ -291,22 +366,22 @@ export default function FreelancerActivationKpiDashboard({ campaigns = [] }) {
           </section>
 
           <section>
-            <h3 className="mb-2 text-[0.95rem] font-extrabold">نسب التحويل</h3>
+            <h3 className="mb-2 text-[0.95rem] font-extrabold">{t("activation.kpi.ratesTitle")}</h3>
             <div
               className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3"
               data-testid="activation-kpi-rate-cards"
             >
-              {Object.entries(RATE_CARD_LABELS_AR).map(([key, label]) => {
+              {RATE_CARD_KEYS.map((key) => {
                 const value = rates[key];
                 return (
                   <div key={key}>
                     <KpiCard
                       testId={`kpi-rate-card-${key}`}
-                      label={label}
-                      value={formatKpiRate(value, { shortUnavailable: true })}
+                      label={t(`activation.kpi.rates.${key}`)}
+                      value={formatRate(value, { shortUnavailable: true })}
                       helper={
                         value == null
-                          ? reasonForMetric(unavailable, `rates.${key}`)
+                          ? reasonForMetric(unavailableMetrics, `rates.${key}`)
                           : null
                       }
                     />
@@ -318,41 +393,37 @@ export default function FreelancerActivationKpiDashboard({ campaigns = [] }) {
           </section>
 
           <section>
-            <h3 className="mb-2 text-[0.95rem] font-extrabold">الأزمنة المتوسطة</h3>
+            <h3 className="mb-2 text-[0.95rem] font-extrabold">{t("activation.kpi.timingTitle")}</h3>
             <div
               className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4"
               data-testid="activation-kpi-timing-cards"
             >
-              {Object.entries(TIMING_CARD_LABELS_AR).map(([key, label]) => (
+              {TIMING_CARD_KEYS.map((key) => (
                 <KpiCard
                   key={key}
                   testId={`kpi-timing-card-${key}`}
-                  label={label}
-                  value={formatKpiDays(timing[key])}
+                  label={t(`activation.kpi.timing.${key}`)}
+                  value={formatDays(timing[key])}
                 />
               ))}
             </div>
           </section>
 
           <section>
-            <h3 className="mb-2 text-[0.95rem] font-extrabold">جودة المقالات</h3>
+            <h3 className="mb-2 text-[0.95rem] font-extrabold">{t("activation.kpi.qualityTitle")}</h3>
             <div
               className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4"
               data-testid="activation-kpi-quality-cards"
             >
-              {Object.entries(QUALITY_CARD_LABELS_AR).map(([key, label]) => {
+              {QUALITY_CARD_KEYS.map((key) => {
                 const isRate = key.endsWith("Rate");
                 const value = quality[key];
                 return (
                   <KpiCard
                     key={key}
                     testId={`kpi-quality-card-${key}`}
-                    label={label}
-                    value={
-                      isRate
-                        ? formatKpiRate(value, { shortUnavailable: true })
-                        : formatKpiCount(value)
-                    }
+                    label={t(`activation.kpi.quality.${key}`)}
+                    value={isRate ? formatRate(value, { shortUnavailable: true }) : formatCount(value)}
                   />
                 );
               })}
@@ -360,20 +431,20 @@ export default function FreelancerActivationKpiDashboard({ campaigns = [] }) {
           </section>
 
           <section>
-            <h3 className="mb-2 text-[0.95rem] font-extrabold">المؤشرات المالية</h3>
+            <h3 className="mb-2 text-[0.95rem] font-extrabold">{t("activation.kpi.financialTitle")}</h3>
             <div
               className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4"
               data-testid="activation-kpi-financial-cards"
             >
-              {Object.entries(FINANCIAL_CARD_LABELS_AR).map(([key, label]) => (
+              {FINANCIAL_CARD_KEYS.map((key) => (
                 <KpiCard
                   key={key}
                   testId={`kpi-financial-card-${key}`}
-                  label={label}
-                  value={formatKpiJod(financial[key])}
+                  label={t(`activation.kpi.financial.${key}`)}
+                  value={formatJod(financial[key])}
                   helper={
                     financial[key] == null
-                      ? reasonForMetric(unavailable, `financial.${key}`)
+                      ? reasonForMetric(unavailableMetrics, `financial.${key}`)
                       : null
                   }
                 />
@@ -381,18 +452,18 @@ export default function FreelancerActivationKpiDashboard({ campaigns = [] }) {
             </div>
           </section>
 
-          {(unavailable.length > 0 || notes.length > 0) && (
+          {(unavailableMetrics.length > 0 || notes.length > 0) && (
             <section
               className="rounded-[var(--dash-radius-md,12px)] border border-[color:var(--dash-border,#c9d0da)] bg-[color:var(--dash-card,#fcfcfd)] p-3"
               data-testid="activation-kpi-notes"
             >
-              <h3 className="mb-1 text-[0.92rem] font-extrabold">{KPI_NOTES_TITLE_AR}</h3>
+              <h3 className="mb-1 text-[0.92rem] font-extrabold">{t("activation.kpi.notesTitle")}</h3>
               <p className="mb-2 text-[0.82rem] font-semibold text-[color:var(--dash-text-secondary,#4b5563)]">
-                {KPI_NOTES_INTRO_AR}
+                {t("activation.kpi.notesIntro")}
               </p>
-              {unavailable.length > 0 ? (
+              {unavailableMetrics.length > 0 ? (
                 <ul className="mb-2 list-disc pr-5 text-[0.78rem]">
-                  {unavailable.slice(0, 8).map((m) => (
+                  {unavailableMetrics.slice(0, 8).map((m) => (
                     <li key={m.key}>
                       <span className="font-bold">{m.key}</span>
                       {m.reason ? ` — ${m.reason}` : ""}
