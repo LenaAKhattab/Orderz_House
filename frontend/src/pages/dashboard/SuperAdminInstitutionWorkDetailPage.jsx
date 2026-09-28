@@ -308,7 +308,7 @@ export default function SuperAdminInstitutionWorkDetailPage() {
               </div>
               <div className="sm:col-span-2">
                 <dt className="text-slate-600">{t("institutions.work.description")}</dt>
-                <dd className="whitespace-pre-wrap break-words text-slate-900">{order.description || "—"}</dd>
+                <dd className="whitespace-pre-wrap break-words text-slate-900" dir="auto">{order.description?.trim() ? order.description : t("institutions.noDescription")}</dd>
               </div>
             </dl>
           ) : null}

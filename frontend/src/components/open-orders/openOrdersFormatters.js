@@ -22,7 +22,7 @@ export function typeLabelAr(projectType) {
   return "—";
 }
 
-export function shortDescription(text, max = 180, { emptyLabel = "لا يوجد وصف." } = {}) {
+export function shortDescription(text, max = 180, { emptyLabel = "لا يوجد وصف" } = {}) {
   const s = String(text || "").trim();
   if (!s) return emptyLabel;
   if (s.length <= max) return s;

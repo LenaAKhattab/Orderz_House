@@ -403,7 +403,7 @@ export default function AdminOrdersPage() {
                   return (
                     <tr key={o.id}>
                       <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>{o.orderCode || "—"}</td>
-                      <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>{o.title || "—"}</td>
+                      <td dir="auto" style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>{o.title || "—"}</td>
                       <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>
                         {o?.isInstitutionalOrder || o?.visibilityScope === "institution" ? (
                           <span title={[o.institutionalStorageName, ...(o.institutionalInstitutionNames || [])].filter(Boolean).join(" · ")}>
@@ -414,7 +414,7 @@ export default function AdminOrdersPage() {
                           t("ordersAdmin.listPage.table.scopeGeneral")
                         )}
                       </td>
-                      <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)", maxWidth: 420 }}>{o.description || "—"}</td>
+                      <td dir="auto" style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)", maxWidth: 420 }}>{o.description?.trim() ? o.description : t("orders.marketplace.card.noDescription")}</td>
                       <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>{o.category?.name || "—"}</td>
                       <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>{o.subSubcategory?.name || "—"}</td>
                       <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>{extra || "—"}</td>
@@ -508,8 +508,8 @@ export default function AdminOrdersPage() {
         {bidsModalOrder ? (
           <>
             <p className="dash-ui-modal__lead">
-              {bidsModalOrder.orderCode ? `${bidsModalOrder.orderCode} — ` : ""}
-              {bidsModalOrder.title || "—"}
+              {bidsModalOrder.orderCode ? <span dir="ltr">{bidsModalOrder.orderCode} — </span> : null}
+              <span dir="auto">{bidsModalOrder.title || "—"}</span>
             </p>
             <p className="dash-ui-modal__hint">{t("ordersAdmin.listPage.bidsModal.hint")}</p>
 

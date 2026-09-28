@@ -377,9 +377,9 @@ export default function TrainingOrderTemplatesPage() {
                         {formatAdminNumber(rowNumber)}
                       </td>
                       <td>
-                        <strong>{title}</strong>
+                        <strong dir="auto">{title}</strong>
                         {description ? (
-                          <div className="help" style={{ marginTop: 4 }}>
+                          <div className="help" style={{ marginTop: 4 }} dir="auto">
                             {description.length > 60 ? `${description.slice(0, 60)}…` : description}
                           </div>
                         ) : null}
