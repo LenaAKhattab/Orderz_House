@@ -43,7 +43,7 @@ describe("institutions management frontend", () => {
     assert.match(src, /aria-invalid|aria-describedby/);
     assert.match(src, /emptyFiltered|DashboardEmptyState/);
     assert.match(src, /tab=members&addMember=1|addMember=1/);
-    assert.match(src, /سيتم تعطيل المؤسسة مع الاحتفاظ بالسجلات/);
+    assert.match(src, /institutions\.listDeactivateBody/);
     assert.doesNotMatch(src, /toLocaleDateString/);
     assert.doesNotMatch(src, /function formatDate\(/);
   });
@@ -53,7 +53,7 @@ describe("institutions management frontend", () => {
     assert.match(src, /to=\{detailTo\}/);
     assert.match(src, /oh-inst-name-link/);
     assert.match(src, /btn btn-primary/);
-    assert.match(src, /dashboard\.institutions\.manage/);
+    assert.match(src, /institutions\.manage/);
     assert.match(src, /break-words/);
     assert.match(src, /ordersCount/);
   });
@@ -86,7 +86,7 @@ describe("institutions management frontend", () => {
     assert.match(src, /debouncedMemberQ|memberStatusFilter/);
     assert.match(src, /manager is membership classification only/);
     assert.match(src, /platformRoleLabel/);
-    assert.match(src, /إضافة طلب للمؤسسة/);
+    assert.match(src, /institutions\.ordersSection\.addWork/);
     assert.match(src, /InstitutionCreateWorkModal/);
     assert.match(src, /createWorkOpen|setCreateWorkOpen/);
     assert.match(src, /WORK_DETAIL_BASE|\/work\/\$\{wt\}/);
@@ -94,7 +94,7 @@ describe("institutions management frontend", () => {
     assert.match(src, /sourceLabel|applicantCount/);
     assert.match(src, /break-words/);
     assert.match(src, /activeMemberIds|existingActiveMemberIds/);
-    assert.doesNotMatch(src, /DashboardSection title=\{t\("dashboard\.institutions\.addMember"\)\}/);
+    assert.doesNotMatch(src, /DashboardSection title=\{t\("institutions\.addMember"\)\}/);
     assert.match(src, /AbortController/);
     assert.match(src, /isAxiosCanceledError/);
     assert.match(src, /sectionTimeout|sectionLoadError/);
@@ -109,7 +109,7 @@ describe("institutions management frontend", () => {
     assert.doesNotMatch(src, /formatInstitutionMoney|Intl\.NumberFormat\(locale === "en" \? "en-JO" : "ar-JO"/);
     assert.match(src, /adminFreezeInstitutionRequest|adminUnfreezeInstitutionRequest/);
     assert.match(src, /confirmFreezeTitle|confirmUnfreezeTitle/);
-    assert.match(src, /dashboard\.institutions\.frozen/);
+    assert.match(src, /institutions\.frozen/);
     // Passive reads must not toast the generic timeout via push on load
     assert.doesNotMatch(src, /push\(\{\s*type:\s*"error",\s*message:\s*getSafeApiErrorMessage/);
     assert.doesNotMatch(src, /Promise\.all\(\[\s*adminGetInstitutionRequest/);
@@ -118,7 +118,7 @@ describe("institutions management frontend", () => {
   it("add-member modal uses debounce, LTR-safe results, and no inline page search form", () => {
     const src = read("src/pages/dashboard/SuperAdminInstitutionDetailPage.jsx");
     const modal = read("src/pages/dashboard/institutions/InstitutionAddMemberModal.jsx");
-    const ar = read("src/locales/ar/dashboard.json");
+    const ar = read("src/locales/ar/institutions.json");
     assert.match(modal, /setTimeout/);
     assert.match(modal, /, 300\)/);
     assert.match(modal, /Search|lucide-react/);
@@ -134,7 +134,7 @@ describe("institutions management frontend", () => {
   it("detail initial load uses bundled GET and passive timeouts stay inline", () => {
     const src = read("src/pages/dashboard/SuperAdminInstitutionDetailPage.jsx");
     const api = read("src/services/api.js");
-    const ar = read("src/locales/ar/dashboard.json");
+    const ar = read("src/locales/ar/institutions.json");
 
     // Canonical paint: one bundle request (not parallel institution+members+storages)
     assert.match(src, /bundle:\s*true/);
@@ -244,15 +244,15 @@ describe("institutions management frontend", () => {
     assert.match(src, /ASSIGNABLE_DASHBOARD_PERMISSIONS[\s\S]*institutions/);
   });
 
-  it("locales removed coming-soon placeholders and include management strings", () => {
-    const ar = read("src/locales/ar/dashboard.json");
-    const en = read("src/locales/en/dashboard.json");
-    assert.doesNotMatch(ar, /"placeholderTitle":\s*"قريباً"/);
-    assert.doesNotMatch(en, /"placeholderTitle":\s*"Coming soon"/);
+  it("institutions locale files include management strings", () => {
+    const ar = read("src/locales/ar/institutions.json");
+    const en = read("src/locales/en/institutions.json");
     assert.match(ar, /"edit":\s*"تعديل المؤسسة"/);
     assert.match(en, /"deactivate"/);
     assert.match(ar, /"linkedStoragesSection"/);
     assert.match(en, /"memberReactivated"/);
     assert.match(ar, /"duplicateName"/);
+    assert.match(ar, /"listDeactivateBody"/);
+    assert.match(en, /"ordersSection"/);
   });
 });

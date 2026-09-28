@@ -9,6 +9,7 @@ import DashboardLoadingState from "../../components/dashboard/DashboardLoadingSt
 import ConfirmDialog from "../../components/dashboard/ConfirmDialog";
 import Pagination from "../../components/common/Pagination";
 import { superAdminBreadcrumbs } from "../../components/dashboard/dashboardBreadcrumbs";
+import "../../i18n/institutionsResources";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import { useToast } from "../../components/ui/toastContext";
 import { formatSubscriptionAdminDate } from "../../admin/subscriptions/subscriptionAdminDisplay";
@@ -21,8 +22,6 @@ import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
 
 const DETAIL_BASE = "/dashboard/super-admin/institutions";
 const PAGE_SIZE_OPTIONS = [10, 20, 50];
-const DELETE_CONFIRM_BODY =
-  "سيتم تعطيل المؤسسة مع الاحتفاظ بالسجلات والطلبات السابقة.";
 const EMPTY_SUMMARY = {
   totalInstitutions: 0,
   activeInstitutions: 0,
@@ -32,8 +31,8 @@ const EMPTY_SUMMARY = {
 };
 
 function statusLabel(status, t) {
-  if (status === "frozen") return t("dashboard.institutions.frozen");
-  return status === "active" ? t("dashboard.institutions.active") : t("dashboard.institutions.inactive");
+  if (status === "frozen") return t("institutions.frozen");
+  return status === "active" ? t("institutions.active") : t("institutions.inactive");
 }
 
 function StatusBadge({ status, t }) {
@@ -106,7 +105,7 @@ export default function SuperAdminInstitutionsPage() {
         setPagination(res?.data?.pagination || { page: 1, limit, total: 0, totalPages: 1 });
         setSummary(res?.data?.summary || EMPTY_SUMMARY);
       } catch (e) {
-        const msg = getSafeApiErrorMessage(e) || t("dashboard.institutions.loadError");
+        const msg = getSafeApiErrorMessage(e) || t("institutions.loadError");
         setError(msg);
         if (!soft) push({ type: "error", message: msg });
       } finally {
@@ -139,11 +138,11 @@ export default function SuperAdminInstitutionsPage() {
     if (saving) return;
     const name = form.name.trim();
     if (name.length < 2) {
-      setFormError(t("dashboard.institutions.validationNameShort"));
+      setFormError(t("institutions.validationNameShort"));
       return;
     }
     if (name.length > 200) {
-      setFormError(t("dashboard.institutions.validationNameLong"));
+      setFormError(t("institutions.validationNameLong"));
       return;
     }
     setSaving(true);
@@ -155,14 +154,14 @@ export default function SuperAdminInstitutionsPage() {
         status: form.status === "inactive" ? "inactive" : "active",
       });
       setForm({ name: "", description: "", status: "active" });
-      push({ type: "success", message: t("dashboard.institutions.created") });
+      push({ type: "success", message: t("institutions.created") });
       if (page !== 1) setPage(1);
       else await load({ soft: true });
     } catch (err) {
       const code = err?.response?.data?.code || err?.response?.data?.publicCode;
       const msg =
         code === "DUPLICATE_INSTITUTION_NAME"
-          ? t("dashboard.institutions.duplicateName")
+          ? t("institutions.duplicateName")
           : getSafeApiErrorMessage(err);
       setFormError(msg);
       push({ type: "error", message: msg });
@@ -179,12 +178,12 @@ export default function SuperAdminInstitutionsPage() {
       const msg =
         res?.data?.message ||
         res?.message ||
-        t("dashboard.institutions.deactivated");
+        t("institutions.deactivated");
       push({ type: "success", message: msg });
       setDeleteTarget(null);
       await load({ soft: true });
     } catch (err) {
-      const msg = getSafeApiErrorMessage(err) || t("dashboard.institutions.actionDeactivateError");
+      const msg = getSafeApiErrorMessage(err) || t("institutions.actionDeactivateError");
       push({ type: "error", message: msg });
     } finally {
       setDeleting(false);
@@ -194,22 +193,22 @@ export default function SuperAdminInstitutionsPage() {
   return (
     <DashboardShell>
       <DashboardPageHeader
-        title={t("dashboard.institutions.title")}
-        description={t("dashboard.institutions.description")}
+        title={t("institutions.title")}
+        description={t("institutions.description")}
         breadcrumbs={superAdminBreadcrumbs("dashboard.breadcrumbs.institutions")}
       />
 
-      <DashboardSection title={t("dashboard.institutions.summaryTitle")}>
+      <DashboardSection title={t("institutions.summaryTitle")}>
         <div
           className="mb-1 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5"
-          aria-label={t("dashboard.institutions.summaryTitle")}
+          aria-label={t("institutions.summaryTitle")}
         >
           {[
-            { key: "total", label: t("dashboard.institutions.metricTotal"), value: summary.totalInstitutions },
-            { key: "active", label: t("dashboard.institutions.metricActive"), value: summary.activeInstitutions },
-            { key: "inactive", label: t("dashboard.institutions.metricInactive"), value: summary.inactiveInstitutions },
-            { key: "members", label: t("dashboard.institutions.metricActiveMembers"), value: summary.totalActiveMembers },
-            { key: "linked", label: t("dashboard.institutions.metricLinkedStorages"), value: summary.institutionsLinkedToStorage },
+            { key: "total", label: t("institutions.metricTotal"), value: summary.totalInstitutions },
+            { key: "active", label: t("institutions.metricActive"), value: summary.activeInstitutions },
+            { key: "inactive", label: t("institutions.metricInactive"), value: summary.inactiveInstitutions },
+            { key: "members", label: t("institutions.metricActiveMembers"), value: summary.totalActiveMembers },
+            { key: "linked", label: t("institutions.metricLinkedStorages"), value: summary.institutionsLinkedToStorage },
           ].map((item) => (
             <article key={item.key} className="dash-ui-form-card flex min-w-0 flex-col gap-1 p-3">
               <p className="m-0 text-[0.72rem] font-bold leading-snug text-slate-500">{item.label}</p>
@@ -219,7 +218,7 @@ export default function SuperAdminInstitutionsPage() {
         </div>
       </DashboardSection>
 
-      <DashboardSection title={t("dashboard.institutions.add")}>
+      <DashboardSection title={t("institutions.add")}>
         <form
           className="dash-ui-form-card"
           onSubmit={create}
@@ -227,13 +226,13 @@ export default function SuperAdminInstitutionsPage() {
         >
           <div className="dash-ui-toolbar" style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
             <label className="dash-ui-stack" style={{ display: "grid", gap: 6 }}>
-              <span>{t("dashboard.institutions.name")} *</span>
+              <span>{t("institutions.name")} *</span>
               <input
                 id="institution-create-name"
                 className="input"
                 value={form.name}
                 onChange={(ev) => setForm((f) => ({ ...f, name: ev.target.value }))}
-                placeholder={t("dashboard.institutions.name")}
+                placeholder={t("institutions.name")}
                 required
                 maxLength={200}
                 disabled={saving}
@@ -242,25 +241,25 @@ export default function SuperAdminInstitutionsPage() {
               />
             </label>
             <label className="dash-ui-stack" style={{ display: "grid", gap: 6 }}>
-              <span>{t("dashboard.institutions.descriptionLabel")}</span>
+              <span>{t("institutions.descriptionLabel")}</span>
               <input
                 className="input"
                 value={form.description}
                 onChange={(ev) => setForm((f) => ({ ...f, description: ev.target.value }))}
-                placeholder={t("dashboard.institutions.descriptionOptional")}
+                placeholder={t("institutions.descriptionOptional")}
                 disabled={saving}
               />
             </label>
             <label className="dash-ui-stack" style={{ display: "grid", gap: 6 }}>
-              <span>{t("dashboard.institutions.status")}</span>
+              <span>{t("institutions.status")}</span>
               <select
                 className="input"
                 value={form.status}
                 onChange={(ev) => setForm((f) => ({ ...f, status: ev.target.value }))}
                 disabled={saving}
               >
-                <option value="active">{t("dashboard.institutions.active")}</option>
-                <option value="inactive">{t("dashboard.institutions.inactive")}</option>
+                <option value="active">{t("institutions.active")}</option>
+                <option value="inactive">{t("institutions.inactive")}</option>
               </select>
             </label>
           </div>
@@ -271,17 +270,17 @@ export default function SuperAdminInstitutionsPage() {
           ) : null}
           <div>
             <button type="submit" className="btn btn-primary" disabled={saving}>
-              {saving ? t("dashboard.institutions.saving") : t("dashboard.institutions.add")}
+              {saving ? t("institutions.saving") : t("institutions.add")}
             </button>
           </div>
         </form>
       </DashboardSection>
 
-      <DashboardSection title={t("dashboard.institutions.sectionTitle")}>
+      <DashboardSection title={t("institutions.sectionTitle")}>
         <div
           className="dash-ui-toolbar oh-institutions-list-toolbar"
           role="search"
-          aria-label={t("dashboard.institutions.search")}
+          aria-label={t("institutions.search")}
           style={{
             display: "grid",
             gap: 12,
@@ -291,30 +290,30 @@ export default function SuperAdminInstitutionsPage() {
           }}
         >
           <label className="dash-ui-stack" style={{ display: "grid", gap: 6 }}>
-            <span>{t("dashboard.institutions.search")}</span>
+            <span>{t("institutions.search")}</span>
             <input
               className="input"
               type="search"
               value={searchInput}
               onChange={(ev) => setSearchInput(ev.target.value)}
-              placeholder={t("dashboard.institutions.searchPlaceholder")}
+              placeholder={t("institutions.searchPlaceholder")}
               disabled={loading && !institutions.length}
             />
           </label>
           <label className="dash-ui-stack" style={{ display: "grid", gap: 6 }}>
-            <span>{t("dashboard.institutions.statusFilter")}</span>
+            <span>{t("institutions.statusFilter")}</span>
             <select
               className="input"
               value={statusFilter}
               onChange={(ev) => setStatusFilter(ev.target.value)}
             >
-              <option value="">{t("dashboard.institutions.statusAll")}</option>
-              <option value="active">{t("dashboard.institutions.active")}</option>
-              <option value="inactive">{t("dashboard.institutions.inactive")}</option>
+              <option value="">{t("institutions.statusAll")}</option>
+              <option value="active">{t("institutions.active")}</option>
+              <option value="inactive">{t("institutions.inactive")}</option>
             </select>
           </label>
           <label className="dash-ui-stack" style={{ display: "grid", gap: 6 }}>
-            <span>{t("dashboard.institutions.pageSize")}</span>
+            <span>{t("institutions.pageSize")}</span>
             <select
               className="input"
               value={String(limit)}
@@ -338,39 +337,39 @@ export default function SuperAdminInstitutionsPage() {
             }}
           >
             <p className="m-0 text-sm font-semibold text-slate-700" aria-live="polite">
-              {t("dashboard.institutions.resultsCount", { count: pagination.total ?? 0 })}
-              {refreshing ? ` — ${t("dashboard.institutions.refreshing")}` : ""}
+              {t("institutions.resultsCount", { count: pagination.total ?? 0 })}
+              {refreshing ? ` — ${t("institutions.refreshing")}` : ""}
             </p>
             {hasFilters ? (
               <button type="button" className="btn btn-secondary" onClick={resetFilters}>
-                {t("dashboard.institutions.resetFilters")}
+                {t("institutions.resetFilters")}
               </button>
             ) : null}
           </div>
         </div>
 
         {loading && institutions.length === 0 ? (
-          <DashboardLoadingState label={t("dashboard.institutions.loading")} />
+          <DashboardLoadingState label={t("institutions.loading")} />
         ) : error && institutions.length === 0 ? (
           <div>
             <p role="alert">{error}</p>
             <button type="button" className="btn btn-secondary" onClick={() => void load()}>
-              {t("dashboard.institutions.retry")}
+              {t("institutions.retry")}
             </button>
           </div>
         ) : hasNoInstitutionsAtAll ? (
           <DashboardEmptyState
-            title={t("dashboard.institutions.empty")}
+            title={t("institutions.empty")}
             icon={<Building2 size={40} strokeWidth={1.5} aria-hidden />}
           />
         ) : hasNoFilterResults ? (
           <DashboardEmptyState
-            title={t("dashboard.institutions.emptyFiltered")}
-            description={t("dashboard.institutions.emptyFilteredHint")}
+            title={t("institutions.emptyFiltered")}
+            description={t("institutions.emptyFilteredHint")}
             icon={<Building2 size={40} strokeWidth={1.5} aria-hidden />}
             actions={
               <button type="button" className="btn btn-secondary" onClick={resetFilters}>
-                {t("dashboard.institutions.resetFilters")}
+                {t("institutions.resetFilters")}
               </button>
             }
           />
@@ -389,7 +388,7 @@ export default function SuperAdminInstitutionsPage() {
                         to={detailTo}
                         className="oh-inst-name-link break-words text-base font-extrabold leading-snug"
                         title={name}
-                        aria-label={`${t("dashboard.institutions.manage")}: ${name}`}
+                        aria-label={`${t("institutions.manage")}: ${name}`}
                       >
                         {name}
                       </Link>
@@ -398,46 +397,46 @@ export default function SuperAdminInstitutionsPage() {
                     {shortDesc ? (
                       <p className="m-0 line-clamp-2 text-sm leading-snug text-slate-600">{shortDesc}</p>
                     ) : (
-                      <p className="m-0 text-sm text-slate-400">{t("dashboard.institutions.noDescription")}</p>
+                      <p className="m-0 text-sm text-slate-400">{t("institutions.noDescription")}</p>
                     )}
                     <dl className="m-0 grid grid-cols-2 gap-x-3 gap-y-1 text-[0.78rem] text-slate-700">
                       <div>
                         <dt className="inline font-bold text-slate-500 after:content-[':']">
-                          {t("dashboard.institutions.members")}
+                          {t("institutions.members")}
                         </dt>{" "}
                         <dd className="inline m-0 tabular-nums font-semibold">{inst.memberCount ?? 0}</dd>
                       </div>
                       {inst.ordersCount != null ? (
                         <div>
                           <dt className="inline font-bold text-slate-500 after:content-[':']">
-                            {t("dashboard.institutions.statsOrdersCount")}
+                            {t("institutions.statsOrdersCount")}
                           </dt>{" "}
                           <dd className="inline m-0 tabular-nums font-semibold">{inst.ordersCount}</dd>
                         </div>
                       ) : null}
                       <div>
                         <dt className="inline font-bold text-slate-500 after:content-[':']">
-                          {t("dashboard.institutions.linkedStorages")}
+                          {t("institutions.linkedStorages")}
                         </dt>{" "}
                         <dd className="inline m-0 tabular-nums font-semibold">{inst.linkedStorageCount ?? 0}</dd>
                       </div>
                       <div className="col-span-2 sm:col-span-1">
                         <dt className="inline font-bold text-slate-500 after:content-[':']">
-                          {t("dashboard.institutions.createdAt")}
+                          {t("institutions.createdAt")}
                         </dt>{" "}
                         <dd className="inline m-0 tabular-nums">{formatSubscriptionAdminDate(inst.createdAt)}</dd>
                       </div>
                     </dl>
                     <div className="mt-auto flex flex-col gap-2 pt-1 sm:flex-row sm:flex-wrap">
                       <Link to={detailTo} className="btn btn-primary flex-1 justify-center sm:flex-none">
-                        {t("dashboard.institutions.manage")}
+                        {t("institutions.manage")}
                       </Link>
                       <Link
                         to={addMembersTo}
                         className="btn btn-secondary inline-flex flex-1 items-center justify-center gap-1.5 sm:flex-none"
                       >
                         <UserPlus size={16} strokeWidth={1.75} aria-hidden />
-                        إضافة أعضاء
+                        {t("institutions.addMembers")}
                       </Link>
                       {inst.status !== "frozen" ? (
                         <button
@@ -445,7 +444,7 @@ export default function SuperAdminInstitutionsPage() {
                           className="btn btn-danger flex-1 justify-center sm:flex-none"
                           onClick={() => setDeleteTarget(inst)}
                         >
-                          حذف
+                          {t("institutions.delete")}
                         </button>
                       ) : null}
                     </div>
@@ -470,10 +469,10 @@ export default function SuperAdminInstitutionsPage() {
 
       <ConfirmDialog
         open={Boolean(deleteTarget)}
-        title="تعطيل المؤسسة"
-        body={DELETE_CONFIRM_BODY}
-        confirmLabel="تعطيل"
-        cancelLabel={t("dashboard.institutions.cancel")}
+        title={t("institutions.listDeactivateTitle")}
+        body={t("institutions.listDeactivateBody")}
+        confirmLabel={t("institutions.listDeactivateConfirm")}
+        cancelLabel={t("institutions.cancel")}
         confirmVariant="danger"
         confirmBusy={deleting}
         onCancel={() => setDeleteTarget(null)}

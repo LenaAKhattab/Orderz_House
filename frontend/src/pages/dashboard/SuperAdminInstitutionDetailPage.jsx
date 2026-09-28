@@ -11,6 +11,7 @@ import DashboardTabs, { DashboardTab } from "../../components/dashboard/Dashboar
 import ConfirmDialog from "../../components/dashboard/ConfirmDialog";
 import Pagination from "../../components/common/Pagination";
 import { superAdminBreadcrumbs } from "../../components/dashboard/dashboardBreadcrumbs";
+import "../../i18n/institutionsResources";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import { useToast } from "../../components/ui/toastContext";
 import { useAuth } from "../../context/useAuth";
@@ -39,11 +40,6 @@ import InstitutionCreateWorkModal from "./institutions/InstitutionCreateWorkModa
 const LIST_PATH = "/dashboard/super-admin/institutions";
 const STORAGE_BASE = "/dashboard/super-admin/institutional-order-storage";
 const EMPTY_STATS = { ordersCount: 0, usersCount: 0, ordersTotalAmount: 0 };
-const WORKSPACE_TABS = [
-  { id: "members", label: "الأعضاء" },
-  { id: "orders", label: "الطلبات" },
-  { id: "settings", label: "الإعدادات" },
-];
 const WORK_DETAIL_BASE = (instId) => `/dashboard/super-admin/institutions/${instId}/work`;
 
 function JodMoneyValue({ amount, locale, className = "" }) {
@@ -61,20 +57,20 @@ function statusBadgeClass(status) {
 }
 
 function statusLabel(status, t) {
-  if (status === "active") return t("dashboard.institutions.active");
-  if (status === "frozen") return t("dashboard.institutions.frozen");
-  return t("dashboard.institutions.inactive");
+  if (status === "active") return t("institutions.active");
+  if (status === "frozen") return t("institutions.frozen");
+  return t("institutions.inactive");
 }
 
 function memberStatusLabel(status, t) {
-  if (status === "active") return t("dashboard.institutions.memberActive");
-  if (status === "inactive") return t("dashboard.institutions.memberInactive");
+  if (status === "active") return t("institutions.memberActive");
+  if (status === "inactive") return t("institutions.memberInactive");
   return String(status || "—");
 }
 
 function memberRoleLabel(role, t) {
-  if (role === "manager") return t("dashboard.institutions.roleManager");
-  return t("dashboard.institutions.roleMember");
+  if (role === "manager") return t("institutions.roleManager");
+  return t("institutions.roleMember");
 }
 
 function platformRoleLabel(role, t) {
@@ -96,8 +92,8 @@ function storageStatusLabel(status, t) {
 }
 
 function passiveSectionMessage(err, t) {
-  if (isAxiosTimeoutError(err)) return t("dashboard.institutions.sectionTimeout");
-  return t("dashboard.institutions.sectionLoadError");
+  if (isAxiosTimeoutError(err)) return t("institutions.sectionTimeout");
+  return t("institutions.sectionLoadError");
 }
 
 function actionErrorMessage(err, t, fallbackKey) {
@@ -132,7 +128,16 @@ export default function SuperAdminInstitutionDetailPage() {
   const { user } = useAuth();
   const isSuperAdmin = (user?.primaryRole || user?.role) === "super_admin";
 
-  const activeTab = WORKSPACE_TABS.some((tab) => tab.id === searchParams.get("tab"))
+  const workspaceTabs = useMemo(
+    () => [
+      { id: "members", label: t("institutions.tabs.members") },
+      { id: "orders", label: t("institutions.tabs.orders") },
+      { id: "settings", label: t("institutions.tabs.settings") },
+    ],
+    [t],
+  );
+
+  const activeTab = workspaceTabs.some((tab) => tab.id === searchParams.get("tab"))
     ? searchParams.get("tab")
     : "members";
   const setActiveTab = (tabId) => {
@@ -291,7 +296,7 @@ export default function SuperAdminInstitutionDetailPage() {
         applyInstitution(inst);
         if (!inst) {
           setOverviewStatus(404);
-          setOverviewError(tRef.current("dashboard.institutions.notFound"));
+          setOverviewError(tRef.current("institutions.notFound"));
           return;
         }
         setMembers(res?.data?.members || []);
@@ -308,7 +313,7 @@ export default function SuperAdminInstitutionDetailPage() {
           setStatsError(null);
         } else {
           setStatistics(EMPTY_STATS);
-          setStatsError(tRef.current("dashboard.institutions.statsError"));
+          setStatsError(tRef.current("institutions.statsError"));
         }
         lastFetchedMembersPageRef.current = membersPage;
         lastFetchedStoragesPageRef.current = storagesPage;
@@ -318,9 +323,9 @@ export default function SuperAdminInstitutionDetailPage() {
         setOverviewStatus(status || null);
         const msg =
           status === 403
-            ? tRef.current("dashboard.institutions.forbidden")
+            ? tRef.current("institutions.forbidden")
             : status === 404
-              ? tRef.current("dashboard.institutions.notFound")
+              ? tRef.current("institutions.notFound")
               : passiveSectionMessage(e, tRef.current);
         setOverviewError(msg);
         if (status !== 403 && status !== 404) {
@@ -360,14 +365,14 @@ export default function SuperAdminInstitutionDetailPage() {
         applyInstitution(inst);
         if (!inst) {
           setOverviewStatus(404);
-          setOverviewError(tRef.current("dashboard.institutions.notFound"));
+          setOverviewError(tRef.current("institutions.notFound"));
         }
       } catch (e) {
         if (isAxiosCanceledError(e) || controller.signal.aborted) return;
         const status = e?.response?.status;
         setOverviewStatus(status || null);
-        if (status === 403) setOverviewError(tRef.current("dashboard.institutions.forbidden"));
-        else if (status === 404) setOverviewError(tRef.current("dashboard.institutions.notFound"));
+        if (status === 403) setOverviewError(tRef.current("institutions.forbidden"));
+        else if (status === 404) setOverviewError(tRef.current("institutions.notFound"));
         else setOverviewError(passiveSectionMessage(e, tRef.current));
       } finally {
         if (!controller.signal.aborted) {
@@ -547,8 +552,8 @@ export default function SuperAdminInstitutionDetailPage() {
       push({
         type: "success",
         message: reactivated
-          ? t("dashboard.institutions.memberReactivated")
-          : t("dashboard.institutions.memberAdded"),
+          ? t("institutions.memberReactivated")
+          : t("institutions.memberAdded"),
       });
       setAddMemberOpen(false);
       setStatistics((prev) => ({
@@ -560,8 +565,8 @@ export default function SuperAdminInstitutionDetailPage() {
       const code = e?.response?.data?.code;
       const msg =
         code === "DUPLICATE_MEMBERSHIP"
-          ? t("dashboard.institutions.memberAlreadyActive")
-          : actionErrorMessage(e, t, "dashboard.institutions.actionAddMemberError");
+          ? t("institutions.memberAlreadyActive")
+          : actionErrorMessage(e, t, "institutions.actionAddMemberError");
       if (msg) push({ type: "error", message: msg });
     } finally {
       setAddingUserId(null);
@@ -573,10 +578,10 @@ export default function SuperAdminInstitutionDetailPage() {
     setUpdatingMemberId(member.userId);
     try {
       await adminUpdateInstitutionMemberRequest(institutionId, member.userId, patch);
-      push({ type: "success", message: t("dashboard.institutions.updated") });
+      push({ type: "success", message: t("institutions.updated") });
       await Promise.all([loadOverview({ soft: true }), loadMembers({ soft: true })]);
     } catch (e) {
-      const msg = actionErrorMessage(e, t, "dashboard.institutions.actionSaveError");
+      const msg = actionErrorMessage(e, t, "institutions.actionSaveError");
       if (msg) push({ type: "error", message: msg });
     } finally {
       setUpdatingMemberId(null);
@@ -588,11 +593,11 @@ export default function SuperAdminInstitutionDetailPage() {
     setRemoving(true);
     try {
       await adminRemoveInstitutionMemberRequest(institutionId, removeTarget.userId);
-      push({ type: "success", message: t("dashboard.institutions.memberRemoved") });
+      push({ type: "success", message: t("institutions.memberRemoved") });
       setRemoveTarget(null);
       await Promise.all([loadOverview({ soft: true }), loadMembers({ soft: true })]);
     } catch (e) {
-      const msg = actionErrorMessage(e, t, "dashboard.institutions.actionRemoveMemberError");
+      const msg = actionErrorMessage(e, t, "institutions.actionRemoveMemberError");
       if (msg) push({ type: "error", message: msg });
     } finally {
       setRemoving(false);
@@ -604,7 +609,7 @@ export default function SuperAdminInstitutionDetailPage() {
     if (savingEdit) return;
     const name = editForm.name.trim();
     if (name.length < 2) {
-      setEditError(t("dashboard.institutions.validationNameShort"));
+      setEditError(t("institutions.validationNameShort"));
       return;
     }
     setSavingEdit(true);
@@ -617,14 +622,14 @@ export default function SuperAdminInstitutionDetailPage() {
         status: editForm.status === "inactive" ? "inactive" : "active",
       });
       setInstitution(res?.data?.institution || null);
-      push({ type: "success", message: t("dashboard.institutions.updated") });
+      push({ type: "success", message: t("institutions.updated") });
       await loadOverview({ soft: true });
     } catch (err) {
       const code = err?.response?.data?.code;
       const msg =
         code === "DUPLICATE_INSTITUTION_NAME"
-          ? t("dashboard.institutions.duplicateName")
-          : actionErrorMessage(err, t, "dashboard.institutions.actionSaveError");
+          ? t("institutions.duplicateName")
+          : actionErrorMessage(err, t, "institutions.actionSaveError");
       setEditError(msg);
       if (msg) push({ type: "error", message: msg });
     } finally {
@@ -640,7 +645,7 @@ export default function SuperAdminInstitutionDetailPage() {
       const res = await adminGetInstitutionDeactivationImpactRequest(institutionId);
       setImpact(res?.data?.impact || null);
     } catch (e) {
-      const msg = actionErrorMessage(e, t, "dashboard.institutions.actionDeactivateError");
+      const msg = actionErrorMessage(e, t, "institutions.actionDeactivateError");
       if (msg) push({ type: "error", message: msg });
       setDeactivateOpen(false);
     } finally {
@@ -655,10 +660,10 @@ export default function SuperAdminInstitutionDetailPage() {
       const res = await adminPatchInstitutionRequest(institutionId, { status: "inactive" });
       setInstitution(res?.data?.institution || null);
       setDeactivateOpen(false);
-      push({ type: "success", message: t("dashboard.institutions.deactivated") });
+      push({ type: "success", message: t("institutions.deactivated") });
       await loadOverview({ soft: true });
     } catch (e) {
-      const msg = actionErrorMessage(e, t, "dashboard.institutions.actionDeactivateError");
+      const msg = actionErrorMessage(e, t, "institutions.actionDeactivateError");
       if (msg) push({ type: "error", message: msg });
     } finally {
       setStatusBusy(false);
@@ -672,10 +677,10 @@ export default function SuperAdminInstitutionDetailPage() {
       const res = await adminPatchInstitutionRequest(institutionId, { status: "active" });
       setInstitution(res?.data?.institution || null);
       setActivateOpen(false);
-      push({ type: "success", message: t("dashboard.institutions.activated") });
+      push({ type: "success", message: t("institutions.activated") });
       await loadOverview({ soft: true });
     } catch (e) {
-      const msg = actionErrorMessage(e, t, "dashboard.institutions.actionActivateError");
+      const msg = actionErrorMessage(e, t, "institutions.actionActivateError");
       if (msg) push({ type: "error", message: msg });
     } finally {
       setStatusBusy(false);
@@ -699,9 +704,9 @@ export default function SuperAdminInstitutionDetailPage() {
         setStatsError(null);
       }
       setFreezeOpen(false);
-      push({ type: "success", message: t("dashboard.institutions.frozenSuccess") });
+      push({ type: "success", message: t("institutions.frozenSuccess") });
     } catch (e) {
-      const msg = actionErrorMessage(e, t, "dashboard.institutions.actionFreezeError");
+      const msg = actionErrorMessage(e, t, "institutions.actionFreezeError");
       if (msg) push({ type: "error", message: msg });
     } finally {
       setStatusBusy(false);
@@ -725,9 +730,9 @@ export default function SuperAdminInstitutionDetailPage() {
         setStatsError(null);
       }
       setUnfreezeOpen(false);
-      push({ type: "success", message: t("dashboard.institutions.unfrozenSuccess") });
+      push({ type: "success", message: t("institutions.unfrozenSuccess") });
     } catch (e) {
-      const msg = actionErrorMessage(e, t, "dashboard.institutions.actionUnfreezeError");
+      const msg = actionErrorMessage(e, t, "institutions.actionUnfreezeError");
       if (msg) push({ type: "error", message: msg });
     } finally {
       setStatusBusy(false);
@@ -748,21 +753,21 @@ export default function SuperAdminInstitutionDetailPage() {
   }, [searchParams, institution, isFrozen, setSearchParams]);
 
   const deactivateBody = impactLoading ? (
-    t("dashboard.institutions.loadingImpact")
+    t("institutions.loadingImpact")
   ) : !impact ? (
-    t("dashboard.institutions.confirmDeactivateBody")
+    t("institutions.confirmDeactivateBody")
   ) : (
     <div style={{ display: "grid", gap: 8 }}>
-      <p style={{ margin: 0 }}>{t("dashboard.institutions.confirmDeactivateBody")}</p>
+      <p style={{ margin: 0 }}>{t("institutions.confirmDeactivateBody")}</p>
       <ul style={{ margin: 0, paddingInlineStart: "1.25rem" }}>
-        <li>{t("dashboard.institutions.impactActiveMembers", { count: impact.activeMemberCount ?? 0 })}</li>
-        <li>{t("dashboard.institutions.impactLinkedStorages", { count: impact.linkedStorageCount ?? 0 })}</li>
-        <li>{t("dashboard.institutions.impactActiveStorages", { count: impact.activeStorageCount ?? 0 })}</li>
-        <li>{t("dashboard.institutions.impactFutureReleases")}</li>
+        <li>{t("institutions.impactActiveMembers", { count: impact.activeMemberCount ?? 0 })}</li>
+        <li>{t("institutions.impactLinkedStorages", { count: impact.linkedStorageCount ?? 0 })}</li>
+        <li>{t("institutions.impactActiveStorages", { count: impact.activeStorageCount ?? 0 })}</li>
+        <li>{t("institutions.impactFutureReleases")}</li>
       </ul>
       {(impact.activeStoragesWithNoOtherActiveInstitution || 0) > 0 ? (
         <p style={{ margin: 0, fontWeight: 700 }} role="alert">
-          {t("dashboard.institutions.impactCriticalSoleInstitution", {
+          {t("institutions.impactCriticalSoleInstitution", {
             count: impact.activeStoragesWithNoOtherActiveInstitution,
           })}
         </p>
@@ -773,7 +778,7 @@ export default function SuperAdminInstitutionDetailPage() {
   if (overviewLoading && !institution) {
     return (
       <DashboardShell>
-        <DashboardLoadingState label={t("dashboard.institutions.loading")} />
+        <DashboardLoadingState label={t("institutions.loading")} />
       </DashboardShell>
     );
   }
@@ -781,10 +786,10 @@ export default function SuperAdminInstitutionDetailPage() {
   if ((overviewStatus === 403 || overviewStatus === 404) && !institution) {
     return (
       <DashboardShell>
-        <DashboardSection title={t("dashboard.institutions.title")}>
+        <DashboardSection title={t("institutions.title")}>
           <p role="alert">{overviewError}</p>
           <Link to={LIST_PATH} className="btn btn-secondary">
-            {t("dashboard.institutions.backToList")}
+            {t("institutions.backToList")}
           </Link>
         </DashboardSection>
       </DashboardShell>
@@ -794,11 +799,11 @@ export default function SuperAdminInstitutionDetailPage() {
   if (overviewError && !institution) {
     return (
       <DashboardShell>
-        <DashboardSection title={t("dashboard.institutions.title")}>
+        <DashboardSection title={t("institutions.title")}>
           <SectionInlineError
             message={overviewError}
             onRetry={() => void loadInitialBundle({ soft: false, membersPage: 1, storagesPage: 1 })}
-            retryLabel={t("dashboard.institutions.retry")}
+            retryLabel={t("institutions.retry")}
           />
         </DashboardSection>
       </DashboardShell>
@@ -808,11 +813,11 @@ export default function SuperAdminInstitutionDetailPage() {
   return (
     <DashboardShell>
       <DashboardPageHeader
-        title={institution?.name || t("dashboard.institutions.title")}
+        title={institution?.name || t("institutions.title")}
         description={
           institution?.description?.trim()
             ? institution.description
-            : t("dashboard.institutions.detailDescription")
+            : t("institutions.detailDescription")
         }
         breadcrumbs={superAdminBreadcrumbs("dashboard.breadcrumbs.institutions")}
         actions={
@@ -825,7 +830,7 @@ export default function SuperAdminInstitutionDetailPage() {
               {statusLabel(institution?.status, t)}
             </span>
             <Link to={LIST_PATH} className="btn btn-secondary">
-              {t("dashboard.institutions.backToList")}
+              {t("institutions.backToList")}
             </Link>
             {!isFrozen ? (
               <button
@@ -835,11 +840,11 @@ export default function SuperAdminInstitutionDetailPage() {
                 onClick={() => setAddMemberOpen(true)}
               >
                 <UserPlus size={16} strokeWidth={1.75} aria-hidden />
-                {t("dashboard.institutions.addMember")}
+                {t("institutions.addMember")}
               </button>
             ) : null}
             <button type="button" className="btn btn-secondary" onClick={() => setActiveTab("settings")}>
-              {t("dashboard.institutions.edit")}
+              {t("institutions.edit")}
             </button>
             {isSuperAdmin && isActive ? (
               <button
@@ -850,7 +855,7 @@ export default function SuperAdminInstitutionDetailPage() {
               >
                 <span className="inline-flex items-center gap-1.5">
                   <Snowflake size={16} aria-hidden />
-                  {t("dashboard.institutions.freeze")}
+                  {t("institutions.freeze")}
                 </span>
               </button>
             ) : null}
@@ -861,42 +866,42 @@ export default function SuperAdminInstitutionDetailPage() {
                 disabled={statusBusy}
                 onClick={() => setUnfreezeOpen(true)}
               >
-                {t("dashboard.institutions.unfreeze")}
+                {t("institutions.unfreeze")}
               </button>
             ) : null}
           </div>
         }
       />
 
-      <DashboardSection title={t("dashboard.institutions.statsTitle")}>
+      <DashboardSection title={t("institutions.statsTitle")}>
         {statsLoading ? (
-          <p className="m-0 text-sm text-slate-500">{t("dashboard.institutions.statsLoading")}</p>
+          <p className="m-0 text-sm text-slate-500">{t("institutions.statsLoading")}</p>
         ) : statsError ? (
           <SectionInlineError
             message={statsError}
             onRetry={() => void loadInitialBundle({ soft: true, membersPage: page, storagesPage: storagePage })}
-            retryLabel={t("dashboard.institutions.retry")}
+            retryLabel={t("institutions.retry")}
           />
         ) : (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {[
               {
                 key: "orders",
-                label: t("dashboard.institutions.statsOrdersCount"),
+                label: t("institutions.statsOrdersCount"),
                 value: statistics.ordersCount,
                 money: false,
                 icon: ClipboardList,
               },
               {
                 key: "users",
-                label: t("dashboard.institutions.statsUsersCount"),
+                label: t("institutions.statsUsersCount"),
                 value: statistics.usersCount,
                 money: false,
                 icon: Users,
               },
               {
                 key: "amount",
-                label: t("dashboard.institutions.statsOrdersTotalAmount"),
+                label: t("institutions.statsOrdersTotalAmount"),
                 value: statistics.ordersTotalAmount,
                 money: true,
                 icon: Coins,
@@ -922,8 +927,8 @@ export default function SuperAdminInstitutionDetailPage() {
       </DashboardSection>
 
       <DashboardSection>
-        <DashboardTabs aria-label="أقسام إدارة المؤسسة" className="oh-institution-workspace-tabs mb-3">
-          {WORKSPACE_TABS.map((tab) => (
+        <DashboardTabs aria-label={t("institutions.workspaceTabsAria")} className="oh-institution-workspace-tabs mb-3">
+          {workspaceTabs.map((tab) => (
             <DashboardTab key={tab.id} selected={activeTab === tab.id} onSelect={() => setActiveTab(tab.id)}>
               {tab.label}
             </DashboardTab>
@@ -932,10 +937,10 @@ export default function SuperAdminInstitutionDetailPage() {
 
         {activeTab === "members" ? (
           <DashboardSection
-            title={t("dashboard.institutions.membersList")}
+            title={t("institutions.membersList")}
             description={
               !membersLoading
-                ? t("dashboard.institutions.membersCount", {
+                ? t("institutions.membersCount", {
                     count: Number(pagination.total) || members.length || 0,
                   })
                 : undefined
@@ -948,7 +953,7 @@ export default function SuperAdminInstitutionDetailPage() {
                   onClick={() => setAddMemberOpen(true)}
                 >
                   <UserPlus size={16} strokeWidth={1.75} aria-hidden />
-                  {t("dashboard.institutions.addMember")}
+                  {t("institutions.addMember")}
                 </button>
               ) : null
             }
@@ -963,42 +968,42 @@ export default function SuperAdminInstitutionDetailPage() {
               }}
             >
               <label className="dash-ui-stack" style={{ display: "grid", gap: 6 }}>
-                <span>{t("dashboard.institutions.search")}</span>
+                <span>{t("institutions.search")}</span>
                 <input
                   className="input"
                   type="search"
                   value={memberSearchInput}
                   onChange={(e) => setMemberSearchInput(e.target.value)}
-                  placeholder="اسم، بريد، هاتف، رقم حساب…"
+                  placeholder={t("institutions.memberSearchPlaceholder")}
                 />
               </label>
               <label className="dash-ui-stack" style={{ display: "grid", gap: 6 }}>
-                <span>{t("dashboard.institutions.memberStatus")}</span>
+                <span>{t("institutions.memberStatus")}</span>
                 <select
                   className="input"
                   value={memberStatusFilter}
                   onChange={(e) => setMemberStatusFilter(e.target.value)}
                 >
-                  <option value="">{t("dashboard.institutions.statusAll")}</option>
-                  <option value="active">{t("dashboard.institutions.memberActive")}</option>
-                  <option value="inactive">{t("dashboard.institutions.memberInactive")}</option>
+                  <option value="">{t("institutions.statusAll")}</option>
+                  <option value="active">{t("institutions.memberActive")}</option>
+                  <option value="inactive">{t("institutions.memberInactive")}</option>
                 </select>
               </label>
             </div>
             {membersRefreshing ? (
-              <p className="mb-2 mt-0 text-sm text-slate-500">{t("dashboard.institutions.refreshing")}</p>
+              <p className="mb-2 mt-0 text-sm text-slate-500">{t("institutions.refreshing")}</p>
             ) : null}
             {membersLoading && members.length === 0 ? (
-              <DashboardLoadingState label={t("dashboard.institutions.loading")} />
+              <DashboardLoadingState label={t("institutions.loading")} />
             ) : membersError && members.length === 0 ? (
               <SectionInlineError
                 message={membersError}
                 onRetry={() => void loadMembers()}
-                retryLabel={t("dashboard.institutions.retry")}
+                retryLabel={t("institutions.retry")}
               />
             ) : members.length === 0 ? (
               <DashboardEmptyState
-                title={t("dashboard.institutions.membersEmpty")}
+                title={t("institutions.membersEmpty")}
                 icon={<Building2 size={40} strokeWidth={1.5} aria-hidden />}
               />
             ) : (
@@ -1008,22 +1013,22 @@ export default function SuperAdminInstitutionDetailPage() {
                     <SectionInlineError
                       message={membersError}
                       onRetry={() => void loadMembers({ soft: true })}
-                      retryLabel={t("dashboard.institutions.retry")}
+                      retryLabel={t("institutions.retry")}
                     />
                   </div>
                 ) : null}
-                <DashboardTable caption={t("dashboard.institutions.membersList")}>
+                <DashboardTable caption={t("institutions.membersList")}>
                   <thead>
                     <tr>
-                      <th>{t("dashboard.institutions.userName")}</th>
-                      <th>{t("dashboard.institutions.userId")}</th>
-                      <th>{t("dashboard.institutions.email")}</th>
-                      <th>الهاتف</th>
-                      <th>دور المنصة</th>
-                      <th>{t("dashboard.institutions.memberRole")}</th>
-                      <th>{t("dashboard.institutions.memberStatus")}</th>
-                      <th>{t("dashboard.institutions.memberSince")}</th>
-                      <th>{t("dashboard.institutions.actions")}</th>
+                      <th>{t("institutions.userName")}</th>
+                      <th>{t("institutions.userId")}</th>
+                      <th>{t("institutions.email")}</th>
+                      <th>{t("institutions.phone")}</th>
+                      <th>{t("institutions.platformRole")}</th>
+                      <th>{t("institutions.memberRole")}</th>
+                      <th>{t("institutions.memberStatus")}</th>
+                      <th>{t("institutions.memberSince")}</th>
+                      <th>{t("institutions.actions")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1050,8 +1055,8 @@ export default function SuperAdminInstitutionDetailPage() {
                                 })
                               }
                             >
-                              <option value="member">{t("dashboard.institutions.roleMember")}</option>
-                              <option value="manager">{t("dashboard.institutions.roleManager")}</option>
+                              <option value="member">{t("institutions.roleMember")}</option>
+                              <option value="manager">{t("institutions.roleManager")}</option>
                             </select>
                           ) : (
                             memberRoleLabel(m.memberRole, t)
@@ -1069,14 +1074,14 @@ export default function SuperAdminInstitutionDetailPage() {
                                   disabled={updatingMemberId === m.userId}
                                   onClick={() => void patchMember(m, { status: "inactive" })}
                                 >
-                                  {t("dashboard.institutions.memberInactive")}
+                                  {t("institutions.memberInactive")}
                                 </button>
                                 <button
                                   type="button"
                                   className="btn btn-danger"
                                   onClick={() => setRemoveTarget(m)}
                                 >
-                                  <UserMinus size={16} aria-hidden /> {t("dashboard.institutions.removeMember")}
+                                  <UserMinus size={16} aria-hidden /> {t("institutions.removeMember")}
                                 </button>
                               </>
                             ) : null}
@@ -1087,7 +1092,7 @@ export default function SuperAdminInstitutionDetailPage() {
                                 disabled={updatingMemberId === m.userId}
                                 onClick={() => void patchMember(m, { status: "active" })}
                               >
-                                {t("dashboard.institutions.memberActive")}
+                                {t("institutions.memberActive")}
                               </button>
                             ) : null}
                           </div>
@@ -1113,8 +1118,8 @@ export default function SuperAdminInstitutionDetailPage() {
 
         {activeTab === "orders" ? (
           <DashboardSection
-            title="طلبات المؤسسة"
-            description="أعمال المؤسسة (طلبات ومقالات) ضمن visibility_scope = institution."
+            title={t("institutions.ordersSection.title")}
+            description={t("institutions.ordersSection.description")}
             actions={
               <button
                 ref={createWorkBtnRef}
@@ -1122,61 +1127,61 @@ export default function SuperAdminInstitutionDetailPage() {
                 className="btn btn-primary"
                 onClick={() => setCreateWorkOpen(true)}
               >
-                إضافة طلب للمؤسسة
+                {t("institutions.ordersSection.addWork")}
               </button>
             }
           >
             <div className="mb-3 flex flex-wrap items-end gap-3">
               <label className="grid gap-1 text-sm">
-                <span className="text-slate-700">بحث</span>
+                <span className="text-slate-700">{t("institutions.search")}</span>
                 <input
                   type="search"
                   className="form-control min-w-[12rem]"
                   value={ordersSearchInput}
                   onChange={(e) => setOrdersSearchInput(e.target.value)}
-                  placeholder="عنوان أو رمز…"
+                  placeholder={t("institutions.ordersSection.searchPlaceholder")}
                 />
               </label>
               <label className="grid gap-1 text-sm">
-                <span className="text-slate-700">نوع العمل</span>
+                <span className="text-slate-700">{t("institutions.ordersSection.workType")}</span>
                 <select
                   className="form-control"
                   value={ordersWorkTypeFilter}
                   onChange={(e) => setOrdersWorkTypeFilter(e.target.value)}
                 >
-                  <option value="">الكل</option>
-                  <option value="order">طلب</option>
-                  <option value="article">مقال</option>
+                  <option value="">{t("institutions.statusAll")}</option>
+                  <option value="order">{t("institutions.ordersSection.workTypeOrder")}</option>
+                  <option value="article">{t("institutions.ordersSection.workTypeArticle")}</option>
                 </select>
               </label>
             </div>
             {ordersRefreshing ? (
-              <p className="mb-2 mt-0 text-sm text-slate-500">{t("dashboard.institutions.refreshing")}</p>
+              <p className="mb-2 mt-0 text-sm text-slate-500">{t("institutions.refreshing")}</p>
             ) : null}
             {ordersLoading && institutionOrders.length === 0 ? (
-              <DashboardLoadingState label={t("dashboard.institutions.loading")} />
+              <DashboardLoadingState label={t("institutions.loading")} />
             ) : ordersError && institutionOrders.length === 0 ? (
               <SectionInlineError
                 message={ordersError}
                 onRetry={() => void loadOrders()}
-                retryLabel={t("dashboard.institutions.retry")}
+                retryLabel={t("institutions.retry")}
               />
             ) : institutionOrders.length === 0 ? (
-              <DashboardEmptyState title="لا توجد أعمال مطلقة لهذه المؤسسة بعد." />
+              <DashboardEmptyState title={t("institutions.ordersSection.empty")} />
             ) : (
               <>
-                <DashboardTable caption="أعمال المؤسسة">
+                <DashboardTable caption={t("institutions.ordersSection.tableCaption")}>
                   <thead>
                     <tr>
-                      <th>العنوان / الرمز</th>
-                      <th>النوع</th>
-                      <th>الحالة</th>
-                      <th>النشر</th>
-                      <th>المتقدمون</th>
-                      <th>الفريلانسر</th>
-                      <th>المصدر</th>
-                      <th>{t("dashboard.institutions.createdAt")}</th>
-                      <th>{t("dashboard.institutions.actions")}</th>
+                      <th>{t("institutions.ordersSection.colTitleCode")}</th>
+                      <th>{t("institutions.ordersSection.colType")}</th>
+                      <th>{t("institutions.ordersSection.colStatus")}</th>
+                      <th>{t("institutions.ordersSection.colPublication")}</th>
+                      <th>{t("institutions.ordersSection.colApplicants")}</th>
+                      <th>{t("institutions.ordersSection.colFreelancer")}</th>
+                      <th>{t("institutions.ordersSection.colSource")}</th>
+                      <th>{t("institutions.createdAt")}</th>
+                      <th>{t("institutions.actions")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1198,7 +1203,9 @@ export default function SuperAdminInstitutionDetailPage() {
                                   : "border-sky-200 bg-sky-50 text-sky-900",
                               ].join(" ")}
                             >
-                              {wt === "article" ? "مقال" : "طلب"}
+                              {wt === "article"
+                                ? t("institutions.ordersSection.workTypeArticle")
+                                : t("institutions.ordersSection.workTypeOrder")}
                             </span>
                           </td>
                           <td>{item.status || "—"}</td>
@@ -1211,7 +1218,9 @@ export default function SuperAdminInstitutionDetailPage() {
                                   : "border-amber-200 bg-amber-50 text-amber-900",
                               ].join(" ")}
                             >
-                              {pub === "published" ? "منشور" : "مسودة"}
+                              {pub === "published"
+                                ? t("institutions.ordersSection.published")
+                                : t("institutions.ordersSection.draft")}
                             </span>
                           </td>
                           <td>
@@ -1220,14 +1229,19 @@ export default function SuperAdminInstitutionDetailPage() {
                             </bdi>
                           </td>
                           <td className="max-w-[12rem] break-words">{item.assignedFreelancerName || "—"}</td>
-                          <td>{item.sourceLabel || (item.source === "storage" ? "من مخزون المؤسسة" : "مباشر")}</td>
+                          <td>
+                            {item.sourceLabel ||
+                              (item.source === "storage"
+                                ? t("institutions.ordersSection.sourceStorage")
+                                : t("institutions.ordersSection.sourceDirect"))}
+                          </td>
                           <td>{formatDate(item.createdAt)}</td>
                           <td>
                             <Link
                               to={`${WORK_DETAIL_BASE(institutionId)}/${wt}/${item.id}`}
                               className="btn btn-secondary"
                             >
-                              إدارة
+                              {t("institutions.manage")}
                             </Link>
                           </td>
                         </tr>
@@ -1253,29 +1267,29 @@ export default function SuperAdminInstitutionDetailPage() {
         {activeTab === "settings" ? (
           <>
             {overviewRefreshing ? (
-              <p className="mb-2 mt-0 text-sm text-slate-500">{t("dashboard.institutions.refreshing")}</p>
+              <p className="mb-2 mt-0 text-sm text-slate-500">{t("institutions.refreshing")}</p>
             ) : null}
             {overviewError && institution ? (
               <div className="mb-3">
                 <SectionInlineError
                   message={overviewError}
                   onRetry={() => void loadOverview({ soft: true })}
-                  retryLabel={t("dashboard.institutions.retry")}
+                  retryLabel={t("institutions.retry")}
                 />
               </div>
             ) : null}
             <DashboardSection
-              title={t("dashboard.institutions.edit")}
+              title={t("institutions.edit")}
               actions={
                 <div className="flex flex-wrap gap-2">
                   {isActive ? (
                     <button type="button" className="btn btn-danger" onClick={() => void openDeactivate()}>
-                      {t("dashboard.institutions.deactivate")}
+                      {t("institutions.deactivate")}
                     </button>
                   ) : null}
                   {institution?.status === "inactive" ? (
                     <button type="button" className="btn btn-primary" onClick={() => setActivateOpen(true)}>
-                      {t("dashboard.institutions.activate")}
+                      {t("institutions.activate")}
                     </button>
                   ) : null}
                 </div>
@@ -1284,7 +1298,7 @@ export default function SuperAdminInstitutionDetailPage() {
               {!isFrozen ? (
                 <form className="dash-ui-form-card" onSubmit={saveEdit} style={{ display: "grid", gap: 12, maxWidth: 640 }}>
                   <label className="dash-ui-stack" style={{ display: "grid", gap: 6 }}>
-                    <span>{t("dashboard.institutions.name")} *</span>
+                    <span>{t("institutions.name")} *</span>
                     <input
                       id="institution-edit-name"
                       className="input"
@@ -1298,7 +1312,7 @@ export default function SuperAdminInstitutionDetailPage() {
                     />
                   </label>
                   <label className="dash-ui-stack" style={{ display: "grid", gap: 6 }}>
-                    <span>{t("dashboard.institutions.descriptionLabel")}</span>
+                    <span>{t("institutions.descriptionLabel")}</span>
                     <textarea
                       className="input"
                       rows={3}
@@ -1308,15 +1322,15 @@ export default function SuperAdminInstitutionDetailPage() {
                     />
                   </label>
                   <label className="dash-ui-stack" style={{ display: "grid", gap: 6 }}>
-                    <span>{t("dashboard.institutions.status")}</span>
+                    <span>{t("institutions.status")}</span>
                     <select
                       className="input"
                       value={editForm.status}
                       onChange={(e) => setEditForm((f) => ({ ...f, status: e.target.value }))}
                       disabled={savingEdit}
                     >
-                      <option value="active">{t("dashboard.institutions.active")}</option>
-                      <option value="inactive">{t("dashboard.institutions.inactive")}</option>
+                      <option value="active">{t("institutions.active")}</option>
+                      <option value="inactive">{t("institutions.inactive")}</option>
                     </select>
                   </label>
                   {editError ? (
@@ -1326,30 +1340,30 @@ export default function SuperAdminInstitutionDetailPage() {
                   ) : null}
                   <div style={{ display: "flex", gap: 8 }}>
                     <button type="submit" className="btn btn-primary" disabled={savingEdit}>
-                      {savingEdit ? t("dashboard.institutions.saving") : t("dashboard.institutions.save")}
+                      {savingEdit ? t("institutions.saving") : t("institutions.save")}
                     </button>
                   </div>
                 </form>
               ) : (
-                <p className="m-0 text-sm text-slate-600">{t("dashboard.institutions.frozen")}</p>
+                <p className="m-0 text-sm text-slate-600">{t("institutions.frozen")}</p>
               )}
               <dl className="m-0 mt-4 grid gap-3 sm:grid-cols-2">
                 <div className="dash-ui-form-card min-w-0 p-3">
-                  <dt className="m-0 text-[0.72rem] font-bold text-slate-500">{t("dashboard.institutions.slug")}</dt>
+                  <dt className="m-0 text-[0.72rem] font-bold text-slate-500">{t("institutions.slug")}</dt>
                   <dd className="m-0 mt-1 break-all font-medium">{institution?.slug || "—"}</dd>
                 </div>
                 <div className="dash-ui-form-card min-w-0 p-3">
-                  <dt className="m-0 text-[0.72rem] font-bold text-slate-500">معرّف المؤسسة</dt>
+                  <dt className="m-0 text-[0.72rem] font-bold text-slate-500">{t("institutions.institutionIdLabel")}</dt>
                   <dd className="m-0 mt-1 tabular-nums" dir="ltr">
                     {institution?.id}
                   </dd>
                 </div>
                 <div className="dash-ui-form-card min-w-0 p-3">
-                  <dt className="m-0 text-[0.72rem] font-bold text-slate-500">{t("dashboard.institutions.createdAt")}</dt>
+                  <dt className="m-0 text-[0.72rem] font-bold text-slate-500">{t("institutions.createdAt")}</dt>
                   <dd className="m-0 mt-1">{formatDate(institution?.createdAt)}</dd>
                 </div>
                 <div className="dash-ui-form-card min-w-0 p-3">
-                  <dt className="m-0 text-[0.72rem] font-bold text-slate-500">{t("dashboard.institutions.createdBy")}</dt>
+                  <dt className="m-0 text-[0.72rem] font-bold text-slate-500">{t("institutions.createdBy")}</dt>
                   <dd className="m-0 mt-1 break-words">
                     {institution?.createdByName || institution?.createdBy || "—"}
                   </dd>
@@ -1357,20 +1371,20 @@ export default function SuperAdminInstitutionDetailPage() {
               </dl>
             </DashboardSection>
 
-            <DashboardSection title={t("dashboard.institutions.linkedStoragesSection")}>
+            <DashboardSection title={t("institutions.linkedStoragesSection")}>
         {storagesRefreshing ? (
-          <p className="mb-2 mt-0 text-sm text-slate-500">{t("dashboard.institutions.refreshing")}</p>
+          <p className="mb-2 mt-0 text-sm text-slate-500">{t("institutions.refreshing")}</p>
         ) : null}
         {storagesLoading && storages.length === 0 ? (
-          <DashboardLoadingState label={t("dashboard.institutions.loading")} />
+          <DashboardLoadingState label={t("institutions.loading")} />
         ) : storagesError && storages.length === 0 ? (
           <SectionInlineError
             message={storagesError}
             onRetry={() => void loadStorages()}
-            retryLabel={t("dashboard.institutions.retry")}
+            retryLabel={t("institutions.retry")}
           />
         ) : storages.length === 0 ? (
-          <DashboardEmptyState title={t("dashboard.institutions.linkedStoragesEmpty")} />
+          <DashboardEmptyState title={t("institutions.linkedStoragesEmpty")} />
         ) : (
           <>
             {storagesError ? (
@@ -1378,20 +1392,20 @@ export default function SuperAdminInstitutionDetailPage() {
                 <SectionInlineError
                   message={storagesError}
                   onRetry={() => void loadStorages({ soft: true })}
-                  retryLabel={t("dashboard.institutions.retry")}
+                  retryLabel={t("institutions.retry")}
                 />
               </div>
             ) : null}
-            <DashboardTable caption={t("dashboard.institutions.linkedStoragesSection")}>
+            <DashboardTable caption={t("institutions.linkedStoragesSection")}>
               <thead>
                 <tr>
-                  <th>{t("dashboard.institutions.storageName")}</th>
-                  <th>{t("dashboard.institutions.storageStatus")}</th>
+                  <th>{t("institutions.storageName")}</th>
+                  <th>{t("institutions.storageStatus")}</th>
                   <th>{t("dashboard.institutionalOrderStorage.financialLimit")}</th>
                   <th>{t("dashboard.institutionalOrderStorage.remaining")}</th>
-                  <th>{t("dashboard.institutions.approvedReleasedCounts")}</th>
+                  <th>{t("institutions.approvedReleasedCounts")}</th>
                   <th>{t("dashboard.institutionalOrderStorage.startDate")}</th>
-                  <th>{t("dashboard.institutions.actions")}</th>
+                  <th>{t("institutions.actions")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -1411,7 +1425,7 @@ export default function SuperAdminInstitutionDetailPage() {
                     <td>{s.distributionStartDate || "—"}</td>
                     <td>
                       <Link to={`${STORAGE_BASE}/${s.id}`} className="btn btn-secondary">
-                        {t("dashboard.institutions.openStorage")}
+                        {t("institutions.openStorage")}
                       </Link>
                     </td>
                   </tr>
@@ -1455,12 +1469,12 @@ export default function SuperAdminInstitutionDetailPage() {
 
       <ConfirmDialog
         open={Boolean(removeTarget)}
-        title={t("dashboard.institutions.confirmRemoveTitle")}
-        body={t("dashboard.institutions.confirmRemoveBody", {
+        title={t("institutions.confirmRemoveTitle")}
+        body={t("institutions.confirmRemoveBody", {
           name: removeTarget?.fullName || removeTarget?.email || removeTarget?.userId,
         })}
-        confirmLabel={t("dashboard.institutions.removeMember")}
-        cancelLabel={t("dashboard.institutions.cancel")}
+        confirmLabel={t("institutions.removeMember")}
+        cancelLabel={t("institutions.cancel")}
         confirmVariant="danger"
         confirmBusy={removing}
         onCancel={() => setRemoveTarget(null)}
@@ -1469,11 +1483,11 @@ export default function SuperAdminInstitutionDetailPage() {
 
       <ConfirmDialog
         open={deactivateOpen}
-        title={t("dashboard.institutions.confirmDeactivateTitle")}
+        title={t("institutions.confirmDeactivateTitle")}
         body={deactivateBody}
         panelClassName="max-w-[560px]"
-        confirmLabel={t("dashboard.institutions.deactivate")}
-        cancelLabel={t("dashboard.institutions.cancel")}
+        confirmLabel={t("institutions.deactivate")}
+        cancelLabel={t("institutions.cancel")}
         confirmVariant="danger"
         confirmBusy={statusBusy || impactLoading}
         onCancel={() => setDeactivateOpen(false)}
@@ -1482,10 +1496,10 @@ export default function SuperAdminInstitutionDetailPage() {
 
       <ConfirmDialog
         open={activateOpen}
-        title={t("dashboard.institutions.confirmActivateTitle")}
-        body={t("dashboard.institutions.confirmActivateBody")}
-        confirmLabel={t("dashboard.institutions.activate")}
-        cancelLabel={t("dashboard.institutions.cancel")}
+        title={t("institutions.confirmActivateTitle")}
+        body={t("institutions.confirmActivateBody")}
+        confirmLabel={t("institutions.activate")}
+        cancelLabel={t("institutions.cancel")}
         confirmBusy={statusBusy}
         onCancel={() => setActivateOpen(false)}
         onConfirm={() => void confirmActivate()}
@@ -1493,11 +1507,11 @@ export default function SuperAdminInstitutionDetailPage() {
 
       <ConfirmDialog
         open={freezeOpen}
-        title={t("dashboard.institutions.confirmFreezeTitle")}
-        body={t("dashboard.institutions.confirmFreezeBody")}
+        title={t("institutions.confirmFreezeTitle")}
+        body={t("institutions.confirmFreezeBody")}
         panelClassName="max-w-[560px]"
-        confirmLabel={t("dashboard.institutions.freeze")}
-        cancelLabel={t("dashboard.institutions.cancel")}
+        confirmLabel={t("institutions.freeze")}
+        cancelLabel={t("institutions.cancel")}
         confirmVariant="danger"
         confirmBusy={statusBusy}
         onCancel={() => setFreezeOpen(false)}
@@ -1506,10 +1520,10 @@ export default function SuperAdminInstitutionDetailPage() {
 
       <ConfirmDialog
         open={unfreezeOpen}
-        title={t("dashboard.institutions.confirmUnfreezeTitle")}
-        body={t("dashboard.institutions.confirmUnfreezeBody")}
-        confirmLabel={t("dashboard.institutions.unfreeze")}
-        cancelLabel={t("dashboard.institutions.cancel")}
+        title={t("institutions.confirmUnfreezeTitle")}
+        body={t("institutions.confirmUnfreezeBody")}
+        confirmLabel={t("institutions.unfreeze")}
+        cancelLabel={t("institutions.cancel")}
         confirmBusy={statusBusy}
         onCancel={() => setUnfreezeOpen(false)}
         onConfirm={() => void confirmUnfreeze()}
