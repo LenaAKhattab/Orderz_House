@@ -9,16 +9,13 @@ import {
 } from "../../services/api";
 import { useToast } from "../ui/toastContext";
 import SubmissionHistoryTimeline from "./submission-history/SubmissionHistoryTimeline";
-import {
-  ORDER_UPLOAD_TOTAL_SIZE_HELPER_AR,
-  ORDER_UPLOAD_TOTAL_SIZE_MESSAGE_AR,
-  validateOrderFilesSize,
-} from "../../utils/orderUploadLimits";
+import { validateOrderFilesSize } from "../../utils/orderUploadLimits";
 import { trackEvent } from "../../services/analytics";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/clientAreaResources";
 
-/** يحسّن عرض اسم الملف إن كان محفوظاً بترميز خاطئ سابقاً. */
-function displayFileName(f) {
-  const raw = String(f?.originalName || "").trim() || "مرفق";
+function displayFileName(f, attachmentFallback) {
+  const raw = String(f?.originalName || "").trim() || attachmentFallback;
   try {
     const bytes = new Uint8Array(raw.length);
     for (let i = 0; i < raw.length; i += 1) bytes[i] = raw.charCodeAt(i) & 0xff;
@@ -36,6 +33,10 @@ function displayFileName(f) {
  */
 export default function ClientDeliveryReviewModal({ open, order, onClose, onApprove, onRevised, variant = "workflow", audience = "client" }) {
   const { push } = useToast();
+  const { t } = useTranslation();
+  const d = "clientArea.deliveryReview";
+  const uploadSizeMessage = t(`${d}.uploadTotalSizeMessage`);
+  const uploadSizeHelper = t(`${d}.uploadTotalSizeHelper`);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [downloadingId, setDownloadingId] = useState(null);
@@ -45,8 +46,8 @@ export default function ClientDeliveryReviewModal({ open, order, onClose, onAppr
 
   const revisionFilesSizeError = useMemo(() => {
     if (!revisionFiles.length) return "";
-    return validateOrderFilesSize(revisionFiles).ok ? "" : ORDER_UPLOAD_TOTAL_SIZE_MESSAGE_AR;
-  }, [revisionFiles]);
+    return validateOrderFilesSize(revisionFiles).ok ? "" : uploadSizeMessage;
+  }, [revisionFiles, uploadSizeMessage]);
 
   if (!open || !order) return null;
 
@@ -76,7 +77,7 @@ export default function ClientDeliveryReviewModal({ open, order, onClose, onAppr
       onApprove?.();
       onClose();
     } catch (e) {
-      setError(e?.response?.data?.message || e?.message || "تعذّر اعتماد التسليم.");
+      setError(e?.response?.data?.message || e?.message || t(`${d}.approveError`));
     } finally {
       setBusy(false);
     }
@@ -85,12 +86,12 @@ export default function ClientDeliveryReviewModal({ open, order, onClose, onAppr
   const requestRevision = async () => {
     const noteText = String(revisionNote || "").trim();
     if (!noteText) {
-      setError("يرجى كتابة ملاحظة التعديل قبل الإرسال.");
+      setError(t(`${d}.revisionNoteRequired`));
       return;
     }
     if (revisionFiles.length && !validateOrderFilesSize(revisionFiles).ok) {
-      setError(ORDER_UPLOAD_TOTAL_SIZE_MESSAGE_AR);
-      push({ type: "error", title: "حجم الملفات", message: ORDER_UPLOAD_TOTAL_SIZE_MESSAGE_AR });
+      setError(uploadSizeMessage);
+      push({ type: "error", title: t(`${d}.uploadSizeTitle`), message: uploadSizeMessage });
       return;
     }
     setBusy(true);
@@ -102,7 +103,7 @@ export default function ClientDeliveryReviewModal({ open, order, onClose, onAppr
       setRevisionFiles([]);
       onClose();
     } catch (e) {
-      setError(e?.response?.data?.message || e?.message || "تعذّر إرسال طلب التعديل.");
+      setError(e?.response?.data?.message || e?.message || t(`${d}.revisionSendError`));
     } finally {
       setBusy(false);
     }
@@ -112,14 +113,15 @@ export default function ClientDeliveryReviewModal({ open, order, onClose, onAppr
     setDownloadingId(f.id);
     setError("");
     try {
-      await downloadOrderFileForRole(order.id, f.id, displayFileName(f), fileScope);
-      push({ type: "success", title: "بدأ التنزيل", message: displayFileName(f) });
+      const name = displayFileName(f, t("clientArea.common.attachmentFallback"));
+      await downloadOrderFileForRole(order.id, f.id, name, fileScope);
+      push({ type: "success", title: t(`${d}.downloadStartedTitle`), message: name });
     } catch (e) {
       const st = e?.response?.status;
       const msg =
-        st === 403 ? "غير مصرح بتنزيل هذا الملف." : st === 404 ? "الملف غير موجود." : e?.message || "تعذّر تنزيل الملف.";
+        st === 403 ? t(`${d}.downloadForbidden`) : st === 404 ? t(`${d}.fileNotFound`) : e?.message || t(`${d}.downloadError`);
       setError(msg);
-      push({ type: "error", title: "تعذّر التنزيل", message: msg });
+      push({ type: "error", title: t(`${d}.downloadErrorTitle`), message: msg });
     } finally {
       setDownloadingId(null);
     }
@@ -129,14 +131,15 @@ export default function ClientDeliveryReviewModal({ open, order, onClose, onAppr
     setViewingId(f.id);
     setError("");
     try {
-      await viewOrderFileForRole(order.id, f.id, displayFileName(f), fileScope);
-      push({ type: "success", title: "تم الفتح", message: "تم فتح الملف في تبويب جديد." });
+      const name = displayFileName(f, t("clientArea.common.attachmentFallback"));
+      await viewOrderFileForRole(order.id, f.id, name, fileScope);
+      push({ type: "success", title: t(`${d}.openSuccessTitle`), message: t(`${d}.openSuccessMessage`) });
     } catch (e) {
       const st = e?.response?.status;
       const msg =
-        st === 403 ? "غير مصرح بعرض هذا الملف." : st === 404 ? "الملف غير موجود." : e?.message || "تعذّر عرض الملف.";
+        st === 403 ? t(`${d}.viewForbidden`) : st === 404 ? t(`${d}.fileNotFound`) : e?.message || t(`${d}.viewError`);
       setError(msg);
-      push({ type: "error", title: "تعذّر العرض", message: msg });
+      push({ type: "error", title: t(`${d}.viewErrorTitle`), message: msg });
     } finally {
       setViewingId(null);
     }
@@ -168,14 +171,14 @@ export default function ClientDeliveryReviewModal({ open, order, onClose, onAppr
         style={{ maxWidth: 560, width: "100%", maxHeight: "90vh", overflow: "auto" }}
       >
         <h2 id="delivery-modal-title" style={{ marginTop: 0 }}>
-          {isArchive ? "ملفات تسليم المستقل" : "استلام الطلب ومراجعة المرفقات"}
+          {isArchive ? t(`${d}.titleArchive`) : t(`${d}.titleWorkflow`)}
         </h2>
         <p className="help" style={{ marginTop: 0 }}>
           {isArchive
-            ? "يمكنك معاينة أو تنزيل الملفات التي أرسلها المستقل في أي وقت."
+            ? t(`${d}.helpArchive`)
             : isAdmin
-              ? "اطلع على ملفات التسليم من المستقل. عند اعتمادك للمرفقات يُعتبر الطلب مكتملاً."
-              : "اطلع على ملفات التسليم من المستقل. عند موافقتك على المرفقات يُعتبر الطلب مكتملاً بينكما."}
+              ? t(`${d}.helpAdmin`)
+              : t(`${d}.helpClient`)}
         </p>
         {error ? (
           <p className="help" style={{ color: "#b91c1c" }}>
@@ -184,9 +187,7 @@ export default function ClientDeliveryReviewModal({ open, order, onClose, onAppr
         ) : null}
         {!isArchive && order.orderStatus === "in_progress" && deliveryFiles.length === 0 ? (
           <p className="help">
-            {isAdmin
-              ? "لم يُسلّم المستقل الملفات بعد."
-              : "لم يُسلّم المستقل الملفات بعد. يمكنك استخدام «طلب تعديل» إن احتجت توضيحاً إضافياً."}
+            {isAdmin ? t(`${d}.noDeliveryAdmin`) : t(`${d}.noDeliveryClient`)}
           </p>
         ) : null}
         {deliveryFiles.length ? (
@@ -197,7 +198,7 @@ export default function ClientDeliveryReviewModal({ open, order, onClose, onAppr
                 className="order-details__attachment"
                 style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}
               >
-                <span style={{ wordBreak: "break-word" }}>{displayFileName(f)}</span>
+                <span style={{ wordBreak: "break-word" }}>{displayFileName(f, t("clientArea.common.attachmentFallback"))}</span>
                 <span style={{ display: "inline-flex", gap: 8, flexShrink: 0 }}>
                   <button
                     type="button"
@@ -206,7 +207,7 @@ export default function ClientDeliveryReviewModal({ open, order, onClose, onAppr
                     disabled={Boolean(downloadingId) || Boolean(viewingId) || busy}
                     onClick={() => void viewOne(f)}
                   >
-                    {viewingId === f.id ? "جارٍ الفتح…" : "عرض"}
+                    {viewingId === f.id ? t("clientArea.common.busy.opening") : t("clientArea.common.view")}
                   </button>
                   <button
                     type="button"
@@ -215,16 +216,16 @@ export default function ClientDeliveryReviewModal({ open, order, onClose, onAppr
                     disabled={Boolean(downloadingId) || Boolean(viewingId) || busy}
                     onClick={() => void downloadOne(f)}
                   >
-                    {downloadingId === f.id ? "جارٍ التنزيل…" : "تحميل"}
+                    {downloadingId === f.id ? t("clientArea.common.busy.downloading") : t("clientArea.common.download")}
                   </button>
                 </span>
               </li>
             ))}
           </ul>
         ) : !isArchive && order.orderStatus === "pending_client_review" ? (
-          <p className="help">لا توجد مرفقات مسجّلة للتسليم.</p>
+          <p className="help">{t(`${d}.noAttachmentsPending`)}</p>
         ) : isArchive && !deliveryFiles.length ? (
-          <p className="help">لا توجد مرفقات تسليم مسجّلة لهذا الطلب.</p>
+          <p className="help">{t(`${d}.noAttachmentsArchive`)}</p>
         ) : null}
         {order?.submissionHistory?.submissions?.length ? (
           <div style={{ marginTop: 16 }}>
@@ -238,7 +239,7 @@ export default function ClientDeliveryReviewModal({ open, order, onClose, onAppr
         {!isArchive && canRequestRevision ? (
           <div className="field" style={{ marginTop: 12 }}>
             <label className="label" htmlFor="delivery-revision-note">
-              ملاحظة التعديل للمستقل
+              {t(`${d}.revisionNoteLabel`)}
             </label>
             <textarea
               id="delivery-revision-note"
@@ -250,13 +251,13 @@ export default function ClientDeliveryReviewModal({ open, order, onClose, onAppr
                 if (error) setError("");
               }}
               disabled={busy || Boolean(downloadingId) || Boolean(viewingId)}
-              placeholder="اكتب ما يجب تعديله قبل الاعتماد النهائي…"
+              placeholder={t(`${d}.revisionNotePlaceholder`)}
             />
             <label className="label" htmlFor="delivery-revision-files" style={{ marginTop: 8 }}>
-              مرفقات طلب التعديل (اختياري)
+              {t(`${d}.revisionFilesLabel`)}
             </label>
             <p className="help" style={{ marginTop: 0, marginBottom: 6 }}>
-              {ORDER_UPLOAD_TOTAL_SIZE_HELPER_AR}
+              {uploadSizeHelper}
             </p>
             <input
               id="delivery-revision-files"
@@ -279,7 +280,7 @@ export default function ClientDeliveryReviewModal({ open, order, onClose, onAppr
         ) : null}
         <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", flexWrap: "wrap", marginTop: 18 }}>
           <button type="button" className="btn btn-secondary" onClick={onClose} disabled={busy}>
-            إغلاق
+            {t("clientArea.common.close")}
           </button>
           {!isArchive && canRequestRevision ? (
             <button
@@ -294,12 +295,12 @@ export default function ClientDeliveryReviewModal({ open, order, onClose, onAppr
               }
               onClick={requestRevision}
             >
-              {busy ? "جارٍ الإرسال…" : "طلب تعديل"}
+              {busy ? t("clientArea.common.busy.sending") : t(`${d}.requestRevision`)}
             </button>
           ) : null}
           {!isArchive ? (
             <button type="button" className="btn btn-primary" disabled={busy || !canApprove} onClick={submit}>
-              {busy ? "جارٍ الاعتماد…" : "اعتماد التسليم وإنهاء الطلب"}
+              {busy ? t("clientArea.common.busy.approving") : t(`${d}.approveDelivery`)}
             </button>
           ) : null}
         </div>

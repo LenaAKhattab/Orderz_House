@@ -4,11 +4,15 @@ import { FilePlus2, X } from "lucide-react";
 import { useAuth } from "../../context/useAuth";
 import { INTERNAL_ORDERS_LIST_REFRESH } from "../../constants/authRoutes";
 import AdminInternalOrderWizard from "./AdminInternalOrderWizard";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/clientAreaResources";
 import "../../styles/createOrderModal.css";
 
 export default function ClientCreateOrderModal({ open, onClose }) {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t, dir } = useTranslation();
+  const c = "clientArea.createOrderModal";
   const accountRole = user?.primaryRole || user?.role;
   const isAdminLike = accountRole === "admin" || accountRole === "super_admin";
 
@@ -39,7 +43,7 @@ export default function ClientCreateOrderModal({ open, onClose }) {
           role="dialog"
           aria-modal="true"
           aria-labelledby="admin-create-order-modal-title"
-          dir="rtl"
+          dir={dir}
           onMouseDown={(e) => e.stopPropagation()}
         >
           <header className="client-order-modal__head co-modal-ref__head">
@@ -48,14 +52,14 @@ export default function ClientCreateOrderModal({ open, onClose }) {
                 <FilePlus2 size={22} strokeWidth={2.25} />
               </span>
               <h2 id="admin-create-order-modal-title" className="client-order-modal__title co-modal-ref__title">
-                إنشاء طلب (إداري)
+                {t(`${c}.titleAdmin`)}
               </h2>
             </div>
             <button
               type="button"
               className="co-modal-ref__close"
               onClick={() => onClose()}
-              aria-label="إغلاق"
+              aria-label={t("clientArea.common.closeAria")}
             >
               <X size={20} strokeWidth={2.25} aria-hidden="true" />
             </button>
@@ -88,7 +92,7 @@ export default function ClientCreateOrderModal({ open, onClose }) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="client-create-order-modal-title"
-        dir="rtl"
+        dir={dir}
         onMouseDown={(e) => e.stopPropagation()}
       >
         <header className="client-order-modal__head co-modal-ref__head">
@@ -97,14 +101,14 @@ export default function ClientCreateOrderModal({ open, onClose }) {
               <FilePlus2 size={22} strokeWidth={2.25} />
             </span>
             <h2 id="client-create-order-modal-title" className="client-order-modal__title co-modal-ref__title">
-              إنشاء طلب
+              {t(`${c}.title`)}
             </h2>
           </div>
           <button
             type="button"
             className="co-modal-ref__close"
             onClick={() => onClose()}
-            aria-label="إغلاق"
+            aria-label={t("clientArea.common.closeAria")}
           >
             <X size={20} strokeWidth={2.25} aria-hidden="true" />
           </button>

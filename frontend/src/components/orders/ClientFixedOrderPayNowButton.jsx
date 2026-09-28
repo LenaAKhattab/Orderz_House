@@ -3,9 +3,13 @@ import { createClientFixedOrderCheckoutRequest } from "../../services/api";
 import { useToast } from "../ui/toastContext";
 import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
 import { isClientFixedOrderAwaitingStripeCheckout } from "../../utils/clientFixedOrderPayNow";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/clientAreaResources";
 
 export default function ClientFixedOrderPayNowButton({ order, className = "btn btn-primary" }) {
   const { push } = useToast();
+  const { t } = useTranslation();
+  const p = "clientArea.payNow";
   const [busy, setBusy] = useState(false);
   const inFlight = useRef(false);
 
@@ -19,15 +23,15 @@ export default function ClientFixedOrderPayNowButton({ order, className = "btn b
       const res = await createClientFixedOrderCheckoutRequest(order.id);
       const checkoutUrl = res?.data?.checkoutUrl || res?.checkoutUrl;
       if (!checkoutUrl) {
-        push({ type: "error", title: "تعذر بدء الدفع", message: "لم يُرجع الخادم رابط الدفع." });
+        push({ type: "error", title: t(`${p}.startErrorTitle`), message: t(`${p}.noCheckoutUrl`) });
         return;
       }
       window.location.href = checkoutUrl;
     } catch (e) {
       push({
         type: "error",
-        title: "تعذر بدء الدفع",
-        message: getSafeApiErrorMessage(e, "تعذر فتح صفحة الدفع. حاول مرة أخرى."),
+        title: t(`${p}.startErrorTitle`),
+        message: getSafeApiErrorMessage(e, t(`${p}.openCheckoutFallback`)),
       });
     } finally {
       inFlight.current = false;
@@ -37,7 +41,7 @@ export default function ClientFixedOrderPayNowButton({ order, className = "btn b
 
   return (
     <button type="button" className={className} disabled={busy} onClick={() => void onPay()}>
-      {busy ? "جارٍ التحويل…" : "ادفع الآن"}
+      {busy ? t("clientArea.common.busy.redirecting") : t(`${p}.label`)}
     </button>
   );
 }

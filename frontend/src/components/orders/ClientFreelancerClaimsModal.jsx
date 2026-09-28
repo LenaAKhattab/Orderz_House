@@ -4,6 +4,8 @@ import {
   listClientOrderClaimsRequest,
   rejectClientOrderClaimRequest,
 } from "../../services/api";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/clientAreaResources";
 
 function applicantDisplayName(row) {
   if (row?.displayName) return row.displayName;
@@ -14,6 +16,8 @@ function applicantDisplayName(row) {
 }
 
 export default function ClientFreelancerClaimsModal({ open, orderId, onClose, onChanged }) {
+  const { t } = useTranslation();
+  const c = "clientArea.freelancerClaims";
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [claims, setClaims] = useState([]);
@@ -30,14 +34,14 @@ export default function ClientFreelancerClaimsModal({ open, orderId, onClose, on
       setClaims(Array.isArray(payload?.claims) ? payload.claims : []);
       setOpenPool(Boolean(payload?.orderSummary?.hasOpenPool));
     } catch (e) {
-      const message = e?.response?.data?.message || e?.message || "تعذّر تحميل القائمة.";
+      const message = e?.response?.data?.message || e?.message || t(`${c}.loadError`);
       setError(message);
       setClaims([]);
       setOpenPool(false);
     } finally {
       setLoading(false);
     }
-  }, [orderId]);
+  }, [orderId, t]);
 
   useEffect(() => {
     if (open && orderId) load();
@@ -53,7 +57,7 @@ export default function ClientFreelancerClaimsModal({ open, orderId, onClose, on
       onChanged?.();
       onClose();
     } catch (e) {
-      setError(e?.response?.data?.message || e?.message || "تعذّر اعتماد المستقل.");
+      setError(e?.response?.data?.message || e?.message || t(`${c}.approveError`));
     } finally {
       setBusy(false);
     }
@@ -67,7 +71,7 @@ export default function ClientFreelancerClaimsModal({ open, orderId, onClose, on
       await load();
       onChanged?.();
     } catch (e) {
-      setError(e?.response?.data?.message || e?.message || "تعذّر الرفض.");
+      setError(e?.response?.data?.message || e?.message || t(`${c}.rejectError`));
     } finally {
       setBusy(false);
     }
@@ -99,10 +103,10 @@ export default function ClientFreelancerClaimsModal({ open, orderId, onClose, on
         style={{ maxWidth: 520, width: "100%", maxHeight: "90vh", overflow: "auto" }}
       >
         <h2 id="claims-modal-title" style={{ marginTop: 0 }}>
-          طلبات المستقلين على هذا الطلب
+          {t(`${c}.title`)}
         </h2>
         <p className="help" style={{ marginTop: 0 }}>
-          راجع من تقدّم لاستلام طلبك من المعرض. يمكنك اعتماد مستقل واحد فقط؛ سيتم رفض بقية الطلبات تلقائياً.
+          {t(`${c}.description`)}
         </p>
         {error ? (
           <p className="help" style={{ color: "#b91c1c", marginTop: 8 }}>
@@ -110,16 +114,16 @@ export default function ClientFreelancerClaimsModal({ open, orderId, onClose, on
           </p>
         ) : null}
         {loading ? (
-          <p className="help">جارٍ التحميل…</p>
+          <p className="help">{t("clientArea.common.loading")}</p>
         ) : !openPool ? (
-          <p className="help">لا يمكن عرض الطلبات هنا (الطلب غير منشور في المعرض أو تم إسناده مسبقاً).</p>
+          <p className="help">{t(`${c}.notAvailable`)}</p>
         ) : claims.length === 0 ? (
-          <p className="help">لا توجد طلبات معلّقة من المستقلين حالياً.</p>
+          <p className="help">{t(`${c}.empty`)}</p>
         ) : (
           <ul className="oh-claims-list" style={{ listStyle: "none", padding: 0, margin: "12px 0 0" }}>
-            {claims.map((c) => (
+            {claims.map((claim) => (
               <li
-                key={c.id}
+                key={claim.id}
                 className="card"
                 style={{
                   marginBottom: 10,
@@ -127,13 +131,13 @@ export default function ClientFreelancerClaimsModal({ open, orderId, onClose, on
                   border: "1px solid rgba(15, 23, 42, 0.08)",
                 }}
               >
-                <div style={{ fontWeight: 800 }}>{applicantDisplayName(c)}</div>
+                <div style={{ fontWeight: 800 }}>{applicantDisplayName(claim)}</div>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12, justifyContent: "flex-end" }}>
-                  <button type="button" className="btn btn-secondary" disabled={busy} onClick={() => reject(c.id)}>
-                    رفض
+                  <button type="button" className="btn btn-secondary" disabled={busy} onClick={() => reject(claim.id)}>
+                    {t("clientArea.common.reject")}
                   </button>
-                  <button type="button" className="btn btn-primary" disabled={busy} onClick={() => approve(c.id)}>
-                    موافقة وإسناد الطلب
+                  <button type="button" className="btn btn-primary" disabled={busy} onClick={() => approve(claim.id)}>
+                    {t(`${c}.approveAndAssign`)}
                   </button>
                 </div>
               </li>
@@ -142,7 +146,7 @@ export default function ClientFreelancerClaimsModal({ open, orderId, onClose, on
         )}
         <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 16 }}>
           <button type="button" className="btn btn-secondary" onClick={onClose} disabled={busy}>
-            إغلاق
+            {t("clientArea.common.close")}
           </button>
         </div>
       </div>

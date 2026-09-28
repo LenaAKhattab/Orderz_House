@@ -5,6 +5,8 @@ import {
   rejectClientOrderBidRequest,
 } from "../../services/api";
 import { JodMoneyDisplay } from "../money/JodMoneyDisplay";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/clientAreaResources";
 
 function applicantDisplayName(row) {
   if (row?.displayName) return row.displayName;
@@ -15,6 +17,8 @@ function applicantDisplayName(row) {
 }
 
 export default function ClientBiddingOffersModal({ open, orderId, order, onClose, onChanged }) {
+  const { t } = useTranslation();
+  const b = "clientArea.biddingOffers";
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [bids, setBids] = useState([]);
@@ -32,13 +36,13 @@ export default function ClientBiddingOffersModal({ open, orderId, order, onClose
       setBids(Array.isArray(payload?.bids) ? payload.bids : []);
       setOpenPool(Boolean(payload?.orderSummary?.hasOpenPool));
     } catch (e) {
-      setError(e?.response?.data?.message || e?.message || "تعذّر تحميل العروض.");
+      setError(e?.response?.data?.message || e?.message || t(`${b}.loadError`));
       setBids([]);
       setOpenPool(false);
     } finally {
       setLoading(false);
     }
-  }, [orderId]);
+  }, [orderId, t]);
 
   useEffect(() => {
     if (open && orderId) load();
@@ -56,9 +60,9 @@ export default function ClientBiddingOffersModal({ open, orderId, order, onClose
         window.location.href = checkoutUrl;
         return;
       }
-      setError("تعذّر إنشاء جلسة الدفع.");
+      setError(t(`${b}.checkoutSessionError`));
     } catch (e) {
-      setError(e?.response?.data?.message || e?.message || "تعذّر اعتماد العرض.");
+      setError(e?.response?.data?.message || e?.message || t(`${b}.acceptError`));
     } finally {
       setBusy(false);
     }
@@ -72,7 +76,7 @@ export default function ClientBiddingOffersModal({ open, orderId, order, onClose
       await load();
       onChanged?.();
     } catch (e) {
-      setError(e?.response?.data?.message || e?.message || "تعذّر رفض العرض.");
+      setError(e?.response?.data?.message || e?.message || t(`${b}.rejectError`));
     } finally {
       setBusy(false);
     }
@@ -104,10 +108,10 @@ export default function ClientBiddingOffersModal({ open, orderId, order, onClose
         style={{ maxWidth: 540, width: "100%", maxHeight: "90vh", overflow: "auto" }}
       >
         <h2 id="bids-modal-title" style={{ marginTop: 0 }}>
-          عروض الأسعار من المستقلين
+          {t(`${b}.title`)}
         </h2>
         <p className="help" style={{ marginTop: 0 }}>
-          النطاق المسموح للعروض:{" "}
+          {t(`${b}.allowedRange`)}{" "}
           {order?.bidBudgetMin != null && order?.bidBudgetMax != null ? (
             <JodMoneyDisplay amount={order.bidBudgetMin} amountMax={order.bidBudgetMax} compact />
           ) : (
@@ -115,7 +119,7 @@ export default function ClientBiddingOffersModal({ open, orderId, order, onClose
           )}
         </p>
         <p className="help" style={{ marginTop: 0 }}>
-          بعد اختيار العرض سيتم تحويلك للدفع أولاً. يبدأ المشروع مع المستقل المختار فقط بعد نجاح الدفع.
+          {t(`${b}.paymentHint`)}
         </p>
         {error ? (
           <p className="help" style={{ color: "#b91c1c", marginTop: 8 }}>
@@ -123,16 +127,16 @@ export default function ClientBiddingOffersModal({ open, orderId, order, onClose
           </p>
         ) : null}
         {loading ? (
-          <p className="help">جارٍ التحميل…</p>
+          <p className="help">{t("clientArea.common.loading")}</p>
         ) : !openPool ? (
-          <p className="help">لا يمكن عرض العروض هنا (الطلب ليس مزايدة بمدى سعر، أو تم إسناده، أو لم يعد في المعرض).</p>
+          <p className="help">{t(`${b}.notAvailable`)}</p>
         ) : bids.length === 0 ? (
-          <p className="help">لا توجد عروض معلّقة حالياً.</p>
+          <p className="help">{t(`${b}.empty`)}</p>
         ) : (
           <ul className="oh-claims-list" style={{ listStyle: "none", padding: 0, margin: "12px 0 0" }}>
-            {bids.map((b) => (
+            {bids.map((bid) => (
               <li
-                key={b.id}
+                key={bid.id}
                 className="card"
                 style={{
                   marginBottom: 10,
@@ -141,8 +145,8 @@ export default function ClientBiddingOffersModal({ open, orderId, order, onClose
                 }}
               >
                 <div style={{ fontWeight: 800, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-                  <span>{applicantDisplayName(b)}</span>
-                  {b.isPriority ? (
+                  <span>{applicantDisplayName(bid)}</span>
+                  {bid.isPriority ? (
                     <span
                       style={{
                         fontSize: 12,
@@ -153,34 +157,34 @@ export default function ClientBiddingOffersModal({ open, orderId, order, onClose
                         color: "#0e7490",
                       }}
                     >
-                      عرض أولوية
+                      {t(`${b}.priorityBid`)}
                     </span>
                   ) : null}
                 </div>
                 <div style={{ marginTop: 8, fontWeight: 700 }}>
-                  مبلغ العرض: <JodMoneyDisplay amount={b.amount} compact />
+                  {t(`${b}.bidAmount`)} <JodMoneyDisplay amount={bid.amount} compact />
                 </div>
-                {confirmBidId === b.id ? (
+                {confirmBidId === bid.id ? (
                   <div className="help" style={{ marginTop: 8 }}>
-                    سيتم الدفع الآن بقيمة العرض المختار قبل بدء العمل.
+                    {t(`${b}.payNowHint`)}
                   </div>
                 ) : null}
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12, justifyContent: "flex-end" }}>
-                  <button type="button" className="btn btn-secondary" disabled={busy} onClick={() => reject(b.id)}>
-                    رفض العرض
+                  <button type="button" className="btn btn-secondary" disabled={busy} onClick={() => reject(bid.id)}>
+                    {t(`${b}.rejectBid`)}
                   </button>
-                  {confirmBidId === b.id ? (
+                  {confirmBidId === bid.id ? (
                     <>
                       <button type="button" className="btn btn-secondary" disabled={busy} onClick={() => setConfirmBidId(null)}>
-                        إلغاء
+                        {t("clientArea.common.cancel")}
                       </button>
-                      <button type="button" className="btn btn-primary" disabled={busy} onClick={() => accept(b.id)}>
-                        تأكيد والدفع
+                      <button type="button" className="btn btn-primary" disabled={busy} onClick={() => accept(bid.id)}>
+                        {t(`${b}.confirmAndPay`)}
                       </button>
                     </>
                   ) : (
-                    <button type="button" className="btn btn-primary" disabled={busy} onClick={() => setConfirmBidId(b.id)}>
-                      اختيار العرض والدفع
+                    <button type="button" className="btn btn-primary" disabled={busy} onClick={() => setConfirmBidId(bid.id)}>
+                      {t(`${b}.selectBidAndPay`)}
                     </button>
                   )}
                 </div>
@@ -190,7 +194,7 @@ export default function ClientBiddingOffersModal({ open, orderId, order, onClose
         )}
         <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 16 }}>
           <button type="button" className="btn btn-secondary" onClick={onClose} disabled={busy}>
-            إغلاق
+            {t("clientArea.common.close")}
           </button>
         </div>
       </div>

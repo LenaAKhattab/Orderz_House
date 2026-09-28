@@ -1,5 +1,6 @@
 ﻿import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/clientAreaResources";
 import {
   formatOrderDuration,
   formatOrderProjectType,
@@ -78,6 +79,7 @@ function isPricedBidding(order) {
  */
 export default function ClientOrderCardCompact({ order, onOrdersChange }) {
   const { t, locale, dir } = useTranslation();
+  const oc = "clientArea.orderCard";
   const [expanded, setExpanded] = useState(false);
   const [detailOrder, setDetailOrder] = useState(null);
   const [claimsOpen, setClaimsOpen] = useState(false);
@@ -222,14 +224,14 @@ export default function ClientOrderCardCompact({ order, onOrdersChange }) {
         <span className="oh-mini-chip">
           {t("orders.card.filesLabel")}: {filesCount ? String(filesCount) : t("orders.card.no")}
           {order?.orderStatus === "completed" && deliveryFilesCount > 0 ? (
-            <span className="client-order-compact__hint"> ({deliveryFilesCount} تسليم)</span>
+            <span className="client-order-compact__hint"> {t(`${oc}.deliveryCount`, { count: deliveryFilesCount })}</span>
           ) : null}
         </span>
         {pricedBidding ? (
-          <span className="oh-mini-chip">العروض: {Number.isFinite(bidsCount) ? String(bidsCount) : "—"}</span>
+          <span className="oh-mini-chip">{t(`${oc}.bidsLabel`)} {Number.isFinite(bidsCount) ? String(bidsCount) : "—"}</span>
         ) : null}
         {pricedBidding && bidUsers.length ? (
-          <span className="oh-mini-chip">المتقدمون: {bidUsers.slice(0, 2).map((b) => bidderDisplayName(b)).join("، ")}{bidUsers.length > 2 ? ` +${bidUsers.length - 2}` : ""}</span>
+          <span className="oh-mini-chip">{t(`${oc}.applicantsLabel`)} {bidUsers.slice(0, 2).map((b) => bidderDisplayName(b)).join(locale === "ar" ? "، " : ", ")}{bidUsers.length > 2 ? ` +${bidUsers.length - 2}` : ""}</span>
         ) : null}
       </div>
 
@@ -237,7 +239,7 @@ export default function ClientOrderCardCompact({ order, onOrdersChange }) {
 
       {displayOrder?.clientRevisionNote ? (
         <p className="help" style={{ margin: "8px 0 0", padding: "10px 12px", background: "rgba(59, 130, 246, 0.08)", borderRadius: 10 }}>
-          <strong>ملاحظة تعديل منك للمستقل:</strong> {displayOrder.clientRevisionNote}
+          <strong>{t(`${oc}.revisionNotePrefix`)}</strong> {displayOrder.clientRevisionNote}
         </p>
       ) : null}
 
@@ -248,41 +250,41 @@ export default function ClientOrderCardCompact({ order, onOrdersChange }) {
       <footer className="client-order-compact__foot flex flex-wrap gap-2">
         <ClientFixedOrderPayNowButton order={order} />
         <button type="button" className="btn btn-secondary" onClick={() => setExpanded((v) => !v)}>
-          {expanded ? "طي الوصف" : "عرض الوصف كاملاً"}
+          {expanded ? t(`${oc}.collapseDescription`) : t(`${oc}.expandDescription`)}
         </button>
         {showClaimsButton ? (
           <button type="button" className="btn btn-primary" onClick={() => setClaimsOpen(true)}>
-            مراجعة طلبات المستقلين
+            {t(`${oc}.reviewFreelancerClaims`)}
           </button>
         ) : null}
         {showBiddingOffersButton ? (
           <button type="button" className="btn btn-primary" onClick={() => setBidsOpen(true)}>
-            عرض مقدمي العروض
+            {t(`${oc}.viewBidOffers`)}
           </button>
         ) : null}
         {showPostAssignActions ? (
           <>
             <button type="button" className="btn btn-secondary" onClick={() => setRevisionOpen(true)}>
-              طلب تعديل
+              {t(`${oc}.requestRevision`)}
             </button>
             <button type="button" className="btn btn-primary" onClick={() => setDeliveryModal({ open: true, variant: "workflow" })}>
-              استلام الطلب
+              {t(`${oc}.acceptDelivery`)}
             </button>
           </>
         ) : null}
         {showCompletedDeliveryArchive ? (
           <button type="button" className="btn btn-primary" onClick={() => setDeliveryModal({ open: true, variant: "archive" })}>
-            ملفات تسليم المستقل
+            {t(`${oc}.freelancerDeliveryFiles`)}
           </button>
         ) : null}
         {showReviewAction && reviewStatus?.canSubmit ? (
           <button type="button" className="btn btn-primary" onClick={() => setReviewOpen(true)}>
-            قيّم تجربتك مع المستقل
+            {t(`${oc}.rateFreelancer`)}
           </button>
         ) : null}
         {showReviewAction && reviewStatus?.existingReview ? (
           <button type="button" className="btn btn-secondary" onClick={() => setReviewOpen(true)}>
-            {reviewStatus.existingReview.canEdit ? "تعديل تقييمك" : "عرض تقييمك"}
+            {reviewStatus.existingReview.canEdit ? t(`${oc}.editReview`) : t(`${oc}.viewReview`)}
           </button>
         ) : null}
       </footer>
