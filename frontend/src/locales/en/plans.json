@@ -147,7 +147,7 @@
   },
   "cta": {
     "freelancersOnly": "Freelancers only",
-    "currentPlan": "Your current plan",
+    "currentPlan": "Your Current Plan",
     "lowerPlan": "Lower plan",
     "alreadySubscribed": "Already subscribed",
     "upgrade": "Upgrade plan",
@@ -158,6 +158,10 @@
     "buyMembership": "Buy package",
     "activateStarter": "Activate free plan",
     "startNow": "Start now"
+  },
+  "membershipWait": {
+    "status": "Waiting for First Order",
+    "startsOnFirstOrder": "Your membership period starts when you receive your first real order."
   },
   "pages": {
     "freelancers": {

@@ -303,6 +303,8 @@
     "termStartsWhen": "Subscription starts",
     "termStartsOnFirstOrder": "When you receive your first order",
     "statusPurchasedPendingStart": "Purchased — waiting for first order",
+    "statusAssignedNotStarted": "Waiting for First Order",
+    "assignedNotStartedBody": "Your membership period starts when you receive your first real order.",
     "checkoutSuccessTitle": "Membership purchased successfully",
     "checkoutSuccessMessage": "Membership purchased successfully. Your subscription period will not start until you receive your first order. Before applying to orders, please complete identity verification and training.",
     "checkoutWebhookHint": "Payment confirmation may take a short moment if the system is still processing the webhook. Refresh shortly if membership does not appear yet.",

@@ -16,17 +16,27 @@ export function isCurrentMarketplacePlanCard(plan, membershipSnapshot) {
     plan.tierCode || plan.tier_code || plan.title || plan.code,
   );
   const currentTier = normalizeMembershipTierCode(
-    membership.plan?.tierCode || membership.plan?.tier_code,
+    membershipSnapshot.currentPlanCode ||
+      membership.plan?.tierCode ||
+      membership.plan?.tier_code,
   );
   if (!planTier || !currentTier || planTier !== currentTier) return false;
-  const status = String(membership.status || "");
+  const status = String(membership.status || membershipSnapshot.membershipStatus || "");
   return [
+    "assigned_not_started",
     "starter_pending_start",
     "purchased_pending_start",
     "active",
     "cancel_at_period_end",
     "suspended",
   ].includes(status);
+}
+
+export function isAssignedNotStartedMembership(membershipSnapshot) {
+  return (
+    String(membershipSnapshot?.membership?.status || membershipSnapshot?.membershipStatus || "") ===
+    "assigned_not_started"
+  );
 }
 
 export function isStarterPendingStartMembership(membershipSnapshot) {

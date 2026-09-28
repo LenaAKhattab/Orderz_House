@@ -450,11 +450,35 @@ async function getMarketplaceMembershipById(membershipId, options = {}) {
   }
 }
 
+async function loadCanonicalMarketplaceDisplay(freelancerUserId) {
+  try {
+    const subscriptionsService = require("./subscriptionsService");
+    const { resolveCanonicalMarketplaceDisplay } = require("./canonicalCurrentMembershipDisplay");
+    const subscription = await subscriptionsService.getCurrentSubscriptionForFreelancer(freelancerUserId);
+    return resolveCanonicalMarketplaceDisplay(subscription);
+  } catch (err) {
+    if (err?.code !== "42P01") {
+      // eslint-disable-next-line no-console
+      console.error(
+        "[membership] canonical current membership display lookup failed:",
+        err?.message || err,
+      );
+    }
+    return null;
+  }
+}
+
+function withCanonicalMembershipDisplay(snapshot, canonicalDisplay) {
+  const { alignMembershipSnapshotToCanonical } = require("./canonicalCurrentMembershipDisplay");
+  return alignMembershipSnapshotToCanonical(snapshot, canonicalDisplay);
+}
+
 async function getFreelancerMarketplaceMembershipSnapshot(freelancerUserId, options = {}) {
   try {
     const now = toUtcDate(options.now || new Date());
+    const canonicalDisplay = await loadCanonicalMarketplaceDisplay(freelancerUserId);
     let membership = await resolveCurrentMarketplaceMembershipForFreelancer(freelancerUserId, options);
-    if (!membership && options.ensureStarterPending !== false) {
+    if (!membership && !canonicalDisplay && options.ensureStarterPending !== false) {
       try {
         const ensured = await ensureStarterPendingEntitlement({
           freelancerUserId,
@@ -482,17 +506,20 @@ async function getFreelancerMarketplaceMembershipSnapshot(freelancerUserId, opti
       }
     }
     if (!membership) {
-      return {
-        hasMembership: false,
-        membership: null,
-        currentCycle: null,
-        priorityBid: {
-          allowed: 0,
-          used: 0,
-          remaining: 0,
-          engineAvailable: false,
+      return withCanonicalMembershipDisplay(
+        {
+          hasMembership: false,
+          membership: null,
+          currentCycle: null,
+          priorityBid: {
+            allowed: 0,
+            used: 0,
+            remaining: 0,
+            engineAvailable: false,
+          },
         },
-      };
+        canonicalDisplay,
+      );
     }
 
     // Reconcile calendar for active/cancel_at_period_end/suspended while current
@@ -581,7 +608,8 @@ async function getFreelancerMarketplaceMembershipSnapshot(freelancerUserId, opti
       }
     }
 
-    return {
+    return withCanonicalMembershipDisplay(
+      {
       hasMembership: true,
       membership: {
         id: current.id,
@@ -635,7 +663,9 @@ async function getFreelancerMarketplaceMembershipSnapshot(freelancerUserId, opti
         engineAvailable: false,
         membershipBenefitsUsable: benefitsUsable,
       },
-    };
+    },
+      canonicalDisplay,
+    );
   } catch (err) {
     if (isMissingRelationError(err)) {
       return {
