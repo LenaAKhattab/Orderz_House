@@ -793,7 +793,7 @@ export default function InstitutionalOrderStorageListPage() {
                 <tbody>
                   {storages.map((s) => {
                     const names = institutionNames(s);
-                    const namesText = names.join("، ") || "—";
+                    const namesText = names.join(locale === "en" ? ", " : "، ") || "—";
                     return (
                       <tr key={s.id}>
                         <td className="max-w-[14rem] align-middle">
@@ -843,7 +843,7 @@ export default function InstitutionalOrderStorageListPage() {
             <ul className="oh-ios-mobile-cards m-0 grid list-none gap-3 p-0 xl:hidden">
               {storages.map((s) => {
                 const names = institutionNames(s);
-                const namesText = names.join("، ") || "—";
+                const namesText = names.join(locale === "en" ? ", " : "، ") || "—";
                 return (
                   <li key={`m-${s.id}`} className="dash-ui-form-card grid gap-2 p-3.5">
                     <Link to={`${BASE}/${s.id}`} className="break-words text-base font-bold leading-snug" title={s.name}>

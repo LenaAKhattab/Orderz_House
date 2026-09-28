@@ -51,7 +51,13 @@
     "loadSubSubcategories": "Could not load detailed categories.",
     "loadOrders": "Could not load requests. Please try again.",
     "loadPage": "Could not load this page",
-    "generic": "Something went wrong. Please try again."
+    "generic": "Something went wrong. Please try again.",
+    "timeout": "The request took too long. Check your connection and try again.",
+    "network": "Could not reach the server. Check your connection and try again.",
+    "unavailable": "This action is not available.",
+    "pricingChanged": "The approved price changed. Refresh the page and review the amount in JOD before submitting again.",
+    "rateLimited": "Too many requests were sent. Wait a moment and try again.",
+    "orderCreateFailed": "Could not create the request. Please try again."
   },
   "pagination": {
     "navAria": "Pagination",

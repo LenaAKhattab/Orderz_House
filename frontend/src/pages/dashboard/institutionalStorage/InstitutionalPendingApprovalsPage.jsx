@@ -387,7 +387,7 @@ export default function InstitutionalPendingApprovalsPage() {
                 </thead>
                 <tbody>
                   {orders.map((o) => {
-                    const instText = (o.institutions || []).map((i) => i.name).join("، ") || "—";
+                    const instText = (o.institutions || []).map((i) => i.name).join(locale === "en" ? ", " : "، ") || "—";
                     return (
                       <tr key={o.id}>
                         <td className="max-w-[12rem] align-middle">
@@ -428,7 +428,7 @@ export default function InstitutionalPendingApprovalsPage() {
 
             <ul className="m-0 grid list-none gap-3 p-0 lg:hidden">
               {orders.map((o) => {
-                const instText = (o.institutions || []).map((i) => i.name).join("، ") || "—";
+                const instText = (o.institutions || []).map((i) => i.name).join(locale === "en" ? ", " : "، ") || "—";
                 return (
                   <li key={`m-${o.id}`} className="dash-ui-form-card grid gap-2 p-3.5">
                     <strong className="break-words">{o.title}</strong>

@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "../../../i18n/LanguageProvider";
+import { formatLocaleDate } from "../../../i18n/formatLocale";
+import { readStoredLocale } from "../../../i18n/localePreference";
 import { fetchLegacyFreelancerIdentityBlob } from "../../../services/api";
 
-export function formatDate(value) {
-  if (!value) return "—";
-  const d = new Date(value);
-  if (!Number.isFinite(d.getTime())) return "—";
-  return new Intl.DateTimeFormat("ar-JO-u-nu-latn", { dateStyle: "medium", timeStyle: "short" }).format(d);
+export function formatDate(value, locale = readStoredLocale()) {
+  return formatLocaleDate(value, locale);
 }
 
 export function formatMoney(amount, currency = "JOD") {
@@ -28,8 +27,9 @@ export function identityStatusLabel(identity, t) {
   return t("legacy.common.incomplete");
 }
 
-export function categoriesLabel(categories) {
-  if (Array.isArray(categories) && categories.length) return categories.join("، ");
+export function categoriesLabel(categories, locale = readStoredLocale()) {
+  const joiner = locale === "en" ? ", " : "، ";
+  if (Array.isArray(categories) && categories.length) return categories.join(joiner);
   if (typeof categories === "string" && categories.trim()) return categories;
   return "—";
 }

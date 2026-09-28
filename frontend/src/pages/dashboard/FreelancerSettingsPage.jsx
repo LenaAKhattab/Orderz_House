@@ -30,7 +30,7 @@ const URL_OPTIONAL = (s) => {
 
 export default function FreelancerSettingsPage() {
   const { refreshUser, user } = useAuth();
-  const { t, dir } = useTranslation();
+  const { t, dir, locale } = useTranslation();
   const s = "freelancerDashboard.settings";
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
@@ -77,7 +77,7 @@ export default function FreelancerSettingsPage() {
         setWhatsApp(u.whatsApp || "");
         setProfessionalTitle(u.professionalTitle || "");
         setBio(u.bio || "");
-        setSkillsText(Array.isArray(u.skills) ? u.skills.join("، ") : "");
+        setSkillsText(Array.isArray(u.skills) ? u.skills.join(locale === "en" ? ", " : "، ") : "");
         setWebsiteUrl(u.websiteUrl || "");
         setLinkedinUrl(u.linkedinUrl || "");
         setGithubUrl(u.githubUrl || "");
@@ -94,7 +94,7 @@ export default function FreelancerSettingsPage() {
     } finally {
       setLoading(false);
     }
-  }, [t]);
+  }, [t, locale]);
 
   useEffect(() => {
     load();

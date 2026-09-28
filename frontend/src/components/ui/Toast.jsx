@@ -9,7 +9,7 @@ const ICON_BY_TYPE = {
 };
 
 export default function Toast({ toast, index = 0, onClose }) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const timerRef = useRef(null);
   const remainingRef = useRef(Math.max(0, Number(toast.durationMs) || 0));
   const startedAtRef = useRef(0);
@@ -47,7 +47,14 @@ export default function Toast({ toast, index = 0, onClose }) {
   const type = toast.type || "info";
   const icon = ICON_BY_TYPE[type] || ICON_BY_TYPE.info;
   const defaultTitle = t(`common.toast.${type}`);
-  const title = toast.title || defaultTitle || t("common.toast.info");
+  const sanitize = (value) => {
+    if (locale === "en" && /[\u0600-\u06FF]/.test(String(value || ""))) {
+      return t("common.errors.generic");
+    }
+    return value;
+  };
+  const title = sanitize(toast.title) || defaultTitle || t("common.toast.info");
+  const message = toast.message ? sanitize(toast.message) : "";
 
   return (
     <article
@@ -63,7 +70,7 @@ export default function Toast({ toast, index = 0, onClose }) {
       </div>
       <div className="toast-content">
         <div className="toast-title">{title}</div>
-        {toast.message ? <div className="toast-message">{toast.message}</div> : null}
+        {message ? <div className="toast-message">{message}</div> : null}
       </div>
       <button type="button" className="toast-close" onClick={() => onClose(toast.id)} aria-label={t("common.toast.closeAria")}>
         ×

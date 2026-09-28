@@ -263,7 +263,10 @@
     "showActiveTitle": "Show active users",
     "showActiveHint": "Display active user count on the homepage",
     "showActiveAria": "Show active users on the homepage",
-    "metricsExplainerAria": "Homepage metrics explained"
+    "metricsExplainerAria": "Homepage metrics explained",
+    "helpTitle": "What is the difference between the two metrics?",
+    "helpVisitors": "Homepage counter: one visit per session (30 minutes). Refreshing or navigating within the same session does not count again.",
+    "helpActive": "Active users: unique visitors (a session or an account) who opened the site in the last 7 days, from the local database."
   },
   "attentionSidePanel": {
     "title": "Needs your action",

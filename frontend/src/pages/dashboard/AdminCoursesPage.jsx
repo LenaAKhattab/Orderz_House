@@ -794,7 +794,7 @@ export default function AdminCoursesPage() {
     } catch (err) {
       const labels = err?.response?.data?.missingLabels;
       const base = err?.response?.data?.message || t("courses.toast.publishBlocked");
-      toast.error(labels?.length ? `${base} (${labels.join("، ")})` : base);
+      toast.error(labels?.length ? `${base} (${labels.join(locale === "en" ? ", " : "، ")})` : base);
     } finally {
       setLoading(false);
     }
@@ -985,7 +985,7 @@ export default function AdminCoursesPage() {
         if (updatedCourse?.isActive) {
           toast.success(t("courses.toast.publishedGlobal"));
         } else {
-          const missing = publishReadiness?.missingLabels?.filter(Boolean).join("، ");
+          const missing = publishReadiness?.missingLabels?.filter(Boolean).join(locale === "en" ? ", " : "، ");
           toast.error(
             missing
               ? t("courses.toast.visibilityGlobalDraftMissing", { missing })

@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "../../../i18n/LanguageProvider";
 import "../../../i18n/opsAdminResources";
 import { getPublicHomeStatsRequest } from "../../../services/api";
-import { HOME_PUBLIC_METRICS, HOME_METRICS_ADMIN_HELP } from "../../../constants/homeAnalyticsMetrics";
 import HomeMetricsHelpCollapsible from "./HomeMetricsHelpCollapsible";
 
 function formatPreviewNumber(value) {
@@ -25,13 +24,13 @@ function HomeStatsPreview({ showVisitors, showActiveUsers, visitors, activeUsers
           {showVisitors ? (
             <div className="sa-home-preview__metric sa-home-preview__metric--visitors">
               <span className="sa-home-preview__value">{loading ? "…" : formatPreviewNumber(visitors)}</span>
-              <span className="sa-home-preview__label">{HOME_PUBLIC_METRICS.views.label}</span>
+              <span className="sa-home-preview__label">{t("home.metrics.views")}</span>
             </div>
           ) : null}
           {showActiveUsers ? (
             <div className="sa-home-preview__metric sa-home-preview__metric--active">
               <span className="sa-home-preview__value">{loading ? "…" : formatPreviewNumber(activeUsers)}</span>
-              <span className="sa-home-preview__label">{HOME_PUBLIC_METRICS.active.label}</span>
+              <span className="sa-home-preview__label">{t("home.metrics.activeUsers")}</span>
             </div>
           ) : null}
         </div>
@@ -148,9 +147,9 @@ export default function PlatformHomeStatsSettings({
       </div>
 
       <HomeMetricsHelpCollapsible
-        title={HOME_METRICS_ADMIN_HELP.title}
-        visitorsLine={HOME_METRICS_ADMIN_HELP.visitors}
-        activeLine={HOME_METRICS_ADMIN_HELP.active}
+        title={t(`${hp}.helpTitle`)}
+        visitorsLine={t(`${hp}.helpVisitors`)}
+        activeLine={t(`${hp}.helpActive`)}
       />
     </div>
   );
