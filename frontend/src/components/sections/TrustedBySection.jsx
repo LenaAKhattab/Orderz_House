@@ -89,12 +89,15 @@ function LogoSoftConstruct() {
   );
 }
 
+import { useTranslation } from "../../i18n/LanguageProvider";
+
 const TrustedBySection = () => {
+  const { t } = useTranslation();
   return (
     <section className="trusted-by-section" aria-labelledby="trusted-by-heading">
       <div className="container trusted-by-section__inner">
         <h2 id="trusted-by-heading" className="trusted-by-section__title">
-          اكتسبنا ثقتهم وثقة أكثر من 150+ شركة
+          {t("home.partnersTrustedTagline")}
         </h2>
         <div className="trusted-by-section__logos" dir="ltr">
           <div className="trusted-by-section__logo-cell">

@@ -163,7 +163,7 @@ function MarketplaceOrderRow({
   const rowDisabled = actionsDisabled || planLockedForUser || collectionClosed;
   const guestLoginLabel = t("orders.marketplace.loginFirst");
   const rowDisabledReason = collectionClosed
-    ? collectionLabel || (locale === "en" ? "Applications closed" : "التقديم مغلق")
+    ? collectionLabel || t("orders.marketplace.applicationsClosed")
     : planLockedForUser
     ? poolOrderPlanLockUserMessage(order)
     : actionsDisabledReason;
@@ -237,7 +237,7 @@ function MarketplaceOrderRow({
               ) : null}
               {Number(order?.relistCount) > 0 ? (
                 <span className="oh-order-row__chip">
-                  {locale === "en" ? "Updated opportunity" : "فرصة محدّثة"}
+                  {t("orders.marketplace.updatedOpportunity")}
                 </span>
               ) : null}
             </div>

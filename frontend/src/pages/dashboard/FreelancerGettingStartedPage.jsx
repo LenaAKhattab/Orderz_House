@@ -9,9 +9,12 @@ import DashboardErrorState from "../../components/dashboard/DashboardErrorState"
 import { getOnboardingGettingStartedRequest } from "../../services/api";
 import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
 import { resolveSafeInternalNavPath } from "../../utils/safeInternalNavPath";
+import { useTranslation } from "../../i18n/LanguageProvider";
 import "./freelancerGettingStarted.css";
 
 export default function FreelancerGettingStartedPage() {
+  const { t } = useTranslation();
+  const gs = "dashboard.gettingStartedPage";
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -23,11 +26,11 @@ export default function FreelancerGettingStartedPage() {
       const res = await getOnboardingGettingStartedRequest();
       setItems(Array.isArray(res?.data?.items) ? res.data.items : []);
     } catch (err) {
-      setError(getSafeApiErrorMessage(err) || "تعذر تحميل مركز البداية.");
+      setError(getSafeApiErrorMessage(err) || t(`${gs}.loadError`));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void load();
@@ -38,8 +41,8 @@ export default function FreelancerGettingStartedPage() {
       <div className="fgs-page">
         <DashboardPageHeader
           className="fgs-page__header"
-          title="مركز البداية"
-          description="شروحات قصيرة لآلية العمل في Orderz House. المحتوى يُدار من لوحة الإدارة."
+          title={t(`${gs}.title`)}
+          description={t(`${gs}.description`)}
         />
         <DashboardSection className="fgs-page__section">
           {loading ? <DashboardLoadingState /> : null}
@@ -47,8 +50,8 @@ export default function FreelancerGettingStartedPage() {
           {!loading && !error && items.length === 0 ? (
             <DashboardEmptyState
               className="fgs-empty"
-              title="لا توجد مقالات بعد"
-              description="سيظهر الدليل هنا بعد تفعيل محتوى مركز البداية من الإدارة. إن لم تُطبَّق الهجرة بعد، أكمل التدريب وطلب التفعيل من لوحة التحكم."
+              title={t(`${gs}.emptyTitle`)}
+              description={t(`${gs}.emptyDescription`)}
             />
           ) : null}
           {!loading && !error && items.length > 0 ? (

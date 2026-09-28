@@ -1,7 +1,11 @@
+import { useTranslation } from "../../i18n/LanguageProvider";
+
 /**
  * Shared confirmation before claiming a pool order (same copy as freelancer orders list).
  */
 export default function TakePoolOrderConfirmModal({ open, busy, onClose, onConfirm }) {
+  const { t } = useTranslation();
+  const pc = "orders.poolConfirm";
   if (!open) return null;
 
   return (
@@ -30,10 +34,10 @@ export default function TakePoolOrderConfirmModal({ open, busy, onClose, onConfi
         style={{ maxWidth: 480, width: "100%" }}
       >
         <h3 id="take-confirm-title" style={{ marginTop: 0, marginBottom: 8 }}>
-          تأكيد الإجراء
+          {t(`${pc}.title`)}
         </h3>
         <p className="help" style={{ marginTop: 0 }}>
-          يرجى قراءة تفاصيل الطلب بعناية قبل استلامه أو تقديم عرض سعر عليه.
+          {t(`${pc}.body`)}
         </p>
         <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 14 }}>
           <button
@@ -44,10 +48,10 @@ export default function TakePoolOrderConfirmModal({ open, busy, onClose, onConfi
               await onConfirm();
             }}
           >
-            {busy ? "جارٍ التنفيذ…" : "متأكد"}
+            {busy ? t("dashboard.ui.executing") : t(`${pc}.confirm`)}
           </button>
           <button type="button" className="btn btn-secondary" onClick={onClose} disabled={busy}>
-            إلغاء
+            {t(`${pc}.cancel`)}
           </button>
         </div>
       </div>

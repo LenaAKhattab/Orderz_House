@@ -7,12 +7,12 @@ import "./home-landing-top.css";
  * @param {{ ads?: import("../../types/ad.js").Ad[]; adsLoading?: boolean; statsPayload?: object | null }} p
  */
 export default function HomeTopSection({ ads = [], adsLoading = false, statsPayload = null }) {
-  const { dir } = useTranslation();
+  const { dir, t } = useTranslation();
 
   return (
     <section
       className="home-top-section w-full min-w-0 overflow-x-clip bg-transparent"
-      aria-label="المقدمة والعروض"
+      aria-label={t("home.hero.adsAria")}
     >
       <div className="home-top-section__inner mx-auto w-full min-w-0 max-w-screen-2xl pt-4 pb-8 sm:pt-6 sm:pb-10 lg:pt-8 lg:pb-12">
         <div className="home-top-section__hero min-w-0" dir={dir}>

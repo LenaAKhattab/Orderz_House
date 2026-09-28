@@ -1,3 +1,6 @@
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/planAdminResources";
+
 const FEATURE_WIDTHS = ["88%", "74%", "92%", "68%"];
 
 function Skel({ className = "", style }) {
@@ -8,13 +11,14 @@ function Skel({ className = "", style }) {
  * Compact placeholder for the three catalog tabs while default_plan_catalog is unresolved.
  * Avoids marking the wrong tab as معروض الآن.
  */
-export function PlanCatalogNavSkeleton({ isEn = false }) {
+export function PlanCatalogNavSkeleton() {
+  const { t } = useTranslation();
   return (
     <div
       className="oh-sapl-section-toggle__tabs"
       role="status"
       aria-busy="true"
-      aria-label={isEn ? "Plan catalogs" : "أقسام الباقات"}
+      aria-label={t("planAdmin.catalog.skeletonCatalogs")}
       data-plan-catalog-nav-skel="true"
     >
       <span className="oh-sapl-skel oh-sapl-section-toggle__tab-skel" />
@@ -28,13 +32,14 @@ export function PlanCatalogNavSkeleton({ isEn = false }) {
  * Compact placeholder for تعيين كافتراضي / ✓ معروض الآن.
  * Same slot size as the resolved control — no loading copy.
  */
-export function DefaultPlanControlSkeleton({ isEn = false }) {
+export function DefaultPlanControlSkeleton() {
+  const { t } = useTranslation();
   return (
     <span
       className="oh-sapl-skel oh-sapl-default-control__skel"
       role="status"
       aria-busy="true"
-      aria-label={isEn ? "Default catalog status" : "حالة الباقات الافتراضية"}
+      aria-label={t("planAdmin.catalog.skeletonDefaultStatus")}
     />
   );
 }
@@ -125,15 +130,15 @@ export function PlanCardsGridSkeleton({
   count = 4,
   className = "oh-sapl-cards",
   variant = "admin",
-  isEn = false,
 }) {
+  const { t } = useTranslation();
   const Card = variant === "marketplace" ? MarketplacePlanCardSkeleton : PlanCardSkeleton;
   return (
     <div
       className={className}
       role="status"
       aria-busy="true"
-      aria-label={isEn ? "Plan catalog" : "كتالوج الباقات"}
+      aria-label={t("planAdmin.catalog.skeletonCatalog")}
     >
       {Array.from({ length: count }).map((_, index) => (
         <Card key={index} />

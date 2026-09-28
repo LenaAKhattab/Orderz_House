@@ -6,6 +6,7 @@ import HomePromoOffersCarousel from "./HomePromoOffersCarousel";
 import HomePromoOfferCard from "./HomePromoOfferCard";
 import HomeStickyAdsDock from "./HomeStickyAdsDock";
 import { getOrderedHomeOffersAds } from "./homeOffersTheme";
+import { useTranslation } from "../../i18n/LanguageProvider";
 import "./home-promo-offers.css";
 
 const INITIAL_VISIBLE = 6;
@@ -29,6 +30,8 @@ export default function HomePromoOffersSection({
   showTitle = true,
   variant = "default",
 }) {
+  const { t } = useTranslation();
+  const pa = "home.promoAds";
   const tracked = useRef(new Set());
   const triggerRef = useRef(/** @type {HTMLElement | null} */ (null));
   const sectionRef = useRef(/** @type {HTMLElement | null} */ (null));
@@ -111,7 +114,7 @@ export default function HomePromoOffersSection({
         className={sectionClass}
         dir="rtl"
         aria-labelledby={showTitle ? "home-promo-offers-heading" : undefined}
-        aria-label={showTitle ? undefined : "عروض وإعلانات"}
+        aria-label={showTitle ? undefined : t(`${pa}.offersSectionAria`)}
       >
         {showHead ? (
           <header className="home-promo-offers__head">
@@ -119,13 +122,13 @@ export default function HomePromoOffersSection({
               <div className="home-promo-offers__title-block">
                 <SparkleIcon />
                 <h2 id="home-promo-offers-heading" className="home-promo-offers__title">
-                  عروض وإعلانات مميزة
+                  {t(`${pa}.offersSectionTitle`)}
                 </h2>
               </div>
             ) : null}
             {showMore ? (
               <button type="button" className="home-promo-offers__more-btn" onClick={() => setExpanded(true)}>
-                عرض المزيد
+                {t(`${pa}.showMore`)}
               </button>
             ) : null}
           </header>

@@ -72,8 +72,10 @@ describe("Phase 1C.5 finance routes", () => {
 
   it("legacy activation page is deprecated (no manual activate queue UI)", () => {
     const src = read("pages/dashboard/AdminSubscriptionsActivationPage.jsx");
+    const arCopy = read("locales/ar/subscriptions.json");
     assert.match(src, /membership-activation-deprecated/);
-    assert.match(src, /لم تعد هذه الصفحة مستخدمة/);
+    assert.match(src, /subscriptions\.activationPage\.body1/);
+    assert.match(arCopy, /لم تعد هذه الصفحة مستخدمة/);
     assert.doesNotMatch(src, /activateSubscriptionCompanyRequest/);
     assert.doesNotMatch(src, /listActivationQueueRequest/);
     assert.doesNotMatch(src, /training.package|TRAINING_PACKAGES|startCheckout/i);

@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "../../../i18n/LanguageProvider";
+import "../../../i18n/opsAdminResources";
 import { getPublicHomeStatsRequest } from "../../../services/api";
 import { HOME_PUBLIC_METRICS, HOME_METRICS_ADMIN_HELP } from "../../../constants/homeAnalyticsMetrics";
 import HomeMetricsHelpCollapsible from "./HomeMetricsHelpCollapsible";
@@ -9,13 +11,15 @@ function formatPreviewNumber(value) {
 }
 
 function HomeStatsPreview({ showVisitors, showActiveUsers, visitors, activeUsers, loading }) {
+  const { t } = useTranslation();
+  const hp = "opsAdmin.homePublicStats";
   const hasAny = showVisitors || showActiveUsers;
 
   return (
     <div className="sa-home-preview" aria-live="polite">
-      <p className="sa-home-preview__lead">سيظهر للزوار:</p>
+      <p className="sa-home-preview__lead">{t(`${hp}.previewLead`)}</p>
       {!hasAny ? (
-        <p className="sa-home-preview__empty">لن تُعرض أرقام في الصفحة الرئيسية.</p>
+        <p className="sa-home-preview__empty">{t(`${hp}.previewEmpty`)}</p>
       ) : (
         <div className="sa-home-preview__row">
           {showVisitors ? (
@@ -70,6 +74,8 @@ export default function PlatformHomeStatsSettings({
   onToggleVisitors,
   onToggleActiveUsers,
 }) {
+  const { t } = useTranslation();
+  const hp = "opsAdmin.homePublicStats";
   const [preview, setPreview] = useState({ visitors: null, activeUsers: null });
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewShowVisitors, setPreviewShowVisitors] = useState(showVisitors);
@@ -118,26 +124,26 @@ export default function PlatformHomeStatsSettings({
 
       <div className="sa-platform-settings__toggles">
         <SettingToggleRow
-          title="عرض مشاهدات الموقع"
-          hint="إظهار إجمالي مشاهدات الصفحات في الصفحة الرئيسية"
+          title={t(`${hp}.showViewsTitle`)}
+          hint={t(`${hp}.showViewsHint`)}
           checked={showVisitors}
           disabled={disabled}
           onChange={(checked) => {
             setPreviewShowVisitors(checked);
             onToggleVisitors(checked);
           }}
-          ariaLabel="عرض مشاهدات الموقع في الصفحة الرئيسية"
+          ariaLabel={t(`${hp}.showViewsAria`)}
         />
         <SettingToggleRow
-          title="عرض المستخدمين النشطين"
-          hint="إظهار عدد المستخدمين النشطين في الصفحة الرئيسية"
+          title={t(`${hp}.showActiveTitle`)}
+          hint={t(`${hp}.showActiveHint`)}
           checked={showActiveUsers}
           disabled={disabled}
           onChange={(checked) => {
             setPreviewShowActive(checked);
             onToggleActiveUsers(checked);
           }}
-          ariaLabel="عرض المستخدمين النشطين في الصفحة الرئيسية"
+          ariaLabel={t(`${hp}.showActiveAria`)}
         />
       </div>
 

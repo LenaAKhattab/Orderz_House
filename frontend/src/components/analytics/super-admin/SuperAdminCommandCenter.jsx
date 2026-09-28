@@ -9,7 +9,7 @@ const FORECAST_LABEL_KEYS = {
 };
 
 function ForecastPremiumBlock({ forecasts, growthPct }) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const revenue = forecasts.find((f) => f.id === "revenue");
   const orders = forecasts.find((f) => f.id === "orders");
   const subs = forecasts.find((f) => f.id === "subscriptions");
@@ -27,7 +27,7 @@ function ForecastPremiumBlock({ forecasts, growthPct }) {
         <div className="sa-forecast-premium__copy">
           <p className="sa-forecast-premium__eyebrow m-0">{t("analysis.commandCenter.eyebrow")}</p>
           <p className="sa-forecast-premium__value m-0">
-            {headline.unit === "money" ? formatMoneyJod(headline.estimate) : formatInt(headline.estimate)}
+            {headline.unit === "money" ? formatMoneyJod(headline.estimate, locale) : formatInt(headline.estimate)}
             {headline.unit !== "money" ? <span className="sa-forecast-premium__unit"> {headlineLabel}</span> : null}
           </p>
           <p className="sa-forecast-premium__basis m-0">{t("analysis.commandCenter.basis")}</p>
@@ -36,7 +36,7 @@ function ForecastPremiumBlock({ forecasts, growthPct }) {
       {hasGrowth ? (
         <p className="sa-forecast-premium__growth m-0">
           <span className="sa-forecast-premium__growth-label">{t("analysis.commandCenter.growthLabel")}</span>
-          <strong className="sa-forecast-premium__growth-value">{formatPctChange(growthPct)}</strong>
+          <strong className="sa-forecast-premium__growth-value">{formatPctChange(growthPct, locale)}</strong>
         </p>
       ) : null}
       <ul className="sa-forecast-premium__metrics m-0 p-0 list-none">

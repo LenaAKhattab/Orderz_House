@@ -253,5 +253,20 @@
     "description": "The link you tried to open may be incorrect or may have moved.",
     "backDashboard": "Back to dashboard",
     "backHome": "Back to home"
+  },
+  "homePublicStats": {
+    "previewLead": "Visitors will see:",
+    "previewEmpty": "No numbers will be shown on the homepage.",
+    "showViewsTitle": "Show site views",
+    "showViewsHint": "Display total page views on the homepage",
+    "showViewsAria": "Show site views on the homepage",
+    "showActiveTitle": "Show active users",
+    "showActiveHint": "Display active user count on the homepage",
+    "showActiveAria": "Show active users on the homepage",
+    "metricsExplainerAria": "Homepage metrics explained"
+  },
+  "attentionSidePanel": {
+    "title": "Needs your action",
+    "description": "Priorities and suggested tasks to help you decide quickly."
   }
 }

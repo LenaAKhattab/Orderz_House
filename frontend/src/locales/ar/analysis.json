@@ -587,5 +587,35 @@
     "noon": "12 ظهراً",
     "am": "{{hour}} صباحاً",
     "pm": "{{hour}} مساءً"
+  },
+  "platformScore": {
+    "stable": "مستقر",
+    "down": "تراجع في طلبات الشهر",
+    "up": "نمو في طلبات الشهر",
+    "needsAttention": "تحتاج متابعة",
+    "excellent": "ممتازة",
+    "good": "جيدة",
+    "steady": "مستقرة",
+    "staleOrders": "الطلبات المتأخرة",
+    "staleOrdersDetail": "{{count}} طلب مفتوح منذ أكثر من 72 ساعة — يخفض النتيجة.",
+    "staleOrdersNone": "لا توجد طلبات متأخرة حالياً.",
+    "staleClaims": "المطالبات المالية",
+    "staleClaimsDetail": "{{count}} مطالبة معلّقة أكثر من 7 أيام.",
+    "staleClaimsNone": "لا مطالبات مالية متأخرة.",
+    "activations": "الاشتراكات المعلقة",
+    "activationsDetail": "{{count}} اشتراك بانتظار تفعيل من الإدارة.",
+    "activationsNone": "لا اشتراكات بانتظار التفعيل.",
+    "freelancers": "نشاط المستقلين",
+    "freelancersDetail": "{{count}} مشترك بلا طلبات منذ 30 يوماً من بداية الاشتراك.",
+    "freelancersNone": "المشتركون النشطون يعملون على المنصة.",
+    "completion": "جودة الإكمال",
+    "completionDetail": "معدل إكمال الطلبات {{rate}}٪ على إجمالي المنصة.",
+    "completionNone": "بيانات غير كافية لقياس الإكمال.",
+    "growth": "اتجاه النمو",
+    "growthDetail": "طلبات الشهر: {{note}}{{pct}}."
+  },
+  "homeLoad": {
+    "timeout": "استغرق تحميل لوحة التحكم وقتًا أطول من المتوقع.",
+    "failed": "تعذر تحميل لوحة التحكم."
   }
 }

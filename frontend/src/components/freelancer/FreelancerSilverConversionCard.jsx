@@ -4,6 +4,7 @@ import {
   recordFreelancerActivationCtaViewedRequest,
   startFreelancerSilverCheckoutRequest,
 } from "../../services/api";
+import { useTranslation } from "../../i18n/LanguageProvider";
 import {
   formatSilverUpgradeButtonLabel,
   silverConversionErrorMessage,
@@ -19,6 +20,8 @@ export default function FreelancerSilverConversionCard({
   isEn = false,
   onCheckoutStarted = null,
 }) {
+  const { t } = useTranslation();
+  const sc = "freelancerDashboard.silverConversion";
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -70,7 +73,7 @@ export default function FreelancerSilverConversionCard({
       data-reason={conversion.reason || "none"}
     >
       <p className="mb-1 text-[0.95rem] font-extrabold text-[color:var(--dash-text,#172033)]">
-        {cta.title || "استمر في استقبال فرص العمل عبر Silver"}
+        {cta.title || t(`${sc}.defaultTitle`)}
       </p>
       <p className="mb-2 text-[0.84rem] font-semibold text-[color:var(--dash-text-secondary,#4b5563)]">
         {cta.description}
@@ -99,21 +102,21 @@ export default function FreelancerSilverConversionCard({
           disabled={busy}
           onClick={() => void onUpgrade()}
         >
-          {busy ? (isEn ? "Starting…" : "جاري البدء…") : buttonLabel}
+          {busy ? t(`${sc}.starting`) : buttonLabel}
         </button>
         <a
           href="#earned-balance"
           className="text-[0.82rem] font-bold text-[color:var(--dash-primary,#2f3b65)]"
           data-testid="silver-earned-balance-secondary"
         >
-          {cta.secondaryLabel || "عرض تفاصيل الرصيد المكتسب"}
+          {cta.secondaryLabel || t(`${sc}.earnedBalanceLink`)}
         </a>
         <Link
           to={plansRoute}
           className="text-[0.78rem] font-semibold text-[color:var(--dash-text-secondary,#4b5563)]"
           data-testid="silver-plans-handoff-link"
         >
-          {isEn ? "Open plans" : "عرض الباقات"}
+          {t(`${sc}.openPlans`)}
         </Link>
       </div>
     </div>

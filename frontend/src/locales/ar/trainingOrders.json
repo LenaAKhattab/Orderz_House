@@ -629,5 +629,10 @@
     "prev": "السابق",
     "next": "التالي",
     "pageOf": "صفحة {{page}} من {{totalPages}} — إجمالي {{total}}"
+  },
+  "widgetFrame": {
+    "loading": "جاري التحميل…",
+    "errorTitle": "تعذر تحميل هذه البيانات حالياً",
+    "retry": "إعادة المحاولة"
   }
 }

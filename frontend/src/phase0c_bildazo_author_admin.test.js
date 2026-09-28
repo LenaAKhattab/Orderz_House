@@ -22,11 +22,11 @@ describe("Super Admin Bildazo author links page", () => {
   it("renders pending filters and manual link dialog contracts", () => {
     assert.ok(BILDAZO_ADMIN_STATUS_FILTERS.some((item) => item.value === "pending_new_account"));
     const page = read("pages/dashboard/SuperAdminBildazoAuthorLinksPage.jsx");
-    assert.match(page, /ربط حسابات Bildazo/);
+    assert.match(page, /bildazoAdmin\.page\.title/);
     assert.match(page, /data-testid="bildazo-admin-filters"/);
     assert.match(page, /data-testid="bildazo-manual-link-dialog"/);
-    assert.match(page, /أؤكد أنني تحققت من ملكية حساب Bildazo قبل الربط/);
-    assert.match(page, /حساب الكاتب مرتبط/);
+    assert.match(page, /bildazoAdmin\.dialog\.confirmVerified/);
+    assert.match(page, /bildazoAdmin\.page\.linkedBadge/);
     assert.match(page, /disabled=\{!canSubmit \|\| saving\}/);
     assert.doesNotMatch(page, /type=["']password["']/);
     assert.doesNotMatch(page, /تم إنشاء الحساب/);
@@ -79,7 +79,7 @@ describe("Super Admin Bildazo author links page", () => {
   it("freelancer article page linked state renders compact account widget", () => {
     const widget = read("components/freelancer/FreelancerBildazoLinkedAccountWidget.jsx");
     assert.match(widget, /data-testid="bildazo-linked-profile"/);
-    assert.match(widget, /حساب Bildazo مرتبط/);
+    assert.match(widget, /articles\.bildazoGate\.linkedTitle/);
     assert.match(widget, /link\?\.linked\?\.bildazoProfileUrl/);
     assert.equal(isBildazoAuthorLinked({ status: "linked" }), true);
   });

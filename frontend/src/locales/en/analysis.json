@@ -587,5 +587,35 @@
     "noon": "12 PM",
     "am": "{{hour}} AM",
     "pm": "{{hour}} PM"
+  },
+  "platformScore": {
+    "stable": "Steady",
+    "down": "Monthly orders declined",
+    "up": "Monthly orders grew",
+    "needsAttention": "Needs attention",
+    "excellent": "Excellent",
+    "good": "Good",
+    "steady": "Stable",
+    "staleOrders": "Late orders",
+    "staleOrdersDetail": "{{count}} open orders older than 72 hours — this lowers the score.",
+    "staleOrdersNone": "No late orders right now.",
+    "staleClaims": "Financial claims",
+    "staleClaimsDetail": "{{count}} claims pending for more than 7 days.",
+    "staleClaimsNone": "No late financial claims.",
+    "activations": "Pending memberships",
+    "activationsDetail": "{{count}} memberships waiting for admin activation.",
+    "activationsNone": "No memberships waiting for activation.",
+    "freelancers": "Freelancer activity",
+    "freelancersDetail": "{{count}} members with no orders for 30 days after membership start.",
+    "freelancersNone": "Active members are working on the platform.",
+    "completion": "Completion quality",
+    "completionDetail": "Order completion rate is {{rate}}% across the platform.",
+    "completionNone": "Not enough data to measure completion.",
+    "growth": "Growth trend",
+    "growthDetail": "Orders this month: {{note}}{{pct}}."
+  },
+  "homeLoad": {
+    "timeout": "The dashboard took longer than expected to load.",
+    "failed": "Could not load the dashboard."
   }
 }

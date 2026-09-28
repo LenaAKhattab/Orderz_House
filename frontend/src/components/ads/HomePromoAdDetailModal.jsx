@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { useTranslation } from "../../i18n/LanguageProvider";
 import SafeAdImage from "./SafeAdImage";
 import { linkTargetRel, primaryHref } from "./adUtils";
 import { resolvePublicBannerSurface } from "./homeOffersTheme";
@@ -9,6 +10,8 @@ import { buildWhatsAppHref, getBannerMetaFromTexts, parseSalePercent } from "./b
  * @param {{ ad: import("../../types/ad.js").Ad | null; onClose: () => void }} p
  */
 export default function HomePromoAdDetailModal({ ad, onClose }) {
+  const { t } = useTranslation();
+  const pa = "home.promoAds";
   const ref = useRef(null);
   const syncingRef = useRef(false);
 
@@ -102,7 +105,7 @@ export default function HomePromoAdDetailModal({ ad, onClose }) {
               data-ad-modal-close
               className="home-promo-ad-modal__close"
               onClick={() => ref.current?.close()}
-              aria-label="إغلاق نافذة التفاصيل"
+              aria-label={t(`${pa}.closeDetailModal`)}
             >
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                 <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" />
@@ -139,12 +142,12 @@ export default function HomePromoAdDetailModal({ ad, onClose }) {
                 {description}
               </p>
             ) : (
-              <p className="home-promo-ad-modal__desc home-promo-ad-modal__desc--muted">لا يوجد وصف إضافي.</p>
+              <p className="home-promo-ad-modal__desc home-promo-ad-modal__desc--muted">{t(`${pa}.noExtraDescription`)}</p>
             )}
 
             {saleN != null ? (
               <p className="home-promo-ad-modal__desc" style={{ color: surface.textColor }}>
-                <strong>الخصم:</strong> {saleN}%
+                <strong>{t(`${pa}.discountLabel`)}</strong> {saleN}%
               </p>
             ) : null}
 
@@ -152,12 +155,12 @@ export default function HomePromoAdDetailModal({ ad, onClose }) {
               <p className="home-promo-ad-modal__desc" style={{ color: surface.textColor }}>
                 {phone ? (
                   <span dir="ltr" style={{ display: "block" }}>
-                    هاتف: {phone}
+                    {t(`${pa}.phoneLabel`)} {phone}
                   </span>
                 ) : null}
                 {waHref ? (
                   <a href={waHref} target="_blank" rel="noopener noreferrer" dir="ltr" style={{ display: "inline-block", marginTop: 6, fontWeight: 700 }}>
-                    واتساب
+                    {t(`${pa}.whatsapp`)}
                   </a>
                 ) : null}
               </p>

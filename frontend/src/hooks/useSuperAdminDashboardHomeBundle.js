@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { useTranslation } from "../i18n/LanguageProvider";
+import { presentServerMessage } from "../i18n/presentServerMessage";
 import {
   getSuperadminDashboardHomeFastRequest,
   getSuperadminDashboardHomeIntelligenceRequest,
@@ -14,18 +16,19 @@ function devLog(...args) {
   if (DEV_TIMING) console.debug("[superadmin-dashboard]", ...args);
 }
 
-function mapError(e) {
+function mapError(e, t, locale) {
   const code = e?.code || "";
   const message = String(e?.message || "");
   if (code === "ERR_CANCELED" || code === "CanceledError") {
     return { canceled: true, message: "" };
   }
   if (code === "ECONNABORTED" || /timeout/i.test(message)) {
-    return { canceled: false, message: "استغرق تحميل لوحة التحكم وقتًا أطول من المتوقع." };
+    return { canceled: false, message: t("analysis.homeLoad.timeout") };
   }
+  const presented = presentServerMessage(e, t, locale);
   return {
     canceled: false,
-    message: e?.response?.data?.message || message || "تعذر تحميل لوحة التحكم.",
+    message: presented || t("analysis.homeLoad.failed"),
   };
 }
 
@@ -82,6 +85,12 @@ async function trackRequest(label, fn) {
  * @param {{ posthogRange?: string, cacheKey?: string } | null} periodQuery
  */
 export function useSuperAdminDashboardHomeBundle(periodQuery = null) {
+  const { t, locale } = useTranslation();
+  const tRef = useRef(t);
+  const localeRef = useRef(locale);
+  tRef.current = t;
+  localeRef.current = locale;
+
   const [fastData, setFastData] = useState(null);
   const [executiveData, setExecutiveData] = useState(null);
   const [intelligenceData, setIntelligenceData] = useState(null);
@@ -156,7 +165,7 @@ export function useSuperAdminDashboardHomeBundle(periodQuery = null) {
       setFastData(res?.data || null);
     } catch (e) {
       if (gen !== fastGenRef.current) return;
-      const mapped = mapError(e);
+      const mapped = mapError(e, tRef.current, localeRef.current);
       if (mapped.canceled) return;
       setFastError(mapped.message);
     } finally {
@@ -189,7 +198,7 @@ export function useSuperAdminDashboardHomeBundle(periodQuery = null) {
       setExecutiveData(res?.data || null);
     } catch (e) {
       if (gen !== executiveGenRef.current) return;
-      const mapped = mapError(e);
+      const mapped = mapError(e, tRef.current, localeRef.current);
       if (mapped.canceled) return;
       setExecutiveError(mapped.message);
     } finally {
@@ -223,7 +232,7 @@ export function useSuperAdminDashboardHomeBundle(periodQuery = null) {
         setPosthogData(res?.data || null);
       } catch (e) {
         if (gen !== posthogGenRef.current) return;
-        const mapped = mapError(e);
+        const mapped = mapError(e, tRef.current, localeRef.current);
         if (mapped.canceled) return;
         setPosthogError(mapped.message);
       } finally {
@@ -259,7 +268,7 @@ export function useSuperAdminDashboardHomeBundle(periodQuery = null) {
         setIntelligenceData(res?.data || null);
       } catch (e) {
         if (gen !== intelligenceGenRef.current) return;
-        const mapped = mapError(e);
+        const mapped = mapError(e, tRef.current, localeRef.current);
         if (mapped.canceled) return;
         setIntelligenceError(mapped.message);
       } finally {

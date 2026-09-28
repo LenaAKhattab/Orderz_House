@@ -505,6 +505,8 @@
     },
     "security": {
       "title": "Security",
+      "mustChangeTitle": "Password change required",
+      "mustChangeBody": "Your account was created with a temporary password. Set a new password below before continuing. Use your national ID as the current password if you have not changed it before.",
       "currentPassword": "Current password",
       "newPassword": "New password",
       "confirmPassword": "Confirm password",
@@ -516,6 +518,7 @@
       "success": "Password updated.",
       "error": "Could not change password."
     },
+    "preferredCurrencyTitle": "Preferred display currency",
     "notifications": {
       "title": "Notification settings",
       "orders": "Order notifications",
@@ -1185,5 +1188,16 @@
       "goDashboard": "Go to dashboard",
       "goArticles": "Marketplace articles"
     }
+  },
+  "onboardingPanel": {
+    "completeNow": "Complete now",
+    "gettingStarted": "Getting started",
+    "remindLater": "Remind me later"
+  },
+  "silverConversion": {
+    "defaultTitle": "Keep receiving work opportunities with Silver",
+    "starting": "Starting…",
+    "earnedBalanceLink": "View earned balance details",
+    "openPlans": "View plans"
   }
 }

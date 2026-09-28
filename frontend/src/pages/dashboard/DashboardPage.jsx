@@ -143,10 +143,10 @@ const DashboardPage = () => {
           </div>
         </header>
         <div className="dash-grid">
-          <Section title="قريباً">
+          <Section title={t("dashboard.comingSoon.sectionTitle")}>
             <EmptyState
-              title="هذه الصفحة قيد الإعداد"
-              subtitle="سيتم إضافة محتوى لوحة التحكم حسب الدور قريباً."
+              title={t("dashboard.comingSoon.title")}
+              subtitle={t("dashboard.comingSoon.subtitle")}
             />
           </Section>
         </div>

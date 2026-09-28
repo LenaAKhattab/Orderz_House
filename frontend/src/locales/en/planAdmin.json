@@ -32,6 +32,7 @@
     }
   },
   "common": {
+    "toggle": "Toggle",
     "cancel": "Cancel",
     "close": "Close",
     "closeDialog": "Close dialog",

@@ -1,15 +1,12 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "../../i18n/LanguageProvider";
 import { getOnboardingGettingStartedRequest } from "../../services/api";
 import { CTA_CLASS } from "./FreelancerOnboardingPanel";
 
-const FALLBACK = {
-  mini_bid_intro:
-    "Mini Bid هي فرصة عمل صغيرة أو محددة تستطيع التقديم عليها باستخدام إحدى المناقصات المتاحة ضمن اشتراكك. بعد التقديم يتم تقييم المتقدمين، وإذا تم اختيارك ينتقل الطلب إلى حسابك للتنفيذ والتسليم.",
-  article_mini_bid_intro:
-    "Mini Bid Article هي فرصة لكتابة مقال وفق عنوان وشروط وعدد كلمات ومتطلبات محددة. تستخدم مناقصة للتقديم، وإذا تم اختيارك تقوم بكتابة المقال وتسليمه من خلال المنصة، ثم يخضع للتدقيق والمراجعة قبل اعتماده وإضافة مستحقاته إلى حسابك.",
-};
-
-export default function OpportunityHelpTrigger({ conditionKey, label = "ما هذا؟" }) {
+export default function OpportunityHelpTrigger({ conditionKey, label }) {
+  const { t } = useTranslation();
+  const oh = "orders.opportunityHelp";
+  const resolvedLabel = label ?? t(`${oh}.defaultLabel`);
   const [open, setOpen] = useState(false);
   const [item, setItem] = useState(null);
 
@@ -31,8 +28,12 @@ export default function OpportunityHelpTrigger({ conditionKey, label = "ما ه�
     };
   }, [open, conditionKey]);
 
-  const title = item?.title || (conditionKey === "article_mini_bid_intro" ? "ما هو Mini Bid Article؟" : "ما هو Mini Bid؟");
-  const body = item?.body || FALLBACK[conditionKey] || FALLBACK.mini_bid_intro;
+  const title =
+    item?.title ||
+    (conditionKey === "article_mini_bid_intro" ? t(`${oh}.articleMiniBidTitle`) : t(`${oh}.miniBidTitle`));
+  const body =
+    item?.body ||
+    (conditionKey === "article_mini_bid_intro" ? t(`${oh}.articleMiniBidFallback`) : t(`${oh}.miniBidFallback`));
 
   return (
     <>
@@ -41,7 +42,7 @@ export default function OpportunityHelpTrigger({ conditionKey, label = "ما ه�
         className="inline-flex cursor-pointer items-center gap-[0.3rem] border-0 bg-transparent text-[0.72rem] font-bold text-[var(--dash-primary,#2f3b65)]"
         onClick={() => setOpen(true)}
       >
-        {label}
+        {resolvedLabel}
       </button>
       {open ? (
         <div
@@ -53,14 +54,14 @@ export default function OpportunityHelpTrigger({ conditionKey, label = "ما ه�
           <button
             type="button"
             className="absolute inset-0 border-0 bg-[rgb(17_24_39/0.45)]"
-            aria-label="إغلاق"
+            aria-label={t(`${oh}.close`)}
             onClick={() => setOpen(false)}
           />
           <div className="relative w-[min(32rem,100%)] rounded-2xl bg-[var(--dash-card,#fff)] p-[1.2rem] leading-[1.7]">
             <h2 id="oh-help-title">{title}</h2>
             <p>{body}</p>
             <button type="button" className={CTA_CLASS} onClick={() => setOpen(false)}>
-              حسنًا
+              {t(`${oh}.ok`)}
             </button>
           </div>
         </div>

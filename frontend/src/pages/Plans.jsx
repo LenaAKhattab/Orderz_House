@@ -136,7 +136,7 @@ const Plans = () => {
     if (!isFreelancer) {
       push({
         type: "warning",
-        message: t("plans.specialOffer.freelancersOnly") || "العرض متاح للمستقلين فقط.",
+        message: t("plans.specialOffer.freelancersOnly"),
       });
       return;
     }
@@ -145,14 +145,13 @@ const Plans = () => {
     try {
       const res = await createSpecialOfferCheckoutRequest();
       const url = res?.data?.checkoutUrl;
-      if (!url) throw new Error(t("plans.specialOffer.checkoutMissingUrl") || "تعذر بدء الدفع.");
+      if (!url) throw new Error(t("plans.specialOffer.checkoutMissingUrl"));
       window.location.href = url;
     } catch (err) {
       const msg =
         err?.response?.data?.message ||
         err?.message ||
-        t("plans.specialOffer.checkoutFailed") ||
-        "تعذر بدء شراء العرض.";
+        t("plans.specialOffer.checkoutFailed");
       push({ type: "warning", message: msg });
       setSpecialOfferCheckoutBusy(false);
     }

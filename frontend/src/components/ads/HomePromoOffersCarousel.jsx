@@ -1,6 +1,7 @@
 import Autoplay from "embla-carousel-autoplay";
 import useEmblaCarousel from "embla-carousel-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "../../i18n/LanguageProvider";
 import HomePromoOfferCard from "./HomePromoOfferCard";
 import "./home-promo-offers-carousel.css";
 
@@ -33,6 +34,8 @@ function ChevronIcon({ flipped = false }) {
  * }} p
  */
 export default function HomePromoOffersCarousel({ ads, variant = "default", openDetails, onTrackClick }) {
+  const { t } = useTranslation();
+  const pa = "home.promoAds";
   const isHero = variant === "hero";
   const multi = ads.length > 1;
 
@@ -121,8 +124,8 @@ export default function HomePromoOffersCarousel({ ads, variant = "default", open
     <div
       className={rootClass}
       role="region"
-      aria-roledescription="عرض دوّار"
-      aria-label={isHero ? "إعلانات مميزة — عرض دوّار" : "عروض وإعلانات مميزة — عرض دوّار"}
+      aria-roledescription={t(`${pa}.carouselRole`)}
+      aria-label={isHero ? t(`${pa}.carouselHeroAria`) : t(`${pa}.carouselOffersAria`)}
     >
       <div className="home-promo-offers__carousel-stage">
         {multi ? (
@@ -130,7 +133,7 @@ export default function HomePromoOffersCarousel({ ads, variant = "default", open
             type="button"
             className="home-promo-offers__carousel-arrow home-promo-offers__carousel-arrow--prev"
             onClick={scrollPrev}
-            aria-label="الإعلان السابق"
+            aria-label={t(`${pa}.previousAd`)}
           >
             <ChevronIcon />
           </button>
@@ -162,7 +165,7 @@ export default function HomePromoOffersCarousel({ ads, variant = "default", open
             type="button"
             className="home-promo-offers__carousel-arrow home-promo-offers__carousel-arrow--next"
             onClick={scrollNext}
-            aria-label="الإعلان التالي"
+            aria-label={t(`${pa}.nextAd`)}
           >
             <ChevronIcon flipped />
           </button>
@@ -170,14 +173,14 @@ export default function HomePromoOffersCarousel({ ads, variant = "default", open
       </div>
 
       {multi && snapCount > 1 ? (
-        <div className="home-promo-offers__carousel-dots" role="tablist" aria-label="مؤشر الشرائح">
+        <div className="home-promo-offers__carousel-dots" role="tablist" aria-label={t(`${pa}.dotsAria`)}>
           {Array.from({ length: snapCount }, (_, i) => (
             <button
               key={i}
               type="button"
               role="tab"
               aria-selected={i === selectedIndex}
-              aria-label={`الشريحة ${i + 1} من ${snapCount}`}
+              aria-label={t(`${pa}.slideOf`, { current: i + 1, total: snapCount })}
               className={`home-promo-offers__carousel-dot${i === selectedIndex ? " is-active" : ""}`}
               onClick={() => scrollTo(i)}
             />

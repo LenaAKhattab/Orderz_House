@@ -11,10 +11,10 @@ import "../ads/home-promo-offers.css";
  * Full homepage skeleton (below real navbar). Mirrors `Home` section shells for stable layout.
  */
 export default function PublicHomePageSkeleton() {
-  const { dir } = useTranslation();
+  const { dir, t } = useTranslation();
 
   return (
-    <div className="home-page-skeleton flex min-w-0 w-full flex-1 flex-col bg-page-bg" aria-busy="true" aria-label="جاري تحميل الصفحة">
+    <div className="home-page-skeleton flex min-w-0 w-full flex-1 flex-col bg-page-bg" aria-busy="true" aria-label={t("common.skeleton.loadingPage")}>
       <div className="home-landing-vp min-w-0">
         <section className="home-top-section w-full min-w-0 overflow-x-clip bg-page-bg">
           <div className="home-top-section__inner mx-auto w-full min-w-0 max-w-screen-2xl px-4 pt-4 pb-8 sm:px-6 sm:pt-6 sm:pb-10 lg:px-10 lg:pt-8 lg:pb-12 xl:px-12">

@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "../../i18n/LanguageProvider";
 import {
   FALLBACK_DEMO,
   resolveNumber,
@@ -7,19 +8,6 @@ import {
 
 /** Auto-rotate dashboard tabs (ms) */
 const ROTATE_INTERVAL_MS = 3600;
-
-/** Page 1 — analytics only */
-const ANALYTICS_STATS = [
-  { key: "views", label: "مشاهدات", demo: FALLBACK_DEMO.views, tone: "purple" },
-  { key: "active", label: "مستخدمون نشطون", demo: FALLBACK_DEMO.activeUsers, tone: "blue" },
-];
-
-/** Page 2 — project pipeline only (order: مفتوحة, قيد التنفيذ, then مكتملة full row) */
-const PROJECT_STATS = [
-  { key: "open", label: "مفتوحة", demo: FALLBACK_DEMO.open, tone: "orange" },
-  { key: "inProgress", label: "قيد التنفيذ", demo: FALLBACK_DEMO.inProgress, tone: "gold" },
-  { key: "completed", label: "مكتملة", demo: FALLBACK_DEMO.completed, tone: "green", fullWidth: true },
-];
 
 function IconEye({ className }) {
   return (
@@ -148,6 +136,24 @@ function StatCards({ stats, statsPayload, mode }) {
 }
 
 export default function HeroDashboardMockup({ statsPayload }) {
+  const { t } = useTranslation();
+  const hm = "home.heroMockup";
+  const hs = "home.heroStrip";
+  const analyticsStats = useMemo(
+    () => [
+      { key: "views", label: t(`${hs}.views`), demo: FALLBACK_DEMO.views, tone: "purple" },
+      { key: "active", label: t(`${hs}.activeUsers`), demo: FALLBACK_DEMO.activeUsers, tone: "blue" },
+    ],
+    [t, hs],
+  );
+  const projectStats = useMemo(
+    () => [
+      { key: "open", label: t(`${hs}.open`), demo: FALLBACK_DEMO.open, tone: "orange" },
+      { key: "inProgress", label: t(`${hs}.inProgress`), demo: FALLBACK_DEMO.inProgress, tone: "gold" },
+      { key: "completed", label: t(`${hs}.completed`), demo: FALLBACK_DEMO.completed, tone: "green", fullWidth: true },
+    ],
+    [t, hs],
+  );
   const [page, setPage] = useState("analytics");
   const [rotatePaused, setRotatePaused] = useState(false);
   /** Bump to reset the auto-rotate timer after manual tab selection */
@@ -166,8 +172,7 @@ export default function HeroDashboardMockup({ statsPayload }) {
     setRotateEpoch((n) => n + 1);
   };
 
-  const headSub =
-    page === "analytics" ? "مؤشرات الزوار والنشاط على المنصة" : "حالة الطلبات والمشاريع في لمحة";
+  const headSub = page === "analytics" ? t(`${hm}.analyticsCaption`) : t(`${hm}.projectsCaption`);
 
   return (
     <div className="home-hero__dash-stage">
@@ -180,18 +185,18 @@ export default function HeroDashboardMockup({ statsPayload }) {
       <div
         className="home-hero__dash"
         role="region"
-        aria-label="معاينة لوحة تحكم"
+        aria-label={t(`${hm}.previewAria`)}
         onMouseEnter={() => setRotatePaused(true)}
         onMouseLeave={() => setRotatePaused(false)}
       >
         <div className="home-hero__dash-body">
-          <aside className="home-hero__dash-side" aria-label="أقسام لوحة التحكم">
+          <aside className="home-hero__dash-side" aria-label={t(`${hm}.sectionsAria`)}>
             <button
               type="button"
               className={`home-hero__dash-side-btn ${page === "analytics" ? "home-hero__dash-side-btn--on home-hero__dash-side-btn--analytics" : "home-hero__dash-side-btn--idle"}`}
               onClick={() => selectPage("analytics")}
               aria-pressed={page === "analytics"}
-              title="نظرة عامة والتحليلات"
+              title={t(`${hm}.overviewTitle`)}
             >
               <IconHome className="home-hero__dash-side-ic" />
             </button>
@@ -200,7 +205,7 @@ export default function HeroDashboardMockup({ statsPayload }) {
               className={`home-hero__dash-side-btn ${page === "projects" ? "home-hero__dash-side-btn--on home-hero__dash-side-btn--projects" : "home-hero__dash-side-btn--idle"}`}
               onClick={() => selectPage("projects")}
               aria-pressed={page === "projects"}
-              title="المشاريع والطلبات"
+              title={t(`${hm}.projectsTitle`)}
             >
               <IconFolder className="home-hero__dash-side-ic" />
             </button>
@@ -209,7 +214,7 @@ export default function HeroDashboardMockup({ statsPayload }) {
           <div className="home-hero__dash-main" dir="rtl">
             <header className="home-hero__dash-head">
               <div className="home-hero__dash-head-text">
-                <p className="home-hero__dash-welcome">مرحباً بك</p>
+                <p className="home-hero__dash-welcome">{t(`${hm}.welcome`)}</p>
                 <p className="home-hero__dash-sub" aria-live="polite">
                   {headSub}
                 </p>
@@ -221,13 +226,13 @@ export default function HeroDashboardMockup({ statsPayload }) {
                 className={`home-hero__dash-panel-layer ${page === "analytics" ? "is-active" : ""}`}
                 aria-hidden={page !== "analytics"}
               >
-                <StatCards stats={ANALYTICS_STATS} statsPayload={statsPayload} mode="analytics" />
+                <StatCards stats={analyticsStats} statsPayload={statsPayload} mode="analytics" />
               </div>
               <div
                 className={`home-hero__dash-panel-layer ${page === "projects" ? "is-active" : ""}`}
                 aria-hidden={page !== "projects"}
               >
-                <StatCards stats={PROJECT_STATS} statsPayload={statsPayload} mode="projects" />
+                <StatCards stats={projectStats} statsPayload={statsPayload} mode="projects" />
               </div>
             </div>
           </div>

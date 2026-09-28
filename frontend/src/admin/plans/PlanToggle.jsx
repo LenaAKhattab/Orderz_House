@@ -1,4 +1,6 @@
 import { useId } from "react";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/planAdminResources";
 
 /**
  * Accessible toggle row (replaces crowded checkboxes).
@@ -13,9 +15,10 @@ import { useId } from "react";
  * }} p
  */
 export default function PlanToggle({ label, description = "", checked, disabled = false, onChange, compact = false, ariaLabel = "" }) {
+  const { t } = useTranslation();
   const uid = useId();
   const inputId = `${uid}-plan-toggle`;
-  const a11y = ariaLabel || label || "تبديل";
+  const a11y = ariaLabel || label || t("planAdmin.common.toggle");
 
   if (compact || !label) {
     return (

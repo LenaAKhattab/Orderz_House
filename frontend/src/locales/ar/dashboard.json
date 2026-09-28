@@ -1011,6 +1011,41 @@
     "financialUserPanel": "بونصاتي",
     "default": "لوحة التحكم"
   },
+  "ui": {
+    "confirm": "تأكيد",
+    "cancel": "إلغاء",
+    "close": "إغلاق",
+    "tabsAria": "أقسام",
+    "executing": "جارٍ التنفيذ…"
+  },
+  "comingSoon": {
+    "sectionTitle": "قريباً",
+    "title": "هذه الصفحة قيد الإعداد",
+    "subtitle": "سيتم إضافة محتوى لوحة التحكم حسب الدور قريباً."
+  },
+  "gettingStartedPage": {
+    "title": "مركز البداية",
+    "description": "شروحات قصيرة لآلية العمل في Orderz House. المحتوى يُدار من لوحة الإدارة.",
+    "loadError": "تعذر تحميل مركز البداية.",
+    "emptyTitle": "لا توجد مقالات بعد",
+    "emptyDescription": "سيظهر الدليل هنا بعد تفعيل محتوى مركز البداية من الإدارة. إن لم تُطبَّق الهجرة بعد، أكمل التدريب وطلب التفعيل من لوحة التحكم."
+  },
+  "homeAside": {
+    "aria": "ملخص سريع",
+    "activityCompletion": "إكمال النشاط",
+    "clientHint": "بناءً على نسبة الطلبات المكتملة.",
+    "freelancerHint": "مؤشر سريع لنشاطك على المنصة.",
+    "todayNumbers": "أرقام اليوم",
+    "totalOrders": "إجمالي الطلبات",
+    "pendingPayment": "بانتظار الدفع",
+    "totalPaid": "إجمالي المدفوع",
+    "workStatus": "حالة العمل",
+    "subscription": "الاشتراك",
+    "poolPreview": "فرص المعرض (عرض)",
+    "assignedOrders": "طلبات مسندة",
+    "claimsPending": "مطالبات قيد المراجعة",
+    "weeklyActivity": "نشاط أسبوعي"
+  },
   "freelancer": {
     "accountReadiness": {
       "completeCoursesTitle": "أكمل الدورات المطلوبة أولاً",

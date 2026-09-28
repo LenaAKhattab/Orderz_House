@@ -6,6 +6,9 @@ import { shouldShowBrowserPush } from "../utils/notificationPreferenceRules";
 import { mergeNotificationPrefs } from "../utils/accountDisplay";
 import { NOTIFICATIONS_REFRESH_EVENT } from "../services/api";
 import { NotificationRealtimeContext } from "./notificationRealtimeContext";
+import "../i18n/notificationsUiResources";
+import { getTranslation } from "../lib/translation/getTranslation.js";
+import { readStoredLocale } from "../i18n/localePreference.js";
 
 export function NotificationRealtimeProvider({ children }) {
   const { user } = useAuth();
@@ -32,7 +35,7 @@ export function NotificationRealtimeProvider({ children }) {
       }
 
       showBrowserNotification({
-        title: notification.title || "إشعار جديد",
+        title: notification.title || getTranslation("notificationsUi.bell.newNotification", readStoredLocale()),
         body: notification.message || "",
         link: notification.link,
         tag: notification.id ? String(notification.id) : undefined,

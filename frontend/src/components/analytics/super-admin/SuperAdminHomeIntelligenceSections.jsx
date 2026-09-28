@@ -192,7 +192,7 @@ export default function SuperAdminHomeIntelligenceSections({
   period,
   periodLabel,
 }) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const resolvedPeriodLabel =
     periodLabel || (period?.labelKey ? t(period.labelKey) : t("analysis.home.defaultPeriod"));
   const summary = intelligence?.summary?.data;
@@ -203,7 +203,7 @@ export default function SuperAdminHomeIntelligenceSections({
   const courses = intelligence?.courses?.data;
   const categories = intelligence?.categories?.data;
   const financial = intelligence?.financial?.data;
-  const operationalCharts = buildOperationalCharts(intelligence, resolvedPeriodLabel);
+  const operationalCharts = buildOperationalCharts(intelligence, resolvedPeriodLabel, locale);
 
   const summaryFailed = sectionFailed(sectionErrors, "summary");
   const ordersFailed = sectionFailed(sectionErrors, "orders");

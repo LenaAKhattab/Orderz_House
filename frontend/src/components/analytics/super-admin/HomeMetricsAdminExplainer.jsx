@@ -1,10 +1,13 @@
 import { HOME_METRICS_ADMIN_EXPLAINER } from "../../../constants/homeAnalyticsMetrics";
+import { useTranslation } from "../../../i18n/LanguageProvider";
+import "../../../i18n/opsAdminResources";
 import "../home-analytics-metric-info.css";
 
 export default function HomeMetricsAdminExplainer() {
+  const { t } = useTranslation();
   const x = HOME_METRICS_ADMIN_EXPLAINER;
   return (
-    <aside className="sa-home-metrics-explainer" aria-label="شرح مؤشرات الصفحة الرئيسية">
+    <aside className="sa-home-metrics-explainer" aria-label={t("opsAdmin.homePublicStats.metricsExplainerAria")}>
       <h3 className="sa-home-metrics-explainer__title">{x.title}</h3>
       <ul className="sa-home-metrics-explainer__list">
         <li className="sa-home-metrics-explainer__item sa-home-metrics-explainer__item--visitors">

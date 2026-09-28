@@ -2,6 +2,8 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { getAdminDefaultPlanCatalogRequest } from "../../services/api";
 import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
 import { isPlanCatalog } from "../../constants/planCatalogs";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import "../../i18n/planAdminResources";
 
 const DefaultPlanCatalogAdminContext = createContext(null);
 
@@ -28,6 +30,7 @@ function writeCache(catalog, catalogs) {
 }
 
 export function DefaultPlanCatalogAdminProvider({ children, isEn = false }) {
+  const { t } = useTranslation();
   const cached = readCache();
   const [catalog, setCatalog] = useState(() => cached?.catalog ?? null);
   const [catalogs, setCatalogs] = useState(() => cached?.catalogs ?? []);
@@ -68,13 +71,12 @@ export function DefaultPlanCatalogAdminProvider({ children, isEn = false }) {
         setCatalog(null);
       }
       setError(
-        getSafeApiErrorMessage(err) ||
-          (isEn ? "Could not load plan catalog data." : "تعذر تحميل بيانات الباقات"),
+        getSafeApiErrorMessage(err) || t("planAdmin.catalog.defaultControl.loadFailed"),
       );
     } finally {
       setLoading(false);
     }
-  }, [applyPayload, isEn]);
+  }, [applyPayload, t]);
 
   useEffect(() => {
     void reload();

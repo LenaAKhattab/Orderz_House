@@ -1,3 +1,5 @@
+import { useTranslation } from "../../i18n/LanguageProvider";
+
 export { AuthRouteSkeleton } from "./AuthRouteSkeleton";
 
 /**
@@ -19,8 +21,9 @@ export function SelectPanelBusySkeleton() {
 }
 
 export function SubscriptionCardSkeleton() {
+  const { t } = useTranslation();
   return (
-    <div className="card" role="status" aria-busy="true" aria-label="جارٍ التحميل">
+    <div className="card" role="status" aria-busy="true" aria-label={t("common.skeleton.loading")}>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 14 }}>
         {[0, 1, 2, 3].map((i) => (
           <div key={i} style={{ display: "grid", gap: 8 }}>
@@ -95,12 +98,13 @@ export function PoolOrderDashboardRowSkeleton() {
 }
 
 export function PoolOrderListSkeleton({ count = 4 }) {
+  const { t } = useTranslation();
   return (
     <ul
       className="oh-orders-list oh-orders-list--loading"
       role="status"
       aria-busy="true"
-      aria-label="جارٍ تحميل الطلبات"
+      aria-label={t("common.skeleton.loadingOrders")}
     >
       {Array.from({ length: count }).map((_, i) => (
         <PoolOrderDashboardRowSkeleton key={i} />
@@ -168,8 +172,9 @@ export function AssignedOrderCardSkeleton() {
 }
 
 export function AssignedOrderListSkeleton({ count = 4 }) {
+  const { t } = useTranslation();
   return (
-    <div className="oh-assigned-list" role="status" aria-busy="true" aria-label="جارٍ التحميل" style={{ marginTop: 0 }}>
+    <div className="oh-assigned-list" role="status" aria-busy="true" aria-label={t("common.skeleton.loading")} style={{ marginTop: 0 }}>
       {Array.from({ length: count }).map((_, i) => (
         <AssignedOrderCardSkeleton key={i} />
       ))}
@@ -219,8 +224,9 @@ export function OrderCardsGridSkeleton({ count = 3 }) {
 
 /** Plan / subscription admin lists: nested grid under a section title. */
 export function AdminInlineGridSkeleton({ count = 3 }) {
+  const { t } = useTranslation();
   return (
-    <div className="cards-grid" style={{ marginTop: 12 }} role="status" aria-busy="true" aria-label="جارٍ التحميل">
+    <div className="cards-grid" style={{ marginTop: 12 }} role="status" aria-busy="true" aria-label={t("common.skeleton.loading")}>
       {Array.from({ length: count }).map((_, i) => (
         <AdminListCardSkeleton key={i} />
       ))}
@@ -229,8 +235,9 @@ export function AdminInlineGridSkeleton({ count = 3 }) {
 }
 
 export function OrderDetailsPageSkeleton() {
+  const { t } = useTranslation();
   return (
-    <div className="od-pool-shell oh-order-details__layout order-details-layout" role="status" aria-busy="true" aria-label="جارٍ التحميل">
+    <div className="od-pool-shell oh-order-details__layout order-details-layout" role="status" aria-busy="true" aria-label={t("common.skeleton.loading")}>
       <aside className="od-pool-summary oh-order-details__aside">
         <div className="od-aside-col">
           <div className="od-summary__surface">
@@ -295,12 +302,13 @@ export function PlanCardSkeleton({ featured = false }) {
 }
 
 export function PlanCardsRowSkeleton({ count = 6, className = "" }) {
+  const { t } = useTranslation();
   return (
     <div
       className={["pricing__grid", className].filter(Boolean).join(" ")}
       role="status"
       aria-busy="true"
-      aria-label="جارٍ التحميل"
+      aria-label={t("common.skeleton.loading")}
     >
       {Array.from({ length: count }).map((_, i) => (
         <PlanCardSkeleton key={i} featured={i === Math.floor(count / 2)} />

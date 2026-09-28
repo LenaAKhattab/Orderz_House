@@ -1,4 +1,5 @@
 import { createPortal } from "react-dom";
+import { useTranslation } from "../../i18n/LanguageProvider";
 import HomePromoOfferCard from "./HomePromoOfferCard";
 import "./home-sticky-ads-dock.css";
 
@@ -12,17 +13,19 @@ import "./home-sticky-ads-dock.css";
  * }} p
  */
 export default function HomeStickyAdsDock({ visible, ads, openDetails, onTrackClick }) {
+  const { t } = useTranslation();
+  const pa = "home.promoAds";
   if (typeof document === "undefined") return null;
 
   return createPortal(
     <aside
       className={`home-sticky-ads-dock${visible ? " home-sticky-ads-dock--visible" : ""}`}
       dir="rtl"
-      aria-label="عروض مميزة — عائم"
+      aria-label={t(`${pa}.stickyDockAria`)}
       aria-hidden={!visible}
     >
       <div className="home-sticky-ads-dock__panel">
-        <p className="home-sticky-ads-dock__eyebrow">عروض وإعلانات</p>
+        <p className="home-sticky-ads-dock__eyebrow">{t(`${pa}.stickyEyebrow`)}</p>
         <div className="home-sticky-ads-dock__list">
           {ads.map((ad) => (
             <div key={ad.id} className="home-sticky-ads-dock__item">

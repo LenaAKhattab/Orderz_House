@@ -15,7 +15,7 @@ import { HEALTH_SCORE_SCOPE } from "./dashboardMetricScope";
  * - Month orders trend up >10%: +min(5, changePct/4)
  * Clamp 0–100
  */
-export function buildPlatformHealthScore({ intelligence }) {
+export function buildPlatformHealthScore({ intelligence, t = (key) => key }) {
   let score = 100;
   const orders = intelligence?.orders?.data;
   const financial = intelligence?.financial?.data;
@@ -48,80 +48,84 @@ export function buildPlatformHealthScore({ intelligence }) {
   }
 
   const orderTrend = executive?.find((m) => m.key === "ordersThisMonth" && m.comparable);
-  let trendNote = "مستقر";
+  let trendKey = "analysis.platformScore.stable";
   let trendImpact = 0;
   if (orderTrend?.changePct != null) {
     if (orderTrend.changePct < -10) {
       trendImpact = -Math.min(10, Math.abs(orderTrend.changePct) / 2);
       score += trendImpact;
-      trendNote = "تراجع في طلبات الشهر";
+      trendKey = "analysis.platformScore.down";
     } else if (orderTrend.changePct > 10) {
       trendImpact = Math.min(5, orderTrend.changePct / 4);
       score += trendImpact;
-      trendNote = "نمو في طلبات الشهر";
+      trendKey = "analysis.platformScore.up";
     }
   }
 
   score = Math.max(0, Math.min(100, Math.round(score)));
 
-  let statusLabel = "تحتاج متابعة";
-  if (score >= 85) statusLabel = "ممتازة";
-  else if (score >= 70) statusLabel = "جيدة";
-  else if (score >= 55) statusLabel = "مستقرة";
+  let statusKey = "analysis.platformScore.needsAttention";
+  if (score >= 85) statusKey = "analysis.platformScore.excellent";
+  else if (score >= 70) statusKey = "analysis.platformScore.good";
+  else if (score >= 55) statusKey = "analysis.platformScore.steady";
+
+  const trendNote = t(trendKey);
+  const pct =
+    orderTrend?.changePct != null ? ` (${formatInt(Math.abs(orderTrend.changePct))}%)` : "";
 
   const factors = [
     {
       id: "stale-orders",
-      label: "الطلبات المتأخرة",
+      label: t("analysis.platformScore.staleOrders"),
       detail:
         staleOrders > 0
-          ? `${formatInt(staleOrders)} طلب مفتوح منذ أكثر من 72 ساعة — يخفض النتيجة.`
-          : "لا توجد طلبات متأخرة حالياً.",
+          ? t("analysis.platformScore.staleOrdersDetail", { count: formatInt(staleOrders) })
+          : t("analysis.platformScore.staleOrdersNone"),
       active: staleOrders > 0,
     },
     {
       id: "stale-claims",
-      label: "المطالبات المالية",
+      label: t("analysis.platformScore.staleClaims"),
       detail:
         staleClaims > 0
-          ? `${formatInt(staleClaims)} مطالبة معلّقة أكثر من 7 أيام.`
-          : "لا مطالبات مالية متأخرة.",
+          ? t("analysis.platformScore.staleClaimsDetail", { count: formatInt(staleClaims) })
+          : t("analysis.platformScore.staleClaimsNone"),
       active: staleClaims > 0,
     },
     {
       id: "activations",
-      label: "الاشتراكات المعلقة",
+      label: t("analysis.platformScore.activations"),
       detail:
         pendingActivation > 0
-          ? `${formatInt(pendingActivation)} اشتراك بانتظار تفعيل من الإدارة.`
-          : "لا اشتراكات بانتظار التفعيل.",
+          ? t("analysis.platformScore.activationsDetail", { count: formatInt(pendingActivation) })
+          : t("analysis.platformScore.activationsNone"),
       active: pendingActivation > 0,
     },
     {
       id: "freelancers",
-      label: "نشاط المستقلين",
+      label: t("analysis.platformScore.freelancers"),
       detail:
         inactiveSub > 0
-          ? `${formatInt(inactiveSub)} مشترك بلا طلبات منذ 30 يوماً من بداية الاشتراك.`
-          : "المشتركون النشطون يعملون على المنصة.",
+          ? t("analysis.platformScore.freelancersDetail", { count: formatInt(inactiveSub) })
+          : t("analysis.platformScore.freelancersNone"),
       active: inactiveSub > 0,
     },
     {
       id: "completion",
-      label: "جودة الإكمال",
+      label: t("analysis.platformScore.completion"),
       detail:
         totalOrders >= 5
-          ? `معدل إكمال الطلبات ${formatInt(completionRate)}٪ على إجمالي المنصة.`
-          : "بيانات غير كافية لقياس الإكمال.",
+          ? t("analysis.platformScore.completionDetail", { rate: formatInt(completionRate) })
+          : t("analysis.platformScore.completionNone"),
       active: completionPenalty > 0,
     },
     {
       id: "growth",
-      label: "اتجاه النمو",
-      detail: `طلبات الشهر: ${trendNote}${orderTrend?.changePct != null ? ` (${formatInt(Math.abs(orderTrend.changePct))}٪)` : ""}.`,
+      label: t("analysis.platformScore.growth"),
+      detail: t("analysis.platformScore.growthDetail", { note: trendNote, pct }),
       active: Math.abs(trendImpact) > 0,
     },
   ];
 
-  return { score, statusLabel, factors, scopeLabel: HEALTH_SCORE_SCOPE };
+  return { score, statusLabel: t(statusKey), factors, scopeLabel: HEALTH_SCORE_SCOPE };
 }

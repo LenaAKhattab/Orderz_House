@@ -1,4 +1,5 @@
 import { useId, useState } from "react";
+import { useTranslation } from "../../i18n/LanguageProvider";
 
 function InfoIcon() {
   return (
@@ -46,6 +47,7 @@ export function HomeAnalyticsMetricLabelRow({
 }) {
   const tipId = useId();
   const [open, setOpen] = useState(false);
+  const { t } = useTranslation();
 
   return (
     <div className={`home-analytics-metric-label ${className} home-analytics-metric-label--${tone}`.trim()}>
@@ -56,7 +58,7 @@ export function HomeAnalyticsMetricLabelRow({
           <button
             type="button"
             className="home-analytics-metric-info__btn"
-            aria-label={`شرح: ${label}`}
+            aria-label={t("common.a11y.explain", { label })}
             aria-expanded={open}
             aria-describedby={tipId}
             onClick={() => setOpen((v) => !v)}

@@ -29,9 +29,10 @@ function formatDate(value, locale) {
   return new Intl.DateTimeFormat(tag, { dateStyle: "medium", timeStyle: "short" }).format(d);
 }
 
-function formatMoney(value) {
+function formatMoney(value, locale = "ar") {
   if (value === null || value === undefined || Number.isNaN(Number(value))) return "—";
-  return `${new Intl.NumberFormat("ar-JO-u-nu-latn", { maximumFractionDigits: 2 }).format(Number(value))} د.أ`;
+  const suffix = locale === "en" ? "JOD" : "د.أ";
+  return `${new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(Number(value))} ${suffix}`;
 }
 
 function claimStatusLabel(s, t) {
@@ -103,6 +104,7 @@ const PAYOUT_STATUS_VALUES = [
 
 export default function SuperAdminFinancialClaimsPage() {
   const { t, locale } = useTranslation();
+  const money = (value) => formatMoney(value, locale);
   const { push } = useToast();
   const sc = "finance.superAdminClaims";
 
@@ -370,10 +372,10 @@ export default function SuperAdminFinancialClaimsPage() {
                   {t(`${sc}.companySharePct`)}: {formatPct(claim.companyPercentageSnapshot)}
                 </p>
                 <p>
-                  {t(`${sc}.freelancerDue`)}: {formatMoney(claim.userAmountSnapshot)}
+                  {t(`${sc}.freelancerDue`)}: {money(claim.userAmountSnapshot)}
                 </p>
                 <p>
-                  {t(`${sc}.remaining`)}: {formatMoney(claim.remainingAmount)}
+                  {t(`${sc}.remaining`)}: {money(claim.remainingAmount)}
                 </p>
                 <div className="actions-row">
                   <button
@@ -465,16 +467,16 @@ export default function SuperAdminFinancialClaimsPage() {
               {t(`${sc}.companySharePct`)}: {formatPct(detail.companyPercentageSnapshot)}
             </p>
             <p>
-              {t(`${sc}.totalPrice`)}: {formatMoney(detail.totalPriceSnapshot)}
+              {t(`${sc}.totalPrice`)}: {money(detail.totalPriceSnapshot)}
             </p>
             <p>
-              {t(`${sc}.freelancerDue`)}: {formatMoney(detail.userAmountSnapshot)}
+              {t(`${sc}.freelancerDue`)}: {money(detail.userAmountSnapshot)}
             </p>
             <p>
-              {t(`${sc}.paidAmount`)}: {formatMoney(detail.paidAmount)}
+              {t(`${sc}.paidAmount`)}: {money(detail.paidAmount)}
             </p>
             <p>
-              {t(`${sc}.remaining`)}: {formatMoney(detail.remainingAmount)}
+              {t(`${sc}.remaining`)}: {money(detail.remainingAmount)}
             </p>
             <p>
               {t(`${sc}.actualCompletionDate`)}: {formatDate(detail.actualCompletionDate, locale)}
@@ -597,7 +599,7 @@ export default function SuperAdminFinancialClaimsPage() {
             {t(`${sc}.claimRef`)}: #{paymentModal.claim?.id}
           </p>
           <p className="dash-ui-modal__hint">
-            {t(`${sc}.remainingAmount`)}: {formatMoney(paymentModal.claim?.remainingAmount)}
+            {t(`${sc}.remainingAmount`)}: {money(paymentModal.claim?.remainingAmount)}
           </p>
           <input
             className="input"

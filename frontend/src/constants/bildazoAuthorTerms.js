@@ -45,30 +45,35 @@ export function hasExistingAccountIdentifier(payload) {
   );
 }
 
-export function validateBildazoPasswordPair(password, confirm) {
+export function validateBildazoPasswordPair(password, confirm, t) {
+  const msg = (key, ar) => (typeof t === "function" ? t(key) : ar);
   const p = String(password || "");
   if (p.length < 8 || !/[A-Za-z\u0600-\u06FF]/.test(p) || !/\d/.test(p)) {
-    return "كلمة المرور يجب أن تكون 8 أحرف على الأقل وتتضمن حرفًا ورقمًا.";
+    return msg(
+      "articles.bildazoGate.errors.passwordWeak",
+      "كلمة المرور يجب أن تكون 8 أحرف على الأقل وتتضمن حرفًا ورقمًا.",
+    );
   }
   if (confirm != null && String(confirm) !== p) {
-    return "تأكيد كلمة المرور غير مطابق.";
+    return msg("articles.bildazoGate.errors.passwordMismatch", "تأكيد كلمة المرور غير مطابق.");
   }
   return null;
 }
 
-export function validateBildazoAuthorLinkForm({ flow, payload, termsChecked }) {
-  if (!termsChecked) return "يجب الموافقة على شروط ربط حساب الكاتب.";
+export function validateBildazoAuthorLinkForm({ flow, payload, termsChecked, t }) {
+  const msg = (key, ar) => (typeof t === "function" ? t(key) : ar);
+  if (!termsChecked) return msg("articles.bildazoGate.errors.terms", "يجب الموافقة على شروط ربط حساب الكاتب.");
   if (flow === BILDAZO_AUTHOR_LINK_FLOWS.NEW_ACCOUNT) {
     if (String(payload?.fullName || "").trim().length < 3) {
-      return "الاسم الكامل مطلوب لإنشاء حساب الكاتب.";
+      return msg("articles.bildazoGate.errors.fullName", "الاسم الكامل مطلوب لإنشاء حساب الكاتب.");
     }
-    return validateBildazoPasswordPair(payload?.password, payload?.passwordConfirm);
+    return validateBildazoPasswordPair(payload?.password, payload?.passwordConfirm, t);
   }
   if (!String(payload?.existingBildazoEmail || "").trim()) {
-    return "أدخل بريد حساب Bildazo وكلمة المرور.";
+    return msg("articles.bildazoGate.errors.existingCredentials", "أدخل بريد حساب Bildazo وكلمة المرور.");
   }
   if (!String(payload?.password || "").trim()) {
-    return "أدخل بريد حساب Bildazo وكلمة المرور.";
+    return msg("articles.bildazoGate.errors.existingCredentials", "أدخل بريد حساب Bildazo وكلمة المرور.");
   }
   return null;
 }
@@ -77,32 +82,43 @@ export function isBildazoAuthorLinked(link) {
   return String(link?.status || "") === "linked";
 }
 
-export function bildazoLinkFailureMessage(link, isEn = false) {
+export function bildazoLinkFailureMessage(link, isEn = false, t) {
   const code = String(link?.failureCode || "");
+  const pick = (key, ar, en) => (typeof t === "function" ? t(key) : isEn ? en : ar);
   if (code === "INVALID_CREDENTIALS") {
-    return isEn
-      ? "Could not verify the Bildazo account. Check the email and password."
-      : "تعذر التحقق من حساب Bildazo. تأكد من البريد وكلمة المرور.";
+    return pick(
+      "articles.bildazoGate.failures.INVALID_CREDENTIALS",
+      "تعذر التحقق من حساب Bildazo. تأكد من البريد وكلمة المرور.",
+      "Could not verify the Bildazo account. Check the email and password.",
+    );
   }
   if (code === "ACCOUNT_UNAVAILABLE") {
-    return isEn
-      ? "This Bildazo account cannot be linked right now."
-      : "لا يمكن ربط حساب Bildazo هذا حالياً.";
+    return pick(
+      "articles.bildazoGate.failures.ACCOUNT_UNAVAILABLE",
+      "لا يمكن ربط حساب Bildazo هذا حالياً.",
+      "This Bildazo account cannot be linked right now.",
+    );
   }
   if (code === "ENDPOINT_UNAVAILABLE" || code === "CONFIG_MISSING") {
-    return isEn
-      ? "Bildazo linking is temporarily unavailable. Try again later."
-      : "خدمة ربط Bildazo غير متاحة مؤقتاً. أعد المحاولة لاحقاً.";
+    return pick(
+      "articles.bildazoGate.failures.ENDPOINT_UNAVAILABLE",
+      "خدمة ربط Bildazo غير متاحة مؤقتاً. أعد المحاولة لاحقاً.",
+      "Bildazo linking is temporarily unavailable. Try again later.",
+    );
   }
   if (code === "TIMEOUT" || code === "NETWORK") {
-    return isEn
-      ? "Could not reach Bildazo. Check your connection and try again."
-      : "تعذر الوصول إلى Bildazo. تحقق من الاتصال ثم أعد المحاولة.";
+    return pick(
+      "articles.bildazoGate.failures.TIMEOUT",
+      "تعذر الوصول إلى Bildazo. تحقق من الاتصال ثم أعد المحاولة.",
+      "Could not reach Bildazo. Check your connection and try again.",
+    );
   }
   if (String(link?.status || "") === "failed") {
-    return isEn
-      ? "Could not complete the Bildazo link. Try again."
-      : "تعذر إكمال الربط مع Bildazo. أعد المحاولة.";
+    return pick(
+      "articles.bildazoGate.failures.failed",
+      "تعذر إكمال الربط مع Bildazo. أعد المحاولة.",
+      "Could not complete the Bildazo link. Try again.",
+    );
   }
   return "";
 }

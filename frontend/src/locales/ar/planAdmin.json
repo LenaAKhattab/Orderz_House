@@ -32,6 +32,7 @@
     }
   },
   "common": {
+    "toggle": "تبديل",
     "cancel": "إلغاء",
     "close": "إغلاق",
     "closeDialog": "إغلاق النافذة",

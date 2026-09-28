@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-
+import { useTranslation } from "../../i18n/LanguageProvider";
 import { JodMoneyDisplay } from "../money/JodMoneyDisplay";
 
 function typeLabel(projectType) {
@@ -12,9 +12,9 @@ function isPricedBiddingOrder(order) {
   return order?.projectType === "bidding" && order?.bidBudgetMin != null && order?.bidBudgetMax != null;
 }
 
-function summaryText(text, max = 140) {
+function summaryText(text, emptyLabel, max = 140) {
   const s = String(text || "").trim();
-  if (!s) return "لا يوجد وصف.";
+  if (!s) return emptyLabel;
   if (s.length <= max) return s;
   return `${s.slice(0, max).trim()}…`;
 }
@@ -23,9 +23,11 @@ export default function PoolOrderCardCompact({
   order,
   onOpenDetails,
 }) {
+  const { t } = useTranslation();
+  const emptyDesc = t("orders.marketplace.card.noDescription");
   const pricedBidding = useMemo(() => isPricedBiddingOrder(order), [order]);
   const typeText = typeLabel(order?.projectType);
-  const description = summaryText(order?.description);
+  const description = summaryText(order?.description, emptyDesc);
 
   return (
     <article

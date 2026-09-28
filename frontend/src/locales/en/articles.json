@@ -583,5 +583,67 @@
         "notOpen": "This Article is not open for applications."
       }
     }
+  },
+  "bildazoGate": {
+    "title": "Bildazo author account",
+    "subtitleInfo": "Link your author account now so you can publish articles on Bildazo later, under your name.",
+    "subtitleApply": "Link your Bildazo author account to submit Mini Articles in your name after they are accepted.",
+    "pendingNew": "Creating your Bildazo author account. You can resubmit if linking does not finish.",
+    "pendingReview": "This link request needs an admin review.",
+    "pendingSaved": "The link request was saved. Try again if the account does not show as linked.",
+    "authFailed": "Could not verify the Bildazo account. Check the email and password.",
+    "completeFailed": "Could not complete the Bildazo link.",
+    "tabNew": "Create a Bildazo author account",
+    "tabExisting": "I already have a Bildazo account",
+    "fullName": "Full name",
+    "email": "Email",
+    "phone": "Mobile number",
+    "country": "Country",
+    "birthOptional": "Date of birth (optional)",
+    "accountCategory": "Account category",
+    "writerRole": "Writer",
+    "password": "Password",
+    "passwordConfirm": "Confirm password",
+    "roleHint": "The account category is fixed as Writer. OrderzHouse creates the account and does not store the password.",
+    "existingEmail": "Bildazo account email",
+    "existingPassword": "Bildazo password",
+    "terms": "I agree to the article publishing terms and to linking them to my Bildazo author account. I understand an accepted article may be sent for review and published on Bildazo under my name.",
+    "submitNew": "Create and link author account",
+    "submitExisting": "Link existing Bildazo account",
+    "linkedTitle": "Bildazo account linked",
+    "publicId": "ID: {{id}}",
+    "publishHelper": "Accepted articles will be published on this account.",
+    "emailLine": "Email: {{email}}",
+    "linkedAt": "Linked on: {{date}}",
+    "changeAccount": "Change linked account",
+    "recheck": "Recheck link",
+    "close": "Close",
+    "changeTitle": "Change the linked Bildazo account",
+    "changeNote": "The new account will be used for upcoming articles only. Articles already published stay on the account they were published with.",
+    "changeConfirm": "I understand that changing the Bildazo account affects upcoming articles only.",
+    "submitNewChange": "Create and link the new account",
+    "submitExistingChange": "Link the current account",
+    "cancel": "Cancel",
+    "confirmFutureOnly": "Confirm that the change affects upcoming articles only.",
+    "changeFailed": "Could not change the linked account.",
+    "replaceUnsupported": "Bildazo needs a safe replace-link endpoint or replace mode.",
+    "errors": {
+      "terms": "You must accept the author-account linking terms.",
+      "fullName": "Full name is required to create the author account.",
+      "passwordWeak": "Password must be at least 8 characters and include a letter and a number.",
+      "passwordMismatch": "Password confirmation does not match.",
+      "existingCredentials": "Enter the Bildazo account email and password."
+    },
+    "failures": {
+      "INVALID_CREDENTIALS": "Could not verify the Bildazo account. Check the email and password.",
+      "ACCOUNT_UNAVAILABLE": "This Bildazo account cannot be linked right now.",
+      "ENDPOINT_UNAVAILABLE": "Bildazo linking is temporarily unavailable. Try again later.",
+      "TIMEOUT": "Could not reach Bildazo. Check your connection and try again.",
+      "failed": "Could not complete the Bildazo link. Try again."
+    }
+  },
+  "reviewPage": {
+    "title": "Articles",
+    "subtitle": "Review articles that need follow-up or a decision"
   }
 }

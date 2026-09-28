@@ -583,5 +583,67 @@
         "notOpen": "هذا المقال غير مفتوح للتقديم."
       }
     }
+  },
+  "bildazoGate": {
+    "title": "حساب الكاتب في Bildazo",
+    "subtitleInfo": "اربط حساب الكاتب الآن لتنشر مقالاتك لاحقًا على Bildazo بسهولة وباسمك.",
+    "subtitleApply": "اربط حساب الكاتب في Bildazo لتقديم مقالات Mini Article باسمك مباشرة بعد القبول.",
+    "pendingNew": "جاري إنشاء حساب الكاتب في Bildazo. إذا لم يكتمل الربط يمكنك إعادة الإرسال.",
+    "pendingReview": "يحتاج طلب الربط إلى مراجعة من الإدارة.",
+    "pendingSaved": "تم حفظ طلب الربط. أعد المحاولة إذا لم يظهر الحساب مرتبطًا.",
+    "authFailed": "تعذر التحقق من حساب Bildazo. تأكد من البريد وكلمة المرور.",
+    "completeFailed": "تعذر إكمال ربط Bildazo.",
+    "tabNew": "أنشئ حساب الكاتب في Bildazo",
+    "tabExisting": "لدي حساب في Bildazo",
+    "fullName": "الاسم الكامل",
+    "email": "البريد الإلكتروني",
+    "phone": "رقم الجوال",
+    "country": "الدولة",
+    "birthOptional": "تاريخ الميلاد (اختياري)",
+    "accountCategory": "فئة الحساب",
+    "writerRole": "كاتب",
+    "password": "كلمة المرور",
+    "passwordConfirm": "تأكيد كلمة المرور",
+    "roleHint": "فئة الحساب ثابتة على «كاتب». يُنشأ الحساب عبر خادم OrderzHouse ولا تُحفظ كلمة المرور هنا.",
+    "existingEmail": "بريد حساب Bildazo",
+    "existingPassword": "كلمة مرور Bildazo",
+    "terms": "أوافق على شروط نشر المقالات وربطها بحساب الكاتب في Bildazo، وأقر بأن المقال المقبول قد يتم إرساله للمراجعة والنشر على Bildazo باسمي.",
+    "submitNew": "إنشاء وربط حساب الكاتب",
+    "submitExisting": "ربط حساب Bildazo الحالي",
+    "linkedTitle": "حساب Bildazo مرتبط",
+    "publicId": "المعرّف: {{id}}",
+    "publishHelper": "سيتم نشر المقالات المقبولة على هذا الحساب.",
+    "emailLine": "البريد: {{email}}",
+    "linkedAt": "تاريخ الربط: {{date}}",
+    "changeAccount": "تغيير حساب الربط",
+    "recheck": "إعادة التحقق من الربط",
+    "close": "إغلاق",
+    "changeTitle": "تغيير حساب Bildazo المرتبط",
+    "changeNote": "سيتم استخدام الحساب الجديد للمقالات القادمة فقط. المقالات التي نُشرت سابقًا ستبقى مرتبطة بالحساب الذي نُشرت عليه.",
+    "changeConfirm": "أفهم أن تغيير حساب Bildazo سيؤثر على المقالات القادمة فقط.",
+    "submitNewChange": "إنشاء الحساب الجديد وربطه",
+    "submitExistingChange": "ربط الحساب الحالي",
+    "cancel": "إلغاء",
+    "confirmFutureOnly": "يجب تأكيد أن التغيير يؤثر على المقالات القادمة فقط.",
+    "changeFailed": "تعذر تغيير حساب الربط.",
+    "replaceUnsupported": "Bildazo needs a safe replace-link endpoint or replace mode.",
+    "errors": {
+      "terms": "يجب الموافقة على شروط ربط حساب الكاتب.",
+      "fullName": "الاسم الكامل مطلوب لإنشاء حساب الكاتب.",
+      "passwordWeak": "كلمة المرور يجب أن تكون 8 أحرف على الأقل وتتضمن حرفًا ورقمًا.",
+      "passwordMismatch": "تأكيد كلمة المرور غير مطابق.",
+      "existingCredentials": "أدخل بريد حساب Bildazo وكلمة المرور."
+    },
+    "failures": {
+      "INVALID_CREDENTIALS": "تعذر التحقق من حساب Bildazo. تأكد من البريد وكلمة المرور.",
+      "ACCOUNT_UNAVAILABLE": "لا يمكن ربط حساب Bildazo هذا حالياً.",
+      "ENDPOINT_UNAVAILABLE": "خدمة ربط Bildazo غير متاحة مؤقتاً. أعد المحاولة لاحقاً.",
+      "TIMEOUT": "تعذر الوصول إلى Bildazo. تحقق من الاتصال ثم أعد المحاولة.",
+      "failed": "تعذر إكمال الربط مع Bildazo. أعد المحاولة."
+    }
+  },
+  "reviewPage": {
+    "title": "المقالات",
+    "subtitle": "مراجعة المقالات التي تحتاج متابعة أو قراراً"
   }
 }

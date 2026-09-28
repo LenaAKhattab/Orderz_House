@@ -1,4 +1,5 @@
-﻿import SafeAdImage from "./SafeAdImage";
+﻿import { useTranslation } from "../../i18n/LanguageProvider";
+import SafeAdImage from "./SafeAdImage";
 import { linkTargetRel, primaryHref, truncateText } from "./adUtils";
 import { getBannerMetaFromTexts, parseSalePercent, resolveBannerTemplateId } from "./bannerAdMeta";
 import { getAdVisualAsset, resolveAdAssetBannerUrl } from "./adVisualAssets";
@@ -59,6 +60,8 @@ function CornerPresetAsset({ assetKey }) {
  * @param {(e: import("react").MouseEvent) => void} [p.stopCardActivate]
  */
 export default function PremiumPromoBanner({ ad, previewMode = false, onTrackClick, stopCardActivate }) {
+  const { t } = useTranslation();
+  const pa = "home.promoAds";
   const tpl = resolveBannerTemplateId(ad);
   const cfg = getTemplateConfig(tpl);
   const structure = cfg.structure;
@@ -138,7 +141,7 @@ export default function PremiumPromoBanner({ ad, previewMode = false, onTrackCli
   const discountLine =
     saleN != null ? (
       <p className="ppm__discount-line" style={{ color: surface.discountLineColor || surface.accentCyan || surface.btnBg }}>
-        خصم يصل إلى {saleN}%
+        {t(`${pa}.discountUpTo`, { n: saleN })}
       </p>
     ) : discountText ? (
       <p className="ppm__discount-line" style={{ color: surface.discountLineColor || surface.accentCyan || surface.btnBg }}>
@@ -170,7 +173,7 @@ export default function PremiumPromoBanner({ ad, previewMode = false, onTrackCli
         className="ppm__discount--edge"
         style={{ backgroundColor: surface.saleStickerBg || "#ef4444", color: surface.saleStickerFg || "#fff" }}
       >
-        {saleN}% خصم
+        {t(`${pa}.discountPercent`, { n: saleN })}
       </span>
     ) : showDiscountBadge && discountText ? (
       <span className="ppm__discount--edge" style={{ backgroundColor: surface.saleStickerBg, color: surface.saleStickerFg }}>
@@ -184,7 +187,7 @@ export default function PremiumPromoBanner({ ad, previewMode = false, onTrackCli
         className="ppm__discount--label"
         style={{ backgroundColor: surface.saleStickerBg || "#f1f5f9", color: surface.saleStickerFg || "#334155" }}
       >
-        {saleN != null ? `خصم ${saleN}%` : truncateText(discountText, 28)}
+        {saleN != null ? t(`${pa}.discountShort`, { n: saleN }) : truncateText(discountText, 28)}
       </span>
     ) : null;
 

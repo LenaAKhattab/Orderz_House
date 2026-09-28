@@ -1,3 +1,5 @@
+import { useTranslation } from "../../i18n/LanguageProvider";
+
 const skelBar = "dash-ui-skeleton-rows__bar block rounded-md bg-[color:var(--dash-skel-from,#e5e9ef)]";
 
 /**
@@ -12,6 +14,7 @@ const skelBar = "dash-ui-skeleton-rows__bar block rounded-md bg-[color:var(--das
  * @param {string} [p.className]
  */
 export default function DashboardStatCard({ label, value, hint, scopeLabel, trend, icon, className = "" }) {
+  const { t } = useTranslation();
   const cardShell = "dash-ui-surface--soft";
 
   return (
@@ -28,7 +31,7 @@ export default function DashboardStatCard({ label, value, hint, scopeLabel, tren
         <div className="min-w-0 flex-1">
           <p className="dash-ui-stat-card__label m-0 text-[0.8125rem] font-semibold leading-snug text-[color:var(--dash-text-secondary,#4b5563)]">{label}</p>
           {scopeLabel ? (
-            <p className="sa-metric-scope m-0 mt-0.5" aria-label={`نطاق البيانات: ${scopeLabel}`}>
+            <p className="sa-metric-scope m-0 mt-0.5" aria-label={t("common.a11y.dataScope", { scope: scopeLabel })}>
               {scopeLabel}
             </p>
           ) : null}

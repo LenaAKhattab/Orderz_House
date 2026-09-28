@@ -63,5 +63,21 @@
     "title": "Page unavailable",
     "text": "This page may be hidden or the link is incorrect."
   },
-  "copyright": "© {{year}} Orderz House. All rights reserved."
+  "copyright": "© {{year}} Orderz House. All rights reserved.",
+  "toast": {
+    "success": "Success",
+    "error": "Error",
+    "warning": "Warning",
+    "info": "Info",
+    "closeAria": "Dismiss notification"
+  },
+  "skeleton": {
+    "loading": "Loading…",
+    "loadingPage": "Loading page…",
+    "loadingOrders": "Loading orders…"
+  },
+  "a11y": {
+    "explain": "Explanation: {{label}}",
+    "dataScope": "Data scope: {{scope}}"
+  }
 }

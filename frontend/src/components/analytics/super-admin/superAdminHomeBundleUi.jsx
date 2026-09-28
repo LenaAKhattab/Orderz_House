@@ -15,6 +15,7 @@ import DashboardEmptyState from "../../dashboard/DashboardEmptyState";
 import { useTranslation } from "../../../i18n/LanguageProvider";
 import { resolveSuperAdminDashboardHomeLink } from "./superAdminHomeDataUtils";
 import { resolveAnalysisScopeLabel } from "./dashboardMetricScope";
+import { formatJodMoney } from "../../../utils/formatJodMoney";
 import "./registerAnalysisLocale";
 
 /** @deprecated Prefer t("analysis.labels.unavailable") at render sites */
@@ -33,41 +34,44 @@ export function formatInt(value) {
   return new Intl.NumberFormat("ar-JO-u-nu-latn").format(Math.trunc(Number(value)));
 }
 
-export function formatMoneyJod(value) {
+export function formatMoneyJod(value, locale = "ar") {
   if (value === null || value === undefined || Number.isNaN(Number(value))) return "—";
-  return `${new Intl.NumberFormat("ar-JO-u-nu-latn", { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(Number(value))} د.أ`;
+  return formatJodMoney(value, { locale });
 }
 
-export function formatPctChange(value) {
+export function formatPctChange(value, locale = "ar") {
   if (value === null || value === undefined || Number.isNaN(Number(value))) return "—";
   const n = Number(value);
   const sign = n > 0 ? "+" : "";
-  return `${sign}${new Intl.NumberFormat("ar-JO-u-nu-latn", { maximumFractionDigits: 1 }).format(n)}٪`;
+  const suffix = locale === "en" ? "%" : "٪";
+  return `${sign}${new Intl.NumberFormat("en-US", { maximumFractionDigits: 1 }).format(n)}${suffix}`;
 }
 
 export function isMetricMissing(value) {
   return value === null || value === undefined || Number.isNaN(Number(value));
 }
 
-function formatChartDay(isoDate) {
+function formatChartDay(isoDate, locale = "ar") {
   try {
     const d = new Date(isoDate);
-    return d.toLocaleDateString("ar-JO-u-nu-latn", { month: "short", day: "numeric" });
+    const tag = locale === "en" ? "en-US" : "en-GB";
+    return d.toLocaleDateString(tag, locale === "en" ? { month: "short", day: "numeric" } : { day: "2-digit", month: "2-digit" });
   } catch {
     return String(isoDate || "");
   }
 }
 
-function formatChartMonth(isoDate) {
+function formatChartMonth(isoDate, locale = "ar") {
   try {
     const d = new Date(isoDate);
-    return d.toLocaleDateString("ar-JO-u-nu-latn", { month: "short", year: "2-digit" });
+    const tag = locale === "en" ? "en-US" : "en-GB";
+    return d.toLocaleDateString(tag, locale === "en" ? { month: "short", year: "2-digit" } : { month: "2-digit", year: "2-digit" });
   } catch {
     return String(isoDate || "");
   }
 }
 
-export function trendBadge(trend, changePct, t) {
+export function trendBadge(trend, changePct, t, locale = "ar") {
   if (changePct === null || changePct === undefined || trend == null) return null;
   const cls =
     trend === "up" ? "text-emerald-700" : trend === "down" ? "text-rose-700" : "text-slate-500";
@@ -75,7 +79,7 @@ export function trendBadge(trend, changePct, t) {
   const vsPrevious = t ? t("analysis.labels.vsPrevious") : "";
   return (
     <span className={cls}>
-      {arrow} {formatPctChange(changePct)}{" "}
+      {arrow} {formatPctChange(changePct, locale)}{" "}
       {vsPrevious ? <span className="font-normal text-slate-400">{vsPrevious}</span> : null}
     </span>
   );
@@ -91,10 +95,10 @@ export function StatCardLink({ to, children, className = "" }) {
   );
 }
 
-function formatStatValue(item, t) {
+function formatStatValue(item, t, locale = "ar") {
   if (item.missing) return item.failed ? t(LABEL_LOAD_FAILED) : t(LABEL_UNAVAILABLE);
-  if (item.money) return formatMoneyJod(item.value);
-  if (item.percent) return `${formatInt(item.value)}٪`;
+  if (item.money) return formatMoneyJod(item.value, locale);
+  if (item.percent) return `${formatInt(item.value)}${locale === "en" ? "%" : "٪"}`;
   return formatInt(item.value);
 }
 
@@ -199,14 +203,14 @@ export function PeriodAwarenessBanner({ period }) {
   );
 }
 
-function resolvePlatformInsightText(t, item) {
+function resolvePlatformInsightText(t, item, locale = "ar") {
   if (item.textKey) {
     const params = { ...(item.textParams || {}) };
     if (params.labelKey) {
       params.label = t(params.labelKey);
       delete params.labelKey;
     }
-    if (params.pct != null) params.pct = formatPctChange(params.pct);
+    if (params.pct != null) params.pct = formatPctChange(params.pct, locale);
     if (params.count != null) params.count = formatInt(params.count);
     return t(item.textKey, params);
   }
@@ -214,7 +218,7 @@ function resolvePlatformInsightText(t, item) {
 }
 
 export function PlatformInsightsList({ insights }) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   if (!insights?.length) {
     return <p className="help m-0">{t("analysis.bundle.insightsEmpty")}</p>;
   }
@@ -222,7 +226,7 @@ export function PlatformInsightsList({ insights }) {
     <ul className="sa-insights-list">
       {insights.map((item) => (
         <li key={item.id} className="sa-insights-list__item">
-          <p className="sa-insights-list__text m-0">{resolvePlatformInsightText(t, item)}</p>
+          <p className="sa-insights-list__text m-0">{resolvePlatformInsightText(t, item, locale)}</p>
           {item.sourceKey || item.source ? (
             <MetricScopeLabel className="sa-insights-list__source">{item.sourceKey || item.source}</MetricScopeLabel>
           ) : null}
@@ -233,7 +237,7 @@ export function PlatformInsightsList({ insights }) {
 }
 
 export function MiniStatGrid({ items, loading = false, dense = false, showCardScope = true }) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const gridClass = dense ? "sa-kpi-grid sa-kpi-grid--dense" : "sa-kpi-grid sa-kpi-grid--platform";
   return (
     <div className={gridClass}>
@@ -246,10 +250,10 @@ export function MiniStatGrid({ items, loading = false, dense = false, showCardSc
               className={`sa-stat-card--platform sa-stat-card--dense${item.to ? " sa-stat-card--clickable" : ""}${item.missing ? " sa-stat-card--unavailable" : ""}`}
               label={item.label}
               scopeLabel={showCardScope ? resolveAnalysisScopeLabel(t, item.scopeLabel) : undefined}
-              value={formatStatValue(item, t)}
+              value={formatStatValue(item, t, locale)}
               hint={item.hint}
               trend={
-                item.comparable !== false && item.trend != null ? trendBadge(item.trend, item.changePct, t) : undefined
+                item.comparable !== false && item.trend != null ? trendBadge(item.trend, item.changePct, t, locale) : undefined
               }
             />
           </StatCardLink>
@@ -302,12 +306,12 @@ export function TopList({
   emptyLabel,
   scopeLabel,
 }) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const resolvedEmpty = emptyLabel || t("analysis.labels.noData");
   if (!Array.isArray(rows) || rows.length === 0) {
     return <p className="help m-0">{resolvedEmpty}</p>;
   }
-  const formatVal = money ? formatMoneyJod : formatInt;
+  const formatVal = money ? (value) => formatMoneyJod(value, locale) : formatInt;
   const rowLabel = (row) => {
     if (labelKey && row[labelKey]) return row[labelKey];
     return row.name || row.title || row.fullName || row.countryCode || "—";
@@ -327,19 +331,19 @@ export function TopList({
   );
 }
 
-export function normalizeTrendRows(rows, { dateKey, valueKeys }) {
+export function normalizeTrendRows(rows, { dateKey, valueKeys, locale = "ar" }) {
   if (!Array.isArray(rows)) return [];
   return rows.map((row) => {
     const dateVal = row[dateKey] ?? row.day ?? row.monthStart ?? row.weekStart;
     const value =
       valueKeys.reduce((acc, key) => (acc != null ? acc : row[key]), null) ?? 0;
-    const label = dateKey === "monthStart" || dateKey === "month_start" ? formatChartMonth(dateVal) : formatChartDay(dateVal);
+    const label = dateKey === "monthStart" || dateKey === "month_start" ? formatChartMonth(dateVal, locale) : formatChartDay(dateVal, locale);
     return { label, value: Number(value) || 0, rawDate: dateVal };
   });
 }
 
 export function IntelligenceTrendCharts({ charts, loading, periodLabel }) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   if (loading) {
     return (
       <div className="sa-charts-layout sa-charts-layout--intel">
@@ -393,7 +397,7 @@ export function IntelligenceTrendCharts({ charts, loading, periodLabel }) {
                   <YAxis width={36} tick={{ fontSize: 10 }} stroke="var(--text-muted, #64748b)" />
                   <Tooltip
                     contentStyle={CHART_TOOLTIP_STYLE}
-                    formatter={(v) => (chart.money ? formatMoneyJod(v) : formatInt(v))}
+                    formatter={(v) => (chart.money ? formatMoneyJod(v, locale) : formatInt(v))}
                   />
                   <Area
                     type="monotone"
@@ -416,7 +420,7 @@ export function IntelligenceTrendCharts({ charts, loading, periodLabel }) {
   );
 }
 
-export function buildOperationalCharts(intelligence, _periodLabel) {
+export function buildOperationalCharts(intelligence, _periodLabel, locale = "ar") {
   const orders = intelligence?.orders?.data;
   const subscriptions = intelligence?.subscriptions?.data;
   const financial = intelligence?.financial?.data;
@@ -434,6 +438,7 @@ export function buildOperationalCharts(intelligence, _periodLabel) {
       data: normalizeTrendRows(orders?.timing?.trendByDay, {
         dateKey: "day",
         valueKeys: ["ordersCount", "orders_count"],
+        locale,
       }),
     },
     {
@@ -447,6 +452,7 @@ export function buildOperationalCharts(intelligence, _periodLabel) {
       data: normalizeTrendRows(subscriptions?.trendByMonth, {
         dateKey: "monthStart",
         valueKeys: ["subscriptionsCount", "subscriptions_count"],
+        locale,
       }),
     },
     {
@@ -460,6 +466,7 @@ export function buildOperationalCharts(intelligence, _periodLabel) {
       data: normalizeTrendRows(financial?.paymentTrendByMonth, {
         dateKey: "monthStart",
         valueKeys: ["amountJod", "amount_jod"],
+        locale,
       }),
     },
     {
@@ -473,6 +480,7 @@ export function buildOperationalCharts(intelligence, _periodLabel) {
       data: normalizeTrendRows(courses?.enrollmentTrendByMonth, {
         dateKey: "monthStart",
         valueKeys: ["enrollments"],
+        locale,
       }),
     },
   ];

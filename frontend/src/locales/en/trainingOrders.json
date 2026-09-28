@@ -629,5 +629,10 @@
     "prev": "Previous",
     "next": "Next",
     "pageOf": "Page {{page}} of {{totalPages}} — total {{total}}"
+  },
+  "widgetFrame": {
+    "loading": "Loading…",
+    "errorTitle": "This data could not be loaded right now",
+    "retry": "Try again"
   }
 }

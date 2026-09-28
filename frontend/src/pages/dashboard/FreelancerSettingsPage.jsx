@@ -292,11 +292,10 @@ export default function FreelancerSettingsPage() {
           }}
         >
           <h2 className="oh-account-card__title" style={{ color: "#92400e" }}>
-            يجب تغيير كلمة المرور
+            {t(`${s}.security.mustChangeTitle`)}
           </h2>
           <p className="oh-account-value" style={{ margin: 0, color: "#78350f" }}>
-            تم إنشاء حسابك بكلمة مرور مؤقتة. يرجى تعيين كلمة مرور جديدة أدناه قبل متابعة استخدام المنصة.
-            استخدم الرقم الوطني ككلمة المرور الحالية إن لم تُغيَّر من قبل.
+            {t(`${s}.security.mustChangeBody`)}
           </p>
         </div>
       ) : null}
@@ -511,7 +510,7 @@ export default function FreelancerSettingsPage() {
       </div>
 
       <div className="oh-account-card" style={{ marginBottom: 16 }}>
-        <h2 className="oh-account-card__title">العملة التقريبية المفضلة</h2>
+        <h2 className="oh-account-card__title">{t(`${s}.preferredCurrencyTitle`)}</h2>
         <PreferredDisplayCurrencySettings />
       </div>
 

@@ -1,14 +1,16 @@
 import * as authTw from "../auth/authTw";
+import { useTranslation } from "../../i18n/LanguageProvider";
 
 /** Full-screen session restore / route chunk loading — no dashboard CSS deps. */
 export function AuthRouteSkeleton() {
+  const { t } = useTranslation();
   return (
     <div
       className={`${authTw.authRouteLoading} ${authTw.authRouteLoadingSkel}`}
       role="status"
       aria-live="polite"
       aria-busy="true"
-      aria-label="جارٍ التحميل"
+      aria-label={t("common.skeleton.loading")}
     >
       <div className={authTw.authRouteSkel}>
         <span
