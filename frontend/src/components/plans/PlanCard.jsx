@@ -14,7 +14,10 @@ import {
   isStarterMarketplaceMembershipTierCode,
   resolveMarketplaceCheckoutPlanCode,
 } from "../../lib/marketplaceMembership/marketplaceMembershipCheckoutUi";
-import { isCurrentMarketplacePlanCard } from "../../lib/marketplaceMembership/marketplaceMembershipCurrentPlanUi";
+import {
+  isAssignedNotStartedMembership,
+  isCurrentMarketplacePlanCard,
+} from "../../lib/marketplaceMembership/marketplaceMembershipCurrentPlanUi";
 
 const MOBILE_FEATURE_PREVIEW = 3;
 const DESKTOP_PUBLIC_FEATURE_LIMIT = 5;
@@ -159,9 +162,7 @@ const PlanCard = ({
           ? isPaidMarketplaceMembershipTierCode(resolveMarketplaceCheckoutPlanCode(plan))
             ? t("plans.cta.buyMembership")
             : isStarterMarketplaceMembershipTierCode(resolveMarketplaceCheckoutPlanCode(plan))
-              ? currentMarketplaceMembership?.hasMembership
-                ? t("plans.cta.currentPlan")
-                : t("plans.cta.viewMembership")
+              ? t("plans.cta.viewMembership")
               : customButtonLabel || t("plans.cta.viewMembership")
           : customButtonLabel || t("plans.cta.viewMembership")
     : freePlanPayFee
@@ -198,6 +199,8 @@ const PlanCard = ({
       (isGuest || (isFreelancer && (canSelfCheckout || freePlanPayFee))) &&
       !isBlockedBySubscription &&
       !isCurrentPlanLocked;
+  const waitingForFirstOrder =
+    isMarketplaceCurrentPlan && isAssignedNotStartedMembership(currentMarketplaceMembership);
   const isLocked = isMarketplaceMembership
     ? isLoggedNonFreelancer ||
       isMarketplaceCurrentPlan ||
@@ -232,8 +235,8 @@ const PlanCard = ({
         return;
       }
       if (!isFreelancer) return;
+      if (isMarketplaceCurrentPlan || checkoutBusy) return;
       if (typeof onCta === "function") {
-        if (checkoutBusy) return;
         onCta(plan);
         return;
       }
@@ -261,7 +264,7 @@ const PlanCard = ({
         isMarketplaceMembership ? "pricing-card--membership" : "",
         tierModifier,
         featured ? "pricing-card--featured" : "",
-        isCurrentPlan ? "pricing-card--current" : "",
+        isCurrentPlan || isMarketplaceCurrentPlan ? "pricing-card--current" : "",
         salePrice?.active ? "pricing-card--sale" : "",
       ]
         .filter(Boolean)
@@ -426,6 +429,13 @@ const PlanCard = ({
         >
           {ctaLabel}
         </Button>
+        {waitingForFirstOrder ? (
+          <p className="pricing-card__footnote" data-testid="membership-waiting-first-order">
+            {t("plans.membershipWait.status")}
+            {" — "}
+            {t("plans.membershipWait.startsOnFirstOrder")}
+          </p>
+        ) : null}
       </div>
     </article>
   );

@@ -159,6 +159,10 @@
     "activateStarter": "تفعيل الباقة المجانية",
     "startNow": "ابدأ الآن"
   },
+  "membershipWait": {
+    "status": "بانتظار أول طلب",
+    "startsOnFirstOrder": "تبدأ مدة الاشتراك عند استلام أول طلب حقيقي"
+  },
   "pages": {
     "freelancers": {
       "trustSimple": "أسعار بسيطة",

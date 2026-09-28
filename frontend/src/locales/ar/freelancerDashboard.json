@@ -303,6 +303,8 @@
     "termStartsWhen": "بداية الاشتراك",
     "termStartsOnFirstOrder": "عند استلام أول طلب",
     "statusPurchasedPendingStart": "مشتراة — بانتظار أول طلب",
+    "statusAssignedNotStarted": "بانتظار أول طلب",
+    "assignedNotStartedBody": "تبدأ مدة الاشتراك عند استلام أول طلب حقيقي",
     "checkoutSuccessTitle": "تم شراء العضوية بنجاح",
     "checkoutSuccessMessage": "تم شراء العضوية بنجاح. لن تبدأ مدة الاشتراك إلا عند استلامك أول طلب. قبل التقديم على الطلبات، يرجى إكمال توثيق الهوية والتدريب.",
     "checkoutWebhookHint": "قد يستغرق تأكيد الدفع لحظات قصيرة إذا كان النظام ما زال يعالج الإشعار. حدّث الصفحة بعد قليل إن لم تظهر العضوية فوراً.",

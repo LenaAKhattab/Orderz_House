@@ -4,6 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+  isAssignedNotStartedMembership,
   isCurrentMarketplacePlanCard,
   isStarterPendingStartMembership,
 } from "./marketplaceMembershipCurrentPlanUi.js";
@@ -49,6 +50,51 @@ describe("marketplaceMembershipCurrentPlanUi", () => {
     assert.equal(isCurrentMarketplacePlanCard(silver, snapProActive), false);
   });
 
+  it("PRO assigned_not_started is current and STARTER is not", () => {
+    const snap = {
+      hasMembership: true,
+      currentPlanCode: "PRO",
+      membershipStatus: "assigned_not_started",
+      membership: {
+        status: "assigned_not_started",
+        plan: { tierCode: "PRO" },
+      },
+    };
+    assert.equal(isCurrentMarketplacePlanCard({ tierCode: "PRO" }, snap), true);
+    assert.equal(isCurrentMarketplacePlanCard({ tierCode: "STARTER" }, snap), false);
+    assert.equal(isAssignedNotStartedMembership(snap), true);
+  });
+
+  it("active PRO stays current after the countdown starts", () => {
+    const snap = {
+      hasMembership: true,
+      currentPlanCode: "PRO",
+      membership: { status: "active", plan: { tierCode: "PRO" } },
+    };
+    assert.equal(isCurrentMarketplacePlanCard({ tierCode: "PRO" }, snap), true);
+    assert.equal(isCurrentMarketplacePlanCard({ tierCode: "STARTER" }, snap), false);
+    assert.equal(isAssignedNotStartedMembership(snap), false);
+  });
+
+  it("expired or cancelled status is not a current plan card", () => {
+    for (const status of ["expired", "cancelled", "superseded"]) {
+      assert.equal(
+        isCurrentMarketplacePlanCard(
+          { tierCode: "PRO" },
+          { hasMembership: true, membership: { status, plan: { tierCode: "PRO" } } },
+        ),
+        false,
+      );
+    }
+  });
+
+  it("no membership does not mark any plan current", () => {
+    assert.equal(
+      isCurrentMarketplacePlanCard({ tierCode: "STARTER" }, { hasMembership: false, membership: null }),
+      false,
+    );
+  });
+
   it("detects starter pending membership", () => {
     assert.equal(
       isStarterPendingStartMembership({
@@ -67,7 +113,11 @@ describe("STARTER UI wiring", () => {
     );
     assert.match(planCard, /isCurrentMarketplacePlanCard/);
     assert.match(planCard, /plans\.cta\.currentPlan/);
+    assert.match(planCard, /plans\.cta\.buyMembership/);
+    assert.match(planCard, /plans\.membershipWait\.status/);
+    assert.match(planCard, /isAssignedNotStartedMembership/);
     assert.doesNotMatch(planCard, /plans\.cta\.activateStarter/);
+    assert.doesNotMatch(planCard, /hasMembership[\s\S]{0,80}plans\.cta\.currentPlan/);
   });
 
   it("membership card exposes start-trial CTA for starter pending", () => {
@@ -79,6 +129,12 @@ describe("STARTER UI wiring", () => {
     assert.match(card, /startTrialCta/);
     assert.match(card, /onStartStarterTrial/);
     assert.match(card, /marketplace-starter-start-trial/);
+    assert.match(card, /marketplace-membership-assigned-not-started/);
+    assert.match(card, /assignedNotStartedBody/);
+    assert.doesNotMatch(
+      card.slice(card.indexOf("if (assignedNotStarted)"), card.indexOf("if (starterPendingStart)")),
+      /startTrialCta|paidTermStartsAt|paidTermEndsAt/,
+    );
   });
 
   it("checkout hook uses start-trial API and does not activate STARTER from plan CTA", () => {
