@@ -18,6 +18,10 @@ function isProductionNodeEnv() {
   return String(process.env.NODE_ENV || "").toLowerCase() === "production";
 }
 
+function isNonProductionRemoteDatabase() {
+  return require("./fakeOrdersAutomation").isNonProductionRemoteDatabase();
+}
+
 const WEAK_SECRETS = new Set([
   "changeme",
   "change-me",
@@ -49,6 +53,7 @@ function isInProcessMembershipReconcileEnabled() {
   if (raw !== undefined && String(raw).trim() !== "") {
     return parseBoolEnv("MARKETPLACE_MEMBERSHIP_RECONCILE_ENABLED", false);
   }
+  if (isNonProductionRemoteDatabase()) return false;
   return !isProductionNodeEnv();
 }
 

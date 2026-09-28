@@ -14,9 +14,30 @@ describe("fakeOrdersAutomation env defaults", () => {
   it("enables in-process ticks in non-production when env unset", () => {
     process.env.NODE_ENV = "development";
     delete process.env.FAKE_ORDERS_AUTOMATION_ENABLED;
+    delete process.env.DATABASE_URL;
     const mod = loadModule();
     assert.equal(mod.isInProcessAutomationIntervalEnabled(), true);
+    assert.equal(mod.shouldRunStartupTrainingBootstrap(), true);
     assert.equal(mod.isAutomationDriverConfigured(), true);
+  });
+
+  it("does not auto-start ticks when development points at a remote database", () => {
+    process.env.NODE_ENV = "development";
+    delete process.env.FAKE_ORDERS_AUTOMATION_ENABLED;
+    process.env.DATABASE_URL = "postgres://user:pass@db.example.internal:5432/staging";
+    const mod = loadModule();
+    assert.equal(mod.isNonProductionRemoteDatabase(), true);
+    assert.equal(mod.isInProcessAutomationIntervalEnabled(), false);
+    assert.equal(mod.shouldRunStartupTrainingBootstrap(), false);
+  });
+
+  it("allows an explicit opt-in against a remote database", () => {
+    process.env.NODE_ENV = "development";
+    process.env.FAKE_ORDERS_AUTOMATION_ENABLED = "true";
+    process.env.DATABASE_URL = "postgres://user:pass@db.example.internal:5432/staging";
+    const mod = loadModule();
+    assert.equal(mod.isInProcessAutomationIntervalEnabled(), true);
+    assert.equal(mod.shouldRunStartupTrainingBootstrap(), true);
   });
 
   it("disables in-process ticks in production when env unset", () => {
@@ -25,6 +46,7 @@ describe("fakeOrdersAutomation env defaults", () => {
     delete process.env.FAKE_ORDERS_AUTOMATION_CRON_SECRET;
     const mod = loadModule();
     assert.equal(mod.isInProcessAutomationIntervalEnabled(), false);
+    assert.equal(mod.shouldRunStartupTrainingBootstrap(), true);
     assert.equal(mod.isAutomationDriverConfigured(), false);
   });
 

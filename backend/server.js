@@ -12,7 +12,10 @@ validateEnv();
 const { registerProcessLifecycleLogging, logProcessEvent } = require("./src/config/processLifecycleLogging");
 const { connectDB, pool } = require("./src/config/db");
 const app = require("./src/app");
-const { isInProcessAutomationIntervalEnabled } = require("./src/config/fakeOrdersAutomation");
+const {
+  isInProcessAutomationIntervalEnabled,
+  shouldRunStartupTrainingBootstrap,
+} = require("./src/config/fakeOrdersAutomation");
 
 const PORT = Number(process.env.PORT) || 5000;
 const HOST = process.env.HOST || "0.0.0.0";
@@ -110,6 +113,8 @@ const startServer = async () => {
   }
 
   // Bootstrap guarantee: when training display is enabled but there are no visible fake orders, generate immediately.
+  // Production boot is unchanged. A non-production process on a remote database skips this unless ticks are explicitly enabled.
+  if (shouldRunStartupTrainingBootstrap()) {
   fakeOrdersService
     .ensureMinimumVisibleFakeOrders({ reason: "server_startup" })
     .then((r) => {
@@ -125,6 +130,15 @@ const startServer = async () => {
     .catch((err) => {
       console.error("[fakeOrders] startup ensureMinimumVisibleFakeOrders failed:", err?.message || err);
     });
+  } else {
+    console.log(
+      JSON.stringify({
+        component: "fake_orders_automation",
+        event: "startup_ensure_min_visible_skipped",
+        reason: "in_process_ticks_disabled",
+      }),
+    );
+  }
 
   if (!isInProcessAutomationIntervalEnabled()) {
     // eslint-disable-next-line no-console

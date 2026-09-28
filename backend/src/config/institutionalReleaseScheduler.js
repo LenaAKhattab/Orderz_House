@@ -3,6 +3,7 @@
  */
 const {
   isProductionNodeEnv,
+  isNonProductionRemoteDatabase,
 } = require("../config/fakeOrdersAutomation");
 
 function parseBoolEnv(name, defaultValue = false) {
@@ -19,6 +20,7 @@ function isInstitutionalReleaseIntervalEnabled() {
   if (raw !== undefined && String(raw).trim() !== "") {
     return parseBoolEnv("INSTITUTIONAL_RELEASE_SCHEDULER_ENABLED", false);
   }
+  if (isNonProductionRemoteDatabase()) return false;
   return !isProductionNodeEnv();
 }
 
