@@ -18,8 +18,9 @@ function read(...parts) {
 describe("Phase A5 freelancer earned balance UI", () => {
   it("panel renders pending total and empty state", () => {
     const src = read("components/freelancer/FreelancerEarnedBalancePanel.jsx");
-    assert.match(src, /الرصيد المكتسب/);
-    assert.match(src, /قيد المعالجة/);
+    assert.match(src, /finance\.earnedBalance/);
+    assert.match(src, /\$\{eb\}\.title/);
+    assert.match(src, /\$\{eb\}\.pending/);
     assert.match(src, /earned-balance-pending/);
     assert.match(src, /earned-balance-empty/);
     assert.match(src, /EARNED_BALANCE_HELPER_AR/);
@@ -35,9 +36,9 @@ describe("Phase A5 freelancer earned balance UI", () => {
   it("entry with Bildazo URL shows open article action", () => {
     const src = read("components/freelancer/FreelancerEarnedBalancePanel.jsx");
     assert.match(src, /earned-balance-open-article/);
-    assert.match(src, /فتح المقال/);
-    assert.match(src, /نُشر على Bildazo/);
-    assert.match(src, /مقال مقبول/);
+    assert.match(src, /\$\{eb\}\.openArticle/);
+    assert.match(src, /\$\{eb\}\.publishedOnBildazo/);
+    assert.match(src, /\$\{eb\}\.acceptedArticle/);
   });
 });
 

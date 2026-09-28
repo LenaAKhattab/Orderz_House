@@ -1,3 +1,4 @@
+import "../../i18n/financeResources";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Wallet } from "lucide-react";
@@ -13,11 +14,10 @@ import { JodMoneyDisplay } from "../../components/money/JodMoneyDisplay";
 import ClientFixedOrderPayNowButton from "../../components/orders/ClientFixedOrderPayNowButton";
 import { isClientFixedOrderAwaitingStripeCheckout } from "../../utils/clientFixedOrderPayNow";
 
-function paymentStatusAr(s) {
-  if (s === "not_required") return "لا يتطلب دفعاً حالياً";
-  if (s === "unpaid") return "غير مدفوع";
-  if (s === "paid") return "مدفوع";
-  if (s === "refunded") return "مُسترد";
+function paymentStatusLabel(s, t) {
+  const key = `finance.client.paymentStatus.${String(s || "")}`;
+  const label = s ? t(key) : "";
+  if (label && label !== key) return label;
   return s || "—";
 }
 
@@ -38,6 +38,7 @@ function StatSegment({ tone, label, value, loading }) {
 export default function ClientFinancialPage() {
   const { push } = useToast();
   const { t } = useTranslation();
+  const c = "finance.client";
   const [rows, setRows] = useState([]);
   const [busy, setBusy] = useState(true);
 
@@ -55,7 +56,11 @@ export default function ClientFinancialPage() {
         await load();
       } catch (e) {
         if (!cancelled) {
-          push({ type: "error", title: "تعذر تحميل السجل", message: e?.response?.data?.message || e?.message });
+          push({
+            type: "error",
+            title: t(`${c}.toastLoadError`),
+            message: e?.response?.data?.message || e?.message,
+          });
         }
       } finally {
         if (!cancelled) setBusy(false);
@@ -91,10 +96,8 @@ export default function ClientFinancialPage() {
     <DashboardHubPage className="fdash-page--my-orders fdash-page--client-financial">
       <header className="fmo-surface fmo-header">
         <div className="fmo-header__copy">
-          <h1 className="fmo-header__title">المالية</h1>
-          <p className="fmo-header__subtitle">
-            نظرة على المدفوعات وحالات الدفع المرتبطة بطلباتك فقط. للتفاصيل الكاملة لكل طلب راجع صفحة طلباتي.
-          </p>
+          <h1 className="fmo-header__title">{t(`${c}.title`)}</h1>
+          <p className="fmo-header__subtitle">{t(`${c}.subtitle`)}</p>
         </div>
         <div className="fmo-header__art" aria-hidden>
           <span className="fmo-header__icon-chip">
@@ -103,34 +106,34 @@ export default function ClientFinancialPage() {
         </div>
       </header>
 
-      <div className="fmo-surface fmo-stats-bar" aria-label="ملخص مالي">
+      <div className="fmo-surface fmo-stats-bar" aria-label={t(`${c}.summaryAria`)}>
         <StatSegment
           tone="green"
-          label="إجمالي المدفوع"
+          label={t(`${c}.totalPaid`)}
           value={<JodMoneyDisplay amount={summary.totalPaid} compact />}
           loading={busy}
         />
-        <StatSegment tone="amber" label="بانتظار دفع" value={summary.pendingPayment} loading={busy} />
-        <StatSegment tone="slate" label="تحتاج دفع" value={summary.unpaid} loading={busy} />
+        <StatSegment tone="amber" label={t(`${c}.pendingPayment`)} value={summary.pendingPayment} loading={busy} />
+        <StatSegment tone="slate" label={t(`${c}.needsPayment`)} value={summary.unpaid} loading={busy} />
       </div>
 
       <section className="fmo-surface fmo-content fmo-content--financial">
         {busy ? (
-          <p className="fmo-toolbar__hint">جارٍ التحميل…</p>
+          <p className="fmo-toolbar__hint">{t(`${c}.loading`)}</p>
         ) : rows.length === 0 ? (
           <div className="fmo-empty">
-            <h3 className="fmo-empty__title">لا توجد بيانات بعد</h3>
-            <p className="fmo-empty__sub">عند وجود طلبات ستظهر هنا حالة الدفع والمبالغ المرتبطة بها.</p>
+            <h3 className="fmo-empty__title">{t(`${c}.emptyTitle`)}</h3>
+            <p className="fmo-empty__sub">{t(`${c}.emptyDescription`)}</p>
             <Link className="fmo-empty__cta" to="/dashboard/client/my-orders">
-              الانتقال إلى طلباتي
+              {t(`${c}.goToMyOrders`)}
             </Link>
           </div>
         ) : (
           <>
             <p className="fmo-toolbar__hint">
-              للتفاصيل الكاملة والمرفقات، انتقل إلى{" "}
+              {t(`${c}.tableHint`)}{" "}
               <Link to="/dashboard/client/my-orders" className="fmo-empty__cta fmo-empty__cta--inline">
-                طلباتي
+                {t(`${c}.myOrders`)}
               </Link>
               .
             </p>
@@ -138,12 +141,12 @@ export default function ClientFinancialPage() {
               <table className="client-financial-table">
                 <thead>
                   <tr>
-                    <th>العنوان</th>
-                    <th>المبلغ / العملة</th>
-                    <th>يتطلب دفع</th>
-                    <th>حالة الدفع</th>
-                    <th>حالة الطلب</th>
-                    <th>إجراء</th>
+                    <th>{t(`${c}.colTitle`)}</th>
+                    <th>{t(`${c}.colAmount`)}</th>
+                    <th>{t(`${c}.colPaymentRequired`)}</th>
+                    <th>{t(`${c}.colPaymentStatus`)}</th>
+                    <th>{t(`${c}.colOrderStatus`)}</th>
+                    <th>{t(`${c}.colAction`)}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -159,8 +162,8 @@ export default function ClientFinancialPage() {
                           "—"
                         )}
                       </td>
-                      <td>{o.paymentRequired ? "نعم" : "لا"}</td>
-                      <td>{paymentStatusAr(o.paymentStatus)}</td>
+                      <td>{o.paymentRequired ? t(`${c}.yes`) : t(`${c}.no`)}</td>
+                      <td>{paymentStatusLabel(o.paymentStatus, t)}</td>
                       <td>{getOrderStatusLabel(o.orderStatus, t)}</td>
                       <td>
                         {isClientFixedOrderAwaitingStripeCheckout(o) ? (

@@ -23,7 +23,7 @@ const ENTITY_UPDATE = {
 };
 
 export function getAuditActionLabel(action, entityType, t) {
-  const ns = "dashboard.financialCenter.audit";
+  const ns = "finance.financialCenter.audit";
   const mapped = ACTION_MAP[action];
   if (mapped) return t(`${ns}.${mapped}`);
 
@@ -41,7 +41,7 @@ export function getAuditActionLabel(action, entityType, t) {
 }
 
 export function allocationPaidBadge(status, t) {
-  if (status === "paid") return { tone: "success", label: t("dashboard.financialCenter.paid") };
-  if (status === "held") return { tone: "pending", label: t("dashboard.financialCenter.held") };
-  return { tone: "pending", label: t("dashboard.financialCenter.unpaid") };
+  if (status === "paid") return { tone: "success", label: t("finance.financialCenter.paid") };
+  if (status === "held") return { tone: "pending", label: t("finance.financialCenter.held") };
+  return { tone: "pending", label: t("finance.financialCenter.unpaid") };
 }

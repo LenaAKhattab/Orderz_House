@@ -1,3 +1,4 @@
+import "../../../i18n/financeResources";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import DashboardShell from "../../../components/dashboard/DashboardShell";
@@ -81,7 +82,7 @@ export default function FinancialEmployeeDetailPage() {
   const [accountForm, setAccountForm] = useState(EMPTY_ACCOUNT_FORM);
   const [actionBusy, setActionBusy] = useState(false);
 
-  const currency = t("dashboard.financialCenter.currency");
+  const currency = t("finance.financialCenter.currency");
   const monthKey = currentMonthKey();
 
   const loadData = useCallback(async () => {
@@ -105,7 +106,7 @@ export default function FinancialEmployeeDetailPage() {
         setNotFound(true);
         setPerson(null);
       } else {
-        push(e?.response?.data?.message || t("dashboard.financialCenter.loadDetailsError"), "error");
+        push(e?.response?.data?.message || t("finance.financialCenter.loadDetailsError"), "error");
       }
     } finally {
       setLoading(false);
@@ -161,17 +162,17 @@ export default function FinancialEmployeeDetailPage() {
 
   const savePerson = async () => {
     if (!String(personForm.fullName || "").trim()) {
-      push(t("dashboard.financialCenter.fullNameRequired"), "error");
+      push(t("finance.financialCenter.fullNameRequired"), "error");
       return;
     }
     setActionBusy(true);
     try {
       await updateFinancialCenterPersonRequest(personId, personForm);
-      push(t("dashboard.financialCenter.personUpdated"), "success");
+      push(t("finance.financialCenter.personUpdated"), "success");
       setPersonModal(false);
       await loadData();
     } catch (e) {
-      push(e?.response?.data?.message || t("dashboard.financialCenter.actionFailed"), "error");
+      push(e?.response?.data?.message || t("finance.financialCenter.actionFailed"), "error");
     } finally {
       setActionBusy(false);
     }
@@ -190,15 +191,15 @@ export default function FinancialEmployeeDetailPage() {
   const saveAccount = async () => {
     const email = String(accountForm.loginEmail || "").trim();
     if (!email) {
-      push(t("dashboard.financialCenter.emailRequired"), "error");
+      push(t("finance.financialCenter.emailRequired"), "error");
       return;
     }
     if (!accountForm.password || accountForm.password.length < 8) {
-      push(t("dashboard.financialCenter.passwordMinLength"), "error");
+      push(t("finance.financialCenter.passwordMinLength"), "error");
       return;
     }
     if (accountForm.password !== accountForm.confirmPassword) {
-      push(t("dashboard.financialCenter.passwordMismatch"), "error");
+      push(t("finance.financialCenter.passwordMismatch"), "error");
       return;
     }
     setActionBusy(true);
@@ -207,11 +208,11 @@ export default function FinancialEmployeeDetailPage() {
         loginEmail: email,
         password: accountForm.password,
       });
-      push(t("dashboard.financialCenter.accountCreatedOk"), "success");
+      push(t("finance.financialCenter.accountCreatedOk"), "success");
       setAccountModal(false);
       await loadData();
     } catch (e) {
-      push(e?.response?.data?.message || t("dashboard.financialCenter.accountCreateError"), "error");
+      push(e?.response?.data?.message || t("finance.financialCenter.accountCreateError"), "error");
     } finally {
       setActionBusy(false);
     }
@@ -219,18 +220,18 @@ export default function FinancialEmployeeDetailPage() {
 
   const toggleAccountStatus = async (suspend) => {
     if (!person || actionBusy) return;
-    if (suspend && !window.confirm(t("dashboard.financialCenter.confirmSuspendAccount"))) return;
+    if (suspend && !window.confirm(t("finance.financialCenter.confirmSuspendAccount"))) return;
     setActionBusy(true);
     try {
       const fn = suspend ? suspendFinancialCenterPersonAccountRequest : activateFinancialCenterPersonAccountRequest;
       await fn(person.id);
       push(
-        suspend ? t("dashboard.financialCenter.accountSuspendedOk") : t("dashboard.financialCenter.accountActivatedOk"),
+        suspend ? t("finance.financialCenter.accountSuspendedOk") : t("finance.financialCenter.accountActivatedOk"),
         "success",
       );
       await loadData();
     } catch (e) {
-      push(e?.response?.data?.message || t("dashboard.financialCenter.accountUpdateError"), "error");
+      push(e?.response?.data?.message || t("finance.financialCenter.accountUpdateError"), "error");
     } finally {
       setActionBusy(false);
     }
@@ -239,7 +240,7 @@ export default function FinancialEmployeeDetailPage() {
   const breadcrumbs = [
     { labelKey: "dashboard.breadcrumbs.home", href: "/dashboard/super-admin" },
     { labelKey: "dashboard.breadcrumbs.financialCenter", href: FC_CENTER_PATH },
-    { label: person?.fullName || t("dashboard.financialCenter.employeeDetail.title") },
+    { label: person?.fullName || t("finance.financialCenter.employeeDetail.title") },
   ];
 
   if (loading && !person) {
@@ -254,12 +255,12 @@ export default function FinancialEmployeeDetailPage() {
     return (
       <DashboardShell className="fc-financial-center">
         <DashboardPageHeader
-          title={t("dashboard.financialCenter.employeeDetail.title")}
+          title={t("finance.financialCenter.employeeDetail.title")}
           breadcrumbs={breadcrumbs}
         />
-        <DashboardEmptyState title={t("dashboard.financialCenter.employeeDetail.notFound")} />
+        <DashboardEmptyState title={t("finance.financialCenter.employeeDetail.notFound")} />
         <Link to={FC_CENTER_PATH} className="btn btn-secondary mt-3">
-          {t("dashboard.financialCenter.employeeDetail.backToCenter")}
+          {t("finance.financialCenter.employeeDetail.backToCenter")}
         </Link>
       </DashboardShell>
     );
@@ -269,23 +270,23 @@ export default function FinancialEmployeeDetailPage() {
     <DashboardShell className="fc-financial-center">
       <DashboardPageHeader
         eyebrow={t("dashboard.nav.superAdmin.panelTitle")}
-        title={person?.fullName || t("dashboard.financialCenter.employeeDetail.title")}
-        description={t("dashboard.financialCenter.employeeDetail.description")}
+        title={person?.fullName || t("finance.financialCenter.employeeDetail.title")}
+        description={t("finance.financialCenter.employeeDetail.description")}
         breadcrumbs={breadcrumbs}
         statusBadge={
           <span className={`fc-badge fc-badge--${person?.status === "active" ? "active" : "inactive"}`}>
             {person?.status === "active"
-              ? t("dashboard.financialCenter.active")
-              : t("dashboard.financialCenter.inactive")}
+              ? t("finance.financialCenter.active")
+              : t("finance.financialCenter.inactive")}
           </span>
         }
         actions={
           <div className="fc-detail-header-actions">
             <button type="button" className="btn btn-secondary" onClick={() => navigate(FC_CENTER_PATH)}>
-              {t("dashboard.financialCenter.employeeDetail.backToCenter")}
+              {t("finance.financialCenter.employeeDetail.backToCenter")}
             </button>
             <button type="button" className="btn btn-secondary" onClick={openEditPerson}>
-              {t("dashboard.financialCenter.edit")}
+              {t("finance.financialCenter.edit")}
             </button>
           </div>
         }
@@ -299,50 +300,50 @@ export default function FinancialEmployeeDetailPage() {
           {accountStatusBadge(person?.accountStatus, t)}
         </div>
 
-        <DashboardSection title={t("dashboard.financialCenter.employeeDetail.employeeInfo")}>
+        <DashboardSection title={t("finance.financialCenter.employeeDetail.employeeInfo")}>
           <div className="fc-detail-grid">
-            <DetailField label={t("dashboard.financialCenter.colName")}>{person?.fullName}</DetailField>
-            <DetailField label={t("dashboard.financialCenter.colEmail")}>
+            <DetailField label={t("finance.financialCenter.colName")}>{person?.fullName}</DetailField>
+            <DetailField label={t("finance.financialCenter.colEmail")}>
               <span dir="ltr">{person?.email || "—"}</span>
             </DetailField>
-            <DetailField label={t("dashboard.financialCenter.colPhone")}>
+            <DetailField label={t("finance.financialCenter.colPhone")}>
               <span dir="ltr">{person?.phone || "—"}</span>
             </DetailField>
-            <DetailField label={t("dashboard.financialCenter.colDepartment")}>
+            <DetailField label={t("finance.financialCenter.colDepartment")}>
               {getFinancialDepartmentLabel(person, t)}
             </DetailField>
-            <DetailField label={t("dashboard.financialCenter.colJobTitle")}>{person?.jobTitle}</DetailField>
-            <DetailField label={t("dashboard.financialCenter.colPaymentMethod")}>{person?.paymentMethod}</DetailField>
-            <DetailField label={t("dashboard.financialCenter.colPaymentDetails")}>{person?.paymentDetails}</DetailField>
-            <DetailField label={t("dashboard.financialCenter.colNotes")}>{person?.notes}</DetailField>
-            <DetailField label={t("dashboard.financialCenter.employeeDetail.addedAt")}>
+            <DetailField label={t("finance.financialCenter.colJobTitle")}>{person?.jobTitle}</DetailField>
+            <DetailField label={t("finance.financialCenter.colPaymentMethod")}>{person?.paymentMethod}</DetailField>
+            <DetailField label={t("finance.financialCenter.colPaymentDetails")}>{person?.paymentDetails}</DetailField>
+            <DetailField label={t("finance.financialCenter.colNotes")}>{person?.notes}</DetailField>
+            <DetailField label={t("finance.financialCenter.employeeDetail.addedAt")}>
               {formatDate(person?.createdAt)}
             </DetailField>
           </div>
         </DashboardSection>
 
-        <DashboardSection title={t("dashboard.financialCenter.employeeDetail.loginAccount")}>
+        <DashboardSection title={t("finance.financialCenter.employeeDetail.loginAccount")}>
           <div className="fc-preview-box">
             <div className="fc-preview-row">
-              <span>{t("dashboard.financialCenter.accountStatus")}</span>
+              <span>{t("finance.financialCenter.accountStatus")}</span>
               {accountStatusBadge(person?.accountStatus, t)}
             </div>
             {person?.loginEmail ? (
               <div className="fc-preview-row">
-                <span>{t("dashboard.financialCenter.loginEmail")}</span>
+                <span>{t("finance.financialCenter.loginEmail")}</span>
                 <strong dir="ltr">{person.loginEmail}</strong>
               </div>
             ) : null}
             {person?.accountCreatedAt ? (
               <div className="fc-preview-row">
-                <span>{t("dashboard.financialCenter.accountCreatedAt")}</span>
+                <span>{t("finance.financialCenter.accountCreatedAt")}</span>
                 <strong>{formatDate(person.accountCreatedAt)}</strong>
               </div>
             ) : null}
             <div className="fc-actions">
               {person?.accountStatus === "none" ? (
                 <button type="button" className="btn btn-secondary btn-sm" onClick={openAccountModal}>
-                  {t("dashboard.financialCenter.createLoginAccount")}
+                  {t("finance.financialCenter.createLoginAccount")}
                 </button>
               ) : null}
               {person?.accountStatus === "active" ? (
@@ -352,7 +353,7 @@ export default function FinancialEmployeeDetailPage() {
                   disabled={actionBusy}
                   onClick={() => toggleAccountStatus(true)}
                 >
-                  {t("dashboard.financialCenter.suspendAccount")}
+                  {t("finance.financialCenter.suspendAccount")}
                 </button>
               ) : null}
               {person?.accountStatus === "suspended" ? (
@@ -362,7 +363,7 @@ export default function FinancialEmployeeDetailPage() {
                   disabled={actionBusy}
                   onClick={() => toggleAccountStatus(false)}
                 >
-                  {t("dashboard.financialCenter.activateAccount")}
+                  {t("finance.financialCenter.activateAccount")}
                 </button>
               ) : null}
             </div>
@@ -371,30 +372,30 @@ export default function FinancialEmployeeDetailPage() {
 
         <div className="fc-summary-grid">
           <div className="fc-summary-card">
-            <span className="fc-summary-card__label">{t("dashboard.financialCenter.colTotalBonus")}</span>
+            <span className="fc-summary-card__label">{t("finance.financialCenter.colTotalBonus")}</span>
             <strong className="fc-summary-card__value">{formatMoney(person?.totalBonus, currency)}</strong>
           </div>
           <div className="fc-summary-card">
-            <span className="fc-summary-card__label">{t("dashboard.financialCenter.colPaid")}</span>
+            <span className="fc-summary-card__label">{t("finance.financialCenter.colPaid")}</span>
             <strong className="fc-summary-card__value">{formatMoney(person?.totalPaid, currency)}</strong>
           </div>
           <div className="fc-summary-card">
-            <span className="fc-summary-card__label">{t("dashboard.financialCenter.colUnpaid")}</span>
+            <span className="fc-summary-card__label">{t("finance.financialCenter.colUnpaid")}</span>
             <strong className="fc-summary-card__value">{formatMoney(person?.totalUnpaid, currency)}</strong>
           </div>
           <div className="fc-summary-card">
-            <span className="fc-summary-card__label">{t("dashboard.financialUser.monthBonus")}</span>
+            <span className="fc-summary-card__label">{t("finance.financialUser.monthBonus")}</span>
             <strong className="fc-summary-card__value">{formatMoney(currentMonthBonus, currency)}</strong>
           </div>
           <div className="fc-summary-card">
-            <span className="fc-summary-card__label">{t("dashboard.financialCenter.employeeDetail.lastPayment")}</span>
+            <span className="fc-summary-card__label">{t("finance.financialCenter.employeeDetail.lastPayment")}</span>
             <strong className="fc-summary-card__value">{formatDate(lastPaymentAt)}</strong>
           </div>
         </div>
 
-        <DashboardSection title={t("dashboard.financialCenter.employeeDetail.employeeBonuses")}>
+        <DashboardSection title={t("finance.financialCenter.employeeDetail.employeeBonuses")}>
           {!bonusDetails?.items?.length ? (
-            <DashboardEmptyState title={t("dashboard.financialCenter.employeeDetail.noBonuses")} />
+            <DashboardEmptyState title={t("finance.financialCenter.employeeDetail.noBonuses")} />
           ) : (
             <FinancialCenterTableWrap>
               <table className="fc-table fc-table--employee-bonus fc-table--fixed">
@@ -411,15 +412,15 @@ export default function FinancialEmployeeDetailPage() {
                 </colgroup>
                 <thead>
                   <tr>
-                    <th>{t("dashboard.financialCenter.month")}</th>
-                    <th>{t("dashboard.financialCenter.colTitle")}</th>
-                    <th>{t("dashboard.financialCenter.sourceType")}</th>
-                    <th>{t("dashboard.financialCenter.bonusPoolAmount")}</th>
-                    <th>{t("dashboard.financialCenter.colPercentage")}</th>
-                    <th>{t("dashboard.financialCenter.colAmount")}</th>
-                    <th>{t("dashboard.financialCenter.colPayment")}</th>
-                    <th>{t("dashboard.financialUser.paidAt")}</th>
-                    <th>{t("dashboard.financialUser.note")}</th>
+                    <th>{t("finance.financialCenter.month")}</th>
+                    <th>{t("finance.financialCenter.colTitle")}</th>
+                    <th>{t("finance.financialCenter.sourceType")}</th>
+                    <th>{t("finance.financialCenter.bonusPoolAmount")}</th>
+                    <th>{t("finance.financialCenter.colPercentage")}</th>
+                    <th>{t("finance.financialCenter.colAmount")}</th>
+                    <th>{t("finance.financialCenter.colPayment")}</th>
+                    <th>{t("finance.financialUser.paidAt")}</th>
+                    <th>{t("finance.financialUser.note")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -448,7 +449,7 @@ export default function FinancialEmployeeDetailPage() {
         </DashboardSection>
 
         {auditLogs.length ? (
-          <DashboardSection title={t("dashboard.financialCenter.employeeDetail.auditLog")}>
+          <DashboardSection title={t("finance.financialCenter.employeeDetail.auditLog")}>
             <ul className="fc-audit-list">
               {auditLogs.map((log) => (
                 <li key={log.id}>
@@ -464,28 +465,28 @@ export default function FinancialEmployeeDetailPage() {
       <DashboardModal
         open={personModal}
         className="fc-modal"
-        title={t("dashboard.financialCenter.editPerson")}
+        title={t("finance.financialCenter.editPerson")}
         onClose={() => setPersonModal(false)}
         footer={
           <>
             <button type="button" className="btn btn-secondary" onClick={() => setPersonModal(false)}>
-              {t("dashboard.financialCenter.close")}
+              {t("finance.financialCenter.close")}
             </button>
             <button type="button" className="btn btn-primary" disabled={actionBusy} onClick={savePerson}>
-              {t("dashboard.financialCenter.save")}
+              {t("finance.financialCenter.save")}
             </button>
           </>
         }
       >
         <div className="dash-ui-modal__form" dir="rtl">
-          <DashboardFieldGroup label={`${t("dashboard.financialCenter.colName")} *`}>
+          <DashboardFieldGroup label={`${t("finance.financialCenter.colName")} *`}>
             <input
               className="input"
               value={personForm.fullName}
               onChange={(e) => setPersonForm((f) => ({ ...f, fullName: e.target.value }))}
             />
           </DashboardFieldGroup>
-          <DashboardFieldGroup label={t("dashboard.financialCenter.colEmail")}>
+          <DashboardFieldGroup label={t("finance.financialCenter.colEmail")}>
             <input
               className="input"
               type="email"
@@ -494,7 +495,7 @@ export default function FinancialEmployeeDetailPage() {
               onChange={(e) => setPersonForm((f) => ({ ...f, email: e.target.value }))}
             />
           </DashboardFieldGroup>
-          <DashboardFieldGroup label={t("dashboard.financialCenter.colPhone")}>
+          <DashboardFieldGroup label={t("finance.financialCenter.colPhone")}>
             <input
               className="input"
               dir="ltr"
@@ -502,14 +503,14 @@ export default function FinancialEmployeeDetailPage() {
               onChange={(e) => setPersonForm((f) => ({ ...f, phone: e.target.value }))}
             />
           </DashboardFieldGroup>
-          <DashboardFieldGroup label={t("dashboard.financialCenter.colJobTitle")}>
+          <DashboardFieldGroup label={t("finance.financialCenter.colJobTitle")}>
             <input
               className="input"
               value={personForm.jobTitle}
               onChange={(e) => setPersonForm((f) => ({ ...f, jobTitle: e.target.value }))}
             />
           </DashboardFieldGroup>
-          <DashboardFieldGroup label={t("dashboard.financialCenter.colDepartment")}>
+          <DashboardFieldGroup label={t("finance.financialCenter.colDepartment")}>
             <FinancialDepartmentCombobox
               value={personForm.departmentId}
               onChange={(departmentId) => setPersonForm((f) => ({ ...f, departmentId }))}
@@ -518,14 +519,14 @@ export default function FinancialEmployeeDetailPage() {
               disabled={actionBusy}
             />
           </DashboardFieldGroup>
-          <DashboardFieldGroup label={t("dashboard.financialCenter.colPaymentMethod")}>
+          <DashboardFieldGroup label={t("finance.financialCenter.colPaymentMethod")}>
             <input
               className="input"
               value={personForm.paymentMethod}
               onChange={(e) => setPersonForm((f) => ({ ...f, paymentMethod: e.target.value }))}
             />
           </DashboardFieldGroup>
-          <DashboardFieldGroup label={t("dashboard.financialCenter.colPaymentDetails")}>
+          <DashboardFieldGroup label={t("finance.financialCenter.colPaymentDetails")}>
             <textarea
               className="input textarea"
               rows={2}
@@ -533,7 +534,7 @@ export default function FinancialEmployeeDetailPage() {
               onChange={(e) => setPersonForm((f) => ({ ...f, paymentDetails: e.target.value }))}
             />
           </DashboardFieldGroup>
-          <DashboardFieldGroup label={t("dashboard.financialCenter.colNotes")}>
+          <DashboardFieldGroup label={t("finance.financialCenter.colNotes")}>
             <textarea
               className="input textarea"
               rows={2}
@@ -541,14 +542,14 @@ export default function FinancialEmployeeDetailPage() {
               onChange={(e) => setPersonForm((f) => ({ ...f, notes: e.target.value }))}
             />
           </DashboardFieldGroup>
-          <DashboardFieldGroup label={t("dashboard.financialCenter.status")}>
+          <DashboardFieldGroup label={t("finance.financialCenter.status")}>
             <select
               className="input"
               value={personForm.status}
               onChange={(e) => setPersonForm((f) => ({ ...f, status: e.target.value }))}
             >
-              <option value="active">{t("dashboard.financialCenter.active")}</option>
-              <option value="inactive">{t("dashboard.financialCenter.inactive")}</option>
+              <option value="active">{t("finance.financialCenter.active")}</option>
+              <option value="inactive">{t("finance.financialCenter.inactive")}</option>
             </select>
           </DashboardFieldGroup>
         </div>
@@ -557,21 +558,21 @@ export default function FinancialEmployeeDetailPage() {
       <DashboardModal
         open={accountModal}
         className="fc-modal"
-        title={t("dashboard.financialCenter.createLoginAccount")}
+        title={t("finance.financialCenter.createLoginAccount")}
         onClose={() => setAccountModal(false)}
         footer={
           <>
             <button type="button" className="btn btn-secondary" onClick={() => setAccountModal(false)}>
-              {t("dashboard.financialCenter.close")}
+              {t("finance.financialCenter.close")}
             </button>
             <button type="button" className="btn btn-primary" disabled={actionBusy} onClick={saveAccount}>
-              {t("dashboard.financialCenter.save")}
+              {t("finance.financialCenter.save")}
             </button>
           </>
         }
       >
         <div className="dash-ui-modal__form" dir="rtl">
-          <DashboardFieldGroup label={t("dashboard.financialCenter.loginEmail")}>
+          <DashboardFieldGroup label={t("finance.financialCenter.loginEmail")}>
             <input
               className="input"
               type="email"
@@ -580,7 +581,7 @@ export default function FinancialEmployeeDetailPage() {
               onChange={(e) => setAccountForm((f) => ({ ...f, loginEmail: e.target.value }))}
             />
           </DashboardFieldGroup>
-          <DashboardFieldGroup label={t("dashboard.financialCenter.password")}>
+          <DashboardFieldGroup label={t("finance.financialCenter.password")}>
             <input
               className="input"
               type="password"
@@ -589,7 +590,7 @@ export default function FinancialEmployeeDetailPage() {
               onChange={(e) => setAccountForm((f) => ({ ...f, password: e.target.value }))}
             />
           </DashboardFieldGroup>
-          <DashboardFieldGroup label={t("dashboard.financialCenter.confirmPassword")}>
+          <DashboardFieldGroup label={t("finance.financialCenter.confirmPassword")}>
             <input
               className="input"
               type="password"

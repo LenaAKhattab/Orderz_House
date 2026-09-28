@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import "../../../i18n/financeResources";
 import { useTranslation } from "../../../i18n/LanguageProvider";
 
 export const FC_TABLE_PAGE_SIZE = 5;
@@ -56,14 +57,14 @@ export default function FinancialCenterPagination({
       dir="rtl"
     >
       <p className="fc-pagination__summary">
-        {t("dashboard.financialCenter.pagination.showing", { from, to, total: safeTotal })}
+        {t("finance.financialCenter.pagination.showing", { from, to, total: safeTotal })}
       </p>
 
       {showControls ? (
         <div
           className="fc-pagination__controls"
           role="navigation"
-          aria-label={t("dashboard.financialCenter.pagination.pageOf", { page: safePage, pages: totalPages })}
+          aria-label={t("finance.financialCenter.pagination.pageOf", { page: safePage, pages: totalPages })}
         >
           <button
             type="button"
@@ -71,7 +72,7 @@ export default function FinancialCenterPagination({
             disabled={!canPrev}
             onClick={() => onPageChange(safePage - 1)}
           >
-            {t("dashboard.financialCenter.pagination.previous")}
+            {t("finance.financialCenter.pagination.previous")}
           </button>
 
           <div className="fc-pagination__numbers">
@@ -101,7 +102,7 @@ export default function FinancialCenterPagination({
             disabled={!canNext}
             onClick={() => onPageChange(safePage + 1)}
           >
-            {t("dashboard.financialCenter.pagination.next")}
+            {t("finance.financialCenter.pagination.next")}
           </button>
         </div>
       ) : null}

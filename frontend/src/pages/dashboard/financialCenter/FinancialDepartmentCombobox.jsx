@@ -1,3 +1,4 @@
+import "../../../i18n/financeResources";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "../../../i18n/LanguageProvider";
 import { useToast } from "../../../components/ui/toastContext";
@@ -81,7 +82,7 @@ export default function FinancialDepartmentCombobox({
         onChange(String(dept.id));
         setQuery("");
         setOpen(false);
-        push(t("dashboard.financialCenter.departmentCreated"), "success");
+        push(t("finance.financialCenter.departmentCreated"), "success");
       }
     } catch (e) {
       if (e?.response?.status === 409) {
@@ -93,7 +94,7 @@ export default function FinancialDepartmentCombobox({
           return;
         }
       }
-      push(e?.response?.data?.message || t("dashboard.financialCenter.departmentCreateError"), "error");
+      push(e?.response?.data?.message || t("finance.financialCenter.departmentCreateError"), "error");
     } finally {
       setCreating(false);
     }
@@ -113,7 +114,7 @@ export default function FinancialDepartmentCombobox({
         disabled={disabled}
       >
         <span className={`oh-select__value ${selected ? "" : "oh-select__value--placeholder"}`.trim()}>
-          {selected ? selected.label : placeholder || t("dashboard.financialCenter.selectDepartment")}
+          {selected ? selected.label : placeholder || t("finance.financialCenter.selectDepartment")}
         </span>
         <span className="oh-select__chev" aria-hidden="true">
           ▾
@@ -126,7 +127,7 @@ export default function FinancialDepartmentCombobox({
             <input
               className="input"
               value={query}
-              placeholder={t("dashboard.financialCenter.searchDepartment")}
+              placeholder={t("finance.financialCenter.searchDepartment")}
               onChange={(e) => setQuery(e.target.value)}
               autoFocus
               disabled={creating}
@@ -150,15 +151,15 @@ export default function FinancialDepartmentCombobox({
             {canCreate ? (
               <button type="button" className="oh-select__opt oh-select__opt--create" onClick={() => void handleCreate()}>
                 <div className="oh-select__opt-label">
-                  {t("dashboard.financialCenter.addDepartmentNamed", { name: qTrim })}
+                  {t("finance.financialCenter.addDepartmentNamed", { name: qTrim })}
                 </div>
               </button>
             ) : null}
             {!filtered.length && !canCreate ? (
-              <div className="oh-select__empty">{t("dashboard.financialCenter.noDepartmentResults")}</div>
+              <div className="oh-select__empty">{t("finance.financialCenter.noDepartmentResults")}</div>
             ) : null}
           </div>
-          <p className="fc-dept-combobox__hint m-0">{t("dashboard.financialCenter.addDepartmentHint")}</p>
+          <p className="fc-dept-combobox__hint m-0">{t("finance.financialCenter.addDepartmentHint")}</p>
         </div>
       ) : null}
     </div>

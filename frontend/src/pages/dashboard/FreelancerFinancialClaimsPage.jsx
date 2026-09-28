@@ -1,3 +1,4 @@
+import "../../i18n/financeResources";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Calendar,
@@ -291,7 +292,9 @@ export default function FreelancerFinancialClaimsPage() {
       ...prev,
       orderNumber: project.orderNumber || "",
       requestTitle: project.requestTitle || "",
-      categoriesText: Array.isArray(project.categories) ? project.categories.join("، ") : "",
+      categoriesText: Array.isArray(project.categories)
+        ? project.categories.join(locale === "en" ? ", " : "، ")
+        : "",
       durationMinutes:
         Number(project.durationMinutes) > 0 ? String(project.durationMinutes) : prev.durationMinutes || "",
       actualCompletionDate: project.actualCompletionDate || "",
@@ -381,9 +384,9 @@ export default function FreelancerFinancialClaimsPage() {
 
       {(cashWallet.availableMinor > 0 || cashWallet.entries.length > 0) && (
         <section className="ffc-surface" style={{ marginBottom: "1rem", padding: "1rem" }}>
-          <h2 style={{ margin: "0 0 0.5rem", fontSize: "1.05rem" }}>رصيد الطلبات المُدارة</h2>
+          <h2 style={{ margin: "0 0 0.5rem", fontSize: "1.05rem" }}>{t("finance.freelancer.managedOrdersBalanceTitle")}</h2>
           <p style={{ margin: "0 0 0.75rem", opacity: 0.85 }}>
-            المتاح:{" "}
+            {t("finance.freelancer.available")}:{" "}
             <strong>
               {formatMoney(Number(cashWallet.availableMinor) / 100, emDash)} {cashWallet.currency}
             </strong>
@@ -391,7 +394,7 @@ export default function FreelancerFinancialClaimsPage() {
           <ul style={{ margin: 0, paddingInlineStart: "1.1rem" }}>
             {cashWallet.entries.slice(0, 8).map((entry) => (
               <li key={entry.id} style={{ marginBottom: "0.35rem" }}>
-                {entry.description || "أرباح طلب مُدار"} —{" "}
+                {entry.description || t("finance.freelancer.defaultEntryDescription")} —{" "}
                 {formatMoney(Number(entry.amountMinor) / 100, emDash)} {entry.currency || "JOD"}
                 <span style={{ opacity: 0.65, marginInlineStart: "0.5rem" }}>
                   {formatDate(entry.createdAt, locale, emDash)}

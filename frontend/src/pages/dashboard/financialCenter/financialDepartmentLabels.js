@@ -7,7 +7,7 @@ export function getFinancialDepartmentLabel(dept, t) {
   const slug = dept.slug || dept.departmentSlug;
   const name = dept.name || dept.departmentName || dept.department;
   if (slug) {
-    const key = `dashboard.financialCenter.departments.${slug}`;
+    const key = `finance.financialCenter.departments.${slug}`;
     const translated = t(key);
     if (translated && translated !== key) return translated;
   }

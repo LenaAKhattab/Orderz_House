@@ -11,17 +11,17 @@ export function formatDate(value) {
 }
 
 export function sourceLabel(type, t) {
-  if (type === "manual") return t("dashboard.financialCenter.sourceManual");
-  if (type === "subscription_payment") return t("dashboard.financialCenter.sourceSubscriptions");
-  if (type === "order_payment") return t("dashboard.financialCenter.sourceOrders");
+  if (type === "manual") return t("finance.financialCenter.sourceManual");
+  if (type === "subscription_payment") return t("finance.financialCenter.sourceSubscriptions");
+  if (type === "order_payment") return t("finance.financialCenter.sourceOrders");
   return type || "—";
 }
 
 export function accountStatusBadge(status, t) {
   const map = {
-    none: ["fc-badge--inactive", t("dashboard.financialCenter.accountNone")],
-    active: ["fc-badge--active", t("dashboard.financialCenter.accountActive")],
-    suspended: ["fc-badge--cancelled", t("dashboard.financialCenter.accountSuspended")],
+    none: ["fc-badge--inactive", t("finance.financialCenter.accountNone")],
+    active: ["fc-badge--active", t("finance.financialCenter.accountActive")],
+    suspended: ["fc-badge--cancelled", t("finance.financialCenter.accountSuspended")],
   };
   const [cls, label] = map[status] || ["fc-badge--inactive", status];
   return <span className={`fc-badge ${cls}`}>{label}</span>;
