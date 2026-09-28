@@ -1,5 +1,6 @@
 import axios from "axios";
 import { getApiBaseUrl } from "../config/apiBase";
+import { scrubArabicApiError } from "../utils/apiErrorMessage";
 
 export const TOKEN_KEY = "orderz_auth_token";
 
@@ -31,5 +32,10 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => Promise.reject(scrubArabicApiError(error)),
+);
 
 export default api;

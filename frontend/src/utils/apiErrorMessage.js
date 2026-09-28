@@ -226,4 +226,20 @@ function looksTechnicalOrUnsafe(t) {
   return false;
 }
 
+/**
+ * English UI must not render unmapped Arabic API error text.
+ * Mutates the axios error so callers that read `response.data.message` directly stay in English.
+ */
+export function scrubArabicApiError(err) {
+  if (!isEnglishLocale() || !err) return err;
+  const data = err.response?.data;
+  if (data && typeof data === "object" && typeof data.message === "string" && ARABIC.test(data.message)) {
+    data.message = EN_ERRORS.generic;
+  }
+  if (typeof err.message === "string" && ARABIC.test(err.message)) {
+    err.message = EN_ERRORS.generic;
+  }
+  return err;
+}
+
 export { DEFAULT_GENERIC_AR };

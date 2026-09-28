@@ -29,6 +29,8 @@
   "whatsapp": "WhatsApp",
   "location": "Location",
   "locationValue": "Dubai, United Arab Emirates",
+  "contactCenterButton": "Contact center",
+  "contactCenterHelper": "For suggestions and complaints",
   "workingHours": "Working hours",
   "workingHoursValue": "We work around the clock for you",
   "phoneValue": "+971 522857808",

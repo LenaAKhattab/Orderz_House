@@ -5,6 +5,7 @@ import { formatInt, formatMoneyJod } from "../../components/analytics/super-admi
 import { isUnknownCountryRow } from "../../components/analytics/super-admin/registerAnalysisLocale";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import { getSuperadminDashboardAnalysisRequest } from "../../services/api";
+import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
 import { withResolvedCountryNames } from "../../utils/countryDisplayAr";
 import "../../styles/adminOverviewSoft.css";
 import "../../styles/adminAnalysisSoft.css";
@@ -145,7 +146,7 @@ export default function SuperAdminAnalysisPage() {
         setData(res?.data || null);
         setError("");
       } catch (e) {
-        setError(e?.response?.data?.message || e?.message || t("analysis.errors.loadAnalysis"));
+        setError(getSafeApiErrorMessage(e, t("analysis.errors.loadAnalysis")));
       } finally {
         setLoading(false);
         setRefreshing(false);
