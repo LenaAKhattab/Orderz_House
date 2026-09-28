@@ -17,12 +17,14 @@ export default function OrderDescriptionCard({ label, text, icon = "description"
       <div className="od-description__body">
         {paragraphs.length ? (
           paragraphs.map((para, i) => (
-            <p key={i} className="od-description__text">
+            <p key={i} className="od-description__text" dir="auto">
               {para}
             </p>
           ))
         ) : (
-          <p className="od-description__text">—</p>
+          <p className="od-description__text" dir="auto">
+            {t("orders.marketplace.card.noDescription")}
+          </p>
         )}
       </div>
     </article>

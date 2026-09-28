@@ -183,7 +183,7 @@ export default function OrderCard({
       {showFull ? (
         <header className="oh-pool-card__head">
           <div className="oh-pool-card__title-wrap">
-            <div className="oh-pool-card__title">{localizedTitle}</div>
+            <div className="oh-pool-card__title" dir="auto">{localizedTitle}</div>
             <div className="oh-pool-card__sub">
               {showOrderCode && order?.orderCode ? (
                 <span className="oh-code" title={order.orderCode}>
@@ -201,7 +201,7 @@ export default function OrderCard({
       ) : (
         <header className="oh-pool-card__head oh-pool-card__head--summary">
           <div className="oh-pool-card__title-wrap">
-            <div className="oh-pool-card__title">{localizedTitle}</div>
+            <div className="oh-pool-card__title" dir="auto">{localizedTitle}</div>
           </div>
         </header>
       )}
@@ -249,14 +249,14 @@ export default function OrderCard({
               {t("orders.card.deliveryDuration")}: <DurationValue>{formatOrderDuration(order, locale, t)}</DurationValue>
             </span>
           </div>
-          <p className="oh-pool-card__desc oh-pool-card__desc--compact-preview">
+          <p className="oh-pool-card__desc oh-pool-card__desc--compact-preview" dir="auto">
             {shortText(localizedDescription, 220, t("orders.marketplace.card.noDescription"))}
           </p>
         </>
       )}
 
       {showFull ? (
-        <p className={`oh-pool-card__desc${expanded ? " oh-pool-card__desc--expanded" : ""}`.trim()}>
+        <p className={`oh-pool-card__desc${expanded ? " oh-pool-card__desc--expanded" : ""}`.trim()} dir="auto">
           {expanded ? showValue(localizedDescription) : shortText(localizedDescription, 140, t("orders.marketplace.card.noDescription"))}
         </p>
       ) : null}

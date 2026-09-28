@@ -214,10 +214,10 @@ function MarketplaceOrderRow({
         <div className="oh-order-row__divider" aria-hidden />
 
         <div className="oh-order-row__center text-start">
-          <h3 className="oh-order-row__title text-start" dir={locale === "en" ? "ltr" : "auto"}>
+          <h3 className="oh-order-row__title text-start" dir="auto">
             {title}
           </h3>
-          <p className="oh-order-row__summary text-start" dir={locale === "en" ? "ltr" : "auto"}>
+          <p className="oh-order-row__summary text-start" dir="auto">
             {shortDescription(description, 120, { emptyLabel: t("orders.marketplace.card.noDescription") })}
           </p>
           {order?.showTrainingBadge || chips.length || collectionLabel || Number(order?.relistCount) > 0 ? (

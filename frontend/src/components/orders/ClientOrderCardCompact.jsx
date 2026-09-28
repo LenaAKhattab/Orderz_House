@@ -235,7 +235,13 @@ export default function ClientOrderCardCompact({ order, onOrdersChange }) {
         ) : null}
       </div>
 
-      <p className="client-order-compact__desc">{expanded ? String(order?.description || "").trim() || "—" : shortText(order?.description, 200)}</p>
+      <p className="client-order-compact__desc" dir="auto">
+        {String(order?.description || "").trim()
+          ? expanded
+            ? String(order.description).trim()
+            : shortText(order.description, 200)
+          : t("orders.marketplace.card.noDescription")}
+      </p>
 
       {displayOrder?.clientRevisionNote ? (
         <p className="help" style={{ margin: "8px 0 0", padding: "10px 12px", background: "rgba(59, 130, 246, 0.08)", borderRadius: 10 }}>

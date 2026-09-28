@@ -12,7 +12,7 @@ export default function OrderTitleCard({ title, icon = "title", label }) {
         <OrderDetailsNeuIcon name={icon} variant="squircle" />
         <div className="od-section-head__copy">
           <div className="od-title-card__label">{titleLabel}</div>
-          <h1 className="od-title-card__value" id="od-order-title-value">
+          <h1 className="od-title-card__value" id="od-order-title-value" dir="auto">
             {title?.trim() ? title : "—"}
           </h1>
         </div>
