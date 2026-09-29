@@ -152,29 +152,53 @@ export function isOtpEmailSendError(err) {
 
 /**
  * Auth-specific mapper: timeout, network, OTP email failure, then safe API message.
+ * Preferred: getAuthApiErrorMessage(err, t, "auth.login.error")
+ * Also accepts a pre-translated fallback string as the 2nd arg (legacy callers).
  * @param {unknown} err
- * @param {(key: string) => string} t
- * @param {string} fallbackKey e.g. "auth.login.error"
+ * @param {((key: string) => string) | string} tOrFallback
+ * @param {string} [fallbackKey] e.g. "auth.login.error" when tOrFallback is `t`
  */
-export function getAuthApiErrorMessage(err, t, fallbackKey) {
+export function getAuthApiErrorMessage(err, tOrFallback, fallbackKey) {
   logDevApiErrorContext(err);
+  const tIsFn = typeof tOrFallback === "function";
+  const translate = (key, stringFallback) => {
+    if (tIsFn) {
+      try {
+        const out = tOrFallback(key);
+        if (typeof out === "string" && out.trim()) return out;
+      } catch {
+        /* fall through */
+      }
+    }
+    return stringFallback;
+  };
+  const fallbackText = tIsFn
+    ? translate(fallbackKey || "auth.register.error", DEFAULT_GENERIC_AR)
+    : String(tOrFallback || DEFAULT_GENERIC_AR);
+
   if (isAxiosTimeoutError(err)) {
     if (fallbackKey === "auth.login.error") {
-      return t("auth.errors.loginTimeout");
+      return translate(
+        "auth.errors.loginTimeout",
+        "استغرق تسجيل الدخول وقتًا أطول من المتوقع. حاول مرة أخرى بعد قليل.",
+      );
     }
-    return t("auth.errors.requestTimeout");
+    return translate(
+      "auth.errors.requestTimeout",
+      "استغرق الطلب وقتاً طويلاً. تحقق من الاتصال وحاول مجدداً.",
+    );
   }
   if (isOtpEmailSendError(err)) {
     const msg = err?.response?.data?.message;
     if (typeof msg === "string" && msg.trim() && !looksTechnicalOrUnsafe(msg.trim())) {
       return msg.trim();
     }
-    return t("auth.errors.otpEmailFailed");
+    return translate("auth.errors.otpEmailFailed", "تعذر إرسال رسالة رمز التحقق.");
   }
   if (isAxiosNetworkError(err)) {
-    return t("auth.errors.network");
+    return translate("auth.errors.network", "تعذر الاتصال بالخادم. تحقق من الاتصال وحاول مجدداً.");
   }
-  return getSafeApiErrorMessage(err, t(fallbackKey));
+  return getSafeApiErrorMessage(err, fallbackText);
 }
 
 /**
