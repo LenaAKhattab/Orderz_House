@@ -114,36 +114,7 @@ function normalizeSlug(raw) {
     .slice(0, 120);
 }
 
-function normalizePhonePart(value) {
-  return String(value ?? "")
-    .trim()
-    .replace(/[\s()-]/g, "");
-}
-
-function composeE164(raw) {
-  if (typeof raw === "string" && raw.trim().startsWith("+")) {
-    const e164 = normalizePhonePart(raw);
-    if (!/^\+[1-9]\d{7,14}$/.test(e164)) {
-      throw createPublicApiError(
-        "رقم الجوال يجب أن يكون بالصيغة الدولية (مثال: +9627xxxxxxxx).",
-        400,
-        "VALIDATION_ERROR",
-      );
-    }
-    return e164;
-  }
-  const cc = normalizePhonePart(raw?.countryCode);
-  const num = normalizePhonePart(raw?.number);
-  const e164 = `${cc}${num}`;
-  if (!/^\+[1-9]\d{7,14}$/.test(e164)) {
-    throw createPublicApiError(
-      "رقم الجوال يجب أن يكون بالصيغة الدولية (مثال: +9627xxxxxxxx).",
-      400,
-      "VALIDATION_ERROR",
-    );
-  }
-  return e164;
-}
+const { composeE164 } = require("../utils/phoneE164");
 
 function splitFullName(fullName) {
   const parts = String(fullName || "")

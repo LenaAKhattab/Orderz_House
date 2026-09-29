@@ -18,7 +18,7 @@ const uploadAccountActivationKyc = multer({
     if (ACCOUNT_ACTIVATION_KYC_ALLOWED_MIME.includes(mime)) {
       return cb(null, true);
     }
-    const err = new Error("يُسمح بصور JPEG أو PNG أو WebP فقط لوثيقة الهوية.");
+    const err = new Error("يُسمح بصور JPEG أو PNG أو WebP فقط لوثيقة الهوية. على آيفون اختر «الأكثر توافقاً» أو صدّر الصورة كـ JPG.");
     err.statusCode = 400;
     err.exposeToClient = true;
     err.publicCode = ACCOUNT_ACTIVATION_KYC_ERROR_CODES.INVALID_FILE_TYPE;

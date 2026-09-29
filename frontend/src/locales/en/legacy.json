@@ -313,6 +313,8 @@
     "identitySection": "Identity",
     "idFrontRequired": "ID image (front) *",
     "idBackRequired": "ID image (back) *",
+    "idFileHint": "JPEG, PNG, or WebP only. On iPhone: Settings → Camera → Formats → Most Compatible, or export as JPG.",
+    "phoneHint": "You can enter the number with or without a leading zero; it is normalized automatically (e.g. 079… or 79…).",
     "loginSection": "Sign-in account",
     "errors": {
       "inviteIncomplete": "The invite link is incomplete.",
@@ -322,6 +324,7 @@
       "workFieldsRequired": "Please select at least one work area.",
       "idFrontRequired": "Front ID image is required.",
       "idBackRequired": "Back ID image is required.",
+      "idFileType": "Unsupported ID image format. Use JPEG, PNG, or WebP. On iPhone choose Most Compatible or export as JPG.",
       "registerFailed": "Could not complete registration."
     },
     "successDefault": "Your legacy approved freelancer account was created."
