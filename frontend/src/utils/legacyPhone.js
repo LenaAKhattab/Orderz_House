@@ -29,6 +29,14 @@ export function normalizePhonePart(value) {
     .replace(/[\s()-]/g, "");
 }
 
+/** Strip domestic trunk prefix `0` from a national number when dial code is separate. */
+export function stripNationalTrunkPrefix(nationalNumber) {
+  const digits = String(nationalNumber || "").replace(/\D/g, "");
+  if (!digits) return "";
+  const stripped = digits.replace(/^0+/, "");
+  return stripped || digits;
+}
+
 /**
  * Split a stored E.164 value into country dial code + local number using the
  * known Arab dial-code dataset (longest matching prefix).
@@ -39,22 +47,28 @@ export function splitE164(e164, { defaultDialCode = DEFAULT_DIAL_CODE } = {}) {
     return { countryCode: defaultDialCode, number: "" };
   }
   if (!normalized.startsWith("+")) {
-    return { countryCode: defaultDialCode, number: normalized.replace(/\D/g, "") };
+    return { countryCode: defaultDialCode, number: stripNationalTrunkPrefix(normalized) };
   }
   for (const dial of DIAL_CODES_LONGEST_FIRST) {
     if (normalized.startsWith(dial)) {
-      return { countryCode: dial, number: normalized.slice(dial.length) };
+      return {
+        countryCode: dial,
+        number: stripNationalTrunkPrefix(normalized.slice(dial.length)),
+      };
     }
   }
   // Unknown international prefix — keep digits after + as local, default dial.
-  return { countryCode: defaultDialCode, number: normalized.slice(1).replace(/\D/g, "") };
+  return {
+    countryCode: defaultDialCode,
+    number: stripNationalTrunkPrefix(normalized.slice(1)),
+  };
 }
 
 /** UI/client payload shape accepted by backend composeE164. */
 export function toPhonePayload({ countryCode, number }) {
   return {
     countryCode: normalizePhonePart(countryCode) || DEFAULT_DIAL_CODE,
-    number: normalizePhonePart(number),
+    number: stripNationalTrunkPrefix(normalizePhonePart(number)),
   };
 }
 

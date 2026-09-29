@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "../i18n/LanguageProvider";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import AuthFormCard from "../components/auth/AuthFormCard";
@@ -27,6 +27,20 @@ import { CITY_OTHER_VALUE, CITY_OTHER_LABEL_AR } from "../constants/jordanCities
 
 const fieldLabel = tw.authFieldLabel;
 const fieldInput = tw.authInputNoIcon;
+
+const LEGACY_ID_ACCEPT = "image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp";
+const LEGACY_ID_MIME = new Set(["image/jpeg", "image/png", "image/webp"]);
+const LEGACY_ID_EXT = /\.(jpe?g|png|webp)$/i;
+
+function isAllowedLegacyIdFile(file) {
+  if (!file) return false;
+  const mime = String(file.type || "").toLowerCase();
+  if (LEGACY_ID_MIME.has(mime)) return true;
+  // Some browsers omit MIME for HEIC/camera rolls — reject by extension too.
+  const name = String(file.name || "");
+  if (LEGACY_ID_EXT.test(name)) return true;
+  return false;
+}
 
 const SECTION_ORDER = ["personal", "address", "education", "skills", "study_work", "extra", "declaration"];
 
@@ -264,6 +278,12 @@ export default function LegacyFreelancerJoinPage() {
   const [workFields, setWorkFields] = useState([]);
   const [idFrontFile, setIdFrontFile] = useState(null);
   const [idBackFile, setIdBackFile] = useState(null);
+  const formErrorRef = useRef(null);
+
+  useEffect(() => {
+    if (!formError) return;
+    formErrorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [formError]);
 
   useEffect(() => {
     let cancelled = false;
@@ -367,6 +387,14 @@ export default function LegacyFreelancerJoinPage() {
       setFormError(t("legacy.join.errors.idBackRequired"));
       return;
     }
+    if (idFrontFile && !isAllowedLegacyIdFile(idFrontFile)) {
+      setFormError(t("legacy.join.errors.idFileType"));
+      return;
+    }
+    if (idBackFile && !isAllowedLegacyIdFile(idBackFile)) {
+      setFormError(t("legacy.join.errors.idFileType"));
+      return;
+    }
     setSubmitting(true);
     try {
       const payloadAnswers = {};
@@ -455,7 +483,13 @@ export default function LegacyFreelancerJoinPage() {
               </div>
             ) : null}
             {formError ? (
-              <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">{formError}</div>
+              <div
+                ref={formErrorRef}
+                role="alert"
+                className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800"
+              >
+                {formError}
+              </div>
             ) : null}
 
             <form className="flex flex-col gap-5" onSubmit={onSubmit}>
@@ -518,24 +552,50 @@ export default function LegacyFreelancerJoinPage() {
                     {preview?.requireIdFront ? (
                       <label className={fieldLabel}>
                         {t("legacy.join.idFrontRequired")}
+                        <span className="mt-0.5 block text-xs font-normal text-slate-500">
+                          {t("legacy.join.idFileHint")}
+                        </span>
                         <input
                           className={fieldInput}
                           type="file"
-                          accept="image/*"
+                          accept={LEGACY_ID_ACCEPT}
                           required
-                          onChange={(e) => setIdFrontFile(e.target.files?.[0] || null)}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0] || null;
+                            if (file && !isAllowedLegacyIdFile(file)) {
+                              setIdFrontFile(null);
+                              e.target.value = "";
+                              setFormError(t("legacy.join.errors.idFileType"));
+                              return;
+                            }
+                            setFormError("");
+                            setIdFrontFile(file);
+                          }}
                         />
                       </label>
                     ) : null}
                     {preview?.requireIdBack ? (
                       <label className={fieldLabel}>
                         {t("legacy.join.idBackRequired")}
+                        <span className="mt-0.5 block text-xs font-normal text-slate-500">
+                          {t("legacy.join.idFileHint")}
+                        </span>
                         <input
                           className={fieldInput}
                           type="file"
-                          accept="image/*"
+                          accept={LEGACY_ID_ACCEPT}
                           required
-                          onChange={(e) => setIdBackFile(e.target.files?.[0] || null)}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0] || null;
+                            if (file && !isAllowedLegacyIdFile(file)) {
+                              setIdBackFile(null);
+                              e.target.value = "";
+                              setFormError(t("legacy.join.errors.idFileType"));
+                              return;
+                            }
+                            setFormError("");
+                            setIdBackFile(file);
+                          }}
                         />
                       </label>
                     ) : null}
@@ -560,6 +620,9 @@ export default function LegacyFreelancerJoinPage() {
                   <div className={tw.authField}>
                     <span className={fieldLabel} id="lf-phone-label">
                       {t("legacy.common.phoneRequired")}
+                    </span>
+                    <span className="mt-0.5 block text-xs font-normal text-slate-500">
+                      {t("legacy.join.phoneHint")}
                     </span>
                     <LegacyPhoneInput
                       id="lf-account-phone"
@@ -631,6 +694,12 @@ export default function LegacyFreelancerJoinPage() {
                   </label>
                 </div>
               </fieldset>
+
+              {formError ? (
+                <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+                  {formError}
+                </div>
+              ) : null}
 
               <Button type="submit" disabled={submitting} className="mt-2 w-full">
                 {submitting ? t("legacy.common.registering") : t("legacy.common.completeRegistration")}

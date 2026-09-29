@@ -232,6 +232,17 @@ describe("legacy invite routes — Admin manage permission + auth isolation", ()
     assert.match(authRoutes, /legacy-freelancer-invite/);
   });
 
+  it("legacy register uses shared phoneE164 util and clear KYC MIME message", () => {
+    const inviteSvc = read("src/services/legacyFreelancerInviteService.js");
+    const phoneUtil = read("src/utils/phoneE164.js");
+    const kycMw = read("src/middleware/accountActivationKycUploadMiddleware.js");
+    assert.match(inviteSvc, /require\(["']\.\.\/utils\/phoneE164["']\)/);
+    assert.match(phoneUtil, /stripNationalTrunkPrefix/);
+    assert.match(phoneUtil, /stripTrunkZeroAfterDialCode/);
+    assert.match(kycMw, /JPEG أو PNG أو WebP/);
+    assert.match(kycMw, /آيفون|الأكثر توافقاً/);
+  });
+
   it("service never calls Stripe or wallet APIs", () => {
     const src = read("src/services/legacyFreelancerInviteService.js");
     assert.doesNotMatch(src, /require\(["']stripe["']\)/i);

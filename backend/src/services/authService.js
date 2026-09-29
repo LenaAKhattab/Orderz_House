@@ -306,20 +306,22 @@ function normalizePhonePart(value) {
 }
 
 function composeE164(fieldName, raw) {
-  const cc = normalizePhonePart(raw?.countryCode);
-  const num = normalizePhonePart(raw?.number);
-  const e164 = `${cc}${num}`;
-  const phonePattern = /^\+[1-9]\d{7,14}$/;
-  if (!phonePattern.test(e164)) {
-    throw createPublicApiError(
-      fieldName === "phone"
-        ? "رقم الجوال يجب أن يكون بالصيغة الدولية (مثال: +9665xxxxxxxx)."
-        : "رقم واتساب يجب أن يكون بالصيغة الدولية (مثال: +9665xxxxxxxx).",
-      400,
-      "VALIDATION_ERROR",
-    );
+  try {
+    return require("../utils/phoneE164").composeE164(raw, {
+      example: "+9665xxxxxxxx",
+    });
+  } catch (err) {
+    if (err && err.publicCode === "VALIDATION_ERROR") {
+      throw createPublicApiError(
+        fieldName === "phone"
+          ? "رقم الجوال يجب أن يكون بالصيغة الدولية (مثال: +9665xxxxxxxx)."
+          : "رقم واتساب يجب أن يكون بالصيغة الدولية (مثال: +9665xxxxxxxx).",
+        400,
+        "VALIDATION_ERROR",
+      );
+    }
+    throw err;
   }
-  return e164;
 }
 
 async function buildRegistrationRowData(payload) {
