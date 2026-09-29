@@ -2557,11 +2557,28 @@ export const legacyFreelancerFieldSuggestionsRequest = async (fieldKey, q = "") 
   return data;
 };
 
+/** KYC image uploads on slow mobile links need more headroom than plain register OTP. */
+export const LEGACY_FREELANCER_REGISTER_TIMEOUT_MS = 120000;
+
 export const legacyFreelancerRegisterRequest = async (payload) => {
   const isFormData = typeof FormData !== "undefined" && payload instanceof FormData;
   const { data } = await api.post("/auth/legacy-freelancer-register", payload, {
-    timeout: AUTH_REGISTER_TIMEOUT_MS,
-    headers: isFormData ? { "Content-Type": "multipart/form-data" } : undefined,
+    timeout: isFormData ? LEGACY_FREELANCER_REGISTER_TIMEOUT_MS : AUTH_REGISTER_TIMEOUT_MS,
+    // Never force Content-Type without a boundary — browser/XHR must set multipart boundary.
+    transformRequest: isFormData
+      ? [
+          (body, headers) => {
+            if (headers && typeof headers === "object") {
+              if (typeof headers.delete === "function") headers.delete("Content-Type");
+              else {
+                delete headers["Content-Type"];
+                delete headers["content-type"];
+              }
+            }
+            return body;
+          },
+        ]
+      : undefined,
   });
   return data;
 };

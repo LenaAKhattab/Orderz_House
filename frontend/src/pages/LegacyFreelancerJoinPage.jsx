@@ -279,11 +279,22 @@ export default function LegacyFreelancerJoinPage() {
   const [idFrontFile, setIdFrontFile] = useState(null);
   const [idBackFile, setIdBackFile] = useState(null);
   const formErrorRef = useRef(null);
+  const submittingRef = useRef(false);
+  const submitWatchdogRef = useRef(null);
 
   useEffect(() => {
     if (!formError) return;
     formErrorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   }, [formError]);
+
+  useEffect(() => {
+    return () => {
+      if (submitWatchdogRef.current != null) {
+        clearTimeout(submitWatchdogRef.current);
+        submitWatchdogRef.current = null;
+      }
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -302,7 +313,7 @@ export default function LegacyFreelancerJoinPage() {
         }
       } catch (err) {
         if (!cancelled) {
-          setPreviewError(getAuthApiErrorMessage(err, t("legacy.join.errors.inviteStopped")));
+          setPreviewError(getAuthApiErrorMessage(err, t, "legacy.join.errors.inviteStopped"));
           setPreview(null);
         }
       } finally {
@@ -363,8 +374,24 @@ export default function LegacyFreelancerJoinPage() {
     });
   };
 
+  const clearSubmitWatchdog = () => {
+    if (submitWatchdogRef.current != null) {
+      clearTimeout(submitWatchdogRef.current);
+      submitWatchdogRef.current = null;
+    }
+  };
+
+  const mapRegisterError = (err) => {
+    try {
+      return getAuthApiErrorMessage(err, t, "legacy.join.errors.registerFailed");
+    } catch {
+      return t("legacy.join.errors.registerFailed");
+    }
+  };
+
   const onSubmit = async (e) => {
     e.preventDefault();
+    if (submittingRef.current) return;
     setFormError("");
     setSuccess("");
     if (password !== passwordConfirm) {
@@ -395,7 +422,16 @@ export default function LegacyFreelancerJoinPage() {
       setFormError(t("legacy.join.errors.idFileType"));
       return;
     }
+    submittingRef.current = true;
     setSubmitting(true);
+    // Hard ceiling so the button never stays on "جاري التسجيل..." if XHR timeout fails.
+    clearSubmitWatchdog();
+    submitWatchdogRef.current = setTimeout(() => {
+      if (!submittingRef.current) return;
+      submittingRef.current = false;
+      setSubmitting(false);
+      setFormError(t("legacy.join.errors.registerTimeout"));
+    }, 130000);
     try {
       const payloadAnswers = {};
       for (const f of visibleFields) {
@@ -448,12 +484,22 @@ export default function LegacyFreelancerJoinPage() {
 
       const res = await legacyFreelancerRegisterRequest(payload);
       setSuccess(res?.message || t("legacy.join.successDefault"));
-      await refreshUser();
+      // Clear loading before optional session refresh / navigate — never block on /auth/me.
+      submittingRef.current = false;
+      setSubmitting(false);
+      clearSubmitWatchdog();
+      try {
+        await refreshUser();
+      } catch {
+        /* cookie session from register response is enough to proceed */
+      }
       const path = dashPath?.() || getDashboardPath("freelancer");
       setTimeout(() => navigate(path || "/dashboard/freelancer"), 600);
     } catch (err) {
-      setFormError(getAuthApiErrorMessage(err, t("legacy.join.errors.registerFailed")));
+      setFormError(mapRegisterError(err));
     } finally {
+      clearSubmitWatchdog();
+      submittingRef.current = false;
       setSubmitting(false);
     }
   };

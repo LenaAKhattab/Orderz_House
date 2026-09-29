@@ -28,14 +28,31 @@ describe("LegacyFreelancerJoinPage registration UX", () => {
     assert.match(page, /scrollIntoView/);
     assert.match(page, /role=["']alert["']/);
     assert.match(page, /toPhonePayload/);
+    assert.match(page, /submittingRef/);
+    assert.match(page, /submitWatchdogRef/);
+    assert.match(page, /registerTimeout/);
+    assert.match(page, /getAuthApiErrorMessage\(err,\s*t,\s*["']legacy\.join\.errors\.registerFailed["']\)/);
+  });
+
+  it("does not force multipart Content-Type without boundary; uses longer KYC timeout", () => {
+    const api = read("services/api.js");
+    assert.match(api, /LEGACY_FREELANCER_REGISTER_TIMEOUT_MS\s*=\s*120000/);
+    assert.match(api, /legacyFreelancerRegisterRequest/);
+    assert.match(api, /transformRequest/);
+    assert.doesNotMatch(
+      api,
+      /legacyFreelancerRegisterRequest[\s\S]{0,400}Content-Type["']:\s*["']multipart\/form-data["']/,
+    );
   });
 
   it("exposes Arabic and English ID + phone hints", () => {
     assert.match(ar, /"idFileType"/);
     assert.match(ar, /"idFileHint"/);
     assert.match(ar, /"phoneHint"/);
+    assert.match(ar, /"registerTimeout"/);
     assert.match(en, /"idFileType"/);
     assert.match(en, /"idFileHint"/);
     assert.match(en, /"phoneHint"/);
+    assert.match(en, /"registerTimeout"/);
   });
 });

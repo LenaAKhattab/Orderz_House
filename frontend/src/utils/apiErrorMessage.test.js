@@ -138,6 +138,21 @@ describe("apiErrorMessage network vs HTTP responses", () => {
     assert.equal(registerTimeout, "استغرق الطلب وقتاً طويلاً. تحقق من الاتصال وحاول مجدداً.");
   });
 
+  it("accepts a pre-translated fallback string without throwing (legacy join callers)", () => {
+    const msg = getAuthApiErrorMessage(
+      { code: "ECONNABORTED", message: "timeout of 25000ms exceeded" },
+      "تعذر إكمال التسجيل.",
+    );
+    assert.match(msg, /استغرق الطلب وقتاً طويلاً|تعذر إكمال التسجيل/);
+    assert.doesNotMatch(msg, /timeout of|ECONNABORTED/i);
+
+    const httpMsg = getAuthApiErrorMessage(
+      { response: { status: 400, data: { message: "صيغة صورة الهوية غير مدعومة." } } },
+      "تعذر إكمال التسجيل.",
+    );
+    assert.equal(httpMsg, "صيغة صورة الهوية غير مدعومة.");
+  });
+
   it("maps invalid credentials HTTP message for login unchanged", () => {
     const t = (key) =>
       ({
