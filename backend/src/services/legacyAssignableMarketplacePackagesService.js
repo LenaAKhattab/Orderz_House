@@ -77,19 +77,32 @@ async function ensureLegacyBridgePlanForMarketplaceTier(marketplacePlan, client 
     Number(marketplacePlan.sort_order ?? marketplacePlan.sortOrder) ||
     100 + (ACTIVE_TIER_SET.size || 0);
 
+  const projectMin = toFiniteNumber(
+    marketplacePlan.project_min_value_jod ?? marketplacePlan.projectMinValueJod,
+  );
+  const unlimited = Boolean(
+    marketplacePlan.unlimited_real_order_value ?? marketplacePlan.unlimitedRealOrderValue,
+  );
+  const projectMaxRaw = toFiniteNumber(
+    marketplacePlan.max_real_order_value_jod ?? marketplacePlan.maxRealOrderValueJod,
+  );
+  const projectMax = unlimited ? null : projectMaxRaw;
+
   const { rows } = await client.query(
     `INSERT INTO plans (
        name, title, title_en, description, description_en,
        duration_days, price_jod,
+       order_value_min_jod, order_value_max_jod,
        requires_company_visit, self_subscribe_allowed,
        is_active, is_visible, sort_order,
        admin_notes, currency
      ) VALUES (
        $1::text, $2::text, $3::text, $4::text, $5::text,
        $6::int, $7::numeric,
+       $8::numeric, $9::numeric,
        FALSE, FALSE,
-       TRUE, FALSE, $8::int,
-       $9::text, 'JOD'
+       TRUE, FALSE, $10::int,
+       $11::text, 'JOD'
      )
      ON CONFLICT (name) DO UPDATE SET
        title = EXCLUDED.title,
@@ -98,13 +111,16 @@ async function ensureLegacyBridgePlanForMarketplaceTier(marketplacePlan, client 
        description_en = COALESCE(EXCLUDED.description_en, plans.description_en),
        duration_days = EXCLUDED.duration_days,
        price_jod = EXCLUDED.price_jod,
+       order_value_min_jod = EXCLUDED.order_value_min_jod,
+       order_value_max_jod = EXCLUDED.order_value_max_jod,
        is_active = TRUE,
        is_visible = FALSE,
        self_subscribe_allowed = FALSE,
        admin_notes = EXCLUDED.admin_notes,
        deleted_at = NULL,
        updated_at = NOW()
-     RETURNING id, name, title, price_jod, duration_days, is_active, is_visible`,
+     RETURNING id, name, title, price_jod, duration_days, is_active, is_visible,
+               order_value_min_jod, order_value_max_jod`,
     [
       name,
       title,
@@ -113,6 +129,8 @@ async function ensureLegacyBridgePlanForMarketplaceTier(marketplacePlan, client 
       description,
       durationDays,
       priceJod != null ? priceJod : 0,
+      projectMin != null ? projectMin : 1,
+      projectMax,
       sortOrder,
       `Bridge for Legacy Admin assignment of marketplace membership tier=${tierCode}. Hidden from public plan catalogs.`,
     ],

@@ -105,8 +105,19 @@ async function assertFreelancerCanAccessPoolOrder(freelancerUserId, orderOrId, c
   }
   await planOrderValueEligibility.assertFreelancerMayAccessOrderByPlan(freelancerUserId, order, clientMaybe);
   // E1: Marketplace Membership project-value gate (additive; does not remove legacy plan gate).
+  // Skip when canonical subscription is already a marketplace bridge plan — that band was
+  // applied above. Prevents a stale STARTER marketplace row from overriding PRO/SILVER/ELITE.
   try {
     const runner = clientMaybe || require("../config/db").pool;
+    const subscriptionsService = require("./subscriptionsService");
+    const sub = await subscriptionsService.getCurrentSubscriptionForFreelancer(freelancerUserId);
+    const planId = sub?.planId != null ? Number(sub.planId) : null;
+    if (Number.isInteger(planId) && planId > 0) {
+      const planRow = await planOrderValueEligibility.getPlanRowForOrderValue(planId, runner);
+      if (String(planRow?.name || "").startsWith("marketplace_membership_")) {
+        return order;
+      }
+    }
     const { rows } = await runner.query(
       `SELECT p.tier_code, p.project_min_value_jod, p.max_real_order_value_jod, p.unlimited_real_order_value
          FROM freelancer_marketplace_memberships m
@@ -125,7 +136,9 @@ async function assertFreelancerCanAccessPoolOrder(freelancerUserId, orderOrId, c
             ? Number(order.max_budget_jod)
             : order.price_jod != null
               ? Number(order.price_jod)
-              : null;
+              : order.budget != null
+                ? Number(order.budget)
+                : null;
       if (projectValue != null && Number.isFinite(projectValue)) {
         const eligibility = require("./marketplaceMembershipEligibilityService");
         eligibility.assertProjectValueEligible(
