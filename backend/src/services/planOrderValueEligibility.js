@@ -6,8 +6,13 @@
  * - Bidding orders: compare plan range to order [bid_budget_min, bid_budget_max] via interval overlap.
  * - Real and fake/training pool rows use the same value band (e.g. free plan 3–7 د.أ for both).
  * - Display/marketing clones with null bands resolve via `subscription_plan_id` when present.
+ * - Legacy Admin marketplace bridge plans (`marketplace_membership_{tier}`) resolve from
+ *   live `marketplace_membership_plans` project-value bands (PRO 1–50, etc.).
  */
 const { ORDERZHOUSE_PLANS_BY_ID, ORDERZHOUSE_PLAN_IDS } = require("../constants/orderzhousePlansCatalog");
+
+/** Must stay aligned with legacyAssignableMarketplacePackagesService.BRIDGE_NAME_PREFIX */
+const MARKETPLACE_BRIDGE_NAME_PREFIX = "marketplace_membership_";
 
 function parseJod(value) {
   if (value === null || value === undefined || value === "") return null;
@@ -66,8 +71,54 @@ async function getPlanOrderValueRangeFromDb(planId, client) {
 }
 
 /**
+ * Hidden Legacy Admin bridge plans store `plans.name = marketplace_membership_{tier}`
+ * without always copying project-value bands onto the bridge row.
+ * Resolve the live marketplace membership tier band instead of failing open/closed.
+ */
+async function resolveMarketplaceBridgePlanOrderValueRange(planRow, client) {
+  const name = String(planRow?.name || "");
+  if (!name.startsWith(MARKETPLACE_BRIDGE_NAME_PREFIX)) return null;
+  const tierCode = name.slice(MARKETPLACE_BRIDGE_NAME_PREFIX.length).trim().toLowerCase();
+  if (!tierCode || /^special_offer(_v\d+)?$/.test(tierCode)) return null;
+
+  const runner = client || require("../config/db").pool;
+  let rows;
+  try {
+    ({ rows } = await runner.query(
+      `SELECT id, tier_code, project_min_value_jod, max_real_order_value_jod, unlimited_real_order_value, is_active
+         FROM marketplace_membership_plans
+        WHERE lower(tier_code) = $1
+          AND is_active = TRUE
+        ORDER BY id ASC
+        LIMIT 1`,
+      [tierCode],
+    ));
+  } catch (err) {
+    if (err && (err.code === "42P01" || err.code === "42703")) return null;
+    throw err;
+  }
+  const market = rows[0];
+  if (!market) return null;
+
+  const minOrderValue = parseJod(market.project_min_value_jod);
+  if (minOrderValue == null) return null;
+  const unlimited = Boolean(market.unlimited_real_order_value);
+  const maxOrderValue = unlimited ? null : parseJod(market.max_real_order_value_jod);
+
+  return {
+    planId: Number(planRow.id),
+    minOrderValue,
+    maxOrderValue,
+    sourcePlanId: Number(planRow.id),
+    resolvedFromMarketplaceTier: String(market.tier_code || tierCode).toLowerCase(),
+    resolvedFromMarketplacePlanId: Number(market.id),
+  };
+}
+
+/**
  * Resolve order-value band for a stored subscription plan id.
- * Prefer the plan's own usable band; otherwise follow subscription_plan_id once.
+ * Prefer the plan's own usable band; otherwise marketplace bridge tier bands;
+ * otherwise follow subscription_plan_id once.
  * Null mins on display clones are never treated as a valid open band.
  */
 async function resolvePlanOrderValueRange(planId, client) {
@@ -82,6 +133,9 @@ async function resolvePlanOrderValueRange(planId, client) {
 
   const dbOwn = normalizePlanRange(row.id, row);
   if (isUsableOrderValueRange(dbOwn)) return dbOwn;
+
+  const marketplaceBridge = await resolveMarketplaceBridgePlanOrderValueRange(row, client);
+  if (isUsableOrderValueRange(marketplaceBridge)) return marketplaceBridge;
 
   const linkedRaw = row.subscription_plan_id;
   if (linkedRaw == null || linkedRaw === "") {
@@ -515,6 +569,7 @@ module.exports = {
   getPlanOrderValueRange,
   getPlanOrderValueRangeFromDb,
   getPlanRowForOrderValue,
+  resolveMarketplaceBridgePlanOrderValueRange,
   resolvePlanOrderValueRange,
   isOrderValueAllowedForPlan,
   isOrderRowAllowedForPlanRange,
