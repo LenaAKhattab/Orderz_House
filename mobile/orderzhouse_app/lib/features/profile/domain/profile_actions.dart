@@ -121,7 +121,7 @@ List<ProfileActionItem> profileQuickActionsForUser(AuthUser user) {
       ),
       ProfileActionItem(
         id: ProfileActionId.accountActivation,
-        label: 'تفعيل الحساب',
+        label: 'توثيق الهوية',
         icon: Icons.verified_user_outlined,
         route: AppRoutes.freelancerAccountActivation,
       ),

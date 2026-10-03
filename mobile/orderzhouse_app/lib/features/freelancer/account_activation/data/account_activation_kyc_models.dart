@@ -8,15 +8,15 @@ const accountActivationKycTermsSnapshotAr =
 
 const accountActivationKycFilesRequiredAr = 'يرجى اختيار صورة الهوية من الأمام والخلف.';
 const accountActivationKycTermsRequiredAr = 'يجب الموافقة على شروط تفعيل الحساب.';
-const accountActivationKycSubmitSuccessAr = 'تم إرسال طلب التفعيل بنجاح.';
-const accountActivationKycPendingAr = 'طلبك قيد المراجعة';
-const accountActivationKycApprovedAr = 'تم تفعيل حسابك.';
-const accountActivationKycRejectedHeadlineAr = 'تم رفض طلب التفعيل';
-const accountActivationKycCompleteCtaAr = 'إكمال تفعيل الحساب';
-const accountActivationKycResubmitCtaAr = 'إعادة إرسال طلب التفعيل';
-const accountActivationKycPageTitleAr = 'تفعيل الحساب';
+const accountActivationKycSubmitSuccessAr = 'تم إرسال طلب توثيق الهوية بنجاح.';
+const accountActivationKycPendingAr = 'طلب توثيق الهوية قيد المراجعة';
+const accountActivationKycApprovedAr = 'تم توثيق هويتك وتفعيل حسابك.';
+const accountActivationKycRejectedHeadlineAr = 'تم رفض طلب توثيق الهوية';
+const accountActivationKycCompleteCtaAr = 'إكمال توثيق الهوية';
+const accountActivationKycResubmitCtaAr = 'إعادة إرسال طلب توثيق الهوية';
+const accountActivationKycPageTitleAr = 'توثيق الهوية';
 const accountActivationKycPageSubtitleAr =
-    'ارفع صورة الهوية من الأمام والخلف لإرسال طلب التفعيل للمراجعة.';
+    'ارفع صور الهوية لإكمال تفعيل الحساب.';
 
 class AccountActivationKycRequest {
   const AccountActivationKycRequest({
