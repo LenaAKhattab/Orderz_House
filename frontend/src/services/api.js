@@ -2901,6 +2901,11 @@ export const createSuperAdminAccountRestrictionRequest = async (payload) => {
   return data;
 };
 
+export const updateSuperAdminAccountRestrictionRequest = async (id, payload = {}) => {
+  const { data } = await api.patch(`/super-admin/account-restrictions/${encodeURIComponent(id)}`, payload);
+  return data;
+};
+
 export const revokeSuperAdminAccountRestrictionRequest = async (id, payload = {}) => {
   const { data } = await api.post(`/super-admin/account-restrictions/${encodeURIComponent(id)}/revoke`, payload);
   return data;

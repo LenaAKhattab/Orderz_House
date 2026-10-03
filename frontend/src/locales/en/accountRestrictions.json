@@ -1,43 +1,54 @@
 {
   "title": "Account Restrictions",
   "subtitle": "Marketplace review holds for freelancers — separate from account disable.",
-  "searchPlaceholder": "Search by name, email, or user id",
+  "listTitle": "Restricted accounts",
+  "listCount": "{{count}} restrictions",
+  "searchPlaceholder": "Search by name, email, or user ID",
+  "filterAria": "Filter restrictions",
   "tabs": {
     "active": "Active",
     "expired": "Expired",
-    "revoked": "Revoked"
+    "revoked": "Removed",
+    "all": "All"
   },
-  "empty": "No restrictions in this list.",
-  "add": "Add restriction",
-  "edit": "Edit restriction",
-  "revoke": "Revoke restriction",
-  "extend": "Extend restriction",
-  "viewHistory": "View history",
-  "manage": "Manage",
-  "user": "User",
-  "plan": "Plan",
-  "accountStatus": "Account status",
-  "type": "Restriction type",
-  "scopes": "Scope",
-  "createdBy": "Created by",
-  "createdAt": "Created at",
-  "startsAt": "Starts",
-  "expiresAt": "Expires",
-  "internalReason": "Internal reason",
-  "internalNote": "Internal note",
-  "revokeReason": "Revoke reason",
-  "noExpiry": "No expiry",
-  "activeHoldBadge": "Active admin hold",
-  "noActive": "No active restriction",
-  "drawerTitle": "Account restrictions",
-  "types": {
-    "ACCOUNT_REVIEW_HOLD": "Account review hold",
-    "MARKETPLACE_RESTRICTED": "Marketplace restricted",
-    "CONTENT_REVIEW": "Content review",
-    "FULL_SUSPENSION": "Full marketplace suspension"
+  "emptyTitle": "There are no restricted accounts currently.",
+  "emptyDescription": "Add a user to restrict marketplace activity.",
+  "addUser": "+ Add User",
+  "addRestriction": "Add Restriction",
+  "edit": "Edit Scope",
+  "revoke": "Remove Restriction",
+  "extend": "Extend Duration",
+  "viewDetails": "View Details",
+  "viewHistory": "View Activity Log",
+  "viewLog": "View Log",
+  "restrictAgain": "Restrict Again",
+  "manage": "Manage Restriction",
+  "addFromUsers": "Add Restriction",
+  "columns": {
+    "user": "User",
+    "userId": "User ID",
+    "email": "Email",
+    "plan": "Current Plan",
+    "status": "Restriction Status",
+    "scope": "Scope",
+    "addedAt": "Added At",
+    "expiresAt": "Expires At",
+    "addedBy": "Added By",
+    "actions": "Actions"
+  },
+  "statusLabels": {
+    "ACTIVE": "Restricted",
+    "EXPIRED": "Expired",
+    "REVOKED": "Restriction Removed"
+  },
+  "restrictionTypeLabel": "Account Restriction",
+  "scopes": "Restriction Scope",
+  "scopeMode": {
+    "all": "Entire Marketplace",
+    "custom": "Custom Scope"
   },
   "scopesLabels": {
-    "ALL_MARKETPLACE": "All marketplace",
+    "ALL_MARKETPLACE": "Entire Marketplace",
     "bids": "Bids",
     "direct_claims": "Direct claims",
     "order_assignments": "Order assignments",
@@ -45,24 +56,85 @@
     "competitions": "Competitions",
     "messaging": "Messaging"
   },
-  "status": {
-    "ACTIVE": "Active",
-    "EXPIRED": "Expired",
-    "REVOKED": "Revoked"
+  "duration": {
+    "label": "Duration",
+    "none": "No Expiration",
+    "h24": "24 Hours",
+    "d3": "3 Days",
+    "d7": "7 Days",
+    "d30": "30 Days",
+    "custom": "Custom Date"
+  },
+  "internalReason": "Internal Reason",
+  "internalReasonPlaceholder": "Enter the internal reason for this restriction...",
+  "internalNote": "Internal Note",
+  "internalNotePlaceholder": "Optional administrative note…",
+  "noExpiry": "No expiration",
+  "activeHoldBadge": "Active restriction",
+  "noActive": "No active restriction",
+  "drawerTitle": "Account restrictions",
+  "detailsTitle": "Restriction details",
+  "sections": {
+    "user": "User",
+    "restriction": "Restriction",
+    "activity": "Activity during restriction",
+    "audit": "Audit timeline"
+  },
+  "activity": {
+    "heldBids": "Held bids",
+    "heldClaims": "Held direct claims",
+    "heldArticles": "Held articles",
+    "releases": "Releases",
+    "rejects": "Rejected from review",
+    "empty": "No held activity recorded."
+  },
+  "addWorkflow": {
+    "title": "Add user to restrictions",
+    "searchLabel": "Search freelancer",
+    "searchPlaceholder": "Name, email, or user ID",
+    "noResults": "No matching results.",
+    "selectUser": "Select",
+    "changeUser": "Change user",
+    "hasActive": "An active restriction already exists",
+    "confirmTitle": "Confirm restriction",
+    "confirmBody": "This user's marketplace activity will be restricted according to the selected scope. Continue?",
+    "confirmAdd": "Add Restriction"
+  },
+  "extendWorkflow": {
+    "title": "Extend duration",
+    "confirm": "Extend"
+  },
+  "editWorkflow": {
+    "title": "Edit scope",
+    "confirm": "Save changes"
+  },
+  "revokeWorkflow": {
+    "title": "Remove restriction",
+    "description": "The active restriction will be removed. Historical records stay intact.",
+    "confirm": "Remove Restriction",
+    "reasonOptional": "Revoke reason (optional)"
   },
   "form": {
-    "userId": "User ID",
     "reasonRequired": "Internal reason is required",
     "save": "Save",
     "cancel": "Cancel",
-    "confirmRevoke": "Confirm revoke"
+    "close": "Close",
+    "working": "Working…"
   },
   "heldBids": "Bids under review",
   "releaseBid": "Release bid to client",
   "rejectBid": "Reject bid and restore credits",
   "loadError": "Could not load restrictions.",
-  "saveOk": "Restriction saved.",
-  "revokeOk": "Restriction revoked.",
+  "saveOk": "Restriction added.",
+  "updateOk": "Restriction updated.",
+  "revokeOk": "Restriction removed.",
+  "extendOk": "Restriction extended.",
   "privacyNote": "Internal reasons are never shown to freelancers or clients.",
-  "refresh": "Refresh"
+  "refresh": "Refresh",
+  "actionsFor": "Actions for {{name}}",
+  "unnamed": "Unnamed",
+  "identity": "Identity",
+  "eligibility": "Eligibility",
+  "accountActive": "Active",
+  "accountInactive": "Inactive"
 }

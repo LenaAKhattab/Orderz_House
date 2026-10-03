@@ -612,16 +612,31 @@ function UserDetailDrawer({
                       <ul>
                         {(restrictionSummary.activeRestrictions || []).map((r) => (
                           <li key={r.id}>
-                            {t(`accountRestrictions.types.${r.restrictionType}`, r.restrictionType)} —{" "}
-                            {(r.scopes || []).join(", ")}
+                            {t("accountRestrictions.restrictionTypeLabel")} —{" "}
+                            {(r.scopes || []).includes("ALL_MARKETPLACE")
+                              ? t("accountRestrictions.scopesLabels.ALL_MARKETPLACE")
+                              : (r.scopes || [])
+                                  .map((s) => t(`accountRestrictions.scopesLabels.${s}`, s))
+                                  .join(", ")}
                             {r.internalReason ? ` — ${r.internalReason}` : ""}
                           </li>
                         ))}
                       </ul>
                     ) : null}
-                    <Link className="oh-account-btn-ghost" to="/dashboard/super-admin/account-restrictions">
-                      {t("accountRestrictions.manage")}
-                    </Link>
+                    <div className="oh-sa-users-actions-row" style={{ marginTop: 10 }}>
+                      <Link
+                        className="btn btn-secondary"
+                        to={
+                          restrictionSummary?.hasActiveRestriction
+                            ? "/dashboard/super-admin/account-restrictions"
+                            : `/dashboard/super-admin/account-restrictions?add=1&userId=${encodeURIComponent(profile.id)}`
+                        }
+                      >
+                        {restrictionSummary?.hasActiveRestriction
+                          ? t("accountRestrictions.manage")
+                          : t("accountRestrictions.addFromUsers")}
+                      </Link>
+                    </div>
                   </section>
 
                   <div className="oh-sa-users-form-grid">

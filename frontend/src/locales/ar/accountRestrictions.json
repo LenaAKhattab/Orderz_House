@@ -1,40 +1,51 @@
 {
   "title": "مركز قيود الحسابات",
   "subtitle": "قيود مراجعة السوق للمستقلين — منفصلة عن إيقاف الحساب.",
+  "listTitle": "الحسابات المقيّدة",
+  "listCount": "{{count}} قيد",
   "searchPlaceholder": "ابحث بالاسم أو البريد أو رقم المستخدم",
+  "filterAria": "تصفية القيود",
   "tabs": {
     "active": "نشطة",
     "expired": "منتهية",
-    "revoked": "مرفوعة"
+    "revoked": "مرفوعة",
+    "all": "الكل"
   },
-  "empty": "لا توجد قيود في هذه القائمة.",
-  "add": "إضافة قيد",
-  "edit": "تعديل القيد",
+  "emptyTitle": "لا توجد حسابات مقيّدة حالياً",
+  "emptyDescription": "أضف مستخدماً لبدء تقييد نشاطه في السوق.",
+  "addUser": "+ إضافة مستخدم",
+  "addRestriction": "إضافة إلى قائمة القيود",
+  "edit": "تعديل النطاق",
   "revoke": "رفع القيد",
-  "extend": "تمديد القيد",
-  "viewHistory": "عرض السجل",
-  "manage": "إدارة",
-  "user": "المستخدم",
-  "plan": "الباقة",
-  "accountStatus": "حالة الحساب",
-  "type": "نوع القيد",
-  "scopes": "النطاق",
-  "createdBy": "أنشأه",
-  "createdAt": "تاريخ الإنشاء",
-  "startsAt": "البداية",
-  "expiresAt": "الانتهاء",
-  "internalReason": "السبب الداخلي",
-  "internalNote": "ملاحظة داخلية",
-  "revokeReason": "سبب الرفع",
-  "noExpiry": "بدون انتهاء",
-  "activeHoldBadge": "قيد إداري نشط",
-  "noActive": "لا يوجد قيد نشط",
-  "drawerTitle": "قيود الحساب",
-  "types": {
-    "ACCOUNT_REVIEW_HOLD": "مراجعة حساب (Hold)",
-    "MARKETPLACE_RESTRICTED": "تقييد السوق",
-    "CONTENT_REVIEW": "مراجعة المحتوى",
-    "FULL_SUSPENSION": "تعليق سوق كامل"
+  "extend": "تمديد المدة",
+  "viewDetails": "عرض التفاصيل",
+  "viewHistory": "عرض سجل النشاط",
+  "viewLog": "عرض السجل",
+  "restrictAgain": "إعادة التقييد",
+  "manage": "إدارة القيد",
+  "addFromUsers": "إضافة إلى قائمة القيود",
+  "columns": {
+    "user": "المستخدم",
+    "userId": "رقم المستخدم",
+    "email": "البريد الإلكتروني",
+    "plan": "الباقة الحالية",
+    "status": "حالة القيد",
+    "scope": "نطاق القيد",
+    "addedAt": "تاريخ الإضافة",
+    "expiresAt": "تاريخ الانتهاء",
+    "addedBy": "أضيف بواسطة",
+    "actions": "الإجراءات"
+  },
+  "statusLabels": {
+    "ACTIVE": "مقيّد",
+    "EXPIRED": "منتهي",
+    "REVOKED": "تم رفع القيد"
+  },
+  "restrictionTypeLabel": "تقييد الحساب",
+  "scopes": "نطاق القيد",
+  "scopeMode": {
+    "all": "كل السوق",
+    "custom": "نطاق مخصص"
   },
   "scopesLabels": {
     "ALL_MARKETPLACE": "كل السوق",
@@ -45,24 +56,85 @@
     "competitions": "المسابقات",
     "messaging": "الرسائل"
   },
-  "status": {
-    "ACTIVE": "نشط",
-    "EXPIRED": "منتهٍ",
-    "REVOKED": "مرفوع"
+  "duration": {
+    "label": "مدة القيد",
+    "none": "بدون تاريخ انتهاء",
+    "h24": "24 ساعة",
+    "d3": "3 أيام",
+    "d7": "7 أيام",
+    "d30": "30 يوم",
+    "custom": "تاريخ مخصص"
+  },
+  "internalReason": "السبب الداخلي",
+  "internalReasonPlaceholder": "اكتب سبب إضافة الحساب إلى قائمة القيود...",
+  "internalNote": "ملاحظة داخلية",
+  "internalNotePlaceholder": "ملاحظة إدارية اختيارية…",
+  "noExpiry": "بدون انتهاء",
+  "activeHoldBadge": "قيد نشط",
+  "noActive": "لا يوجد قيد نشط",
+  "drawerTitle": "قيود الحساب",
+  "detailsTitle": "تفاصيل القيد",
+  "sections": {
+    "user": "المستخدم",
+    "restriction": "القيد",
+    "activity": "النشاط أثناء القيد",
+    "audit": "سجل التدقيق"
+  },
+  "activity": {
+    "heldBids": "عروض محجوزة",
+    "heldClaims": "مطالبات مباشرة محجوزة",
+    "heldArticles": "مقالات محجوزة",
+    "releases": "إطلاقات",
+    "rejects": "رفض من المراجعة",
+    "empty": "لا يوجد نشاط محجوز مسجّل."
+  },
+  "addWorkflow": {
+    "title": "إضافة مستخدم إلى القيود",
+    "searchLabel": "ابحث عن المستقل",
+    "searchPlaceholder": "الاسم أو البريد أو رقم المستخدم",
+    "noResults": "لا نتائج مطابقة.",
+    "selectUser": "اختيار",
+    "changeUser": "تغيير المستخدم",
+    "hasActive": "يوجد قيد نشط حالياً",
+    "confirmTitle": "تأكيد التقييد",
+    "confirmBody": "سيتم تقييد نشاط هذا المستخدم في السوق وفق النطاق المحدد. هل تريد المتابعة؟",
+    "confirmAdd": "إضافة إلى قائمة القيود"
+  },
+  "extendWorkflow": {
+    "title": "تمديد المدة",
+    "confirm": "تمديد"
+  },
+  "editWorkflow": {
+    "title": "تعديل النطاق",
+    "confirm": "حفظ التعديل"
+  },
+  "revokeWorkflow": {
+    "title": "رفع القيد",
+    "description": "سيتم رفع القيد النشط. يبقى السجل التاريخي محفوظاً.",
+    "confirm": "رفع القيد",
+    "reasonOptional": "سبب الرفع (اختياري)"
   },
   "form": {
-    "userId": "رقم المستخدم",
     "reasonRequired": "السبب الداخلي مطلوب",
     "save": "حفظ",
     "cancel": "إلغاء",
-    "confirmRevoke": "تأكيد رفع القيد"
+    "close": "إغلاق",
+    "working": "جارٍ التنفيذ…"
   },
   "heldBids": "عروض قيد المراجعة",
   "releaseBid": "إطلاق العرض للعميل",
   "rejectBid": "رفض العرض واستعادة الرصيد",
   "loadError": "تعذر تحميل القيود.",
-  "saveOk": "تم حفظ القيد.",
+  "saveOk": "تم إضافة القيد.",
+  "updateOk": "تم تحديث القيد.",
   "revokeOk": "تم رفع القيد.",
+  "extendOk": "تم تمديد القيد.",
   "privacyNote": "الأسباب الداخلية لا تظهر للمستقل أو العميل.",
-  "refresh": "تحديث"
+  "refresh": "تحديث",
+  "actionsFor": "إجراءات {{name}}",
+  "unnamed": "بدون اسم",
+  "identity": "الهوية",
+  "eligibility": "الأهلية",
+  "accountActive": "نشط",
+  "accountInactive": "غير نشط"
 }
