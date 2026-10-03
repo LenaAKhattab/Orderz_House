@@ -19,6 +19,7 @@ export const SUPER_ADMIN_PAGE_PERMISSIONS = {
   analytics: "dashboard.super_admin.analytics",
   /** Super Admin only — Users Control Center (not assignable to delegated admins) */
   usersControl: "dashboard.super_admin.users_control",
+  accountRestrictions: "dashboard.super_admin.account_restrictions",
   adminsManage: "dashboard.super_admin.admins_manage",
   trainingOrders: "dashboard.super_admin.training_orders",
   pantry: "dashboard.super_admin.pantry",
@@ -61,6 +62,10 @@ export const ASSIGNABLE_DASHBOARD_PERMISSIONS = [
 const SUPER_ADMIN_ROUTE_RULES = [
   { prefix: "/dashboard/super-admin/analysis", permission: SUPER_ADMIN_PAGE_PERMISSIONS.analytics },
   { prefix: "/dashboard/super-admin/users", permission: SUPER_ADMIN_PAGE_PERMISSIONS.usersControl },
+  {
+    prefix: "/dashboard/super-admin/account-restrictions",
+    permission: SUPER_ADMIN_PAGE_PERMISSIONS.accountRestrictions,
+  },
   { prefix: "/dashboard/super-admin/legacy-freelancer-invites", permission: LEGACY_FREELANCERS_MANAGE_PERMISSION },
   { prefix: "/dashboard/legacy-freelancers", permission: LEGACY_FREELANCERS_MANAGE_PERMISSION },
   { prefix: "/dashboard/super-admin/edit-website", permission: SUPER_ADMIN_PAGE_PERMISSIONS.editWebsite },

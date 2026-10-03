@@ -1,0 +1,68 @@
+{
+  "title": "مركز قيود الحسابات",
+  "subtitle": "قيود مراجعة السوق للمستقلين — منفصلة عن إيقاف الحساب.",
+  "searchPlaceholder": "ابحث بالاسم أو البريد أو رقم المستخدم",
+  "tabs": {
+    "active": "نشطة",
+    "expired": "منتهية",
+    "revoked": "مرفوعة"
+  },
+  "empty": "لا توجد قيود في هذه القائمة.",
+  "add": "إضافة قيد",
+  "edit": "تعديل القيد",
+  "revoke": "رفع القيد",
+  "extend": "تمديد القيد",
+  "viewHistory": "عرض السجل",
+  "manage": "إدارة",
+  "user": "المستخدم",
+  "plan": "الباقة",
+  "accountStatus": "حالة الحساب",
+  "type": "نوع القيد",
+  "scopes": "النطاق",
+  "createdBy": "أنشأه",
+  "createdAt": "تاريخ الإنشاء",
+  "startsAt": "البداية",
+  "expiresAt": "الانتهاء",
+  "internalReason": "السبب الداخلي",
+  "internalNote": "ملاحظة داخلية",
+  "revokeReason": "سبب الرفع",
+  "noExpiry": "بدون انتهاء",
+  "activeHoldBadge": "قيد إداري نشط",
+  "noActive": "لا يوجد قيد نشط",
+  "drawerTitle": "قيود الحساب",
+  "types": {
+    "ACCOUNT_REVIEW_HOLD": "مراجعة حساب (Hold)",
+    "MARKETPLACE_RESTRICTED": "تقييد السوق",
+    "CONTENT_REVIEW": "مراجعة المحتوى",
+    "FULL_SUSPENSION": "تعليق سوق كامل"
+  },
+  "scopesLabels": {
+    "ALL_MARKETPLACE": "كل السوق",
+    "bids": "العروض",
+    "direct_claims": "الاستلام المباشر",
+    "order_assignments": "إسناد الطلبات",
+    "articles": "المقالات",
+    "competitions": "المسابقات",
+    "messaging": "الرسائل"
+  },
+  "status": {
+    "ACTIVE": "نشط",
+    "EXPIRED": "منتهٍ",
+    "REVOKED": "مرفوع"
+  },
+  "form": {
+    "userId": "رقم المستخدم",
+    "reasonRequired": "السبب الداخلي مطلوب",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "confirmRevoke": "تأكيد رفع القيد"
+  },
+  "heldBids": "عروض قيد المراجعة",
+  "releaseBid": "إطلاق العرض للعميل",
+  "rejectBid": "رفض العرض واستعادة الرصيد",
+  "loadError": "تعذر تحميل القيود.",
+  "saveOk": "تم حفظ القيد.",
+  "revokeOk": "تم رفع القيد.",
+  "privacyNote": "الأسباب الداخلية لا تظهر للمستقل أو العميل.",
+  "refresh": "تحديث"
+}

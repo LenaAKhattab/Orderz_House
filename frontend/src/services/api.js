@@ -2891,6 +2891,52 @@ export const postSuperAdminUsersBulkActionsRequest = async (payload) => {
   return data;
 };
 
+export const listSuperAdminAccountRestrictionsRequest = async (params = {}) => {
+  const { data } = await api.get("/super-admin/account-restrictions", { params });
+  return data;
+};
+
+export const createSuperAdminAccountRestrictionRequest = async (payload) => {
+  const { data } = await api.post("/super-admin/account-restrictions", payload);
+  return data;
+};
+
+export const revokeSuperAdminAccountRestrictionRequest = async (id, payload = {}) => {
+  const { data } = await api.post(`/super-admin/account-restrictions/${encodeURIComponent(id)}/revoke`, payload);
+  return data;
+};
+
+export const extendSuperAdminAccountRestrictionRequest = async (id, payload) => {
+  const { data } = await api.post(`/super-admin/account-restrictions/${encodeURIComponent(id)}/extend`, payload);
+  return data;
+};
+
+export const getSuperAdminUserAccountRestrictionsRequest = async (userId) => {
+  const { data } = await api.get(`/super-admin/users/${encodeURIComponent(userId)}/account-restrictions`);
+  return data;
+};
+
+export const listSuperAdminHeldBidsRequest = async (params = {}) => {
+  const { data } = await api.get("/super-admin/account-restrictions/held-bids", { params });
+  return data;
+};
+
+export const releaseSuperAdminHeldBidRequest = async (bidId, payload = {}) => {
+  const { data } = await api.post(
+    `/super-admin/account-restrictions/held-bids/${encodeURIComponent(bidId)}/release`,
+    payload,
+  );
+  return data;
+};
+
+export const rejectSuperAdminHeldBidRequest = async (bidId, payload = {}) => {
+  const { data } = await api.post(
+    `/super-admin/account-restrictions/held-bids/${encodeURIComponent(bidId)}/reject`,
+    payload,
+  );
+  return data;
+};
+
 // Super Admin — admin account management
 export const listSuperAdminAdminsRequest = async () => {
   const { data } = await api.get("/super-admin/admins");

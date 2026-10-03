@@ -318,15 +318,33 @@ function buildOrderRulesSnapshotForCreate({ payload, rules, projectType, isBiddi
 
 async function countValidApplicants(client, orderId) {
   const statuses = NORMAL_ORDER_VALID_APPLICATION_STATUSES;
-  const { rows } = await client.query(
-    `SELECT COUNT(*)::int AS c
-       FROM order_freelancer_bids
-      WHERE order_id = $1
-        AND COALESCE(is_fake_bid, FALSE) = FALSE
-        AND status = ANY($2::text[])`,
-    [Number(orderId), statuses],
-  );
-  return Number(rows[0]?.c) || 0;
+  // Held moderation bids are not client-visible and must not fill applicant slots.
+  try {
+    const { rows } = await client.query(
+      `SELECT COUNT(*)::int AS c
+         FROM order_freelancer_bids
+        WHERE order_id = $1
+          AND COALESCE(is_fake_bid, FALSE) = FALSE
+          AND status = ANY($2::text[])
+          AND (
+            moderation_status IS NULL
+            OR moderation_status IN ('published', 'released')
+          )`,
+      [Number(orderId), statuses],
+    );
+    return Number(rows[0]?.c) || 0;
+  } catch (err) {
+    if (err?.code !== "42703") throw err;
+    const { rows } = await client.query(
+      `SELECT COUNT(*)::int AS c
+         FROM order_freelancer_bids
+        WHERE order_id = $1
+          AND COALESCE(is_fake_bid, FALSE) = FALSE
+          AND status = ANY($2::text[])`,
+      [Number(orderId), statuses],
+    );
+    return Number(rows[0]?.c) || 0;
+  }
 }
 
 function applicantCapacityView(orderRow, currentCount) {

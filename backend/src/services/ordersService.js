@@ -505,15 +505,33 @@ async function getOrderById(orderId, client) {
     [Number(orderId)],
   );
 
-  const { rows: orderBidRows } = await runner.query(
-    `SELECT b.id, b.amount, b.status, b.created_at, b.order_id,
-            u.id AS user_id, u.first_name, u.father_name, u.family_name, u.email
-     FROM order_freelancer_bids b
-     JOIN users u ON u.id = b.freelancer_user_id
-     WHERE b.order_id = $1
-     ORDER BY b.created_at DESC, b.id DESC`,
-    [Number(orderId)],
-  );
+  let orderBidRows;
+  try {
+    ({ rows: orderBidRows } = await runner.query(
+      `SELECT b.id, b.amount, b.status, b.created_at, b.order_id,
+              u.id AS user_id, u.first_name, u.father_name, u.family_name, u.email
+       FROM order_freelancer_bids b
+       JOIN users u ON u.id = b.freelancer_user_id
+       WHERE b.order_id = $1
+         AND (
+           b.moderation_status IS NULL
+           OR b.moderation_status IN ('published', 'released')
+         )
+       ORDER BY b.created_at DESC, b.id DESC`,
+      [Number(orderId)],
+    ));
+  } catch (bidModErr) {
+    if (bidModErr?.code !== "42703") throw bidModErr;
+    ({ rows: orderBidRows } = await runner.query(
+      `SELECT b.id, b.amount, b.status, b.created_at, b.order_id,
+              u.id AS user_id, u.first_name, u.father_name, u.family_name, u.email
+       FROM order_freelancer_bids b
+       JOIN users u ON u.id = b.freelancer_user_id
+       WHERE b.order_id = $1
+       ORDER BY b.created_at DESC, b.id DESC`,
+      [Number(orderId)],
+    ));
+  }
 
   const { rows: catRows } = await runner.query(`SELECT id, slug, name FROM categories WHERE id = $1 LIMIT 1`, [
     Number(base.categoryId),
@@ -1749,16 +1767,36 @@ async function getMyOrderClaim({ orderId, freelancerUserId }, clientMaybe) {
 async function getMyOrderBid({ orderId, freelancerUserId }, clientMaybe) {
   if (!freelancerUserId) return null;
   const runner = clientMaybe || pool;
-  const { rows } = await runner.query(
-    `SELECT id, amount, status
-     FROM order_freelancer_bids
-     WHERE order_id = $1
-       AND freelancer_user_id = $2
-     LIMIT 1`,
-    [Number(orderId), Number(freelancerUserId)],
-  );
-  if (!rows[0]) return null;
-  return { id: String(rows[0].id), amount: Number(rows[0].amount), status: rows[0].status };
+  try {
+    const { rows } = await runner.query(
+      `SELECT id, amount, status, moderation_status
+       FROM order_freelancer_bids
+       WHERE order_id = $1
+         AND freelancer_user_id = $2
+       LIMIT 1`,
+      [Number(orderId), Number(freelancerUserId)],
+    );
+    if (!rows[0]) return null;
+    return {
+      id: String(rows[0].id),
+      amount: Number(rows[0].amount),
+      status: rows[0].status,
+      moderationStatus: rows[0].moderation_status || "published",
+      underReview: String(rows[0].moderation_status || "") === "held",
+    };
+  } catch (err) {
+    if (err?.code !== "42703") throw err;
+    const { rows } = await runner.query(
+      `SELECT id, amount, status
+       FROM order_freelancer_bids
+       WHERE order_id = $1
+         AND freelancer_user_id = $2
+       LIMIT 1`,
+      [Number(orderId), Number(freelancerUserId)],
+    );
+    if (!rows[0]) return null;
+    return { id: String(rows[0].id), amount: Number(rows[0].amount), status: rows[0].status };
+  }
 }
 
 async function listPoolOrdersForFreelancer({
@@ -2166,6 +2204,13 @@ async function submitPoolOrderBid({
       }
     }
     await orderAuthz.assertFreelancerCanBidOrder(freelancerUserId, order, client);
+    const accountRestrictions = require("./freelancerAccountRestrictionsService");
+    const holdDecision = await accountRestrictions.assertMarketplaceActionAllowedOrHeld(
+      freelancerUserId,
+      accountRestrictions.RESTRICTION_SCOPES.BIDS,
+      client,
+    );
+    const bidHeldForReview = Boolean(holdDecision.held);
     const planOrderValueEligibility = require("./planOrderValueEligibility");
     const bidPlanRange = await planOrderValueEligibility.getFreelancerPlanOrderValueRange(freelancerUserId);
 
@@ -2231,20 +2276,60 @@ async function submitPoolOrderBid({
     );
     const hadBidBefore = Boolean(prevBidRows[0]);
 
-    const { rows: bidRows } = await client.query(
-      `INSERT INTO order_freelancer_bids (order_id, freelancer_user_id, amount, status, is_fake_bid, fake_round_id, proposal_message)
-       VALUES ($1, $2, $3, 'pending', FALSE, NULL, $4)
-       ON CONFLICT (order_id, freelancer_user_id)
-       DO UPDATE SET amount = EXCLUDED.amount, status = 'pending', proposal_message = EXCLUDED.proposal_message, is_fake_bid = FALSE, fake_round_id = NULL, updated_at = NOW()
-       RETURNING id`,
-      [Number(orderId), Number(freelancerUserId), bid, bidMessage || null],
-    );
+    const moderationStatus = bidHeldForReview
+      ? accountRestrictions.BID_MODERATION_STATUS.HELD
+      : accountRestrictions.BID_MODERATION_STATUS.PUBLISHED;
+    const holdRestrictionId = bidHeldForReview
+      ? Number(holdDecision.primaryRestriction?.id) || null
+      : null;
+
+    let bidRows;
+    try {
+      ({ rows: bidRows } = await client.query(
+        `INSERT INTO order_freelancer_bids (
+           order_id, freelancer_user_id, amount, status, is_fake_bid, fake_round_id, proposal_message,
+           moderation_status, hold_restriction_id, moderation_held_at
+         )
+         VALUES ($1, $2, $3, 'pending', FALSE, NULL, $4, $5, $6, CASE WHEN $5 = 'held' THEN NOW() ELSE NULL END)
+         ON CONFLICT (order_id, freelancer_user_id)
+         DO UPDATE SET amount = EXCLUDED.amount,
+                       status = 'pending',
+                       proposal_message = EXCLUDED.proposal_message,
+                       is_fake_bid = FALSE,
+                       fake_round_id = NULL,
+                       moderation_status = EXCLUDED.moderation_status,
+                       hold_restriction_id = EXCLUDED.hold_restriction_id,
+                       moderation_held_at = CASE
+                         WHEN EXCLUDED.moderation_status = 'held' THEN COALESCE(order_freelancer_bids.moderation_held_at, NOW())
+                         ELSE order_freelancer_bids.moderation_held_at
+                       END,
+                       updated_at = NOW()
+         RETURNING id`,
+        [
+          Number(orderId),
+          Number(freelancerUserId),
+          bid,
+          bidMessage || null,
+          moderationStatus,
+          holdRestrictionId,
+        ],
+      ));
+    } catch (modColErr) {
+      if (modColErr?.code !== "42703") throw modColErr;
+      ({ rows: bidRows } = await client.query(
+        `INSERT INTO order_freelancer_bids (order_id, freelancer_user_id, amount, status, is_fake_bid, fake_round_id, proposal_message)
+         VALUES ($1, $2, $3, 'pending', FALSE, NULL, $4)
+         ON CONFLICT (order_id, freelancer_user_id)
+         DO UPDATE SET amount = EXCLUDED.amount, status = 'pending', proposal_message = EXCLUDED.proposal_message, is_fake_bid = FALSE, fake_round_id = NULL, updated_at = NOW()
+         RETURNING id`,
+        [Number(orderId), Number(freelancerUserId), bid, bidMessage || null],
+      ));
+    }
     const bidId = bidRows[0].id;
 
     // Phase E3: after insert, refuse last-slot overflow BEFORE charging Bids.
-    // Order row is locked FOR UPDATE, so concurrent applies serialize; this is the
-    // charge-safety check so a loser never consumes Bids or daily spend.
-    if (!hadBidBefore) {
+    // Held moderation bids are excluded from valid applicant counts.
+    if (!hadBidBefore && !bidHeldForReview) {
       const e3 = require("./marketplaceNormalOrderRulesService");
       if (await e3.normalOrderRulesSchemaReady(client)) {
         const count = await e3.countValidApplicants(client, orderId);
@@ -2261,7 +2346,7 @@ async function submitPoolOrderBid({
     }
 
     // Phase B2/E3: charge Order snapshotted Bid cost on first application when bid_credits_enabled.
-    // Edits/retries skip (hadBidBefore). Fake/training never reach this function.
+    // Held bids RESERVE credits (not permanent consume) until released to the client.
     const resolvedBidCost = normalAppBids.resolveChargeAmount
       ? normalAppBids.resolveChargeAmount(order)
       : normalAppBids.NORMAL_APPLICATION_BID_COST;
@@ -2270,8 +2355,70 @@ async function submitPoolOrderBid({
       skipped: true,
       reason: hadBidBefore ? "existing_application" : "not_attempted",
       bidCreditCost: hadBidBefore ? 0 : resolvedBidCost,
+      reserved: false,
     };
-    if (!hadBidBefore) {
+    if (!hadBidBefore && bidHeldForReview) {
+      const reservationService = require("./marketplaceBidCreditReservationService");
+      try {
+        const reserve = await reservationService.reserveBidCreditsFefo({
+          client,
+          freelancerUserId,
+          amount: resolvedBidCost,
+          idempotencyKey: `held_bid_reserve:order:${Number(orderId)}:freelancer:${Number(freelancerUserId)}`.slice(
+            0,
+            180,
+          ),
+          referenceType: "order_freelancer_bid_held",
+          referenceId: String(bidId),
+          purpose: "held_bid_review",
+          actorUserId: freelancerUserId,
+          applyDailyLimit: true,
+        });
+        bidCreditCharge = {
+          charged: false,
+          skipped: false,
+          reserved: true,
+          reason: "held_for_review_reserved",
+          bidCreditCost: resolvedBidCost,
+          reservationId: reserve?.reservation?.id || null,
+        };
+        if (reserve?.reservation?.id) {
+          try {
+            await client.query(
+              `UPDATE order_freelancer_bids SET bid_reservation_id = $2 WHERE id = $1`,
+              [bidId, Number(reserve.reservation.id)],
+            );
+          } catch (linkErr) {
+            if (linkErr?.code !== "42703") throw linkErr;
+          }
+        }
+      } catch (reserveErr) {
+        // If reservation schema missing, skip charge entirely rather than consuming permanently.
+        if (reserveErr?.statusCode === 503 || reserveErr?.code === "42P01") {
+          bidCreditCharge = {
+            charged: false,
+            skipped: true,
+            reserved: false,
+            reason: "held_for_review_no_reserve_schema",
+            bidCreditCost: 0,
+          };
+        } else {
+          throw reserveErr;
+        }
+      }
+      await accountRestrictions.writeAudit(
+        {
+          restrictionId: holdRestrictionId,
+          targetUserId: freelancerUserId,
+          action: accountRestrictions.AUDIT_ACTIONS.BID_HELD_FOR_REVIEW,
+          relatedEntityType: "order_freelancer_bid",
+          relatedEntityId: bidId,
+          reason: holdDecision.primaryRestriction?.internalReason || null,
+          metadata: { orderId: String(orderId), bidId: String(bidId) },
+        },
+        client,
+      );
+    } else if (!hadBidBefore && !bidHeldForReview) {
       bidCreditCharge = await normalAppBids.chargeNormalApplicationBidCreditOnFirstBid({
         client,
         freelancerUserId,
@@ -2285,7 +2432,7 @@ async function submitPoolOrderBid({
 
     // Phase E3: auto-close applications when valid applicant target reached (order FOR UPDATE).
     let applicantCap = null;
-    {
+    if (!bidHeldForReview) {
       const e3 = require("./marketplaceNormalOrderRulesService");
       if (!hadBidBefore && (await e3.normalOrderRulesSchemaReady(client))) {
         const closeOut = await e3.maybeAutoCloseOnTargetReached(client, order, {
@@ -2319,15 +2466,20 @@ async function submitPoolOrderBid({
 
     // Phase B4: optional Priority Application Boost (1 Priority Use; 0 extra Bids; 0 WT).
     // Requested Priority with unavailable entitlement fails closed (full txn rollback).
+    // Held bids never receive priority boost (not client-visible).
     let priorityBoost = {
       boosted: false,
       skipped: true,
-      reason: usePriority ? "not_attempted" : "not_requested",
+      reason: bidHeldForReview
+        ? "held_for_review"
+        : usePriority
+          ? "not_attempted"
+          : "not_requested",
       priorityUseCost: 0,
       additionalBidCreditCost: 0,
       workTokenCost: 0,
     };
-    if (usePriority) {
+    if (usePriority && !bidHeldForReview) {
       const priorityBoostSvc = require("./marketplacePriorityApplicationBoostService");
       const boostResult = await priorityBoostSvc.applyPriorityApplicationBoost({
         client,
@@ -2353,42 +2505,54 @@ async function submitPoolOrderBid({
       };
     }
 
-    await safeNotify(() =>
-      notificationEventsService.notifyOrderOwner(
-        {
-          order,
-          actorUserId: Number(freelancerUserId),
-          type: hadBidBefore ? "order.bid.updated" : "order.bid.submitted",
-          title: hadBidBefore ? "تم تحديث عرض السعر" : "تم استلام عرض سعر جديد",
-          message: hadBidBefore
-            ? priorityBoost.boosted
-              ? "قام مستقل بترقية عرضه إلى عرض أولوية."
-              : "قام مستقل بتحديث عرضه على المشروع."
-            : priorityBoost.boosted
-              ? "تم إرسال عرض أولوية جديد على مشروعك."
-              : "تم إرسال عرض سعر جديد على مشروعك.",
-          priority: "high",
-          dedupeKey: hadBidBefore
-            ? `order_bid_updated_${orderId}_${freelancerUserId}_${bid}_${priorityBoost.boosted ? "priority" : "normal"}`
-            : `order_bid_submitted_${orderId}_${freelancerUserId}_${priorityBoost.boosted ? "priority" : "normal"}`,
-          metadata: {
-            orderId: String(orderId),
-            freelancerUserId: String(freelancerUserId),
-            amount: bid,
-            isPriority: Boolean(priorityBoost.boosted),
+    // Never notify the client about held moderation bids.
+    if (!bidHeldForReview) {
+      await safeNotify(() =>
+        notificationEventsService.notifyOrderOwner(
+          {
+            order,
+            actorUserId: Number(freelancerUserId),
+            type: hadBidBefore ? "order.bid.updated" : "order.bid.submitted",
+            title: hadBidBefore ? "تم تحديث عرض السعر" : "تم استلام عرض سعر جديد",
+            message: hadBidBefore
+              ? priorityBoost.boosted
+                ? "قام مستقل بترقية عرضه إلى عرض أولوية."
+                : "قام مستقل بتحديث عرضه على المشروع."
+              : priorityBoost.boosted
+                ? "تم إرسال عرض أولوية جديد على مشروعك."
+                : "تم إرسال عرض سعر جديد على مشروعك.",
+            priority: "high",
+            dedupeKey: hadBidBefore
+              ? `order_bid_updated_${orderId}_${freelancerUserId}_${bid}_${priorityBoost.boosted ? "priority" : "normal"}`
+              : `order_bid_submitted_${orderId}_${freelancerUserId}_${priorityBoost.boosted ? "priority" : "normal"}`,
+            metadata: {
+              orderId: String(orderId),
+              freelancerUserId: String(freelancerUserId),
+              amount: bid,
+              isPriority: Boolean(priorityBoost.boosted),
+            },
           },
-        },
-        client,
-      ),
-    );
+          client,
+        ),
+      );
+    }
 
     await client.query("COMMIT");
     const orderOut = await getOrderById(orderId);
     return {
       order: orderOut,
+      moderation: bidHeldForReview
+        ? {
+            held: true,
+            status: "held",
+            messageAr: accountRestrictions.PUBLIC_MESSAGES.BID_HELD_AR,
+            messageEn: accountRestrictions.PUBLIC_MESSAGES.BID_HELD_EN,
+          }
+        : { held: false, status: "published" },
       bidCredit: {
         consumed: Boolean(bidCreditCharge.charged),
-        cost: bidCreditCharge.charged
+        reserved: Boolean(bidCreditCharge.reserved),
+        cost: bidCreditCharge.charged || bidCreditCharge.reserved
           ? Number(bidCreditCharge.bidCreditCost) || resolvedBidCost
           : hadBidBefore
             ? 0
@@ -2477,6 +2641,69 @@ async function claimPoolOrder({ freelancerUserId, orderId }) {
       err.statusCode = 409;
       throw err;
     }
+
+    // Moderation hold: accept the request into HELD storage — never assign, never start membership.
+    {
+      const accountRestrictions = require("./freelancerAccountRestrictionsService");
+      const claimHold = await accountRestrictions.assertMarketplaceActionAllowedOrHeld(
+        freelancerUserId,
+        accountRestrictions.RESTRICTION_SCOPES.DIRECT_CLAIMS,
+        client,
+      );
+      const assignHold = await accountRestrictions.assertMarketplaceActionAllowedOrHeld(
+        freelancerUserId,
+        accountRestrictions.RESTRICTION_SCOPES.ORDER_ASSIGNMENTS,
+        client,
+      );
+      if (claimHold.held || assignHold.held) {
+        const primary = claimHold.primaryRestriction || assignHold.primaryRestriction;
+        try {
+          await client.query(
+            `INSERT INTO freelancer_moderation_held_claims (
+               order_id, freelancer_user_id, restriction_id, status, metadata
+             ) VALUES ($1, $2, $3, 'held', $4::jsonb)
+             ON CONFLICT (order_id, freelancer_user_id)
+             DO UPDATE SET status = 'held',
+                           restriction_id = EXCLUDED.restriction_id,
+                           resolved_at = NULL,
+                           resolve_action = NULL,
+                           metadata = EXCLUDED.metadata`,
+            [
+              Number(orderId),
+              Number(freelancerUserId),
+              primary?.id != null ? Number(primary.id) : null,
+              JSON.stringify({ source: "claim_pool_order" }),
+            ],
+          );
+        } catch (holdTblErr) {
+          if (holdTblErr?.code !== "42P01") throw holdTblErr;
+        }
+        await accountRestrictions.writeAudit(
+          {
+            restrictionId: primary?.id || null,
+            targetUserId: freelancerUserId,
+            action: accountRestrictions.AUDIT_ACTIONS.CLAIM_HELD_FOR_REVIEW,
+            relatedEntityType: "order",
+            relatedEntityId: orderId,
+            reason: primary?.internalReason || null,
+            metadata: { orderId: String(orderId) },
+          },
+          client,
+        );
+        await client.query("COMMIT");
+        return {
+          order: await getOrderById(orderId),
+          moderation: {
+            held: true,
+            status: "held",
+            assigned: false,
+            messageAr: accountRestrictions.PUBLIC_MESSAGES.CLAIM_HELD_AR,
+            messageEn: accountRestrictions.PUBLIC_MESSAGES.CLAIM_HELD_EN,
+          },
+        };
+      }
+    }
+
     const now = new Date();
     const dueAt = computeDueAt(now, order.duration_value, order.duration_unit);
     const { rows: updatedRows } = await client.query(
@@ -2753,6 +2980,11 @@ async function approvePoolClaimAdmin({ actorUserId, orderId, claimId }) {
       throw err;
     }
 
+    {
+      const accountRestrictions = require("./freelancerAccountRestrictionsService");
+      await accountRestrictions.assertOrderAssignmentAllowed(claim.freelancer_user_id, client);
+    }
+
     const receivedAt = new Date();
     const startedAt = receivedAt;
     const dueAt = computeDueAt(startedAt, order.duration_value, order.duration_unit);
@@ -2993,6 +3225,17 @@ async function approveInternalPricedBidAdmin({ actorUserId, orderId, bidId }) {
       err.statusCode = 409;
       throw err;
     }
+    if (String(selectedBid.moderation_status || "published") === "held") {
+      const err = new Error("This bid is held for moderation review and cannot be awarded.");
+      err.statusCode = 409;
+      err.exposeToClient = true;
+      err.publicCode = "BID_HELD_FOR_REVIEW";
+      throw err;
+    }
+    {
+      const accountRestrictions = require("./freelancerAccountRestrictionsService");
+      await accountRestrictions.assertOrderAssignmentAllowed(selectedBid.freelancer_user_id, client);
+    }
 
     const receivedAt = new Date();
     const dueAt = computeDueAt(receivedAt, order.duration_value, order.duration_unit);
@@ -3158,41 +3401,83 @@ async function listOrderClaimsForClient({ clientUserId, orderId }) {
   return { claims: sanitizeClaimsForClient(pending), orderSummary: { hasOpenPool: true } };
 }
 
-async function listOrderBidsWithFreelancers({ orderId }, clientMaybe) {
+async function listOrderBidsWithFreelancers({ orderId, clientVisibleOnly = false }, clientMaybe) {
   const runner = clientMaybe || pool;
   const priorityBoostSchema = require("../utils/marketplacePriorityApplicationBoostSchema");
   const schemaReady = await priorityBoostSchema.priorityApplicationBoostSchemaReady(runner);
-  const { rows } = schemaReady
-    ? await runner.query(
-        `SELECT b.id, b.order_id, b.freelancer_user_id, b.amount, b.status, b.created_at, b.updated_at, b.proposal_message,
-                u.first_name, u.father_name, u.family_name, u.email, u.account_id,
-                CASE WHEN pab.id IS NOT NULL AND pab.status IN ('active', 'returned') THEN TRUE ELSE FALSE END AS is_priority,
-                pab.boosted_at AS priority_boosted_at
-         FROM order_freelancer_bids b
-         JOIN users u ON u.id = b.freelancer_user_id
-         LEFT JOIN order_freelancer_priority_application_boosts pab
-           ON pab.bid_id = b.id AND pab.order_id = b.order_id AND pab.freelancer_user_id = b.freelancer_user_id
-         WHERE b.order_id = $1
-         ORDER BY
-           CASE WHEN pab.id IS NOT NULL AND pab.status IN ('active', 'returned') THEN 0 ELSE 1 END ASC,
-           CASE WHEN pab.id IS NOT NULL AND pab.status IN ('active', 'returned') THEN b.created_at END ASC NULLS LAST,
-           CASE WHEN pab.id IS NOT NULL AND pab.status IN ('active', 'returned') THEN b.id END ASC NULLS LAST,
-           b.amount ASC,
-           b.created_at ASC,
-           b.id ASC`,
-        [Number(orderId)],
-      )
-    : await runner.query(
-        `SELECT b.id, b.order_id, b.freelancer_user_id, b.amount, b.status, b.created_at, b.updated_at, b.proposal_message,
-                u.first_name, u.father_name, u.family_name, u.email, u.account_id,
-                FALSE AS is_priority,
-                NULL::timestamptz AS priority_boosted_at
-         FROM order_freelancer_bids b
-         JOIN users u ON u.id = b.freelancer_user_id
-         WHERE b.order_id = $1
-         ORDER BY b.amount ASC, b.created_at ASC, b.id ASC`,
-        [Number(orderId)],
-      );
+  const accountRestrictions = require("./freelancerAccountRestrictionsService");
+  const visibilitySql = clientVisibleOnly
+    ? ` AND ${accountRestrictions.clientVisibleBidModerationSql("b")}`
+    : "";
+  let rows;
+  try {
+    ({ rows } = schemaReady
+      ? await runner.query(
+          `SELECT b.id, b.order_id, b.freelancer_user_id, b.amount, b.status, b.created_at, b.updated_at, b.proposal_message,
+                  b.moderation_status,
+                  u.first_name, u.father_name, u.family_name, u.email, u.account_id,
+                  CASE WHEN pab.id IS NOT NULL AND pab.status IN ('active', 'returned') THEN TRUE ELSE FALSE END AS is_priority,
+                  pab.boosted_at AS priority_boosted_at
+           FROM order_freelancer_bids b
+           JOIN users u ON u.id = b.freelancer_user_id
+           LEFT JOIN order_freelancer_priority_application_boosts pab
+             ON pab.bid_id = b.id AND pab.order_id = b.order_id AND pab.freelancer_user_id = b.freelancer_user_id
+           WHERE b.order_id = $1${visibilitySql}
+           ORDER BY
+             CASE WHEN pab.id IS NOT NULL AND pab.status IN ('active', 'returned') THEN 0 ELSE 1 END ASC,
+             CASE WHEN pab.id IS NOT NULL AND pab.status IN ('active', 'returned') THEN b.created_at END ASC NULLS LAST,
+             CASE WHEN pab.id IS NOT NULL AND pab.status IN ('active', 'returned') THEN b.id END ASC NULLS LAST,
+             b.amount ASC,
+             b.created_at ASC,
+             b.id ASC`,
+          [Number(orderId)],
+        )
+      : await runner.query(
+          `SELECT b.id, b.order_id, b.freelancer_user_id, b.amount, b.status, b.created_at, b.updated_at, b.proposal_message,
+                  b.moderation_status,
+                  u.first_name, u.father_name, u.family_name, u.email, u.account_id,
+                  FALSE AS is_priority,
+                  NULL::timestamptz AS priority_boosted_at
+           FROM order_freelancer_bids b
+           JOIN users u ON u.id = b.freelancer_user_id
+           WHERE b.order_id = $1${visibilitySql}
+           ORDER BY b.amount ASC, b.created_at ASC, b.id ASC`,
+          [Number(orderId)],
+        ));
+  } catch (err) {
+    if (err?.code !== "42703") throw err;
+    ({ rows } = schemaReady
+      ? await runner.query(
+          `SELECT b.id, b.order_id, b.freelancer_user_id, b.amount, b.status, b.created_at, b.updated_at, b.proposal_message,
+                  u.first_name, u.father_name, u.family_name, u.email, u.account_id,
+                  CASE WHEN pab.id IS NOT NULL AND pab.status IN ('active', 'returned') THEN TRUE ELSE FALSE END AS is_priority,
+                  pab.boosted_at AS priority_boosted_at
+           FROM order_freelancer_bids b
+           JOIN users u ON u.id = b.freelancer_user_id
+           LEFT JOIN order_freelancer_priority_application_boosts pab
+             ON pab.bid_id = b.id AND pab.order_id = b.order_id AND pab.freelancer_user_id = b.freelancer_user_id
+           WHERE b.order_id = $1
+           ORDER BY
+             CASE WHEN pab.id IS NOT NULL AND pab.status IN ('active', 'returned') THEN 0 ELSE 1 END ASC,
+             CASE WHEN pab.id IS NOT NULL AND pab.status IN ('active', 'returned') THEN b.created_at END ASC NULLS LAST,
+             CASE WHEN pab.id IS NOT NULL AND pab.status IN ('active', 'returned') THEN b.id END ASC NULLS LAST,
+             b.amount ASC,
+             b.created_at ASC,
+             b.id ASC`,
+          [Number(orderId)],
+        )
+      : await runner.query(
+          `SELECT b.id, b.order_id, b.freelancer_user_id, b.amount, b.status, b.created_at, b.updated_at, b.proposal_message,
+                  u.first_name, u.father_name, u.family_name, u.email, u.account_id,
+                  FALSE AS is_priority,
+                  NULL::timestamptz AS priority_boosted_at
+           FROM order_freelancer_bids b
+           JOIN users u ON u.id = b.freelancer_user_id
+           WHERE b.order_id = $1
+           ORDER BY b.amount ASC, b.created_at ASC, b.id ASC`,
+          [Number(orderId)],
+        ));
+  }
   return rows.map((r) => ({
     id: String(r.id),
     orderId: String(r.order_id),
@@ -3204,6 +3489,7 @@ async function listOrderBidsWithFreelancers({ orderId }, clientMaybe) {
     updatedAt: r.updated_at,
     isPriority: Boolean(r.is_priority),
     priorityBoostedAt: r.priority_boosted_at || null,
+    moderationStatus: r.moderation_status || "published",
     freelancer: {
       id: String(r.freelancer_user_id),
       accountId: r.account_id,
@@ -3226,7 +3512,7 @@ async function listOrderBidsForClient({ clientUserId, orderId }) {
   if (o.order_status !== ORDER_STATUSES.OPEN_FOR_BIDS || !o.is_published || !o.is_open_for_pool || o.assigned_freelancer_id) {
     return { bids: [], orderSummary: { hasOpenPool: false } };
   }
-  const all = await listOrderBidsWithFreelancers({ orderId });
+  const all = await listOrderBidsWithFreelancers({ orderId, clientVisibleOnly: true });
   const pending = all.filter((b) => b.status === "pending" || b.status === "selected_pending_payment");
   return {
     bids: sanitizeBidsForClient(pending),
@@ -3438,6 +3724,11 @@ async function approvePoolClaimClient({ clientUserId, orderId, claimId }) {
       const err = new Error("تمت معالجة هذا الطلب مسبقاً.");
       err.statusCode = 409;
       throw err;
+    }
+
+    {
+      const accountRestrictions = require("./freelancerAccountRestrictionsService");
+      await accountRestrictions.assertOrderAssignmentAllowed(claim.freelancer_user_id, client);
     }
 
     const receivedAt = new Date();

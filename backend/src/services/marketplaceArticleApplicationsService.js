@@ -732,6 +732,59 @@ async function submitArticleApplication({
       }
     }
 
+    // Super Admin review-hold: store application as HELD (not ranking/competition visible).
+    let articleHeldForReview = false;
+    let articleHoldRestrictionId = null;
+    try {
+      const accountRestrictions = require("./freelancerAccountRestrictionsService");
+      const articleHold = await accountRestrictions.assertMarketplaceActionAllowedOrHeld(
+        fid,
+        accountRestrictions.RESTRICTION_SCOPES.ARTICLES,
+        client,
+        { now },
+      );
+      const competitionHold = await accountRestrictions.assertMarketplaceActionAllowedOrHeld(
+        fid,
+        accountRestrictions.RESTRICTION_SCOPES.COMPETITIONS,
+        client,
+        { now },
+      );
+      if (articleHold.held || competitionHold.held) {
+        articleHeldForReview = true;
+        const primary = articleHold.primaryRestriction || competitionHold.primaryRestriction;
+        articleHoldRestrictionId = primary?.id != null ? Number(primary.id) : null;
+        try {
+          await client.query(
+            `UPDATE marketplace_article_applications
+                SET moderation_status = 'held',
+                    hold_restriction_id = $2,
+                    moderation_held_at = NOW(),
+                    updated_at = NOW()
+              WHERE id = $1`,
+            [inserted.id, articleHoldRestrictionId],
+          );
+          inserted.moderation_status = "held";
+          inserted.hold_restriction_id = articleHoldRestrictionId;
+        } catch (modErr) {
+          if (modErr?.code !== "42703") throw modErr;
+        }
+        await accountRestrictions.writeAudit(
+          {
+            restrictionId: articleHoldRestrictionId,
+            targetUserId: fid,
+            action: accountRestrictions.AUDIT_ACTIONS.ARTICLE_HELD_FOR_REVIEW,
+            relatedEntityType: "marketplace_article_application",
+            relatedEntityId: inserted.id,
+            reason: primary?.internalReason || null,
+            metadata: { articleId: String(aid), applicationId: String(inserted.id) },
+          },
+          client,
+        );
+      }
+    } catch (holdErr) {
+      if (holdErr?.code !== "42P01") throw holdErr;
+    }
+
     // E2: reserve Bids (not immediate B5 consume). Final approval consumes reservation.
     const economy = await economyService.getArticleEconomyConfig(client);
     const bidCost = economyService.resolveBidCostForCampaign(article, economy);
@@ -814,12 +867,14 @@ async function submitArticleApplication({
       // Pre-154 schema: reservation still held; column link optional.
     }
 
-    await collectionService.onArticleApplicationSubmitted(client, {
-      articleId: aid,
-      applicationId: inserted.id,
-      roundId: round?.id || inserted.collection_round_id || null,
-      now,
-    });
+    if (!articleHeldForReview) {
+      await collectionService.onArticleApplicationSubmitted(client, {
+        articleId: aid,
+        applicationId: inserted.id,
+        roundId: round?.id || inserted.collection_round_id || null,
+        now,
+      });
+    }
 
     try {
       await activationEngine.markTrialFirstBidIfNeeded(client, {
@@ -833,6 +888,30 @@ async function submitArticleApplication({
     if (ownClient) await client.query("COMMIT");
 
     let autoAssignment = null;
+    if (articleHeldForReview) {
+      return {
+        application: mapApplicationRow(inserted),
+        created: true,
+        moderation: {
+          held: true,
+          status: "held",
+          messageAr: "قيد المراجعة",
+          messageEn: "Under review",
+        },
+        approvedBidCost: bidCost,
+        bidCreditConsumed: 0,
+        bidCreditReserved: bidCost,
+        workTokenConsumed: 0,
+        economicsRuntime: ARTICLE_APPLICATION_BID_ECONOMICS_RUNTIME,
+        priorityBoost: ARTICLE_PRIORITY_BOOST,
+        fairDistribution: ARTICLE_FAIR_DISTRIBUTION,
+        workTokenEntry: ARTICLE_WORK_TOKEN_ENTRY,
+        activeWorkTokenRuntime: ACTIVE_ARTICLE_WORK_TOKEN_RUNTIME,
+        editAdditionalBidCost: ARTICLE_APPLICATION_EDIT_ADDITIONAL_BID_COST,
+        withdrawalRefundPolicy: ARTICLE_APPLICATION_WITHDRAWAL_REFUND,
+        noSelectionRefundPolicy: ARTICLE_APPLICATION_NO_SELECTION_REFUND,
+      };
+    }
     try {
       const autoAssign = require("./freelancerActivationAutoAssignmentService");
       autoAssignment = await autoAssign.maybeTriggerAfterApplication({
@@ -1181,6 +1260,12 @@ async function selectArticleApplication({
       throw createAppError("Application is not selectable.", 409, {
         exposeToClient: true,
         publicCode: ARTICLE_APPLICATION_ERROR_CODES.ARTICLE_APPLICATION_NOT_SELECTABLE,
+      });
+    }
+    if (String(row.moderation_status || "published") === "held") {
+      throw createAppError("Application is held for moderation review.", 409, {
+        exposeToClient: true,
+        publicCode: "ARTICLE_APPLICATION_HELD_FOR_REVIEW",
       });
     }
     const article = await loadArticleForUpdate(client, row.article_id);

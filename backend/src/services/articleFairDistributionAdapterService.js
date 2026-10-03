@@ -198,6 +198,8 @@ async function maybeLoadActivationFairContext(db, article, built) {
 
 async function loadEligibleApplications(db, articleId, roundId) {
   const statuses = [...ARTICLE_FAIR_RANKING_ELIGIBLE_STATUSES];
+  // Exclude Super Admin review-hold applications from competition ranking.
+  const moderationVisible = `(a.moderation_status IS NULL OR a.moderation_status IN ('published', 'released'))`;
   try {
     if (roundId != null) {
       const { rows } = await db.query(
@@ -211,6 +213,7 @@ async function loadEligibleApplications(db, articleId, roundId) {
           WHERE a.article_id = $1
             AND a.status = ANY($3::text[])
             AND (a.collection_round_id = $2 OR a.collection_round_id IS NULL)
+            AND ${moderationVisible}
           ORDER BY a.submitted_at ASC, a.id ASC`,
         [Number(articleId), Number(roundId), statuses],
       );
@@ -226,6 +229,7 @@ async function loadEligibleApplications(db, articleId, roundId) {
          JOIN users u ON u.id = a.freelancer_user_id
         WHERE a.article_id = $1
           AND a.status = ANY($2::text[])
+          AND ${moderationVisible}
         ORDER BY a.submitted_at ASC, a.id ASC`,
       [Number(articleId), statuses],
     );

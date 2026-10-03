@@ -98,6 +98,9 @@ export const FinancialUserMyBonusesPage = lazy(() => import("../pages/dashboard/
 export const SuperAdminSettingsPage = lazy(() => import("../pages/dashboard/SuperAdminSettingsPage"));
 export const SuperAdminAdminsPage = lazy(() => import("../pages/dashboard/SuperAdminAdminsPage"));
 export const SuperAdminUsersPage = lazy(() => import("../pages/dashboard/SuperAdminUsersPage"));
+export const SuperAdminAccountRestrictionsPage = lazy(
+  () => import("../pages/dashboard/SuperAdminAccountRestrictionsPage"),
+);
 export const SuperAdminRateLimitExemptionsPage = lazy(
   () => import("../pages/dashboard/SuperAdminRateLimitExemptionsPage"),
 );
