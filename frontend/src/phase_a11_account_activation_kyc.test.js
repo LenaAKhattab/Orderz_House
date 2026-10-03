@@ -38,13 +38,28 @@ describe("Phase A11 — freelancer activate-account KYC UI", () => {
 
   it("Arabic KYC copy keys exist", () => {
     const ar = read("locales/ar/freelancerDashboard.json");
-    assert.match(ar, /تفعيل حساب المستقل/);
+    assert.match(ar, /توثيق الهوية/);
+    assert.match(ar, /ارفع صور الهوية لإكمال تفعيل الحساب/);
     assert.match(ar, /لن يتم تفعيل الحساب مباشرة/);
-    assert.match(ar, /إرسال طلب التفعيل/);
-    assert.match(ar, /طلبك قيد المراجعة/);
-    assert.match(ar, /إعادة إرسال طلب التفعيل/);
+    assert.match(ar, /إرسال طلب توثيق الهوية/);
+    assert.match(ar, /طلب توثيق الهوية قيد المراجعة/);
+    assert.match(ar, /إعادة إرسال طلب توثيق الهوية/);
     assert.match(ar, /اضغط لاختيار الصورة/);
     assert.match(ar, /تغيير الصورة/);
+  });
+
+  it("menu and page label identity verification for discovery", () => {
+    const dashAr = read("locales/ar/dashboard.json");
+    const dashEn = read("locales/en/dashboard.json");
+    const page = read("pages/dashboard/FreelancerActivateAccountPage.jsx");
+    const layout = read("layouts/FreelancerDashboardLayout.jsx");
+    assert.match(dashAr, /"activateAccount": "توثيق الهوية"/);
+    assert.match(dashEn, /"activateAccount": "Identity verification"/);
+    assert.match(layout, /activate-account/);
+    assert.match(layout, /activateAccount/);
+    assert.match(page, /kyc\.pageTitle/);
+    assert.match(page, /kyc\.uploadHint/);
+    assert.equal(canRoleAccessPath("/dashboard/freelancer/activate-account", ROLE.FREELANCER), true);
   });
 });
 
@@ -65,20 +80,23 @@ describe("Phase A11 — KYC upload card UI", () => {
 describe("Phase A11 — Super Admin review UI", () => {
   it("list/detail page has approve/reject and both images", () => {
     const page = read("pages/dashboard/SuperAdminFreelancerActivationRequestsPage.jsx");
-    assert.match(page, /قبول التفعيل/);
-    assert.match(page, /رفض التفعيل/);
-    assert.match(page, /سبب الرفض/);
-    assert.match(page, /ملاحظات داخلية/);
-    assert.match(page, /صورة الهوية الأمامية/);
-    assert.match(page, /صورة الهوية الخلفية/);
+    const ar = read("locales/ar/activation.json");
+    assert.match(page, /activation\.requests\.approve/);
+    assert.match(page, /activation\.requests\.reject/);
+    assert.match(page, /activation\.requests\.rejectReasonLabel|activation\.requests\.rejectionReason/);
+    assert.match(page, /activation\.requests\.adminNotes/);
+    assert.match(page, /activation\.requests\.idFront/);
+    assert.match(page, /activation\.requests\.idBack/);
+    assert.match(ar, /"approve": "قبول التفعيل"/);
+    assert.match(ar, /رفض التفعيل|رفض/);
     assert.match(page, /approveSuperAdminFreelancerActivationRequestRequest/);
     assert.match(page, /rejectSuperAdminFreelancerActivationRequestRequest/);
     assert.match(page, /fetchSuperAdminFreelancerActivationKycFileBlob/);
     assert.match(page, /AbortController/);
     assert.match(page, /revokeObjectURL/);
-    assert.match(page, /لم يتم العثور على صورة الهوية/);
-    assert.match(page, /ليست لديك صلاحية لعرض هذه الصورة/);
-    assert.match(page, /تعذر تحميل صورة الهوية الآن/);
+    assert.match(page, /activation\.requests\.kycNotFound/);
+    assert.match(page, /activation\.requests\.kycForbidden/);
+    assert.match(page, /activation\.requests\.kycLoadFailed/);
     assert.doesNotMatch(page, /res\.cloudinary\.com|cloudinary\.com\/.*authenticated/);
   });
 
