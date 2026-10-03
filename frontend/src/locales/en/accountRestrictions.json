@@ -1,0 +1,68 @@
+{
+  "title": "Account Restrictions",
+  "subtitle": "Marketplace review holds for freelancers — separate from account disable.",
+  "searchPlaceholder": "Search by name, email, or user id",
+  "tabs": {
+    "active": "Active",
+    "expired": "Expired",
+    "revoked": "Revoked"
+  },
+  "empty": "No restrictions in this list.",
+  "add": "Add restriction",
+  "edit": "Edit restriction",
+  "revoke": "Revoke restriction",
+  "extend": "Extend restriction",
+  "viewHistory": "View history",
+  "manage": "Manage",
+  "user": "User",
+  "plan": "Plan",
+  "accountStatus": "Account status",
+  "type": "Restriction type",
+  "scopes": "Scope",
+  "createdBy": "Created by",
+  "createdAt": "Created at",
+  "startsAt": "Starts",
+  "expiresAt": "Expires",
+  "internalReason": "Internal reason",
+  "internalNote": "Internal note",
+  "revokeReason": "Revoke reason",
+  "noExpiry": "No expiry",
+  "activeHoldBadge": "Active admin hold",
+  "noActive": "No active restriction",
+  "drawerTitle": "Account restrictions",
+  "types": {
+    "ACCOUNT_REVIEW_HOLD": "Account review hold",
+    "MARKETPLACE_RESTRICTED": "Marketplace restricted",
+    "CONTENT_REVIEW": "Content review",
+    "FULL_SUSPENSION": "Full marketplace suspension"
+  },
+  "scopesLabels": {
+    "ALL_MARKETPLACE": "All marketplace",
+    "bids": "Bids",
+    "direct_claims": "Direct claims",
+    "order_assignments": "Order assignments",
+    "articles": "Articles",
+    "competitions": "Competitions",
+    "messaging": "Messaging"
+  },
+  "status": {
+    "ACTIVE": "Active",
+    "EXPIRED": "Expired",
+    "REVOKED": "Revoked"
+  },
+  "form": {
+    "userId": "User ID",
+    "reasonRequired": "Internal reason is required",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirmRevoke": "Confirm revoke"
+  },
+  "heldBids": "Bids under review",
+  "releaseBid": "Release bid to client",
+  "rejectBid": "Reject bid and restore credits",
+  "loadError": "Could not load restrictions.",
+  "saveOk": "Restriction saved.",
+  "revokeOk": "Restriction revoked.",
+  "privacyNote": "Internal reasons are never shown to freelancers or clients.",
+  "refresh": "Refresh"
+}

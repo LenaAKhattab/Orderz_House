@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { Link } from "react-router-dom";
 import { MoreVertical, Search, X } from "lucide-react";
 import Button from "../../components/ui/Button";
 import DashboardShell from "../../components/dashboard/DashboardShell";
@@ -14,6 +15,7 @@ import {
   getSuperAdminUsersStatsRequest,
   listSuperAdminUsersRequest,
   getSuperAdminUserDetailRequest,
+  getSuperAdminUserAccountRestrictionsRequest,
   patchSuperAdminUserAccountRequest,
   patchSuperAdminUserIdentityRequest,
   patchSuperAdminUserMembershipRequest,
@@ -25,6 +27,7 @@ import { membershipScheduleView } from "../../utils/membershipFirstOrderSchedule
 import { useTranslation } from "../../i18n/LanguageProvider";
 import { durationMonthsText, formatLocaleDate, formatLocaleDateTime } from "../../i18n/formatLocale";
 import { presentServerMessage } from "../../i18n/presentServerMessage";
+import "../../i18n/accountRestrictionsResources";
 import "./superAdminUsersPage.css";
 
 const PAGE_SIZE = 20;
@@ -424,10 +427,31 @@ function UserDetailDrawer({
   const [planId, setPlanId] = useState("");
   const [durationChoice, setDurationChoice] = useState("1");
   const [customMonths, setCustomMonths] = useState("1");
+  const [restrictionSummary, setRestrictionSummary] = useState(null);
 
   useEffect(() => {
     if (!open) return;
     setTab("overview");
+  }, [open, detail?.profile?.id]);
+
+  useEffect(() => {
+    const userId = detail?.profile?.id;
+    if (!open || !userId) {
+      setRestrictionSummary(null);
+      return undefined;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await getSuperAdminUserAccountRestrictionsRequest(userId);
+        if (!cancelled) setRestrictionSummary(res?.data || null);
+      } catch {
+        if (!cancelled) setRestrictionSummary(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [open, detail?.profile?.id]);
 
   useEffect(() => {
@@ -574,6 +598,31 @@ function UserDetailDrawer({
                       </ul>
                     </div>
                   ) : null}
+
+                  <section className="oh-sa-users-gates" aria-label={t("accountRestrictions.drawerTitle")}>
+                    <div className="oh-sa-users-gates__head">
+                      <h3>{t("accountRestrictions.drawerTitle")}</h3>
+                      <StatusBadge tone={restrictionSummary?.hasActiveRestriction ? "warning" : "success"}>
+                        {restrictionSummary?.hasActiveRestriction
+                          ? t("accountRestrictions.activeHoldBadge")
+                          : t("accountRestrictions.noActive")}
+                      </StatusBadge>
+                    </div>
+                    {restrictionSummary?.hasActiveRestriction ? (
+                      <ul>
+                        {(restrictionSummary.activeRestrictions || []).map((r) => (
+                          <li key={r.id}>
+                            {t(`accountRestrictions.types.${r.restrictionType}`, r.restrictionType)} —{" "}
+                            {(r.scopes || []).join(", ")}
+                            {r.internalReason ? ` — ${r.internalReason}` : ""}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
+                    <Link className="oh-account-btn-ghost" to="/dashboard/super-admin/account-restrictions">
+                      {t("accountRestrictions.manage")}
+                    </Link>
+                  </section>
 
                   <div className="oh-sa-users-form-grid">
                     <label className="oh-sa-users-field">

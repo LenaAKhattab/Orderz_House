@@ -377,6 +377,17 @@ async function createClientSelectedBidCheckoutSession({ clientUserId, orderId, b
       err.statusCode = 409;
       throw err;
     }
+    if (String(selectedBid.moderation_status || "published") === "held") {
+      const err = new Error("Bid is not available for selection.");
+      err.statusCode = 409;
+      err.exposeToClient = true;
+      err.publicCode = "BID_HELD_FOR_REVIEW";
+      throw err;
+    }
+    {
+      const accountRestrictions = require("./freelancerAccountRestrictionsService");
+      await accountRestrictions.assertOrderAssignmentAllowed(selectedBid.freelancer_user_id, db);
+    }
 
     const amountMajor = Number(selectedBid.amount);
     const min = Number(order.bid_budget_min);

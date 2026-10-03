@@ -66,6 +66,7 @@ import {
   SuperAdminSettingsPage,
   SuperAdminAdminsPage,
   SuperAdminUsersPage,
+  SuperAdminAccountRestrictionsPage,
   SuperAdminRateLimitExemptionsPage,
   SuperAdminFeedbackPage,
   SuperAdminFeedbackDetailPage,
@@ -554,6 +555,14 @@ function App() {
                   element={
                     <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
                       <SuperAdminUsersPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/account-restrictions"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                      <SuperAdminAccountRestrictionsPage />
                     </RequireRole>
                   }
                 />

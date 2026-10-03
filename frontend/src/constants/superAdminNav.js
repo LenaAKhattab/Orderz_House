@@ -27,6 +27,15 @@ export const SUPER_ADMIN_NAV_ITEM_DEFS = {
     matchPrefix: "/dashboard/super-admin/users",
     permission: SUPER_ADMIN_PAGE_PERMISSIONS.usersControl,
   },
+  accountRestrictions: {
+    key: "accountRestrictions",
+    to: "/dashboard/super-admin/account-restrictions",
+    labelKey: "dashboard.nav.superAdmin.accountRestrictions",
+    icon: "admins",
+    end: true,
+    matchPrefix: "/dashboard/super-admin/account-restrictions",
+    permission: SUPER_ADMIN_PAGE_PERMISSIONS.accountRestrictions,
+  },
   legacyFreelancerInvites: {
     key: "legacyFreelancerInvites",
     to: "/dashboard/legacy-freelancers",
@@ -260,7 +269,7 @@ export const SUPER_ADMIN_NAV_SECTION_DEFS = [
   {
     id: "overview",
     labelKey: "dashboard.nav.sections.overview",
-    itemKeys: ["overview", "analytics", "users", "legacyFreelancerInvites"],
+    itemKeys: ["overview", "analytics", "users", "accountRestrictions", "legacyFreelancerInvites"],
   },
   {
     id: "ordersOps",
