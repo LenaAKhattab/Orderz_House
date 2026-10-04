@@ -2023,9 +2023,31 @@ async function canFreelancerTakeOrders(freelancerUserId) {
   const base = evaluateFreelancerTakeOrdersEligibility(sub);
   const feeStatus = await getActivationFeeStatus(freelancerUserId);
   const gated = applyActivationFeeEligibilityGate(base, feeStatus);
+  if (!gated?.eligible) {
+    return {
+      ...gated,
+      activationFeeStatus: feeStatus,
+    };
+  }
+
+  // Canonical identity gate — company_approved alone must never pass as KYC.
+  const { getCanonicalIdentityState } = require("./freelancerIdentityGate");
+  const identity = await getCanonicalIdentityState(freelancerUserId);
+  if (!identity.verified) {
+    return {
+      eligible: false,
+      reason: "identity_not_verified",
+      identityStatus: identity.status,
+      identitySource: identity.source,
+      activationFeeStatus: feeStatus,
+    };
+  }
+
   return {
     ...gated,
     activationFeeStatus: feeStatus,
+    identityStatus: identity.status,
+    identitySource: identity.source,
   };
 }
 

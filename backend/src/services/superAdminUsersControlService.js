@@ -19,6 +19,7 @@ const {
   MANUAL_IDENTITY_METHODS,
   COURSE_COMPLETION_REASON_CODES,
   loadManualIdentityVerification,
+  isManualIdentityApproved,
 } = require("./freelancerIdentityGate");
 
 const KYC_FILE_BASE = "/api/super-admin/freelancer-activation-requests";
@@ -335,7 +336,7 @@ function mapIdentityForAdmin(kycRow, manualRow = null) {
   const documents = kycRow ? kycProtectedDocs(kycRow.id, kycRow) : { front: null, back: null };
   const hasFiles = Boolean(documents.front?.protectedPath || documents.back?.protectedPath);
   const platformStatus = kycRow?.status || "none";
-  const manualApproved = Boolean(manualRow) && String(manualRow.status) === "approved";
+  const manualApproved = isManualIdentityApproved(manualRow);
   return {
     status: manualApproved ? "approved" : platformStatus,
     platformStatus,

@@ -104,10 +104,10 @@ class _AccountActivationKycScreenState extends ConsumerState<AccountActivationKy
             else if (ui.error != null && status == null)
               OhErrorBanner(message: ui.error!)
             else if (status != null) ...[
-              if (status.isCompanyApproved) _StatusCard(
+              if (status.isIdentityVerified) _StatusCard(
                 tone: _Tone.success,
-                title: accountActivationKycApprovedAr,
-                body: status.messageAr,
+                title: status.verifiedTitleAr,
+                body: status.membershipBodyAr,
               ) else if (status.isPending) _StatusCard(
                 tone: _Tone.warning,
                 title: accountActivationKycPendingAr,

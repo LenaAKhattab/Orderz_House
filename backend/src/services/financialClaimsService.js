@@ -80,12 +80,14 @@ function assertNoFreelancerPricingFields(payload) {
 }
 
 /**
- * Phase F1 — require company_approved (A11 KYC) before new portal claims.
+ * Phase F1 — require company approval AND canonical identity before new portal claims.
+ * company_approved alone must never masquerade as KYC approval.
  */
 async function assertFreelancerCompanyApprovedForClaims(runner, freelancerUserId) {
   const {
     ACCOUNT_ACTIVATION_KYC_ERROR_CODES,
   } = require("../constants/freelancerAccountActivationKyc");
+  const { getCanonicalIdentityState } = require("./freelancerIdentityGate");
   const uid = Number(freelancerUserId);
   let activationStatus = null;
   try {
@@ -102,38 +104,28 @@ async function assertFreelancerCompanyApprovedForClaims(runner, freelancerUserId
     if (err?.code !== "42P01" && err?.code !== "42703") throw err;
   }
 
-  if (activationStatus === "company_approved") return;
+  const identity = await getCanonicalIdentityState(uid, { client: runner });
+  if (activationStatus === "company_approved" && identity.verified) return;
 
-  let kycStatus = null;
-  try {
-    const { rows: kycRows } = await runner.query(
-      `SELECT status
-         FROM freelancer_account_activation_requests
-        WHERE freelancer_user_id = $1
-        ORDER BY created_at DESC, id DESC
-        LIMIT 1`,
-      [uid],
-    );
-    kycStatus = kycRows[0] ? String(kycRows[0].status) : null;
-  } catch (err) {
-    if (err?.code !== "42P01" && err?.code !== "42703") throw err;
-  }
-
-  if (kycStatus === "pending_review" || activationStatus === "company_pending") {
+  if (identity.status === "pending_review" || activationStatus === "company_pending") {
     const err = new Error("طلب التفعيل قيد المراجعة.");
     err.statusCode = 403;
     err.publicCode = ACCOUNT_ACTIVATION_KYC_ERROR_CODES.FREELANCER_KYC_PENDING_REVIEW;
     err.exposeToClient = true;
     throw err;
   }
-  if (kycStatus === "rejected" || activationStatus === "company_rejected") {
+  if (identity.status === "rejected" || activationStatus === "company_rejected") {
     const err = new Error("تم رفض طلب التفعيل. يرجى مراجعة السبب وإعادة الإرسال.");
     err.statusCode = 403;
     err.publicCode = ACCOUNT_ACTIVATION_KYC_ERROR_CODES.FREELANCER_KYC_REJECTED;
     err.exposeToClient = true;
     throw err;
   }
-  const err = new Error("لا يمكن إنشاء مطالبة مالية قبل تفعيل الحساب.");
+  const err = new Error(
+    identity.verified
+      ? "لا يمكن إنشاء مطالبة مالية قبل اعتماد الحساب."
+      : "لا يمكن إنشاء مطالبة مالية قبل توثيق الهوية واعتماد الحساب.",
+  );
   err.statusCode = 403;
   err.publicCode = ACCOUNT_ACTIVATION_KYC_ERROR_CODES.FREELANCER_KYC_REQUIRED;
   err.exposeToClient = true;

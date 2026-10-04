@@ -16,7 +16,12 @@ const {
   ACCOUNT_ACTIVATION_KYC_ERROR_CODES,
 } = require("../constants/freelancerAccountActivationKyc");
 const { uploadKycIdBuffer } = require("./cloudinaryUploadService");
-const { loadManualIdentityVerification, isManualIdentityApproved } = require("./freelancerIdentityGate");
+const {
+  loadManualIdentityVerification,
+  isManualIdentityApproved,
+  resolveCanonicalIdentityState,
+  getCanonicalIdentityState,
+} = require("./freelancerIdentityGate");
 const { getCloudinary } = require("../config/cloudinary");
 
 function isMissingSchema(err) {
@@ -192,7 +197,7 @@ async function assertCompanyApprovalAllowed({
 
 async function loadSubscriptionActivation(runner, freelancerUserId) {
   const { rows } = await runner.query(
-    `SELECT id, activation_status, status, actual_start_date, expiry_date
+    `SELECT id, activation_status, status, actual_start_date, expiry_date, has_first_order
        FROM freelancer_subscriptions
       WHERE freelancer_user_id = $1 AND is_current = TRUE
       ORDER BY id DESC
@@ -259,46 +264,96 @@ async function getFreelancerAccountActivationStatus(freelancerUserId) {
   const ready = await schemaReady();
   const sub = await loadSubscriptionActivation(pool, uid);
   const activationStatus = String(sub?.activation_status || "").toLowerCase() || null;
-  const subscriptionActive =
-    String(sub?.status || "").toLowerCase() === "active"
-    && Boolean(sub?.actual_start_date);
+  const companyApproved = activationStatus === "company_approved";
+  const subStatus = String(sub?.status || "").toLowerCase() || null;
+  const hasFirstOrder = Boolean(sub?.has_first_order);
+  // Membership countdown is live only after canonical first-order activation with real dates.
+  const membershipCountdownStarted =
+    Boolean(sub?.actual_start_date) && hasFirstOrder && subStatus === "active";
+
+  const emptyIdentity = resolveCanonicalIdentityState({ platformRow: null, manualRow: null });
 
   if (!ready) {
     return {
       schemaReady: false,
       activationStatus,
-      isCompanyApproved: activationStatus === "company_approved",
-      isSubscriptionPeriodActive: subscriptionActive,
+      // Legacy field: company approval only — NOT identity verification.
+      isCompanyApproved: companyApproved,
+      isSubscriptionPeriodActive: membershipCountdownStarted && companyApproved,
       request: null,
-      canSubmit: activationStatus !== "company_approved",
+      canSubmit: emptyIdentity.canSubmit,
       canResubmit: false,
       messageAr: "نظام مراجعة التفعيل غير جاهز بعد.",
+      identity: {
+        ...emptyIdentity,
+        canSubmit: false,
+        canResubmit: false,
+      },
+      accountApproval: {
+        status: activationStatus,
+        approved: companyApproved,
+      },
+      membership: {
+        status: subStatus,
+        countdownStarted: membershipCountdownStarted,
+        actualStartDate: sub?.actual_start_date || null,
+        expiryDate: sub?.expiry_date || null,
+        hasFirstOrder,
+      },
     };
   }
 
   const latest = await loadLatestRequest(pool, uid);
+  const manual = await loadManualIdentityVerification(uid, pool);
+  const identity = resolveCanonicalIdentityState({ platformRow: latest, manualRow: manual });
   const mapped = mapRequestRow(latest, { forAdmin: false });
-  const isApproved = activationStatus === "company_approved";
-  const pending = mapped?.status === "pending_review";
-  const rejected = mapped?.status === "rejected" || activationStatus === "company_rejected";
-  const canSubmit = !isApproved && !pending;
-  const canResubmit = !isApproved && !pending && (rejected || !mapped);
 
-  let messageAr = "يرجى رفع صورة الهوية من الأمام والخلف لإرسال طلب التفعيل.";
-  if (isApproved) messageAr = "تم تفعيل حسابك.";
-  else if (pending) messageAr = "طلبك قيد المراجعة من قبل الإدارة.";
-  else if (rejected) messageAr = "تم رفض طلب التفعيل. يمكنك إعادة الإرسال بعد تصحيح المطلوب.";
+  let messageAr = "لم يتم توثيق الهوية بعد. يرجى رفع صورة الهوية من الأمام والخلف.";
+  if (identity.verified && identity.source === "manual_admin") {
+    messageAr = "تم التحقق من الهوية إدارياً.";
+  } else if (identity.verified) {
+    messageAr = "تم توثيق هويتك.";
+  } else if (identity.status === "pending_review") {
+    messageAr = "طلب توثيق الهوية قيد المراجعة من قبل الإدارة.";
+  } else if (identity.status === "rejected") {
+    messageAr = "تم رفض طلب توثيق الهوية. يمكنك إعادة الإرسال بعد تصحيح المطلوب.";
+  }
 
   return {
     schemaReady: true,
     activationStatus,
-    isCompanyApproved: isApproved,
-    isSubscriptionPeriodActive: subscriptionActive && isApproved,
+    // Legacy field retained for older clients: company approval only.
+    isCompanyApproved: companyApproved,
+    isSubscriptionPeriodActive: membershipCountdownStarted,
     request: mapped,
-    canSubmit,
-    canResubmit,
+    canSubmit: identity.canSubmit,
+    canResubmit: identity.canResubmit,
     termsVersion: ACCOUNT_ACTIVATION_KYC_TERMS_VERSION,
     messageAr,
+    identity: {
+      status: identity.status,
+      verified: identity.verified,
+      source: identity.source,
+      submittedAt: identity.submittedAt,
+      reviewedAt: identity.reviewedAt,
+      canSubmit: identity.canSubmit,
+      canResubmit: identity.canResubmit,
+      hasPlatformDocuments: identity.hasPlatformDocuments,
+      verificationMethod: identity.verificationMethod,
+      rejectionReason: identity.rejectionReason,
+      resubmissionCount: identity.resubmissionCount,
+    },
+    accountApproval: {
+      status: activationStatus,
+      approved: companyApproved,
+    },
+    membership: {
+      status: subStatus,
+      countdownStarted: membershipCountdownStarted,
+      actualStartDate: sub?.actual_start_date || null,
+      expiryDate: sub?.expiry_date || null,
+      hasFirstOrder,
+    },
   };
 }
 
@@ -330,9 +385,9 @@ async function submitFreelancerAccountActivationRequest({
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
-    const sub = await loadSubscriptionActivation(client, uid);
-    if (String(sub?.activation_status || "").toLowerCase() === "company_approved") {
-      throw createAppError("حسابك مفعّل مسبقًا.", 409, {
+    const identity = await getCanonicalIdentityState(uid, { client });
+    if (identity.verified) {
+      throw createAppError("تم توثيق هويتك مسبقاً.", 409, {
         exposeToClient: true,
         publicCode: ACCOUNT_ACTIVATION_KYC_ERROR_CODES.ALREADY_APPROVED,
       });
