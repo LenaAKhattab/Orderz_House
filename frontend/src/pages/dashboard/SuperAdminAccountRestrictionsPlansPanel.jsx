@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { MoreVertical, X } from "lucide-react";
+import { MoreVertical } from "lucide-react";
 import Button from "../../components/ui/Button";
 import DashboardEmptyState from "../../components/dashboard/DashboardEmptyState";
 import DashboardLoadingState from "../../components/dashboard/DashboardLoadingState";
@@ -83,6 +83,11 @@ function expiresAtFromDuration(durationId, customValue) {
   return new Date(Date.now() + opt.ms).toISOString();
 }
 
+function planDisplayName(row, locale) {
+  return locale?.startsWith("en") ? row.planNameEn || row.tierCode : row.planNameAr || row.tierCode;
+}
+
+/** Exact Users row-action menu (portal + fixed panel). */
 function RowActionsMenu({ open, onOpenChange, label, items }) {
   const triggerRef = useRef(null);
   const panelRef = useRef(null);
@@ -102,62 +107,469 @@ function RowActionsMenu({ open, onOpenChange, label, items }) {
       setPos({ top: r.bottom + 6, left });
     };
     update();
-    window.addEventListener("resize", update);
     window.addEventListener("scroll", update, true);
+    window.addEventListener("resize", update);
+    return () => {
+      window.removeEventListener("scroll", update, true);
+      window.removeEventListener("resize", update);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return undefined;
     const onDoc = (e) => {
       if (triggerRef.current?.contains(e.target) || panelRef.current?.contains(e.target)) return;
       onOpenChange(false);
     };
+    const onKey = (e) => {
+      if (e.key === "Escape") onOpenChange(false);
+    };
     document.addEventListener("mousedown", onDoc);
+    document.addEventListener("keydown", onKey);
     return () => {
-      window.removeEventListener("resize", update);
-      window.removeEventListener("scroll", update, true);
       document.removeEventListener("mousedown", onDoc);
+      document.removeEventListener("keydown", onKey);
     };
   }, [open, onOpenChange]);
 
+  const panel =
+    open && pos
+      ? createPortal(
+          <div ref={panelRef} className="oh-sa-users-row-menu__panel" role="menu" style={{ top: pos.top, left: pos.left }}>
+            {items.map((item) => (
+              <button
+                key={item.key}
+                type="button"
+                role="menuitem"
+                className={`oh-sa-users-row-menu__item${item.danger ? " oh-sa-users-row-menu__item--danger" : ""}`}
+                onClick={() => {
+                  onOpenChange(false);
+                  item.onClick();
+                }}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>,
+          document.body,
+        )
+      : null;
+
   return (
-    <>
+    <div className="oh-sa-users-row-menu">
       <button
         ref={triggerRef}
         type="button"
-        className="oh-sa-users-row-menu-btn"
+        className={`oh-sa-users-row-menu__trigger${open ? " is-open" : ""}`}
         aria-label={label}
+        aria-haspopup="menu"
         aria-expanded={open}
-        onClick={(e) => {
-          e.stopPropagation();
-          onOpenChange(!open);
-        }}
+        onClick={() => onOpenChange(!open)}
       >
-        <MoreVertical size={16} strokeWidth={2.25} aria-hidden />
+        <MoreVertical size={18} strokeWidth={2.25} aria-hidden />
       </button>
-      {open && pos
-        ? createPortal(
-            <div
-              ref={panelRef}
-              className="oh-sa-users-row-menu"
-              style={{ position: "fixed", top: pos.top, left: pos.left, zIndex: 80 }}
-              role="menu"
-            >
-              {items.map((item) => (
-                <button
-                  key={item.key}
-                  type="button"
-                  role="menuitem"
-                  className="oh-sa-users-row-menu__item"
-                  onClick={() => {
-                    onOpenChange(false);
-                    item.onClick?.();
-                  }}
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>,
-            document.body,
-          )
-        : null}
+      {panel}
+    </div>
+  );
+}
+
+function ScopeModeField({ scopeMode, setScopeMode, scopes, onToggleCustomScope, busy, t }) {
+  return (
+    <fieldset className="oh-sa-users-field">
+      <span>{t("accountRestrictions.scopes")}</span>
+      <div className="oh-sa-restr-radio-row">
+        <label className="oh-sa-restr-radio">
+          <input
+            type="radio"
+            name="planScopeMode"
+            checked={scopeMode === "all"}
+            onChange={() => setScopeMode("all")}
+            disabled={busy}
+          />
+          {t("accountRestrictions.scopeMode.all")}
+        </label>
+        <label className="oh-sa-restr-radio">
+          <input
+            type="radio"
+            name="planScopeMode"
+            checked={scopeMode === "custom"}
+            onChange={() => setScopeMode("custom")}
+            disabled={busy}
+          />
+          {t("accountRestrictions.scopeMode.custom")}
+        </label>
+      </div>
+      {scopeMode === "custom" ? (
+        <div className="oh-sa-restr-custom-scopes">
+          {CUSTOM_SCOPES.map((scope) => (
+            <label key={scope} className="oh-sa-restr-radio">
+              <input
+                type="checkbox"
+                checked={(scopes || []).includes(scope)}
+                onChange={() => onToggleCustomScope(scope)}
+                disabled={busy}
+              />
+              {t(`accountRestrictions.scopesLabels.${scope}`)}
+            </label>
+          ))}
+        </div>
+      ) : null}
+    </fieldset>
+  );
+}
+
+function DurationField({ durationId, setDurationId, customExpires, setCustomExpires, busy, t, allowNone = true }) {
+  const options = allowNone ? DURATION_OPTIONS : DURATION_OPTIONS.filter((o) => o.id !== "none");
+  return (
+    <>
+      <label className="oh-sa-users-field">
+        <span>{t("accountRestrictions.duration.label")}</span>
+        <select value={durationId} onChange={(e) => setDurationId(e.target.value)} disabled={busy}>
+          {options.map((opt) => (
+            <option key={opt.id} value={opt.id}>
+              {t(`accountRestrictions.duration.${opt.id}`)}
+            </option>
+          ))}
+        </select>
+      </label>
+      {durationId === "custom" ? (
+        <label className="oh-sa-users-field">
+          <span>{t("accountRestrictions.columns.expiresAt")}</span>
+          <input
+            type="datetime-local"
+            value={customExpires}
+            onChange={(e) => setCustomExpires(e.target.value)}
+            disabled={busy}
+          />
+        </label>
+      ) : null}
     </>
+  );
+}
+
+function PlanRestrictDrawer({
+  open,
+  onClose,
+  busy,
+  selectedPlan,
+  setSelectedPlan,
+  planChoices,
+  form,
+  setForm,
+  scopeMode,
+  setScopeMode,
+  durationId,
+  setDurationId,
+  customExpires,
+  setCustomExpires,
+  onSubmit,
+  locale,
+  t,
+}) {
+  if (!open) return null;
+
+  const toggleCustomScope = (scope) => {
+    setForm((prev) => {
+      const current = (prev.scopes || []).filter((s) => s !== "ALL_MARKETPLACE");
+      const next = current.includes(scope) ? current.filter((s) => s !== scope) : [...current, scope];
+      return { ...prev, scopes: next.length ? next : ["bids"] };
+    });
+  };
+
+  const displayName = selectedPlan ? planDisplayName(selectedPlan, locale) : "";
+
+  return (
+    <div className="oh-sa-users-drawer" role="dialog" aria-modal="true" aria-labelledby="oh-sa-plan-restr-add-title">
+      <button
+        type="button"
+        className="oh-sa-users-drawer__backdrop"
+        aria-label={t("accountRestrictions.form.close")}
+        onClick={busy ? undefined : onClose}
+      />
+      <aside className="oh-sa-users-drawer__panel">
+        <header className="oh-sa-users-drawer__header">
+          <div>
+            <h2 id="oh-sa-plan-restr-add-title">{t("accountRestrictions.plans.restrictPlan")}</h2>
+            {selectedPlan ? (
+              <p className="oh-sa-users-drawer__sub">
+                <span dir="ltr">{selectedPlan.tierCode}</span>
+                {" · "}
+                {displayName}
+              </p>
+            ) : (
+              <p className="oh-sa-users-drawer__sub">{t("accountRestrictions.plans.selectPlan")}</p>
+            )}
+          </div>
+          <button
+            type="button"
+            className="oh-sa-users-drawer__close"
+            onClick={onClose}
+            disabled={busy}
+            aria-label={t("accountRestrictions.form.close")}
+          >
+            ×
+          </button>
+        </header>
+        <div className="oh-sa-users-drawer__body">
+          {!selectedPlan ? (
+            <div className="oh-sa-users-stack">
+              <label className="oh-sa-users-field">
+                <span>{t("accountRestrictions.plans.selectPlan")}</span>
+              </label>
+              <div className="oh-sa-restr-search-results">
+                {planChoices.map((p) => {
+                  const name = planDisplayName(p, locale);
+                  return (
+                    <button
+                      key={p.marketplacePlanId}
+                      type="button"
+                      className="oh-sa-restr-search-result"
+                      disabled={p.restrictionStatus === "ACTIVE"}
+                      onClick={() => setSelectedPlan(p)}
+                    >
+                      <span className="oh-sa-users-person">
+                        <span className="oh-sa-users-person__text">
+                          <strong className="oh-sa-users-person__name" dir="ltr">
+                            {p.tierCode}
+                          </strong>
+                          <span className="oh-sa-users-person__sub">{name}</span>
+                        </span>
+                      </span>
+                      <span className="oh-sa-users-cell-sub" dir="ltr">
+                        {formatCount(p.currentSubscriberCount)} · {planStatusLabel(t, p.restrictionStatus)}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <form
+              className="oh-sa-users-stack"
+              onSubmit={(e) => {
+                e.preventDefault();
+                onSubmit();
+              }}
+            >
+              <section className="oh-sa-users-gates">
+                <div className="oh-sa-users-gates__head">
+                  <h3>{t("accountRestrictions.plans.sections.plan")}</h3>
+                  <Button type="button" variant="secondary" onClick={() => setSelectedPlan(null)} disabled={busy}>
+                    {t("accountRestrictions.plans.changePlan")}
+                  </Button>
+                </div>
+                <div className="oh-sa-users-person">
+                  <span className="oh-sa-users-person__text">
+                    <strong className="oh-sa-users-person__name" dir="ltr">
+                      {selectedPlan.tierCode}
+                    </strong>
+                    <span className="oh-sa-users-person__sub">{displayName}</span>
+                  </span>
+                </div>
+                <div className="oh-sa-users-kv" style={{ marginTop: 12 }}>
+                  <div>
+                    <span>{t("accountRestrictions.plans.currentSubscribers")}</span>
+                    <strong dir="ltr">{formatCount(selectedPlan.currentSubscriberCount)}</strong>
+                  </div>
+                  <div>
+                    <span>{t("accountRestrictions.plans.columns.status")}</span>
+                    <strong>{planStatusLabel(t, selectedPlan.restrictionStatus)}</strong>
+                  </div>
+                </div>
+              </section>
+
+              <ScopeModeField
+                scopeMode={scopeMode}
+                setScopeMode={(mode) => {
+                  setScopeMode(mode);
+                  setForm((p) => ({
+                    ...p,
+                    scopes: mode === "all" ? ["ALL_MARKETPLACE"] : (p.scopes || []).includes("ALL_MARKETPLACE") ? ["bids"] : p.scopes,
+                  }));
+                }}
+                scopes={form.scopes}
+                onToggleCustomScope={toggleCustomScope}
+                busy={busy}
+                t={t}
+              />
+
+              <DurationField
+                durationId={durationId}
+                setDurationId={setDurationId}
+                customExpires={customExpires}
+                setCustomExpires={setCustomExpires}
+                busy={busy}
+                t={t}
+              />
+
+              <label className="oh-sa-users-field">
+                <span>{t("accountRestrictions.internalReason")}</span>
+                <textarea
+                  value={form.internalReason}
+                  onChange={(e) => setForm((p) => ({ ...p, internalReason: e.target.value }))}
+                  rows={3}
+                  required
+                  minLength={3}
+                  placeholder={t("accountRestrictions.internalReasonPlaceholder")}
+                  disabled={busy}
+                />
+              </label>
+              <label className="oh-sa-users-field">
+                <span>{t("accountRestrictions.internalNote")}</span>
+                <textarea
+                  value={form.internalNote}
+                  onChange={(e) => setForm((p) => ({ ...p, internalNote: e.target.value }))}
+                  rows={2}
+                  placeholder={t("accountRestrictions.internalNotePlaceholder")}
+                  disabled={busy}
+                />
+              </label>
+
+              <p className="oh-sa-users-muted">{t("accountRestrictions.privacyNote")}</p>
+
+              <div className="oh-sa-users-actions-row oh-sa-users-actions-row--primary">
+                <Button type="button" variant="secondary" onClick={onClose} disabled={busy}>
+                  {t("accountRestrictions.form.cancel")}
+                </Button>
+                <Button type="submit" disabled={busy}>
+                  {busy ? t("accountRestrictions.form.working") : t("accountRestrictions.plans.restrictPlan")}
+                </Button>
+              </div>
+            </form>
+          )}
+        </div>
+      </aside>
+    </div>
+  );
+}
+
+function PlanDetailsDrawer({ open, detail, detailLoading, onClose, locale, t }) {
+  if (!open || !detail) return null;
+  const row = detail.row;
+  const displayName = planDisplayName(row, locale);
+
+  return (
+    <div className="oh-sa-users-drawer" role="dialog" aria-modal="true" aria-labelledby="oh-sa-plan-restr-detail-title">
+      <button type="button" className="oh-sa-users-drawer__backdrop" aria-label={t("accountRestrictions.form.close")} onClick={onClose} />
+      <aside className="oh-sa-users-drawer__panel">
+        <header className="oh-sa-users-drawer__header">
+          <div>
+            <h2 id="oh-sa-plan-restr-detail-title">{t("accountRestrictions.plans.drawerTitle")}</h2>
+            <p className="oh-sa-users-drawer__sub">
+              <span dir="ltr">{row.tierCode}</span>
+              {" · "}
+              {displayName}
+            </p>
+          </div>
+          <button type="button" className="oh-sa-users-drawer__close" onClick={onClose} aria-label={t("accountRestrictions.form.close")}>
+            ×
+          </button>
+        </header>
+        <div className="oh-sa-users-drawer__body">
+          {detailLoading ? <DashboardLoadingState /> : null}
+          {!detailLoading ? (
+            <div className="oh-sa-users-stack">
+              <section className="oh-sa-users-gates" aria-label={t("accountRestrictions.plans.sections.plan")}>
+                <div className="oh-sa-users-gates__head">
+                  <h3>{t("accountRestrictions.plans.sections.plan")}</h3>
+                </div>
+                <div className="oh-sa-users-kv">
+                  <div>
+                    <span>{t("accountRestrictions.plans.columns.code")}</span>
+                    <strong dir="ltr">{row.tierCode}</strong>
+                  </div>
+                  <div>
+                    <span>{t("accountRestrictions.plans.columns.plan")}</span>
+                    <strong>{displayName}</strong>
+                  </div>
+                  <div>
+                    <span>{t("accountRestrictions.plans.currentSubscribers")}</span>
+                    <strong dir="ltr">
+                      {formatCount(detail.impact?.currentSubscriberCount ?? row.currentSubscriberCount)}
+                    </strong>
+                  </div>
+                </div>
+              </section>
+
+              {detail.restriction ? (
+                <section className="oh-sa-users-gates" aria-label={t("accountRestrictions.plans.sections.restriction")}>
+                  <div className="oh-sa-users-gates__head">
+                    <h3>{t("accountRestrictions.plans.sections.restriction")}</h3>
+                  </div>
+                  <StatusBadge tone={planStatusTone(detail.restriction.status)} className="oh-sa-users-pill">
+                    {planStatusLabel(t, detail.restriction.status)}
+                  </StatusBadge>
+                  <div className="oh-sa-restr-scope-pills" style={{ marginTop: 8 }}>
+                    {scopeLabels(t, detail.restriction.scopes).map((label) => (
+                      <span key={label} className="oh-sa-restr-scope-pill">
+                        {label}
+                      </span>
+                    ))}
+                  </div>
+                  <div className="oh-sa-users-kv" style={{ marginTop: 12 }}>
+                    <div>
+                      <span>{t("accountRestrictions.internalReason")}</span>
+                      <strong>{detail.restriction.internalReason || "—"}</strong>
+                    </div>
+                    {detail.restriction.internalNote ? (
+                      <div>
+                        <span>{t("accountRestrictions.internalNote")}</span>
+                        <strong>{detail.restriction.internalNote}</strong>
+                      </div>
+                    ) : null}
+                  </div>
+                </section>
+              ) : null}
+
+              <section className="oh-sa-users-gates" aria-label={t("accountRestrictions.plans.sections.impact")}>
+                <div className="oh-sa-users-gates__head">
+                  <h3>{t("accountRestrictions.plans.sections.impact")}</h3>
+                </div>
+                <div className="oh-sa-users-kv">
+                  <div>
+                    <span>{t("accountRestrictions.plans.currentSubscribers")}</span>
+                    <strong dir="ltr">{formatCount(detail.impact?.currentSubscriberCount)}</strong>
+                  </div>
+                  <div>
+                    <span>{t("accountRestrictions.activity.heldBids")}</span>
+                    <strong dir="ltr">{formatCount(detail.impact?.heldBids)}</strong>
+                  </div>
+                  <div>
+                    <span>{t("accountRestrictions.activity.heldClaims")}</span>
+                    <strong dir="ltr">{formatCount(detail.impact?.heldClaims)}</strong>
+                  </div>
+                  <div>
+                    <span>{t("accountRestrictions.activity.heldArticles")}</span>
+                    <strong dir="ltr">{formatCount(detail.impact?.heldArticles)}</strong>
+                  </div>
+                </div>
+              </section>
+
+              <section className="oh-sa-users-gates" aria-label={t("accountRestrictions.plans.sections.audit")}>
+                <div className="oh-sa-users-gates__head">
+                  <h3>{t("accountRestrictions.plans.sections.audit")}</h3>
+                </div>
+                {(detail.audit || []).length === 0 ? (
+                  <p className="oh-sa-users-muted">{t("accountRestrictions.activity.empty")}</p>
+                ) : (
+                  <div className="oh-sa-users-stack">
+                    {detail.audit.map((a) => (
+                      <div key={a.id} className="oh-sa-users-kv">
+                        <div>
+                          <span>{a.action}</span>
+                          <strong>{formatLocaleDateTime(a.createdAt, locale)}</strong>
+                          {a.actorName ? <span className="oh-sa-users-muted">{a.actorName}</span> : null}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+            </div>
+          ) : null}
+        </div>
+      </aside>
+    </div>
   );
 }
 
@@ -188,7 +600,6 @@ export default function SuperAdminAccountRestrictionsPlansPanel() {
   const [extendDurationId, setExtendDurationId] = useState("d7");
   const [extendCustom, setExtendCustom] = useState("");
   const [revokeRow, setRevokeRow] = useState(null);
-  const [revokeReason, setRevokeReason] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -209,12 +620,13 @@ export default function SuperAdminAccountRestrictionsPlansPanel() {
     void load();
   }, [load]);
 
-  const unrestrictedPlans = useMemo(
+  const planChoices = useMemo(
     () => items.filter((p) => p.restrictionStatus !== "ACTIVE"),
     [items],
   );
 
   const openAdd = () => {
+    setRowMenuId(null);
     setAddOpen(true);
     setSelectedPlan(null);
     setScopeMode("all");
@@ -223,13 +635,22 @@ export default function SuperAdminAccountRestrictionsPlansPanel() {
     setForm({ scopes: ["ALL_MARKETPLACE"], internalReason: "", internalNote: "" });
   };
 
+  const closeAdd = () => {
+    if (busy) return;
+    setAddOpen(false);
+    setSelectedPlan(null);
+    setConfirmAddOpen(false);
+  };
+
   const openDetails = async (row) => {
+    setRowMenuId(null);
     const restrictionId = row.activeRestriction?.id || row.restrictionId;
     if (!restrictionId) {
       setDetail({ row, restriction: null, audit: [], impact: { currentSubscriberCount: row.currentSubscriberCount } });
       return;
     }
     setDetailLoading(true);
+    setDetail({ row, restriction: null, audit: [], impact: { currentSubscriberCount: row.currentSubscriberCount } });
     try {
       const res = await getSuperAdminPlanRestrictionRequest(restrictionId);
       setDetail({
@@ -240,9 +661,24 @@ export default function SuperAdminAccountRestrictionsPlansPanel() {
       });
     } catch (err) {
       push({ type: "error", message: errorMessage(err, t, locale) });
+      setDetail(null);
     } finally {
       setDetailLoading(false);
     }
+  };
+
+  const requestCreateConfirm = () => {
+    if (!selectedPlan?.marketplacePlanId) return;
+    if (selectedPlan.restrictionStatus === "ACTIVE") {
+      push({ type: "error", message: t("accountRestrictions.plans.alreadyActive") });
+      return;
+    }
+    const reason = String(form.internalReason || "").trim();
+    if (reason.length < 3) {
+      push({ type: "error", message: t("accountRestrictions.form.reasonRequired") });
+      return;
+    }
+    setConfirmAddOpen(true);
   };
 
   const submitCreate = async () => {
@@ -265,6 +701,7 @@ export default function SuperAdminAccountRestrictionsPlansPanel() {
       push({ type: "success", message: t("accountRestrictions.plans.saveOk") });
       setConfirmAddOpen(false);
       setAddOpen(false);
+      setSelectedPlan(null);
       await load();
     } catch (err) {
       push({ type: "error", message: errorMessage(err, t, locale) });
@@ -301,9 +738,9 @@ export default function SuperAdminAccountRestrictionsPlansPanel() {
         {
           key: "revoke",
           label: t("accountRestrictions.revoke"),
+          danger: true,
           onClick: () => {
             setRevokeRow(row.activeRestriction || row);
-            setRevokeReason("");
           },
         },
         { key: "audit", label: t("accountRestrictions.viewLog"), onClick: () => openDetails(row) },
@@ -381,9 +818,7 @@ export default function SuperAdminAccountRestrictionsPlansPanel() {
             <tbody>
               {items.map((row) => {
                 const id = String(row.marketplacePlanId);
-                const displayName = locale?.startsWith("en")
-                  ? row.planNameEn || row.tierCode
-                  : row.planNameAr || row.tierCode;
+                const displayName = planDisplayName(row, locale);
                 return (
                   <tr key={id} onDoubleClick={() => openDetails(row)} style={{ cursor: "pointer" }}>
                     <td className="oh-sa-users-col oh-sa-users-col--user">
@@ -457,246 +892,34 @@ export default function SuperAdminAccountRestrictionsPlansPanel() {
         </div>
       ) : null}
 
-      {addOpen ? (
-        <div className="oh-sa-users-drawer-root" role="presentation">
-          <button type="button" className="oh-sa-users-drawer-backdrop" aria-label={t("accountRestrictions.form.close")} onClick={() => setAddOpen(false)} />
-          <aside className="oh-sa-users-drawer" role="dialog" aria-modal="true">
-            <header className="oh-sa-users-drawer__head">
-              <h3 className="oh-sa-users-drawer__title">{t("accountRestrictions.plans.addWorkflowTitle")}</h3>
-              <button type="button" className="oh-sa-users-drawer__close" onClick={() => setAddOpen(false)}>
-                <X size={18} aria-hidden />
-              </button>
-            </header>
-            <div className="oh-sa-users-drawer__body">
-              {!selectedPlan ? (
-                <div className="oh-sa-users-drawer__section">
-                  <h4 className="oh-sa-users-drawer__section-title">{t("accountRestrictions.plans.selectPlan")}</h4>
-                  <div className="oh-sa-users-search-results">
-                    {(unrestrictedPlans.length ? unrestrictedPlans : items).map((p) => (
-                      <button
-                        key={p.marketplacePlanId}
-                        type="button"
-                        className="oh-sa-users-search-result"
-                        disabled={p.restrictionStatus === "ACTIVE"}
-                        onClick={() => setSelectedPlan(p)}
-                      >
-                        <strong dir="ltr">{p.tierCode}</strong>
-                        <span>
-                          {t("accountRestrictions.plans.currentSubscribers")}: {formatCount(p.currentSubscriberCount)}
-                        </span>
-                        <span>{planStatusLabel(t, p.restrictionStatus)}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <form
-                  className="oh-sa-users-drawer__form"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    if (selectedPlan.restrictionStatus === "ACTIVE") {
-                      push({ type: "error", message: t("accountRestrictions.plans.alreadyActive") });
-                      return;
-                    }
-                    setConfirmAddOpen(true);
-                  }}
-                >
-                  <div className="oh-sa-users-drawer__section">
-                    <p className="oh-sa-users-cell-primary" dir="ltr">
-                      {selectedPlan.tierCode}
-                    </p>
-                    <p className="oh-sa-users-cell-sub">
-                      {t("accountRestrictions.plans.currentSubscribers")}:{" "}
-                      {formatCount(selectedPlan.currentSubscriberCount)}
-                    </p>
-                    <Button type="button" variant="ghost" onClick={() => setSelectedPlan(null)}>
-                      {t("accountRestrictions.addWorkflow.changeUser")}
-                    </Button>
-                  </div>
+      <PlanRestrictDrawer
+        open={addOpen}
+        onClose={closeAdd}
+        busy={busy}
+        selectedPlan={selectedPlan}
+        setSelectedPlan={setSelectedPlan}
+        planChoices={planChoices.length ? planChoices : items}
+        form={form}
+        setForm={setForm}
+        scopeMode={scopeMode}
+        setScopeMode={setScopeMode}
+        durationId={durationId}
+        setDurationId={setDurationId}
+        customExpires={customExpires}
+        setCustomExpires={setCustomExpires}
+        onSubmit={requestCreateConfirm}
+        locale={locale}
+        t={t}
+      />
 
-                  <div className="oh-sa-users-drawer__section">
-                    <h4 className="oh-sa-users-drawer__section-title">{t("accountRestrictions.scopes")}</h4>
-                    <div className="oh-sa-restr-scope-mode">
-                      <label>
-                        <input
-                          type="radio"
-                          checked={scopeMode === "all"}
-                          onChange={() => {
-                            setScopeMode("all");
-                            setForm((f) => ({ ...f, scopes: ["ALL_MARKETPLACE"] }));
-                          }}
-                        />
-                        {t("accountRestrictions.scopeMode.all")}
-                      </label>
-                      <label>
-                        <input
-                          type="radio"
-                          checked={scopeMode === "custom"}
-                          onChange={() => {
-                            setScopeMode("custom");
-                            setForm((f) => ({ ...f, scopes: ["bids"] }));
-                          }}
-                        />
-                        {t("accountRestrictions.scopeMode.custom")}
-                      </label>
-                    </div>
-                    {scopeMode === "custom" ? (
-                      <div className="oh-sa-restr-scope-checks">
-                        {CUSTOM_SCOPES.map((s) => (
-                          <label key={s}>
-                            <input
-                              type="checkbox"
-                              checked={form.scopes.includes(s)}
-                              onChange={(e) => {
-                                setForm((f) => {
-                                  const next = e.target.checked
-                                    ? [...f.scopes.filter((x) => x !== "ALL_MARKETPLACE"), s]
-                                    : f.scopes.filter((x) => x !== s);
-                                  return { ...f, scopes: next.length ? next : ["bids"] };
-                                });
-                              }}
-                            />
-                            {t(`accountRestrictions.scopesLabels.${s}`)}
-                          </label>
-                        ))}
-                      </div>
-                    ) : null}
-                  </div>
-
-                  <label className="oh-sa-users-field">
-                    <span>{t("accountRestrictions.internalReason")}</span>
-                    <textarea
-                      required
-                      value={form.internalReason}
-                      onChange={(e) => setForm((f) => ({ ...f, internalReason: e.target.value }))}
-                      placeholder={t("accountRestrictions.internalReasonPlaceholder")}
-                    />
-                  </label>
-                  <label className="oh-sa-users-field">
-                    <span>{t("accountRestrictions.internalNote")}</span>
-                    <textarea
-                      value={form.internalNote}
-                      onChange={(e) => setForm((f) => ({ ...f, internalNote: e.target.value }))}
-                      placeholder={t("accountRestrictions.internalNotePlaceholder")}
-                    />
-                  </label>
-
-                  <div className="oh-sa-users-drawer__section">
-                    <h4 className="oh-sa-users-drawer__section-title">{t("accountRestrictions.duration.label")}</h4>
-                    <select value={durationId} onChange={(e) => setDurationId(e.target.value)}>
-                      {DURATION_OPTIONS.map((opt) => (
-                        <option key={opt.id} value={opt.id}>
-                          {t(`accountRestrictions.duration.${opt.id}`)}
-                        </option>
-                      ))}
-                    </select>
-                    {durationId === "custom" ? (
-                      <input
-                        type="datetime-local"
-                        value={customExpires}
-                        onChange={(e) => setCustomExpires(e.target.value)}
-                      />
-                    ) : null}
-                  </div>
-
-                  <p className="oh-sa-users-cell-sub">{t("accountRestrictions.privacyNote")}</p>
-
-                  <div className="oh-sa-users-drawer__footer">
-                    <Button type="button" variant="ghost" onClick={() => setAddOpen(false)}>
-                      {t("accountRestrictions.form.cancel")}
-                    </Button>
-                    <Button type="submit" disabled={busy}>
-                      {busy ? t("accountRestrictions.form.working") : t("accountRestrictions.plans.restrictPlan")}
-                    </Button>
-                  </div>
-                </form>
-              )}
-            </div>
-          </aside>
-        </div>
-      ) : null}
-
-      {detail ? (
-        <div className="oh-sa-users-drawer-root" role="presentation">
-          <button type="button" className="oh-sa-users-drawer-backdrop" aria-label={t("accountRestrictions.form.close")} onClick={() => setDetail(null)} />
-          <aside className="oh-sa-users-drawer" role="dialog" aria-modal="true">
-            <header className="oh-sa-users-drawer__head">
-              <h3 className="oh-sa-users-drawer__title">{t("accountRestrictions.plans.drawerTitle")}</h3>
-              <button type="button" className="oh-sa-users-drawer__close" onClick={() => setDetail(null)}>
-                <X size={18} aria-hidden />
-              </button>
-            </header>
-            <div className="oh-sa-users-drawer__body">
-              {detailLoading ? <DashboardLoadingState /> : null}
-              <div className="oh-sa-users-drawer__section">
-                <h4 className="oh-sa-users-drawer__section-title">{t("accountRestrictions.plans.sections.plan")}</h4>
-                <p className="oh-sa-users-cell-primary" dir="ltr">
-                  {detail.row.tierCode}
-                </p>
-                <p className="oh-sa-users-cell-sub">
-                  {t("accountRestrictions.plans.currentSubscribers")}:{" "}
-                  {formatCount(detail.impact?.currentSubscriberCount ?? detail.row.currentSubscriberCount)}
-                </p>
-              </div>
-              {detail.restriction ? (
-                <div className="oh-sa-users-drawer__section">
-                  <h4 className="oh-sa-users-drawer__section-title">{t("accountRestrictions.plans.sections.restriction")}</h4>
-                  <StatusBadge tone={planStatusTone(detail.restriction.status)} className="oh-sa-users-pill">
-                    {planStatusLabel(t, detail.restriction.status)}
-                  </StatusBadge>
-                  <div className="oh-sa-restr-scope-pills" style={{ marginTop: 8 }}>
-                    {scopeLabels(t, detail.restriction.scopes).map((label) => (
-                      <span key={label} className="oh-sa-restr-scope-pill">
-                        {label}
-                      </span>
-                    ))}
-                  </div>
-                  <p className="oh-sa-users-cell-sub" style={{ marginTop: 8 }}>
-                    {detail.restriction.internalReason}
-                  </p>
-                  {detail.restriction.internalNote ? (
-                    <p className="oh-sa-users-cell-sub">{detail.restriction.internalNote}</p>
-                  ) : null}
-                </div>
-              ) : null}
-              <div className="oh-sa-users-drawer__section">
-                <h4 className="oh-sa-users-drawer__section-title">{t("accountRestrictions.plans.sections.impact")}</h4>
-                <ul className="oh-sa-users-cell-sub">
-                  <li>
-                    {t("accountRestrictions.plans.currentSubscribers")}:{" "}
-                    {formatCount(detail.impact?.currentSubscriberCount)}
-                  </li>
-                  <li>
-                    {t("accountRestrictions.activity.heldBids")}: {formatCount(detail.impact?.heldBids)}
-                  </li>
-                  <li>
-                    {t("accountRestrictions.activity.heldClaims")}: {formatCount(detail.impact?.heldClaims)}
-                  </li>
-                  <li>
-                    {t("accountRestrictions.activity.heldArticles")}: {formatCount(detail.impact?.heldArticles)}
-                  </li>
-                </ul>
-              </div>
-              <div className="oh-sa-users-drawer__section">
-                <h4 className="oh-sa-users-drawer__section-title">{t("accountRestrictions.plans.sections.audit")}</h4>
-                {(detail.audit || []).length === 0 ? (
-                  <p className="oh-sa-users-cell-sub">{t("accountRestrictions.activity.empty")}</p>
-                ) : (
-                  <ul className="oh-sa-users-audit-list">
-                    {detail.audit.map((a) => (
-                      <li key={a.id}>
-                        <strong>{a.action}</strong>
-                        <span>{formatLocaleDateTime(a.createdAt, locale)}</span>
-                        {a.actorName ? <span>{a.actorName}</span> : null}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            </div>
-          </aside>
-        </div>
-      ) : null}
+      <PlanDetailsDrawer
+        open={Boolean(detail)}
+        detail={detail}
+        detailLoading={detailLoading}
+        onClose={() => setDetail(null)}
+        locale={locale}
+        t={t}
+      />
 
       <ConfirmDialog
         open={confirmAddOpen}
@@ -723,9 +946,7 @@ export default function SuperAdminAccountRestrictionsPlansPanel() {
           if (!revokeRow?.id) return;
           setBusy(true);
           try {
-            await revokeSuperAdminPlanRestrictionRequest(revokeRow.id, {
-              revokeReason: revokeReason.trim() || null,
-            });
+            await revokeSuperAdminPlanRestrictionRequest(revokeRow.id, { revokeReason: null });
             push({ type: "success", message: t("accountRestrictions.plans.revokeOk") });
             setRevokeRow(null);
             await load();
@@ -744,21 +965,16 @@ export default function SuperAdminAccountRestrictionsPlansPanel() {
           open
           title={t("accountRestrictions.extendWorkflow.title")}
           body={
-            <div>
-              <select value={extendDurationId} onChange={(e) => setExtendDurationId(e.target.value)}>
-                {DURATION_OPTIONS.filter((o) => o.id !== "none").map((opt) => (
-                  <option key={opt.id} value={opt.id}>
-                    {t(`accountRestrictions.duration.${opt.id}`)}
-                  </option>
-                ))}
-              </select>
-              {extendDurationId === "custom" ? (
-                <input
-                  type="datetime-local"
-                  value={extendCustom}
-                  onChange={(e) => setExtendCustom(e.target.value)}
-                />
-              ) : null}
+            <div className="oh-sa-users-stack">
+              <DurationField
+                durationId={extendDurationId}
+                setDurationId={setExtendDurationId}
+                customExpires={extendCustom}
+                setCustomExpires={setExtendCustom}
+                busy={busy}
+                t={t}
+                allowNone={false}
+              />
             </div>
           }
           confirmLabel={t("accountRestrictions.extendWorkflow.confirm")}
@@ -788,53 +1004,23 @@ export default function SuperAdminAccountRestrictionsPlansPanel() {
           open
           title={t("accountRestrictions.editWorkflow.title")}
           body={
-            <div>
-              <div className="oh-sa-restr-scope-mode">
-                <label>
-                  <input
-                    type="radio"
-                    checked={editScopeMode === "all"}
-                    onChange={() => {
-                      setEditScopeMode("all");
-                      setEditScopes(["ALL_MARKETPLACE"]);
-                    }}
-                  />
-                  {t("accountRestrictions.scopeMode.all")}
-                </label>
-                <label>
-                  <input
-                    type="radio"
-                    checked={editScopeMode === "custom"}
-                    onChange={() => {
-                      setEditScopeMode("custom");
-                      setEditScopes(["bids"]);
-                    }}
-                  />
-                  {t("accountRestrictions.scopeMode.custom")}
-                </label>
-              </div>
-              {editScopeMode === "custom" ? (
-                <div className="oh-sa-restr-scope-checks">
-                  {CUSTOM_SCOPES.map((s) => (
-                    <label key={s}>
-                      <input
-                        type="checkbox"
-                        checked={editScopes.includes(s)}
-                        onChange={(e) => {
-                          setEditScopes((prev) => {
-                            const next = e.target.checked
-                              ? [...prev.filter((x) => x !== "ALL_MARKETPLACE"), s]
-                              : prev.filter((x) => x !== s);
-                            return next.length ? next : ["bids"];
-                          });
-                        }}
-                      />
-                      {t(`accountRestrictions.scopesLabels.${s}`)}
-                    </label>
-                  ))}
-                </div>
-              ) : null}
-            </div>
+            <ScopeModeField
+              scopeMode={editScopeMode}
+              setScopeMode={(mode) => {
+                setEditScopeMode(mode);
+                setEditScopes(mode === "all" ? ["ALL_MARKETPLACE"] : ["bids"]);
+              }}
+              scopes={editScopes}
+              onToggleCustomScope={(scope) => {
+                setEditScopes((prev) => {
+                  const current = (prev || []).filter((s) => s !== "ALL_MARKETPLACE");
+                  const next = current.includes(scope) ? current.filter((s) => s !== scope) : [...current, scope];
+                  return next.length ? next : ["bids"];
+                });
+              }}
+              busy={busy}
+              t={t}
+            />
           }
           confirmLabel={t("accountRestrictions.editWorkflow.confirm")}
           cancelLabel={t("accountRestrictions.form.cancel")}
