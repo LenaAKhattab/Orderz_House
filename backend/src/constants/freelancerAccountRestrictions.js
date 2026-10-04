@@ -36,6 +36,11 @@ const AUDIT_ACTIONS = Object.freeze({
   ACCOUNT_RESTRICTION_UPDATED: "account_restriction_updated",
   ACCOUNT_RESTRICTION_REVOKED: "account_restriction_revoked",
   ACCOUNT_RESTRICTION_EXTENDED: "account_restriction_extended",
+  PLAN_RESTRICTION_CREATED: "plan_restriction_created",
+  PLAN_RESTRICTION_UPDATED: "plan_restriction_updated",
+  PLAN_RESTRICTION_EXTENDED: "plan_restriction_extended",
+  PLAN_RESTRICTION_REVOKED: "plan_restriction_revoked",
+  PLAN_RESTRICTION_EXPIRED: "plan_restriction_expired",
   BID_HELD_FOR_REVIEW: "bid_held_for_review",
   BID_RELEASED: "bid_released",
   BID_REJECTED_FROM_REVIEW: "bid_rejected_from_review",
@@ -45,6 +50,9 @@ const AUDIT_ACTIONS = Object.freeze({
   ARTICLE_RELEASED: "article_released",
   ARTICLE_REJECTED_FROM_REVIEW: "article_rejected_from_review",
 });
+
+/** Canonical marketplace tiers eligible for plan-level restrictions. */
+const PLAN_RESTRICTION_TIER_CODES = Object.freeze(["starter", "silver", "pro", "elite"]);
 
 const PUBLIC_MESSAGES = Object.freeze({
   BID_HELD_AR: "تم استلام عرضك وهو قيد المراجعة",
@@ -62,4 +70,5 @@ module.exports = {
   BID_MODERATION_STATUS,
   AUDIT_ACTIONS,
   PUBLIC_MESSAGES,
+  PLAN_RESTRICTION_TIER_CODES,
 };

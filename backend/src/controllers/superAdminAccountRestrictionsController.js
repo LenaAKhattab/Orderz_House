@@ -1,4 +1,5 @@
 const restrictionsService = require("../services/freelancerAccountRestrictionsService");
+const planRestrictionsService = require("../services/marketplacePlanRestrictionsService");
 const subscriptionsService = require("../services/subscriptionsService");
 
 function actorId(req) {
@@ -155,6 +156,102 @@ async function rejectBid(req, res, next) {
   }
 }
 
+async function listPlans(req, res, next) {
+  try {
+    const data = await planRestrictionsService.listCanonicalPlansWithRestrictionState();
+    return res.json({ success: true, data });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+async function getPlanRestriction(req, res, next) {
+  try {
+    const restriction = await planRestrictionsService.getPlanRestrictionById(req.params.id);
+    if (!restriction) {
+      return res.status(404).json({ success: false, message: "Plan restriction not found." });
+    }
+    const [audit, impact] = await Promise.all([
+      planRestrictionsService.listPlanRestrictionAudit(req.params.id, { limit: 50 }),
+      planRestrictionsService.getPlanRestrictionImpact(restriction.marketplacePlanId),
+    ]);
+    return res.json({ success: true, data: { restriction, audit, impact } });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+async function createPlan(req, res, next) {
+  try {
+    const created = await planRestrictionsService.createPlanRestriction({
+      marketplacePlanId: req.body.marketplacePlanId,
+      restrictionType: req.body.restrictionType,
+      scopes: req.body.scopes,
+      internalReason: req.body.internalReason,
+      internalNote: req.body.internalNote,
+      startsAt: req.body.startsAt,
+      expiresAt: req.body.expiresAt,
+      actorAdminId: actorId(req),
+      metadata: req.body.metadata || null,
+    });
+    return res.status(201).json({ success: true, data: { restriction: created } });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+async function updatePlan(req, res, next) {
+  try {
+    const updated = await planRestrictionsService.updatePlanRestriction(
+      req.params.id,
+      req.body,
+      actorId(req),
+    );
+    return res.json({ success: true, data: { restriction: updated } });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+async function extendPlan(req, res, next) {
+  try {
+    const updated = await planRestrictionsService.extendPlanRestriction(
+      req.params.id,
+      req.body.expiresAt,
+      actorId(req),
+      req.body.reason || null,
+    );
+    return res.json({ success: true, data: { restriction: updated } });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+async function revokePlan(req, res, next) {
+  try {
+    const revoked = await planRestrictionsService.revokePlanRestriction(req.params.id, {
+      actorAdminId: actorId(req),
+      revokeReason: req.body.revokeReason || null,
+    });
+    return res.json({ success: true, data: { restriction: revoked } });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+async function planImpact(req, res, next) {
+  try {
+    const impact = await planRestrictionsService.getPlanRestrictionImpact(req.params.planId);
+    const count = await planRestrictionsService.countCurrentSubscribersForPlanId(req.params.planId);
+    return res.json({
+      success: true,
+      data: { ...impact, currentSubscriberCount: count },
+    });
+  } catch (err) {
+    return next(err);
+  }
+}
+
 module.exports = {
   list,
   getOne,
@@ -166,4 +263,11 @@ module.exports = {
   listHeldBids,
   releaseBid,
   rejectBid,
+  listPlans,
+  getPlanRestriction,
+  createPlan,
+  updatePlan,
+  extendPlan,
+  revokePlan,
+  planImpact,
 };

@@ -5,11 +5,64 @@
   "listCount": "{{count}} قيد",
   "searchPlaceholder": "ابحث بالاسم أو البريد أو رقم المستخدم",
   "filterAria": "تصفية القيود",
+  "primaryTabs": {
+    "users": "المستخدمون",
+    "plans": "الباقات",
+    "aria": "أقسام قيود الحسابات"
+  },
   "tabs": {
     "active": "نشطة",
     "expired": "منتهية",
     "revoked": "مرفوعة",
     "all": "الكل"
+  },
+  "plans": {
+    "listTitle": "قيود الباقات",
+    "listCount": "{{count}} باقة",
+    "emptyTitle": "لا توجد باقات معروضة",
+    "emptyDescription": "ستظهر هنا باقات العضوية القياسية في السوق.",
+    "addPlan": "+ إضافة باقة إلى القيود",
+    "restrictPlan": "تقييد الباقة",
+    "restrictAgain": "تقييد مرة أخرى",
+    "marketplaceMembership": "عضوية السوق",
+    "impactConfirmTitle": "تأكيد قيد الباقة",
+    "impactConfirmBody": "سيتم تطبيق هذا القيد على جميع المستخدمين الذين باقتهم الحالية {{tier}}، بما في ذلك أي مستخدم ينتقل إلى هذه الباقة أثناء فترة القيد.",
+    "impactCount": "المتأثرون حالياً: {{count}} مستخدم",
+    "alreadyActive": "يوجد قيد نشط على هذه الباقة",
+    "selectPlan": "اختر الباقة",
+    "currentSubscribers": "المشتركون الحاليون",
+    "existingRestriction": "القيد الحالي",
+    "notRestricted": "غير مقيّدة",
+    "inheritedLabel": "قيد موروث من الباقة: {{tier}}",
+    "saveOk": "تم تقييد الباقة.",
+    "updateOk": "تم تحديث قيد الباقة.",
+    "revokeOk": "تم رفع قيد الباقة.",
+    "extendOk": "تم تمديد قيد الباقة.",
+    "columns": {
+      "plan": "الباقة",
+      "code": "الرمز",
+      "subscribers": "عدد المشتركين الحاليين",
+      "status": "حالة القيد",
+      "scope": "نطاق القيد",
+      "startsAt": "تاريخ البداية",
+      "expiresAt": "تاريخ الانتهاء",
+      "addedBy": "أضيف بواسطة",
+      "actions": "الإجراءات"
+    },
+    "statusLabels": {
+      "ACTIVE": "مقيّدة",
+      "EXPIRED": "منتهية",
+      "REVOKED": "تم رفع القيد",
+      "NONE": "غير مقيّدة"
+    },
+    "sections": {
+      "plan": "الباقة",
+      "restriction": "القيد",
+      "impact": "الأثر",
+      "audit": "سجل التدقيق"
+    },
+    "drawerTitle": "قيد الباقة",
+    "addWorkflowTitle": "تقييد باقة"
   },
   "emptyTitle": "لا توجد حسابات مقيّدة حالياً",
   "emptyDescription": "أضف مستخدماً لبدء تقييد نشاطه في السوق.",

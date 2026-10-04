@@ -752,8 +752,27 @@ async function submitArticleApplication({
       if (articleHold.held || competitionHold.held) {
         articleHeldForReview = true;
         const primary = articleHold.primaryRestriction || competitionHold.primaryRestriction;
+        const primaryPlan =
+          articleHold.primaryPlanRestriction || competitionHold.primaryPlanRestriction || null;
         articleHoldRestrictionId = primary?.id != null ? Number(primary.id) : null;
+        const articleHoldPlanRestrictionId =
+          primaryPlan?.id != null ? Number(primaryPlan.id) : null;
         try {
+          await client.query(
+            `UPDATE marketplace_article_applications
+                SET moderation_status = 'held',
+                    hold_restriction_id = $2,
+                    hold_plan_restriction_id = $3,
+                    moderation_held_at = NOW(),
+                    updated_at = NOW()
+              WHERE id = $1`,
+            [inserted.id, articleHoldRestrictionId, articleHoldPlanRestrictionId],
+          );
+          inserted.moderation_status = "held";
+          inserted.hold_restriction_id = articleHoldRestrictionId;
+          inserted.hold_plan_restriction_id = articleHoldPlanRestrictionId;
+        } catch (modErr) {
+          if (modErr?.code !== "42703") throw modErr;
           await client.query(
             `UPDATE marketplace_article_applications
                 SET moderation_status = 'held',
@@ -765,8 +784,6 @@ async function submitArticleApplication({
           );
           inserted.moderation_status = "held";
           inserted.hold_restriction_id = articleHoldRestrictionId;
-        } catch (modErr) {
-          if (modErr?.code !== "42703") throw modErr;
         }
         await accountRestrictions.writeAudit(
           {
@@ -775,8 +792,13 @@ async function submitArticleApplication({
             action: accountRestrictions.AUDIT_ACTIONS.ARTICLE_HELD_FOR_REVIEW,
             relatedEntityType: "marketplace_article_application",
             relatedEntityId: inserted.id,
-            reason: primary?.internalReason || null,
-            metadata: { articleId: String(aid), applicationId: String(inserted.id) },
+            reason: primary?.internalReason || primaryPlan?.internalReason || null,
+            metadata: {
+              articleId: String(aid),
+              applicationId: String(inserted.id),
+              planRestrictionId: articleHoldPlanRestrictionId,
+              planTier: primaryPlan?.tierCode || null,
+            },
           },
           client,
         );

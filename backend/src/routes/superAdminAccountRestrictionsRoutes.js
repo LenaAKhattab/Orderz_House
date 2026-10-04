@@ -28,6 +28,69 @@ router.get(
   controller.listHeldBids,
 );
 
+router.get("/account-restrictions/plans", ...guard, controller.listPlans);
+
+router.get(
+  "/account-restrictions/plans/:planId/impact",
+  ...guard,
+  param("planId").isInt({ min: 1 }),
+  validateRequest,
+  controller.planImpact,
+);
+
+router.get(
+  "/account-restrictions/plan-restrictions/:id",
+  ...guard,
+  param("id").isInt({ min: 1 }),
+  validateRequest,
+  controller.getPlanRestriction,
+);
+
+router.post(
+  "/account-restrictions/plans",
+  ...writeGuard,
+  body("marketplacePlanId").isInt({ min: 1 }),
+  body("restrictionType").optional().isString().isLength({ min: 3, max: 64 }),
+  body("scopes").optional().isArray(),
+  body("internalReason").isString().isLength({ min: 3, max: 4000 }),
+  body("internalNote").optional({ nullable: true }).isString().isLength({ max: 4000 }),
+  body("startsAt").optional({ nullable: true }).isISO8601(),
+  body("expiresAt").optional({ nullable: true }).isISO8601(),
+  validateRequest,
+  controller.createPlan,
+);
+
+router.patch(
+  "/account-restrictions/plan-restrictions/:id",
+  ...writeGuard,
+  param("id").isInt({ min: 1 }),
+  body("scopes").optional().isArray(),
+  body("internalReason").optional().isString().isLength({ min: 3, max: 4000 }),
+  body("internalNote").optional({ nullable: true }).isString().isLength({ max: 4000 }),
+  body("expiresAt").optional({ nullable: true }).isISO8601(),
+  validateRequest,
+  controller.updatePlan,
+);
+
+router.post(
+  "/account-restrictions/plan-restrictions/:id/extend",
+  ...writeGuard,
+  param("id").isInt({ min: 1 }),
+  body("expiresAt").isISO8601(),
+  body("reason").optional({ nullable: true }).isString().isLength({ max: 2000 }),
+  validateRequest,
+  controller.extendPlan,
+);
+
+router.post(
+  "/account-restrictions/plan-restrictions/:id/revoke",
+  ...writeGuard,
+  param("id").isInt({ min: 1 }),
+  body("revokeReason").optional({ nullable: true }).isString().isLength({ max: 2000 }),
+  validateRequest,
+  controller.revokePlan,
+);
+
 router.get(
   "/account-restrictions/:id",
   ...guard,

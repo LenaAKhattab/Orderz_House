@@ -5,11 +5,64 @@
   "listCount": "{{count}} restrictions",
   "searchPlaceholder": "Search by name, email, or user ID",
   "filterAria": "Filter restrictions",
+  "primaryTabs": {
+    "users": "Users",
+    "plans": "Plans",
+    "aria": "Account restrictions sections"
+  },
   "tabs": {
     "active": "Active",
     "expired": "Expired",
     "revoked": "Removed",
     "all": "All"
+  },
+  "plans": {
+    "listTitle": "Plan restrictions",
+    "listCount": "{{count}} plans",
+    "emptyTitle": "No plans to show",
+    "emptyDescription": "Canonical marketplace membership plans will appear here.",
+    "addPlan": "+ Restrict Plan",
+    "restrictPlan": "Restrict Plan",
+    "restrictAgain": "Restrict Again",
+    "marketplaceMembership": "Marketplace Membership",
+    "impactConfirmTitle": "Confirm plan restriction",
+    "impactConfirmBody": "This restriction will apply to every user whose current plan is {{tier}}, including anyone who moves to this plan while the restriction is active.",
+    "impactCount": "Currently affected: {{count}} users",
+    "alreadyActive": "This plan already has an active restriction",
+    "selectPlan": "Select plan",
+    "currentSubscribers": "Current subscribers",
+    "existingRestriction": "Existing restriction",
+    "notRestricted": "Not Restricted",
+    "inheritedLabel": "Inherited from plan: {{tier}}",
+    "saveOk": "Plan restriction added.",
+    "updateOk": "Plan restriction updated.",
+    "revokeOk": "Plan restriction removed.",
+    "extendOk": "Plan restriction extended.",
+    "columns": {
+      "plan": "Plan",
+      "code": "Code",
+      "subscribers": "Current Subscribers",
+      "status": "Restriction Status",
+      "scope": "Scope",
+      "startsAt": "Starts At",
+      "expiresAt": "Expires At",
+      "addedBy": "Added By",
+      "actions": "Actions"
+    },
+    "statusLabels": {
+      "ACTIVE": "Restricted",
+      "EXPIRED": "Expired",
+      "REVOKED": "Restriction Removed",
+      "NONE": "Not Restricted"
+    },
+    "sections": {
+      "plan": "Plan",
+      "restriction": "Restriction",
+      "impact": "Impact",
+      "audit": "Audit log"
+    },
+    "drawerTitle": "Plan restriction",
+    "addWorkflowTitle": "Restrict a plan"
   },
   "emptyTitle": "There are no restricted accounts currently.",
   "emptyDescription": "Add a user to restrict marketplace activity.",
