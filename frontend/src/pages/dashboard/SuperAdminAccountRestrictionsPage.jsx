@@ -29,11 +29,17 @@ import {
   revokeSuperAdminAccountRestrictionRequest,
   updateSuperAdminAccountRestrictionRequest,
 } from "../../services/api";
+import SuperAdminAccountRestrictionsPlansPanel from "./SuperAdminAccountRestrictionsPlansPanel";
 import "./superAdminUsersPage.css";
 import "./superAdminAccountRestrictionsPage.css";
 
 const PAGE_SIZE = 20;
 const SEARCH_DEBOUNCE_MS = 350;
+
+const PRIMARY_TABS = [
+  { id: "users", labelKey: "accountRestrictions.primaryTabs.users" },
+  { id: "plans", labelKey: "accountRestrictions.primaryTabs.plans" },
+];
 
 const FILTER_TABS = [
   { id: "ACTIVE", labelKey: "accountRestrictions.tabs.active" },
@@ -225,6 +231,7 @@ function RestrictionDetailsDrawer({
   onReleaseBid,
   onRejectBid,
   busy,
+  inheritedPlanRestrictions = [],
 }) {
   const { t, locale } = useTranslation();
   if (!open) return null;
@@ -272,6 +279,24 @@ function RestrictionDetailsDrawer({
                   </div>
                 </div>
               </section>
+
+              {inheritedPlanRestrictions?.length ? (
+                <section className="oh-sa-users-gates" aria-label={t("accountRestrictions.plans.inheritedLabel", { tier: "" })}>
+                  <div className="oh-sa-users-gates__head">
+                    <h3>{t("accountRestrictions.plans.listTitle")}</h3>
+                  </div>
+                  <ul className="oh-sa-users-audit">
+                    {inheritedPlanRestrictions.map((pr) => (
+                      <li key={pr.id}>
+                        <strong>
+                          {t("accountRestrictions.plans.inheritedLabel", { tier: pr.tierCode || "" })}
+                        </strong>
+                        <p>{scopeLabels(t, pr.scopes).join(" · ")}</p>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ) : null}
 
               <section className="oh-sa-users-gates" aria-label={t("accountRestrictions.sections.restriction")}>
                 <div className="oh-sa-users-gates__head">
@@ -616,6 +641,7 @@ export default function SuperAdminAccountRestrictionsPage() {
   const { push } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
 
+  const [primaryTab, setPrimaryTab] = useState("users");
   const [activeTab, setActiveTab] = useState("ACTIVE");
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchInput, setSearchInput] = useState("");
@@ -649,6 +675,7 @@ export default function SuperAdminAccountRestrictionsPage() {
   const [detailRow, setDetailRow] = useState(null);
   const [detailAudit, setDetailAudit] = useState([]);
   const [detailHeld, setDetailHeld] = useState([]);
+  const [detailInherited, setDetailInherited] = useState([]);
   const [detailLoading, setDetailLoading] = useState(false);
 
   const [editRow, setEditRow] = useState(null);
@@ -686,8 +713,9 @@ export default function SuperAdminAccountRestrictionsPage() {
   }, [activeTab, page, searchQuery, t, locale]);
 
   useEffect(() => {
+    if (primaryTab !== "users") return;
     void load();
-  }, [load]);
+  }, [load, primaryTab]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -798,9 +826,11 @@ export default function SuperAdminAccountRestrictionsPage() {
       ]);
       setDetailAudit(summary?.data?.audit || []);
       setDetailHeld(held?.data?.items || []);
+      setDetailInherited(summary?.data?.inheritedPlanRestrictions || []);
     } catch {
       setDetailAudit([]);
       setDetailHeld([]);
+      setDetailInherited([]);
     } finally {
       setDetailLoading(false);
     }
@@ -949,6 +979,37 @@ export default function SuperAdminAccountRestrictionsPage() {
   return (
     <DashboardShell>
       <DashboardSection className="oh-sa-users-list-section">
+        <div
+          className="oh-sa-users-toolbar__tabs"
+          role="tablist"
+          aria-label={t("accountRestrictions.primaryTabs.aria")}
+          style={{ marginBottom: 12 }}
+        >
+          {PRIMARY_TABS.map((tab) => {
+            const isActive = primaryTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                className={`oh-sa-users-tab${isActive ? " is-active" : ""}`}
+                onClick={() => {
+                  if (tab.id === primaryTab) return;
+                  setPrimaryTab(tab.id);
+                  setRowMenuId(null);
+                }}
+              >
+                <span className="oh-sa-users-tab__label">{t(tab.labelKey)}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {primaryTab === "plans" ? (
+          <SuperAdminAccountRestrictionsPlansPanel />
+        ) : (
+          <>
         <header className="oh-sa-users-list-head">
           <div className="oh-sa-users-list-head__top">
             <div className="oh-sa-users-list-head__titles">
@@ -1126,6 +1187,8 @@ export default function SuperAdminAccountRestrictionsPage() {
             </div>
           </>
         ) : null}
+          </>
+        )}
       </DashboardSection>
 
       <AddRestrictionDrawer
@@ -1156,6 +1219,7 @@ export default function SuperAdminAccountRestrictionsPage() {
         row={detailRow}
         audit={detailAudit}
         heldBids={detailHeld}
+        inheritedPlanRestrictions={detailInherited}
         loading={detailLoading}
         onClose={() => setDetailRow(null)}
         busy={busy}

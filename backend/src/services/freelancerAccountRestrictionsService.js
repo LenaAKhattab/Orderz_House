@@ -154,6 +154,50 @@ async function getActiveFreelancerRestrictions(userId, client = pool, { now = ne
   return rows.map(mapRestriction);
 }
 
+/**
+ * Effective restrictions = individual rows UNION inherited active plan policy.
+ * Does not create per-user rows for plan policy.
+ */
+async function getEffectiveFreelancerRestrictions(userId, client = pool, opts = {}) {
+  const individual = await getActiveFreelancerRestrictions(userId, client, opts);
+  let plan = [];
+  let planContext = null;
+  try {
+    const planService = require("./marketplacePlanRestrictionsService");
+    planContext = await planService.resolveCanonicalMarketplacePlanForFreelancer(userId, client);
+    if (planContext?.marketplacePlanId) {
+      plan = await planService.getActivePlanRestrictionsForPlanId(
+        planContext.marketplacePlanId,
+        client,
+        opts,
+      );
+    }
+  } catch (err) {
+    if (err?.code !== "42P01") {
+      // eslint-disable-next-line no-console
+      console.error("[restrictions] plan inheritance lookup failed:", err?.message || err);
+    }
+  }
+  const scopeLists = [...individual.map((r) => r.scopes), ...plan.map((r) => r.scopes)];
+  const effectiveScopes = (() => {
+    const all = [];
+    for (const list of scopeLists) {
+      for (const s of list || []) all.push(s);
+    }
+    if (all.includes(RESTRICTION_SCOPES.ALL_MARKETPLACE)) {
+      return [RESTRICTION_SCOPES.ALL_MARKETPLACE];
+    }
+    return [...new Set(all)];
+  })();
+  return {
+    individual,
+    plan,
+    effectiveScopes,
+    planContext,
+    hasActiveRestriction: individual.length > 0 || plan.length > 0,
+  };
+}
+
 function isScopeRestricted(activeRestrictions, scope) {
   return (activeRestrictions || []).some((r) => scopesInclude(r.scopes, scope));
 }
@@ -162,17 +206,38 @@ function isScopeRestricted(activeRestrictions, scope) {
  * Returns whether marketplace action must be held for moderation.
  * Does not throw for hold — callers create HELD entities.
  * FULL_SUSPENSION still holds (does not disable login).
+ * Includes inherited plan-level restrictions.
  */
 async function assertMarketplaceActionAllowedOrHeld(userId, scope, client = pool, opts = {}) {
-  const active = await getActiveFreelancerRestrictions(userId, client, opts);
-  const matching = active.filter((r) => scopesInclude(r.scopes, scope));
-  if (!matching.length) {
-    return { held: false, restrictions: [], primaryRestriction: null };
+  const effective = await getEffectiveFreelancerRestrictions(userId, client, opts);
+  const individualMatching = effective.individual.filter((r) => scopesInclude(r.scopes, scope));
+  const planMatching = effective.plan.filter((r) => scopesInclude(r.scopes, scope));
+  if (!individualMatching.length && !planMatching.length) {
+    return {
+      held: false,
+      restrictions: [],
+      planRestrictions: [],
+      primaryRestriction: null,
+      primaryPlanRestriction: null,
+      effectiveScopes: [],
+      source: null,
+    };
   }
+  const source =
+    individualMatching.length && planMatching.length
+      ? "both"
+      : individualMatching.length
+        ? "individual"
+        : "plan";
   return {
     held: true,
-    restrictions: matching,
-    primaryRestriction: matching[0],
+    restrictions: individualMatching,
+    planRestrictions: planMatching,
+    primaryRestriction: individualMatching[0] || null,
+    primaryPlanRestriction: planMatching[0] || null,
+    effectiveScopes: effective.effectiveScopes,
+    source,
+    planContext: effective.planContext,
   };
 }
 
@@ -470,10 +535,10 @@ async function listAuditForUser(userId, { limit = 50 } = {}) {
 }
 
 async function getUserRestrictionSummary(userId) {
-  const active = await getActiveFreelancerRestrictions(userId);
+  const effective = await getEffectiveFreelancerRestrictions(userId);
   return {
-    hasActiveRestriction: active.length > 0,
-    activeRestrictions: active.map((r) => ({
+    hasActiveRestriction: effective.hasActiveRestriction,
+    activeRestrictions: effective.individual.map((r) => ({
       id: r.id,
       restrictionType: r.restrictionType,
       scopes: r.scopes,
@@ -482,7 +547,26 @@ async function getUserRestrictionSummary(userId) {
       internalReason: r.internalReason,
       internalNote: r.internalNote,
       createdAt: r.createdAt,
+      source: "individual",
     })),
+    inheritedPlanRestrictions: effective.plan.map((r) => ({
+      id: r.id,
+      marketplacePlanId: r.marketplacePlanId,
+      tierCode: r.tierCode,
+      restrictionType: r.restrictionType,
+      scopes: r.scopes,
+      startsAt: r.startsAt,
+      expiresAt: r.expiresAt,
+      // Super Admin only — never expose to freelancer/client APIs.
+      internalReason: r.internalReason,
+      internalNote: r.internalNote,
+      createdAt: r.createdAt,
+      source: "plan",
+      inheritedFromPlanLabel: r.tierCode ? `Inherited from plan: ${r.tierCode}` : null,
+      inheritedFromPlanLabelAr: r.tierCode ? `قيد موروث من الباقة: ${r.tierCode}` : null,
+    })),
+    effectiveScopes: effective.effectiveScopes,
+    planContext: effective.planContext,
   };
 }
 
@@ -686,6 +770,7 @@ module.exports = {
   writeAudit,
   expireDueRestrictions,
   getActiveFreelancerRestrictions,
+  getEffectiveFreelancerRestrictions,
   isScopeRestricted,
   assertMarketplaceActionAllowedOrHeld,
   assertOrderAssignmentAllowed,

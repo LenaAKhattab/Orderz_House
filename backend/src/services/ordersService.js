@@ -2282,15 +2282,18 @@ async function submitPoolOrderBid({
     const holdRestrictionId = bidHeldForReview
       ? Number(holdDecision.primaryRestriction?.id) || null
       : null;
+    const holdPlanRestrictionId = bidHeldForReview
+      ? Number(holdDecision.primaryPlanRestriction?.id) || null
+      : null;
 
     let bidRows;
     try {
       ({ rows: bidRows } = await client.query(
         `INSERT INTO order_freelancer_bids (
            order_id, freelancer_user_id, amount, status, is_fake_bid, fake_round_id, proposal_message,
-           moderation_status, hold_restriction_id, moderation_held_at
+           moderation_status, hold_restriction_id, hold_plan_restriction_id, moderation_held_at
          )
-         VALUES ($1, $2, $3, 'pending', FALSE, NULL, $4, $5, $6, CASE WHEN $5 = 'held' THEN NOW() ELSE NULL END)
+         VALUES ($1, $2, $3, 'pending', FALSE, NULL, $4, $5, $6, $7, CASE WHEN $5 = 'held' THEN NOW() ELSE NULL END)
          ON CONFLICT (order_id, freelancer_user_id)
          DO UPDATE SET amount = EXCLUDED.amount,
                        status = 'pending',
@@ -2299,6 +2302,7 @@ async function submitPoolOrderBid({
                        fake_round_id = NULL,
                        moderation_status = EXCLUDED.moderation_status,
                        hold_restriction_id = EXCLUDED.hold_restriction_id,
+                       hold_plan_restriction_id = EXCLUDED.hold_plan_restriction_id,
                        moderation_held_at = CASE
                          WHEN EXCLUDED.moderation_status = 'held' THEN COALESCE(order_freelancer_bids.moderation_held_at, NOW())
                          ELSE order_freelancer_bids.moderation_held_at
@@ -2312,6 +2316,7 @@ async function submitPoolOrderBid({
           bidMessage || null,
           moderationStatus,
           holdRestrictionId,
+          holdPlanRestrictionId,
         ],
       ));
     } catch (modColErr) {
@@ -2657,14 +2662,17 @@ async function claimPoolOrder({ freelancerUserId, orderId }) {
       );
       if (claimHold.held || assignHold.held) {
         const primary = claimHold.primaryRestriction || assignHold.primaryRestriction;
+        const primaryPlan =
+          claimHold.primaryPlanRestriction || assignHold.primaryPlanRestriction || null;
         try {
           await client.query(
             `INSERT INTO freelancer_moderation_held_claims (
-               order_id, freelancer_user_id, restriction_id, status, metadata
-             ) VALUES ($1, $2, $3, 'held', $4::jsonb)
+               order_id, freelancer_user_id, restriction_id, plan_restriction_id, status, metadata
+             ) VALUES ($1, $2, $3, $4, 'held', $5::jsonb)
              ON CONFLICT (order_id, freelancer_user_id)
              DO UPDATE SET status = 'held',
                            restriction_id = EXCLUDED.restriction_id,
+                           plan_restriction_id = EXCLUDED.plan_restriction_id,
                            resolved_at = NULL,
                            resolve_action = NULL,
                            metadata = EXCLUDED.metadata`,
@@ -2672,11 +2680,35 @@ async function claimPoolOrder({ freelancerUserId, orderId }) {
               Number(orderId),
               Number(freelancerUserId),
               primary?.id != null ? Number(primary.id) : null,
-              JSON.stringify({ source: "claim_pool_order" }),
+              primaryPlan?.id != null ? Number(primaryPlan.id) : null,
+              JSON.stringify({
+                source: "claim_pool_order",
+                restrictionSource: claimHold.source || assignHold.source || null,
+                planTier: claimHold.planContext?.tierCode || assignHold.planContext?.tierCode || null,
+              }),
             ],
           );
         } catch (holdTblErr) {
-          if (holdTblErr?.code !== "42P01") throw holdTblErr;
+          if (holdTblErr?.code !== "42P01" && holdTblErr?.code !== "42703") throw holdTblErr;
+          if (holdTblErr?.code === "42703") {
+            await client.query(
+              `INSERT INTO freelancer_moderation_held_claims (
+                 order_id, freelancer_user_id, restriction_id, status, metadata
+               ) VALUES ($1, $2, $3, 'held', $4::jsonb)
+               ON CONFLICT (order_id, freelancer_user_id)
+               DO UPDATE SET status = 'held',
+                             restriction_id = EXCLUDED.restriction_id,
+                             resolved_at = NULL,
+                             resolve_action = NULL,
+                             metadata = EXCLUDED.metadata`,
+              [
+                Number(orderId),
+                Number(freelancerUserId),
+                primary?.id != null ? Number(primary.id) : null,
+                JSON.stringify({ source: "claim_pool_order" }),
+              ],
+            );
+          }
         }
         await accountRestrictions.writeAudit(
           {
@@ -2685,8 +2717,12 @@ async function claimPoolOrder({ freelancerUserId, orderId }) {
             action: accountRestrictions.AUDIT_ACTIONS.CLAIM_HELD_FOR_REVIEW,
             relatedEntityType: "order",
             relatedEntityId: orderId,
-            reason: primary?.internalReason || null,
-            metadata: { orderId: String(orderId) },
+            reason: primary?.internalReason || primaryPlan?.internalReason || null,
+            metadata: {
+              orderId: String(orderId),
+              planRestrictionId: primaryPlan?.id || null,
+              planTier: primaryPlan?.tierCode || null,
+            },
           },
           client,
         );
