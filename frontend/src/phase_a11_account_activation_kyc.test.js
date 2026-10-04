@@ -24,8 +24,21 @@ describe("Phase A11 — freelancer activate-account KYC UI", () => {
     assert.match(page, /pending_review/);
     assert.match(page, /rejectionReason/);
     assert.match(page, /resubmitCta|kyc\.resubmitCta/);
-    assert.match(page, /approvedTitle|kyc\.approvedTitle/);
+    assert.match(page, /approvedIdentityTitle|approvedManualTitle|kyc\.approvedIdentityTitle/);
+    assert.match(page, /identity\?\.verified|isIdentityVerified/);
+    assert.doesNotMatch(page, /const isApproved = Boolean\(status\?\.isCompanyApproved\)/);
     assert.doesNotMatch(page, /adminNotes/);
+  });
+
+  it("identity UI stays independent from company approval and membership countdown", () => {
+    const page = read("pages/dashboard/FreelancerActivateAccountPage.jsx");
+    const ar = read("locales/ar/freelancerDashboard.json");
+    assert.match(page, /membershipCountdownStarted/);
+    assert.match(page, /accountApproved/);
+    assert.match(ar, /لم يتم توثيق الهوية بعد/);
+    assert.match(ar, /تم التحقق من الهوية إدارياً/);
+    assert.match(ar, /تبدأ مدة الاشتراك عند استلام أول طلب حقيقي/);
+    assert.doesNotMatch(ar, /تم توثيق هويتك وتفعيل حسابك/);
   });
 
   it("A11.1 — no old immediate self-activate call remains", () => {

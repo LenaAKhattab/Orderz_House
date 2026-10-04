@@ -167,11 +167,23 @@ export default function FreelancerActivateAccountPage() {
     void load();
   }, [load]);
 
-  const isApproved = Boolean(status?.isCompanyApproved);
-  const requestStatus = String(status?.request?.status || "");
-  const isPending = requestStatus === "pending_review";
-  const isRejected = requestStatus === "rejected" || status?.activationStatus === "company_rejected";
-  const canSubmit = Boolean(status?.canSubmit || status?.canResubmit) && !isApproved && !isPending;
+  // Canonical identity — never infer from company approval / membership.
+  const identity = status?.identity || null;
+  const identityStatus = String(identity?.status || status?.request?.status || "none");
+  const isIdentityVerified = Boolean(identity?.verified);
+  const isManualVerified = isIdentityVerified && identity?.source === "manual_admin";
+  const isPending = identityStatus === "pending_review";
+  const isRejected = identityStatus === "rejected";
+  const canSubmit =
+    Boolean(identity?.canSubmit ?? status?.canSubmit)
+    || Boolean(identity?.canResubmit ?? status?.canResubmit);
+  const accountApproved = Boolean(status?.accountApproval?.approved ?? status?.isCompanyApproved);
+  const membershipCountdownStarted = Boolean(status?.membership?.countdownStarted);
+  const membershipWaitingFirstOrder =
+    accountApproved
+    && !membershipCountdownStarted
+    && (String(status?.membership?.status || "") === "assigned_not_started"
+      || status?.membership?.hasFirstOrder === false);
 
   const handleSubmit = async () => {
     if (busy || !canSubmit) return;
@@ -245,13 +257,30 @@ export default function FreelancerActivateAccountPage() {
               {t("freelancerDashboard.common.retry")}
             </button>
           </>
-        ) : isApproved ? (
+        ) : isIdentityVerified ? (
           <>
             <h2 className="oh-account-card__title">
-              {t("freelancerDashboard.activateAccount.kyc.approvedTitle")}
+              {isManualVerified
+                ? t("freelancerDashboard.activateAccount.kyc.approvedManualTitle")
+                : t("freelancerDashboard.activateAccount.kyc.approvedIdentityTitle")}
             </h2>
+            <p className="oh-account-value" style={{ marginBottom: 8, color: "#4b5563" }}>
+              {t("freelancerDashboard.activateAccount.kyc.identityVerifiedLabel")}:{" "}
+              {t("freelancerDashboard.activateAccount.kyc.identityVerifiedValue")}
+            </p>
+            <p className="oh-account-value" style={{ marginBottom: 8, color: "#4b5563" }}>
+              {t("freelancerDashboard.activateAccount.kyc.accountApprovalLabel")}:{" "}
+              {accountApproved
+                ? t("freelancerDashboard.activateAccount.kyc.accountApprovedValue")
+                : t("freelancerDashboard.activateAccount.kyc.accountPendingValue")}
+            </p>
             <p className="oh-account-value" style={{ marginBottom: 16, color: "#4b5563" }}>
-              {t("freelancerDashboard.activateAccount.alreadyActiveMessage")}
+              {t("freelancerDashboard.activateAccount.kyc.membershipLabel")}:{" "}
+              {membershipCountdownStarted
+                ? t("freelancerDashboard.activateAccount.kyc.membershipActiveValue")
+                : membershipWaitingFirstOrder
+                  ? t("freelancerDashboard.activateAccount.kyc.membershipWaitingFirstOrderValue")
+                  : t("freelancerDashboard.activateAccount.kyc.membershipInactiveValue")}
             </p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
               <Link className="oh-account-btn-primary" to="/dashboard/freelancer">
@@ -281,6 +310,11 @@ export default function FreelancerActivateAccountPage() {
                 ? t("freelancerDashboard.activateAccount.kyc.rejectedTitle")
                 : t("freelancerDashboard.activateAccount.kyc.pageTitle")}
             </h2>
+            <p className="oh-account-value" style={{ marginBottom: 8, color: "#4b5563" }}>
+              {isRejected
+                ? t("freelancerDashboard.activateAccount.kyc.uploadHint")
+                : t("freelancerDashboard.activateAccount.kyc.notVerifiedYet")}
+            </p>
             <p className="oh-account-value" style={{ marginBottom: 8, color: "#4b5563" }}>
               {t("freelancerDashboard.activateAccount.kyc.uploadHint")}
             </p>

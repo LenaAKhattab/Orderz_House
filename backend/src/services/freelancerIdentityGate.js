@@ -1,6 +1,7 @@
 /**
- * Trusted Super Admin identity approval received outside the platform.
- * Never stores ID file keys or document bytes.
+ * Canonical freelancer identity verification gate.
+ * Identity passes ONLY via approved platform KYC OR approved non-revoked manual verification.
+ * Never treat company_approved / membership / account active alone as identity verification.
  */
 
 const { pool } = require("../config/db");
@@ -47,13 +48,107 @@ async function loadManualIdentityVerification(freelancerUserId, client = null) {
   }
 }
 
+async function loadLatestPlatformKycRequest(freelancerUserId, client = null) {
+  const runner = client || pool;
+  try {
+    const { rows } = await runner.query(
+      `SELECT id, status, submitted_at, reviewed_at, rejection_reason,
+              resubmission_count, id_front_file_key, id_back_file_key
+         FROM freelancer_account_activation_requests
+        WHERE freelancer_user_id = $1
+        ORDER BY created_at DESC, id DESC
+        LIMIT 1`,
+      [Number(freelancerUserId)],
+    );
+    return rows[0] || null;
+  } catch (err) {
+    if (err?.code === "42P01" || err?.code === "42703") return null;
+    throw err;
+  }
+}
+
 function isManualIdentityApproved(row) {
-  return Boolean(row) && String(row.status) === "approved";
+  return Boolean(row) && String(row.status) === "approved" && !row.revoked_at;
+}
+
+/**
+ * Pure resolver from already-loaded rows.
+ * @returns {{
+ *   verified: boolean,
+ *   status: 'none'|'pending_review'|'rejected'|'approved',
+ *   source: 'platform'|'manual_admin'|null,
+ *   platformStatus: string,
+ *   manualStatus: string|null,
+ *   submittedAt: *,
+ *   reviewedAt: *,
+ *   hasPlatformDocuments: boolean,
+ *   verificationMethod: string|null,
+ *   canSubmit: boolean,
+ *   canResubmit: boolean,
+ * }}
+ */
+function resolveCanonicalIdentityState({ platformRow = null, manualRow = null } = {}) {
+  const platformStatus = platformRow ? String(platformRow.status || "none") : "none";
+  const manualApproved = isManualIdentityApproved(manualRow);
+  const platformApproved = platformStatus === "approved";
+  const verified = platformApproved || manualApproved;
+
+  let status = "none";
+  let source = null;
+  if (manualApproved) {
+    status = "approved";
+    source = "manual_admin";
+  } else if (platformApproved) {
+    status = "approved";
+    source = "platform";
+  } else if (platformStatus === "pending_review") {
+    status = "pending_review";
+  } else if (platformStatus === "rejected") {
+    status = "rejected";
+  }
+
+  const pending = status === "pending_review";
+  const rejected = status === "rejected";
+  const canSubmit = !verified && !pending;
+  const canResubmit = !verified && !pending && (rejected || !platformRow);
+
+  return {
+    verified,
+    status,
+    source,
+    platformStatus,
+    manualStatus: manualRow ? String(manualRow.status || null) : null,
+    submittedAt: platformRow?.submitted_at || null,
+    reviewedAt: manualApproved
+      ? manualRow.verified_at || null
+      : platformRow?.reviewed_at || null,
+    hasPlatformDocuments: Boolean(
+      platformRow?.id_front_file_key || platformRow?.id_back_file_key,
+    ),
+    verificationMethod: manualApproved ? manualRow.verification_method || null : null,
+    canSubmit,
+    canResubmit,
+    requestId: platformRow?.id != null ? String(platformRow.id) : null,
+    rejectionReason:
+      !verified && platformStatus === "rejected" ? platformRow?.rejection_reason || null : null,
+    resubmissionCount: Number(platformRow?.resubmission_count || 0),
+  };
+}
+
+async function getCanonicalIdentityState(freelancerUserId, { client = null } = {}) {
+  const [platformRow, manualRow] = await Promise.all([
+    loadLatestPlatformKycRequest(freelancerUserId, client),
+    loadManualIdentityVerification(freelancerUserId, client),
+  ]);
+  return resolveCanonicalIdentityState({ platformRow, manualRow });
 }
 
 module.exports = {
   MANUAL_IDENTITY_METHODS,
   COURSE_COMPLETION_REASON_CODES,
   loadManualIdentityVerification,
+  loadLatestPlatformKycRequest,
   isManualIdentityApproved,
+  resolveCanonicalIdentityState,
+  getCanonicalIdentityState,
 };
