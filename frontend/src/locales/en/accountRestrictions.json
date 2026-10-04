@@ -30,6 +30,7 @@
     "impactCount": "Currently affected: {{count}} users",
     "alreadyActive": "This plan already has an active restriction",
     "selectPlan": "Select plan",
+    "changePlan": "Change plan",
     "currentSubscribers": "Current subscribers",
     "existingRestriction": "Existing restriction",
     "notRestricted": "Not Restricted",

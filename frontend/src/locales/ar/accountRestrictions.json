@@ -30,6 +30,7 @@
     "impactCount": "المتأثرون حالياً: {{count}} مستخدم",
     "alreadyActive": "يوجد قيد نشط على هذه الباقة",
     "selectPlan": "اختر الباقة",
+    "changePlan": "تغيير الباقة",
     "currentSubscribers": "المشتركون الحاليون",
     "existingRestriction": "القيد الحالي",
     "notRestricted": "غير مقيّدة",

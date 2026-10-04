@@ -108,3 +108,29 @@
   gap: 0.5rem;
   flex-shrink: 0;
 }
+
+/* Match Users field wrappers when used as fieldset (scope radios). */
+.oh-sa-users-drawer__body fieldset.oh-sa-users-field {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-inline-size: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.oh-sa-users-drawer__body .oh-sa-users-field,
+.oh-sa-users-drawer__body .oh-sa-users-field input,
+.oh-sa-users-drawer__body .oh-sa-users-field select,
+.oh-sa-users-drawer__body .oh-sa-users-field textarea,
+.oh-sa-users-drawer__body .oh-sa-restr-search-results,
+.oh-sa-users-drawer__body .oh-sa-restr-custom-scopes {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.oh-sa-users-drawer__body .oh-sa-users-field textarea {
+  width: 100%;
+  resize: vertical;
+}
