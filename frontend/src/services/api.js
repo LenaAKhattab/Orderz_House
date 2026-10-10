@@ -808,6 +808,29 @@ export const startMarketplaceStarterTrialRequest = async () => {
 export const activateMarketplaceStarterMembershipRequest = startMarketplaceStarterTrialRequest;
 
 /** Marketplace-M2: start Stripe Checkout for SILVER/PRO/ELITE (does not grant membership). */
+export const getMyTrainingPackagesRequest = async () => {
+  const { data } = await api.get("/freelancer/training-packages/me");
+  return data;
+};
+
+export const createTrainingPackageCheckoutRequest = async (packageCode) => {
+  const code = typeof packageCode === "string" ? packageCode.trim() : "";
+  if (!code) {
+    throw new Error("Invalid training package code.");
+  }
+  const { data } = await api.post(
+    "/freelancer/training-packages/checkout",
+    { packageCode: code },
+    { timeout: 30000 },
+  );
+  return data;
+};
+
+export const cancelTrainingPackageCheckoutRequest = async (sessionId) => {
+  const { data } = await api.post("/freelancer/training-packages/checkout/cancel", { sessionId });
+  return data;
+};
+
 export const createMarketplaceMembershipCheckoutRequest = async (planCode) => {
   const code = typeof planCode === "string" ? planCode.trim() : "";
   if (!code) {

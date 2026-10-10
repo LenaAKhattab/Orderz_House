@@ -112,6 +112,26 @@ const DEFAULT_TRAINING_PACKAGES = Object.freeze([
     whatsappMessageAr:
       "مرحبًا، أرغب بالاستفسار والتسجيل في الباقة المميزة للتدريب بسعر 349 د.أ، وأود معرفة تفاصيل الدورات وطريقة التسجيل.",
   },
+  {
+    code: "content_writing_training",
+    accent: "basic",
+    featured: false,
+    isVisible: true,
+    sortOrder: 40,
+    priceJod: 35,
+    durationMonths: null,
+    nameAr: "باقة كتابة المحتوى",
+    nameEn: "Content Writing Training Package",
+    shortDescAr: "دورة كتابة المحتوى.",
+    shortDescEn: "Content Writing Course.",
+    featuresAr: ["دورة كتابة المحتوى"],
+    featuresEn: ["Content Writing Course"],
+    highlightFeatureIndex: 0,
+    badgeAr: "",
+    badgeEn: "",
+    whatsappMessageAr:
+      "مرحبًا، أرغب بالاستفسار والتسجيل في باقة كتابة المحتوى للتدريب بسعر 35 د.أ، وأود معرفة تفاصيل الدورة وطريقة التسجيل.",
+  },
 ]);
 
 function cloneDefaultTrainingPackages() {

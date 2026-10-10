@@ -37,6 +37,7 @@ const institutionPoolRoutes = require("./routes/institutionPoolRoutes");
 const adminAdsRoutes = require("./routes/adminAdsRoutes");
 const freelancerSubscriptionsRoutes = require("./routes/freelancerSubscriptionsRoutes");
 const freelancerMarketplaceMembershipRoutes = require("./routes/freelancerMarketplaceMembershipRoutes");
+const freelancerTrainingPackageRoutes = require("./routes/freelancerTrainingPackageRoutes");
 const freelancerActivationEngineRoutes = require("./routes/freelancerActivationEngineRoutes");
 const freelancerAccountActivationKycRoutes = require("./routes/freelancerAccountActivationKycRoutes");
 const superAdminFreelancerActivationRoutes = require("./routes/superAdminFreelancerActivationRoutes");
@@ -192,6 +193,7 @@ app.use("/api/institution", institutionPoolRoutes);
 app.use("/api/admin", adminAdsRoutes);
 app.use("/api/freelancer", freelancerSubscriptionsRoutes);
 app.use("/api/freelancer", freelancerMarketplaceMembershipRoutes);
+app.use("/api/freelancer", freelancerTrainingPackageRoutes);
 app.use("/api/freelancer", freelancerActivationEngineRoutes);
 app.use("/api/freelancer", freelancerAccountActivationKycRoutes);
 app.use("/api/freelancer", freelancerWorkTokenWalletRoutes); // LEGACY_DEPRECATED_WORK_TOKEN_MODEL (read retained)

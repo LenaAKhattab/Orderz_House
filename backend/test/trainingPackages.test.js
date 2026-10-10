@@ -29,15 +29,19 @@ describe("training packages catalog", () => {
   it("returns seeded defaults when unset", async () => {
     const settings = memorySettings(null);
     const pub = await listPublicTrainingPackages(settings);
-    assert.equal(pub.length, 3);
+    assert.equal(pub.length, 4);
     assert.deepEqual(
       pub.map((p) => p.code),
-      ["basic", "professional", "premium"],
+      ["basic", "professional", "premium", "content_writing_training"],
     );
     assert.deepEqual(
       pub.map((p) => p.priceJod),
-      [49, 249, 349],
+      [49, 249, 349, 35],
     );
+    const content = pub.find((p) => p.code === "content_writing_training");
+    assert.equal(content.priceJod, 35);
+    assert.equal(content.nameAr, "باقة كتابة المحتوى");
+    assert.deepEqual(content.featuresEn, ["Content Writing Course"]);
     assert.equal(pub[1].featured, true);
   });
 
@@ -47,9 +51,10 @@ describe("training packages catalog", () => {
     const settings = memorySettings(JSON.stringify({ packages: defaults }));
     const pub = await listPublicTrainingPackages(settings);
     const admin = await listAdminTrainingPackages(settings);
-    assert.equal(pub.length, 2);
+    assert.equal(pub.length, 3);
     assert.ok(!pub.some((p) => p.code === "basic"));
-    assert.equal(admin.length, 3);
+    assert.ok(pub.some((p) => p.code === "content_writing_training"));
+    assert.equal(admin.length, 4);
     assert.equal(admin.find((p) => p.code === "basic").isVisible, false);
   });
 
@@ -127,7 +132,7 @@ describe("training packages catalog", () => {
     );
     assert.equal(created.code, "workshop");
     const pub = await listPublicTrainingPackages(settings);
-    assert.equal(pub.length, 4);
+    assert.equal(pub.length, 5);
   });
 
   it("rejects invalid price", () => {
@@ -139,7 +144,7 @@ describe("training packages catalog", () => {
 
   it("parseStored falls back when JSON is empty", () => {
     const list = parseStored("{}");
-    assert.equal(list.length, 3);
+    assert.equal(list.length, 4);
   });
 });
 

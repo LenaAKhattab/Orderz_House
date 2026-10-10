@@ -7,7 +7,7 @@
   },
   "categories": {
     "aria": "Plan categories",
-    "training": "Training Plans",
+    "training": "Training Packages",
     "membership": "OrderzHouse Marketplace Membership"
   },
   "training": {
@@ -15,6 +15,14 @@
     "includes": "Package includes",
     "featuresAria": "Training package contents",
     "cta": "Contact us",
+    "buyCta": "Buy Package",
+    "buyBusy": "Redirecting to checkout…",
+    "purchased": "Purchased",
+    "currentTitle": "Your Current Training Package",
+    "waiting": "Waiting for payment confirmation",
+    "companyFollowUp": "Your training package was purchased successfully. The company will follow up with you regarding the training process outside the platform.",
+    "checkoutFailed": "Could not start the training package checkout.",
+    "checkoutMissingUrl": "Could not start checkout.",
     "mostRequested": "Most requested",
     "footnote": "Contact us on WhatsApp for registration and payment details.",
     "whatsappAria": "Contact via WhatsApp about {{package}}",

@@ -8,7 +8,13 @@ import "../../styles/plansPage.css";
  * Training packages grid for public `/plans` (WhatsApp inquiry CTAs).
  * No page hero — cards are the first content (parity with membership catalog).
  */
-export default function TrainingPlansSection() {
+export default function TrainingPlansSection({
+  purchaseMode = false,
+  currentPackageCode = "",
+  pendingPackageCode = "",
+  onBuy,
+  buyBusyCode = "",
+}) {
   const { t, locale } = useTranslation();
   const packages = usePublicTrainingPackages();
 
@@ -21,9 +27,27 @@ export default function TrainingPlansSection() {
       aria-label={t("plans.training.sectionAria")}
     >
       <div className="pricing__grid pricing__grid--public-dynamic pricing__grid--training-three">
-        {packages.map((pkg) => (
-          <TrainingPlanCard key={pkg.id} pkg={pkg} locale={locale} t={t} />
-        ))}
+        {packages.map((pkg) => {
+          const code = String(pkg.code || pkg.id || "");
+          const purchaseState =
+            currentPackageCode && code === currentPackageCode
+              ? "current"
+              : pendingPackageCode && code === pendingPackageCode
+                ? "pending"
+                : "available";
+          return (
+            <TrainingPlanCard
+              key={pkg.id || code}
+              pkg={pkg}
+              locale={locale}
+              t={t}
+              purchaseMode={purchaseMode}
+              purchaseState={purchaseState}
+              onBuy={onBuy}
+              buyBusy={buyBusyCode === code}
+            />
+          );
+        })}
       </div>
     </section>
   );

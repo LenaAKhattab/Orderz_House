@@ -12,7 +12,7 @@ export const DEFAULT_PLANS_CATEGORY = PLANS_CATEGORY.TRAINING;
 
 export const TRAINING_WHATSAPP_E164 = "962791433341";
 
-/** @typedef {"basic" | "professional" | "premium"} TrainingPackageId */
+/** @typedef {"basic" | "professional" | "premium" | "content_writing_training"} TrainingPackageId */
 
 /**
  * @type {ReadonlyArray<{
@@ -119,6 +119,21 @@ export const TRAINING_PACKAGES = Object.freeze([
     highlightFeatureIndex: 0,
     whatsappMessageAr:
       "مرحبًا، أرغب بالاستفسار والتسجيل في الباقة المميزة للتدريب بسعر 349 د.أ، وأود معرفة تفاصيل الدورات وطريقة التسجيل.",
+  },
+  {
+    id: "content_writing_training",
+    accent: "basic",
+    featured: false,
+    priceJod: 35,
+    nameAr: "باقة كتابة المحتوى",
+    nameEn: "Content Writing Training Package",
+    shortDescAr: "دورة كتابة المحتوى.",
+    shortDescEn: "Content Writing Course.",
+    featuresAr: ["دورة كتابة المحتوى"],
+    featuresEn: ["Content Writing Course"],
+    highlightFeatureIndex: 0,
+    whatsappMessageAr:
+      "مرحبًا، أرغب بالاستفسار والتسجيل في باقة كتابة المحتوى للتدريب بسعر 35 د.أ، وأود معرفة تفاصيل الدورة وطريقة التسجيل.",
   },
 ]);
 

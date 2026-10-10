@@ -63,6 +63,19 @@ function buildFreelancerBidPackageCheckoutReturnUrls(clientUrl) {
  * Marketplace Membership Checkout return URLs (Marketplace-M2).
  * Success page must NOT grant membership — M3 webhook only.
  */
+function buildFreelancerTrainingPackageCheckoutReturnUrls(clientUrl) {
+  const base = String(clientUrl || "").replace(/\/$/, "");
+  if (!base) {
+    const err = new Error("CLIENT_URL is not configured (set a single origin, e.g. https://orderzhouse.com).");
+    err.statusCode = 500;
+    throw err;
+  }
+  return {
+    successUrl: `${base}/dashboard/freelancer/plans?type=training&trainingCheckout=success&session_id={CHECKOUT_SESSION_ID}`,
+    cancelUrl: `${base}/dashboard/freelancer/plans?type=training&trainingCheckout=cancelled&session_id={CHECKOUT_SESSION_ID}`,
+  };
+}
+
 function buildFreelancerMarketplaceMembershipCheckoutReturnUrls(clientUrl) {
   const base = String(clientUrl || "").replace(/\/$/, "");
   if (!base) {
@@ -144,4 +157,5 @@ module.exports = {
   buildFreelancerActivationFeeCheckoutReturnUrls,
   buildFreelancerBidPackageCheckoutReturnUrls,
   buildFreelancerMarketplaceMembershipCheckoutReturnUrls,
+  buildFreelancerTrainingPackageCheckoutReturnUrls,
 };

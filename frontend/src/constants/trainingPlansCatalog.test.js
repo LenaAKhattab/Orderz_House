@@ -19,19 +19,24 @@ import {
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 describe("trainingPlansCatalog", () => {
-  it("defaults to TRAINING and exposes three approved packages", () => {
+  it("defaults to TRAINING and exposes the canonical training packages", () => {
     assert.strictEqual(DEFAULT_PLANS_CATEGORY, PLANS_CATEGORY.TRAINING);
     assert.strictEqual(resolvePlansCategory(null), "training");
     assert.strictEqual(resolvePlansCategory("membership"), "membership");
-    assert.strictEqual(TRAINING_PACKAGES.length, 3);
+    assert.strictEqual(TRAINING_PACKAGES.length, 4);
     assert.deepStrictEqual(
       TRAINING_PACKAGES.map((p) => p.priceJod),
-      [49, 249, 349],
+      [49, 249, 349, 35],
     );
     assert.deepStrictEqual(
       TRAINING_PACKAGES.map((p) => p.id),
-      ["basic", "professional", "premium"],
+      ["basic", "professional", "premium", "content_writing_training"],
     );
+    const content = TRAINING_PACKAGES.find((p) => p.id === "content_writing_training");
+    assert.equal(content.nameAr, "باقة كتابة المحتوى");
+    assert.equal(content.nameEn, "Content Writing Training Package");
+    assert.deepStrictEqual(content.featuresAr, ["دورة كتابة المحتوى"]);
+    assert.deepStrictEqual(content.featuresEn, ["Content Writing Course"]);
     assert.strictEqual(TRAINING_PACKAGES[1].featured, true);
   });
 
@@ -46,6 +51,20 @@ describe("trainingPlansCatalog", () => {
       assert.ok(text.includes(String(pkg.priceJod)));
       assert.doesNotMatch(url.toLowerCase(), /work.?token|token/);
     }
+  });
+
+  it("authenticated freelancer plans reuse the public training cards and keep marketplace checkout", () => {
+    const page = fs.readFileSync(path.join(__dirname, "../pages/dashboard/FreelancerPlansPage.jsx"), "utf8");
+    assert.match(page, /PlansCategoryToggle/);
+    assert.match(page, /TrainingPlansSection/);
+    assert.match(page, /purchaseMode/);
+    assert.match(page, /startMarketplaceCheckout/);
+    assert.match(page, /FreelancerMarketplaceMembershipCard/);
+    assert.match(page, /PLANS_CATEGORY\.MEMBERSHIP/);
+    const card = fs.readFileSync(path.join(__dirname, "../components/plans/TrainingPlanCard.jsx"), "utf8");
+    assert.match(card, /plans\.training\.buyCta/);
+    assert.match(card, /plans\.training\.cta/);
+    assert.doesNotMatch(page, /SuperAdminUsersPage/);
   });
 
   it("Plans page defaults to training category and keeps membership intact", () => {

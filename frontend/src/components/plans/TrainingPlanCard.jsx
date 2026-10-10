@@ -13,7 +13,15 @@ function featureIcon(text) {
 /**
  * Single Training package card with WhatsApp CTA.
  */
-export default function TrainingPlanCard({ pkg, locale = "ar", t }) {
+export default function TrainingPlanCard({
+  pkg,
+  locale = "ar",
+  t,
+  purchaseMode = false,
+  purchaseState = "available",
+  onBuy,
+  buyBusy = false,
+}) {
   const isEn = locale === "en";
   const name = isEn ? pkg.nameEn : pkg.nameAr;
   const shortDesc = isEn ? pkg.shortDescEn : pkg.shortDescAr;
@@ -77,19 +85,42 @@ export default function TrainingPlanCard({ pkg, locale = "ar", t }) {
       </div>
 
       <div className="training-card__cta">
-        <a
-          className={[
-            "training-card__btn",
-            pkg.featured ? "training-card__btn--primary" : "training-card__btn--outline",
-          ].join(" ")}
-          href={href}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label={t("plans.training.whatsappAria", { package: name })}
-        >
-          <MessageCircle size={16} strokeWidth={2.2} aria-hidden="true" />
-          <span>{t("plans.training.cta")}</span>
-        </a>
+        {purchaseMode && purchaseState === "current" ? (
+          <p className="training-card__purchased" data-testid="training-package-purchased">
+            {t("plans.training.purchased")}
+          </p>
+        ) : purchaseMode && purchaseState === "pending" ? (
+          <p className="training-card__purchased" data-testid="training-package-pending">
+            {t("plans.training.waiting")}
+          </p>
+        ) : purchaseMode ? (
+          <button
+            type="button"
+            className={[
+              "training-card__btn",
+              pkg.featured ? "training-card__btn--primary" : "training-card__btn--outline",
+            ].join(" ")}
+            disabled={buyBusy}
+            onClick={() => onBuy?.(pkg)}
+            data-testid={`training-buy-${pkg.id || pkg.code}`}
+          >
+            <span>{buyBusy ? t("plans.training.buyBusy") : t("plans.training.buyCta")}</span>
+          </button>
+        ) : (
+          <a
+            className={[
+              "training-card__btn",
+              pkg.featured ? "training-card__btn--primary" : "training-card__btn--outline",
+            ].join(" ")}
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={t("plans.training.whatsappAria", { package: name })}
+          >
+            <MessageCircle size={16} strokeWidth={2.2} aria-hidden="true" />
+            <span>{t("plans.training.cta")}</span>
+          </a>
+        )}
       </div>
     </article>
   );
