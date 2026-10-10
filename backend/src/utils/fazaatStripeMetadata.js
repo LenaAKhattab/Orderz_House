@@ -15,6 +15,7 @@ const PAYMENT_CONTEXT = {
   ACTIVATION_FEE_BUNDLED: "activation_fee_bundled",
   BID_CREDIT_PACKAGE: "bid_credit_package",
   MARKETPLACE_MEMBERSHIP: "marketplace_membership",
+  TRAINING_PACKAGE: "training_package",
 };
 
 const PAYMENT_INTENT_DESCRIPTION = {
@@ -24,6 +25,7 @@ const PAYMENT_INTENT_DESCRIPTION = {
   [PAYMENT_CONTEXT.ACTIVATION_FEE_ONLY]: "FAZAAT - Orderz House - Activation Fee",
   [PAYMENT_CONTEXT.BID_CREDIT_PACKAGE]: "FAZAAT - Orderz House - Bid Credit Package",
   [PAYMENT_CONTEXT.MARKETPLACE_MEMBERSHIP]: "FAZAAT - Orderz House - Marketplace Membership",
+  [PAYMENT_CONTEXT.TRAINING_PACKAGE]: "FAZAAT - Orderz House - Training Package",
 };
 
 const LINE_ITEM_PRODUCT_NAME = {
@@ -33,6 +35,7 @@ const LINE_ITEM_PRODUCT_NAME = {
   [PAYMENT_CONTEXT.ACTIVATION_FEE_ONLY]: "FAZAAT - Orderz House - Activation Fee",
   [PAYMENT_CONTEXT.BID_CREDIT_PACKAGE]: "FAZAAT - Orderz House - Bid Credit Package",
   [PAYMENT_CONTEXT.MARKETPLACE_MEMBERSHIP]: "FAZAAT - Orderz House - Marketplace Membership",
+  [PAYMENT_CONTEXT.TRAINING_PACKAGE]: "FAZAAT - Orderz House - Training Package",
 };
 
 function stringifyMetaValue(value) {

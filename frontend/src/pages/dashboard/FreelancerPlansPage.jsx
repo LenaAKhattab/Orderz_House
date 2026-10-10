@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Crown, Sparkles } from "lucide-react";
 import PricingSection from "../../components/plans/PricingSection";
 import FreelancerMarketplaceMembershipCard from "../../components/freelancer/FreelancerMarketplaceMembershipCard";
@@ -7,6 +8,10 @@ import DashboardHubPage from "../../components/dashboard/hub/DashboardHubPage";
 import { useFreelancerPlansCheckout } from "../../hooks/useFreelancerPlansCheckout";
 import { useFreelancerPlansScreen } from "../../hooks/useFreelancerPlansScreen";
 import { useMarketplaceMembershipCheckout } from "../../hooks/useMarketplaceMembershipCheckout";
+import { useTrainingPackageCheckout } from "../../hooks/useTrainingPackageCheckout";
+import PlansCategoryToggle from "../../components/plans/PlansCategoryToggle";
+import TrainingPlansSection from "../../components/plans/TrainingPlansSection";
+import { PLANS_CATEGORY } from "../../constants/trainingPlansCatalog";
 import { useFreelancerMarketplaceContext } from "../../hooks/useFreelancerMarketplaceContext";
 import { getFreelancerOrderEligibilityMessage } from "../../utils/freelancerEligibilityUi";
 import { formatJoDateMedium, getPlanOrderValueRangeLabel } from "../../utils/freelancerDashboardData";
@@ -82,6 +87,19 @@ export default function FreelancerPlansPage() {
   });
 
   const { eligibility } = useFreelancerMarketplaceContext();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const packagesTab =
+    searchParams.get("type") === PLANS_CATEGORY.TRAINING || searchParams.get("trainingCheckout")
+      ? PLANS_CATEGORY.TRAINING
+      : PLANS_CATEGORY.MEMBERSHIP;
+  const {
+    current: currentTraining,
+    pending: pendingTraining,
+    waiting: trainingPaymentWaiting,
+    buyBusyCode: trainingBuyBusyCode,
+    checkoutError: trainingCheckoutError,
+    startTrainingCheckout,
+  } = useTrainingPackageCheckout({ enabled: isMarketplaceCatalog && packagesTab === PLANS_CATEGORY.TRAINING });
 
   const nextPlan = useMemo(
     () => (isMarketplaceCatalog ? null : getNextUpgradePlan(plans, mySubscription)),
@@ -159,6 +177,53 @@ export default function FreelancerPlansPage() {
           <FreelancerPlansScreenSkeleton catalog={catalog} catalogResolved={catalogResolved} />
         ) : isMarketplaceCatalog ? (
           <>
+            <div className="plans-page plans-page--ref" style={{ marginBottom: 16 }}>
+              <PlansCategoryToggle
+                value={packagesTab}
+                onChange={(next) => {
+                  const params = new URLSearchParams(searchParams);
+                  if (next === PLANS_CATEGORY.TRAINING) params.set("type", PLANS_CATEGORY.TRAINING);
+                  else params.delete("type");
+                  setSearchParams(params, { replace: true });
+                }}
+                t={t}
+              />
+            </div>
+            {packagesTab === PLANS_CATEGORY.TRAINING ? (
+              <section className="fp-surface fp-pricing-wrap fp-pricing-wrap--public-match plans-page plans-page--ref">
+                {currentTraining ? (
+                  <header className="fp-hero" data-testid="current-training-package">
+                    <div className="fp-hero__copy">
+                      <span className="fp-hero__eyebrow">{t("plans.training.currentTitle")}</span>
+                      <h2 className="fp-hero__title">
+                        {locale?.startsWith("en")
+                          ? currentTraining.nameEn || currentTraining.packageCode
+                          : currentTraining.nameAr || currentTraining.packageCode}
+                      </h2>
+                      <p>{t("plans.training.companyFollowUp")}</p>
+                    </div>
+                  </header>
+                ) : null}
+                {trainingPaymentWaiting || pendingTraining ? (
+                  <p className="fp-checkout-banner__message" role="status" data-testid="training-payment-waiting">
+                    {t("plans.training.waiting")}
+                  </p>
+                ) : null}
+                {trainingCheckoutError ? <p className="fp-error">{trainingCheckoutError}</p> : null}
+                <TrainingPlansSection
+                  purchaseMode
+                  currentPackageCode={currentTraining?.packageCode || ""}
+                  pendingPackageCode={
+                    trainingPaymentWaiting
+                      ? pendingTraining?.packageCode || ""
+                      : pendingTraining?.packageCode || ""
+                  }
+                  onBuy={startTrainingCheckout}
+                  buyBusyCode={trainingBuyBusyCode}
+                />
+              </section>
+            ) : (
+            <>
             <FreelancerMarketplaceMembershipCard
               snapshot={membership}
               error={membershipError}
@@ -192,6 +257,8 @@ export default function FreelancerPlansPage() {
                 />
               ) : null}
             </section>
+            </>
+            )}
           </>
         ) : (
           <>

@@ -100,19 +100,30 @@ function sortPackages(list) {
   });
 }
 
+function defaultPackages() {
+  return cloneDefaultTrainingPackages().map((pkg) => normalizePackage(pkg));
+}
+
+/** Append canonical packages missing from a stored catalog. Never overwrites existing codes. */
+function mergeMissingDefaults(list) {
+  const codes = new Set(list.map((pkg) => pkg.code));
+  const extras = defaultPackages().filter((pkg) => !codes.has(pkg.code));
+  return sortPackages([...list, ...extras]);
+}
+
 function parseStored(raw) {
-  if (!raw) return cloneDefaultTrainingPackages().map((pkg) => normalizePackage(pkg));
+  if (!raw) return mergeMissingDefaults(defaultPackages());
   let parsed;
   try {
     parsed = JSON.parse(raw);
   } catch {
-    return cloneDefaultTrainingPackages().map((pkg) => normalizePackage(pkg));
+    return mergeMissingDefaults(defaultPackages());
   }
   const list = Array.isArray(parsed) ? parsed : parsed?.packages;
   if (!Array.isArray(list) || list.length === 0) {
-    return cloneDefaultTrainingPackages().map((pkg) => normalizePackage(pkg));
+    return mergeMissingDefaults(defaultPackages());
   }
-  return sortPackages(list.map((item) => normalizePackage(item)));
+  return mergeMissingDefaults(sortPackages(list.map((item) => normalizePackage(item))));
 }
 
 function toPublicDto(pkg) {
@@ -240,6 +251,7 @@ module.exports = {
   CODE_RE,
   normalizePackage,
   parseStored,
+  mergeMissingDefaults,
   listPublicTrainingPackages,
   listAdminTrainingPackages,
   upsertTrainingPackage,

@@ -1018,6 +1018,10 @@ async function applyCheckoutSessionCompleted(session, dbPool = pool) {
       dbPool,
     );
   }
+  if (purpose === "training_package_purchase") {
+    const trainingCheckout = require("../services/trainingPackageCheckoutService");
+    return trainingCheckout.applyTrainingPackageCheckoutSessionCompleted(session, meta, dbPool);
+  }
   if (!["client_fixed_order", "client_selected_bid"].includes(purpose)) {
     return { status: "ignored", reason: "unknown_checkout_purpose" };
   }
@@ -1036,6 +1040,10 @@ async function applyPaymentIntentOutcome(pi, outcomePaymentStatus, dbPool = pool
     ...pickFazaatTrackingLogFields(meta),
   });
   const purpose = String(meta.purpose || "");
+  if (purpose === "training_package_purchase" && outcomePaymentStatus !== "paid") {
+    const trainingCheckout = require("../services/trainingPackageCheckoutService");
+    return trainingCheckout.applyTrainingPackagePaymentFailed(pi, dbPool);
+  }
   if (purpose === "bid_credit_package_purchase") {
     const purchases = require("../services/marketplaceBidCreditPurchasesService");
     const purchaseId = Number(meta.purchaseId || meta.purchase_id || 0);
