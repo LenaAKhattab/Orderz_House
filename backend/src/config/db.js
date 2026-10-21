@@ -57,27 +57,50 @@ const STATEMENT_TIMEOUT_MS = positiveIntEnv("PG_STATEMENT_TIMEOUT_MS", 30000);
 
 const pool = new Pool(resolvePoolOptions());
 
+async function ensureStatementTimeout(client) {
+  if (!client || client.__ohStatementTimeoutMs === STATEMENT_TIMEOUT_MS) return;
+  await client.query(`SET statement_timeout TO ${STATEMENT_TIMEOUT_MS}`);
+  client.__ohStatementTimeoutMs = STATEMENT_TIMEOUT_MS;
+}
+
 // Apply statement_timeout after checkout (Neon pooler rejects startup `options`).
-// Wrap connect so SET finishes before the client is handed to callers / pool.query.
+// Support both callback and Promise forms of pg.Pool#connect.
 const checkout = pool.connect.bind(pool);
-pool.connect = async function connectWithStatementTimeout(...args) {
-  const client = await checkout(...args);
-  if (!client.__ohStatementTimeoutMs) {
+pool.connect = function connectWithStatementTimeout(cb) {
+  if (typeof cb === "function") {
+    return checkout((err, client) => {
+      if (err) return cb(err);
+      ensureStatementTimeout(client).then(
+        () => cb(null, client),
+        (setErr) => {
+          // eslint-disable-next-line no-console
+          console.error(
+            JSON.stringify({
+              component: "db_pool",
+              event: "statement_timeout_set_failed",
+              message: setErr?.message || String(setErr),
+            }),
+          );
+          cb(null, client);
+        },
+      );
+    });
+  }
+  return checkout().then(async (client) => {
     try {
-      await client.query(`SET statement_timeout TO ${STATEMENT_TIMEOUT_MS}`);
-      client.__ohStatementTimeoutMs = STATEMENT_TIMEOUT_MS;
-    } catch (err) {
+      await ensureStatementTimeout(client);
+    } catch (setErr) {
       // eslint-disable-next-line no-console
       console.error(
         JSON.stringify({
           component: "db_pool",
           event: "statement_timeout_set_failed",
-          message: err?.message || String(err),
+          message: setErr?.message || String(setErr),
         }),
       );
     }
-  }
-  return client;
+    return client;
+  });
 };
 
 pool.on("error", (err) => {
