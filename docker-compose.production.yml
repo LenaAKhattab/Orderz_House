@@ -1,0 +1,28 @@
+# Production VPS topology for orderzhouse.com (host nginx → 3006/3007).
+#
+# Usage on the VPS (from /root/Orderz_House):
+#   docker compose -f docker-compose.yml -f docker-compose.production.yml up -d --build
+#   bash scripts/orderzhouse-rollout-check.sh
+#
+# Why this file exists:
+# - Neon may be reachable from the VPS primarily over IPv6 while Docker bridge
+#   IPv4 dials hang; backend therefore runs on the host network and listens on 3007.
+# - Frontend stays on the Compose bridge and needs `backend` → host-gateway so its
+#   in-container nginx can resolve the hostname at start (public /api is still
+#   terminated by host nginx → 127.0.0.1:3007).
+#
+# Do NOT commit secrets. backend/.env on the server remains the secret source.
+
+services:
+  backend:
+    network_mode: host
+    ports: !reset []
+    environment:
+      - PORT=3007
+      - NODE_OPTIONS=--require /opt/oh-neon-ipv6.js
+    volumes:
+      - ./backend/ops/neonIpv6Dial.js:/opt/oh-neon-ipv6.js:ro
+
+  frontend:
+    extra_hosts:
+      - "backend:host-gateway"

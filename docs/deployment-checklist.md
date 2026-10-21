@@ -212,3 +212,33 @@ npm run db:verify-schema
 | Backend | Node `npm start` (Render, Railway, Fly, VPS) |
 | Database | Managed Postgres |
 | Webhooks | Public HTTPS URL to `/api/webhooks/stripe` only |
+
+---
+
+## E) Production VPS (orderzhouse.com) — required topology
+
+Host nginx terminates TLS and proxies:
+
+| Path | Upstream |
+|------|----------|
+| `/` | `127.0.0.1:3006` (frontend container) |
+| `/api/`, `/images/`, `/mobile/payment-return` | `127.0.0.1:3007` (backend on host network) |
+
+Deploy with the versioned production overlay (not a one-off server-only file):
+
+```bash
+cd /root/Orderz_House
+git fetch origin && git checkout main && git pull --ff-only origin main
+docker compose -f docker-compose.yml -f docker-compose.production.yml up -d --build
+bash scripts/orderzhouse-rollout-check.sh
+```
+
+`docker-compose.production.yml` keeps:
+
+- backend `network_mode: host` + `PORT=3007`
+- Neon IPv6 dial helper mounted at `/opt/oh-neon-ipv6.js`
+- frontend `extra_hosts: backend:host-gateway` so the SPA container nginx can resolve `backend` at start
+
+Restart policy for both services remains `unless-stopped`.
+
+Rollout is **not** successful until `scripts/orderzhouse-rollout-check.sh` reports `ROLLOUT_READY` (local 3006/3007, DB connected, frontend resolves `backend`, public `/` + `/api/health`, and one DB-backed public endpoint).
