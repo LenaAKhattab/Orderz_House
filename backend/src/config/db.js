@@ -35,6 +35,9 @@ function positiveIntEnv(name, fallback) {
 /**
  * Fail acquisition and recycle idle clients so a saturated/stale Neon pool cannot
  * hang every HTTP request indefinitely (nginx then surfaces upstream timeouts).
+ *
+ * Do NOT pass `options: -c statement_timeout=…` — Neon’s pooled endpoint rejects
+ * that startup parameter. Apply the timeout with SET after connect instead.
  */
 function resolvePoolOptions(databaseUrl = process.env.DATABASE_URL) {
   return {
@@ -47,12 +50,35 @@ function resolvePoolOptions(databaseUrl = process.env.DATABASE_URL) {
     allowExitOnIdle: true,
     keepAlive: true,
     keepAliveInitialDelayMillis: 10000,
-    // Cap long-running queries so one stuck DB round-trip cannot pin a pool slot forever.
-    options: `-c statement_timeout=${positiveIntEnv("PG_STATEMENT_TIMEOUT_MS", 30000)}`,
   };
 }
 
+const STATEMENT_TIMEOUT_MS = positiveIntEnv("PG_STATEMENT_TIMEOUT_MS", 30000);
+
 const pool = new Pool(resolvePoolOptions());
+
+// Apply statement_timeout after checkout (Neon pooler rejects startup `options`).
+// Wrap connect so SET finishes before the client is handed to callers / pool.query.
+const checkout = pool.connect.bind(pool);
+pool.connect = async function connectWithStatementTimeout(...args) {
+  const client = await checkout(...args);
+  if (!client.__ohStatementTimeoutMs) {
+    try {
+      await client.query(`SET statement_timeout TO ${STATEMENT_TIMEOUT_MS}`);
+      client.__ohStatementTimeoutMs = STATEMENT_TIMEOUT_MS;
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error(
+        JSON.stringify({
+          component: "db_pool",
+          event: "statement_timeout_set_failed",
+          message: err?.message || String(err),
+        }),
+      );
+    }
+  }
+  return client;
+};
 
 pool.on("error", (err) => {
   // Idle client errors must not crash the process silently; log and keep serving.
