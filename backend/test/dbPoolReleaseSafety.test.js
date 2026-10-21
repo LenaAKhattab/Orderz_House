@@ -27,7 +27,11 @@ describe("db pool release safety", () => {
     assert.equal(opts.maxUses, 7500);
     assert.equal(opts.allowExitOnIdle, true);
     assert.equal(opts.keepAlive, true);
-    assert.match(String(opts.options || ""), /statement_timeout=30000/);
+    assert.equal(opts.options, undefined);
+    const dbSrc = fs.readFileSync(path.join(__dirname, "..", "src", "config", "db.js"), "utf8");
+    assert.match(dbSrc, /connectWithStatementTimeout/);
+    assert.match(dbSrc, /SET statement_timeout TO/);
+    assert.doesNotMatch(dbSrc, /options:\s*`-c statement_timeout/);
   });
 
   it("health exposes runtime diagnostics only when allowed", () => {
