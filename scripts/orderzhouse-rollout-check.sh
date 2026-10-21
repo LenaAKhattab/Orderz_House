@@ -48,12 +48,23 @@ else
   fail "database not connected ($(head -c 200 /tmp/oh_rollout_body.json))"
 fi
 
-# 6 frontend container can resolve backend hostname (Compose DNS / extra_hosts)
+# 6 frontend container can resolve + reach backend on Production host port 3007
 if docker ps --format '{{.Names}}' | grep -qx orderzhouse-frontend; then
-  if docker exec orderzhouse-frontend getent hosts backend >/dev/null 2>&1; then
-    pass "frontend resolves backend"
-  else
+  if ! docker exec orderzhouse-frontend getent hosts backend >/dev/null 2>&1; then
     fail "frontend cannot resolve backend"
+  fi
+  pass "frontend resolves backend"
+  if docker exec orderzhouse-frontend wget -qO- -T 5 http://backend:3007/api/health 2>/dev/null \
+    | grep -q '"database":"connected"'; then
+    pass "frontend reaches backend:3007"
+  else
+    fail "frontend cannot reach backend:3007/api/health"
+  fi
+  if curl -fsS -m 8 -o /tmp/oh_rollout_3006_api.json http://127.0.0.1:3006/api/health \
+    && grep -q '"database":"connected"' /tmp/oh_rollout_3006_api.json; then
+    pass "local frontend:3006 proxies /api"
+  else
+    fail "local frontend:3006 /api/health (SPA nginx upstream)"
   fi
 else
   echo "WARN frontend container not named orderzhouse-frontend — skip resolve check"
