@@ -14,6 +14,22 @@ describe("db pool release safety", () => {
     assert.doesNotMatch(dbSrc, /setImmediate\s*\(\s*\(\)\s*=>\s*\{[\s\S]*pg_advisory_unlock/);
   });
 
+  it("resolvePoolOptions fails acquisition and recycles idle clients", () => {
+    process.env.DATABASE_URL =
+      process.env.DATABASE_URL || "postgres://u:p@127.0.0.1:5432/orderz_pool_test";
+    const dbPath = require.resolve("../src/config/db");
+    delete require.cache[dbPath];
+    const { resolvePoolOptions } = require("../src/config/db");
+    const opts = resolvePoolOptions("postgres://u:p@127.0.0.1:5432/orderz_pool_test");
+    assert.equal(opts.max, 10);
+    assert.equal(opts.connectionTimeoutMillis, 10000);
+    assert.equal(opts.idleTimeoutMillis, 30000);
+    assert.equal(opts.maxUses, 7500);
+    assert.equal(opts.allowExitOnIdle, true);
+    assert.equal(opts.keepAlive, true);
+    assert.match(String(opts.options || ""), /statement_timeout=30000/);
+  });
+
   it("health exposes runtime diagnostics only when allowed", () => {
     const src = fs.readFileSync(
       path.join(__dirname, "..", "src", "services", "healthService.js"),

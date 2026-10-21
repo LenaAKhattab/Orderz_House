@@ -26,10 +26,33 @@ function resolvePoolSsl(databaseUrl = process.env.DATABASE_URL) {
   return { rejectUnauthorized: false };
 }
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: resolvePoolSsl(),
-});
+function positiveIntEnv(name, fallback) {
+  const raw = Number(process.env[name]);
+  if (Number.isFinite(raw) && raw > 0) return Math.floor(raw);
+  return fallback;
+}
+
+/**
+ * Fail acquisition and recycle idle clients so a saturated/stale Neon pool cannot
+ * hang every HTTP request indefinitely (nginx then surfaces upstream timeouts).
+ */
+function resolvePoolOptions(databaseUrl = process.env.DATABASE_URL) {
+  return {
+    connectionString: databaseUrl,
+    ssl: resolvePoolSsl(databaseUrl),
+    max: positiveIntEnv("PG_POOL_MAX", 10),
+    connectionTimeoutMillis: positiveIntEnv("PG_CONNECTION_TIMEOUT_MS", 10000),
+    idleTimeoutMillis: positiveIntEnv("PG_IDLE_TIMEOUT_MS", 30000),
+    maxUses: positiveIntEnv("PG_POOL_MAX_USES", 7500),
+    allowExitOnIdle: true,
+    keepAlive: true,
+    keepAliveInitialDelayMillis: 10000,
+    // Cap long-running queries so one stuck DB round-trip cannot pin a pool slot forever.
+    options: `-c statement_timeout=${positiveIntEnv("PG_STATEMENT_TIMEOUT_MS", 30000)}`,
+  };
+}
+
+const pool = new Pool(resolvePoolOptions());
 
 pool.on("error", (err) => {
   // Idle client errors must not crash the process silently; log and keep serving.
@@ -56,6 +79,8 @@ const connectDB = async () => {
 module.exports = {
   pool,
   connectDB,
+  resolvePoolSsl,
+  resolvePoolOptions,
   GENERATION_ADVISORY_LOCK_KEY,
   INSTITUTIONAL_RELEASE_ADVISORY_LOCK_KEY,
 };
