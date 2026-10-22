@@ -173,6 +173,7 @@ const Register = () => {
   const [whatsAppNumber, setWhatsAppNumber] = useState("");
   const [gender, setGender] = useState("");
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [referralCode, setReferralCode] = useState(() => sessionStorage.getItem("oh_ref_prefill") || "");
   const [categories, setCategories] = useState([]);
   const [error, setError] = useState("");
   const [emailAlreadyRegistered, setEmailAlreadyRegistered] = useState(false);
@@ -370,6 +371,7 @@ const Register = () => {
       },
       gender,
       termsAccepted,
+      referralCode: referralCode.trim() || undefined,
     };
     if (isFreelancer) {
       const allowed = new Set(CATEGORY_SLUGS.map((c) => c.slug));
@@ -745,6 +747,20 @@ const Register = () => {
                       </div>
                     </div>
                   ) : null}
+
+                  <label className={tw.authField}>
+                    <span className={tw.authFieldLabel}>{t("auth.register.fields.referralCode")}</span>
+                    <div className={tw.authInputWrap}>
+                      <input
+                        className={tw.authInputNoIcon}
+                        value={referralCode}
+                        onChange={(e) => setReferralCode(e.target.value)}
+                        maxLength={32}
+                        disabled={submitting}
+                        dir="ltr"
+                      />
+                    </div>
+                  </label>
 
                   <label className={tw.authFieldCheckbox}>
                     <input

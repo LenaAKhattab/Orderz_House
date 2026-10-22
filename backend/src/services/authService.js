@@ -2,6 +2,7 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const crypto = require("node:crypto");
 const { pool } = require("../config/db");
+const referralAttributionService = require("./referralAttributionService");
 const { ROLES, PUBLIC_SIGNUP_ROLES } = require("../constants/roles");
 const { ensureUserRole, resolveAuthzContext } = require("./rbacService");
 const notificationService = require("./notificationService");
@@ -397,6 +398,23 @@ async function resumeUnverifiedRegistration(userId, data, role, passwordHash, fr
   return { requiresEmailVerification: true, email };
 }
 
+async function tryAttachReferral(userId, role, phone, payload) {
+  try {
+    const fullName = [payload.firstName, payload.familyName].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
+    await referralAttributionService.attachOnRegistration({
+      userId,
+      role,
+      phone,
+      fullName,
+      manualCode: payload.referralCode,
+      cookieToken: payload.referralCookie,
+    });
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error(JSON.stringify({ component: "referral", event: "attach_failed", message: error?.message }));
+  }
+}
+
 function isEmailUniqueViolation(error) {
   return error?.code === "23505" && String(error.detail || "").includes("(email)");
 }
@@ -414,7 +432,7 @@ async function registerUser(payload) {
 
   try {
     if (existing && !existing.email_verified) {
-      return resumeUnverifiedRegistration(
+      const resumed = await resumeUnverifiedRegistration(
         existing.id,
         data,
         role,
@@ -424,6 +442,8 @@ async function registerUser(payload) {
         whatsApp,
         email,
       );
+      await tryAttachReferral(existing.id, role, phone, payload);
+      return resumed;
     }
 
     const accountId = await generateUniqueAccountId();
@@ -460,12 +480,13 @@ async function registerUser(payload) {
       }
       throw e;
     }
+    await tryAttachReferral(row.id, row.role, phone, payload);
     return { requiresEmailVerification: true, email: row.email };
   } catch (error) {
     if (isEmailUniqueViolation(error)) {
       const raced = await findUserByEmail(email);
       if (raced && !raced.email_verified) {
-        return resumeUnverifiedRegistration(
+        const resumed = await resumeUnverifiedRegistration(
           raced.id,
           data,
           role,
@@ -475,6 +496,8 @@ async function registerUser(payload) {
           whatsApp,
           email,
         );
+        await tryAttachReferral(raced.id, role, phone, payload);
+        return resumed;
       }
     }
 

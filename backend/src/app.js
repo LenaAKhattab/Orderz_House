@@ -4,6 +4,8 @@ const cookieParser = require("cookie-parser");
 const morgan = require("morgan");
 const path = require("node:path");
 const stripeWebhookRoutes = require("./routes/stripeWebhookRoutes");
+const referralRoutes = require("./routes/referralRoutes");
+const superAdminReferralRoutes = require("./routes/superAdminReferralRoutes");
 const healthRoutes = require("./routes/healthRoutes");
 const authRoutes = require("./routes/authRoutes");
 const categoriesRoutes = require("./routes/categoriesRoutes");
@@ -166,6 +168,8 @@ app.use("/images", express.static(path.join(__dirname, "..", "images")));
 // use authenticated download routes only (staff/super-admin).
 
 // Versioned API mounting keeps future domains modular (auth/orders/users/etc.).
+app.use("/api/referrals", referralRoutes);
+app.use("/api/super-admin/referrals", superAdminReferralRoutes);
 app.use("/api", healthRoutes);
 app.use("/api", publicRoutes);
 app.use("/api", translationRoutes);

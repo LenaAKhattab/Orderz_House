@@ -88,6 +88,7 @@ const registerValidators = [
     .isLength({ max: 80 })
     .withMessage("اسم العائلة طويل جداً."),
   body("email").trim().notEmpty().withMessage("البريد الإلكتروني مطلوب.").isEmail().withMessage("صيغة البريد الإلكتروني غير صالحة."),
+  body("referralCode").optional({ nullable: true, checkFalsy: true }).trim().isLength({ max: 32 }),
   body("password")
     .notEmpty()
     .withMessage("كلمة المرور مطلوبة.")

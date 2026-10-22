@@ -8,6 +8,7 @@ export const Plans = lazy(() => import("../pages/Plans"));
 export const Orders = lazy(() => import("../pages/Orders"));
 export const Login = lazy(() => import("../pages/Login"));
 export const Register = lazy(() => import("../pages/Register"));
+export const ReferralLanding = lazy(() => import("../pages/ReferralLanding"));
 export const ForgotPassword = lazy(() => import("../pages/ForgotPassword"));
 export const PrivacyPolicy = lazy(() => import("../pages/PrivacyPolicy"));
 export const TermsConditions = lazy(() => import("../pages/TermsConditions"));
@@ -98,6 +99,8 @@ export const FinancialUserMyBonusesPage = lazy(() => import("../pages/dashboard/
 export const SuperAdminSettingsPage = lazy(() => import("../pages/dashboard/SuperAdminSettingsPage"));
 export const SuperAdminAdminsPage = lazy(() => import("../pages/dashboard/SuperAdminAdminsPage"));
 export const SuperAdminUsersPage = lazy(() => import("../pages/dashboard/SuperAdminUsersPage"));
+export const SuperAdminReferralsPage = lazy(() => import("../pages/dashboard/SuperAdminReferralsPage"));
+export const ReferralsDashboardPage = lazy(() => import("../pages/dashboard/ReferralsDashboardPage"));
 export const SuperAdminAccountRestrictionsPage = lazy(
   () => import("../pages/dashboard/SuperAdminAccountRestrictionsPage"),
 );

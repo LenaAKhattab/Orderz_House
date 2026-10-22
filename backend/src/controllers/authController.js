@@ -17,7 +17,10 @@ async function safeNotify(run) {
 
 const register = async (req, res, next) => {
   try {
-    const out = await authService.registerUser(req.body);
+    const out = await authService.registerUser({
+      ...req.body,
+      referralCookie: req.cookies?.oh_ref || null,
+    });
     return res.status(201).json({
       success: true,
       message: "تم إنشاء الحساب. راجع بريدك لإدخال رمز التحقق.",

@@ -13,6 +13,7 @@ export const FREELANCER_NAV_MAIN = [
   },
   { to: "/dashboard/freelancer/my-orders", labelKey: "dashboard.nav.freelancer.myRequests", icon: "my-orders" },
   { to: "/dashboard/freelancer/financial-claims", labelKey: "dashboard.nav.freelancer.wallet", icon: "wallet" },
+  { to: "/dashboard/referrals", labelKey: "dashboard.nav.freelancer.referrals", icon: "wallet" },
   { to: "/dashboard/freelancer/plans", labelKey: "dashboard.nav.freelancer.plans", icon: "plans" },
   { to: "/dashboard/freelancer/courses", labelKey: "dashboard.nav.freelancer.courses", icon: "courses" },
   { to: "/dashboard/freelancer/getting-started", labelKey: "dashboard.nav.freelancer.gettingStarted", icon: "courses" },
@@ -29,7 +30,8 @@ export const FREELANCER_NAV_FOOTER = [
 ];
 
 export function isFreelancerDashboardPath(pathname) {
-  return String(pathname || "").startsWith("/dashboard/freelancer");
+  const p = String(pathname || "");
+  return p.startsWith("/dashboard/freelancer") || p === "/dashboard/referrals";
 }
 
 export function freelancerPageTitle(pathname, t) {

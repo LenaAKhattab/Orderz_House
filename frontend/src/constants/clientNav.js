@@ -5,6 +5,7 @@ export const CLIENT_NAV_MAIN = [
   { to: "/dashboard/client", labelKey: "dashboard.nav.client.home", icon: "dashboard", end: true },
   { to: "/dashboard/client/my-orders", labelKey: "dashboard.nav.client.myRequests", icon: "my-orders" },
   { to: "/dashboard/client/financial", labelKey: "dashboard.nav.client.finance", icon: "wallet" },
+  { to: "/dashboard/referrals", labelKey: "dashboard.nav.client.referrals", icon: "wallet" },
   {
     to: "/dashboard/client/orders",
     labelKey: "dashboard.nav.client.requestMarketplace",
@@ -41,7 +42,8 @@ export function isClientDashboardShellPath(pathname) {
     p === "/dashboard/client/orders" ||
     p.startsWith("/dashboard/client/orders/") ||
     p === "/dashboard/freelancer/orders" ||
-    p.startsWith("/dashboard/freelancer/orders/")
+    p.startsWith("/dashboard/freelancer/orders/") ||
+    p === "/dashboard/referrals"
   );
 }
 

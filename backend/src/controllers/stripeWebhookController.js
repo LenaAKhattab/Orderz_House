@@ -233,6 +233,11 @@ async function handleStripeWebhook(req, res) {
     ) {
       // Bid package: record only — Bid economic reversal is PRODUCT_DECISION_REQUIRED.
       applyResult = await applyBidPackageProviderRefundOrDisputeRecordOnly(event.data.object, eventType);
+      const disputeLost = eventType === "charge.dispute.closed" && String(event.data.object?.status || "") === "lost";
+      if (eventType === "charge.refunded" || disputeLost) {
+        const referralBridge = require("../services/referralPaymentBridge");
+        await referralBridge.reverseFromStripeCharge(event.data.object);
+      }
     } else {
       logStripeWebhook({ eventId, type: eventType, outcome: "unhandled_type" });
       applyResult = { status: "ignored", reason: "unhandled_event_type" };
@@ -1012,15 +1017,23 @@ async function applyCheckoutSessionCompleted(session, dbPool = pool) {
   }
   if (purpose === "marketplace_membership_checkout") {
     const membershipCheckout = require("../services/marketplaceMembershipCheckoutService");
-    return membershipCheckout.applyMarketplaceMembershipCheckoutSessionCompleted(
+    const result = await membershipCheckout.applyMarketplaceMembershipCheckoutSessionCompleted(
       session,
       meta,
       dbPool,
     );
+    const bridge = require("../services/referralPaymentBridge");
+    const { PAYMENT_TYPES } = require("../domain/referralPolicy");
+    await bridge.processCheckoutSession(session, PAYMENT_TYPES.MARKETPLACE_MEMBERSHIP, result);
+    return result;
   }
   if (purpose === "training_package_purchase") {
     const trainingCheckout = require("../services/trainingPackageCheckoutService");
-    return trainingCheckout.applyTrainingPackageCheckoutSessionCompleted(session, meta, dbPool);
+    const result = await trainingCheckout.applyTrainingPackageCheckoutSessionCompleted(session, meta, dbPool);
+    const bridge = require("../services/referralPaymentBridge");
+    const { PAYMENT_TYPES } = require("../domain/referralPolicy");
+    await bridge.processCheckoutSession(session, PAYMENT_TYPES.TRAINING_PACKAGE, result);
+    return result;
   }
   if (!["client_fixed_order", "client_selected_bid"].includes(purpose)) {
     return { status: "ignored", reason: "unknown_checkout_purpose" };
