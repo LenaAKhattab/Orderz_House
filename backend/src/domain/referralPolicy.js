@@ -6,6 +6,12 @@
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const ATTRIBUTION_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
 const MAX_PERCENT_BPS = 10000;
+/** Referral discount safety cap: 50%. */
+const MAX_DISCOUNT_BPS = 5000;
+/** Smallest amount we will ask Stripe to charge after a referral discount (1 JOD). */
+const MIN_DISCOUNTED_CHARGE_MINOR = 1000;
+/** Stripe requires three-decimal currencies (JOD) to be charged in multiples of 10 fils. */
+const STRIPE_JOD_STEP_MINOR = 10;
 
 const PAYMENT_TYPES = Object.freeze({
   TRAINING_PACKAGE: "training_package_purchase",
@@ -50,14 +56,49 @@ function calculateCommissionMinor({ mode, percentageBps, fixedMinor, baseMinor }
   return 0;
 }
 
+/**
+ * Referral discount on a canonical list price (integer fils).
+ * Never larger than the price minus the minimum charge; rounded down to Stripe's JOD step.
+ */
 function calculateDiscountMinor({ enabled, mode, percentageBps, fixedMinor, baseMinor }) {
   if (!enabled) return 0;
-  return calculateCommissionMinor({
-    mode,
-    percentageBps,
-    fixedMinor,
-    baseMinor,
-  });
+  const base = Math.trunc(Number(baseMinor));
+  if (!Number.isInteger(base) || base <= MIN_DISCOUNTED_CHARGE_MINOR) return 0;
+  let discount = 0;
+  if (mode === "percentage") {
+    const bps = Math.trunc(Number(percentageBps));
+    if (!Number.isInteger(bps) || bps <= 0 || bps > MAX_DISCOUNT_BPS) return 0;
+    discount = Math.floor((base * bps) / 10000);
+  } else if (mode === "fixed") {
+    const fixed = Math.trunc(Number(fixedMinor));
+    if (!Number.isInteger(fixed) || fixed <= 0) return 0;
+    discount = fixed;
+  } else {
+    return 0;
+  }
+  discount = Math.min(discount, base - MIN_DISCOUNTED_CHARGE_MINOR);
+  discount -= discount % STRIPE_JOD_STEP_MINOR;
+  return discount > 0 ? discount : 0;
+}
+
+/**
+ * Commission target after refunds: recomputed from the remaining captured base with the
+ * commission's own snapshotted terms. Returns how much of the commission must be reversed now.
+ */
+function refundAdjustment({ mode, percentageBps, fixedMinor, baseMinor, refundedBaseMinor, commissionMinor, reversedMinor }) {
+  const base = Math.trunc(Number(baseMinor));
+  const refunded = Math.min(Math.max(Math.trunc(Number(refundedBaseMinor)) || 0, 0), base);
+  const remaining = base - refunded;
+  const target = remaining > 0
+    ? Math.min(calculateCommissionMinor({ mode, percentageBps, fixedMinor, baseMinor: remaining }), Number(commissionMinor))
+    : 0;
+  const effective = Number(commissionMinor) - (Number(reversedMinor) || 0);
+  return {
+    refundedBaseMinor: refunded,
+    targetMinor: target,
+    reverseMinor: Math.max(effective - target, 0),
+    fullyReversed: target === 0,
+  };
 }
 
 /**
@@ -146,12 +187,14 @@ function validatePolicyDraft(draft) {
     if (dMode !== "percentage" && dMode !== "fixed") errors.push("discount_mode");
     if (dMode === "percentage") {
       const bps = Math.trunc(Number(draft.discountPercentageBps));
-      if (!Number.isInteger(bps) || bps <= 0 || bps > MAX_PERCENT_BPS) errors.push("discount_percentage");
+      if (!Number.isInteger(bps) || bps <= 0 || bps > MAX_DISCOUNT_BPS) errors.push("discount_percentage");
     }
     if (dMode === "fixed") {
       const fixed = Math.trunc(Number(draft.discountFixedMinor));
-      if (!Number.isInteger(fixed) || fixed <= 0) errors.push("discount_fixed");
+      if (!Number.isInteger(fixed) || fixed <= 0 || fixed % STRIPE_JOD_STEP_MINOR !== 0) errors.push("discount_fixed");
     }
+    const dTypes = Array.isArray(draft.discountPaymentTypes) ? draft.discountPaymentTypes : [];
+    if (!dTypes.length || dTypes.some((type) => !allowed.has(type))) errors.push("discount_payment_types");
   }
   return { ok: errors.length === 0, errors };
 }
@@ -172,7 +215,9 @@ function policySnapshotUnchanged(previous, next) {
     Boolean(previous.discountEnabled) === Boolean(next.discountEnabled) &&
     String(previous.discountMode || "") === String(next.discountMode || "") &&
     Number(previous.discountPercentageBps || 0) === Number(next.discountPercentageBps || 0) &&
-    Number(previous.discountFixedMinor || 0) === Number(next.discountFixedMinor || 0)
+    Number(previous.discountFixedMinor || 0) === Number(next.discountFixedMinor || 0) &&
+    JSON.stringify([...(previous.discountPaymentTypes || [])].sort()) ===
+      JSON.stringify([...(next.discountEnabled ? next.discountPaymentTypes || [] : [])].sort())
   );
 }
 
@@ -180,6 +225,8 @@ module.exports = {
   CODE_ALPHABET,
   ATTRIBUTION_WINDOW_MS,
   MAX_PERCENT_BPS,
+  MAX_DISCOUNT_BPS,
+  MIN_DISCOUNTED_CHARGE_MINOR,
   PAYMENT_TYPES,
   DEFAULT_ELIGIBLE_PAYMENT_TYPES,
   ELIGIBLE_ROLES,
@@ -188,6 +235,7 @@ module.exports = {
   isEligibleReferralRole,
   calculateCommissionMinor,
   calculateDiscountMinor,
+  refundAdjustment,
   resolveAttributionSource,
   nextCommissionStatus,
   sumLedgerBuckets,

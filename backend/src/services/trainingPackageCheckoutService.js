@@ -22,6 +22,8 @@ const {
   lineItemProductNameForContext,
 } = require("../utils/fazaatStripeMetadata");
 const trainingPackagesService = require("./trainingPackagesService");
+const { resolveReferralDiscount } = require("./referralDiscountService");
+const { PAYMENT_TYPES: REFERRAL_PAYMENT_TYPES } = require("../domain/referralPolicy");
 
 const PURPOSE = "training_package_purchase";
 const PURCHASE_TYPE = "training_package";
@@ -150,7 +152,7 @@ async function createTrainingPackageCheckoutSession(input = {}, deps = {}) {
   }
 
   const { rows: pendingRows } = await db.query(
-    `SELECT id, stripe_checkout_session_id, checkout_url
+    `SELECT id, stripe_checkout_session_id, checkout_url, amount_jod
        FROM training_package_purchases
       WHERE user_id = $1
         AND package_code = $2
@@ -166,7 +168,7 @@ async function createTrainingPackageCheckoutSession(input = {}, deps = {}) {
       checkoutUrl: pendingRows[0].checkout_url,
       sessionId: pendingRows[0].stripe_checkout_session_id,
       packageCode: resolved.packageCode,
-      amountJod: resolved.priceJod,
+      amountJod: Number(pendingRows[0].amount_jod) || resolved.priceJod,
       currency: CURRENCY,
       alreadyPending: true,
       membershipGranted: false,
@@ -174,18 +176,34 @@ async function createTrainingPackageCheckoutSession(input = {}, deps = {}) {
     };
   }
 
+  // Referral discount: server-side, from the referred user's snapshotted policy only.
+  const discount = await (deps.resolveReferralDiscount || resolveReferralDiscount)(
+    {
+      userId: freelancerUserId,
+      paymentType: REFERRAL_PAYMENT_TYPES.TRAINING_PACKAGE,
+      listAmountMinor: resolved.expectedAmountMinor,
+    },
+    db,
+  );
+  const chargeMinor = discount.discountMinor > 0 ? discount.chargeMinor : resolved.expectedAmountMinor;
+  const chargeJod = chargeMinor / 1000;
+
   const inserted = await db.query(
     `INSERT INTO training_package_purchases (
-       user_id, package_code, package_name_ar, package_name_en, amount_jod, currency, status
-     ) VALUES ($1, $2, $3, $4, $5, $6, 'pending')
+       user_id, package_code, package_name_ar, package_name_en, amount_jod, currency, status,
+       list_amount_jod, referral_discount_minor, referral_policy_version_id
+     ) VALUES ($1, $2, $3, $4, $5, $6, 'pending', $7, $8, $9)
      RETURNING id`,
     [
       freelancerUserId,
       resolved.packageCode,
       resolved.pkg.nameAr,
       resolved.pkg.nameEn,
-      resolved.priceJod,
+      chargeJod,
       CURRENCY,
+      resolved.priceJod,
+      discount.discountMinor,
+      discount.policyVersionId,
     ],
   );
   const purchaseId = Number(inserted.rows[0].id);
@@ -201,7 +219,7 @@ async function createTrainingPackageCheckoutSession(input = {}, deps = {}) {
       purpose: PURPOSE,
       userId: freelancerUserId,
       purchaseId,
-      expectedAmountMinor: resolved.expectedAmountMinor,
+      expectedAmountMinor: chargeMinor,
       currency: CURRENCY,
       flow: PURCHASE_TYPE,
     }),
@@ -211,7 +229,13 @@ async function createTrainingPackageCheckoutSession(input = {}, deps = {}) {
       training_package_code: resolved.packageCode,
       user_id: String(freelancerUserId),
       purchase_id: String(purchaseId),
-      expectedAmountMinor: String(resolved.expectedAmountMinor),
+      expectedAmountMinor: String(chargeMinor),
+      ...(discount.discountMinor > 0
+        ? {
+            referralDiscountMinor: String(discount.discountMinor),
+            referralListAmountMinor: String(resolved.expectedAmountMinor),
+          }
+        : {}),
     },
   );
 
@@ -233,7 +257,7 @@ async function createTrainingPackageCheckoutSession(input = {}, deps = {}) {
             quantity: 1,
             price_data: {
               currency: CURRENCY.toLowerCase(),
-              unit_amount: resolved.expectedAmountMinor,
+              unit_amount: chargeMinor,
               product_data: {
                 name: productName.slice(0, 120),
                 description: String(label).slice(0, 200),
@@ -274,7 +298,9 @@ async function createTrainingPackageCheckoutSession(input = {}, deps = {}) {
     sessionId: session.id,
     purchaseId: String(purchaseId),
     packageCode: resolved.packageCode,
-    amountJod: resolved.priceJod,
+    amountJod: chargeJod,
+    listAmountJod: resolved.priceJod,
+    referralDiscountJod: discount.discountMinor / 1000,
     currency: CURRENCY,
     membershipGranted: false,
     termStarted: false,

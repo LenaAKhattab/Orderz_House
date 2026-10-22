@@ -12,28 +12,32 @@ export function requestReferralWithdrawal(amountJod) {
   return api.post("/referrals/withdrawals", { amountJod });
 }
 
+export function cancelReferralWithdrawalRequest(id) {
+  return api.post(`/referrals/withdrawals/${id}/cancel`);
+}
+
 export function getReferralOverviewRequest(params) {
   return api.get("/super-admin/referrals/overview", { params });
 }
 
-export function getReferralTopRequest() {
-  return api.get("/super-admin/referrals/top");
+export function getReferralTopRequest(params) {
+  return api.get("/super-admin/referrals/top", { params });
 }
 
-export function listReferralRelationshipsRequest() {
-  return api.get("/super-admin/referrals/relationships");
+export function listReferralRelationshipsRequest(params) {
+  return api.get("/super-admin/referrals/relationships", { params });
 }
 
 export function getReferralRelationshipRequest(id) {
   return api.get(`/super-admin/referrals/relationships/${id}`);
 }
 
-export function listReferralCommissionsRequest() {
-  return api.get("/super-admin/referrals/commissions");
+export function listReferralCommissionsRequest(params) {
+  return api.get("/super-admin/referrals/commissions", { params });
 }
 
-export function listReferralWithdrawalsRequest() {
-  return api.get("/super-admin/referrals/withdrawals");
+export function listReferralWithdrawalsRequest(params) {
+  return api.get("/super-admin/referrals/withdrawals", { params });
 }
 
 export function reviewReferralWithdrawalRequest(id, body) {
@@ -46,6 +50,10 @@ export function listReferralRewardsRequest() {
 
 export function createReferralRewardRequest(body) {
   return api.post("/super-admin/referrals/rewards", body);
+}
+
+export function updateReferralRewardRequest(id, body) {
+  return api.patch(`/super-admin/referrals/rewards/${id}`, body);
 }
 
 export function getReferralSettingsRequest() {

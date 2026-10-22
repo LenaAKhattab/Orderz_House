@@ -236,7 +236,7 @@ async function handleStripeWebhook(req, res) {
       const disputeLost = eventType === "charge.dispute.closed" && String(event.data.object?.status || "") === "lost";
       if (eventType === "charge.refunded" || disputeLost) {
         const referralBridge = require("../services/referralPaymentBridge");
-        await referralBridge.reverseFromStripeCharge(event.data.object);
+        await referralBridge.reverseFromStripeCharge(event.data.object, { dispute: disputeLost });
       }
     } else {
       logStripeWebhook({ eventId, type: eventType, outcome: "unhandled_type" });

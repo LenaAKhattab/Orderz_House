@@ -21,6 +21,9 @@ function createHarness() {
         const paid = purchases.filter((p) => p.user_id === params[0] && p.status === "paid");
         return { rows: paid.slice(-1).map((p) => ({ id: p.id, package_code: p.package_code })) };
       }
+      if (sql.includes("FROM user_referrals")) {
+        return { rows: [] };
+      }
       if (sql.includes("checkout_url IS NOT NULL")) {
         return { rows: [] };
       }

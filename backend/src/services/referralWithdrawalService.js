@@ -13,6 +13,10 @@ async function availableMinor(client, userId) {
   return Number(rows[0]?.n || 0);
 }
 
+async function cancelOwnWithdrawal(userId, withdrawalId) {
+  return reviewWithdrawal({ withdrawalId, adminId: null, action: "cancel", userId });
+}
+
 async function requestWithdrawal(userId, amountMinor) {
   const policy = await getCurrentPolicy();
   const db = await pool.connect();
@@ -36,6 +40,16 @@ async function requestWithdrawal(userId, amountMinor) {
       throw error;
     }
     const amount = Math.trunc(Number(amountMinor));
+    const open = await db.query(
+      `SELECT 1 FROM referral_withdrawal_requests WHERE user_id = $1 AND status IN ('pending', 'approved') LIMIT 1`,
+      [userId],
+    );
+    if (open.rows[0]) {
+      const error = new Error("withdrawal_already_open");
+      error.publicCode = "WITHDRAWAL_ALREADY_OPEN";
+      error.status = 409;
+      throw error;
+    }
     const inserted = await db.query(
       `INSERT INTO referral_withdrawal_requests (user_id, amount_minor, status)
        VALUES ($1, $2, 'pending')
@@ -62,13 +76,25 @@ async function requestWithdrawal(userId, amountMinor) {
     return withdrawal;
   } catch (error) {
     await db.query("ROLLBACK");
+    if (error?.code === "23505") {
+      error.publicCode = "WITHDRAWAL_ALREADY_OPEN";
+      error.status = 409;
+    }
     throw error;
   } finally {
     db.release();
   }
 }
 
-async function reviewWithdrawal({ withdrawalId, adminId, action, payoutReference, note }) {
+async function reviewWithdrawal({ withdrawalId, adminId, action, payoutReference, note, userId = null }) {
+  const reference = String(payoutReference || "").trim().slice(0, 200);
+  const cleanNote = note == null ? null : String(note).trim().slice(0, 2000) || null;
+  if (action === "paid" && !reference) {
+    const error = new Error("payout_reference_required");
+    error.status = 400;
+    error.publicCode = "PAYOUT_REFERENCE_REQUIRED";
+    throw error;
+  }
   const db = await pool.connect();
   try {
     await db.query("BEGIN");
@@ -77,26 +103,30 @@ async function reviewWithdrawal({ withdrawalId, adminId, action, payoutReference
       [withdrawalId],
     );
     const row = rows[0];
-    if (!row) {
+    if (!row || (userId != null && Number(row.user_id) !== Number(userId))) {
       const error = new Error("not_found");
       error.status = 404;
       error.publicCode = "NOT_FOUND";
       throw error;
     }
-    if (action === "approve" && row.status === "pending") {
+    if (action === "approve" && userId == null && row.status === "pending") {
       await db.query(
         `UPDATE referral_withdrawal_requests
             SET status = 'approved', reviewed_by_admin_id = $2, reviewed_at = NOW(), admin_note = COALESCE($3, admin_note)
           WHERE id = $1`,
-        [withdrawalId, adminId, note || null],
+        [withdrawalId, adminId, cleanNote],
       );
-    } else if ((action === "reject" || action === "cancel") && ["pending", "approved"].includes(row.status)) {
+    } else if (
+      (action === "reject" || action === "cancel") &&
+      (userId != null ? row.status === "pending" : ["pending", "approved"].includes(row.status))
+    ) {
       const next = action === "reject" ? "rejected" : "cancelled";
       await db.query(
         `UPDATE referral_withdrawal_requests
-            SET status = $2, reviewed_by_admin_id = $3, reviewed_at = NOW(), admin_note = COALESCE($4, admin_note)
+            SET status = $2, reviewed_by_admin_id = $3, reviewed_at = NOW(), admin_note = COALESCE($4, admin_note),
+                cancelled_by_user = $5
           WHERE id = $1`,
-        [withdrawalId, next, adminId, note || null],
+        [withdrawalId, next, adminId, cleanNote, userId != null],
       );
       await db.query(
         `INSERT INTO referral_wallet_ledger (
@@ -113,13 +143,13 @@ async function reviewWithdrawal({ withdrawalId, adminId, action, payoutReference
           `withdraw-restore-available:${row.id}`,
         ],
       );
-    } else if (action === "paid" && ["pending", "approved"].includes(row.status)) {
+    } else if (action === "paid" && userId == null && ["pending", "approved"].includes(row.status)) {
       await db.query(
         `UPDATE referral_withdrawal_requests
             SET status = 'paid', reviewed_by_admin_id = $2, reviewed_at = NOW(), paid_at = NOW(),
                 payout_reference = $3, admin_note = COALESCE($4, admin_note)
           WHERE id = $1`,
-        [withdrawalId, adminId, payoutReference || null, note || null],
+        [withdrawalId, adminId, reference, cleanNote],
       );
       await db.query(
         `INSERT INTO referral_wallet_ledger (
@@ -145,7 +175,18 @@ async function reviewWithdrawal({ withdrawalId, adminId, action, payoutReference
     await db.query(
       `INSERT INTO referral_admin_audit (admin_user_id, action, entity_type, entity_id, metadata)
        VALUES ($1, $2, 'referral_withdrawal', $3, $4::jsonb)`,
-      [adminId, action, String(withdrawalId), JSON.stringify({ payoutReference: payoutReference || null })],
+      [
+        adminId,
+        userId != null ? "user_cancel" : action,
+        String(withdrawalId),
+        JSON.stringify({
+          payoutReference: reference || null,
+          note: cleanNote,
+          fromStatus: row.status,
+          amountMinor: Number(row.amount_minor),
+          userId: Number(row.user_id),
+        }),
+      ],
     );
     await db.query("COMMIT");
   } catch (error) {
@@ -160,4 +201,5 @@ module.exports = {
   availableMinor,
   requestWithdrawal,
   reviewWithdrawal,
+  cancelOwnWithdrawal,
 };

@@ -163,6 +163,21 @@ const startServer = async () => {
   }
 
   try {
+    const { startReferralHoldProcessor } = require("./src/config/referralHoldProcessor");
+    const referralHold = startReferralHoldProcessor();
+    // eslint-disable-next-line no-console
+    console.log(
+      JSON.stringify({
+        component: "referral_hold",
+        event: referralHold.enabled ? "interval_started" : "interval_disabled",
+        tickMs: referralHold.tickMs,
+      }),
+    );
+  } catch (err) {
+    console.error("[referralHold] scheduler start failed:", err?.message || err);
+  }
+
+  try {
     const {
       isInProcessMembershipReconcileEnabled,
       getMarketplaceMembershipReconcileTickMs,

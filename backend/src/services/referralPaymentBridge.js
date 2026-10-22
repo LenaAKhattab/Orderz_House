@@ -20,18 +20,27 @@ async function processCheckoutSession(session, paymentType, result) {
     paymentType,
     paymentSourceId: sourceId,
     paidAmountMinor: Number(session?.amount_total),
+    discountMinor: Number(meta.referralDiscountMinor || 0),
+    listAmountMinor: Number(meta.referralListAmountMinor || 0) || null,
     currency: session?.currency || "jod",
     stripePaymentIntentId: paymentIntentId(session),
     paidAt: new Date().toISOString(),
   });
 }
 
-async function reverseFromStripeCharge(charge) {
-  const paymentIntent = typeof charge?.payment_intent === "string" ? charge.payment_intent : charge?.payment_intent?.id;
-  if (!paymentIntent && !charge?.id) return { reversed: [] };
+/**
+ * charge.refunded → cumulative amount_refunded drives a partial/full commission adjustment.
+ * charge.dispute.closed (lost) → full reversal.
+ */
+async function reverseFromStripeCharge(object, { dispute = false } = {}) {
+  const paymentIntent = typeof object?.payment_intent === "string" ? object.payment_intent : object?.payment_intent?.id;
+  if (!paymentIntent) return { reversed: [] };
+  const refunded = Number(object?.amount_refunded);
+  const fullRefund = dispute || object?.refunded === true || !Number.isInteger(refunded);
   return reverseReferralCommission({
-    stripePaymentIntentId: paymentIntent || null,
-    chargeId: charge?.id || null,
+    stripePaymentIntentId: paymentIntent,
+    refundedAmountMinor: fullRefund ? null : refunded,
+    reason: dispute ? "dispute_lost" : "refund",
   });
 }
 

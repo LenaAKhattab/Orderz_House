@@ -23,6 +23,7 @@ function mapPolicy(row) {
     discountMode: row.discount_mode,
     discountPercentageBps: row.discount_percentage_bps == null ? null : Number(row.discount_percentage_bps),
     discountFixedMinor: row.discount_fixed_minor == null ? null : Number(row.discount_fixed_minor),
+    discountPaymentTypes: row.discount_payment_types || [],
     createdAt: row.created_at,
     createdByAdminId: row.created_by_admin_id == null ? null : Number(row.created_by_admin_id),
   };
@@ -37,9 +38,17 @@ async function getCurrentPolicy(client = pool) {
 
 async function listPolicyHistory(client = pool) {
   const { rows } = await client.query(
-    `SELECT * FROM referral_commission_policy_versions ORDER BY id DESC`,
+    `SELECT p.*, NULLIF(TRIM(CONCAT_WS(' ', u.first_name, u.family_name)), '') AS created_by_name,
+            (SELECT COUNT(*)::int FROM user_referrals r WHERE r.policy_version_id = p.id) AS referral_count
+       FROM referral_commission_policy_versions p
+       LEFT JOIN users u ON u.id = p.created_by_admin_id
+      ORDER BY p.id DESC`,
   );
-  return rows.map(mapPolicy);
+  return rows.map((row) => ({
+    ...mapPolicy(row),
+    createdByName: row.created_by_name || null,
+    referralCount: Number(row.referral_count || 0),
+  }));
 }
 
 function randomCode() {
@@ -57,10 +66,15 @@ async function ensureReferralCode(userId, role, client = pool) {
     const code = randomCode();
     try {
       const inserted = await client.query(
-        `INSERT INTO referral_codes (user_id, code) VALUES ($1, $2) RETURNING *`,
+        `INSERT INTO referral_codes (user_id, code) VALUES ($1, $2)
+         ON CONFLICT (user_id) DO NOTHING
+         RETURNING *`,
         [userId, code],
       );
-      return inserted.rows[0];
+      if (inserted.rows[0]) return inserted.rows[0];
+      // A concurrent request created this user's code first — return that one.
+      const raced = await client.query(`SELECT * FROM referral_codes WHERE user_id = $1`, [userId]);
+      if (raced.rows[0]) return raced.rows[0];
     } catch (error) {
       if (error?.code !== "23505") throw error;
     }
@@ -87,6 +101,21 @@ async function regenerateReferralCode(userId, adminId, client = pool) {
 }
 
 async function createPolicyVersion(draft, adminId, client = pool) {
+  if (client === pool) {
+    const db = await pool.connect();
+    try {
+      await db.query("BEGIN");
+      await db.query(`SELECT pg_advisory_xact_lock(hashtext('referral_policy_versions'))`);
+      const created = await createPolicyVersion(draft, adminId, db);
+      await db.query("COMMIT");
+      return created;
+    } catch (error) {
+      await db.query("ROLLBACK");
+      throw error;
+    } finally {
+      db.release();
+    }
+  }
   const validation = validatePolicyDraft(draft);
   if (!validation.ok) {
     const error = new Error("invalid_referral_policy");
@@ -107,8 +136,8 @@ async function createPolicyVersion(draft, adminId, client = pool) {
        enabled, calculation_mode, percentage_bps, fixed_amount_minor, currency,
        eligible_payment_types, commission_hold_days, minimum_withdrawal_minor,
        discount_enabled, discount_mode, discount_percentage_bps, discount_fixed_minor,
-       created_by_admin_id
-     ) VALUES ($1,$2,$3,$4,'JOD',$5::text[],$6,$7,$8,$9,$10,$11,$12)
+       created_by_admin_id, discount_payment_types
+     ) VALUES ($1,$2,$3,$4,'JOD',$5::text[],$6,$7,$8,$9,$10,$11,$12,$13::text[])
      RETURNING *`,
     [
       Boolean(draft.enabled),
@@ -123,6 +152,7 @@ async function createPolicyVersion(draft, adminId, client = pool) {
       draft.discountEnabled && draft.discountMode === "percentage" ? Math.trunc(draft.discountPercentageBps) : null,
       draft.discountEnabled && draft.discountMode === "fixed" ? Math.trunc(draft.discountFixedMinor) : null,
       adminId,
+      draft.discountEnabled ? draft.discountPaymentTypes : [],
     ],
   );
   await client.query(

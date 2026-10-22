@@ -15,6 +15,7 @@ const marketplaceEliteDirectOrdersController = require("../controllers/marketpla
 const marketplaceBidCreditsController = require("../controllers/marketplaceBidCreditsController");
 const { getBidCreditReconcileSecret } = require("../config/marketplaceBidCreditReconcile");
 const { isProduction } = require("../config/env");
+const { getReferralHoldProcessorSecret } = require("../config/referralHoldProcessor");
 
 const router = express.Router();
 
@@ -87,6 +88,28 @@ router.post("/priority-auctions/resolve-tick", async (req, res, next) => {
     });
   }
   return marketplacePriorityAuctionController.runPriorityAuctionResolveTick(req, res, next);
+});
+
+router.post("/referrals/hold-tick", async (req, res, next) => {
+  const secret = getReferralHoldProcessorSecret();
+  if (!secret) {
+    return res.status(isProduction() ? 404 : 503).json({
+      success: false,
+      code: "REFERRAL_HOLD_NOT_CONFIGURED",
+      message: isProduction() ? "غير متاح." : "REFERRAL_HOLD_PROCESSOR_SECRET غير مضبوط (16+ حرف).",
+    });
+  }
+  const hdr = req.headers["x-referral-hold-secret"];
+  if (typeof hdr !== "string" || hdr !== secret) {
+    return res.status(401).json({ success: false, code: "UNAUTHORIZED", message: "غير مصرح." });
+  }
+  try {
+    const { runReferralHoldProcessor } = require("../services/referralCommissionService");
+    const result = await runReferralHoldProcessor({ limit: 200 });
+    return res.status(200).json({ success: true, data: result });
+  } catch (e) {
+    return next(e);
+  }
 });
 
 router.post("/elite-direct-offers/expire-tick", async (req, res, next) => {

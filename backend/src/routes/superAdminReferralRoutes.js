@@ -14,6 +14,7 @@ router.get("/withdrawals", controller.listWithdrawals);
 router.post("/withdrawals/:id/review", controller.review);
 router.get("/rewards", controller.listRewards);
 router.post("/rewards", controller.createBonus);
+router.patch("/rewards/:id", controller.updateBonus);
 router.get("/settings", controller.settings);
 router.post("/settings", controller.saveSettings);
 router.get("/policy-history", controller.history);
