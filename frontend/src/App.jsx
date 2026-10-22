@@ -31,6 +31,7 @@ import {
   Orders,
   Login,
   Register,
+  ReferralLanding,
   ForgotPassword,
   PrivacyPolicy,
   TermsConditions,
@@ -66,6 +67,8 @@ import {
   SuperAdminSettingsPage,
   SuperAdminAdminsPage,
   SuperAdminUsersPage,
+  SuperAdminReferralsPage,
+  ReferralsDashboardPage,
   SuperAdminAccountRestrictionsPage,
   SuperAdminRateLimitExemptionsPage,
   SuperAdminFeedbackPage,
@@ -259,6 +262,7 @@ function App() {
                   </GuestOnly>
                 }
               />
+              <Route path="/ref/:code" element={<ReferralLanding />} />
               <Route
                 path="/register"
                 element={
@@ -555,6 +559,22 @@ function App() {
                   element={
                     <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
                       <SuperAdminUsersPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/referrals"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.SUPER_ADMIN]}>
+                      <SuperAdminReferralsPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/referrals"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.CLIENT, ROLE.FREELANCER]}>
+                      <ReferralsDashboardPage />
                     </RequireRole>
                   }
                 />

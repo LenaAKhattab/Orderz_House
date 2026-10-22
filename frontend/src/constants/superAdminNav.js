@@ -94,6 +94,15 @@ export const SUPER_ADMIN_NAV_ITEM_DEFS = {
     icon: "financial-claims",
     permission: SUPER_ADMIN_PAGE_PERMISSIONS.financialClaims,
   },
+  referrals: {
+    key: "referrals",
+    to: "/dashboard/super-admin/referrals",
+    labelKey: "dashboard.nav.superAdmin.referrals",
+    icon: "financial-claims",
+    permission: "dashboard.super_admin.referrals",
+    end: true,
+    matchPrefix: "/dashboard/super-admin/referrals",
+  },
   financialCenter: {
     key: "financialCenter",
     to: "/dashboard/super-admin/financial-center",
@@ -280,7 +289,7 @@ export const SUPER_ADMIN_NAV_SECTION_DEFS = [
   {
     id: "financeAdmin",
     labelKey: "dashboard.nav.sections.financeAdmin",
-    itemKeys: ["financialCenter", "financialClaims", "fazatSettlements"],
+    itemKeys: ["financialCenter", "financialClaims", "fazatSettlements", "referrals"],
   },
   {
     id: "usersSubscriptions",
