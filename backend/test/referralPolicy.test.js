@@ -13,6 +13,8 @@ const {
   validatePolicyDraft,
   policySnapshotUnchanged,
   isEligibleReferralRole,
+  refundAdjustment,
+  MIN_DISCOUNTED_CHARGE_MINOR,
 } = require("../src/domain/referralPolicy");
 const { signPayload, readCookieToken } = require("../src/services/referralCookie");
 
@@ -130,5 +132,80 @@ describe("referral policy", () => {
       fs.readFileSync(path.join(__dirname, "../src/services/referralPaymentBridge.js"), "utf8"),
       /req\.body\.paid/,
     );
+  });
+
+  it("computes referral discount in integer fils with safe limits", () => {
+    // 10% of 50 JOD → 45 JOD charged.
+    assert.equal(calculateDiscountMinor({ enabled: true, mode: "percentage", percentageBps: 1000, baseMinor: 50000 }), 5000);
+    // Percentage above the 50% cap is refused.
+    assert.equal(calculateDiscountMinor({ enabled: true, mode: "percentage", percentageBps: 6000, baseMinor: 50000 }), 0);
+    // Fixed discount never reaches the full price; the charge keeps the minimum.
+    assert.equal(
+      calculateDiscountMinor({ enabled: true, mode: "fixed", fixedMinor: 90000, baseMinor: 35000 }),
+      35000 - MIN_DISCOUNTED_CHARGE_MINOR,
+    );
+    // Stripe JOD step: rounded down to a multiple of 10 fils.
+    assert.equal(calculateDiscountMinor({ enabled: true, mode: "percentage", percentageBps: 333, baseMinor: 35000 }) % 10, 0);
+    assert.equal(Number.isInteger(calculateDiscountMinor({ enabled: true, mode: "percentage", percentageBps: 1250, baseMinor: 35000 })), true);
+  });
+
+  it("validates discount configuration and scope", () => {
+    const base = {
+      enabled: false,
+      calculationMode: "percentage",
+      percentageBps: 1000,
+      commissionHoldDays: 7,
+      minimumWithdrawalMinor: 10000,
+      eligiblePaymentTypes: ["training_package_purchase"],
+    };
+    assert.equal(validatePolicyDraft({ ...base, discountEnabled: true, discountMode: "percentage", discountPercentageBps: 1000, discountPaymentTypes: [] }).ok, false);
+    assert.equal(validatePolicyDraft({ ...base, discountEnabled: true, discountMode: "percentage", discountPercentageBps: 6000, discountPaymentTypes: ["training_package_purchase"] }).ok, false);
+    assert.equal(validatePolicyDraft({ ...base, discountEnabled: true, discountMode: "fixed", discountFixedMinor: 2005, discountPaymentTypes: ["training_package_purchase"] }).ok, false);
+    assert.equal(validatePolicyDraft({ ...base, discountEnabled: true, discountMode: "percentage", discountPercentageBps: 1000, discountPaymentTypes: ["client_order"] }).ok, false);
+    assert.equal(validatePolicyDraft({ ...base, discountEnabled: true, discountMode: "percentage", discountPercentageBps: 1000, discountPaymentTypes: ["training_package_purchase"] }).ok, true);
+    // Discount scope is part of the snapshot: changing only the scope creates a new version.
+    const prev = { ...base, discountEnabled: true, discountMode: "percentage", discountPercentageBps: 1000, discountPaymentTypes: ["training_package_purchase"] };
+    assert.equal(policySnapshotUnchanged(prev, { ...prev }), true);
+    assert.equal(policySnapshotUnchanged(prev, { ...prev, discountPaymentTypes: ["training_package_purchase", "marketplace_membership_purchase"] }), false);
+  });
+
+  it("calculates commission on the net amount actually paid after discount", () => {
+    const paid = 50000 - calculateDiscountMinor({ enabled: true, mode: "percentage", percentageBps: 1000, baseMinor: 50000 });
+    assert.equal(paid, 45000);
+    assert.equal(calculateCommissionMinor({ mode: "percentage", percentageBps: 1000, baseMinor: paid }), 4500);
+  });
+
+  it("recomputes the commission target on partial and full refunds", () => {
+    const terms = { mode: "percentage", percentageBps: 1000, baseMinor: 50000, commissionMinor: 5000 };
+    const partial = refundAdjustment({ ...terms, refundedBaseMinor: 20000, reversedMinor: 0 });
+    assert.deepEqual(
+      { target: partial.targetMinor, reverse: partial.reverseMinor, full: partial.fullyReversed },
+      { target: 3000, reverse: 2000, full: false },
+    );
+    // A later full refund only posts the remaining delta.
+    const full = refundAdjustment({ ...terms, refundedBaseMinor: 50000, reversedMinor: 2000 });
+    assert.deepEqual({ target: full.targetMinor, reverse: full.reverseMinor, full: full.fullyReversed }, { target: 0, reverse: 3000, full: true });
+    // Replaying the same cumulative refund posts nothing new.
+    assert.equal(refundAdjustment({ ...terms, refundedBaseMinor: 20000, reversedMinor: 2000 }).reverseMinor, 0);
+    // Fixed commission stays until the remaining base drops below it.
+    const fixed = { mode: "fixed", fixedMinor: 5000, baseMinor: 50000, commissionMinor: 5000 };
+    assert.equal(refundAdjustment({ ...fixed, refundedBaseMinor: 20000, reversedMinor: 0 }).reverseMinor, 0);
+    assert.equal(refundAdjustment({ ...fixed, refundedBaseMinor: 47000, reversedMinor: 0 }).reverseMinor, 2000);
+  });
+
+  it("enforces final-completion constraints in migration 205", () => {
+    const sql = fs.readFileSync(path.join(__dirname, "../sql/migrations/205_referral_final_completion.sql"), "utf8");
+    assert.match(sql, /BEFORE UPDATE OR DELETE ON referral_commission_policy_versions/);
+    assert.match(sql, /referral_withdrawals_one_open_idx/);
+    assert.match(sql, /discount_percentage_bps <= 5000/);
+    assert.match(sql, /reversed_minor <= commission_minor/);
+    assert.doesNotMatch(sql, /DROP TABLE|DROP COLUMN|DELETE FROM/i);
+  });
+
+  it("never creates commissions from client order payments or unrelated purposes", () => {
+    const webhook = fs.readFileSync(path.join(__dirname, "../src/controllers/stripeWebhookController.js"), "utf8");
+    const calls = webhook.match(/bridge\.processCheckoutSession\([^)]*\)/g) || [];
+    assert.equal(calls.length, 2);
+    assert.ok(calls.every((c) => /MARKETPLACE_MEMBERSHIP|TRAINING_PACKAGE/.test(c)));
   });
 });

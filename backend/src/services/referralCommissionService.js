@@ -1,5 +1,5 @@
 const { pool } = require("../config/db");
-const { calculateCommissionMinor, PAYMENT_TYPES } = require("../domain/referralPolicy");
+const { calculateCommissionMinor, refundAdjustment, PAYMENT_TYPES } = require("../domain/referralPolicy");
 const notificationService = require("./notificationService");
 
 const SUPPORTED_TYPES = new Set(Object.values(PAYMENT_TYPES));
@@ -89,26 +89,38 @@ async function evaluateBonuses(client, referrerUserId) {
   }
 }
 
-async function promoteMaturedCommissions(client, referrerUserId = null) {
-  const params = [];
+async function promoteMaturedCommissions(client, referrerUserId = null, { limit = 500 } = {}) {
+  const params = [Math.max(1, Math.min(Number(limit) || 500, 5000))];
   let where = `status = 'pending' AND hold_until <= NOW()`;
   if (referrerUserId) {
     params.push(referrerUserId);
-    where += ` AND referrer_user_id = $1`;
+    where += ` AND referrer_user_id = $2`;
   }
   const { rows } = await client.query(
-    `UPDATE referral_commissions
+    `WITH due AS (
+       SELECT id FROM referral_commissions
+        WHERE ${where}
+        ORDER BY hold_until
+        LIMIT $1
+        FOR UPDATE SKIP LOCKED
+     )
+     UPDATE referral_commissions c
         SET status = 'available', available_at = NOW()
-      WHERE ${where}
-      RETURNING *`,
+       FROM due
+      WHERE c.id = due.id
+      RETURNING c.*`,
     params,
   );
+  const referrers = new Set();
   for (const row of rows) {
+    const amount = Number(row.commission_minor) - Number(row.reversed_minor || 0);
+    referrers.add(Number(row.referrer_user_id));
+    if (amount <= 0) continue;
     await insertLedger(client, {
       userId: row.referrer_user_id,
       eventType: "commission_available",
       bucket: "pending",
-      amountMinor: -Number(row.commission_minor),
+      amountMinor: -amount,
       commissionId: row.id,
       idempotencyKey: `available-pending:${row.id}`,
     });
@@ -116,7 +128,7 @@ async function promoteMaturedCommissions(client, referrerUserId = null) {
       userId: row.referrer_user_id,
       eventType: "commission_available",
       bucket: "available",
-      amountMinor: Number(row.commission_minor),
+      amountMinor: amount,
       commissionId: row.id,
       idempotencyKey: `available-credit:${row.id}`,
     });
@@ -129,9 +141,63 @@ async function promoteMaturedCommissions(client, referrerUserId = null) {
       dedupeKey: `referral_available_${row.id}`,
       metadata: { titleEn: "Referral commission available", messageEn: "A referral commission is now available to withdraw." },
     });
-    await evaluateBonuses(client, row.referrer_user_id);
   }
+  for (const id of referrers) await evaluateBonuses(client, id);
   return rows.length;
+}
+
+/**
+ * Scheduled hold processor: matures due commissions and evaluates bonuses.
+ * One pooled client, bounded batch, single runner via advisory lock, always released.
+ */
+async function runReferralHoldProcessor({ limit = 200 } = {}) {
+  const db = await pool.connect();
+  let locked = false;
+  try {
+    const lock = await db.query(`SELECT pg_try_advisory_lock(hashtext('referral_hold_processor')) AS ok`);
+    locked = Boolean(lock.rows[0]?.ok);
+    if (!locked) return { skipped: true, promoted: 0 };
+    await db.query("BEGIN");
+    const promoted = await promoteMaturedCommissions(db, null, { limit });
+    // Referrers who already qualify for an enabled, effective rule they have not received
+    // (e.g. a rule created after their referrals matured).
+    const referrers = await db.query(
+      `SELECT c.referrer_user_id
+         FROM referral_commissions c
+        WHERE c.status IN ('available', 'paid')
+        GROUP BY c.referrer_user_id
+       HAVING EXISTS (
+         SELECT 1 FROM referral_bonus_rules r
+          WHERE r.enabled AND r.effective_from <= NOW()
+            AND r.threshold_paid_referrals <= COUNT(DISTINCT c.referred_user_id)
+            AND NOT EXISTS (
+              SELECT 1 FROM referral_bonus_awards a
+               WHERE a.rule_id = r.id AND a.referrer_user_id = c.referrer_user_id
+            )
+       )
+        LIMIT $1`,
+      [limit],
+    );
+    for (const row of referrers.rows) await evaluateBonuses(db, row.referrer_user_id);
+    await db.query("COMMIT");
+    return { skipped: false, promoted };
+  } catch (error) {
+    try {
+      await db.query("ROLLBACK");
+    } catch {
+      /* ignore */
+    }
+    throw error;
+  } finally {
+    if (locked) {
+      try {
+        await db.query(`SELECT pg_advisory_unlock(hashtext('referral_hold_processor'))`);
+      } catch {
+        /* ignore */
+      }
+    }
+    db.release();
+  }
 }
 
 async function processReferralCommissionForPayment(input, client = pool) {
@@ -140,6 +206,8 @@ async function processReferralCommissionForPayment(input, client = pool) {
   const payerUserId = Number(input.payerUserId);
   const baseMinor = Math.trunc(Number(input.paidAmountMinor));
   const sourceId = String(input.paymentSourceId || "");
+  const discountMinor = Math.max(Math.trunc(Number(input.discountMinor)) || 0, 0);
+  const listAmountMinor = Math.trunc(Number(input.listAmountMinor)) || baseMinor + discountMinor;
   if (!payerUserId || !sourceId || !Number.isInteger(baseMinor) || baseMinor <= 0) {
     return { created: false, reason: "invalid_payment" };
   }
@@ -160,6 +228,16 @@ async function processReferralCommissionForPayment(input, client = pool) {
     if (!row) {
       if (ownClient) await db.query("COMMIT");
       return { created: false, reason: "no_referral" };
+    }
+    if (discountMinor > 0) {
+      await db.query(
+        `INSERT INTO referral_discount_redemptions (
+           user_referral_id, referred_user_id, policy_version_id, payment_source_type, payment_source_id,
+           list_amount_minor, discount_minor
+         ) VALUES ($1,$2,$3,$4,$5,$6,$7)
+         ON CONFLICT (payment_source_type, payment_source_id) DO NOTHING`,
+        [row.id, payerUserId, row.policy_version_id, paymentType, sourceId, listAmountMinor, discountMinor],
+      );
     }
     const eligible = row.eligible_payment_types || [];
     if (!eligible.includes(paymentType)) {
@@ -182,8 +260,8 @@ async function processReferralCommissionForPayment(input, client = pool) {
          user_referral_id, referrer_user_id, referred_user_id, policy_version_id,
          payment_source_type, payment_source_id, stripe_payment_intent_id,
          payment_base_minor, currency, calculation_mode, percentage_bps, fixed_amount_minor,
-         commission_minor, status, hold_until
-       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,'pending', NOW() + ($14::int * INTERVAL '1 day'))
+         commission_minor, status, hold_until, list_amount_minor, discount_minor
+       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,'pending', NOW() + ($14::int * INTERVAL '1 day'), $15, $16)
        ON CONFLICT (payment_source_type, payment_source_id) DO NOTHING
        RETURNING id`,
       [
@@ -201,6 +279,8 @@ async function processReferralCommissionForPayment(input, client = pool) {
         row.fixed_amount_minor,
         commissionMinor,
         holdDays,
+        listAmountMinor,
+        discountMinor,
       ],
     );
     if (!inserted.rows[0]) {
@@ -236,7 +316,12 @@ async function processReferralCommissionForPayment(input, client = pool) {
   }
 }
 
-async function reverseReferralCommission({ paymentSourceType, paymentSourceId, stripePaymentIntentId, chargeId }) {
+/**
+ * Refund / lost dispute. The commission target is recomputed from the remaining captured base
+ * (snapshotted terms) and only the delta is posted. Rows are never deleted.
+ * `refundedAmountMinor` is cumulative (Stripe charge.amount_refunded); null means full reversal.
+ */
+async function reverseReferralCommission({ paymentSourceType, paymentSourceId, stripePaymentIntentId, refundedAmountMinor = null, reason = "refund" }) {
   const db = await pool.connect();
   try {
     await db.query("BEGIN");
@@ -249,36 +334,47 @@ async function reverseReferralCommission({ paymentSourceType, paymentSourceId, s
     );
     const results = [];
     for (const row of rows) {
-      const key = `reverse:${row.id}:${chargeId || "event"}`;
-      if (row.status === "pending" || row.status === "available") {
-        const updated = await db.query(
-          `UPDATE referral_commissions
-              SET status = 'reversed', reversed_at = NOW()
-            WHERE id = $1 AND status IN ('pending', 'available')
-            RETURNING status`,
-          [row.id],
-        );
-        if (!updated.rows[0]) continue;
+      if (row.status === "reversed" || row.status === "cancelled") continue;
+      const refunded = refundedAmountMinor == null
+        ? Number(row.payment_base_minor)
+        : Math.min(Math.trunc(Number(refundedAmountMinor)) || 0, Number(row.payment_base_minor));
+      if (refunded <= Number(row.refunded_base_minor || 0)) continue;
+      const adj = refundAdjustment({
+        mode: row.calculation_mode,
+        percentageBps: row.percentage_bps,
+        fixedMinor: row.fixed_amount_minor,
+        baseMinor: row.payment_base_minor,
+        refundedBaseMinor: refunded,
+        commissionMinor: row.commission_minor,
+        reversedMinor: row.reversed_minor,
+      });
+      const nextStatus = adj.fullyReversed && (row.status === "pending" || row.status === "available") ? "reversed" : row.status;
+      await db.query(
+        `UPDATE referral_commissions
+            SET refunded_base_minor = $2,
+                reversed_minor = reversed_minor + $3,
+                status = $4,
+                reversed_at = CASE WHEN $4 = 'reversed' THEN NOW() ELSE reversed_at END
+          WHERE id = $1`,
+        [row.id, adj.refundedBaseMinor, adj.reverseMinor, nextStatus],
+      );
+      if (adj.reverseMinor > 0) {
         await insertLedger(db, {
           userId: row.referrer_user_id,
-          eventType: "commission_reversed",
-          bucket: row.status,
-          amountMinor: -Number(row.commission_minor),
+          eventType: row.status === "pending" ? "commission_reversed" : "commission_refund_adjustment",
+          bucket: row.status === "pending" ? "pending" : "available",
+          amountMinor: -adj.reverseMinor,
           commissionId: row.id,
-          idempotencyKey: key,
+          idempotencyKey: `refund:${row.id}:${adj.refundedBaseMinor}`,
+          metadata: { reason, refundedBaseMinor: adj.refundedBaseMinor, targetMinor: adj.targetMinor },
         });
-        results.push({ id: Number(row.id), status: "reversed" });
-      } else if (row.status === "paid") {
-        const claw = await db.query(
-          `INSERT INTO referral_wallet_ledger (
-             user_id, event_type, bucket, amount_minor, commission_id, idempotency_key, metadata
-           ) VALUES ($1, 'commission_refund_adjustment', 'available', $2, $3, $4, '{}'::jsonb)
-           ON CONFLICT (idempotency_key) DO NOTHING
-           RETURNING id`,
-          [row.referrer_user_id, -Number(row.commission_minor), row.id, key],
-        );
-        if (claw.rows[0]) results.push({ id: Number(row.id), status: "adjustment" });
       }
+      results.push({
+        id: Number(row.id),
+        status: nextStatus,
+        reversedMinor: adj.reverseMinor,
+        targetMinor: adj.targetMinor,
+      });
     }
     await db.query("COMMIT");
     return { reversed: results };
@@ -292,6 +388,7 @@ async function reverseReferralCommission({ paymentSourceType, paymentSourceId, s
 
 module.exports = {
   promoteMaturedCommissions,
+  runReferralHoldProcessor,
   processReferralCommissionForPayment,
   reverseReferralCommission,
   evaluateBonuses,

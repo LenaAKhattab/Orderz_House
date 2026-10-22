@@ -226,6 +226,19 @@ async function createMarketplaceMembershipCheckoutSession(input = {}, deps = {})
   const stripe = deps.stripe || getStripeOrNull();
   if (!stripe) throwStripeNotConfigured();
 
+  // Referral discount: server-side, from the referred user's snapshotted policy only.
+  const { resolveReferralDiscount } = require("./referralDiscountService");
+  const { PAYMENT_TYPES: REFERRAL_PAYMENT_TYPES } = require("../domain/referralPolicy");
+  const discount = await (deps.resolveReferralDiscount || resolveReferralDiscount)(
+    {
+      userId: freelancerUserId,
+      paymentType: REFERRAL_PAYMENT_TYPES.MARKETPLACE_MEMBERSHIP,
+      listAmountMinor: resolved.expectedAmountMinor,
+    },
+    db,
+  );
+  const chargeMinor = discount.discountMinor > 0 ? discount.chargeMinor : resolved.expectedAmountMinor;
+
   const clientUrl = requireStripeClientUrl();
   const returnUrls = buildFreelancerMarketplaceMembershipCheckoutReturnUrls(clientUrl);
 
@@ -260,6 +273,12 @@ async function createMarketplaceMembershipCheckoutSession(input = {}, deps = {})
       expectedAmountMinor: String(resolved.expectedAmountMinor),
       // Explicit: term does not start at payment — first real order (M4).
       termStartPolicy: "first_real_order",
+      ...(discount.discountMinor > 0
+        ? {
+            referralDiscountMinor: String(discount.discountMinor),
+            referralListAmountMinor: String(resolved.expectedAmountMinor),
+          }
+        : {}),
       ...(input.extraMetadata && typeof input.extraMetadata === "object"
         ? Object.fromEntries(
             Object.entries(input.extraMetadata)
@@ -289,7 +308,7 @@ async function createMarketplaceMembershipCheckoutSession(input = {}, deps = {})
           quantity: 1,
           price_data: {
             currency: String(resolved.currency).toLowerCase(),
-            unit_amount: resolved.expectedAmountMinor,
+            unit_amount: chargeMinor,
             product_data: {
               name: productName,
               description: `${planLabel} · ${resolved.durationDays} days`,
@@ -312,7 +331,9 @@ async function createMarketplaceMembershipCheckoutSession(input = {}, deps = {})
     planCode: resolved.planCode,
     marketplacePlanId: String(resolved.plan.id),
     durationDays: resolved.durationDays,
-    amountJod: resolved.priceJod,
+    amountJod: chargeMinor / 1000,
+    listAmountJod: resolved.priceJod,
+    referralDiscountJod: discount.discountMinor / 1000,
     currency: resolved.currency,
     mode: MARKETPLACE_MEMBERSHIP_CHECKOUT_MODE,
     // Explicit product contract for clients / tests
@@ -473,6 +494,11 @@ async function applyMarketplaceMembershipCheckoutSessionCompleted(
     MARKETPLACE_MEMBERSHIP_CHECKOUT_CURRENCY,
   );
   const metaExpected = Number(metaPick(sessionMeta, "expectedAmountMinor", "expected_amount_minor"));
+  // Server-written referral discount (session metadata is set only by our checkout creation).
+  const referralDiscountMinor = Math.trunc(Number(metaPick(sessionMeta, "referralDiscountMinor") || 0)) || 0;
+  if (referralDiscountMinor < 0) {
+    return { status: "ignored", reason: "marketplace_membership_referral_discount_invalid" };
+  }
   const isSpecialOfferPurchase =
     String(metaPick(sessionMeta, "specialOfferPackage", "special_offer_package") || "") === "1" ||
     String(metaPick(sessionMeta, "purchaseSource", "purchase_source") || "").toLowerCase() ===
@@ -485,9 +511,12 @@ async function applyMarketplaceMembershipCheckoutSessionCompleted(
     if (!Number.isInteger(metaExpected) || metaExpected < 1) {
       return { status: "ignored", reason: "marketplace_membership_special_offer_missing_expected_amount" };
     }
+    if (referralDiscountMinor >= metaExpected) {
+      return { status: "ignored", reason: "marketplace_membership_referral_discount_invalid" };
+    }
     if (session.amount_total != null) {
       const paidTotal = Number(session.amount_total);
-      if (!Number.isInteger(paidTotal) || paidTotal !== metaExpected) {
+      if (!Number.isInteger(paidTotal) || paidTotal !== metaExpected - referralDiscountMinor) {
         return { status: "ignored", reason: "marketplace_membership_amount_mismatch" };
       }
     }
@@ -500,9 +529,12 @@ async function applyMarketplaceMembershipCheckoutSessionCompleted(
     return { status: "ignored", reason: "marketplace_membership_expected_amount_mismatch" };
   }
 
+  if (!isSpecialOfferPurchase && referralDiscountMinor >= expectedAmountMinor) {
+    return { status: "ignored", reason: "marketplace_membership_referral_discount_invalid" };
+  }
   if (!isSpecialOfferPurchase && session.amount_total != null) {
     const paidTotal = Number(session.amount_total);
-    if (!Number.isInteger(paidTotal) || paidTotal !== expectedAmountMinor) {
+    if (!Number.isInteger(paidTotal) || paidTotal !== expectedAmountMinor - referralDiscountMinor) {
       return { status: "ignored", reason: "marketplace_membership_amount_mismatch" };
     }
   }

@@ -53,17 +53,18 @@ async function captureVisit({ code, cookieToken, utmSource, utmMedium, utmCampai
   if (!codeRow || codeRow.is_active === false || !isEligibleReferralRole(codeRow.role)) {
     return { ok: false, reason: "invalid_code" };
   }
+  const policy = await getCurrentPolicy();
+  // Program off: no visit tracking and no attribution cookie.
+  if (!policy?.enabled) {
+    return { ok: true, preserved: false, programEnabled: false, cookie: null };
+  }
   const existing = readCookieToken(cookieToken);
   const now = Date.now();
   const preserved = resolveAttributionSource({ cookie: existing, manualCode: null, now });
   const visitId = preserved?.visitId || crypto.randomUUID();
   await recordVisit(codeRow, { visitId, utmSource, utmMedium, utmCampaign });
-  const policy = await getCurrentPolicy();
   if (preserved) {
-    return { ok: true, preserved: true, programEnabled: Boolean(policy?.enabled) };
-  }
-  if (!policy?.enabled) {
-    return { ok: true, preserved: false, programEnabled: false, cookie: null };
+    return { ok: true, preserved: true, programEnabled: true };
   }
   return {
     ok: true,
