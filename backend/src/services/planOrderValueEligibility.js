@@ -221,10 +221,15 @@ function isOrderValueAllowedForPlan(planId, orderLike) {
 }
 
 /**
- * Project-value band of the freelancer's current PAID marketplace membership
- * (purchased_pending_start / active / cancel_at_period_end). Null when none.
+ * Project-value band of the freelancer's current ANNUAL plan membership
+ * (catalog_category = 'annual'; purchased_pending_start / active / cancel_at_period_end).
+ *
+ * Deliberately limited to the Annual Plans category: regular marketplace tiers
+ * (SILVER/PRO/ELITE/special offer) keep the existing additive rule — the legacy
+ * subscription band still applies alongside the E1 membership gate.
+ * Null when none.
  */
-async function resolveCurrentPaidMembershipOrderValueRange(freelancerUserId, client) {
+async function resolveCurrentAnnualMembershipOrderValueRange(freelancerUserId, client) {
   const runner = client || require("../config/db").pool;
   let rows;
   try {
@@ -236,6 +241,7 @@ async function resolveCurrentPaidMembershipOrderValueRange(freelancerUserId, cli
         WHERE m.freelancer_user_id = $1
           AND m.is_current = TRUE
           AND m.status IN ('active', 'cancel_at_period_end', 'purchased_pending_start')
+          AND p.catalog_category = 'annual'
         LIMIT 1`,
       [Number(freelancerUserId)],
     ));
@@ -245,8 +251,6 @@ async function resolveCurrentPaidMembershipOrderValueRange(freelancerUserId, cli
   }
   const market = rows[0];
   if (!market) return null;
-  const { isPaidMarketplaceMembershipTier } = require("../utils/marketplaceMembershipPendingStart");
-  if (!isPaidMarketplaceMembershipTier(market.tier_code)) return null;
   const minOrderValue = parseJod(market.project_min_value_jod);
   if (minOrderValue == null) return null;
   return {
@@ -258,16 +262,16 @@ async function resolveCurrentPaidMembershipOrderValueRange(freelancerUserId, cli
 }
 
 /**
- * Canonical band for a freelancer: a marketplace bridge subscription is authoritative;
- * otherwise a current paid marketplace membership (e.g. Stripe purchase) supplies its band,
- * matching resolveCanonicalMarketplacePlanForFreelancer. Falls back to the subscription plan.
+ * Band for a freelancer: a marketplace bridge subscription is authoritative; otherwise a current
+ * Annual Plans membership supplies its own band (its entitlement defines the order ceiling).
+ * Every other case resolves from the subscription plan exactly as before.
  */
 async function resolveFreelancerOrderValueRange(freelancerUserId, sub, client) {
   if (!sub?.planId) return null;
   const planRow = await getPlanRowForOrderValue(sub.planId, client);
   const isBridge = String(planRow?.name || "").startsWith(MARKETPLACE_BRIDGE_NAME_PREFIX);
   if (!isBridge) {
-    const membershipRange = await resolveCurrentPaidMembershipOrderValueRange(freelancerUserId, client);
+    const membershipRange = await resolveCurrentAnnualMembershipOrderValueRange(freelancerUserId, client);
     if (isUsableOrderValueRange(membershipRange)) {
       return { ...membershipRange, planId: Number(sub.planId), sourcePlanId: Number(sub.planId) };
     }
@@ -632,7 +636,7 @@ module.exports = {
   budgetRangesOverlap,
   getFreelancerPlanOrderValueRange,
   resolveFreelancerOrderValueRange,
-  resolveCurrentPaidMembershipOrderValueRange,
+  resolveCurrentAnnualMembershipOrderValueRange,
   getFreelancerPlanEligibilityContext,
   formatPlanRangeLabel,
   isPlanValueAllowedForOrder,

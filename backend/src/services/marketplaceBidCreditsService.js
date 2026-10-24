@@ -6,6 +6,7 @@ const { pool } = require("../config/db");
 const { createAppError } = require("../utils/AppError");
 const { BID_CREDIT_ERROR_CODES, NORMAL_APPLICATION_BID_COST } = require("../constants/marketplaceBidCredits");
 const { marketplaceBidCreditsSchemaReady } = require("../utils/marketplaceBidCreditsSchema");
+const { freelancerHasAnnualBidEnforcement } = require("../utils/annualPlanBidEnforcement");
 const accounting = require("./marketplaceBidCreditAccountingService");
 const distribution = require("./marketplaceBidCreditDistributionService");
 const { getMarketplaceEconomySettings } = require("./marketplaceEconomySettingsService");
@@ -102,7 +103,8 @@ async function getFreelancerBidCreditsSummary({ freelancerUserId, now = new Date
 
     return {
       schemaReady: true,
-      engineEnabled: isBidCreditsEngineActive(settings),
+      engineEnabled:
+        isBidCreditsEngineActive(settings) || (await freelancerHasAnnualBidEnforcement(client, fid)),
       purchasesEngineEnabled: isBidCreditPurchasesEngineActive(settings),
       availableBids: available,
       membershipDerivedAvailable,

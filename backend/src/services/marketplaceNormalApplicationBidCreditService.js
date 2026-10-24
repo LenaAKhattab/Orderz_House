@@ -29,6 +29,7 @@ const {
 const accounting = require("./marketplaceBidCreditAccountingService");
 const distribution = require("./marketplaceBidCreditDistributionService");
 const { marketplaceBidCreditsSchemaReady } = require("../utils/marketplaceBidCreditsSchema");
+const { freelancerHasAnnualBidEnforcement } = require("../utils/annualPlanBidEnforcement");
 const {
   resolveOrderApplicationBidCost,
 } = require("./marketplaceNormalOrderRulesService");
@@ -129,7 +130,9 @@ async function quoteNormalApplicationBidCost({
   now = new Date(),
 } = {}) {
   const settings = await getMarketplaceEconomySettings();
-  const engineAvailable = isBidCreditsEngineActive(settings);
+  const engineAvailable =
+    isBidCreditsEngineActive(settings) ||
+    (freelancerUserId != null && (await freelancerHasAnnualBidEnforcement(null, freelancerUserId)));
   const schemaReady =
     (await marketplaceBidCreditsSchemaReady()) &&
     (await normalApplicationBidEconomicsSchemaReady());
@@ -200,7 +203,11 @@ async function chargeNormalApplicationBidCreditOnFirstBid({
   }
 
   const settings = await getMarketplaceEconomySettings(client);
-  if (!isBidCreditsEngineActive(settings)) {
+  // Annual Plans enforce their contractual allowance even while the global engine is OFF.
+  if (
+    !isBidCreditsEngineActive(settings) &&
+    !(await freelancerHasAnnualBidEnforcement(client, freelancerUserId))
+  ) {
     return { charged: false, skipped: true, reason: "engine_off", bidCreditCost: 0 };
   }
 

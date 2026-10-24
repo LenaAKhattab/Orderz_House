@@ -381,6 +381,110 @@ describe("Annual Basic — webhook grant (trusted payment only)", () => {
   });
 });
 
+/**
+ * Fake DB for resolveFreelancerOrderValueRange: plans rows, marketplace tier bands,
+ * and the annual-only membership lookup (catalog_category = 'annual').
+ */
+function rangeClient({ planRow = null, annualMembership = null } = {}) {
+  const tiers = {
+    silver: { id: 8, tier_code: "silver", project_min_value_jod: "1", max_real_order_value_jod: "20", unlimited_real_order_value: false, is_active: true },
+    pro: { id: 3, tier_code: "pro", project_min_value_jod: "1", max_real_order_value_jod: "50", unlimited_real_order_value: false, is_active: true },
+    elite: { id: 4, tier_code: "elite", project_min_value_jod: "1", max_real_order_value_jod: null, unlimited_real_order_value: true, is_active: true },
+  };
+  return {
+    async query(sql, params = []) {
+      if (/FROM plans\s+WHERE id = \$1/.test(sql)) return { rows: planRow ? [planRow] : [] };
+      if (/catalog_category = 'annual'/.test(sql)) return { rows: annualMembership ? [annualMembership] : [] };
+      if (/FROM marketplace_membership_plans\s+WHERE lower\(tier_code\) = \$1/.test(sql)) {
+        return { rows: tiers[params[0]] ? [tiers[params[0]]] : [] };
+      }
+      throw new Error(`unexpected SQL: ${sql.slice(0, 80)}`);
+    },
+  };
+}
+
+describe("Order-value band — existing tiers unchanged, Annual uses its own band", () => {
+  const { resolveFreelancerOrderValueRange } = require("../src/services/planOrderValueEligibility");
+  const bridge = (tier) => ({ id: 900, name: `marketplace_membership_${tier}`, order_value_min_jod: null, order_value_max_jod: null, subscription_plan_id: null });
+  const expectedTier = { silver: [1, 20], pro: [1, 50], elite: [1, null] };
+
+  for (const tier of ["silver", "pro", "elite"]) {
+    it(`admin-assigned ${tier.toUpperCase()} (bridge) → its marketplace band`, async () => {
+      const out = await resolveFreelancerOrderValueRange(42, { planId: 900 }, rangeClient({ planRow: bridge(tier) }));
+      assert.deepEqual([out.minOrderValue, out.maxOrderValue], expectedTier[tier]);
+    });
+
+    it(`Stripe-purchased ${tier.toUpperCase()} on the free plan → unchanged legacy band (3–7, as on main)`, async () => {
+      // Annual-only lookup returns nothing for regular marketplace tiers.
+      const out = await resolveFreelancerOrderValueRange(42, { planId: 1 }, rangeClient());
+      assert.deepEqual([out.minOrderValue, out.maxOrderValue], [3, 7]);
+      assert.equal(out.resolvedFromMarketplaceTier, undefined);
+    });
+  }
+
+  it("Annual Basic on the free plan → its own 1–10 band", async () => {
+    const out = await resolveFreelancerOrderValueRange(
+      42,
+      { planId: 1 },
+      rangeClient({
+        annualMembership: { id: 21, tier_code: "annual_basic", project_min_value_jod: "1", max_real_order_value_jod: "10", unlimited_real_order_value: false },
+      }),
+    );
+    assert.deepEqual([out.minOrderValue, out.maxOrderValue], [1, 10]);
+    assert.equal(out.resolvedFromMarketplaceTier, "annual_basic");
+  });
+
+  it("annual band lookup is limited to catalog_category = 'annual'", () => {
+    const src = read("src/services/planOrderValueEligibility.js");
+    assert.match(src, /AND p\.catalog_category = 'annual'/);
+    assert.doesNotMatch(src, /resolveCurrentPaidMembershipOrderValueRange/);
+  });
+});
+
+describe("Annual limits enforced even while the global Bid Credits engine is OFF", () => {
+  const {
+    freelancerHasAnnualBidEnforcement,
+    planHasAnnualBidEnforcement,
+  } = require("../src/utils/annualPlanBidEnforcement");
+
+  it("true only for a current Annual Plans membership", async () => {
+    let seen = null;
+    const yes = { query: async (sql, params) => ((seen = { sql, params }), { rows: [{ "?column?": 1 }] }) };
+    const no = { query: async () => ({ rows: [] }) };
+    assert.equal(await freelancerHasAnnualBidEnforcement(yes, 42), true);
+    assert.match(seen.sql, /p\.catalog_category = 'annual'/);
+    assert.match(seen.sql, /m\.is_current = TRUE/);
+    assert.deepEqual(seen.params[1], ["purchased_pending_start", "active", "cancel_at_period_end"]);
+    assert.equal(await freelancerHasAnnualBidEnforcement(no, 42), false);
+    assert.equal(await planHasAnnualBidEnforcement(yes, 21), true);
+    assert.equal(await planHasAnnualBidEnforcement(no, 8), false);
+  });
+
+  it("fails safe (no enforcement change) when migration 206 is not applied", async () => {
+    const missing = { query: async () => { const e = new Error("column does not exist"); e.code = "42703"; throw e; } };
+    assert.equal(await freelancerHasAnnualBidEnforcement(missing, 42), false);
+    assert.equal(await planHasAnnualBidEnforcement(missing, 21), false);
+  });
+
+  it("charge, quote, distribution and summary OR the global switch with the Annual scope", () => {
+    const charge = read("src/services/marketplaceNormalApplicationBidCreditService.js");
+    assert.match(charge, /!isBidCreditsEngineActive\(settings\) &&\s+!\(await freelancerHasAnnualBidEnforcement\(client, freelancerUserId\)\)/);
+    assert.match(charge, /isBidCreditsEngineActive\(settings\) \|\|\s+\(freelancerUserId != null && \(await freelancerHasAnnualBidEnforcement\(null, freelancerUserId\)\)\)/);
+    const dist = read("src/services/marketplaceBidCreditDistributionService.js");
+    assert.match(dist, /isBidCreditsEngineActive\(settings\) \|\|\s+\(await planHasAnnualBidEnforcement\(client, row\.marketplace_plan_id\)\)/);
+    const summary = read("src/services/marketplaceBidCreditsService.js");
+    assert.match(summary, /isBidCreditsEngineActive\(settings\) \|\| \(await freelancerHasAnnualBidEnforcement\(client, fid\)\)/);
+  });
+});
+
+describe("Priced bid INSERT — single parameter type for moderation_status", () => {
+  it("casts $5 so Postgres does not deduce varchar and text for one parameter", () => {
+    const src = read("src/services/ordersService.js");
+    assert.match(src, /\$4, \$5::varchar, \$6, \$7, CASE WHEN \$5::varchar = 'held'/);
+    assert.doesNotMatch(src, /CASE WHEN \$5 = 'held'/);
+  });
+});
+
 describe("Annual Basic — canonical resolver / display / courses", () => {
   it("bridge plan name resolves to ANNUAL_BASIC; special offers do not", () => {
     assert.equal(tierFromSubscriptionPlan({ name: "marketplace_membership_annual_basic" }), "ANNUAL_BASIC");
