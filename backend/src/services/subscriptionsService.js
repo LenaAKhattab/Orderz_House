@@ -1540,8 +1540,8 @@ async function updateSubscription({ actorUserId, subscriptionId, patch }) {
     if ([SUBSCRIPTION_STATUSES.CANCELLED, SUBSCRIPTION_STATUSES.INACTIVE].includes(nextStatus)) {
       const { rows: override } = await client.query(
         `UPDATE freelancer_subscriptions
-         SET status = $2,
-             cancelled_at = CASE WHEN $2 = 'cancelled' THEN COALESCE(cancelled_at, NOW()) ELSE cancelled_at END,
+         SET status = $2::text,
+             cancelled_at = CASE WHEN $2::text = 'cancelled' THEN COALESCE(cancelled_at, NOW()) ELSE cancelled_at END,
              updated_at = NOW()
          WHERE id = $1
          RETURNING *`,

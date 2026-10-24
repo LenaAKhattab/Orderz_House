@@ -170,7 +170,7 @@ export default function PlansMobilePlanCard({
 
   const hasMeta = Boolean(offerLabel || orderRange || display.activationRequirements || display.refundPolicy);
   const tierModifier = isMarketplaceMembership
-    ? `pm-plan-card--tier-${String(plan?.tierCode || "")
+    ? `pm-plan-card--tier-${String(plan?.visualTierCode || plan?.tierCode || "")
         .trim()
         .toLowerCase()}`
     : "";

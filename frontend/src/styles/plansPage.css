@@ -1564,6 +1564,25 @@
   border: 1px solid rgba(148, 163, 184, 0.2);
 }
 
+/* Shared "application ≠ guaranteed order" note under membership grids (compact, muted). */
+.plans-application-note {
+  gap: 8px;
+  margin: 14px auto 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.5;
+  color: #64748b;
+}
+
+.plans-application-note .plans-application-note__icon {
+  width: 22px;
+  height: 22px;
+}
+
+.plans-application-note__text {
+  color: #64748b;
+}
+
 /* Included plan benefits (Annual Plans) reuse the withdrawal chip styling. */
 .pricing-card__included-benefits {
   display: flex;

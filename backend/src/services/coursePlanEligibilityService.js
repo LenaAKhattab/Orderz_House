@@ -4,7 +4,7 @@
 
 const { pool } = require("../config/db");
 const { createAppError } = require("../utils/AppError");
-const { isSpecialOfferMembershipTier } = require("../constants/marketplaceMembershipPlans");
+const { isSpecialOfferMembershipTier, resolveEntitlementTierCode } = require("../constants/marketplaceMembershipPlans");
 const marketplaceMembershipsService = require("./marketplaceMembershipsService");
 
 const UPGRADE_PATH = "/dashboard/freelancer/plans";
@@ -32,11 +32,11 @@ function normalizeCourseRequiredTierCode(raw) {
 
 function normalizeMembershipTierForCourses(raw) {
   if (raw == null || raw === "") return null;
-  const code = String(raw).trim().toLowerCase();
+  // Annual SILVER resolves to SILVER course access (company still delivers its Content Writing Course).
+  const code = resolveEntitlementTierCode(raw);
   if (isSpecialOfferMembershipTier(code)) return "silver";
   if (COURSE_REQUIRED_TIER_CODES.includes(code)) return code;
-  // Annual Basic shares Starter's 10 JOD band; its Content Writing Course is company-fulfilled.
-  if (code === "free" || code === "pay_as_you_work" || code === "annual_basic") return "starter";
+  if (code === "free" || code === "pay_as_you_work") return "starter";
   if (code === "start") return "silver";
   if (code === "active") return "pro";
   return null;

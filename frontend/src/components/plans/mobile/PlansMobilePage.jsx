@@ -2,6 +2,7 @@ import PlansMobilePlans from "./PlansMobilePlans";
 import SpecialOfferPackageCard from "../SpecialOfferPackageCard";
 import { useTranslation } from "../../../i18n/LanguageProvider";
 import PlansActivationFeeNote from "../PlansActivationFeeNote";
+import PlansApplicationNote from "../PlansApplicationNote";
 import TrainingPlanCard from "../TrainingPlanCard";
 import { getPlansLayoutConfig, PLANS_LAYOUT_VARIANT } from "../plansLayoutUtils";
 import { useDisplayCurrency } from "../../../hooks/useDisplayCurrency";
@@ -111,6 +112,9 @@ export default function PlansMobilePage({
             onCta={onCta}
             skeletonCount={layout.skeletonCount}
           />
+          {!loading && plans.some((p) => p?.marketplaceMembership) ? (
+            <PlansApplicationNote className="plans-application-note--mobile" />
+          ) : null}
 
           {error ? (
             <p className="pm-feedback pm-feedback--error" role="alert">
@@ -141,6 +145,9 @@ export default function PlansMobilePage({
             highlightFeatured={false}
             membershipDashboardPath="/dashboard/freelancer/plans?type=annual"
           />
+          {!annualPlansLoading && annualPlans.length > 0 ? (
+            <PlansApplicationNote className="plans-application-note--mobile" />
+          ) : null}
           {!annualPlansLoading && annualPlans.length === 0 ? (
             <p className="pm-feedback" role="status">
               {t("plans.annual.empty")}

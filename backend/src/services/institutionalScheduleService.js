@@ -390,10 +390,10 @@ async function recordSchedulerTick({ status, error = null, summary = {} }) {
   await pool.query(
     `UPDATE institutional_release_scheduler_state
      SET last_tick_at = NOW(),
-         last_tick_status = $1,
+         last_tick_status = $1::text,
          last_tick_error = $2,
-         last_success_at = CASE WHEN $1 = 'success' THEN NOW() ELSE last_success_at END,
-         last_failure_at = CASE WHEN $1 = 'failed' THEN NOW() ELSE last_failure_at END,
+         last_success_at = CASE WHEN $1::text = 'success' THEN NOW() ELSE last_success_at END,
+         last_failure_at = CASE WHEN $1::text = 'failed' THEN NOW() ELSE last_failure_at END,
          last_result_summary = $3::jsonb,
          updated_at = NOW()
      WHERE id = 1`,

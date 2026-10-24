@@ -11,6 +11,7 @@
 
 const { pool } = require("../config/db");
 const { createAppError } = require("../utils/AppError");
+const { resolveEntitlementTierCode } = require("../constants/marketplaceMembershipPlans");
 const {
   getMarketplaceEconomySettings,
   isArticleApplicationsEngineActive,
@@ -837,7 +838,8 @@ async function submitArticleApplication({
         eligibleTiers = null;
       }
     }
-    const tierCode = String(membership.plan?.tierCode || "").toLowerCase();
+    // Annual SILVER is eligible wherever SILVER is.
+    const tierCode = resolveEntitlementTierCode(membership.plan?.tierCode);
     if (Array.isArray(eligibleTiers) && eligibleTiers.length && !eligibleTiers.map(String).map((t) => t.toLowerCase()).includes(tierCode)) {
       throw createAppError("Your membership plan is not eligible for this Article campaign.", 403, {
         exposeToClient: true,

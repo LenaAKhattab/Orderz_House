@@ -62,10 +62,10 @@ function annualPlan(overrides = {}) {
     entitlementDurationMonths: 12,
     bidAllowanceScope: "term",
     catalogCategory: "annual",
-    monthlyBidAllowance: 30,
+    monthlyBidAllowance: 480,
     dailyBidSpendLimit: 3,
     projectMinValueJod: 1,
-    maxRealOrderValueJod: 10,
+    maxRealOrderValueJod: 20,
     unlimitedRealOrderValue: false,
     saleEnabled: false,
     ...overrides,
@@ -150,9 +150,78 @@ describe("Annual Basic — migration 206 plan config", () => {
     assert.ok(PLAN_RESTRICTION_TIER_CODES.includes("annual_basic"));
     // Regular marketplace catalog unchanged.
     assert.deepEqual([...MARKETPLACE_MEMBERSHIP_ACTIVE_TIER_CODES], ["starter", "silver", "pro", "elite"]);
-    assert.equal(E1_PLAN_SPECS.annual_basic.totalBids, 30);
+    assert.equal(E1_PLAN_SPECS.annual_basic.totalBids, 480);
+    assert.equal(E1_PLAN_SPECS.annual_basic.projectMaxJod, E1_PLAN_SPECS.silver.projectMaxJod);
     assert.equal(E1_PLAN_SPECS.annual_basic.dailyBidLimit, 3);
     assert.equal(E1_PLAN_SPECS.annual_basic.durationMonths, 12);
+  });
+});
+
+describe("Annual SILVER parity — migration 207 + entitlement tier", () => {
+  const M207 = read("sql/migrations/207_annual_silver_plan_alignment.sql");
+  const { resolveEntitlementTierCode, ANNUAL_PLAN_ENTITLEMENT_TIER, defaultArticleAccessLevelForTier } =
+    require("../src/constants/marketplaceMembershipPlans");
+
+  it("is additive: one UPDATE of the annual row, values copied from the live SILVER row", () => {
+    assert.match(M207, /UPDATE marketplace_membership_plans AS a/);
+    assert.match(M207, /FROM marketplace_membership_plans AS s/);
+    assert.match(M207, /WHERE a\.tier_code = 'annual_basic'\s+AND s\.tier_code = 'silver'/);
+    assert.match(M207, /'207_annual_silver_plan_alignment'/);
+    assert.doesNotMatch(M207, /DELETE|TRUNCATE|DROP|freelancer_marketplace_memberships|stripe/i);
+  });
+
+  it("copies every SILVER marketplace capability from s.*", () => {
+    for (const col of [
+      "daily_bid_spend_limit",
+      "project_min_value_jod",
+      "max_real_order_value_jod",
+      "unlimited_real_order_value",
+      "withdrawal_enabled",
+      "starter_earnings_mode",
+      "bid_distribution_mode",
+      "is_one_time_starter",
+      "elite_direct_orders_enabled",
+      "priority_bid_enabled",
+      "article_access_level",
+      "cash_allowed",
+      "included_tokens_per_cycle",
+    ]) {
+      assert.match(M207, new RegExp(`${col} = s\\.${col}`), col);
+    }
+  });
+
+  it("only the annual overrides differ: 480 total, Priority Bid uses scaled to one 12-month cycle", () => {
+    assert.match(M207, /monthly_bid_allowance = 480/);
+    assert.match(M207, /priority_bid_uses_per_cycle = s\.priority_bid_uses_per_cycle \* 12/);
+    assert.doesNotMatch(M207, /monthly_price_jod|entitlement_duration_months|included_benefits|catalog_category/);
+    assert.match(M207, /name_ar = 'SILVER — سنوية'/);
+    assert.match(M207, /name_en = 'SILVER — Annual'/);
+  });
+
+  it("annual_basic grants SILVER entitlements in tier-coded gates", () => {
+    assert.deepEqual({ ...ANNUAL_PLAN_ENTITLEMENT_TIER }, { annual_basic: "silver" });
+    assert.equal(resolveEntitlementTierCode("ANNUAL_BASIC"), "silver");
+    for (const t of ["starter", "silver", "pro", "elite", "special_offer"]) {
+      assert.equal(resolveEntitlementTierCode(t), t, "other tiers unchanged");
+    }
+    assert.equal(defaultArticleAccessLevelForTier("annual_basic"), defaultArticleAccessLevelForTier("silver"));
+    assert.equal(normalizeMembershipTierForCourses("annual_basic"), normalizeMembershipTierForCourses("silver"));
+    for (const [file, pattern] of [
+      ["src/services/freelancerActivationEngineService.js", /const tier = resolveEntitlementTierCode\(rows\[0\]\?\.tier_code\)/],
+      ["src/services/freelancerActivationFairDistributionService.js", /const tier = resolveEntitlementTierCode\(row\.tier_code\)/],
+      ["src/services/marketplaceArticleApplicationsService.js", /const tierCode = resolveEntitlementTierCode\(membership\.plan\?\.tierCode\)/],
+      ["src/services/pantryMembershipBidService.js", /pantryTiers\.includes\(resolveEntitlementTierCode\(tier\)\)/],
+    ]) {
+      assert.match(read(file), pattern, file);
+    }
+  });
+
+  it("withdrawal eligibility matches SILVER for an identical plan row", () => {
+    const { evaluateMembershipWithdrawalEligibility } = require("../src/services/marketplaceMembershipEligibilityService");
+    const silverRow = { tierCode: "silver", withdrawalEnabled: true, starterEarningsMode: "standard" };
+    const annualRow = { ...silverRow, tierCode: "annual_basic" };
+    assert.deepEqual(evaluateMembershipWithdrawalEligibility(annualRow), evaluateMembershipWithdrawalEligibility(silverRow));
+    assert.equal(evaluateMembershipWithdrawalEligibility(annualRow).allowed, true);
   });
 });
 
@@ -191,25 +260,26 @@ describe("Annual Basic — 12-month term (calendar months, first real order)", (
   });
 });
 
-describe("Annual Basic — order value eligibility (≤ 10 JOD, backend)", () => {
+describe("Annual SILVER — order value eligibility (SILVER band ≤ 20 JOD, backend)", () => {
   const plan = annualPlan();
-  it("allows 5 JOD and 10 JOD", () => {
+  it("allows 5, 10 and 20 JOD", () => {
     assert.equal(evaluateProjectValueEligibility(plan, 5).eligible, true);
     assert.equal(evaluateProjectValueEligibility(plan, 10).eligible, true);
+    assert.equal(evaluateProjectValueEligibility(plan, 20).eligible, true);
   });
-  it("blocks 10.001 / 10.01 JOD and above", () => {
-    for (const v of [10.001, 10.01, 11, 50]) {
+  it("blocks 20.001 / 20.01 JOD and above", () => {
+    for (const v of [20.001, 20.01, 21, 50]) {
       const out = evaluateProjectValueEligibility(plan, v);
       assert.equal(out.eligible, false, `value ${v}`);
       assert.equal(out.reason, "ABOVE_MAX");
     }
   });
   it("membership band applies on the pool range engine (fixed + bidding)", () => {
-    const range = { minOrderValue: 1, maxOrderValue: 10 };
-    assert.equal(isPlanValueAllowedForOrder({ project_type: "fixed", budget: 10 }, range), true);
-    assert.equal(isPlanValueAllowedForOrder({ project_type: "fixed", budget: 10.01 }, range), false);
+    const range = { minOrderValue: 1, maxOrderValue: 20 };
+    assert.equal(isPlanValueAllowedForOrder({ project_type: "fixed", budget: 20 }, range), true);
+    assert.equal(isPlanValueAllowedForOrder({ project_type: "fixed", budget: 20.01 }, range), false);
     assert.equal(
-      isPlanValueAllowedForOrder({ project_type: "bidding", bid_budget_min: 11, bid_budget_max: 20 }, range),
+      isPlanValueAllowedForOrder({ project_type: "bidding", bid_budget_min: 21, bid_budget_max: 30 }, range),
       false,
     );
   });
@@ -222,7 +292,7 @@ function dailySpendClient({ limit = 3 } = {}) {
     rows,
     async query(sql, params = []) {
       if (/FROM freelancer_marketplace_memberships m/.test(sql)) {
-        return { rows: [{ daily_bid_spend_limit: limit, tier_code: "annual_basic", monthly_bid_allowance: 30 }] };
+        return { rows: [{ daily_bid_spend_limit: limit, tier_code: "annual_basic", monthly_bid_allowance: 480 }] };
       }
       if (/marketplace_membership_business_timezone/.test(sql)) {
         return { rows: [{ tz: "Asia/Amman" }] };
@@ -268,9 +338,9 @@ describe("Annual Basic — daily limit 3 (existing Asia/Amman business day)", ()
   });
 });
 
-describe("Annual Basic — total allowance 30 per entitlement", () => {
+describe("Annual SILVER — total allowance 480 per entitlement", () => {
   it("package grant equals the plan total (no monthly multiplier)", () => {
-    assert.equal(computePendingStartApplicationBidAllowance(annualPlan()), 30);
+    assert.equal(computePendingStartApplicationBidAllowance(annualPlan()), 480);
   });
 
   it("cycle service scopes the allowance to the whole term", () => {
@@ -422,15 +492,15 @@ describe("Order-value band — existing tiers unchanged, Annual uses its own ban
     });
   }
 
-  it("Annual Basic on the free plan → its own 1–10 band", async () => {
+  it("Annual SILVER on the free plan → its own SILVER band (1–20)", async () => {
     const out = await resolveFreelancerOrderValueRange(
       42,
       { planId: 1 },
       rangeClient({
-        annualMembership: { id: 21, tier_code: "annual_basic", project_min_value_jod: "1", max_real_order_value_jod: "10", unlimited_real_order_value: false },
+        annualMembership: { id: 21, tier_code: "annual_basic", project_min_value_jod: "1", max_real_order_value_jod: "20", unlimited_real_order_value: false },
       }),
     );
-    assert.deepEqual([out.minOrderValue, out.maxOrderValue], [1, 10]);
+    assert.deepEqual([out.minOrderValue, out.maxOrderValue], [1, 20]);
     assert.equal(out.resolvedFromMarketplaceTier, "annual_basic");
   });
 
@@ -498,7 +568,7 @@ describe("Annual Basic — canonical resolver / display / courses", () => {
     assert.doesNotMatch(src, /IN \('STARTER','SILVER','PRO','ELITE'\)/);
   });
 
-  it("course gating treats Annual Basic like Starter (no auto-enrolment)", () => {
-    assert.equal(normalizeMembershipTierForCourses("annual_basic"), "starter");
+  it("course gating treats Annual SILVER as SILVER (no auto-enrolment)", () => {
+    assert.equal(normalizeMembershipTierForCourses("annual_basic"), "silver");
   });
 });

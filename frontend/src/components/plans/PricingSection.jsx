@@ -5,6 +5,7 @@ import PublicPageHeader from "../layout/PublicPageHeader";
 import { PlanCardsRowSkeleton } from "../ui/Skeleton";
 import { pickFeaturedPlanIndex } from "./plansFeaturedUtils";
 import PlansActivationFeeNote from "./PlansActivationFeeNote";
+import PlansApplicationNote from "./PlansApplicationNote";
 import {
   getPlansLayoutConfig,
   PLANS_LAYOUT_VARIANT,
@@ -150,6 +151,8 @@ const PricingSection = ({
       ) : (
         planCards
       )}
+
+      {isMembershipCatalog && !loading && plansList.length > 0 ? <PlansApplicationNote /> : null}
     </section>
   );
 };
