@@ -6,6 +6,8 @@
 export const PLANS_CATEGORY = Object.freeze({
   TRAINING: "training",
   MEMBERSHIP: "membership",
+  /** Annual Plans (الباقات السنوية) — marketplace memberships with a 12-month term. */
+  ANNUAL: "annual",
 });
 
 export const DEFAULT_PLANS_CATEGORY = PLANS_CATEGORY.TRAINING;
@@ -147,6 +149,9 @@ export function resolvePlansCategory(raw) {
     .toLowerCase();
   if (value === PLANS_CATEGORY.MEMBERSHIP || value === "memberships" || value === "marketplace") {
     return PLANS_CATEGORY.MEMBERSHIP;
+  }
+  if (value === PLANS_CATEGORY.ANNUAL || value === "yearly") {
+    return PLANS_CATEGORY.ANNUAL;
   }
   return PLANS_CATEGORY.TRAINING;
 }

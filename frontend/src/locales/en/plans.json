@@ -8,7 +8,13 @@
   "categories": {
     "aria": "Plan categories",
     "training": "Training Packages",
-    "membership": "OrderzHouse Marketplace Membership"
+    "membership": "OrderzHouse Marketplace Membership",
+    "annual": "Annual Plans"
+  },
+  "annual": {
+    "sectionAria": "Annual plans",
+    "empty": "No annual plans are available right now.",
+    "footnote": "The annual term starts when you receive your first real order. Included benefits are delivered directly by the company."
   },
   "training": {
     "sectionAria": "Professional training packages",
@@ -71,7 +77,9 @@
     "free": "Trial",
     "metricsAria": "Key membership metrics",
     "bidsAvailable": "Bids available",
+    "bidsForTerm": "Bids for the plan term",
     "bidsPerDay": "Bids per day",
+    "includedBenefitsAria": "Included plan benefits",
     "projectCapMax": "per project",
     "projectCapValue": "Up to {{value}} {{currency}}",
     "projectCapUnlimited": "Project cap",
@@ -101,6 +109,7 @@
   "extraDetails": "More details",
   "fullYear": "Full year",
   "days": "{{count}} days",
+  "months": "{{count}} months",
   "priceTotal": "Total: {{amount}} JOD",
   "installmentAtSignup": "{{amount}} JOD at signup",
   "installmentMonthly": "{{amount}} JOD monthly × {{months}} months",

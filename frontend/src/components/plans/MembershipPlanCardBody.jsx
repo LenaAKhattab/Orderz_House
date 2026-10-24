@@ -9,6 +9,9 @@ import { ApproximateCurrencyLine } from "../money/JodMoneyDisplay";
 export default function MembershipPlanCardBody({ plan, locale = "ar", t }) {
   const metrics = plan?.primaryMetrics || {};
   const durationDays = Number(plan?.durationDays);
+  const durationMonths = Number(plan?.durationMonths);
+  const bidsForTerm = plan?.bidAllowanceScope === "term";
+  const includedBenefits = Array.isArray(plan?.includedBenefits) ? plan.includedBenefits : [];
   const withdrawalEnabled = plan?.withdrawalEnabled;
   const tagline =
     locale === "en"
@@ -75,7 +78,9 @@ export default function MembershipPlanCardBody({ plan, locale = "ar", t }) {
             <span className="pricing-card__price-unit">{t("plans.currency.jod")}</span>
           </div>
         )}
-        {Number.isFinite(durationDays) && durationDays > 0 ? (
+        {Number.isInteger(durationMonths) && durationMonths > 0 ? (
+          <p className="pricing-card__price-period">{t("plans.months", { count: durationMonths })}</p>
+        ) : Number.isFinite(durationDays) && durationDays > 0 ? (
           <p className="pricing-card__price-period">{t("plans.days", { count: durationDays })}</p>
         ) : null}
         {!isFree ? (
@@ -93,7 +98,9 @@ export default function MembershipPlanCardBody({ plan, locale = "ar", t }) {
             </span>
             <p className="pricing-card__metric-copy">
               <span className="pricing-card__metric-value">{bids}</span>
-              <span className="pricing-card__metric-label">{t("plans.membership.bidsAvailable")}</span>
+              <span className="pricing-card__metric-label">
+                {bidsForTerm ? t("plans.membership.bidsForTerm") : t("plans.membership.bidsAvailable")}
+              </span>
             </p>
           </div>
         ) : null}
@@ -149,6 +156,22 @@ export default function MembershipPlanCardBody({ plan, locale = "ar", t }) {
       </div>
 
       <div className="pricing-card__secondary">
+        {includedBenefits.length > 0 ? (
+          <ul
+            className="pricing-card__included-benefits"
+            aria-label={t("plans.membership.includedBenefitsAria")}
+          >
+            {includedBenefits.map((benefit, idx) => (
+              <li
+                key={benefit.code || idx}
+                className="pricing-card__withdrawal pricing-card__withdrawal--on"
+              >
+                <Check size={14} strokeWidth={2.4} aria-hidden="true" />
+                <span>{locale === "en" ? benefit.labelEn : benefit.labelAr}</span>
+              </li>
+            ))}
+          </ul>
+        ) : null}
         {withdrawalEnabled === false ? (
           <p className="pricing-card__withdrawal pricing-card__withdrawal--off">
             <MinusCircle size={14} strokeWidth={2} aria-hidden="true" />

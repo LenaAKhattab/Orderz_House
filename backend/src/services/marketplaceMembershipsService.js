@@ -31,6 +31,7 @@ const {
   STARTER_TRIAL_DURATION_DAYS,
   isPaidMarketplaceMembershipTier,
   computePaidTermWindowFromDurationDays,
+  computePaidTermWindowForPlan,
   decideMarketplaceMembershipFirstOrderStart,
   isPurchasedPendingStartStatus,
   isStarterPendingStartStatus,
@@ -135,6 +136,12 @@ function mapPlanFields(row) {
     eliteDirectOrdersEnabled: isTruthyFlag(row.plan_elite_direct_orders_enabled),
     monthlyPriceJod:
       row.plan_monthly_price_jod != null ? Number(row.plan_monthly_price_jod) : null,
+    catalogCategory: row.plan_catalog_category || "marketplace",
+    entitlementDurationMonths:
+      row.plan_entitlement_duration_months != null
+        ? Number(row.plan_entitlement_duration_months) || null
+        : null,
+    bidAllowanceScope: row.plan_bid_allowance_scope || "cycle",
   };
 }
 
@@ -172,13 +179,19 @@ async function createAndActivateMarketplaceMembership(input) {
   if (input.paidTermEndsAt) {
     paidTermEndsAt = toUtcDate(input.paidTermEndsAt);
   } else {
-    // Prefer plan.cycleDurationDays (E1) when provided by catalog.
+    // Prefer plan term (months, then cycleDurationDays E1) when provided by catalog.
     const planPeek = await marketplaceMembershipPlansService.getMarketplaceMembershipPlanById(
       marketplacePlanId,
       input.client || null,
     );
+    const planMonths = Number(planPeek?.entitlementDurationMonths);
     const durationDays = Number(planPeek?.cycleDurationDays);
-    if (Number.isInteger(durationDays) && durationDays >= 1) {
+    if (Number.isInteger(planMonths) && planMonths >= 1 && planMonths <= 120) {
+      paidTermEndsAt = computePaidTermWindowForPlan({
+        startsAt: paidTermStartsAt,
+        plan: planPeek,
+      }).paidTermEndsAt;
+    } else if (Number.isInteger(durationDays) && durationDays >= 1) {
       paidTermEndsAt = new Date(paidTermStartsAt.getTime() + durationDays * 24 * 60 * 60 * 1000);
     } else {
       const months = Number(input.paidTermMonths);
@@ -1416,15 +1429,9 @@ async function startMarketplaceMembershipOnFirstRealOrder(input = {}) {
       Number(mem.marketplace_plan_id),
       client,
     );
-    let durationDays = Number(plan?.cycleDurationDays);
-    if (!Number.isInteger(durationDays) || durationDays < 1) {
-      durationDays = 30;
-    }
-
-    const { paidTermStartsAt, paidTermEndsAt } = computePaidTermWindowFromDurationDays({
-      startsAt: now,
-      durationDays,
-    });
+    // Calendar-month plans (Annual) use anchored months; day plans keep the 30-day fallback.
+    const { paidTermStartsAt, paidTermEndsAt, durationDays, durationMonths } =
+      computePaidTermWindowForPlan({ startsAt: now, plan, fallbackDays: 30 });
     const anchorDay = resolveCycleAnchorDay(paidTermStartsAt);
 
     let updatedRow;
@@ -1495,6 +1502,7 @@ async function startMarketplaceMembershipOnFirstRealOrder(input = {}) {
         paidTermStartsAt: paidTermStartsAt.toISOString(),
         paidTermEndsAt: paidTermEndsAt.toISOString(),
         durationDays,
+        durationMonths,
       },
     });
     await writeAudit(client, {

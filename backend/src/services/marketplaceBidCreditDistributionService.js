@@ -20,6 +20,7 @@ const {
   dailyBidUnlockAmount,
 } = require("../utils/marketplaceBidCreditDistributionMath");
 const { marketplaceBidCreditsSchemaReady } = require("../utils/marketplaceBidCreditsSchema");
+const { planHasAnnualBidEnforcement } = require("../utils/annualPlanBidEnforcement");
 const accounting = require("./marketplaceBidCreditAccountingService");
 const { BID_CREDIT_ERROR_CODES } = require("../constants/marketplaceBidCredits");
 const { BENEFIT_USABLE_MEMBERSHIP_STATUSES } = require("../constants/marketplaceMemberships");
@@ -219,7 +220,10 @@ async function reconcileDistributionMonth({
 
     // Phase B3: do not unlock while engine OFF (catch-up when enabled). Still close ended windows.
     const settings = await getMarketplaceEconomySettings(client);
-    const engineOn = isBidCreditsEngineActive(settings);
+    // Annual Plans unlock their contractual allowance even while the global engine is OFF.
+    const engineOn =
+      isBidCreditsEngineActive(settings) ||
+      (await planHasAnnualBidEnforcement(client, row.marketplace_plan_id));
 
     // Phase B3: pause unlock when membership is not benefit-usable (suspended/superseded/expired).
     const { rows: memRows } = await client.query(

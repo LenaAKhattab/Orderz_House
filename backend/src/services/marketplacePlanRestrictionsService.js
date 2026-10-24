@@ -145,9 +145,9 @@ function canonicalTierCteSql() {
     canonical_sub AS (
       SELECT fs.freelancer_user_id,
              CASE
-               WHEN lower(p.name) ~ '^marketplace_membership_(starter|silver|pro|elite)$'
-                 THEN upper(substring(lower(p.name) from 'marketplace_membership_(.*)'))
-               WHEN upper(btrim(COALESCE(p.title, ''))) IN ('STARTER','SILVER','PRO','ELITE')
+               WHEN substring(lower(p.name) from '^marketplace_membership_(.*)$') = ANY($tier_codes$::text[])
+                 THEN upper(substring(lower(p.name) from '^marketplace_membership_(.*)$'))
+               WHEN lower(btrim(COALESCE(p.title, ''))) = ANY($tier_codes$::text[])
                  THEN upper(btrim(p.title))
                ELSE NULL
              END AS tier_code
@@ -303,6 +303,7 @@ async function listCanonicalPlansWithRestrictionState() {
           WHEN 'silver' THEN 2
           WHEN 'pro' THEN 3
           WHEN 'elite' THEN 4
+          WHEN 'annual_basic' THEN 5
           ELSE 99
         END,
         id ASC`,

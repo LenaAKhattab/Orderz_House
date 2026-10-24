@@ -1,6 +1,6 @@
 /** Marketplace-M5 — pure helpers for paid vs STARTER checkout UI. */
 
-const PAID_TIER_CODES = Object.freeze(["SILVER", "PRO", "ELITE", "SPECIAL_OFFER"]);
+const PAID_TIER_CODES = Object.freeze(["SILVER", "PRO", "ELITE", "SPECIAL_OFFER", "ANNUAL_BASIC"]);
 
 function isSpecialOfferTierCodeNormalized(code) {
   const c = String(code || "").trim().toUpperCase();

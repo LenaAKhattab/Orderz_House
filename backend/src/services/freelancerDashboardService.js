@@ -144,7 +144,7 @@ async function getFreelancerDashboardSummary(freelancerUserId) {
   const eligibility = subscriptionsService.evaluateFreelancerTakeOrdersEligibility(subscription);
 
   const planRange = subscription?.planId
-    ? await planOrderValueEligibility.resolvePlanOrderValueRange(subscription.planId)
+    ? await planOrderValueEligibility.resolveFreelancerOrderValueRange(uid, subscription)
     : null;
   const canAccessTrainingOrders = false;
 

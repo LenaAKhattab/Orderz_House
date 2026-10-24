@@ -16,6 +16,11 @@ const {
   toUtcDate,
 } = require("../utils/marketplaceMembershipCycleDates");
 const marketplaceMembershipPlansService = require("./marketplaceMembershipPlansService");
+const { BID_ALLOWANCE_SCOPES } = require("../constants/marketplaceMembershipPlans");
+
+function isTermScopedPlan(plan) {
+  return String(plan?.bidAllowanceScope || plan?.bid_allowance_scope || "") === BID_ALLOWANCE_SCOPES.TERM;
+}
 
 function mapCycle(row) {
   if (!row) return null;
@@ -118,14 +123,22 @@ async function createAndActivateCycleForMembership({
       });
     }
 
-    const window = computeCycleWindow({
-      membershipStartedAt: mem.started_at || mem.paid_term_starts_at,
-      cycleNumber,
-      anchorDay: mem.cycle_anchor_day,
-    });
+    const termEnd = mem.paid_term_ends_at ? toUtcDate(mem.paid_term_ends_at) : null;
+    // Term-scoped allowance (Annual): a single benefit cycle spans the whole entitlement.
+    const window =
+      isTermScopedPlan(planRow) && termEnd
+        ? {
+            startsAt: toUtcDate(mem.paid_term_starts_at || mem.started_at),
+            endsAt: termEnd,
+            cycleNumber: 1,
+          }
+        : computeCycleWindow({
+            membershipStartedAt: mem.started_at || mem.paid_term_starts_at,
+            cycleNumber,
+            anchorDay: mem.cycle_anchor_day,
+          });
 
     let endsAt = window.endsAt;
-    const termEnd = mem.paid_term_ends_at ? toUtcDate(mem.paid_term_ends_at) : null;
     if (termEnd && endsAt > termEnd) {
       endsAt = termEnd;
     }
@@ -504,11 +517,21 @@ async function reconcileMembershipCycles({
     }
 
     const startedAt = mem.started_at || mem.paid_term_starts_at;
-    const dueCycleNumber = resolveCycleNumberAt({
-      membershipStartedAt: startedAt,
-      at: instant,
-      anchorDay: mem.cycle_anchor_day,
-    });
+    const reconcilePlan = await marketplaceMembershipPlansService.getMarketplaceMembershipPlanById(
+      Number(mem.marketplace_plan_id),
+      client,
+    );
+    // Term-scoped allowance never rolls into a second cycle within the same entitlement.
+    const dueCycleNumber =
+      isTermScopedPlan(reconcilePlan) && startedAt
+        ? toUtcDate(startedAt) <= instant
+          ? 1
+          : null
+        : resolveCycleNumberAt({
+            membershipStartedAt: startedAt,
+            at: instant,
+            anchorDay: mem.cycle_anchor_day,
+          });
     if (dueCycleNumber == null) {
       if (ownTxn) await client.query("COMMIT");
       return { ok: true, cycle: null, reason: "before_start" };

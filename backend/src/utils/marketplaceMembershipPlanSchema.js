@@ -35,9 +35,27 @@ async function marketplacePlanHasMonthlyBidAllowance(db = pool) {
   return Boolean(rows[0]);
 }
 
+let annualPlanColumnsReady = null;
+
+/** Migration 206 columns (catalog_category, entitlement_duration_months, bid_allowance_scope). */
+async function marketplacePlanHasAnnualPlanColumns(db = pool) {
+  if (annualPlanColumnsReady === true) return true;
+  const { rows } = await db.query(
+    `SELECT 1
+       FROM information_schema.columns
+      WHERE table_schema = 'public'
+        AND table_name = 'marketplace_membership_plans'
+        AND column_name = 'bid_allowance_scope'
+      LIMIT 1`,
+  );
+  annualPlanColumnsReady = Boolean(rows[0]);
+  return annualPlanColumnsReady;
+}
+
 /** Test / gate helper — reset after applying migration 144 mid-process. */
 function clearMarketplaceMembershipPlanSchemaCache() {
   articleAccessLevelReady = null;
+  annualPlanColumnsReady = null;
 }
 
 /**
@@ -47,10 +65,23 @@ function clearMarketplaceMembershipPlanSchemaCache() {
 async function marketplacePlanJoinSelectExtras(db = pool) {
   const hasArticle = await marketplacePlanHasArticleAccessLevel(db);
   const hasBidAllowance = await marketplacePlanHasMonthlyBidAllowance(db);
+  const hasAnnual = await marketplacePlanHasAnnualPlanColumns(db);
   return {
     hasArticleAccessLevel: hasArticle,
     hasMonthlyBidAllowance: hasBidAllowance,
+    hasAnnualPlanColumns: hasAnnual,
     sql: [
+      ...(hasAnnual
+        ? [
+            `p.catalog_category AS plan_catalog_category`,
+            `p.entitlement_duration_months AS plan_entitlement_duration_months`,
+            `p.bid_allowance_scope AS plan_bid_allowance_scope`,
+          ]
+        : [
+            `'marketplace'::text AS plan_catalog_category`,
+            `NULL::integer AS plan_entitlement_duration_months`,
+            `'cycle'::text AS plan_bid_allowance_scope`,
+          ]),
       hasArticle
         ? `p.article_access_level AS plan_article_access_level`
         : `NULL::integer AS plan_article_access_level`,
@@ -66,6 +97,7 @@ async function marketplacePlanJoinSelectExtras(db = pool) {
 module.exports = {
   marketplacePlanHasArticleAccessLevel,
   marketplacePlanHasMonthlyBidAllowance,
+  marketplacePlanHasAnnualPlanColumns,
   clearMarketplaceMembershipPlanSchemaCache,
   marketplacePlanJoinSelectExtras,
 };

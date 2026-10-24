@@ -2293,7 +2293,7 @@ async function submitPoolOrderBid({
            order_id, freelancer_user_id, amount, status, is_fake_bid, fake_round_id, proposal_message,
            moderation_status, hold_restriction_id, hold_plan_restriction_id, moderation_held_at
          )
-         VALUES ($1, $2, $3, 'pending', FALSE, NULL, $4, $5, $6, $7, CASE WHEN $5 = 'held' THEN NOW() ELSE NULL END)
+         VALUES ($1, $2, $3, 'pending', FALSE, NULL, $4, $5::varchar, $6, $7, CASE WHEN $5::varchar = 'held' THEN NOW() ELSE NULL END)
          ON CONFLICT (order_id, freelancer_user_id)
          DO UPDATE SET amount = EXCLUDED.amount,
                        status = 'pending',

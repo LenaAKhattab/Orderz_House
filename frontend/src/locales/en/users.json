@@ -121,6 +121,7 @@
     "reviewedAt": "Reviewed",
     "resubmissions": "Resubmissions",
     "currentPlan": "Current plan",
+    "marketplacePlan": "Effective marketplace plan",
     "subscriptionStatus": "Membership status",
     "activation": "Activation",
     "duration": "Duration",

@@ -42,6 +42,7 @@ export default function PlansMobilePlanCard({
   checkoutBusy = false,
   activationFeeNeedsPayment = false,
   activationFee = null,
+  membershipDashboardPath = "/dashboard/freelancer/plans",
 }) {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -150,7 +151,7 @@ export default function PlansMobilePlanCard({
         return;
       }
       if (!isFreelancer) return;
-      navigate("/dashboard/freelancer/plans");
+      navigate(membershipDashboardPath);
       return;
     }
     if (isGuest) {

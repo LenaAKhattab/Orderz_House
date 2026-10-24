@@ -29,6 +29,26 @@ function normalizeTierCode(value) {
   return String(value || "").trim().toLowerCase();
 }
 
+function mapIncludedBenefits(raw) {
+  let list = raw;
+  if (typeof list === "string") {
+    try {
+      list = JSON.parse(list);
+    } catch {
+      list = [];
+    }
+  }
+  if (!Array.isArray(list)) return [];
+  return list
+    .filter((b) => b && typeof b === "object" && (b.labelAr || b.labelEn))
+    .map((b) => ({
+      code: b.code ? String(b.code) : null,
+      labelAr: b.labelAr ? String(b.labelAr) : String(b.labelEn),
+      labelEn: b.labelEn ? String(b.labelEn) : String(b.labelAr),
+      fulfillment: b.fulfillment ? String(b.fulfillment) : "company_service",
+    }));
+}
+
 function mapMarketplaceMembershipPlan(row) {
   if (!row) return null;
   const unlimited = isTruthyFlag(row.unlimited_real_order_value);
@@ -75,6 +95,12 @@ function mapMarketplaceMembershipPlan(row) {
     starterEarningsMode: row.starter_earnings_mode || null,
     bidDistributionMode: row.bid_distribution_mode || "progressive_daily",
     isOneTimeStarter: isTruthyFlag(row.is_one_time_starter),
+    // Migration 206 (Annual Plans). Missing columns → existing marketplace defaults.
+    catalogCategory: row.catalog_category || "marketplace",
+    entitlementDurationMonths:
+      row.entitlement_duration_months == null ? null : Number(row.entitlement_duration_months) || null,
+    bidAllowanceScope: row.bid_allowance_scope || "cycle",
+    includedBenefits: mapIncludedBenefits(row.included_benefits),
     saleEnabled: isTruthyFlag(row.sale_enabled),
     salePercentage: toFiniteNumber(row.sale_percentage),
     saleReason: row.sale_reason || null,
@@ -111,6 +137,10 @@ function mapPublicMarketplaceMembershipPlan(row) {
     withdrawalEnabled: full.withdrawalEnabled,
     starterEarningsMode: full.starterEarningsMode,
     bidDistributionMode: full.bidDistributionMode,
+    catalogCategory: full.catalogCategory,
+    entitlementDurationMonths: full.entitlementDurationMonths,
+    bidAllowanceScope: full.bidAllowanceScope,
+    includedBenefits: full.includedBenefits,
     cash: {
       allowed: full.cashAllowed,
       minimumMonths: full.minimumCashMonths,
@@ -124,6 +154,7 @@ function mapPublicMarketplaceMembershipPlan(row) {
       withdrawalEnabled: full.withdrawalEnabled,
       dailyBidSpendLimit: full.dailyBidSpendLimit,
       cycleDurationDays: full.cycleDurationDays,
+      entitlementDurationMonths: full.entitlementDurationMonths,
     },
     sale: full.sale,
   };

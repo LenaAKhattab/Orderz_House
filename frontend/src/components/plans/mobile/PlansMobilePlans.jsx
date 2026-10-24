@@ -23,9 +23,11 @@ export default function PlansMobilePlans({
   skeletonCount = 6,
   activationFeeNeedsPayment = false,
   activationFee = null,
+  highlightFeatured = true,
+  membershipDashboardPath,
 }) {
   const { t } = useTranslation();
-  const featuredIndex = pickFeaturedPlanIndex(plans);
+  const featuredIndex = highlightFeatured ? pickFeaturedPlanIndex(plans) : -1;
 
   return (
     <section className="pm-plans" aria-label={t("plans.sectionAria")} aria-busy={loading || undefined}>
@@ -52,6 +54,7 @@ export default function PlansMobilePlans({
                 activationFeeNeedsPayment={activationFeeNeedsPayment}
                 activationFee={activationFee}
                 onCta={onCta}
+                membershipDashboardPath={membershipDashboardPath}
               />
             ))}
       </div>
