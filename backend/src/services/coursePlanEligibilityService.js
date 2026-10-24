@@ -35,7 +35,8 @@ function normalizeMembershipTierForCourses(raw) {
   const code = String(raw).trim().toLowerCase();
   if (isSpecialOfferMembershipTier(code)) return "silver";
   if (COURSE_REQUIRED_TIER_CODES.includes(code)) return code;
-  if (code === "free" || code === "pay_as_you_work") return "starter";
+  // Annual Basic shares Starter's 10 JOD band; its Content Writing Course is company-fulfilled.
+  if (code === "free" || code === "pay_as_you_work" || code === "annual_basic") return "starter";
   if (code === "start") return "silver";
   if (code === "active") return "pro";
   return null;

@@ -220,11 +220,66 @@ function isOrderValueAllowedForPlan(planId, orderLike) {
   return isPlanValueAllowedForOrder(orderLike, range);
 }
 
+/**
+ * Project-value band of the freelancer's current PAID marketplace membership
+ * (purchased_pending_start / active / cancel_at_period_end). Null when none.
+ */
+async function resolveCurrentPaidMembershipOrderValueRange(freelancerUserId, client) {
+  const runner = client || require("../config/db").pool;
+  let rows;
+  try {
+    ({ rows } = await runner.query(
+      `SELECT p.id, p.tier_code, p.project_min_value_jod, p.max_real_order_value_jod,
+              p.unlimited_real_order_value
+         FROM freelancer_marketplace_memberships m
+         JOIN marketplace_membership_plans p ON p.id = m.marketplace_plan_id
+        WHERE m.freelancer_user_id = $1
+          AND m.is_current = TRUE
+          AND m.status IN ('active', 'cancel_at_period_end', 'purchased_pending_start')
+        LIMIT 1`,
+      [Number(freelancerUserId)],
+    ));
+  } catch (err) {
+    if (err && (err.code === "42P01" || err.code === "42703")) return null;
+    throw err;
+  }
+  const market = rows[0];
+  if (!market) return null;
+  const { isPaidMarketplaceMembershipTier } = require("../utils/marketplaceMembershipPendingStart");
+  if (!isPaidMarketplaceMembershipTier(market.tier_code)) return null;
+  const minOrderValue = parseJod(market.project_min_value_jod);
+  if (minOrderValue == null) return null;
+  return {
+    minOrderValue,
+    maxOrderValue: market.unlimited_real_order_value ? null : parseJod(market.max_real_order_value_jod),
+    resolvedFromMarketplaceTier: String(market.tier_code).toLowerCase(),
+    resolvedFromMarketplacePlanId: Number(market.id),
+  };
+}
+
+/**
+ * Canonical band for a freelancer: a marketplace bridge subscription is authoritative;
+ * otherwise a current paid marketplace membership (e.g. Stripe purchase) supplies its band,
+ * matching resolveCanonicalMarketplacePlanForFreelancer. Falls back to the subscription plan.
+ */
+async function resolveFreelancerOrderValueRange(freelancerUserId, sub, client) {
+  if (!sub?.planId) return null;
+  const planRow = await getPlanRowForOrderValue(sub.planId, client);
+  const isBridge = String(planRow?.name || "").startsWith(MARKETPLACE_BRIDGE_NAME_PREFIX);
+  if (!isBridge) {
+    const membershipRange = await resolveCurrentPaidMembershipOrderValueRange(freelancerUserId, client);
+    if (isUsableOrderValueRange(membershipRange)) {
+      return { ...membershipRange, planId: Number(sub.planId), sourcePlanId: Number(sub.planId) };
+    }
+  }
+  return resolvePlanOrderValueRange(sub.planId, client);
+}
+
 async function getFreelancerPlanOrderValueRange(freelancerUserId, client) {
   const subscriptionsService = require("./subscriptionsService");
   const sub = await subscriptionsService.getCurrentSubscriptionForFreelancer(freelancerUserId);
   if (!sub?.planId) return null;
-  return resolvePlanOrderValueRange(sub.planId, client);
+  return resolveFreelancerOrderValueRange(freelancerUserId, sub, client);
 }
 
 function buildPlanOrderValueWhereClause(alias, minParamIndex, maxParamIndex) {
@@ -414,7 +469,7 @@ async function getFreelancerPlanEligibilityContext(freelancerUserId, client) {
   const sub = await subscriptionsService.getCurrentSubscriptionForFreelancer(freelancerUserId);
   const planId = sub?.planId != null ? Number(sub.planId) : null;
   const hasPlanId = Number.isInteger(planId) && planId > 0;
-  const range = hasPlanId ? await resolvePlanOrderValueRange(planId, client) : null;
+  const range = hasPlanId ? await resolveFreelancerOrderValueRange(freelancerUserId, sub, client) : null;
   return { sub, planId: hasPlanId ? planId : null, hasPlanId, range };
 }
 
@@ -576,6 +631,8 @@ module.exports = {
   isSingleValueInPlanRange,
   budgetRangesOverlap,
   getFreelancerPlanOrderValueRange,
+  resolveFreelancerOrderValueRange,
+  resolveCurrentPaidMembershipOrderValueRange,
   getFreelancerPlanEligibilityContext,
   formatPlanRangeLabel,
   isPlanValueAllowedForOrder,

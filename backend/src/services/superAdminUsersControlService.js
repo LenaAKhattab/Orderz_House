@@ -303,6 +303,38 @@ async function getCurrentSubscriptionSafe(freelancerUserId) {
   };
 }
 
+/**
+ * Canonical current marketplace plan (bridge subscription or membership row), read-only.
+ * Lets the drawer show Stripe-purchased plans such as Annual Basic.
+ */
+async function getCanonicalMarketplacePlanSafe(freelancerUserId) {
+  try {
+    const planRestrictions = require("./marketplacePlanRestrictionsService");
+    const membershipsService = require("./marketplaceMembershipsService");
+    const [plan, membership] = await Promise.all([
+      planRestrictions.resolveCanonicalMarketplacePlanForFreelancer(freelancerUserId),
+      membershipsService.resolveCurrentMarketplaceMembershipForFreelancer(freelancerUserId),
+    ]);
+    if (!plan) return null;
+    const sameMembership =
+      membership && String(membership.marketplacePlanId) === String(plan.marketplacePlanId);
+    return {
+      marketplacePlanId: String(plan.marketplacePlanId),
+      tierCode: plan.tierCode,
+      nameAr: plan.planNameAr,
+      nameEn: plan.planNameEn,
+      source: plan.source,
+      catalogCategory: sameMembership ? membership.plan?.catalogCategory || "marketplace" : null,
+      membershipStatus: sameMembership ? membership.status : null,
+      membershipSource: sameMembership ? membership.source : null,
+      paidTermStartsAt: sameMembership ? membership.paidTermStartsAt : null,
+      paidTermEndsAt: sameMembership ? membership.paidTermEndsAt : null,
+    };
+  } catch {
+    return null;
+  }
+}
+
 async function getEligibilitySafe(freelancerUserId) {
   try {
     if (typeof subscriptionsService?.canFreelancerTakeOrders === "function") {
@@ -998,6 +1030,7 @@ async function getUserDetail(userId) {
 
   const isFreelancer = row.role === ROLES.FREELANCER;
   const subscription = isFreelancer ? sanitizeSubscription(await getCurrentSubscriptionSafe(uid)) : null;
+  const marketplacePlan = isFreelancer ? await getCanonicalMarketplacePlanSafe(uid) : null;
   const eligibility = isFreelancer ? await getEligibilitySafe(uid) : null;
   const kycRow = isFreelancer ? await loadLatestKycRequest(uid) : null;
   const manualIdentity = isFreelancer ? await loadManualIdentityVerification(uid) : null;
@@ -1030,6 +1063,7 @@ async function getUserDetail(userId) {
       isOnline: notificationRealtimeHub.isUserOnline(uid),
     },
     subscription,
+    marketplacePlan,
     eligibility: eligibility
       ? {
           eligible: eligibility.eligible === true,

@@ -1564,6 +1564,26 @@
   border: 1px solid rgba(148, 163, 184, 0.2);
 }
 
+/* Included plan benefits (Annual Plans) reuse the withdrawal chip styling. */
+.pricing-card__included-benefits {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0 0 6px;
+  padding: 0;
+  list-style: none;
+}
+
+.pricing-card__included-benefits .pricing-card__withdrawal {
+  text-align: start;
+  line-height: 1.35;
+}
+
+.pricing-card__included-benefits .pricing-card__withdrawal svg {
+  flex-shrink: 0;
+}
+
 .plans-page--ref .pricing-card--membership .pricing-card__cta {
   margin-top: auto;
   padding-top: 14px;
@@ -1618,6 +1638,14 @@
   background: rgba(248, 250, 252, 0.95);
   border: 1px solid rgba(56, 82, 180, 0.12);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.plans-category-toggle__track--three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.plans-category-toggle:has(.plans-category-toggle__track--three) {
+  max-width: min(880px, 100%);
 }
 
 .plans-category-toggle__btn {
@@ -1942,6 +1970,15 @@
   .plans-category-toggle__btn {
     padding: 9px 10px;
     font-size: 0.78rem;
+  }
+
+  .plans-category-toggle__track--three {
+    border-radius: 22px;
+  }
+
+  .plans-category-toggle__track--three .plans-category-toggle__btn {
+    padding: 8px 6px;
+    border-radius: 18px;
   }
 
   .plans-page--ref .pricing__grid--training-three {

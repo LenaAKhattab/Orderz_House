@@ -898,6 +898,17 @@ function UserDetailDrawer({
                           (subscription ? t("users.assignedPlan") : t("users.noPlan"))}
                       </strong>
                     </div>
+                    {detail?.marketplacePlan ? (
+                      <div data-testid="sa-user-marketplace-plan">
+                        <span>{t("users.fields.marketplacePlan")}</span>
+                        <strong>
+                          {(locale === "en"
+                            ? detail.marketplacePlan.nameEn || detail.marketplacePlan.nameAr
+                            : detail.marketplacePlan.nameAr || detail.marketplacePlan.nameEn) ||
+                            detail.marketplacePlan.tierCode}
+                        </strong>
+                      </div>
+                    ) : null}
                     <div>
                       <span>{t("users.fields.subscriptionStatus")}</span>
                       <strong>

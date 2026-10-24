@@ -84,8 +84,14 @@ describe("wiring", () => {
     assert.equal(AUDIT_ACTIONS.PLAN_RESTRICTION_REVOKED, "plan_restriction_revoked");
   });
 
-  it("canonical tiers are starter/silver/pro/elite", () => {
-    assert.deepEqual([...PLAN_RESTRICTION_TIER_CODES], ["starter", "silver", "pro", "elite"]);
+  it("canonical tiers are starter/silver/pro/elite plus Annual Basic", () => {
+    assert.deepEqual([...PLAN_RESTRICTION_TIER_CODES], [
+      "starter",
+      "silver",
+      "pro",
+      "elite",
+      "annual_basic",
+    ]);
   });
 
   it("frontend primary tabs + plans panel exist", () => {

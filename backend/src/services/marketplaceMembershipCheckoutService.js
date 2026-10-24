@@ -28,6 +28,7 @@ const {
 } = require("../utils/marketplaceMembershipSalePricing");
 const {
   isPaidMarketplaceMembershipTier,
+  resolvePlanTermDuration,
 } = require("../utils/marketplaceMembershipPendingStart");
 const {
   isSpecialOfferMembershipTier,
@@ -88,7 +89,7 @@ function requireStripeClientUrl() {
 async function resolvePaidMarketplacePlanForCheckout(planCodeRaw, deps = {}) {
   const planCode = normalizeMarketplaceCheckoutPlanCode(planCodeRaw);
   if (!planCode) {
-    throw createAppError("planCode is required (SILVER | PRO | ELITE).", 400, {
+    throw createAppError("planCode is required (SILVER | PRO | ELITE | ANNUAL_BASIC).", 400, {
       exposeToClient: true,
       publicCode: MARKETPLACE_MEMBERSHIP_CHECKOUT_ERROR_CODES.INVALID_PLAN_CODE,
     });
@@ -101,7 +102,7 @@ async function resolvePaidMarketplacePlanForCheckout(planCodeRaw, deps = {}) {
   }
   if (!isPaidMarketplaceMembershipTier(planCode)) {
     throw createAppError(
-      "Only SILVER, PRO, ELITE, or special offer marketplace memberships can be purchased.",
+      "Only SILVER, PRO, ELITE, ANNUAL_BASIC, or special offer marketplace memberships can be purchased.",
       400,
       {
       exposeToClient: true,
@@ -142,13 +143,15 @@ async function resolvePaidMarketplacePlanForCheckout(planCodeRaw, deps = {}) {
     });
   }
 
-  const durationDays = Number(plan.cycleDurationDays);
-  if (!Number.isInteger(durationDays) || durationDays < 1) {
+  const term = resolvePlanTermDuration(plan);
+  if (!term) {
     throw createAppError("Marketplace membership durationDays is invalid.", 400, {
       exposeToClient: true,
       publicCode: MARKETPLACE_MEMBERSHIP_CHECKOUT_ERROR_CODES.INVALID_DURATION,
     });
   }
+  const durationDays = term.days;
+  const durationMonths = term.months;
 
   const expectedAmountMinor = amountMajorToStripeMinor(priceJod, currency);
   if (!Number.isInteger(expectedAmountMinor) || expectedAmountMinor < 1) {
@@ -162,6 +165,7 @@ async function resolvePaidMarketplacePlanForCheckout(planCodeRaw, deps = {}) {
     plan,
     planCode: String(plan.tierCode).toLowerCase(),
     durationDays,
+    durationMonths,
     priceJod,
     expectedAmountMinor,
     currency,
@@ -269,7 +273,9 @@ async function createMarketplaceMembershipCheckoutSession(input = {}, deps = {})
       freelancerUserId: String(freelancerUserId),
       marketplacePlanId: String(resolved.plan.id),
       planCode: resolved.planCode,
-      durationDays: String(resolved.durationDays),
+      ...(resolved.durationMonths
+        ? { durationMonths: String(resolved.durationMonths) }
+        : { durationDays: String(resolved.durationDays) }),
       expectedAmountMinor: String(resolved.expectedAmountMinor),
       // Explicit: term does not start at payment — first real order (M4).
       termStartPolicy: "first_real_order",
@@ -311,7 +317,9 @@ async function createMarketplaceMembershipCheckoutSession(input = {}, deps = {})
             unit_amount: chargeMinor,
             product_data: {
               name: productName,
-              description: `${planLabel} · ${resolved.durationDays} days`,
+              description: resolved.durationMonths
+                ? `${planLabel} · ${resolved.durationMonths} months`
+                : `${planLabel} · ${resolved.durationDays} days`,
             },
           },
         },
@@ -331,6 +339,7 @@ async function createMarketplaceMembershipCheckoutSession(input = {}, deps = {})
     planCode: resolved.planCode,
     marketplacePlanId: String(resolved.plan.id),
     durationDays: resolved.durationDays,
+    durationMonths: resolved.durationMonths,
     amountJod: chargeMinor / 1000,
     listAmountJod: resolved.priceJod,
     referralDiscountJod: discount.discountMinor / 1000,
@@ -465,10 +474,20 @@ async function applyMarketplaceMembershipCheckoutSessionCompleted(
     return { status: "ignored", reason: "marketplace_membership_plan_code_mismatch" };
   }
 
-  const durationDays = Number(plan.cycleDurationDays);
-  if (!Number.isInteger(durationDays) || durationDays < 1) {
+  const term = resolvePlanTermDuration(plan);
+  if (!term) {
     return { status: "ignored", reason: "marketplace_membership_invalid_duration" };
   }
+  const metaMonths = Number(metaPick(sessionMeta, "durationMonths", "duration_months"));
+  if (
+    term.months &&
+    Number.isInteger(metaMonths) &&
+    metaMonths >= 1 &&
+    metaMonths !== term.months
+  ) {
+    return { status: "ignored", reason: "marketplace_membership_duration_mismatch" };
+  }
+  const durationDays = term.days;
   const metaDuration = Number(metaPick(sessionMeta, "durationDays", "duration_days"));
   const isSpecialOfferEarly =
     String(metaPick(sessionMeta, "specialOfferPackage", "special_offer_package") || "") === "1" ||

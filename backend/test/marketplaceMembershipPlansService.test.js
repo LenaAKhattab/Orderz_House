@@ -41,6 +41,8 @@ describe("marketplace membership tier codes", () => {
       "silver",
       "pro",
       "elite",
+      "special_offer",
+      "annual_basic",
       "free",
       "start",
       "active",

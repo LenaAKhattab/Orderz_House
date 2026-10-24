@@ -93,6 +93,7 @@ const PlanCard = ({
   checkoutBusy = false,
   activationFeeNeedsPayment = false,
   activationFee = null,
+  membershipDashboardPath = "/dashboard/freelancer/plans",
 }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -240,7 +241,7 @@ const PlanCard = ({
         onCta(plan);
         return;
       }
-      navigate("/dashboard/freelancer/plans");
+      navigate(membershipDashboardPath);
       return;
     }
     if (isGuest) {

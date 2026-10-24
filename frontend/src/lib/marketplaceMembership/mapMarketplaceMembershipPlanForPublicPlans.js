@@ -90,6 +90,21 @@ function buildPrimaryMetrics(plan) {
   };
 }
 
+function isAnnualCatalogPlan(plan) {
+  return normalizeTierCode(plan?.catalogCategory) === "annual";
+}
+
+function mapIncludedBenefits(raw) {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((b) => b && (b.labelAr || b.labelEn))
+    .map((b) => ({
+      code: b.code || null,
+      labelAr: b.labelAr || b.labelEn,
+      labelEn: b.labelEn || b.labelAr,
+    }));
+}
+
 /**
  * @param {object} plan — public marketplace membership plan DTO
  * @returns {object} plan card DTO for PricingSection
@@ -99,8 +114,47 @@ export function mapMarketplaceMembershipPlanForPublicPlans(plan) {
 
   const tierCode = normalizeTierCode(plan.tierCode);
   if (!isPublicMarketplaceTier(tierCode)) return null;
+  if (isAnnualCatalogPlan(plan)) return null;
 
   const display = PUBLIC_MEMBERSHIP_TIER_DISPLAY[tierCode];
+  return buildMembershipPlanCard(plan, tierCode, {
+    titleAr: display.code,
+    titleEn: display.code,
+    taglineAr: display.taglineAr,
+    taglineEn: display.taglineEn,
+    isPopular: tierCode === "pro",
+  });
+}
+
+/**
+ * Annual Plans tab — same card DTO as the marketplace catalog, named from the plan row.
+ * @param {object} plan — public marketplace membership plan DTO (catalogCategory = annual)
+ */
+export function mapAnnualMembershipPlanForPublicPlans(plan) {
+  if (!plan || typeof plan !== "object" || !isAnnualCatalogPlan(plan)) return null;
+  const tierCode = normalizeTierCode(plan.tierCode);
+  if (!tierCode) return null;
+  const titleAr = plan.nameAr || plan.nameEn || tierCode.toUpperCase();
+  const titleEn = plan.nameEn || plan.nameAr || tierCode.toUpperCase();
+  return buildMembershipPlanCard(plan, tierCode, {
+    titleAr,
+    titleEn,
+    taglineAr: plan.descriptionAr || "",
+    taglineEn: plan.descriptionEn || plan.descriptionAr || "",
+    isPopular: false,
+  });
+}
+
+/** Annual Plans, ordered by catalog sort order. */
+export function mapAnnualMembershipPlansForPublicPlans(items) {
+  if (!Array.isArray(items)) return [];
+  return items
+    .map(mapAnnualMembershipPlanForPublicPlans)
+    .filter(Boolean)
+    .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+}
+
+function buildMembershipPlanCard(plan, tierCode, display) {
   const sale = plan.sale && typeof plan.sale === "object" ? plan.sale : null;
   const effectivePrice =
     sale?.enabled && sale.effectivePriceJod != null
@@ -111,24 +165,31 @@ export function mapMarketplaceMembershipPlanForPublicPlans(plan) {
   const durationDaysRaw = Number(
     plan.cycleDurationDays ?? plan?.capabilities?.cycleDurationDays,
   );
+  const durationMonthsRaw = Number(
+    plan.entitlementDurationMonths ?? plan?.capabilities?.entitlementDurationMonths,
+  );
+  const durationMonths =
+    Number.isInteger(durationMonthsRaw) && durationMonthsRaw > 0 ? durationMonthsRaw : null;
+  // Calendar-month terms win over day counts (mirrors the server term resolver).
   const durationDays =
-    Number.isFinite(durationDaysRaw) && durationDaysRaw > 0 ? durationDaysRaw : null;
+    !durationMonths && Number.isFinite(durationDaysRaw) && durationDaysRaw > 0 ? durationDaysRaw : null;
 
   const primaryMetrics = buildPrimaryMetrics(plan);
   const featuresAr = buildSecondaryFeatures(plan, false);
   const featuresEn = buildSecondaryFeatures(plan, true);
-  const tierTitle = display.code;
 
   return {
     id: String(plan.id),
     catalogSource: "marketplace_membership",
     marketplaceMembership: true,
+    catalogCategory: isAnnualCatalogPlan(plan) ? "annual" : "marketplace",
     tierCode: plan.tierCode || tierCode,
-    name: tierTitle,
-    nameAr: tierTitle,
-    nameEn: tierTitle,
-    title: tierTitle,
-    titleEn: tierTitle,
+    sortOrder: Number(plan.sortOrder) || 0,
+    name: display.titleAr,
+    nameAr: display.titleAr,
+    nameEn: display.titleEn,
+    title: display.titleAr,
+    titleEn: display.titleEn,
     taglineAr: display.taglineAr,
     taglineEn: display.taglineEn,
     description: "",
@@ -138,6 +199,9 @@ export function mapMarketplaceMembershipPlanForPublicPlans(plan) {
     billingText: null,
     billingTextEn: null,
     durationDays,
+    durationMonths,
+    bidAllowanceScope: plan.bidAllowanceScope === "term" ? "term" : "cycle",
+    includedBenefits: mapIncludedBenefits(plan.includedBenefits),
     primaryMetrics,
     features: featuresAr,
     featuresEn,
@@ -149,8 +213,8 @@ export function mapMarketplaceMembershipPlanForPublicPlans(plan) {
     selfCheckoutEligible: false,
     buttonText: "عرض العضوية",
     buttonTextEn: "View membership",
-    isPopular: tierCode === "pro",
-    isFeatured: tierCode === "pro",
+    isPopular: display.isPopular,
+    isFeatured: display.isPopular,
     monthlyBidAllowance: Number(plan.monthlyBidAllowance) || 0,
     articleAccessLevel: plan.articleAccessLevel ?? 1,
     priorityBidEnabled: Boolean(plan?.capabilities?.priorityBid),

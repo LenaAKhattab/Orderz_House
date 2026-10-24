@@ -1,0 +1,400 @@
+/**
+ * Annual Plans (الباقات السنوية) — Annual Basic on the canonical marketplace membership stack.
+ * Mocks Stripe + DB only. No real Stripe / Production writes.
+ *
+ * Run: node --test test/annualMembershipPlans.test.js
+ */
+process.env.DATABASE_URL =
+  process.env.DATABASE_URL || "postgresql://127.0.0.1:5432/annual_membership_plans_placeholder";
+process.env.CLIENT_URL = process.env.CLIENT_URL || "https://example-orderzhouse.test";
+process.env.STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || "sk_test_annual_placeholder";
+
+const { describe, it } = require("node:test");
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+
+const {
+  ANNUAL_MEMBERSHIP_TIER_CODES,
+  CANONICAL_MARKETPLACE_TIER_CODES,
+  PAID_MARKETPLACE_MEMBERSHIP_TIER_CODES,
+  MARKETPLACE_MEMBERSHIP_ACTIVE_TIER_CODES,
+  E1_PLAN_SPECS,
+  isAnnualMembershipTier,
+  isCanonicalMarketplaceTier,
+} = require("../src/constants/marketplaceMembershipPlans");
+const { PLAN_RESTRICTION_TIER_CODES } = require("../src/constants/freelancerAccountRestrictions");
+const {
+  isPaidMarketplaceMembershipTier,
+  resolvePlanTermDuration,
+  computePaidTermWindowForPlan,
+} = require("../src/utils/marketplaceMembershipPendingStart");
+const { evaluateProjectValueEligibility } = require("../src/services/marketplaceMembershipEligibilityService");
+const {
+  isPlanValueAllowedForOrder,
+} = require("../src/services/planOrderValueEligibility");
+const { computePendingStartApplicationBidAllowance } = require(
+  "../src/services/marketplacePendingStartBidAllowanceService",
+);
+const { assertAndConsumeDailyBidSpend } = require("../src/services/marketplaceMembershipDailyBidSpendService");
+const {
+  createMarketplaceMembershipCheckoutSession,
+  resolvePaidMarketplacePlanForCheckout,
+  applyMarketplaceMembershipCheckoutSessionCompleted,
+} = require("../src/services/marketplaceMembershipCheckoutService");
+const { tierFromSubscriptionPlan } = require("../src/services/canonicalCurrentMembershipDisplay");
+const { normalizeMembershipTierForCourses } = require("../src/services/coursePlanEligibilityService");
+
+const root = path.join(__dirname, "..");
+const read = (rel) => fs.readFileSync(path.join(root, rel), "utf8");
+const MIGRATION = read("sql/migrations/206_annual_membership_plans.sql");
+
+/** Mirrors the annual_basic row seeded by migration 206 (mapped service shape). */
+function annualPlan(overrides = {}) {
+  return {
+    id: 21,
+    tierCode: "annual_basic",
+    nameAr: "الباقة السنوية الأساسية",
+    nameEn: "Annual Basic",
+    isActive: true,
+    monthlyPriceJod: 50,
+    cycleDurationDays: null,
+    entitlementDurationMonths: 12,
+    bidAllowanceScope: "term",
+    catalogCategory: "annual",
+    monthlyBidAllowance: 30,
+    dailyBidSpendLimit: 3,
+    projectMinValueJod: 1,
+    maxRealOrderValueJod: 10,
+    unlimitedRealOrderValue: false,
+    saleEnabled: false,
+    ...overrides,
+  };
+}
+
+function mockStripe(capture) {
+  return {
+    checkout: {
+      sessions: {
+        create: async (params, opts) => {
+          capture.params = params;
+          capture.opts = opts;
+          return { id: "cs_test_annual", url: "https://checkout.stripe.test/pay/cs_test_annual" };
+        },
+      },
+    },
+  };
+}
+
+function mockDb(user = { id: 42, role: "freelancer", is_active: true, email: "f@example.com" }) {
+  return { query: async () => ({ rows: user ? [user] : [] }) };
+}
+
+function paidSession(overrides = {}) {
+  return {
+    id: "cs_test_annual_paid",
+    mode: "payment",
+    payment_status: "paid",
+    status: "complete",
+    amount_total: 50000,
+    currency: "jod",
+    created: 1793000000,
+    metadata: {
+      purpose: "marketplace_membership_checkout",
+      flow: "marketplace_membership",
+      freelancerUserId: "42",
+      marketplacePlanId: "21",
+      planCode: "annual_basic",
+      durationMonths: "12",
+      expectedAmountMinor: "50000",
+    },
+    ...overrides,
+  };
+}
+
+describe("Annual Basic — migration 206 plan config", () => {
+  it("is additive and idempotent on the canonical plan table", () => {
+    assert.match(MIGRATION, /ADD COLUMN IF NOT EXISTS catalog_category/);
+    assert.match(MIGRATION, /ADD COLUMN IF NOT EXISTS entitlement_duration_months/);
+    assert.match(MIGRATION, /ADD COLUMN IF NOT EXISTS bid_allowance_scope/);
+    assert.match(MIGRATION, /ADD COLUMN IF NOT EXISTS included_benefits/);
+    assert.match(MIGRATION, /ON CONFLICT \(tier_code\) DO NOTHING/);
+    assert.match(MIGRATION, /'206_annual_membership_plans'/);
+    assert.doesNotMatch(MIGRATION, /DROP TABLE|DELETE FROM|TRUNCATE/i);
+    assert.doesNotMatch(MIGRATION, /UPDATE\s+(freelancer_marketplace_memberships|freelancer_subscriptions|marketplace_membership_plans)/i);
+  });
+
+  it("seeds annual_basic: 50 JOD, 12 months, ≤10 JOD, 30 total, 3 daily", () => {
+    const values = MIGRATION.slice(MIGRATION.indexOf(") VALUES ("));
+    assert.match(values, /'annual_basic', 'الباقة السنوية الأساسية', 'Annual Basic'/);
+    assert.match(values, /TRUE, 50, 50,\s+10, FALSE,\s+0, 30,/);
+    assert.match(values, /NULL, 3, 1,/);
+    assert.match(values, /'annual', 12, 'term'/);
+  });
+
+  it("includes Content Writing + DV Lottery as company-fulfilled benefits", () => {
+    assert.match(MIGRATION, /"code":"content_writing_course","labelAr":"دورة كتابة المحتوى","labelEn":"Content Writing Course","fulfillment":"company_service"/);
+    assert.match(
+      MIGRATION,
+      /"code":"us_dv_lottery_application","labelAr":"التقديم على اللوتري الأمريكي","labelEn":"U\.S\. Diversity Visa Lottery Application Service","fulfillment":"company_service"/,
+    );
+  });
+
+  it("plan code is unique among tier constants and recognized everywhere it belongs", () => {
+    assert.deepEqual([...ANNUAL_MEMBERSHIP_TIER_CODES], ["annual_basic"]);
+    assert.equal(new Set(CANONICAL_MARKETPLACE_TIER_CODES).size, CANONICAL_MARKETPLACE_TIER_CODES.length);
+    assert.ok(PAID_MARKETPLACE_MEMBERSHIP_TIER_CODES.includes("annual_basic"));
+    assert.ok(isPaidMarketplaceMembershipTier("ANNUAL_BASIC"));
+    assert.ok(isAnnualMembershipTier("annual_basic"));
+    assert.ok(isCanonicalMarketplaceTier("annual_basic"));
+    assert.ok(PLAN_RESTRICTION_TIER_CODES.includes("annual_basic"));
+    // Regular marketplace catalog unchanged.
+    assert.deepEqual([...MARKETPLACE_MEMBERSHIP_ACTIVE_TIER_CODES], ["starter", "silver", "pro", "elite"]);
+    assert.equal(E1_PLAN_SPECS.annual_basic.totalBids, 30);
+    assert.equal(E1_PLAN_SPECS.annual_basic.dailyBidLimit, 3);
+    assert.equal(E1_PLAN_SPECS.annual_basic.durationMonths, 12);
+  });
+});
+
+describe("Annual Basic — 12-month term (calendar months, first real order)", () => {
+  it("resolves months over days", () => {
+    assert.deepEqual(resolvePlanTermDuration(annualPlan()), { months: 12, days: null });
+    assert.deepEqual(resolvePlanTermDuration(annualPlan({ cycleDurationDays: 30 })), {
+      months: 12,
+      days: null,
+    });
+    assert.deepEqual(resolvePlanTermDuration({ cycleDurationDays: 30 }), { months: null, days: 30 });
+  });
+
+  it("ends exactly 12 calendar months after the first real order", () => {
+    const start = new Date("2026-11-03T09:15:00.000Z");
+    const out = computePaidTermWindowForPlan({ startsAt: start, plan: annualPlan() });
+    assert.equal(out.paidTermEndsAt.toISOString(), "2027-11-03T09:15:00.000Z");
+    assert.equal(out.durationMonths, 12);
+    assert.equal(out.durationDays, null);
+  });
+
+  it("clamps month-end anchors (Feb 29 → Feb 28 next year)", () => {
+    const out = computePaidTermWindowForPlan({
+      startsAt: new Date("2028-02-29T00:00:00.000Z"),
+      plan: annualPlan(),
+    });
+    assert.equal(out.paidTermEndsAt.toISOString(), "2029-02-28T00:00:00.000Z");
+  });
+
+  it("day-based plans are unchanged (SILVER 30 days)", () => {
+    const out = computePaidTermWindowForPlan({
+      startsAt: new Date("2026-01-01T00:00:00.000Z"),
+      plan: { cycleDurationDays: 30 },
+    });
+    assert.equal(out.paidTermEndsAt.toISOString(), "2026-01-31T00:00:00.000Z");
+  });
+});
+
+describe("Annual Basic — order value eligibility (≤ 10 JOD, backend)", () => {
+  const plan = annualPlan();
+  it("allows 5 JOD and 10 JOD", () => {
+    assert.equal(evaluateProjectValueEligibility(plan, 5).eligible, true);
+    assert.equal(evaluateProjectValueEligibility(plan, 10).eligible, true);
+  });
+  it("blocks 10.001 / 10.01 JOD and above", () => {
+    for (const v of [10.001, 10.01, 11, 50]) {
+      const out = evaluateProjectValueEligibility(plan, v);
+      assert.equal(out.eligible, false, `value ${v}`);
+      assert.equal(out.reason, "ABOVE_MAX");
+    }
+  });
+  it("membership band applies on the pool range engine (fixed + bidding)", () => {
+    const range = { minOrderValue: 1, maxOrderValue: 10 };
+    assert.equal(isPlanValueAllowedForOrder({ project_type: "fixed", budget: 10 }, range), true);
+    assert.equal(isPlanValueAllowedForOrder({ project_type: "fixed", budget: 10.01 }, range), false);
+    assert.equal(
+      isPlanValueAllowedForOrder({ project_type: "bidding", bid_budget_min: 11, bid_budget_max: 20 }, range),
+      false,
+    );
+  });
+});
+
+/** Minimal transactional fake for marketplace_freelancer_daily_bid_spend. */
+function dailySpendClient({ limit = 3 } = {}) {
+  const rows = new Map();
+  return {
+    rows,
+    async query(sql, params = []) {
+      if (/FROM freelancer_marketplace_memberships m/.test(sql)) {
+        return { rows: [{ daily_bid_spend_limit: limit, tier_code: "annual_basic", monthly_bid_allowance: 30 }] };
+      }
+      if (/marketplace_membership_business_timezone/.test(sql)) {
+        return { rows: [{ tz: "Asia/Amman" }] };
+      }
+      if (/INSERT INTO marketplace_freelancer_daily_bid_spend/.test(sql)) {
+        const key = `${params[0]}|${params[1]}`;
+        if (!rows.has(key)) rows.set(key, 0);
+        return { rows: [] };
+      }
+      if (/SELECT amount_spent FROM marketplace_freelancer_daily_bid_spend/.test(sql)) {
+        return { rows: [{ amount_spent: rows.get(`${params[0]}|${params[1]}`) || 0 }] };
+      }
+      if (/UPDATE marketplace_freelancer_daily_bid_spend/.test(sql)) {
+        const key = `${params[0]}|${params[1]}`;
+        const next = (rows.get(key) || 0) + Number(params[2]);
+        if (next > Number(params[3])) return { rows: [] };
+        rows.set(key, next);
+        return { rows: [{ amount_spent: next }] };
+      }
+      throw new Error(`unexpected SQL: ${sql.slice(0, 60)}`);
+    },
+  };
+}
+
+describe("Annual Basic — daily limit 3 (existing Asia/Amman business day)", () => {
+  it("1st–3rd pass, 4th blocked same day, next business day passes", async () => {
+    const client = dailySpendClient({ limit: 3 });
+    const day1 = new Date("2026-11-03T10:00:00.000Z");
+    for (let i = 1; i <= 3; i += 1) {
+      const out = await assertAndConsumeDailyBidSpend({ client, freelancerUserId: 42, now: day1 });
+      assert.equal(out.amountSpent, i);
+      assert.equal(out.limit, 3);
+    }
+    await assert.rejects(
+      () => assertAndConsumeDailyBidSpend({ client, freelancerUserId: 42, now: day1 }),
+      (err) => err.publicCode === "MEMBERSHIP_DAILY_BID_LIMIT_REACHED",
+    );
+    // 22:30Z = 01:30 Amman next day → new business day.
+    const day2 = new Date("2026-11-03T22:30:00.000Z");
+    const out = await assertAndConsumeDailyBidSpend({ client, freelancerUserId: 42, now: day2 });
+    assert.equal(out.amountSpent, 1);
+    assert.equal(out.spendDate, "2026-11-04");
+  });
+});
+
+describe("Annual Basic — total allowance 30 per entitlement", () => {
+  it("package grant equals the plan total (no monthly multiplier)", () => {
+    assert.equal(computePendingStartApplicationBidAllowance(annualPlan()), 30);
+  });
+
+  it("cycle service scopes the allowance to the whole term", () => {
+    const src = read("src/services/marketplaceMembershipCyclesService.js");
+    assert.match(src, /isTermScopedPlan\(planRow\) && termEnd/);
+    assert.match(src, /Term-scoped allowance never rolls into a second cycle/);
+  });
+});
+
+describe("Annual Basic — Stripe checkout (server price only)", () => {
+  it("resolves 50 JOD / 12 months from the plan row", async () => {
+    const out = await resolvePaidMarketplacePlanForCheckout("ANNUAL_BASIC", {
+      getPlanByTierCode: async () => annualPlan(),
+    });
+    assert.equal(out.planCode, "annual_basic");
+    assert.equal(out.priceJod, 50);
+    assert.equal(out.expectedAmountMinor, 50000);
+    assert.equal(out.durationMonths, 12);
+    assert.equal(out.durationDays, null);
+  });
+
+  it("creates a one-time payment session; browser price fields are ignored", async () => {
+    const capture = {};
+    const result = await createMarketplaceMembershipCheckoutSession(
+      { freelancerUserId: 42, planCode: "annual_basic", priceJod: 1, amountMinor: 1, durationMonths: 99 },
+      {
+        stripe: mockStripe(capture),
+        db: mockDb(),
+        getPlanByTierCode: async () => annualPlan(),
+        resolveReferralDiscount: async () => ({ discountMinor: 0, chargeMinor: 50000 }),
+      },
+    );
+    assert.equal(capture.params.mode, "payment");
+    assert.equal(capture.params.line_items[0].price_data.unit_amount, 50000);
+    assert.equal(capture.params.line_items[0].price_data.currency, "jod");
+    assert.match(capture.params.line_items[0].price_data.product_data.description, /12 months/);
+    assert.equal(capture.params.metadata.planCode, "annual_basic");
+    assert.equal(capture.params.metadata.durationMonths, "12");
+    assert.equal(capture.params.metadata.durationDays, undefined);
+    assert.equal(capture.params.metadata.expectedAmountMinor, "50000");
+    assert.equal(capture.params.metadata.termStartPolicy, "first_real_order");
+    assert.equal(result.membershipGranted, false);
+    assert.equal(result.termStarted, false);
+    assert.equal(result.amountJod, 50);
+  });
+});
+
+describe("Annual Basic — webhook grant (trusted payment only)", () => {
+  const deps = (calls) => ({
+    getPlanById: async () => annualPlan(),
+    getPlanByTierCode: async () => annualPlan(),
+    createPurchasedPendingStartMembership: async (input) => {
+      calls.push(input);
+      return {
+        membership: { id: "m1", status: "purchased_pending_start", paidTermStartsAt: null },
+        created: calls.length === 1,
+        idempotentReplay: calls.length > 1,
+      };
+    },
+  });
+
+  it("paid session → purchased_pending_start (term not started)", async () => {
+    const calls = [];
+    const out = await applyMarketplaceMembershipCheckoutSessionCompleted(paidSession(), {}, null, deps(calls));
+    assert.equal(out.status, "applied");
+    assert.equal(out.termStarted, false);
+    assert.equal(calls[0].marketplacePlanId, 21);
+    assert.equal(calls[0].purchasePaymentReference, "cs_test_annual_paid");
+  });
+
+  it("webhook replay is idempotent", async () => {
+    const calls = [];
+    await applyMarketplaceMembershipCheckoutSessionCompleted(paidSession(), {}, null, deps(calls));
+    const again = await applyMarketplaceMembershipCheckoutSessionCompleted(paidSession(), {}, null, deps(calls));
+    assert.equal(again.status, "already_applied");
+  });
+
+  it("rejects unpaid, wrong amount, tampered duration", async () => {
+    const calls = [];
+    const unpaid = await applyMarketplaceMembershipCheckoutSessionCompleted(
+      paidSession({ payment_status: "unpaid" }),
+      {},
+      null,
+      deps(calls),
+    );
+    assert.equal(unpaid.status, "ignored");
+    const cheap = await applyMarketplaceMembershipCheckoutSessionCompleted(
+      paidSession({ amount_total: 100 }),
+      {},
+      null,
+      deps(calls),
+    );
+    assert.equal(cheap.reason, "marketplace_membership_amount_mismatch");
+    const s = paidSession();
+    s.metadata.durationMonths = "24";
+    const tampered = await applyMarketplaceMembershipCheckoutSessionCompleted(s, {}, null, deps(calls));
+    assert.equal(tampered.reason, "marketplace_membership_duration_mismatch");
+    assert.equal(calls.length, 0);
+  });
+
+  it("referral processing stays generic for marketplace memberships", () => {
+    const controller = read("src/controllers/stripeWebhookController.js");
+    assert.match(
+      controller,
+      /purpose === "marketplace_membership_checkout"[\s\S]{0,400}processCheckoutSession\(session, PAYMENT_TYPES\.MARKETPLACE_MEMBERSHIP, result\)/,
+    );
+    assert.doesNotMatch(read("src/services/referralPaymentBridge.js"), /annual_basic/);
+  });
+});
+
+describe("Annual Basic — canonical resolver / display / courses", () => {
+  it("bridge plan name resolves to ANNUAL_BASIC; special offers do not", () => {
+    assert.equal(tierFromSubscriptionPlan({ name: "marketplace_membership_annual_basic" }), "ANNUAL_BASIC");
+    assert.equal(tierFromSubscriptionPlan({ name: "marketplace_membership_silver" }), "SILVER");
+    assert.equal(tierFromSubscriptionPlan({ name: "marketplace_membership_special_offer" }), null);
+  });
+
+  it("plan-restriction canonical SQL no longer hard-codes four tiers", () => {
+    const src = read("src/services/marketplacePlanRestrictionsService.js");
+    assert.doesNotMatch(src, /\(starter\|silver\|pro\|elite\)/);
+    assert.doesNotMatch(src, /IN \('STARTER','SILVER','PRO','ELITE'\)/);
+  });
+
+  it("course gating treats Annual Basic like Starter (no auto-enrolment)", () => {
+    assert.equal(normalizeMembershipTierForCourses("annual_basic"), "starter");
+  });
+});

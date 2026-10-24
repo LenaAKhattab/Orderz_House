@@ -2,9 +2,9 @@ import { orderPublicPlansCategoryTabs } from "../../constants/publicPlansContent
 import { PLANS_CATEGORY } from "../../constants/trainingPlansCatalog";
 
 /**
- * Segmented Training / Membership category toggle for public `/plans`.
- * Tab order follows the admin-configured default section (RTL first / rightmost).
- * `value` only controls which tab is active — clicks do not reorder.
+ * Segmented Training / Membership / Annual category toggle for `/plans`.
+ * Training/Membership order follows the admin-configured default section (RTL first / rightmost);
+ * Annual Plans is always the third tab. `value` only controls which tab is active — clicks do not reorder.
  */
 export default function PlansCategoryToggle({
   value,
@@ -13,6 +13,7 @@ export default function PlansCategoryToggle({
   trainingLabel,
   membershipLabel,
   defaultSection,
+  showAnnual = true,
 }) {
   const byId = {
     [PLANS_CATEGORY.TRAINING]: {
@@ -23,12 +24,26 @@ export default function PlansCategoryToggle({
       id: PLANS_CATEGORY.MEMBERSHIP,
       label: String(membershipLabel || "").trim() || t("plans.categories.membership"),
     },
+    [PLANS_CATEGORY.ANNUAL]: {
+      id: PLANS_CATEGORY.ANNUAL,
+      label: t("plans.categories.annual"),
+    },
   };
-  const options = orderPublicPlansCategoryTabs(defaultSection).map((id) => byId[id]);
+  const options = [
+    ...orderPublicPlansCategoryTabs(defaultSection),
+    ...(showAnnual ? [PLANS_CATEGORY.ANNUAL] : []),
+  ].map((id) => byId[id]);
 
   return (
     <div className="plans-category-toggle" role="tablist" aria-label={t("plans.categories.aria")}>
-      <div className="plans-category-toggle__track">
+      <div
+        className={[
+          "plans-category-toggle__track",
+          options.length > 2 ? "plans-category-toggle__track--three" : "",
+        ]
+          .filter(Boolean)
+          .join(" ")}
+      >
         {options.map((opt) => {
           const active = value === opt.id;
           return (

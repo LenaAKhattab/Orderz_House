@@ -3,16 +3,21 @@
  * to a marketplace plan card. Does not write rows or start a countdown.
  */
 
-const MARKETPLACE_TIERS = new Set(["STARTER", "SILVER", "PRO", "ELITE"]);
+const { CANONICAL_MARKETPLACE_TIER_CODES } = require("../constants/marketplaceMembershipPlans");
+
+const MARKETPLACE_TIERS = new Set(CANONICAL_MARKETPLACE_TIER_CODES.map((c) => c.toUpperCase()));
 const DISPLAY_CURRENT_STATUSES = new Set(["assigned_not_started", "active"]);
+const BRIDGE_PLAN_NAME_PREFIX = "marketplace_membership_";
 
 function tierFromSubscriptionPlan(plan) {
   if (!plan || typeof plan !== "object") return null;
   const name = String(plan.name || "")
     .trim()
     .toLowerCase();
-  const bridged = name.match(/^marketplace_membership_(starter|silver|pro|elite)$/);
-  if (bridged) return bridged[1].toUpperCase();
+  if (name.startsWith(BRIDGE_PLAN_NAME_PREFIX)) {
+    const bridgedTier = name.slice(BRIDGE_PLAN_NAME_PREFIX.length).toUpperCase();
+    if (MARKETPLACE_TIERS.has(bridgedTier)) return bridgedTier;
+  }
   const title = String(plan.title || plan.titleEn || "")
     .trim()
     .toUpperCase();

@@ -698,6 +698,16 @@
   background: rgba(22, 101, 52, 0.08);
 }
 
+.pm-plan-card--membership .pricing-card__included-benefits {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+  margin: 0 0 0.35rem;
+  padding: 0;
+  list-style: none;
+}
+
 .pm-plan-card--membership .pricing-card__withdrawal--off {
   color: #64748b;
   background: rgba(148, 163, 184, 0.14);

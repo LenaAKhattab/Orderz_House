@@ -7,6 +7,8 @@ import PricingSection from "../components/plans/PricingSection";
 import PlansMobilePage from "../components/plans/mobile/PlansMobilePage";
 import PlansCategoryToggle from "../components/plans/PlansCategoryToggle";
 import TrainingPlansSection from "../components/plans/TrainingPlansSection";
+import AnnualPlansSection from "../components/plans/AnnualPlansSection";
+import { usePublicAnnualPlans } from "../hooks/usePublicAnnualPlans";
 import { PlanCardsRowSkeleton } from "../components/ui/Skeleton";
 import {
   getPlansLayoutConfig,
@@ -54,6 +56,7 @@ const Plans = () => {
 
   const isMainCatalog = !slug;
   const plansContent = usePublicPlansContent({ enabled: isMainCatalog });
+  const annualPlans = usePublicAnnualPlans({ enabled: isMainCatalog });
   const [category, setCategory] = useState(() => {
     if (!isMainCatalog) return PLANS_CATEGORY.MEMBERSHIP;
     const urlType = searchParams.get("type");
@@ -178,6 +181,7 @@ const Plans = () => {
 
   const contentPending = isMainCatalog && (category == null || !plansContent.ready);
   const showTraining = !contentPending && isMainCatalog && category === PLANS_CATEGORY.TRAINING;
+  const showAnnual = !contentPending && isMainCatalog && category === PLANS_CATEGORY.ANNUAL;
   const showMembership = !contentPending && (!isMainCatalog || category === PLANS_CATEGORY.MEMBERSHIP);
 
   return (
@@ -208,6 +212,14 @@ const Plans = () => {
 
         {showTraining ? (
           <TrainingPlansSection />
+        ) : null}
+
+        {showAnnual ? (
+          <AnnualPlansSection
+            plans={annualPlans.plans}
+            loading={annualPlans.loading}
+            error={annualPlans.error}
+          />
         ) : null}
 
         {showMembership ? (
@@ -274,6 +286,8 @@ const Plans = () => {
         layoutVariant={layoutVariant}
         category={isMainCatalog ? category : null}
         contentPending={contentPending}
+        annualPlans={annualPlans.plans}
+        annualPlansLoading={annualPlans.loading}
       />
     </main>
   );

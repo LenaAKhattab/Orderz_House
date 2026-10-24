@@ -11,11 +11,17 @@ const {
   isSpecialOfferMembershipTier,
 } = require("../constants/marketplaceMembershipPlans");
 
+const {
+  addCalendarMonthsAnchored,
+  resolveCycleAnchorDay,
+} = require("./marketplaceMembershipCycleDates");
+
 const PAID_MARKETPLACE_MEMBERSHIP_TIER_CODES = Object.freeze([
   "silver",
   "pro",
   "elite",
   "special_offer",
+  "annual_basic",
 ]);
 
 const PURCHASED_PENDING_START_MESSAGE_AR =
@@ -80,6 +86,42 @@ function computePaidTermWindowFromDurationDays({ startsAt, durationDays }) {
 }
 
 /**
+ * Term length configured on a marketplace plan.
+ * Calendar months (entitlementDurationMonths) win over cycleDurationDays.
+ * @returns {{ months: number|null, days: number|null }|null}
+ */
+function resolvePlanTermDuration(plan = {}) {
+  const months = Number(plan?.entitlementDurationMonths);
+  if (Number.isInteger(months) && months >= 1 && months <= 120) {
+    return { months, days: null };
+  }
+  const days = Number(plan?.cycleDurationDays);
+  if (Number.isInteger(days) && days >= 1) {
+    return { months: null, days };
+  }
+  return null;
+}
+
+/**
+ * Paid term window for a plan, months-aware (anchored calendar months) with day fallback.
+ * @param {{ startsAt: Date|string, plan: object, fallbackDays?: number }} input
+ */
+function computePaidTermWindowForPlan({ startsAt, plan, fallbackDays = null }) {
+  const term = resolvePlanTermDuration(plan);
+  if (term?.months) {
+    const start = startsAt instanceof Date ? new Date(startsAt.getTime()) : new Date(startsAt);
+    if (Number.isNaN(start.getTime())) {
+      throw new Error("Invalid startsAt");
+    }
+    const end = addCalendarMonthsAnchored(start, term.months, resolveCycleAnchorDay(start));
+    return { paidTermStartsAt: start, paidTermEndsAt: end, durationMonths: term.months, durationDays: null };
+  }
+  const durationDays = term?.days || fallbackDays;
+  const out = computePaidTermWindowFromDurationDays({ startsAt, durationDays });
+  return { ...out, durationMonths: null, durationDays };
+}
+
+/**
  * Real marketplace orders live in `orders` (fake/training use `fake_orders`).
  * Caller must load from `orders` only; this rejects training markers if present.
  *
@@ -132,6 +174,8 @@ module.exports = {
   isStarterPendingStartStatus,
   isApplicationEligibleStatus,
   computePaidTermWindowFromDurationDays,
+  resolvePlanTermDuration,
+  computePaidTermWindowForPlan,
   isRealOrderForMarketplaceMembershipStart,
   decideMarketplaceMembershipFirstOrderStart,
 };

@@ -34,6 +34,8 @@ export default function PlansMobilePage({
   activationFee = null,
   category = null,
   contentPending = false,
+  annualPlans = [],
+  annualPlansLoading = false,
 }) {
   const { t, dir, locale } = useTranslation();
   const { formatActivationFeeAmount } = useDisplayCurrency();
@@ -43,6 +45,7 @@ export default function PlansMobilePage({
   const feeAmountLabel = feeEnabled ? formatActivationFeeAmount(activationFee?.amountJod) : "";
   const isMainCatalog = !pageSlug;
   const showTraining = !contentPending && isMainCatalog && category === PLANS_CATEGORY.TRAINING;
+  const showAnnual = !contentPending && isMainCatalog && category === PLANS_CATEGORY.ANNUAL;
   const showMembership = !contentPending && (!isMainCatalog || category === PLANS_CATEGORY.MEMBERSHIP);
   const specialOffer =
     showMembership && layoutVariant !== PLANS_LAYOUT_VARIANT.LEGACY_THREE_CARD
@@ -123,12 +126,37 @@ export default function PlansMobilePage({
         </>
       ) : null}
 
+      {showAnnual ? (
+        <div
+          id="plans-panel-annual-mobile"
+          role="tabpanel"
+          aria-labelledby="plans-tab-annual"
+          aria-label={t("plans.annual.sectionAria")}
+        >
+          <PlansMobilePlans
+            loading={annualPlansLoading}
+            plans={annualPlans}
+            onCta={null}
+            skeletonCount={1}
+            highlightFeatured={false}
+            membershipDashboardPath="/dashboard/freelancer/plans?type=annual"
+          />
+          {!annualPlansLoading && annualPlans.length === 0 ? (
+            <p className="pm-feedback" role="status">
+              {t("plans.annual.empty")}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
       <p className="pm-footnote pm-footnote--secondary">
         {pageSlug === "freelancers" && feeEnabled && feeAmountLabel
           ? t("plans.pages.freelancers.footnote", { amount: feeAmountLabel })
           : showTraining
             ? t("plans.training.footnote")
-            : t("plans.mobile.footnote")}
+            : showAnnual
+              ? t("plans.annual.footnote")
+              : t("plans.mobile.footnote")}
       </p>
     </div>
   );

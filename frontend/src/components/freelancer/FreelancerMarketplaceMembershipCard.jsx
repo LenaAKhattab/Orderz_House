@@ -112,6 +112,8 @@ export default function FreelancerMarketplaceMembershipCard({
   const plan = membership.plan || {};
   const planName = resolvePlanName(plan, locale);
   const tierCode = plan.tierCode ? String(plan.tierCode).toUpperCase() : null;
+  // Annual plans are identified by their own name; the internal code is not a display label.
+  const displayTierCode = plan.catalogCategory === "annual" ? null : tierCode;
   const catalogMatch = Array.isArray(catalogPlans)
     ? catalogPlans.find(
         (p) =>
@@ -181,7 +183,7 @@ export default function FreelancerMarketplaceMembershipCard({
             <Crown size={14} strokeWidth={2} aria-hidden />
             {t("freelancerDashboard.marketplaceMembership.currentEyebrow")}
           </span>
-          {tierCode ? <p className="fp-hero__tier">{tierCode}</p> : null}
+          {displayTierCode ? <p className="fp-hero__tier">{displayTierCode}</p> : null}
           <h1 className="fp-hero__title">{planName}</h1>
           <p className="fp-hero__subtitle">
             {t("freelancerDashboard.marketplaceMembership.assignedNotStartedBody")}
@@ -220,7 +222,7 @@ export default function FreelancerMarketplaceMembershipCard({
             <Crown size={14} strokeWidth={2} aria-hidden />
             {t("freelancerDashboard.marketplaceMembership.starterReadyEyebrow")}
           </span>
-          {tierCode ? <p className="fp-hero__tier">{tierCode}</p> : null}
+          {displayTierCode ? <p className="fp-hero__tier">{displayTierCode}</p> : null}
           <h1 className="fp-hero__title">
             {t("freelancerDashboard.marketplaceMembership.starterReadyTitle")}
           </h1>
@@ -282,7 +284,7 @@ export default function FreelancerMarketplaceMembershipCard({
             <Crown size={14} strokeWidth={2} aria-hidden />
             {t("freelancerDashboard.marketplaceMembership.purchasedEyebrow")}
           </span>
-          {tierCode ? <p className="fp-hero__tier">{tierCode}</p> : null}
+          {displayTierCode ? <p className="fp-hero__tier">{displayTierCode}</p> : null}
           <h1 className="fp-hero__title">
             {t("freelancerDashboard.marketplaceMembership.purchasedTitle")}
           </h1>
@@ -332,7 +334,7 @@ export default function FreelancerMarketplaceMembershipCard({
           <Crown size={14} strokeWidth={2} aria-hidden />
           {t("freelancerDashboard.marketplaceMembership.currentEyebrow")}
         </span>
-        {tierCode ? <p className="fp-hero__tier">{tierCode}</p> : null}
+        {displayTierCode ? <p className="fp-hero__tier">{displayTierCode}</p> : null}
         <h1 className="fp-hero__title">{planName}</h1>
         {canApply === false ? (
           <p className="fp-hero__subtitle">

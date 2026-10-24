@@ -51,8 +51,8 @@ const AUDIT_ACTIONS = Object.freeze({
   ARTICLE_REJECTED_FROM_REVIEW: "article_rejected_from_review",
 });
 
-/** Canonical marketplace tiers eligible for plan-level restrictions. */
-const PLAN_RESTRICTION_TIER_CODES = Object.freeze(["starter", "silver", "pro", "elite"]);
+/** Canonical marketplace tiers eligible for plan-level restrictions (incl. Annual Plans). */
+const PLAN_RESTRICTION_TIER_CODES = Object.freeze(["starter", "silver", "pro", "elite", "annual_basic"]);
 
 const PUBLIC_MESSAGES = Object.freeze({
   BID_HELD_AR: "تم استلام عرضك وهو قيد المراجعة",

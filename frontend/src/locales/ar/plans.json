@@ -8,7 +8,13 @@
   "categories": {
     "aria": "أقسام الباقات",
     "training": "باقات التدريب",
-    "membership": "عضوية سوق أوردرز هاوس"
+    "membership": "عضوية سوق أوردرز هاوس",
+    "annual": "الباقات السنوية"
+  },
+  "annual": {
+    "sectionAria": "الباقات السنوية",
+    "empty": "لا توجد باقات سنوية متاحة حالياً.",
+    "footnote": "تبدأ مدة الباقة السنوية عند استلامك أول طلب حقيقي. مزايا الباقة المشمولة تقدّمها الشركة مباشرة."
   },
   "training": {
     "sectionAria": "باقات التدريب الاحترافية",
@@ -71,7 +77,9 @@
     "free": "تجريبية",
     "metricsAria": "أبرز مزايا الباقة",
     "bidsAvailable": "عرض متاح",
+    "bidsForTerm": "عرض طوال مدة الباقة",
     "bidsPerDay": "عروض يوميًا",
+    "includedBenefitsAria": "مزايا مشمولة في الباقة",
     "projectCapMax": "للمشروع",
     "projectCapValue": "حتى {{value}} {{currency}}",
     "projectCapUnlimited": "سقف المشاريع",
@@ -101,6 +109,7 @@
   "extraDetails": "تفاصيل إضافية",
   "fullYear": "سنة كاملة",
   "days": "{{count}} يوم",
+  "months": "{{count}} شهرًا",
   "priceTotal": "الإجمالي: {{amount}} د.أ",
   "installmentAtSignup": "{{amount}} د.أ عند التسجيل",
   "installmentMonthly": "{{amount}} د.أ شهرياً × {{months}} أشهر",

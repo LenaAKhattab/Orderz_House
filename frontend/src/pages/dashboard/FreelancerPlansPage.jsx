@@ -11,6 +11,8 @@ import { useMarketplaceMembershipCheckout } from "../../hooks/useMarketplaceMemb
 import { useTrainingPackageCheckout } from "../../hooks/useTrainingPackageCheckout";
 import PlansCategoryToggle from "../../components/plans/PlansCategoryToggle";
 import TrainingPlansSection from "../../components/plans/TrainingPlansSection";
+import AnnualPlansSection from "../../components/plans/AnnualPlansSection";
+import { usePublicAnnualPlans } from "../../hooks/usePublicAnnualPlans";
 import { PLANS_CATEGORY } from "../../constants/trainingPlansCatalog";
 import { useFreelancerMarketplaceContext } from "../../hooks/useFreelancerMarketplaceContext";
 import { getFreelancerOrderEligibilityMessage } from "../../utils/freelancerEligibilityUi";
@@ -91,7 +93,12 @@ export default function FreelancerPlansPage() {
   const packagesTab =
     searchParams.get("type") === PLANS_CATEGORY.TRAINING || searchParams.get("trainingCheckout")
       ? PLANS_CATEGORY.TRAINING
-      : PLANS_CATEGORY.MEMBERSHIP;
+      : searchParams.get("type") === PLANS_CATEGORY.ANNUAL
+        ? PLANS_CATEGORY.ANNUAL
+        : PLANS_CATEGORY.MEMBERSHIP;
+  const annualPlans = usePublicAnnualPlans({
+    enabled: isMarketplaceCatalog && packagesTab === PLANS_CATEGORY.ANNUAL,
+  });
   const {
     current: currentTraining,
     pending: pendingTraining,
@@ -182,8 +189,9 @@ export default function FreelancerPlansPage() {
                 value={packagesTab}
                 onChange={(next) => {
                   const params = new URLSearchParams(searchParams);
-                  if (next === PLANS_CATEGORY.TRAINING) params.set("type", PLANS_CATEGORY.TRAINING);
-                  else params.delete("type");
+                  if (next === PLANS_CATEGORY.TRAINING || next === PLANS_CATEGORY.ANNUAL) {
+                    params.set("type", next);
+                  } else params.delete("type");
                   setSearchParams(params, { replace: true });
                 }}
                 t={t}
@@ -222,6 +230,30 @@ export default function FreelancerPlansPage() {
                   buyBusyCode={trainingBuyBusyCode}
                 />
               </section>
+            ) : packagesTab === PLANS_CATEGORY.ANNUAL ? (
+              <>
+                <FreelancerMarketplaceMembershipCard
+                  snapshot={membership}
+                  error={membershipError}
+                  catalogPlans={annualPlans.plans}
+                  onStartStarterTrial={startStarterTrial}
+                  trialBusy={trialBusy}
+                />
+                <section
+                  className="fp-surface fp-pricing-wrap fp-pricing-wrap--public-match plans-page plans-page--ref"
+                  aria-label={t("plans.annual.sectionAria")}
+                >
+                  {marketplaceCheckoutError ? <p className="fp-error">{marketplaceCheckoutError}</p> : null}
+                  <AnnualPlansSection
+                    plans={annualPlans.plans}
+                    loading={annualPlans.loading}
+                    error={annualPlans.error}
+                    currentMarketplaceMembership={membership}
+                    onCta={startMarketplaceCheckout}
+                    checkoutBusyPlanId={marketplaceCheckoutBusyPlanId}
+                  />
+                </section>
+              </>
             ) : (
             <>
             <FreelancerMarketplaceMembershipCard
