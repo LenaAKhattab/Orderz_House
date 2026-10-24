@@ -1,5 +1,6 @@
 import { useTranslation } from "../../i18n/LanguageProvider";
 import PlanCard from "./PlanCard";
+import PlansApplicationNote from "./PlansApplicationNote";
 import { PlanCardsRowSkeleton } from "../ui/Skeleton";
 import { resolvePublicPlansGridClassName } from "./plansLayoutUtils";
 import "../../styles/publicPlans.css";
@@ -45,11 +46,13 @@ export default function AnnualPlansSection({
             />
           ))}
         </div>
-      ) : (
+      ) : null}
+      {!loading && list.length > 0 ? <PlansApplicationNote /> : null}
+      {!loading && list.length === 0 ? (
         <section className="card" style={{ marginTop: 14 }}>
           <p>{error ? t("plans.errors.loadFailed") : t("plans.annual.empty")}</p>
         </section>
-      )}
+      ) : null}
     </section>
   );
 }

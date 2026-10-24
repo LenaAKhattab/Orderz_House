@@ -8,6 +8,7 @@
 
 const { pool } = require("../config/db");
 const { createAppError } = require("../utils/AppError");
+const { resolveEntitlementTierCode } = require("../constants/marketplaceMembershipPlans");
 const {
   STARTER_PANTRY_APPLICATION_OPPORTUNITY_TOTAL,
   PANTRY_BID_REFUND_RESTORES_DAILY_CAP,
@@ -252,7 +253,8 @@ function evaluatePantryEligibility({ requestRow, membershipPlan, starterConsumed
   const pantryTiers = parseEligibleTiers(
     requestRow.eligible_tier_codes ?? requestRow.eligibleTierCodes,
   );
-  if (pantryTiers && !pantryTiers.includes(tier)) {
+  // Annual SILVER is eligible wherever SILVER is.
+  if (pantryTiers && !pantryTiers.includes(resolveEntitlementTierCode(tier))) {
     reasons.push({
       code: PANTRY_MEMBERSHIP_BID_ERROR_CODES.PANTRY_PLAN_NOT_ELIGIBLE,
       message: pantryApplyBlockMessage(PANTRY_MEMBERSHIP_BID_ERROR_CODES.PANTRY_PLAN_NOT_ELIGIBLE),

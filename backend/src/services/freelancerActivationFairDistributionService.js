@@ -7,6 +7,7 @@ const { pool } = require("../config/db");
 const {
   FREELANCER_ACTIVATION_PAID_TIER_CODES,
 } = require("../constants/freelancerActivationEngine");
+const { resolveEntitlementTierCode } = require("../constants/marketplaceMembershipPlans");
 const {
   ACTIVATION_FAIR_RANKING_VERSION,
   ACTIVATION_FAIR_RANK_GROUPS,
@@ -374,7 +375,7 @@ async function loadActivationFairContextMap(client, { freelancerUserIds } = {}) 
     for (const row of rows) {
       const ctx = map.get(Number(row.freelancer_user_id));
       if (!ctx) continue;
-      const tier = String(row.tier_code || "").toLowerCase();
+      const tier = resolveEntitlementTierCode(row.tier_code);
       ctx.hasActivePaidSilver = FREELANCER_ACTIVATION_PAID_TIER_CODES.includes(tier);
     }
   } catch (err) {

@@ -63,7 +63,16 @@ const ARTICLE_ACCESS_LEVEL_BY_TIER = Object.freeze({
   start: 2,
   active: 3,
   pay_as_you_work: 1,
-  annual_basic: 1,
+  annual_basic: 2,
+});
+
+/**
+ * Annual products that grant another tier's marketplace privileges.
+ * Annual SILVER (internal code annual_basic) = SILVER for 12 months.
+ * Use resolveEntitlementTierCode wherever logic branches on a tier code.
+ */
+const ANNUAL_PLAN_ENTITLEMENT_TIER = Object.freeze({
+  annual_basic: "silver",
 });
 
 const E1_PLAN_SPECS = Object.freeze({
@@ -134,14 +143,15 @@ const E1_PLAN_SPECS = Object.freeze({
     oneTimeStarter: false,
   },
   /** Fallback only — live values come from the annual_basic plan row (migration 206). */
+  /** Annual SILVER: SILVER privileges for 12 months; 480 applications for the whole term. */
   annual_basic: {
     priceJod: 50,
     durationMonths: 12,
     durationDays: null,
-    totalBids: 30,
+    totalBids: 480,
     dailyBidLimit: 3,
     projectMinJod: 1,
-    projectMaxJod: 10,
+    projectMaxJod: 20,
     unlimitedProjectMax: false,
     withdrawalEnabled: true,
     starterEarningsMode: "standard",
@@ -197,6 +207,12 @@ function isCanonicalMarketplaceTier(tierCode) {
   return CANONICAL_MARKETPLACE_TIER_CODES.includes(String(tierCode || "").trim().toLowerCase());
 }
 
+/** Tier whose marketplace privileges a plan grants (annual_basic → silver; others unchanged). */
+function resolveEntitlementTierCode(tierCode) {
+  const code = String(tierCode || "").trim().toLowerCase();
+  return ANNUAL_PLAN_ENTITLEMENT_TIER[code] || code;
+}
+
 function defaultArticleAccessLevelForTier(tierCode) {
   const code = String(tierCode || "").trim().toLowerCase();
   if (isSpecialOfferMembershipTier(code)) {
@@ -234,5 +250,7 @@ module.exports = {
   isSpecialOfferMembershipTier,
   isAnnualMembershipTier,
   isCanonicalMarketplaceTier,
+  resolveEntitlementTierCode,
+  ANNUAL_PLAN_ENTITLEMENT_TIER,
   defaultArticleAccessLevelForTier,
 };

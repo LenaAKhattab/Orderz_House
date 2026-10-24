@@ -224,7 +224,7 @@ const PlanCard = ({
     featured &&
     (plan?.isPopular === true || plan?.is_popular === true);
   const tierModifier = isMarketplaceMembership
-    ? `pricing-card--tier-${String(plan?.tierCode || "")
+    ? `pricing-card--tier-${String(plan?.visualTierCode || plan?.tierCode || "")
         .trim()
         .toLowerCase()}`
     : "";

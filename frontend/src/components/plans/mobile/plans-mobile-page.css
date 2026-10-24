@@ -698,6 +698,13 @@
   background: rgba(22, 101, 52, 0.08);
 }
 
+.plans-mobile-page .plans-application-note--mobile {
+  margin: 0.85rem 1rem 0;
+  padding: 0;
+  justify-content: flex-start;
+  text-align: start;
+}
+
 .pm-plan-card--membership .pricing-card__included-benefits {
   display: flex;
   flex-direction: column;

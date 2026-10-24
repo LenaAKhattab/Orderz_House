@@ -25,13 +25,14 @@ function annualDto(overrides = {}) {
   return {
     id: "21",
     tierCode: "annual_basic",
-    nameAr: "الباقة السنوية الأساسية",
-    nameEn: "Annual Basic",
+    nameAr: "SILVER — سنوية",
+    nameEn: "SILVER — Annual",
+    entitlementTierCode: "silver",
     descriptionAr: "عضوية سنوية للعمل على أوردرز هاوس",
     descriptionEn: "Annual OrderzHouse marketplace membership",
     sortOrder: 50,
     monthlyPriceJod: 50,
-    monthlyBidAllowance: 30,
+    monthlyBidAllowance: 480,
     cycleDurationDays: null,
     entitlementDurationMonths: 12,
     dailyBidSpendLimit: 3,
@@ -47,7 +48,7 @@ function annualDto(overrides = {}) {
         labelEn: "U.S. Diversity Visa Lottery Application Service",
       },
     ],
-    access: { unlimited: false, maxRealOrderValueJod: 10 },
+    access: { unlimited: false, maxRealOrderValueJod: 20 },
     capabilities: { dailyBidSpendLimit: 3, cycleDurationDays: null, entitlementDurationMonths: 12 },
     sale: { enabled: false },
     ...overrides,
@@ -68,21 +69,24 @@ const silverDto = {
 };
 
 describe("Annual Plans mapping", () => {
-  it("maps Annual Basic into the shared membership card DTO", () => {
+  it("maps Annual SILVER into the shared membership card DTO (title SILVER, no subtitle)", () => {
     const [card] = mapAnnualMembershipPlansForPublicPlans([annualDto(), silverDto]);
     assert.strictEqual(card.catalogSource, "marketplace_membership");
     assert.strictEqual(card.catalogCategory, "annual");
-    assert.strictEqual(card.titleEn, "Annual Basic");
-    assert.strictEqual(card.title, "الباقة السنوية الأساسية");
-    assert.strictEqual(card.taglineAr, "عضوية سنوية للعمل على أوردرز هاوس");
+    assert.strictEqual(card.titleEn, "SILVER");
+    assert.strictEqual(card.title, "SILVER");
+    assert.strictEqual(card.taglineAr, "");
+    assert.strictEqual(card.taglineEn, "");
+    assert.strictEqual(card.visualTierCode, "silver");
+    assert.strictEqual(card.tierCode, "annual_basic");
     assert.strictEqual(card.priceJod, 50);
     assert.strictEqual(card.durationMonths, 12);
     assert.strictEqual(card.durationDays, null);
     assert.strictEqual(card.bidAllowanceScope, "term");
     assert.deepStrictEqual(card.primaryMetrics, {
-      bids: 30,
+      bids: 480,
       dailyLimit: 3,
-      projectMaxJod: 10,
+      projectMaxJod: 20,
       unlimitedProjects: false,
     });
     assert.deepStrictEqual(
@@ -104,6 +108,31 @@ describe("Annual Plans mapping", () => {
     const [card] = mapAnnualMembershipPlansForPublicPlans([annualDto()]);
     assert.strictEqual(resolveMarketplaceCheckoutPlanCode(card), "ANNUAL_BASIC");
     assert.ok(isPaidMarketplaceMembershipTierCode("ANNUAL_BASIC"));
+  });
+});
+
+describe("Package allowance wording (cards only)", () => {
+  it("Arabic cards say مرات تقديم, not عروض", () => {
+    const ar = JSON.parse(read("locales/ar/plans.json"));
+    assert.strictEqual(ar.membership.bidsAvailable, "مرة تقديم");
+    assert.strictEqual(ar.membership.bidsForTerm, "مرة تقديم طوال مدة الباقة");
+    assert.strictEqual(ar.membership.bidsPerDay, "مرات تقديم يوميًا");
+    assert.strictEqual(ar.membership.applicationNote, "التقديم = إرسال عرض على طلب، وليس طلبًا مضمونًا.");
+    assert.strictEqual(ar.specialOffer.offersPerDay, "مرات تقديم يوميًا");
+  });
+
+  it("English cards say applications", () => {
+    const en = JSON.parse(read("locales/en/plans.json"));
+    assert.strictEqual(en.membership.bidsForTerm, "applications for the plan term");
+    assert.strictEqual(en.membership.bidsPerDay, "applications per day");
+    assert.strictEqual(en.membership.withdrawalOn, "Withdrawals available");
+    assert.match(en.membership.applicationNote, /does not guarantee receiving an order/);
+  });
+
+  it("one shared note under membership + annual grids (not inside cards)", () => {
+    assert.match(read("components/plans/PricingSection.jsx"), /<PlansApplicationNote \/>/);
+    assert.match(read("components/plans/AnnualPlansSection.jsx"), /<PlansApplicationNote \/>/);
+    assert.doesNotMatch(read("components/plans/MembershipPlanCardBody.jsx"), /PlansApplicationNote/);
   });
 });
 
@@ -134,6 +163,7 @@ describe("Annual Plans tab", () => {
       assert.ok(plans.categories.annual);
       assert.ok(plans.months.includes("{{count}}"));
       assert.ok(plans.membership.bidsForTerm);
+      assert.ok(plans.membership.applicationNote);
       assert.ok(plans.annual.empty && plans.annual.footnote);
     }
     const ar = JSON.parse(read("locales/ar/plans.json"));

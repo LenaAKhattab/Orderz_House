@@ -11,7 +11,11 @@ const {
   attachSaleFieldsToMappedMarketplacePlan,
   resolveMarketplaceMembershipPayablePricing,
 } = require("../utils/marketplaceMembershipSalePricing");
-const { isValidMarketplaceTierCode, defaultArticleAccessLevelForTier } = require("../constants/marketplaceMembershipPlans");
+const {
+  isValidMarketplaceTierCode,
+  defaultArticleAccessLevelForTier,
+  resolveEntitlementTierCode,
+} = require("../constants/marketplaceMembershipPlans");
 const { defaultPriorityBidUsesForTier } = require("../constants/marketplaceEconomy");
 const { marketplacePlanHasArticleAccessLevel, marketplacePlanHasMonthlyBidAllowance } = require("../utils/marketplaceMembershipPlanSchema");
 
@@ -97,6 +101,8 @@ function mapMarketplaceMembershipPlan(row) {
     isOneTimeStarter: isTruthyFlag(row.is_one_time_starter),
     // Migration 206 (Annual Plans). Missing columns → existing marketplace defaults.
     catalogCategory: row.catalog_category || "marketplace",
+    // Tier whose marketplace privileges this plan grants (Annual SILVER → silver).
+    entitlementTierCode: resolveEntitlementTierCode(row.tier_code),
     entitlementDurationMonths:
       row.entitlement_duration_months == null ? null : Number(row.entitlement_duration_months) || null,
     bidAllowanceScope: row.bid_allowance_scope || "cycle",
@@ -138,6 +144,7 @@ function mapPublicMarketplaceMembershipPlan(row) {
     starterEarningsMode: full.starterEarningsMode,
     bidDistributionMode: full.bidDistributionMode,
     catalogCategory: full.catalogCategory,
+    entitlementTierCode: full.entitlementTierCode,
     entitlementDurationMonths: full.entitlementDurationMonths,
     bidAllowanceScope: full.bidAllowanceScope,
     includedBenefits: full.includedBenefits,

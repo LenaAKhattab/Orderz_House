@@ -12,6 +12,7 @@ const { createAppError } = require("../utils/AppError");
 const {
   resolveBusinessSpendDate,
 } = require("./marketplaceMembershipDailyBidSpendService");
+const { resolveEntitlementTierCode } = require("../constants/marketplaceMembershipPlans");
 const {
   FREELANCER_ACTIVATION_SETTINGS_DEFAULTS,
   FREELANCER_ACTIVATION_PAID_TIER_CODES,
@@ -342,7 +343,7 @@ async function loadPaidMembership(runner, freelancerUserId) {
         LIMIT 1`,
       [freelancerUserId],
     );
-    const tier = String(rows[0]?.tier_code || "").toLowerCase();
+    const tier = resolveEntitlementTierCode(rows[0]?.tier_code);
     return {
       hasActivePaidSilver: FREELANCER_ACTIVATION_PAID_TIER_CODES.includes(tier),
       currentMembershipId: rows[0]?.membership_id != null ? Number(rows[0].membership_id) : null,

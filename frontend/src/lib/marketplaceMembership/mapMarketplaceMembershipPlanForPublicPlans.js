@@ -134,15 +134,22 @@ export function mapAnnualMembershipPlanForPublicPlans(plan) {
   if (!plan || typeof plan !== "object" || !isAnnualCatalogPlan(plan)) return null;
   const tierCode = normalizeTierCode(plan.tierCode);
   if (!tierCode) return null;
-  const titleAr = plan.nameAr || plan.nameEn || tierCode.toUpperCase();
-  const titleEn = plan.nameEn || plan.nameAr || tierCode.toUpperCase();
-  return buildMembershipPlanCard(plan, tierCode, {
-    titleAr,
-    titleEn,
-    taglineAr: plan.descriptionAr || "",
-    taglineEn: plan.descriptionEn || plan.descriptionAr || "",
-    isPopular: false,
-  });
+  // Annual SILVER is titled by the tier it grants ("SILVER"); the tab + duration convey "annual".
+  const entitlementTier = normalizeTierCode(plan.entitlementTierCode);
+  const entitlementDisplay = PUBLIC_MEMBERSHIP_TIER_DISPLAY[entitlementTier];
+  const titleAr = entitlementDisplay?.code || plan.nameAr || plan.nameEn || tierCode.toUpperCase();
+  const titleEn = entitlementDisplay?.code || plan.nameEn || plan.nameAr || tierCode.toUpperCase();
+  return {
+    ...buildMembershipPlanCard(plan, tierCode, {
+      titleAr,
+      titleEn,
+      taglineAr: entitlementDisplay ? "" : plan.descriptionAr || "",
+      taglineEn: entitlementDisplay ? "" : plan.descriptionEn || plan.descriptionAr || "",
+      isPopular: false,
+    }),
+    // Reuse the granted tier's card styling (e.g. the SILVER accent).
+    visualTierCode: entitlementDisplay ? entitlementTier : tierCode,
+  };
 }
 
 /** Annual Plans, ordered by catalog sort order. */
