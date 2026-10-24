@@ -7,6 +7,9 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 require("dotenv").config({ path: path.join(__dirname, "..", ".env") });
+// Live-DB cases use ONLY INTEGRATION_TEST_DATABASE_URL (never backend/.env DATABASE_URL).
+const { isIntegrationEnvConfigured } = require("./helpers/integrationEnv");
+const integrationOk = isIntegrationEnvConfigured();
 
 const storageSrc = fs.readFileSync(
   path.join(__dirname, "..", "src", "services", "institutionalStorageService.js"),
@@ -97,8 +100,8 @@ describe("releaseClientAfterSessionLock behavior", () => {
 
 describe("xact lock mutual exclusion (live DB when available)", () => {
   it("two concurrent xact lock attempts: only one succeeds inside overlapping transactions", async (t) => {
-    if (!process.env.DATABASE_URL) {
-      t.skip("DATABASE_URL not set");
+    if (!integrationOk) {
+      t.skip("INTEGRATION_TEST_DATABASE_URL not configured");
       return;
     }
 
@@ -144,8 +147,8 @@ describe("xact lock mutual exclusion (live DB when available)", () => {
   });
 
   it("session lock is cleared before client returns to pool on success path", async (t) => {
-    if (!process.env.DATABASE_URL) {
-      t.skip("DATABASE_URL not set");
+    if (!integrationOk) {
+      t.skip("INTEGRATION_TEST_DATABASE_URL not configured");
       return;
     }
 

@@ -3,7 +3,7 @@
  * without Stripe.
  *
  * Run: npm run test:integration
- * Requires: backend/.env with real DATABASE_URL (not a *placeholder* URL) and JWT_SECRET (16+ chars).
+ * Requires: INTEGRATION_TEST_DATABASE_URL (explicit non-Production DB; never DATABASE_URL) and JWT_SECRET (16+ chars).
  * Skips when env is missing, DATABASE_URL is unreachable, or assignable paid plan is absent.
  */
 const path = require("node:path");
@@ -121,7 +121,8 @@ rootDescribe("internal priced bidding lifecycle (Postgres integration)", () => {
         }
 
         const suffix = `${Date.now()}_${crypto.randomBytes(4).toString("hex")}`;
-        const password = "IntegrationTest1!";
+        // Per-run random credential: a leaked fixture can never be logged into with a repo-known password.
+        const password = `It${crypto.randomBytes(18).toString("base64url")}9!`;
         const adminEmail = `intadm_${suffix}@example.test`;
         const faEmail = `intf_a_${suffix}@example.test`;
         const fbEmail = `intf_b_${suffix}@example.test`;
