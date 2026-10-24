@@ -2,7 +2,7 @@
  * Postgres integration: fake/training order automation gap prevention.
  *
  * Run: npm run test:fake-orders-integration
- * Requires: backend/.env with real DATABASE_URL (not *placeholder*) and JWT_SECRET (16+ chars).
+ * Requires: INTEGRATION_TEST_DATABASE_URL (explicit non-Production DB; never DATABASE_URL) and JWT_SECRET (16+ chars).
  * Mutates fake_order_settings and training rounds — dev/staging only.
  */
 const path = require("node:path");
