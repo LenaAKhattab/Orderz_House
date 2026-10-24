@@ -1,4 +1,6 @@
 require("dotenv").config();
+// Unit tests: never inherit a Production DATABASE_URL from backend/.env.
+require("./helpers/integrationEnv").isIntegrationEnvConfigured();
 const { describe, it } = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");

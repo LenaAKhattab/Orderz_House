@@ -4,10 +4,15 @@
  * Never run against production.
  */
 function assertCleanupEnvironmentSafe(env = process.env) {
+  const { classifyDatabaseUrl } = require("../../src/utils/databaseEnvironmentSafety");
   const nodeEnv = String(env.NODE_ENV || "").toLowerCase();
   const dbUrl = String(env.DATABASE_URL || env.DB_URL || "");
   if (nodeEnv === "production") {
     throw new Error("Refusing institutional test cleanup: NODE_ENV=production");
+  }
+  // Known Production host markers (the Neon Production URL contains no "prod" text).
+  if (classifyDatabaseUrl(dbUrl, env).isProduction) {
+    throw new Error("Refusing institutional test cleanup: DATABASE_URL looks like production");
   }
   if (/prod|production/i.test(dbUrl) && !/test|staging|dev|local|127\.0\.0\.1|localhost/i.test(dbUrl)) {
     throw new Error("Refusing institutional test cleanup: DATABASE_URL looks like production");

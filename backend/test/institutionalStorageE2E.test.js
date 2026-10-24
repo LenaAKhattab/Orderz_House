@@ -1,6 +1,6 @@
 /**
  * Full institutional order storage E2E lifecycle + remaining concurrency tests.
- * Requires real DATABASE_URL + JWT_SECRET (see helpers/integrationEnv.js).
+ * Requires INTEGRATION_TEST_DATABASE_URL + JWT_SECRET (see helpers/integrationEnv.js).
  *
  * Run: npm run test:institutional-storage
  */

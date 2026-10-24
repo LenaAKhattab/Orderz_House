@@ -4,6 +4,9 @@ if (!process.env.DATABASE_URL) {
   throw new Error("DATABASE_URL is missing. Please configure backend/.env.");
 }
 
+// Automated tests must never reach Production; refuse before any Pool/connection exists.
+require("./testRuntimeDatabaseGuard").assertTestRuntimeDatabaseSafe(process.env.DATABASE_URL);
+
 /**
  * Session advisory lock key constants (kept for callers / docs).
  * Generation work uses transaction-scoped locks in fakeOrdersService.
