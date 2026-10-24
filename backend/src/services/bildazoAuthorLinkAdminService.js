@@ -398,9 +398,9 @@ async function updateBildazoAuthorLinkStatus(id, body, actorUserId, { db = pool 
 
   const updated = await db.query(
     `UPDATE freelancer_bildazo_author_links
-        SET status = $2,
+        SET status = $2::text,
             manual_review_reason = $3,
-            last_error = CASE WHEN $2 = 'failed' THEN $3 ELSE last_error END,
+            last_error = CASE WHEN $2::text = 'failed' THEN $3 ELSE last_error END,
             updated_at = NOW()
       WHERE id = $1
         AND status <> 'linked'
