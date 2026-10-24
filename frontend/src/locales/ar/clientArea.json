@@ -223,12 +223,12 @@
     "downloadStartedTitle": "بدأ التنزيل",
     "downloadForbidden": "غير مصرح بتنزيل هذا الملف.",
     "fileNotFound": "الملف غير موجود.",
-    "downloadError": "تعذّر تنزيل الملف.",
+    "downloadError": "تعذر تنزيل المرفق. حاول مرة أخرى.",
     "downloadErrorTitle": "تعذّر التنزيل",
     "openSuccessTitle": "تم الفتح",
     "openSuccessMessage": "تم فتح الملف في تبويب جديد.",
     "viewForbidden": "غير مصرح بعرض هذا الملف.",
-    "viewError": "تعذّر عرض الملف.",
+    "viewError": "تعذر فتح المرفق. حاول مرة أخرى.",
     "viewErrorTitle": "تعذّر العرض"
   },
   "revisionRequest": {

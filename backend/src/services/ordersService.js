@@ -5,11 +5,12 @@ const { pool } = require("../config/db");
 const subscriptionsService = require("./subscriptionsService");
 const notificationService = require("./notificationService");
 const orderFlowService = require("./orderFlowService");
-const { resolveOrderFileLocation } = require("../utils/orderFileDownload");
 const { sanitizeOrderForClient, sanitizeBidsForClient, sanitizeClaimsForClient } = require("../utils/orderViewerSanitize");
 const notificationEventsService = require("./notificationEventsService");
 const { baseUploadsDir } = require("../middleware/ordersUploadMiddleware");
 const { uploadBuffer, destroyByPublicId } = require("./cloudinaryUploadService");
+const fileStorage = require("./fileStorageService");
+const { decodeMultipartFilename, sanitizeOriginalFilename } = require("../utils/orderUploadValidation");
 const orderSubmissionHistoryService = require("./orderSubmissionHistoryService");
 const {
   mapCachedEnglishFields,
@@ -58,18 +59,12 @@ function scheduleClientBiddingPoolFreelancerNotifications({ orderId, actorUserId
   });
 }
 
-/** Multer/busboy often stores UTF-8 filenames as latin1 bytes; fix for DB display and downloads. */
+/**
+ * Multer/busboy often stores UTF-8 filenames as latin1 bytes; fix for DB display and downloads
+ * (any script: Arabic, accents, CJK). Idempotent on already-decoded names.
+ */
 function decodeMultipartOriginalName(name) {
-  const s = String(name ?? "");
-  if (!s) return s;
-  try {
-    const decoded = Buffer.from(s, "latin1").toString("utf8");
-    const hasArabic = (t) => /[\u0600-\u06FF]/.test(t);
-    if (hasArabic(decoded) && !hasArabic(s)) return decoded;
-  } catch (_) {
-    /* ignore */
-  }
-  return s;
+  return decodeMultipartFilename(name);
 }
 
 const ORDER_STATUSES = Object.freeze({
@@ -396,18 +391,21 @@ async function attachFiles({ orderId, actorUserId, files, defaultPurpose = "brie
     const relativePath = f.relativePath;
     const storedPath =
       (relativePath && String(relativePath).trim()) ||
+      (f.storageKey && String(f.storageKey).trim()) ||
       (f.publicId && String(f.publicId).trim()) ||
       (f.urlPath && String(f.urlPath).trim()) ||
       "cloudinary_asset";
     const urlPath = f.urlPath || f.secureUrl || null;
+    const storageProvider = f.storageProvider || fileStorage.resolveProvider({ secure_url: urlPath });
     const purpose = f.purpose || defaultPurpose;
-    const originalName = decodeMultipartOriginalName(f.originalname);
+    const originalName = sanitizeOriginalFilename(f.originalname);
     const submissionIdIns =
       f.submissionId != null ? Number(f.submissionId) : f.submission_id != null ? Number(f.submission_id) : null;
     const { rows } = await runner.query(
       `INSERT INTO order_files (
-        order_id, file_path, file_url, secure_url, public_id, original_name, mime_type, size_bytes, uploaded_by_user_id, purpose, assignment_id, revision_id, submission_id
-      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+        order_id, file_path, file_url, secure_url, public_id, original_name, mime_type, size_bytes, uploaded_by_user_id, purpose, assignment_id, revision_id, submission_id,
+        storage_provider, storage_bucket, storage_key, content_sha256
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
       RETURNING *`,
       [
         Number(orderId),
@@ -423,6 +421,10 @@ async function attachFiles({ orderId, actorUserId, files, defaultPurpose = "brie
         f.assignmentId ? Number(f.assignmentId) : null,
         f.revisionId ? Number(f.revisionId) : null,
         submissionIdIns != null && Number.isFinite(submissionIdIns) ? submissionIdIns : null,
+        storageProvider,
+        f.storageBucket || null,
+        f.storageKey || null,
+        f.sha256 || null,
       ],
     );
     rowsOut.push(rows[0]);
@@ -430,11 +432,57 @@ async function attachFiles({ orderId, actorUserId, files, defaultPurpose = "brie
   return rowsOut;
 }
 
-async function uploadFilesToCloudinary({ orderId, files, purpose }) {
+/** Best-effort removal of objects uploaded before a failure / after an order is deleted. */
+async function removeStoredObject(f) {
+  try {
+    if ((f.storageProvider || f.storage_provider) === fileStorage.PROVIDERS.R2) {
+      await fileStorage.deletePrivateFile({
+        bucket: f.storageBucket || f.storage_bucket,
+        key: f.storageKey || f.storage_key,
+      });
+    } else if (f.publicId || f.public_id) {
+      await destroyByPublicId(f.publicId || f.public_id);
+    }
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.warn("[order-files] cleanup failed", { code: err?.code || null, name: err?.name || null });
+  }
+}
+
+/**
+ * Store private order attachments. New uploads → Cloudflare R2 (private bucket, PII-free keys);
+ * legacy Cloudinary only when R2 is not configured (local/dev without storage credentials).
+ */
+async function uploadOrderFiles({ orderId, files, purpose, scope = "orders" }) {
   const input = Array.isArray(files) ? files : [];
   const uploaded = [];
+  const useR2 = fileStorage.isPrivateR2WriteEnabled();
   try {
     for (const file of input) {
+      if (useR2) {
+        const key = fileStorage.buildPrivateObjectKey({
+          scope,
+          scopeId: orderId,
+          purpose,
+          originalname: file.originalname,
+        });
+        // eslint-disable-next-line no-await-in-loop
+        const out = await fileStorage.uploadPrivateFile({ buffer: file.buffer, mimetype: file.mimetype, key });
+        uploaded.push({
+          ...file,
+          purpose,
+          relativePath: null,
+          urlPath: null,
+          secureUrl: null,
+          publicId: null,
+          storageProvider: out.provider,
+          storageBucket: out.bucket,
+          storageKey: out.key,
+          sha256: out.sha256,
+          size: out.size,
+        });
+        continue;
+      }
       // eslint-disable-next-line no-await-in-loop
       const out = await uploadBuffer({
         buffer: file.buffer,
@@ -450,6 +498,7 @@ async function uploadFilesToCloudinary({ orderId, files, purpose }) {
         urlPath: out.secureUrl,
         secureUrl: out.secureUrl,
         publicId: out.publicId,
+        storageProvider: fileStorage.PROVIDERS.CLOUDINARY,
         size: out.bytes || file.size,
       });
     }
@@ -457,14 +506,19 @@ async function uploadFilesToCloudinary({ orderId, files, purpose }) {
   } catch (e) {
     for (const f of uploaded) {
       // eslint-disable-next-line no-await-in-loop
-      await destroyByPublicId(f.publicId);
+      await removeStoredObject(f);
     }
+    // eslint-disable-next-line no-console
+    console.warn("[order-files] upload failed", { provider: useR2 ? "r2" : "cloudinary", code: e?.code || null, name: e?.name || null });
     const err = new Error("فشل رفع الملفات، يرجى المحاولة مرة أخرى.");
     err.statusCode = 500;
     err.cause = e;
     throw err;
   }
 }
+
+/** @deprecated name kept for existing callers; storage is provider-neutral. */
+const uploadFilesToCloudinary = uploadOrderFiles;
 
 async function getOrderById(orderId, client) {
   const runner = client || pool;
@@ -1257,7 +1311,7 @@ async function purgeClientUnpaidFixedOrderDraft({ clientUserId, orderId }, clien
       throw err;
     }
 
-    const { rows: fileRows } = await runner.query(`SELECT file_path, public_id FROM order_files WHERE order_id = $1`, [oid]);
+    const { rows: fileRows } = await runner.query(`SELECT file_path, public_id, storage_provider, storage_bucket, storage_key FROM order_files WHERE order_id = $1`, [oid]);
     await runner.query(`DELETE FROM order_claims WHERE order_id = $1`, [oid]);
     await runner.query(`DELETE FROM order_freelancer_bids WHERE order_id = $1`, [oid]);
     await runner.query(`DELETE FROM client_order_payments WHERE order_id = $1`, [oid]);
@@ -1268,10 +1322,9 @@ async function purgeClientUnpaidFixedOrderDraft({ clientUserId, orderId }, clien
     if (ownsClient) await runner.query("COMMIT");
 
     for (const f of fileRows || []) {
-      if (f.public_id) {
-        // eslint-disable-next-line no-await-in-loop
-        await destroyByPublicId(f.public_id);
-      }
+      // eslint-disable-next-line no-await-in-loop
+      await removeStoredObject(f);
+      if (f.storage_provider && f.storage_provider !== fileStorage.PROVIDERS.LOCAL) continue;
       const rel = String(f.file_path || "").replace(/^\/+/, "");
       if (!rel) continue;
       const abs = path.join(baseUploadsDir, "..", rel);
@@ -4212,7 +4265,7 @@ async function prepareStaffOrderFileDownload({ orderId, fileId }) {
     throw err;
   }
   const { rows } = await pool.query(
-    `SELECT id, order_id, file_path, file_url, secure_url, original_name, mime_type
+    `SELECT id, order_id, file_path, file_url, secure_url, original_name, mime_type, storage_provider, storage_bucket, storage_key, public_id
      FROM order_files
      WHERE id = $1 AND order_id = $2
      LIMIT 1`,
@@ -4224,11 +4277,9 @@ async function prepareStaffOrderFileDownload({ orderId, fileId }) {
     err.statusCode = 404;
     throw err;
   }
-  const loc = await resolveOrderFileLocation(f);
   const downloadName = decodeMultipartOriginalName(f.original_name) || f.original_name || "file";
   const mimeType = f.mime_type || "application/octet-stream";
-  if (loc.redirectUrl) return { redirectUrl: loc.redirectUrl, downloadName, mimeType };
-  return { absPath: loc.absPath, downloadName, mimeType };
+  return { file: f, downloadName, mimeType };
 }
 
 /**
@@ -4244,7 +4295,7 @@ async function prepareFreelancerOrderFileDownload({ freelancerUserId, orderId, f
     throw err;
   }
   const { rows: fr } = await pool.query(
-    `SELECT id, order_id, file_path, file_url, secure_url, original_name, mime_type, purpose
+    `SELECT id, order_id, file_path, file_url, secure_url, original_name, mime_type, purpose, storage_provider, storage_bucket, storage_key, public_id
      FROM order_files
      WHERE id = $1 AND order_id = $2
      LIMIT 1`,
@@ -4261,11 +4312,9 @@ async function prepareFreelancerOrderFileDownload({ freelancerUserId, orderId, f
     { auth: { userId: String(uid), primaryRole: "freelancer", roles: [{ name: "freelancer" }] }, orderId: oid, fileId: fid },
     pool,
   );
-  const loc = await resolveOrderFileLocation(fileRow);
   const downloadName = decodeMultipartOriginalName(fileRow.original_name) || fileRow.original_name || "file";
   const mimeType = fileRow.mime_type || "application/octet-stream";
-  if (loc.redirectUrl) return { redirectUrl: loc.redirectUrl, downloadName, mimeType };
-  return { absPath: loc.absPath, downloadName, mimeType };
+  return { file: fileRow, downloadName, mimeType };
 }
 
 async function clientApproveDelivery({ clientUserId, orderId }) {
@@ -4431,7 +4480,7 @@ async function clientRequestDeliveryRevision({ clientUserId, orderId, note, uplo
 async function prepareClientOrderFileDownload({ clientUserId, orderId, fileId }) {
   await assertClientOwnsOrder({ clientUserId, orderId });
   const { rows } = await pool.query(
-    `SELECT id, order_id, file_path, file_url, secure_url, original_name, mime_type
+    `SELECT id, order_id, file_path, file_url, secure_url, original_name, mime_type, storage_provider, storage_bucket, storage_key, public_id
      FROM order_files
      WHERE id = $1 AND order_id = $2
      LIMIT 1`,
@@ -4443,11 +4492,9 @@ async function prepareClientOrderFileDownload({ clientUserId, orderId, fileId })
     err.statusCode = 404;
     throw err;
   }
-  const loc = await resolveOrderFileLocation(f);
   const downloadName = decodeMultipartOriginalName(f.original_name) || f.original_name || "file";
   const mimeType = f.mime_type || "application/octet-stream";
-  if (loc.redirectUrl) return { redirectUrl: loc.redirectUrl, downloadName, mimeType };
-  return { absPath: loc.absPath, downloadName, mimeType };
+  return { file: f, downloadName, mimeType };
 }
 
 async function activateArchivedInternalOrder({ orderId }) {
@@ -4691,6 +4738,7 @@ module.exports = {
   adminRequestInternalDeliveryRevision,
   activateArchivedInternalOrder,
   uploadFilesToCloudinary,
+  uploadOrderFiles,
   attachFiles,
   purgeClientUnpaidFixedOrderDraft,
   scheduleClientBiddingPoolFreelancerNotifications,

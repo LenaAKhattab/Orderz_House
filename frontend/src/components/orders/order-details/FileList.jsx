@@ -49,7 +49,7 @@ export default function FileList({ files, emptyText, orderId = null, fileAccess 
   const canUseApi = Boolean(orderId && fileAccess && String(orderId).trim() && String(fileAccess).trim());
 
   const toastApiError = useCallback(
-    (e, title) => {
+    (e, title, fallback) => {
       const status = e?.response?.status;
       let msg = e?.message || e?.response?.data?.message;
       if (e?.response?.data instanceof Blob) {
@@ -70,7 +70,7 @@ export default function FileList({ files, emptyText, orderId = null, fileAccess 
       push({
         type: "error",
         title,
-        message: msg || t("ordersAdmin.orderDetails.files.genericError"),
+        message: msg || fallback || t("ordersAdmin.orderDetails.files.genericError"),
       });
     },
     [push, t],
@@ -82,14 +82,19 @@ export default function FileList({ files, emptyText, orderId = null, fileAccess 
       setBusyId(f.id);
       setBusyAction("view");
       try {
-        await viewOrderFileForRole(orderId, f.id, displayOrderFileName(f, defaultFileName), fileAccess);
-        push({
-          type: "success",
-          title: t("ordersAdmin.orderDetails.files.openSuccessTitle"),
-          message: t("ordersAdmin.orderDetails.files.openSuccessMessage"),
-        });
+        const name = displayOrderFileName(f, defaultFileName);
+        const out = await viewOrderFileForRole(orderId, f.id, name, fileAccess);
+        push(
+          out?.previewed === false
+            ? { type: "success", title: t("ordersAdmin.orderDetails.files.downloadSuccessTitle"), message: name }
+            : {
+                type: "success",
+                title: t("ordersAdmin.orderDetails.files.openSuccessTitle"),
+                message: t("ordersAdmin.orderDetails.files.openSuccessMessage"),
+              },
+        );
       } catch (e) {
-        toastApiError(e, t("ordersAdmin.orderDetails.files.openErrorTitle"));
+        toastApiError(e, t("ordersAdmin.orderDetails.files.openErrorTitle"), t("ordersAdmin.orderDetails.files.openError"));
       } finally {
         setBusyId(null);
         setBusyAction(null);
@@ -112,7 +117,11 @@ export default function FileList({ files, emptyText, orderId = null, fileAccess 
           message: name,
         });
       } catch (e) {
-        toastApiError(e, t("ordersAdmin.orderDetails.files.downloadErrorTitle"));
+        toastApiError(
+          e,
+          t("ordersAdmin.orderDetails.files.downloadErrorTitle"),
+          t("ordersAdmin.orderDetails.files.downloadError"),
+        );
       } finally {
         setBusyId(null);
         setBusyAction(null);

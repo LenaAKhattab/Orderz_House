@@ -290,7 +290,9 @@
       "downloadSuccessTitle": "Download started",
       "genericError": "The operation failed.",
       "unauthorized": "You are not allowed to view this file.",
-      "notFound": "File not found."
+      "notFound": "File not found.",
+      "openError": "Could not open the attachment. Please try again.",
+      "downloadError": "Could not download the attachment. Please try again."
     },
     "submissionHistory": {
       "title": "Submission and revision history",

@@ -290,7 +290,9 @@
       "downloadSuccessTitle": "بدأ التنزيل",
       "genericError": "تعذّرت العملية.",
       "unauthorized": "غير مصرح بعرض هذا الملف.",
-      "notFound": "الملف غير موجود."
+      "notFound": "الملف غير موجود.",
+      "openError": "تعذر فتح المرفق. حاول مرة أخرى.",
+      "downloadError": "تعذر تنزيل المرفق. حاول مرة أخرى."
     },
     "submissionHistory": {
       "title": "سجل التسليمات والتعديلات",

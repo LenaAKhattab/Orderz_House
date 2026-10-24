@@ -1153,7 +1153,9 @@ main.app-shell:has(.fdl-shell) {
   background: transparent;
 }
 
-.page-shell:has(.fdl-shell) footer {
+/* Public site footer only — a bare `footer` selector also hid card/modal action footers
+   (e.g. client order card «استلام الطلب» → delivery files). */
+.page-shell:has(.fdl-shell) .site-footer {
   display: none;
 }
 
