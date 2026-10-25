@@ -1,19 +1,9 @@
 import { Link } from "react-router-dom";
 import usePublicSitePage from "../hooks/usePublicSitePage";
+import RichContent from "../components/content/RichContent";
 import { useTranslation } from "../i18n/LanguageProvider";
 import { pickLocalizedPlatformCopy } from "../lib/i18n/platformContentLocale";
 import "../styles/publicSitePage.css";
-
-function renderContentBlock(block, index) {
-  const trimmed = block.trim();
-  if (!trimmed) return null;
-
-  if (trimmed.startsWith("## ")) {
-    return <h2 key={index}>{trimmed.slice(3).trim()}</h2>;
-  }
-
-  return <p key={index}>{trimmed}</p>;
-}
 
 /**
  * @param {{ slug: string }} props
@@ -57,7 +47,6 @@ export default function PublicSitePage({ slug }) {
 
   const title = pickLocalizedPlatformCopy(page?.title, page?.titleEn || page?.title_en, locale);
   const content = pickLocalizedPlatformCopy(page?.content, page?.contentEn || page?.content_en, locale);
-  const blocks = content.split(/\n\n+/);
   const missingEnglish = locale === "en" && !content;
 
   return (
@@ -68,7 +57,7 @@ export default function PublicSitePage({ slug }) {
         </h1>
         <div className="public-site-page__content">
           {missingEnglish ? <p>{t(`${ps}.englishUnavailable`)}</p> : null}
-          {blocks.map((block, index) => renderContentBlock(block, index))}
+          <RichContent text={content} />
         </div>
       </section>
     </main>

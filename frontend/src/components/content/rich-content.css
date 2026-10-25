@@ -1,0 +1,81 @@
+/* Long-form public content (legal, help, how-it-works). Uses brand navy for headings. */
+.rich-content {
+  color: #334155;
+  font-size: 1rem;
+  line-height: 1.9;
+  text-align: start;
+}
+
+.rich-content > * + * {
+  margin-top: 0.85rem;
+}
+
+.rich-content p {
+  margin: 0;
+}
+
+.rich-content__heading {
+  margin: 1.9rem 0 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  line-height: 1.45;
+  color: #2f3b65;
+}
+
+.rich-content > .rich-content__heading:first-child {
+  margin-top: 0;
+}
+
+.rich-content__heading + * {
+  margin-top: 0.55rem;
+}
+
+.rich-content__meta {
+  display: inline-block;
+  padding: 0.2rem 0.75rem;
+  border-radius: 999px;
+  background: #eef1f6;
+  color: #475569;
+  font-size: 0.85rem;
+  line-height: 1.7;
+}
+
+.rich-content__list {
+  margin: 0.55rem 0 0;
+  padding-inline-start: 1.35rem;
+  display: grid;
+  gap: 0.2rem;
+  /* Tailwind preflight resets list-style to none. */
+  list-style: disc outside;
+}
+
+.rich-content__list--ordered {
+  list-style: decimal outside;
+}
+
+.rich-content__list li {
+  display: list-item;
+  padding-inline-start: 0.2rem;
+  line-height: 1.75;
+}
+
+.rich-content__list li::marker {
+  color: #76cfdf;
+  font-weight: 800;
+}
+
+.rich-content__list--ordered li::marker {
+  color: #2f3b65;
+}
+
+@media (max-width: 560px) {
+  .rich-content {
+    font-size: 0.95rem;
+    line-height: 1.85;
+  }
+
+  .rich-content__heading {
+    font-size: 1.05rem;
+    margin-top: 1.5rem;
+  }
+}

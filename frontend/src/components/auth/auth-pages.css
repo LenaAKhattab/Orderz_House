@@ -109,10 +109,13 @@
   align-items: center;
   gap: 0.45rem;
   align-self: start;
-  padding: 0.35rem 0.75rem 0.35rem 0.85rem;
+  width: fit-content;
+  padding: 0.45rem 0.9rem;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  background: rgba(255, 255, 255, 0.1);
+  /* Solid surface: the brand logo is dark navy and disappeared on the translucent pill. */
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  background: #ffffff;
+  box-shadow: 0 10px 24px -14px rgba(10, 18, 40, 0.55);
   font-size: 0.78rem;
   font-weight: 800;
   letter-spacing: 0.02em;
@@ -691,4 +694,14 @@ html[dir="ltr"] .oh-auth-form-panel {
   }
 }
 
+/* Field-level validation: invalid inputs (and password shells) get a red border + soft ring. */
+.oh-auth-page input[aria-invalid="true"],
+.oh-auth-page [data-invalid="true"] {
+  border-color: #d92d20 !important;
+  box-shadow: 0 0 0 3px rgba(217, 45, 32, 0.12) !important;
+}
 
+.oh-auth-page [data-invalid="true"] input[aria-invalid="true"] {
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
