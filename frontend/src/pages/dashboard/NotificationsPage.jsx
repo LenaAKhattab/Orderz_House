@@ -448,10 +448,6 @@ export default function NotificationsPage() {
 
                       <div className="fn-notif-card__body">
                         <h2 className="fn-notif-card__title">{cardTitle}</h2>
-                        <p className="fn-notif-card__details">
-                          {unread ? <span className="fn-notif-card__details-dot" aria-hidden /> : null}
-                          <span className="fn-notif-card__details-category">{category.label}</span>
-                        </p>
                         {description ? (
                           <p className={`fn-notif-card__desc${isFeedbackNotif && details ? " fn-notif-card__desc--stacked" : ""}`}>
                             {description}

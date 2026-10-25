@@ -6,6 +6,7 @@ import {
 } from "../../services/api";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import "../../i18n/clientAreaResources";
+import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
 
 function StarRow({ value, onChange, label, starAriaLabel }) {
   return (
@@ -69,7 +70,7 @@ export default function ClientFreelancerReviewModal({ open, orderId, orderTitle,
         setWouldRecommend(data.existingReview.wouldRecommend !== false);
       }
     } catch (e) {
-      setError(e?.response?.data?.message || e?.message || t(`${fr}.loadError`));
+      setError(getSafeApiErrorMessage(e, t(`${fr}.loadError`)));
     } finally {
       setLoading(false);
     }
@@ -103,7 +104,7 @@ export default function ClientFreelancerReviewModal({ open, orderId, orderTitle,
       onSubmitted?.();
       onClose?.();
     } catch (err) {
-      setError(err?.response?.data?.message || err?.message || t(`${fr}.submitError`));
+      setError(getSafeApiErrorMessage(err, t(`${fr}.submitError`)));
     } finally {
       setSubmitting(false);
     }

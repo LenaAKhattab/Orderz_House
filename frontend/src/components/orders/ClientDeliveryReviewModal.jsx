@@ -1,31 +1,22 @@
-import { useMemo, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
+import { PackageCheck } from "lucide-react";
 import {
   approveAdminInternalOrderDeliveryRequest,
   approveClientOrderDeliveryRequest,
-  downloadOrderFileForRole,
   requestAdminInternalOrderRevisionRequest,
   requestClientOrderRevisionRequest,
-  viewOrderFileForRole,
 } from "../../services/api";
 import { useToast } from "../ui/toastContext";
 import SubmissionHistoryTimeline from "./submission-history/SubmissionHistoryTimeline";
+import FileList from "./order-details/FileList";
+import OrderDialog from "./OrderDialog";
+import OrderFilesPicker from "./OrderFilesPicker";
+import ConfirmDialog from "../dashboard/ConfirmDialog";
 import { validateOrderFilesSize } from "../../utils/orderUploadLimits";
+import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
 import { trackEvent } from "../../services/analytics";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import "../../i18n/clientAreaResources";
-
-function displayFileName(f, attachmentFallback) {
-  const raw = String(f?.originalName || "").trim() || attachmentFallback;
-  try {
-    const bytes = new Uint8Array(raw.length);
-    for (let i = 0; i < raw.length; i += 1) bytes[i] = raw.charCodeAt(i) & 0xff;
-    const decoded = new TextDecoder("utf-8").decode(bytes);
-    if (/[\u0600-\u06FF]/.test(decoded) && !/[\u0600-\u06FF]/.test(raw)) return decoded;
-  } catch {
-    /* ignore */
-  }
-  return raw;
-}
 
 /**
  * @param {'workflow' | 'archive'} variant — workflow: مراجعة قبل الاعتماد؛ archive: طلب مكتمل، عرض وتنزيل فقط
@@ -35,19 +26,24 @@ export default function ClientDeliveryReviewModal({ open, order, onClose, onAppr
   const { push } = useToast();
   const { t } = useTranslation();
   const d = "clientArea.deliveryReview";
-  const uploadSizeMessage = t(`${d}.uploadTotalSizeMessage`);
-  const uploadSizeHelper = t(`${d}.uploadTotalSizeHelper`);
+  const noteId = useId();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [downloadingId, setDownloadingId] = useState(null);
-  const [viewingId, setViewingId] = useState(null);
+  const [view, setView] = useState("review");
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [revisionNote, setRevisionNote] = useState("");
   const [revisionFiles, setRevisionFiles] = useState([]);
+  const inFlight = useRef(false);
 
-  const revisionFilesSizeError = useMemo(() => {
-    if (!revisionFiles.length) return "";
-    return validateOrderFilesSize(revisionFiles).ok ? "" : uploadSizeMessage;
-  }, [revisionFiles, uploadSizeMessage]);
+  useEffect(() => {
+    if (!open) {
+      setView("review");
+      setError("");
+      setConfirmOpen(false);
+      setRevisionNote("");
+      setRevisionFiles([]);
+    }
+  }, [open]);
 
   if (!open || !order) return null;
 
@@ -56,255 +52,188 @@ export default function ClientDeliveryReviewModal({ open, order, onClose, onAppr
   const fileScope = isAdmin ? "admin" : "client";
   const orderIdStr = String(order?.id ?? "").trim();
   const deliveryFiles = (Array.isArray(order.files) ? order.files : []).filter(
-    (f) =>
-      f &&
-      f.purpose === "delivery" &&
-      (!f.orderId || String(f.orderId) === orderIdStr),
+    (f) => f && f.purpose === "delivery" && (!f.orderId || String(f.orderId) === orderIdStr),
   );
+  const submissions = Array.isArray(order?.submissionHistory?.submissions) ? order.submissionHistory.submissions : [];
+  // After a resubmission, review the current delivery only; earlier ones stay in the history below.
+  const currentSubmission = submissions.find((s) => s?.isCurrent);
+  const reviewFiles =
+    currentSubmission && Array.isArray(currentSubmission.files) && currentSubmission.files.length ? currentSubmission.files : deliveryFiles;
   const canApprove = !isArchive && order.orderStatus === "pending_client_review" && deliveryFiles.length > 0;
-  const canRequestRevision = !isArchive && (order.orderStatus === "pending_client_review" || order.orderStatus === "in_progress");
+  const canRequestRevision =
+    !isArchive && (order.orderStatus === "pending_client_review" || (order.orderStatus === "in_progress" && deliveryFiles.length > 0));
+  const revisionFilesOk = validateOrderFilesSize(revisionFiles).ok;
+  const noteText = String(revisionNote || "").trim();
 
-  const submit = async () => {
+  const approve = async () => {
+    if (inFlight.current) return;
+    inFlight.current = true;
     setBusy(true);
     setError("");
     try {
       if (isAdmin) await approveAdminInternalOrderDeliveryRequest(order.id);
       else await approveClientOrderDeliveryRequest(order.id);
-      trackEvent("order_completed", {
-        order_id: String(order.id),
-        audience: isAdmin ? "admin" : "client",
-      });
+      trackEvent("order_completed", { order_id: String(order.id), audience: isAdmin ? "admin" : "client" });
+      push({ type: "success", title: t(`${d}.approvedTitle`), message: t(`${d}.approvedMessage`) });
+      setConfirmOpen(false);
       onApprove?.();
       onClose();
     } catch (e) {
-      setError(e?.response?.data?.message || e?.message || t(`${d}.approveError`));
+      setConfirmOpen(false);
+      setError(getSafeApiErrorMessage(e, t(`${d}.approveError`)));
     } finally {
+      inFlight.current = false;
       setBusy(false);
     }
   };
 
-  const requestRevision = async () => {
-    const noteText = String(revisionNote || "").trim();
+  const requestRevision = async (e) => {
+    e?.preventDefault?.();
+    if (inFlight.current) return;
     if (!noteText) {
       setError(t(`${d}.revisionNoteRequired`));
       return;
     }
-    if (revisionFiles.length && !validateOrderFilesSize(revisionFiles).ok) {
-      setError(uploadSizeMessage);
-      push({ type: "error", title: t(`${d}.uploadSizeTitle`), message: uploadSizeMessage });
-      return;
-    }
+    if (!revisionFilesOk) return;
+    inFlight.current = true;
     setBusy(true);
     setError("");
     try {
       if (isAdmin) await requestAdminInternalOrderRevisionRequest(order.id, noteText, revisionFiles);
       else await requestClientOrderRevisionRequest(order.id, noteText, revisionFiles);
+      push({ type: "success", title: t(`${d}.revisionSentTitle`), message: t(`${d}.revisionSentMessage`) });
       onRevised?.();
-      setRevisionFiles([]);
       onClose();
-    } catch (e) {
-      setError(e?.response?.data?.message || e?.message || t(`${d}.revisionSendError`));
+    } catch (err) {
+      setError(getSafeApiErrorMessage(err, t(`${d}.revisionSendError`)));
     } finally {
+      inFlight.current = false;
       setBusy(false);
     }
   };
 
-  const downloadOne = async (f) => {
-    setDownloadingId(f.id);
-    setError("");
-    try {
-      const name = displayFileName(f, t("clientArea.common.attachmentFallback"));
-      await downloadOrderFileForRole(order.id, f.id, name, fileScope);
-      push({ type: "success", title: t(`${d}.downloadStartedTitle`), message: name });
-    } catch (e) {
-      const st = e?.response?.status;
-      const msg =
-        st === 403 ? t(`${d}.downloadForbidden`) : st === 404 ? t(`${d}.fileNotFound`) : e?.message || t(`${d}.downloadError`);
-      setError(msg);
-      push({ type: "error", title: t(`${d}.downloadErrorTitle`), message: msg });
-    } finally {
-      setDownloadingId(null);
-    }
-  };
+  const isRevisionView = view === "revision" && canRequestRevision;
+  const title = isRevisionView ? t(`${d}.requestRevision`) : isArchive ? t(`${d}.titleArchive`) : t(`${d}.titleWorkflow`);
 
-  const viewOne = async (f) => {
-    setViewingId(f.id);
-    setError("");
-    try {
-      const name = displayFileName(f, t("clientArea.common.attachmentFallback"));
-      await viewOrderFileForRole(order.id, f.id, name, fileScope);
-      push({ type: "success", title: t(`${d}.openSuccessTitle`), message: t(`${d}.openSuccessMessage`) });
-    } catch (e) {
-      const st = e?.response?.status;
-      const msg =
-        st === 403 ? t(`${d}.viewForbidden`) : st === 404 ? t(`${d}.fileNotFound`) : e?.message || t(`${d}.viewError`);
-      setError(msg);
-      push({ type: "error", title: t(`${d}.viewErrorTitle`), message: msg });
-    } finally {
-      setViewingId(null);
-    }
-  };
+  const footer = isRevisionView ? (
+    <>
+      <button type="button" className="btn btn-secondary" onClick={() => { setView("review"); setError(""); }} disabled={busy}>
+        {t(`${d}.backToDelivery`)}
+      </button>
+      <span className="oh-dialog__foot-spacer" />
+      <button type="submit" form={`${noteId}-form`} className="btn btn-primary" disabled={busy || !noteText || !revisionFilesOk}>
+        {busy ? t("clientArea.common.busy.sending") : t(`${d}.sendRevision`)}
+      </button>
+    </>
+  ) : (
+    <>
+      <button type="button" className="btn btn-secondary" onClick={onClose} disabled={busy}>
+        {t("clientArea.common.close")}
+      </button>
+      {!isArchive ? <span className="oh-dialog__foot-spacer" /> : null}
+      {canRequestRevision ? (
+        <button type="button" className="btn btn-secondary" onClick={() => { setView("revision"); setError(""); }} disabled={busy}>
+          {t(`${d}.requestRevision`)}
+        </button>
+      ) : null}
+      {!isArchive ? (
+        <button type="button" className="btn btn-primary" disabled={busy || !canApprove} onClick={() => setConfirmOpen(true)}>
+          {t(`${d}.approveDelivery`)}
+        </button>
+      ) : null}
+    </>
+  );
 
   return (
-    <div
-      role="presentation"
-      onMouseDown={() => {
-        if (!busy && !downloadingId && !viewingId) onClose();
-      }}
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 1000,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 16,
-        background: "rgba(15, 23, 42, 0.45)",
-      }}
-    >
-      <div
-        className="card"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="delivery-modal-title"
-        onMouseDown={(ev) => ev.stopPropagation()}
-        style={{ maxWidth: 560, width: "100%", maxHeight: "90vh", overflow: "auto" }}
+    <>
+      <OrderDialog
+        open={open}
+        onClose={onClose}
+        busy={busy || confirmOpen}
+        size="lg"
+        icon={<PackageCheck />}
+        title={title}
+        subtitle={order.title ? <span dir="auto">{order.title}</span> : null}
+        footer={footer}
       >
-        <h2 id="delivery-modal-title" style={{ marginTop: 0 }}>
-          {isArchive ? t(`${d}.titleArchive`) : t(`${d}.titleWorkflow`)}
-        </h2>
-        <p className="help" style={{ marginTop: 0 }}>
-          {isArchive
-            ? t(`${d}.helpArchive`)
-            : isAdmin
-              ? t(`${d}.helpAdmin`)
-              : t(`${d}.helpClient`)}
-        </p>
         {error ? (
-          <p className="help" style={{ color: "#b91c1c" }}>
+          <p className="oh-dialog-error" role="alert">
             {error}
           </p>
         ) : null}
-        {!isArchive && order.orderStatus === "in_progress" && deliveryFiles.length === 0 ? (
-          <p className="help">
-            {isAdmin ? t(`${d}.noDeliveryAdmin`) : t(`${d}.noDeliveryClient`)}
-          </p>
-        ) : null}
-        {deliveryFiles.length ? (
-          <ul className="order-details__attachments" style={{ marginTop: 12 }}>
-            {deliveryFiles.map((f) => (
-              <li
-                key={f.id}
-                className="order-details__attachment"
-                style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}
-              >
-                <span style={{ wordBreak: "break-word" }}>{displayFileName(f, t("clientArea.common.attachmentFallback"))}</span>
-                <span style={{ display: "inline-flex", gap: 8, flexShrink: 0 }}>
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    style={{ padding: "6px 12px", fontSize: 14 }}
-                    disabled={Boolean(downloadingId) || Boolean(viewingId) || busy}
-                    onClick={() => void viewOne(f)}
-                  >
-                    {viewingId === f.id ? t("clientArea.common.busy.opening") : t("clientArea.common.view")}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-primary"
-                    style={{ padding: "6px 12px", fontSize: 14 }}
-                    disabled={Boolean(downloadingId) || Boolean(viewingId) || busy}
-                    onClick={() => void downloadOne(f)}
-                  >
-                    {downloadingId === f.id ? t("clientArea.common.busy.downloading") : t("clientArea.common.download")}
-                  </button>
-                </span>
-              </li>
-            ))}
-          </ul>
-        ) : !isArchive && order.orderStatus === "pending_client_review" ? (
-          <p className="help">{t(`${d}.noAttachmentsPending`)}</p>
-        ) : isArchive && !deliveryFiles.length ? (
-          <p className="help">{t(`${d}.noAttachmentsArchive`)}</p>
-        ) : null}
-        {order?.submissionHistory?.submissions?.length ? (
-          <div style={{ marginTop: 16 }}>
-            <SubmissionHistoryTimeline
-              submissionHistory={order.submissionHistory}
-              orderId={String(order.id)}
-              fileAccess={isAdmin ? "admin" : "client"}
-            />
-          </div>
-        ) : null}
-        {!isArchive && canRequestRevision ? (
-          <div className="field" style={{ marginTop: 12 }}>
-            <label className="label" htmlFor="delivery-revision-note">
-              {t(`${d}.revisionNoteLabel`)}
-            </label>
-            <textarea
-              id="delivery-revision-note"
-              className="input"
-              rows={3}
-              value={revisionNote}
-              onChange={(e) => {
-                setRevisionNote(e.target.value);
-                if (error) setError("");
-              }}
-              disabled={busy || Boolean(downloadingId) || Boolean(viewingId)}
-              placeholder={t(`${d}.revisionNotePlaceholder`)}
-            />
-            <label className="label" htmlFor="delivery-revision-files" style={{ marginTop: 8 }}>
-              {t(`${d}.revisionFilesLabel`)}
-            </label>
-            <p className="help" style={{ marginTop: 0, marginBottom: 6 }}>
-              {uploadSizeHelper}
+
+        {isRevisionView ? (
+          <form id={`${noteId}-form`} onSubmit={requestRevision} className="oh-dialog-section" noValidate>
+            <p className="oh-dialog-note">{t("clientArea.revisionRequest.description")}</p>
+            <div className="oh-dialog-field">
+              <label className="oh-dialog-field__label" htmlFor={noteId}>
+                {t(`${d}.revisionNoteLabel`)}
+              </label>
+              <textarea
+                id={noteId}
+                className="input"
+                rows={4}
+                value={revisionNote}
+                onChange={(e) => {
+                  setRevisionNote(e.target.value);
+                  if (error) setError("");
+                }}
+                disabled={busy}
+                placeholder={t(`${d}.revisionNotePlaceholder`)}
+                aria-required="true"
+                data-autofocus
+              />
+            </div>
+            <OrderFilesPicker label={t(`${d}.revisionFilesLabel`)} files={revisionFiles} onChange={setRevisionFiles} disabled={busy} />
+          </form>
+        ) : (
+          <>
+            <p className="oh-dialog-note">
+              {isArchive ? t(`${d}.helpArchive`) : isAdmin ? t(`${d}.helpAdmin`) : t(`${d}.helpClient`)}
             </p>
-            <input
-              id="delivery-revision-files"
-              type="file"
-              className="input"
-              multiple
-              disabled={busy || Boolean(downloadingId) || Boolean(viewingId)}
-              onChange={(e) => {
-                const list = Array.from(e.target.files || []);
-                setRevisionFiles(list.slice(0, 5));
-                setError("");
-              }}
-            />
-            {revisionFilesSizeError ? (
-              <p className="help" style={{ color: "#b91c1c", marginTop: 6, marginBottom: 0 }}>
-                {revisionFilesSizeError}
-              </p>
+            <section className="oh-dialog-section" aria-labelledby={`${noteId}-files`}>
+              <h3 className="oh-dialog-section__title" id={`${noteId}-files`}>
+                {t(`${d}.deliveryFilesTitle`, { count: reviewFiles.length })}
+              </h3>
+              <FileList
+                files={reviewFiles}
+                orderId={orderIdStr}
+                fileAccess={fileScope}
+                emptyText={
+                  !isArchive && order.orderStatus === "in_progress"
+                    ? isAdmin
+                      ? t(`${d}.noDeliveryAdmin`)
+                      : t(`${d}.noDeliveryClient`)
+                    : isArchive
+                      ? t(`${d}.noAttachmentsArchive`)
+                      : t(`${d}.noAttachmentsPending`)
+                }
+              />
+            </section>
+            {submissions.length ? (
+              <details className="oh-dialog-details">
+                <summary>{t(`${d}.historyToggle`, { count: submissions.length })}</summary>
+                <SubmissionHistoryTimeline
+                  submissionHistory={order.submissionHistory}
+                  orderId={orderIdStr}
+                  fileAccess={isAdmin ? "admin" : "client"}
+                  hideTitle
+                />
+              </details>
             ) : null}
-          </div>
-        ) : null}
-        <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", flexWrap: "wrap", marginTop: 18 }}>
-          <button type="button" className="btn btn-secondary" onClick={onClose} disabled={busy}>
-            {t("clientArea.common.close")}
-          </button>
-          {!isArchive && canRequestRevision ? (
-            <button
-              type="button"
-              className="btn btn-secondary"
-              disabled={
-                busy ||
-                Boolean(downloadingId) ||
-                Boolean(viewingId) ||
-                !String(revisionNote || "").trim() ||
-                Boolean(revisionFilesSizeError)
-              }
-              onClick={requestRevision}
-            >
-              {busy ? t("clientArea.common.busy.sending") : t(`${d}.requestRevision`)}
-            </button>
-          ) : null}
-          {!isArchive ? (
-            <button type="button" className="btn btn-primary" disabled={busy || !canApprove} onClick={submit}>
-              {busy ? t("clientArea.common.busy.approving") : t(`${d}.approveDelivery`)}
-            </button>
-          ) : null}
-        </div>
-      </div>
-    </div>
+          </>
+        )}
+      </OrderDialog>
+      <ConfirmDialog
+        open={confirmOpen}
+        title={t(`${d}.approveConfirmTitle`)}
+        body={isAdmin ? t(`${d}.helpAdmin`) : t(`${d}.approveConfirmBody`)}
+        confirmLabel={busy ? t("clientArea.common.busy.approving") : t(`${d}.approveConfirm`)}
+        cancelLabel={t("clientArea.common.cancel")}
+        confirmBusy={busy}
+        onCancel={() => setConfirmOpen(false)}
+        onConfirm={() => void approve()}
+      />
+    </>
   );
 }

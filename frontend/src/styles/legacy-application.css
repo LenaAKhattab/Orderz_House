@@ -2261,8 +2261,8 @@ body {
   color: var(--text-main);
   font-family: var(--font-sans);
   line-height: 1.6;
-  direction: rtl;
-  text-align: right;
+  /* Direction comes from <html dir> (LanguageProvider); Arabic stays RTL, English is LTR. */
+  text-align: start;
 }
 
 

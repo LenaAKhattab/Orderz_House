@@ -10,9 +10,11 @@ import { getOrderStatusLabel } from "../../utils/orderFlowUi";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import "../../styles/dashboardHub.css";
 import "./freelancerMyOrders.css";
+import "./clientFinancial.css";
 import { JodMoneyDisplay } from "../../components/money/JodMoneyDisplay";
 import ClientFixedOrderPayNowButton from "../../components/orders/ClientFixedOrderPayNowButton";
 import { isClientFixedOrderAwaitingStripeCheckout } from "../../utils/clientFixedOrderPayNow";
+import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
 
 function paymentStatusLabel(s, t) {
   const key = `finance.client.paymentStatus.${String(s || "")}`;
@@ -59,7 +61,7 @@ export default function ClientFinancialPage() {
           push({
             type: "error",
             title: t(`${c}.toastLoadError`),
-            message: e?.response?.data?.message || e?.message,
+            message: getSafeApiErrorMessage(e),
           });
         }
       } finally {
@@ -152,8 +154,8 @@ export default function ClientFinancialPage() {
                 <tbody>
                   {rows.map((o) => (
                     <tr key={o.id}>
-                      <td>{o.title || "—"}</td>
-                      <td>
+                      <td className="cft-title" dir="auto">{o.title || "—"}</td>
+                      <td data-label={t(`${c}.colAmount`)}>
                         {o.projectType === "bidding" && o.bidBudgetMin != null && o.bidBudgetMax != null ? (
                           <JodMoneyDisplay amount={o.bidBudgetMin} amountMax={o.bidBudgetMax} compact />
                         ) : o.budget != null ? (
@@ -162,10 +164,10 @@ export default function ClientFinancialPage() {
                           "—"
                         )}
                       </td>
-                      <td>{o.paymentRequired ? t(`${c}.yes`) : t(`${c}.no`)}</td>
-                      <td>{paymentStatusLabel(o.paymentStatus, t)}</td>
-                      <td>{getOrderStatusLabel(o.orderStatus, t)}</td>
-                      <td>
+                      <td data-label={t(`${c}.colPaymentRequired`)}>{o.paymentRequired ? t(`${c}.yes`) : t(`${c}.no`)}</td>
+                      <td data-label={t(`${c}.colPaymentStatus`)}>{paymentStatusLabel(o.paymentStatus, t)}</td>
+                      <td data-label={t(`${c}.colOrderStatus`)}>{getOrderStatusLabel(o.orderStatus, t)}</td>
+                      <td className={isClientFixedOrderAwaitingStripeCheckout(o) ? "cft-action" : "cft-action cft-action--empty"}>
                         {isClientFixedOrderAwaitingStripeCheckout(o) ? (
                           <ClientFixedOrderPayNowButton order={o} className="btn btn-primary" />
                         ) : (

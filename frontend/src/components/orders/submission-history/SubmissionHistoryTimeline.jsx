@@ -1,29 +1,42 @@
-import { useCallback, useState } from "react";
-import { downloadOrderFileForRole, viewOrderFileForRole } from "../../../services/api";
-import { useToast } from "../../ui/toastContext";
+import FileList from "../order-details/FileList";
 import { formatJoDateTime } from "../order-details/orderDetailsUtils";
 import { useTranslation } from "../../../i18n/LanguageProvider";
 import "../../../i18n/ordersAdminResources";
 import "./submission-history.css";
 
-function badgeClass(titleBadgeAr) {
-  const t = String(titleBadgeAr || "");
-  if (t.includes("النهائي")) return "oh-submission-badge oh-submission-badge--final";
-  if (t.includes("الحالي") || t.includes("آخر")) return "oh-submission-badge oh-submission-badge--current";
-  return "oh-submission-badge oh-submission-badge--past";
+const SH = "ordersAdmin.orderDetails.submissionHistory";
+const STATUS_KEYS = new Set(["submitted", "revision_requested", "accepted", "superseded"]);
+const ROLE_KEYS = new Set(["client", "admin", "super_admin"]);
+
+/** Label + tone from structured fields (the API's *Ar strings are Arabic-only). */
+function submissionTitle(s, t) {
+  const accepted = String(s?.status || "") === "accepted";
+  if (s?.isFinal || (s?.isCurrent && accepted)) return { label: t(`${SH}.badge.final`), cls: "oh-submission-badge--final" };
+  if (s?.isCurrent) return { label: t(`${SH}.badge.current`), cls: "oh-submission-badge--current" };
+  return { label: t(`${SH}.badge.past`), cls: "oh-submission-badge--past" };
+}
+
+function submissionStatus(s, t) {
+  const st = String(s?.status || "");
+  return STATUS_KEYS.has(st) ? t(`${SH}.status.${st}`) : s?.statusBadgeAr || st || "—";
+}
+
+function requesterLabel(r, t) {
+  const role = String(r?.requestedByRole || "");
+  return ROLE_KEYS.has(role) ? t(`${SH}.requestedBy.${role}`) : r?.requestedByRoleLabelAr || "—";
 }
 
 /**
- * @param {{ submissionHistory?: { submissions?: unknown[] }; orderId: string; fileAccess: 'client' | 'freelancer' | 'admin' }} props
+ * @param {{ submissionHistory?: { submissions?: unknown[] }; orderId: string; fileAccess: 'client' | 'freelancer' | 'admin'; hideTitle?: boolean }} props
  */
 export default function SubmissionHistoryTimeline({ submissionHistory, orderId, fileAccess = "freelancer", hideTitle = false }) {
-  const { t } = useTranslation();
+  const { t, dir } = useTranslation();
   const subs = Array.isArray(submissionHistory?.submissions) ? submissionHistory.submissions : [];
   if (!subs.length) return null;
 
   return (
-    <section className="oh-submission-history" dir="rtl">
-      {hideTitle ? null : <h3 className="oh-submission-history__title">{t("ordersAdmin.orderDetails.submissionHistory.title")}</h3>}
+    <section className="oh-submission-history" dir={dir}>
+      {hideTitle ? null : <h3 className="oh-submission-history__title">{t(`${SH}.title`)}</h3>}
       {subs.map((s) => (
         <SubmissionTimelineItem key={s.id} submission={s} orderId={orderId} fileAccess={fileAccess} />
       ))}
@@ -35,23 +48,27 @@ function SubmissionTimelineItem({ submission, orderId, fileAccess }) {
   const { t } = useTranslation();
   const revisions = Array.isArray(submission.revisionRequests) ? submission.revisionRequests : [];
   const files = Array.isArray(submission.files) ? submission.files : [];
-  const submissionNumber =
-    submission.submissionNumber != null ? String(submission.submissionNumber) : "—";
+  const submissionNumber = submission.submissionNumber != null ? String(submission.submissionNumber) : "—";
+  const title = submissionTitle(submission, t);
 
   return (
     <article className="oh-submission-item">
       <div className="oh-submission-item__head">
-        <span className={badgeClass(submission.titleBadgeAr)}>{submission.titleBadgeAr || "—"}</span>
-        <span className="oh-submission-badge oh-submission-badge--status">{submission.statusBadgeAr || submission.status || "—"}</span>
+        <span className={`oh-submission-badge ${title.cls}`}>{title.label}</span>
+        <span className="oh-submission-badge oh-submission-badge--status">{submissionStatus(submission, t)}</span>
         <span className="oh-submission-item__meta">
-          {t("ordersAdmin.orderDetails.submissionHistory.submissionMeta", {
+          {t(`${SH}.submissionMeta`, {
             number: submissionNumber,
             date: formatJoDateTime(submission.submittedAt),
           })}
         </span>
       </div>
-      {submission.message ? <p className="oh-submission-item__msg">{submission.message}</p> : null}
-      <SubmissionFilesList files={files} orderId={orderId} fileAccess={fileAccess} />
+      {submission.message ? (
+        <p className="oh-submission-item__msg" dir="auto">
+          {submission.message}
+        </p>
+      ) : null}
+      <FileList files={files} orderId={orderId} fileAccess={fileAccess} emptyText={t(`${SH}.noSubmissionFiles`)} />
       {revisions.map((r) => (
         <RevisionRequestCard key={r.id} revision={r} orderId={orderId} fileAccess={fileAccess} />
       ))}
@@ -59,152 +76,23 @@ function SubmissionTimelineItem({ submission, orderId, fileAccess }) {
   );
 }
 
-function useOrderFileErrorToast() {
-  const { push } = useToast();
-  const { t } = useTranslation();
-  return useCallback(
-    (e, mode) => {
-      const st = e?.response?.status;
-      const fallback =
-        mode === "view" ? t("ordersAdmin.orderDetails.files.openError") : t("ordersAdmin.orderDetails.files.downloadError");
-      const message =
-        st === 403
-          ? e?.message || t("ordersAdmin.orderDetails.files.unauthorized")
-          : st === 404
-            ? e?.message || t("ordersAdmin.orderDetails.files.notFound")
-            : e?.message || fallback;
-      push({
-        type: "error",
-        title:
-          mode === "view"
-            ? t("ordersAdmin.orderDetails.files.openErrorTitle")
-            : t("ordersAdmin.orderDetails.files.downloadErrorTitle"),
-        message,
-      });
-    },
-    [push, t],
-  );
-}
-
-function SubmissionFilesList({ files, orderId, fileAccess }) {
-  const { t } = useTranslation();
-  const toastFileError = useOrderFileErrorToast();
-  const [busy, setBusy] = useState(null);
-  const loadingLabel = t("ordersAdmin.orderDetails.submissionHistory.loading");
-  const viewLabel = t("ordersAdmin.orderDetails.files.view");
-  const downloadLabel = t("ordersAdmin.orderDetails.files.download");
-  const fileDefault = t("ordersAdmin.orderDetails.submissionHistory.fileDefault");
-
-  const onView = useCallback(
-    async (f) => {
-      setBusy(`v-${f.id}`);
-      try {
-        await viewOrderFileForRole(orderId, f.id, f.originalName, fileAccess);
-      } catch (e) {
-        toastFileError(e, "view");
-      } finally {
-        setBusy(null);
-      }
-    },
-    [orderId, fileAccess, toastFileError],
-  );
-
-  const onDownload = useCallback(
-    async (f) => {
-      setBusy(`d-${f.id}`);
-      try {
-        await downloadOrderFileForRole(orderId, f.id, f.originalName, fileAccess);
-      } catch (e) {
-        toastFileError(e, "download");
-      } finally {
-        setBusy(null);
-      }
-    },
-    [orderId, fileAccess, toastFileError],
-  );
-
-  if (!files.length) {
-    return (
-      <p className="help" style={{ margin: "6px 0 0" }}>
-        {t("ordersAdmin.orderDetails.submissionHistory.noSubmissionFiles")}
-      </p>
-    );
-  }
-
-  return (
-    <ul className="oh-submission-files">
-      {files.map((f) => (
-        <li key={f.id}>
-          <span style={{ flex: "1 1 140px", minWidth: 0, overflowWrap: "anywhere" }} dir="auto">{f.originalName || fileDefault}</span>
-          <span style={{ display: "inline-flex", gap: 6, flexShrink: 0 }}>
-            <button type="button" className="btn btn-secondary" style={{ padding: "4px 10px", fontSize: 13 }} disabled={busy} onClick={() => void onView(f)}>
-              {busy === `v-${f.id}` ? loadingLabel : viewLabel}
-            </button>
-            <button type="button" className="btn btn-primary" style={{ padding: "4px 10px", fontSize: 13 }} disabled={busy} onClick={() => void onDownload(f)}>
-              {busy === `d-${f.id}` ? loadingLabel : downloadLabel}
-            </button>
-          </span>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
 function RevisionRequestCard({ revision, orderId, fileAccess }) {
   const { t } = useTranslation();
   const files = Array.isArray(revision.files) ? revision.files : [];
-  const toastFileError = useOrderFileErrorToast();
-  const [busy, setBusy] = useState(null);
-  const loadingLabel = t("ordersAdmin.orderDetails.submissionHistory.loading");
-  const viewLabel = t("ordersAdmin.orderDetails.files.view");
-  const downloadLabel = t("ordersAdmin.orderDetails.files.download");
-  const attachmentDefault = t("ordersAdmin.orderDetails.submissionHistory.attachmentDefault");
-
-  const onView = async (f) => {
-    setBusy(`v-${f.id}`);
-    try {
-      await viewOrderFileForRole(orderId, f.id, f.originalName, fileAccess);
-    } catch (e) {
-      toastFileError(e, "view");
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const onDownload = async (f) => {
-    setBusy(`d-${f.id}`);
-    try {
-      await downloadOrderFileForRole(orderId, f.id, f.originalName, fileAccess);
-    } catch (e) {
-      toastFileError(e, "download");
-    } finally {
-      setBusy(null);
-    }
-  };
 
   return (
     <div className="oh-revision-card">
-      <div className="oh-revision-card__title">{t("ordersAdmin.orderDetails.submissionHistory.revisionTitle")}</div>
-      <div className="oh-revision-card__role">{revision.requestedByRoleLabelAr || "—"}</div>
-      <p className="oh-revision-card__note">{revision.note || "—"}</p>
-      <div className="oh-revision-card__time">{formatJoDateTime(revision.createdAt)}</div>
-      {files.length ? (
-        <ul className="oh-submission-files" style={{ marginTop: 8 }}>
-          {files.map((f) => (
-            <li key={f.id}>
-              <span style={{ flex: "1 1 140px", minWidth: 0, overflowWrap: "anywhere" }} dir="auto">{f.originalName || attachmentDefault}</span>
-              <span style={{ display: "inline-flex", gap: 6, flexShrink: 0 }}>
-                <button type="button" className="btn btn-secondary" style={{ padding: "4px 10px", fontSize: 13 }} disabled={busy} onClick={() => void onView(f)}>
-                  {busy === `v-${f.id}` ? loadingLabel : viewLabel}
-                </button>
-                <button type="button" className="btn btn-primary" style={{ padding: "4px 10px", fontSize: 13 }} disabled={busy} onClick={() => void onDownload(f)}>
-                  {busy === `d-${f.id}` ? loadingLabel : downloadLabel}
-                </button>
-              </span>
-            </li>
-          ))}
-        </ul>
-      ) : null}
+      <div className="oh-revision-card__head">
+        <span className="oh-revision-card__title">{t(`${SH}.revisionTitle`)}</span>
+        <span className="oh-revision-card__role">{t(`${SH}.requestedByPrefix`, { who: requesterLabel(revision, t) })}</span>
+        <time className="oh-revision-card__time" dateTime={revision.createdAt || undefined}>
+          {formatJoDateTime(revision.createdAt)}
+        </time>
+      </div>
+      <p className="oh-revision-card__note" dir="auto">
+        {revision.note || "—"}
+      </p>
+      {files.length ? <FileList files={files} orderId={orderId} fileAccess={fileAccess} emptyText="" /> : null}
     </div>
   );
 }

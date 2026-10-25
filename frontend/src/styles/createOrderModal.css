@@ -569,3 +569,68 @@
 .co-modal-ref__form-card--page {
   display: contents;
 }
+
+/* Files step — shared OrderFilesPicker (same picker as delivery/revision uploads) */
+.co-files-step {
+  display: grid;
+  gap: 10px;
+}
+
+.co-files-step__help {
+  margin: 0;
+}
+
+/* Review — selected file names + payment summary before Stripe */
+.co-review-files {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.co-review-files li {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: #334155;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  unicode-bidi: plaintext;
+  text-align: start;
+}
+
+.co-pay-summary {
+  display: grid;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(47, 59, 101, 0.16);
+  background: #ffffff;
+}
+
+.co-pay-summary__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.co-pay-summary__label {
+  font-weight: 700;
+  color: #2f3b65;
+}
+
+.co-pay-summary__amount {
+  font-size: 1.05rem;
+  color: #0f172a;
+}
+
+.co-pay-summary__hint {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.6;
+  color: #64748b;
+}

@@ -17,6 +17,7 @@ import DashboardShell from "../dashboard/DashboardShell";
 import { getDashboardPath } from "../../constants/authRoutes";
 import { SelectPanelBusySkeleton } from "../ui/Skeleton";
 import { CreateOrderReviewRow } from "./CreateOrderReviewRow";
+import OrderFilesPicker from "./OrderFilesPicker";
 import { JodMoneyDisplay } from "../money/JodMoneyDisplay";
 import { validateOrderFilesSize } from "../../utils/orderUploadLimits";
 import { getOrderCreateErrorMessage } from "../../utils/apiErrorMessage";
@@ -231,13 +232,6 @@ function FieldError({ message }) {
   );
 }
 
-function formatMoney(value) {
-  const n = Number(value);
-  if (!Number.isFinite(n)) return "—";
-  // Force English digits everywhere in UI
-  return new Intl.NumberFormat("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(n);
-}
-
 function SearchableSelect({
   value,
   onChange,
@@ -427,7 +421,6 @@ export default function AdminInternalOrderWizard({
   const [assignedFreelancer, setAssignedFreelancer] = useState(null);
   const [skillHistory, setSkillHistory] = useState(readSkillHistoryFromStorage);
 
-  const fileInputRef = useRef(null);
   const explicitSubmitClickRef = useRef(false);
   const submitInFlightRef = useRef(false);
   const hydratingCategoryRef = useRef(false);
@@ -636,23 +629,6 @@ export default function AdminInternalOrderWizard({
     // If the admin assigns a freelancer, archiving no longer applies.
     if (form.assignedFreelancerId) setArchiveOnCreate(false);
   }, [form.assignedFreelancerId]);
-
-  const addFiles = (incoming) => {
-    const list = Array.from(incoming || []);
-    const next = [...files, ...list].slice(0, 5);
-    if (!validateOrderFilesSize(next).ok) {
-      push({ type: "error", title: t("ordersAdmin.wizard.toast.fileSizeTitle"), message: t("ordersAdmin.wizard.upload.totalSizeMessage") });
-      return;
-    }
-    setFiles(next);
-    if (list.length + files.length > 5) {
-      push({
-        type: "error",
-        title: t("ordersAdmin.wizard.toast.fileLimitTitle"),
-        message: t("ordersAdmin.wizard.toast.fileLimitMessage"),
-      });
-    }
-  };
 
   const submit = async (e) => {
     e.preventDefault();
@@ -1490,71 +1466,10 @@ export default function AdminInternalOrderWizard({
                   </p>
                 </div>
               ) : (
-              <div
-                className="dropzone"
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  addFiles(e.dataTransfer.files);
-                }}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    fileInputRef.current?.click();
-                  }
-                }}
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <div className="co-dropzone-title">{t("ordersAdmin.wizard.files.dropzoneTitle")}</div>
-                <div className="help">{t("ordersAdmin.wizard.files.dropzoneHelp")}</div>
-                <div className="help" style={{ marginTop: 6 }}>
-                  {t("ordersAdmin.wizard.upload.totalSizeHelper")}
-                </div>
-
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  multiple
-                  style={{ display: "none" }}
-                  onChange={(e) => addFiles(e.target.files)}
-                />
-
+              <div className="co-files-step">
+                <p className="help co-files-step__help">{t("ordersAdmin.wizard.files.dropzoneHelp")}</p>
+                <OrderFilesPicker files={files} onChange={setFiles} disabled={busy} />
                 <FieldError message={errorsByStep.files.files || ""} />
-
-                {files.length ? (
-                  <div style={{ marginTop: 12 }}>
-                    <div className="help">{t("ordersAdmin.wizard.files.selectedLabel")}</div>
-                    <ul className="co-dropzone-files">
-                      {files.map((f, idx) => (
-                        <li key={`${f.name}-${idx}`} className="co-dropzone-files__item">
-                          <span className="co-dropzone-files__name">{f.name}</span>
-                          <span className="co-dropzone-files__meta" dir="ltr">
-                            ({(Math.round((f.size / 1024) * 10) / 10).toLocaleString("en-US")} KB)
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                    <div style={{ marginTop: 10, display: "flex", gap: 10, flexWrap: "wrap" }}>
-                      <button
-                        type="button"
-                        className="btn btn-secondary"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          fileInputRef.current?.click();
-                        }}
-                        disabled={files.length >= 5}
-                        title={files.length >= 5 ? t("ordersAdmin.wizard.files.maxFilesTitle") : t("ordersAdmin.wizard.files.addMoreTitle")}
-                      >
-                        {t("ordersAdmin.wizard.files.addMore")}
-                      </button>
-                      <button type="button" className="btn btn-secondary" onClick={() => setFiles([])}>
-                        {t("ordersAdmin.wizard.files.clearFiles")}
-                      </button>
-                    </div>
-                  </div>
-                ) : null}
               </div>
               )}
             </>
@@ -1656,12 +1571,34 @@ export default function AdminInternalOrderWizard({
                 ) : null}
                 {!isFakePoolMode ? (
                 <CreateOrderReviewRow label={t("ordersAdmin.wizard.review.files")}>
-                  {files.length
-                    ? t("ordersAdmin.wizard.review.filesCount", { count: files.length })
-                    : t("ordersAdmin.wizard.review.noFiles")}
+                  {files.length ? (
+                    <>
+                      {t("ordersAdmin.wizard.review.filesCount", { count: files.length })}
+                      <ul className="co-review-files">
+                        {files.map((f, idx) => (
+                          <li key={`${f.name}-${idx}`} dir="auto" title={f.name}>
+                            {f.name}
+                          </li>
+                        ))}
+                      </ul>
+                    </>
+                  ) : (
+                    t("ordersAdmin.wizard.review.noFiles")
+                  )}
                 </CreateOrderReviewRow>
                 ) : null}
 
+                {isClientAudience && form.projectType === "fixed" ? (
+                  <div className="co-pay-summary" role="note">
+                    <div className="co-pay-summary__row">
+                      <span className="co-pay-summary__label">{t("ordersAdmin.wizard.review.payNowLabel")}</span>
+                      <strong className="co-pay-summary__amount">
+                        <JodMoneyDisplay amount={form.budget} compact />
+                      </strong>
+                    </div>
+                    <p className="co-pay-summary__hint">{t("ordersAdmin.wizard.review.payNowHint")}</p>
+                  </div>
+                ) : null}
                 <div className="oh-review__note">
                   {isFakePoolMode
                     ? tpl("reviewNote")
@@ -1717,9 +1654,11 @@ export default function AdminInternalOrderWizard({
                   (isInstitutionalMode ? t("ordersAdmin.wizard.nav.cancel") : t("ordersAdmin.wizard.nav.close"))}
               </button>
             ) : null}
-            <button type="button" className="btn btn-secondary" onClick={goPrev} disabled={stepIdx === 0 || busy}>
-              {isFakePoolMode ? tpl("previous") : t("ordersAdmin.wizard.nav.previous")}
-            </button>
+            {stepIdx > 0 ? (
+              <button type="button" className="btn btn-secondary" onClick={goPrev} disabled={busy}>
+                {isFakePoolMode ? tpl("previous") : t("ordersAdmin.wizard.nav.previous")}
+              </button>
+            ) : null}
             {currentStepKey !== "review" ? (
               <button
                 type="button"

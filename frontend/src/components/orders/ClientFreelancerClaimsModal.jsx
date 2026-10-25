@@ -6,6 +6,7 @@ import {
 } from "../../services/api";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import "../../i18n/clientAreaResources";
+import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
 
 function applicantDisplayName(row) {
   if (row?.displayName) return row.displayName;
@@ -34,7 +35,7 @@ export default function ClientFreelancerClaimsModal({ open, orderId, onClose, on
       setClaims(Array.isArray(payload?.claims) ? payload.claims : []);
       setOpenPool(Boolean(payload?.orderSummary?.hasOpenPool));
     } catch (e) {
-      const message = e?.response?.data?.message || e?.message || t(`${c}.loadError`);
+      const message = getSafeApiErrorMessage(e, t(`${c}.loadError`));
       setError(message);
       setClaims([]);
       setOpenPool(false);
@@ -57,7 +58,7 @@ export default function ClientFreelancerClaimsModal({ open, orderId, onClose, on
       onChanged?.();
       onClose();
     } catch (e) {
-      setError(e?.response?.data?.message || e?.message || t(`${c}.approveError`));
+      setError(getSafeApiErrorMessage(e, t(`${c}.approveError`)));
     } finally {
       setBusy(false);
     }
@@ -71,7 +72,7 @@ export default function ClientFreelancerClaimsModal({ open, orderId, onClose, on
       await load();
       onChanged?.();
     } catch (e) {
-      setError(e?.response?.data?.message || e?.message || t(`${c}.rejectError`));
+      setError(getSafeApiErrorMessage(e, t(`${c}.rejectError`)));
     } finally {
       setBusy(false);
     }

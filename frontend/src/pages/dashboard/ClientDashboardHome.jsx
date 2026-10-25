@@ -7,15 +7,18 @@ import DashboardWelcomeSkeleton from "../../components/dashboard/hub/DashboardWe
 import DashboardActionBanner from "../../components/dashboard/hub/DashboardActionBanner";
 import DashboardInsightsSection from "../../components/dashboard/hub/DashboardInsightsSection";
 import {
+  IconBell,
   IconBriefcase,
-  IconStar,
+  IconClipboardCheck,
   IconWallet,
 } from "../../components/dashboard/hub/icons/DashboardIcons";
+import { getClientOrderNextStep } from "../../utils/clientOrderNextStep";
 import { listClientMyOrdersRequest, listMyNotificationsRequest } from "../../services/api";
 import { JodMoneyDisplay } from "../../components/money/JodMoneyDisplay";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import "../../i18n/clientAreaResources";
 import "../../styles/dashboardHub.css";
+import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
 
 function fullNameAr(user) {
   const parts = [user?.firstName, user?.fatherName, user?.familyName].filter(Boolean);
@@ -27,19 +30,21 @@ function normalizeClientOrders(res) {
   return Array.isArray(list) ? list : [];
 }
 
-/** @returns {{ actionKey: string } | null} */
+const ATTENTION_ACTION_KEY = {
+  pay: "completePayment",
+  payAfterBid: "completePaymentAfterBid",
+  reviewBids: "reviewBids",
+  reviewDelivery: "reviewDelivery",
+};
+
+/** Same rule as "My orders → Needs action": only orders the client is blocking. @returns {{ actionKey: string } | null} */
 function attentionMeta(order) {
-  const s = String(order?.orderStatus || "");
-  const a = "clientArea.dashboard.attention";
-  if (s === "pending_payment") return { actionKey: `${a}.completePayment` };
-  if (s === "awaiting_payment_after_bid_selection") return { actionKey: `${a}.completePaymentAfterBid` };
-  if (s === "open_for_bids" || s === "open_for_freelancers") return { actionKey: `${a}.reviewBids` };
-  if (s === "pending_client_review") return { actionKey: `${a}.reviewDelivery` };
-  if (order?.clientRevisionNote && (s === "in_progress" || s === "assigned")) {
-    return { actionKey: `${a}.revisionPending` };
-  }
-  return null;
+  const step = getClientOrderNextStep(order);
+  if (!step.attention) return null;
+  return { actionKey: `clientArea.dashboard.attention.${ATTENTION_ACTION_KEY[step.key] || "reviewDelivery"}` };
 }
+
+const myOrderLink = (order) => `/dashboard/client/my-orders?orderId=${encodeURIComponent(String(order?.id ?? ""))}`;
 
 function sortByRecent(orders) {
   return [...orders].sort((a, b) => {
@@ -65,7 +70,7 @@ function buildClientMetrics({ orders, financial, attentionCount, unreadNotificat
       label: t(`${m}.needsAttention`),
       value: String(attentionCount),
       sublabel: t(`${m}.needsAttentionSub`),
-      icon: IconStar,
+      icon: IconClipboardCheck,
       tone: "amber",
     },
     {
@@ -81,7 +86,7 @@ function buildClientMetrics({ orders, financial, attentionCount, unreadNotificat
       label: t(`${m}.unreadNotifications`),
       value: String(unreadNotifications),
       sublabel: t(`${m}.unreadNotificationsSub`),
-      icon: IconStar,
+      icon: IconBell,
       tone: "purple",
     },
   ];
@@ -96,7 +101,7 @@ function buildPendingActions(attentionOrders) {
       title: o.title || undefined,
       titleKey: o.title ? undefined : defaultTitle,
       descriptionKey: meta?.actionKey ?? defaultDesc,
-      to: "/dashboard/client/my-orders",
+      to: myOrderLink(o),
       ctaKey: "clientArea.dashboard.pendingAction.cta",
     };
   });
@@ -110,7 +115,7 @@ function buildClientInsights({ attentionOrders, financial, orders, unreadNotific
     const meta = attentionMeta(first);
     items.push({
       id: "attention-orders",
-      type: "orders",
+      type: "action",
       titleKey: `${i}.attentionOrdersTitle`,
       descriptionKey: meta?.actionKey ?? `${i}.attentionOrdersDescription`,
       helperTextKey: first?.title ? `${i}.exampleOrder` : `${i}.fromYourOrdersOnly`,
@@ -119,13 +124,13 @@ function buildClientInsights({ attentionOrders, financial, orders, unreadNotific
         ...(first?.title ? { title: first.title } : {}),
       },
       actionLabelKey: "clientArea.dashboard.myOrders",
-      actionUrl: "/dashboard/client/my-orders",
+      actionUrl: myOrderLink(first),
     });
   }
   if (financial.pendingPayment > 0) {
     items.push({
       id: "pending-pay",
-      type: "performance",
+      type: "earnings",
       titleKey: `${i}.pendingPaymentTitle`,
       descriptionKey: `${i}.pendingPaymentDescription`,
       helperTextKey: `${i}.paymentsFromAccount`,
@@ -148,7 +153,7 @@ function buildClientInsights({ attentionOrders, financial, orders, unreadNotific
   if (unreadNotifications > 0) {
     items.push({
       id: "unread-notif",
-      type: "messages",
+      type: "subscription",
       titleKey: `${i}.unreadTitle`,
       descriptionKey: `${i}.unreadDescription`,
       helperTextKey: `${i}.messages`,
@@ -196,7 +201,7 @@ export default function ClientDashboardHome({ user }) {
         await load();
       } catch (e) {
         if (!cancelled) {
-          const msg = e?.response?.data?.message || e?.message || t(`${d}.loadDataFallback`);
+          const msg = getSafeApiErrorMessage(e, t(`${d}.loadDataFallback`));
           setError(msg);
           push({ type: "error", title: t(`${d}.loadErrorTitle`), message: msg });
         }
@@ -294,11 +299,15 @@ export default function ClientDashboardHome({ user }) {
         title={welcomeTitle}
         subtitle={t(`${d}.subtitle`)}
         metrics={metrics}
-        primaryCta={{ to: "/dashboard/client/my-orders", label: t(`${d}.myOrders`) }}
-        secondaryCta={{
-          to: "/dashboard/client/orders",
-          label: t(`${d}.exploreMarketplace`),
+        primaryCta={{
+          to: "/dashboard/client/orders/create",
+          label: t(`${d}.createOrder`),
+          onClick: (e) => {
+            e.preventDefault();
+            openCreateOrder();
+          },
         }}
+        secondaryCta={{ to: "/dashboard/client/my-orders", label: t(`${d}.myOrders`) }}
         tip={
           orders.length === 0
             ? tipFirstOrder
@@ -312,11 +321,6 @@ export default function ClientDashboardHome({ user }) {
               : null
         }
       />
-      <div className="fdash-client-home-actions">
-        <button type="button" className="fdash-banner__cta" onClick={() => openCreateOrder()}>
-          {t(`${d}.createOrderNew`)}
-        </button>
-      </div>
       <DashboardActionBanner actions={pendingActions} />
       {insights.length > 0 ? <DashboardInsightsSection insights={insights} loading={false} /> : null}
     </DashboardHubPage>

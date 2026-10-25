@@ -22,6 +22,7 @@ export default function DashboardWelcomeHero({
   const resolvedPrimaryCta = {
     to: primaryCta?.to ?? "/dashboard/freelancer/orders",
     label: primaryCta?.label ?? t("freelancerDashboard.hero.browseOrders"),
+    onClick: primaryCta?.onClick,
   };
   const resolvedSecondaryCta = {
     to: secondaryCta?.to ?? "/dashboard/freelancer/my-orders",
@@ -67,7 +68,7 @@ export default function DashboardWelcomeHero({
             ))}
           </div>
           <div className="fdash-welcome__actions">
-            <DashboardButton to={resolvedPrimaryCta.to} variant="primary" icon={IconBriefcase}>
+            <DashboardButton to={resolvedPrimaryCta.to} onClick={resolvedPrimaryCta.onClick} variant="primary" icon={IconBriefcase}>
               {resolvedPrimaryCta.label}
             </DashboardButton>
             <DashboardButton to={resolvedSecondaryCta.to} variant="secondary" icon={IconChevronStart} iconEnd>
