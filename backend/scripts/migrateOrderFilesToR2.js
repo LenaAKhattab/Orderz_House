@@ -7,6 +7,7 @@
  *   node scripts/migrateOrderFilesToR2.js --verify --limit=50  # HEAD-check migrated rows in R2
  *   node scripts/migrateOrderFilesToR2.js --rollback           # point migrated rows back to legacy (dry unless --execute)
  * Options: --table=order_files|institutional_stored_order_files|all  --concurrency=3  --staging
+ *          --retry-failed (include rows that failed within the last hour)
  *
  * Guarantees:
  *   - Idempotent / resumable: only rows with storage_migrated_at IS NULL are picked; keys are
@@ -165,6 +166,21 @@ async function migrateRow(table, row) {
   return rowCount ? "migrated" : "skipped";
 }
 
+const TRANSIENT = new Set(["TRUNCATED", "LEGACY_FILE_UNAVAILABLE", "STORAGE_UNAVAILABLE", "ECONNRESET", "ETIMEDOUT", "TimeoutError", "AbortError"]);
+
+/** Up to 3 attempts for transient source/target errors (truncated transfer, throttling, resets). */
+async function migrateRowWithRetry(table, row) {
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      return await migrateRow(table, row);
+    } catch (err) {
+      const code = err?.code || err?.name;
+      if (attempt >= 3 || !TRANSIENT.has(code)) throw err;
+      await new Promise((r) => setTimeout(r, attempt * 2000));
+    }
+  }
+}
+
 async function runPool(items, concurrency, fn) {
   let i = 0;
   const workers = Array.from({ length: Math.max(1, concurrency) }, async () => {
@@ -187,22 +203,23 @@ async function executeTable(table, limit, concurrency, counters) {
        FROM ${table}
       WHERE storage_migrated_at IS NULL
         AND COALESCE(storage_provider, 'cloudinary') IN ('cloudinary', 'local')
-        AND NOT EXISTS (
+        AND ($3::boolean OR NOT EXISTS (
           SELECT 1 FROM file_storage_migration_events e
            WHERE e.source_table = $2 AND e.source_id = ${table}.id AND e.outcome = 'failed'
              AND e.created_at > NOW() - INTERVAL '1 hour'
-        )
+        ))
       ORDER BY id ASC
       LIMIT $1`,
-    [limit, table],
+    [limit, table, Boolean(args.get("retry-failed"))],
   );
   await runPool(rows, concurrency, async (row) => {
     try {
-      const outcome = await migrateRow(table, row);
+      const outcome = await migrateRowWithRetry(table, row);
       counters[outcome] += 1;
     } catch (err) {
       counters.failed += 1;
-      const detail = `${err?.code || err?.name || "ERROR"}${err?.statusCode ? ` status=${err.statusCode}` : ""}`;
+      const sizes = err?.code === "TRUNCATED" ? ` ${String(err.message).replace(/^truncated /, "")}` : "";
+      const detail = `${err?.code || err?.name || "ERROR"}${err?.statusCode ? ` status=${err.statusCode}` : ""}${sizes}`;
       await journal(table, row.id, "failed", { detail }).catch(() => {});
       // eslint-disable-next-line no-console
       console.log(JSON.stringify({ table, id: String(row.id), outcome: "failed", detail }));
