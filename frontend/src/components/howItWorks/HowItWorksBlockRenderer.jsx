@@ -1,6 +1,8 @@
 import PublicPageHeader from "../layout/PublicPageHeader";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import { pickLocalizedPlatformCopy } from "../../lib/i18n/platformContentLocale";
+import { hasStructuredContent } from "../../lib/publicContent/structureContent";
+import RichContent from "../content/RichContent";
 
 function localizedBlock(block, locale) {
   if (!block || locale !== "en") return block;
@@ -34,7 +36,13 @@ const BLOCK_RENDERERS = {
   title: ({ block }) => (
     <section className="hiw-block hiw-block--title">
       {block.title ? <h2 className="hiw-block__heading">{block.title}</h2> : null}
-      {block.body ? <p className="hiw-block__lede">{block.body}</p> : null}
+      {block.body ? (
+        hasStructuredContent(block.body) ? (
+          <RichContent text={block.body} className="hiw-block__rich" />
+        ) : (
+          <p className="hiw-block__lede">{block.body}</p>
+        )
+      ) : null}
     </section>
   ),
   text: ({ block, index }) => (
@@ -45,7 +53,7 @@ const BLOCK_RENDERERS = {
         </span>
         <div className="hiw-block__step-copy">
           {block.title ? <h3 className="hiw-block__step-title">{block.title}</h3> : null}
-          {block.body ? <p className="hiw-block__step-text">{block.body}</p> : null}
+          {block.body ? <RichContent text={block.body} headingLevel={3} className="hiw-block__step-text" /> : null}
         </div>
       </div>
     </article>
@@ -89,18 +97,18 @@ export default function HowItWorksBlockRenderer({ blocks }) {
     return <p className="hiw-page__empty">{t("home.hiw.empty")}</p>;
   }
 
-  let stepIndex = 0;
+  const usesStepNumber = (b) => b.blockType === "text" || b.blockType === "text_image";
+  // Step number = count of preceding step blocks (computed without mutation during render).
+  const stepIndexes = blocks.map((_, i) => blocks.slice(0, i).filter(usesStepNumber).length);
 
   return (
     <div className="hiw-page__blocks">
-      {blocks.map((block) => {
+      {blocks.map((block, i) => {
         const localized = localizedBlock(block, locale);
         const Renderer = BLOCK_RENDERERS[localized.blockType];
         if (!Renderer) return null;
 
-        const usesStepNumber = localized.blockType === "text" || localized.blockType === "text_image";
-        const index = usesStepNumber ? stepIndex : 0;
-        if (usesStepNumber) stepIndex += 1;
+        const index = usesStepNumber(localized) ? stepIndexes[i] : 0;
 
         return (
           <div key={block.id} className="hiw-page__block-wrap">

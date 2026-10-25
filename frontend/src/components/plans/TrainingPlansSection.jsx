@@ -26,7 +26,9 @@ export default function TrainingPlansSection({
       aria-labelledby="plans-tab-training"
       aria-label={t("plans.training.sectionAria")}
     >
-      <div className="pricing__grid pricing__grid--public-dynamic pricing__grid--training-three">
+      <div
+        className={`pricing__grid pricing__grid--public-dynamic pricing__grid--training-three pricing__grid--training-count-${packages.length}`}
+      >
         {packages.map((pkg) => {
           const code = String(pkg.code || pkg.id || "");
           const purchaseState =

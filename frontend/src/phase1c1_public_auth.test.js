@@ -58,9 +58,11 @@ describe("Phase 1C.1 public/auth routing", () => {
 
   it("public plans aliases still redirect", () => {
     const src = read("pages/Plans.jsx");
-    assert.match(src, /slug === "freelancers"/);
-    assert.match(src, /Navigate to="\/plans"/);
+    assert.match(src, /slug === "freelancers" \? "\/plans"/);
     assert.match(src, /slug === "client-offer"/);
+    // Redirect is returned after all hooks (rules of hooks), not as an early return.
+    assert.match(src, /<Navigate to=\{legacyRedirect\} replace \/>/);
+    assert.ok(src.indexOf("<Navigate to={legacyRedirect}") > src.lastIndexOf("useCallback("));
   });
 
   it("GuestOnly wraps login/register and Unauthorized is eagerly imported", () => {

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import AuthFormCard from "../components/auth/AuthFormCard";
 import AuthLayout from "../components/auth/AuthLayout";
+import AuthPasswordInput from "../components/auth/AuthPasswordInput";
 import * as tw from "../components/auth/authTw";
 import Button from "../components/ui/Button";
 import { useAuth } from "../context/useAuth";
@@ -255,22 +256,36 @@ const Register = () => {
     [t],
   );
 
-  const step1Error = useMemo(() => {
-    if (!firstName.trim()) return t("auth.register.validation.firstNameRequired");
-    if (!fatherName.trim()) return t("auth.register.validation.fatherNameRequired");
-    if (!familyName.trim()) return t("auth.register.validation.familyNameRequired");
-    if (!ARABIC_ONLY.test(firstName.trim())) return t("auth.register.validation.firstNameArabicOnly");
-    if (!ARABIC_ONLY.test(fatherName.trim())) return t("auth.register.validation.fatherNameArabicOnly");
-    if (!ARABIC_ONLY.test(familyName.trim())) return t("auth.register.validation.familyNameArabicOnly");
-    if (!email.trim()) return t("auth.register.validation.emailRequired");
-    if (password.length < 8) return t("auth.register.validation.passwordMin");
-    if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
-      return t("auth.register.validation.passwordComplexity");
-    }
-    if (password !== confirmPassword) return t("auth.register.validation.passwordMismatch");
-    if (!["client", "freelancer"].includes(accountType)) return t("auth.register.validation.accountTypeRequired");
+  /** First step-1 problem as { field, message } — field drives aria-invalid + focus. */
+  const step1Issue = useMemo(() => {
+    const issue = (field, key) => ({ field, message: t(`auth.register.validation.${key}`) });
+    if (!firstName.trim()) return issue("firstName", "firstNameRequired");
+    if (!fatherName.trim()) return issue("fatherName", "fatherNameRequired");
+    if (!familyName.trim()) return issue("familyName", "familyNameRequired");
+    if (!ARABIC_ONLY.test(firstName.trim())) return issue("firstName", "firstNameArabicOnly");
+    if (!ARABIC_ONLY.test(fatherName.trim())) return issue("fatherName", "fatherNameArabicOnly");
+    if (!ARABIC_ONLY.test(familyName.trim())) return issue("familyName", "familyNameArabicOnly");
+    if (!email.trim()) return issue("email", "emailRequired");
+    if (password.length < 8) return issue("password", "passwordMin");
+    if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) return issue("password", "passwordComplexity");
+    if (password !== confirmPassword) return issue("confirmPassword", "passwordMismatch");
+    if (!["client", "freelancer"].includes(accountType)) return issue("accountType", "accountTypeRequired");
     return null;
   }, [firstName, fatherName, familyName, email, password, confirmPassword, accountType, t]);
+  const step1Error = step1Issue?.message || null;
+  const [invalidField, setInvalidField] = useState("");
+  const formRef = useRef(null);
+  const flagStep1Issue = () => {
+    const field = step1Issue?.field || "";
+    setInvalidField(field);
+    if (field) formRef.current?.querySelector(`[name="${field}"]`)?.focus();
+  };
+  // Editing any step-1 value clears the field highlight until the next validation.
+  useEffect(() => {
+    setInvalidField("");
+  }, [firstName, fatherName, familyName, email, password, confirmPassword, accountType]);
+  const fieldA11y = (field) =>
+    invalidField === field ? { "aria-invalid": true, "aria-describedby": "register-form-error" } : {};
 
   const step2Error = useMemo(() => {
     if (!country) return t("auth.register.validation.countryRequired");
@@ -349,6 +364,7 @@ const Register = () => {
     }
 
     const localErr = step === 1 ? step1Error : step2Error;
+    if (step === 1) flagStep1Issue();
     if (localErr) return setError(localErr);
     if (step === 1) return setStep(2);
 
@@ -417,10 +433,12 @@ const Register = () => {
         footerLinkText={t("auth.register.loginLink")}
         footerLinkTo="/login"
       >
-        <form className={tw.authFormGrid} onSubmit={handleSubmit} noValidate>
+        <form ref={formRef} className={tw.authFormGrid} onSubmit={handleSubmit} noValidate>
           {error ? (
             <div className="grid gap-2">
-              <p className={tw.authFormError}>{error}</p>
+              <p id="register-form-error" className={tw.authFormError} role="alert">
+                {error}
+              </p>
               {emailAlreadyRegistered ? (
                 <Link to="/login" className={tw.authSubtleLink}>
                   {t("auth.register.loginLink")}
@@ -500,6 +518,7 @@ const Register = () => {
                   className={[tw.authStep, step === 2 ? tw.authStepActive : ""].filter(Boolean).join(" ")}
                   onClick={() => {
                     const err = step1Error;
+                    flagStep1Issue();
                     if (err) return setError(err);
                     setError("");
                     setStep(2);
@@ -520,6 +539,8 @@ const Register = () => {
                         <input
                           className={tw.authInputNoIcon}
                           type="text"
+                          name="firstName"
+                          {...fieldA11y("firstName")}
                           placeholder={t("auth.register.placeholders.firstName")}
                           value={firstName}
                           onChange={(e) => setFirstName(e.target.value)}
@@ -534,6 +555,8 @@ const Register = () => {
                         <input
                           className={tw.authInputNoIcon}
                           type="text"
+                          name="fatherName"
+                          {...fieldA11y("fatherName")}
                           placeholder={t("auth.register.placeholders.fatherName")}
                           value={fatherName}
                           onChange={(e) => setFatherName(e.target.value)}
@@ -548,6 +571,8 @@ const Register = () => {
                         <input
                           className={tw.authInputNoIcon}
                           type="text"
+                          name="familyName"
+                          {...fieldA11y("familyName")}
                           placeholder={t("auth.register.placeholders.familyName")}
                           value={familyName}
                           onChange={(e) => setFamilyName(e.target.value)}
@@ -565,6 +590,8 @@ const Register = () => {
                         type="email"
                         dir="ltr"
                         inputMode="email"
+                        name="email"
+                        {...fieldA11y("email")}
                         placeholder="name@email.com"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
@@ -576,34 +603,28 @@ const Register = () => {
 
                   <label className={tw.authField}>
                     <span className={tw.authFieldLabel}>{t("auth.register.fields.password")}</span>
-                    <div className={tw.authInputWrap}>
-                      <input
-                        className={tw.authInputCredential}
-                        type="password"
-                        dir="ltr"
-                        placeholder="********"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        autoComplete="new-password"
-                        disabled={submitting}
-                      />
-                    </div>
+                    <AuthPasswordInput
+                      name="password"
+                      invalid={invalidField === "password"}
+                      aria-describedby={invalidField === "password" ? "register-form-error" : undefined}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      autoComplete="new-password"
+                      disabled={submitting}
+                    />
                   </label>
 
                   <label className={tw.authField}>
                     <span className={tw.authFieldLabel}>{t("auth.register.fields.confirmPassword")}</span>
-                    <div className={tw.authInputWrap}>
-                      <input
-                        className={tw.authInputCredential}
-                        type="password"
-                        dir="ltr"
-                        placeholder="********"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        autoComplete="new-password"
-                        disabled={submitting}
-                      />
-                    </div>
+                    <AuthPasswordInput
+                      name="confirmPassword"
+                      invalid={invalidField === "confirmPassword"}
+                      aria-describedby={invalidField === "confirmPassword" ? "register-form-error" : undefined}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      autoComplete="new-password"
+                      disabled={submitting}
+                    />
                   </label>
 
                   <div className={tw.authField} role="radiogroup" aria-labelledby="register-account-type-label">

@@ -110,9 +110,21 @@
 
 .hiw-block__step-text {
   margin: 8px 0 0;
-  font-size: 0.9rem;
-  line-height: 1.75;
-  color: #5b6684;
+  font-size: 0.95rem;
+  line-height: 1.8;
+  color: #475569;
+}
+
+/* Long structured intro (e.g. freelancer guide): start-aligned card instead of a centred wall of text. */
+.hiw-block__rich {
+  margin: 18px auto 0;
+  max-width: 760px;
+  padding: clamp(1.1rem, 2.5vw, 1.75rem);
+  border-radius: 16px;
+  background: #ffffff;
+  border: 1px solid rgba(47, 59, 101, 0.1);
+  box-shadow: 0 6px 20px rgba(15, 26, 58, 0.04);
+  text-align: start;
 }
 
 .hiw-block--image {

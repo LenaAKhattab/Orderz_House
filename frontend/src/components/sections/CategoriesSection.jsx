@@ -7,7 +7,7 @@ const CategoriesSection = () => {
 
   return (
     <section
-      className="home-categories-section relative box-border my-8 w-full px-3 py-6 sm:my-10 sm:px-5 sm:py-8 md:my-12 md:px-8 md:py-10 lg:my-14 lg:px-9 lg:py-12 max-[560px]:px-2.5"
+      className="home-categories-section relative box-border mt-2 mb-8 w-full px-3 py-6 sm:mb-10 sm:px-5 sm:py-8 md:mb-12 md:px-8 md:py-10 lg:mb-14 lg:px-9 lg:py-12 max-[560px]:px-2.5"
       aria-labelledby="home-categories-heading"
     >
       <div className="home-categories-stack relative z-10 mx-auto w-full" dir={dir}>

@@ -93,13 +93,10 @@ const Plans = () => {
     [isMainCatalog, searchParams, setSearchParams],
   );
 
-  if (slug === "freelancers") {
-    return <Navigate to="/plans" replace />;
-  }
-
-  if (slug === "client-offer") {
-    return <Navigate to={`/plans/${LEGACY_DIRECT_PLANS_URL_SEGMENT}`} replace />;
-  }
+  // Legacy slugs redirect — returned only after every hook has run (rules of hooks: the same
+  // Plans instance is reused when the redirect lands on /plans).
+  const legacyRedirect =
+    slug === "freelancers" ? "/plans" : slug === "client-offer" ? `/plans/${LEGACY_DIRECT_PLANS_URL_SEGMENT}` : null;
 
   const trustPills = [];
 
@@ -168,6 +165,10 @@ const Plans = () => {
     user,
   ]);
 
+  if (legacyRedirect) {
+    return <Navigate to={legacyRedirect} replace />;
+  }
+
   if (notFound) {
     return (
       <main className="container page-content plans-page plans-page--ref" lang={dir === "rtl" ? "ar" : "en"} dir={dir}>
@@ -192,6 +193,7 @@ const Plans = () => {
       lang={dir === "rtl" ? "ar" : "en"}
       dir={dir}
     >
+      {isMainCatalog ? <h1 className="sr-only">{pageTitle || t("plans.hero.title")}</h1> : null}
       {isMainCatalog && !contentPending ? (
         <PlansCategoryToggle
           value={category}

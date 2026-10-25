@@ -56,6 +56,9 @@ export const authFormSubtitle = "";
 
 export const authHelperText = "text-[0.82rem] text-[#7a839a]";
 
+/** Inline field-level validation message (paired with aria-invalid + aria-describedby). */
+export const authFieldError = "-mt-1 block text-start text-[0.82rem] font-semibold leading-[1.5] text-[#b42318]";
+
 export const authFormError =
   "m-0 rounded-[14px] border border-[rgba(180,50,50,0.18)] bg-[rgba(180,50,50,0.06)] px-3.5 py-3 text-start text-[0.9rem] leading-[1.45] text-[#8b2222]";
 
