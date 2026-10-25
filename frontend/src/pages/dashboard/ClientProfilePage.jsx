@@ -8,6 +8,7 @@ import { useTranslation } from "../../i18n/LanguageProvider";
 import "../../i18n/clientAreaResources";
 import "../../styles/dashboardHub.css";
 import "./shared/account-pages.css";
+import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
 
 export default function ClientProfilePage() {
   const { user: authUser } = useAuth();
@@ -24,7 +25,7 @@ export default function ClientProfilePage() {
       const data = await getProfileMeRequest();
       setPayload(data?.data || null);
     } catch (e) {
-      setError(e?.response?.data?.message || e?.message || t(`${p}.loadError`));
+      setError(getSafeApiErrorMessage(e, t(`${p}.loadError`)));
     } finally {
       setLoading(false);
     }

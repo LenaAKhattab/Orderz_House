@@ -143,7 +143,9 @@
       "noteArchive": "سيتم حفظ الطلب في الأرشيف (غير نشط الآن). يمكنك تفعيله لاحقاً من لوحة التحكم.",
       "notePublish": "سيتم نشر الطلب في قائمة الطلبات المتاحة",
       "archiveCheckbox": "حفظ في الأرشيف (غير نشط الآن)",
-      "archiveHelp": "عند تفعيل هذا الخيار لن يظهر الطلب في قائمة الطلبات المتاحة. يمكنك تفعيله لاحقاً."
+      "archiveHelp": "عند تفعيل هذا الخيار لن يظهر الطلب في قائمة الطلبات المتاحة. يمكنك تفعيله لاحقاً.",
+      "payNowLabel": "المبلغ المطلوب دفعه الآن",
+      "payNowHint": "ستنتقل إلى صفحة الدفع الآمنة عبر Stripe، ولا يُنشر الطلب في المعرض إلا بعد تأكيد الدفع."
     },
     "freelancer": {
       "unassigned": "غير معين",
@@ -301,7 +303,24 @@
       "fileDefault": "ملف",
       "attachmentDefault": "مرفق",
       "revisionTitle": "طلب تعديلات",
-      "loading": "…"
+      "loading": "…",
+      "badge": {
+        "final": "التسليم النهائي",
+        "current": "التسليم الحالي",
+        "past": "تسليم سابق"
+      },
+      "status": {
+        "submitted": "تم التسليم",
+        "revision_requested": "طُلب تعديل",
+        "accepted": "مقبول",
+        "superseded": "سابق"
+      },
+      "requestedBy": {
+        "client": "العميل",
+        "admin": "الإدارة",
+        "super_admin": "المشرف العام"
+      },
+      "requestedByPrefix": "بواسطة {{who}}"
     }
   },
   "deliveryTiming": {

@@ -18,6 +18,7 @@ import { useTranslation } from "../../i18n/LanguageProvider";
 import "../../i18n/clientAreaResources";
 import "../../styles/dashboardHub.css";
 import "./shared/account-pages.css";
+import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
 
 const PHONE_RE = /^\+[1-9]\d{7,14}$/;
 
@@ -68,7 +69,7 @@ export default function ClientSettingsPage() {
         setNotif(mergeNotificationPrefs(u.notificationPreferences));
       }
     } catch (e) {
-      setError(e?.response?.data?.message || e?.message || t(`${s}.loadError`));
+      setError(getSafeApiErrorMessage(e, t(`${s}.loadError`)));
     } finally {
       setLoading(false);
     }
@@ -120,7 +121,7 @@ export default function ClientSettingsPage() {
       await refreshUser();
       toast.success(t(`${s}.toast.saved`));
     } catch (e) {
-      toast.error(e?.response?.data?.message || e?.message || t(`${s}.toast.saveError`));
+      toast.error(getSafeApiErrorMessage(e, t(`${s}.toast.saveError`)));
     } finally {
       setSaving(false);
     }
@@ -139,7 +140,7 @@ export default function ClientSettingsPage() {
       setConfirmPassword("");
       toast.success(t(`${s}.toast.passwordUpdated`));
     } catch (e) {
-      toast.error(e?.response?.data?.message || e?.message || t(`${s}.toast.passwordError`));
+      toast.error(getSafeApiErrorMessage(e, t(`${s}.toast.passwordError`)));
     } finally {
       setPwSaving(false);
     }
@@ -160,7 +161,7 @@ export default function ClientSettingsPage() {
       await load();
       toast.success(t(`${s}.toast.avatarUpdated`));
     } catch (err) {
-      toast.error(err?.response?.data?.message || err?.message || t(`${s}.toast.avatarUploadError`));
+      toast.error(getSafeApiErrorMessage(err, t(`${s}.toast.avatarUploadError`)));
     } finally {
       setAvatarBusy(false);
     }
@@ -174,7 +175,7 @@ export default function ClientSettingsPage() {
       await load();
       toast.success(t(`${s}.toast.avatarRemoved`));
     } catch (err) {
-      toast.error(err?.response?.data?.message || err?.message || t(`${s}.toast.avatarRemoveError`));
+      toast.error(getSafeApiErrorMessage(err, t(`${s}.toast.avatarRemoveError`)));
     } finally {
       setAvatarBusy(false);
     }

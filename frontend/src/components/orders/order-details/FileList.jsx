@@ -4,6 +4,7 @@ import { downloadOrderFileForRole, viewOrderFileForRole } from "../../../service
 import { useTranslation } from "../../../i18n/LanguageProvider";
 import { getFileAccessLoginToast } from "../../../utils/guestPoolLoginToast";
 import "../../../i18n/ordersAdminResources";
+import "./order-details-page.css";
 
 /** @typedef {"client"|"freelancer"|"admin"} OrderFileAccessScope */
 

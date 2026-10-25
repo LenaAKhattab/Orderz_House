@@ -10,6 +10,7 @@ import {
   getClientEliteEngineStatus,
   listClientEliteOffersForOrder,
 } from "../../services/eliteDirectOrdersApi";
+import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
 
 export default function ClientEliteDirectOfferPanel({ orderId }) {
   const [engineOn, setEngineOn] = useState(false);
@@ -69,7 +70,7 @@ export default function ClientEliteDirectOfferPanel({ orderId }) {
                 setOffers(list);
                 setTargetId("");
               } catch (err) {
-                setError(err?.response?.data?.message || err?.message || "Failed");
+                setError(getSafeApiErrorMessage(err));
               }
             });
           }}
@@ -92,7 +93,7 @@ export default function ClientEliteDirectOfferPanel({ orderId }) {
                       const list = await listClientEliteOffersForOrder(orderId);
                       setOffers(list);
                     } catch (err) {
-                      setError(err?.response?.data?.message || err?.message || "Failed");
+                      setError(getSafeApiErrorMessage(err));
                     }
                   });
                 }}

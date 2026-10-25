@@ -365,7 +365,9 @@
       "not_required": "No payment required currently",
       "unpaid": "Unpaid",
       "paid": "Paid",
-      "refunded": "Refunded"
+      "refunded": "Refunded",
+      "pending": "Payment pending",
+      "skipped_by_admin": "Payment waived"
     }
   },
   "freelancer": {

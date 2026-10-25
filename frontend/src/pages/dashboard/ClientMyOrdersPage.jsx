@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ClipboardList, Inbox, RefreshCw } from "lucide-react";
 import { useClientCreateOrderModal } from "../../context/ClientCreateOrderModalContext";
@@ -21,11 +21,14 @@ import {
   parseConfirmPaymentAxiosError,
 } from "../../utils/clientMyOrdersPaymentReturn";
 import { orderHasAssignment } from "../../utils/orderPrivacyUi";
+import { CLIENT_ORDER_FILTERS, clientOrderMatchesFilter, getClientOrderNextStep } from "../../utils/clientOrderNextStep";
+import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
 import { trackEvent } from "../../services/analytics";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import "../../i18n/clientAreaResources";
 import "../../styles/dashboardHub.css";
 import "./freelancerMyOrders.css";
+import "./clientMyOrders.css";
 
 function StatSegment({ tone, label, value, loading }) {
   return (
@@ -52,6 +55,12 @@ export default function ClientMyOrdersPage() {
   const [orders, setOrders] = useState([]);
   const [busy, setBusy] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [filter, setFilter] = useState("all");
+  const focusOrderId = useMemo(() => {
+    const params = new URLSearchParams(location.search || "");
+    return params.get("paid") || params.get("cancelled") ? null : params.get("orderId");
+  }, [location.search]);
+  const scrolledToRef = useRef(null);
 
   const load = useCallback(async () => {
     const res = await listClientMyOrdersRequest({ limit: 50, offset: 0 });
@@ -68,10 +77,7 @@ export default function ClientMyOrdersPage() {
       } catch (e) {
         if (!cancelled) {
           const status = e?.response?.status;
-          const msg =
-            status === 403
-              ? t(`${m}.loadForbidden`)
-              : e?.response?.data?.message || e?.message;
+          const msg = status === 403 ? t(`${m}.loadForbidden`) : getSafeApiErrorMessage(e, t(`${m}.loadErrorTitle`));
           push({ type: "error", title: t(`${m}.loadErrorTitle`), message: msg });
         }
       } finally {
@@ -181,10 +187,7 @@ export default function ClientMyOrdersPage() {
       await load();
     } catch (e) {
       const status = e?.response?.status;
-      const msg =
-        status === 403
-          ? t(`${m}.refreshForbidden`)
-          : e?.response?.data?.message || e?.message;
+      const msg = status === 403 ? t(`${m}.refreshForbidden`) : getSafeApiErrorMessage(e, t(`${m}.refreshErrorTitle`));
       push({ type: "error", title: t(`${m}.refreshErrorTitle`), message: msg });
     } finally {
       setRefreshing(false);
@@ -201,8 +204,27 @@ export default function ClientMyOrdersPage() {
       return ["published", "open_for_freelancers", "open_for_bids"].includes(status);
     }).length;
     const assigned = orders.filter((o) => orderHasAssignment(o)).length;
-    return { total, inPool, assigned };
+    const attention = orders.filter((o) => getClientOrderNextStep(o).attention).length;
+    return { total, inPool, assigned, attention };
   }, [orders]);
+
+  const filterCounts = useMemo(() => {
+    const out = {};
+    for (const f of CLIENT_ORDER_FILTERS) out[f] = orders.filter((o) => clientOrderMatchesFilter(o, f)).length;
+    return out;
+  }, [orders]);
+  const visibleOrders = useMemo(() => orders.filter((o) => clientOrderMatchesFilter(o, filter)), [orders, filter]);
+
+  /** Deep link from notifications / dashboard: /dashboard/client/my-orders?orderId=… */
+  useEffect(() => {
+    if (busy || !focusOrderId || scrolledToRef.current === focusOrderId) return;
+    if (!orders.some((o) => String(o.id) === String(focusOrderId))) return;
+    scrolledToRef.current = focusOrderId;
+    queueMicrotask(() => setFilter("all"));
+    window.requestAnimationFrame(() => {
+      document.getElementById(`client-order-${focusOrderId}`)?.scrollIntoView({ block: "start", behavior: "smooth" });
+    });
+  }, [busy, focusOrderId, orders]);
 
   return (
     <DashboardHubPage className="fdash-page--my-orders">
@@ -211,10 +233,10 @@ export default function ClientMyOrdersPage() {
           <h1 className="fmo-header__title">{t(`${m}.title`)}</h1>
           <p className="fmo-header__subtitle">{t(`${m}.subtitle`)}</p>
           <div className="fmo-header__actions">
-            <button type="button" className="fmo-empty__cta" style={{ border: "none", cursor: "pointer" }} onClick={() => openCreateOrder()}>
+            <button type="button" className="btn btn-primary" onClick={() => openCreateOrder()}>
               {t(`${m}.newOrder`)}
             </button>
-            <Link className="fmo-toolbar__refresh fmo-toolbar__refresh--label" to="/dashboard/freelancer/orders">
+            <Link className="btn btn-secondary" to="/dashboard/client/orders">
               {t(`${m}.exploreMarketplace`)}
             </Link>
           </div>
@@ -226,14 +248,30 @@ export default function ClientMyOrdersPage() {
         </div>
       </header>
 
-      <div className="fmo-surface fmo-stats-bar" aria-label={t(`${m}.statsAria`)}>
+      <div className="fmo-surface fmo-stats-bar fmo-stats-bar--client" aria-label={t(`${m}.statsAria`)}>
         <StatSegment tone="slate" label={t(`${m}.statsTotal`)} value={stats.total} loading={busy} />
+        <StatSegment tone="rose" label={t(`${m}.statsAttention`)} value={stats.attention} loading={busy} />
         <StatSegment tone="amber" label={t(`${m}.statsInPool`)} value={stats.inPool} loading={busy} />
         <StatSegment tone="green" label={t(`${m}.statsAssigned`)} value={stats.assigned} loading={busy} />
       </div>
 
       <div className="fmo-surface fmo-toolbar">
-        <p className="fmo-toolbar__hint">{t(`${m}.toolbarHint`)}</p>
+        <div className="fmo-filter-tabs" role="tablist" aria-label={t(`${m}.filtersAria`)}>
+          {CLIENT_ORDER_FILTERS.map((f) => (
+            <button
+              key={f}
+              type="button"
+              role="tab"
+              aria-selected={filter === f}
+              className={`fmo-filter-tab${filter === f ? " is-active" : ""}${f === "attention" && filterCounts.attention ? " fmo-filter-tab--alert" : ""}`}
+              onClick={() => setFilter(f)}
+              disabled={busy}
+            >
+              <span>{t(`${m}.filters.${f}`)}</span>
+              <span className="fmo-filter-tab__count">{busy ? "–" : filterCounts[f]}</span>
+            </button>
+          ))}
+        </div>
         <div className="fmo-toolbar__actions">
           <button
             type="button"
@@ -263,15 +301,28 @@ export default function ClientMyOrdersPage() {
               <button type="button" className="fmo-empty__cta" onClick={() => openCreateOrder()}>
                 {t(`${m}.createOrder`)}
               </button>
-              <Link className="fmo-empty__cta fmo-empty__cta--muted" to="/dashboard/freelancer/orders">
+              <Link className="fmo-empty__cta fmo-empty__cta--muted" to="/dashboard/client/orders">
                 {t(`${m}.browseMarketplace`)}
               </Link>
             </div>
           </div>
+        ) : visibleOrders.length === 0 ? (
+          <div className="fmo-filter-empty" role="status">
+            <p className="fmo-filter-empty__title">{t(`${m}.filterEmpty.${filter}`)}</p>
+            <button type="button" className="fmo-toolbar__refresh fmo-toolbar__refresh--label" onClick={() => setFilter("all")}>
+              {t(`${m}.showAll`)}
+            </button>
+          </div>
         ) : (
-          <div className="fmo-client-cards-grid">
-            {orders.map((order) => (
-              <ClientOrderCardCompact key={order.id} order={order} onOrdersChange={load} />
+          <div className="fmo-client-cards-list">
+            {visibleOrders.map((order) => (
+              <ClientOrderCardCompact
+                key={order.id}
+                order={order}
+                onOrdersChange={load}
+                initiallyExpanded={String(order.id) === String(focusOrderId)}
+                highlighted={String(order.id) === String(focusOrderId)}
+              />
             ))}
           </div>
         )}

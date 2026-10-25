@@ -278,7 +278,12 @@ const Register = () => {
   const flagStep1Issue = () => {
     const field = step1Issue?.field || "";
     setInvalidField(field);
-    if (field) formRef.current?.querySelector(`[name="${field}"]`)?.focus();
+    const el = field ? formRef.current?.querySelector(`[name="${field}"]`) : null;
+    if (el) {
+      // Centre the field (same in RTL and LTR) so the floating header never covers it.
+      el.focus({ preventScroll: true });
+      el.scrollIntoView({ block: "center" });
+    }
   };
   // Editing any step-1 value clears the field highlight until the next validation.
   useEffect(() => {

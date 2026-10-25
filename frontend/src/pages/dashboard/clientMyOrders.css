@@ -1,0 +1,107 @@
+/* Client "My orders" — scoped additions on top of the shared fmo-* My orders surface. */
+.fmo-stats-bar.fmo-stats-bar--client {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+@media (max-width: 1100px) {
+  .fmo-stats-bar.fmo-stats-bar--client {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.fmo-filter-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+
+.fmo-filter-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(47, 59, 101, 0.14);
+  background: #ffffff;
+  color: #334155;
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+.fmo-filter-tab:hover:not(:disabled) {
+  border-color: rgba(47, 59, 101, 0.3);
+}
+
+.fmo-filter-tab:focus-visible {
+  outline: 3px solid rgba(118, 207, 223, 0.6);
+  outline-offset: 2px;
+}
+
+.fmo-filter-tab.is-active {
+  background: var(--dash-primary, #2f3b65);
+  border-color: var(--dash-primary, #2f3b65);
+  color: #ffffff;
+}
+
+.fmo-filter-tab__count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: rgba(47, 59, 101, 0.08);
+  font-size: 0.74rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.fmo-filter-tab.is-active .fmo-filter-tab__count {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.fmo-filter-tab--alert:not(.is-active) .fmo-filter-tab__count {
+  background: #d97706;
+  color: #ffffff;
+}
+
+.fmo-client-cards-list {
+  display: grid;
+  gap: 10px;
+}
+
+.fmo-filter-empty {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  padding: 28px 16px;
+  text-align: center;
+}
+
+.fmo-filter-empty__title {
+  margin: 0;
+  font-weight: 700;
+  color: #475569;
+}
+
+@media (max-width: 560px) {
+  .fmo-filter-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    width: 100%;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+
+  .fmo-filter-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .fmo-filter-tab {
+    flex-shrink: 0;
+  }
+}

@@ -365,7 +365,9 @@
       "not_required": "لا يتطلب دفعاً حالياً",
       "unpaid": "غير مدفوع",
       "paid": "مدفوع",
-      "refunded": "مُسترد"
+      "refunded": "مُسترد",
+      "pending": "بانتظار إتمام الدفع",
+      "skipped_by_admin": "معفى من الدفع"
     }
   },
   "freelancer": {

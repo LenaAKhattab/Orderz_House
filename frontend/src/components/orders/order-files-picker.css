@@ -129,3 +129,15 @@
   font-weight: 600;
   color: #b42318;
 }
+
+/* Phones: let long (often Arabic) names wrap to two lines instead of a one-word ellipsis. */
+@media (max-width: 480px) {
+  .oh-files-picker__name {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 1.4;
+  }
+}

@@ -1,3 +1,5 @@
+import { readStoredLocale } from "../../../i18n/localePreference.js";
+
 export function formatMoney(value) {
   const n = Number(value);
   if (!Number.isFinite(n)) return "—";
@@ -19,16 +21,21 @@ export function formatMoneyJodRange(min, max) {
   return `JOD ${formatMoney(min)} – ${formatMoney(max)}`;
 }
 
+/** Arabic UI keeps the Jordanian Arabic format (Latin digits); English UI gets an English date. */
+function dateLocale() {
+  return readStoredLocale() === "en" ? "en-GB" : "ar-JO-u-nu-latn";
+}
+
 export function formatJoDate(value) {
   if (!value) return "—";
   const d = new Date(value);
   if (!Number.isFinite(d.getTime())) return "—";
-  return new Intl.DateTimeFormat("ar-JO-u-nu-latn", { dateStyle: "medium" }).format(d);
+  return new Intl.DateTimeFormat(dateLocale(), { dateStyle: "medium" }).format(d);
 }
 
 export function formatJoDateTime(value) {
   if (!value) return "—";
   const d = new Date(value);
   if (!Number.isFinite(d.getTime())) return "—";
-  return new Intl.DateTimeFormat("ar-JO-u-nu-latn", { dateStyle: "medium", timeStyle: "short" }).format(d);
+  return new Intl.DateTimeFormat(dateLocale(), { dateStyle: "medium", timeStyle: "short" }).format(d);
 }

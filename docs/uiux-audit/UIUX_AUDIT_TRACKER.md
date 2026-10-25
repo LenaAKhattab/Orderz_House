@@ -78,7 +78,32 @@ Staging fixtures: 3 QA freelancers (pending-start SILVER with full order history
 | `(shell)` | Sidebar collapsed / mobile drawer | Freelancer | ✓/✓ | ✓ | ✓ | ✓ | ✓ | KEEP | ✓ | ✓ |  |
 | `/dashboard/freelancer/courses/:id, articles/:id, elite-offers/:id` | Detail sub-pages | Freelancer | — | — | — | — | — | — | — | — | Not captured: require course/article/elite-offer fixtures; deferred to Phase 5 (shared) |
 
-## Phase 3 — Client (pending)
+## Phase 3 — Client dashboard
+
+Staging fixtures: 2 QA clients (9 orders across every lifecycle state, and a new client with none) + 1 QA freelancer (bid, deliveries, resubmission); cleaned after QA. No client Draft feature exists (unpaid fixed orders are purged when checkout fails/cancels) — not invented. Authenticated Production screenshots not captured (no legitimate Production client session).
+
+| ROUTE | SURFACE | ROLE | AR/EN | DESKTOP | MOBILE | BEFORE CAPTURED | AUDITED | CHANGED | AFTER CAPTURED | DEPLOYED | NOTES |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| `/dashboard/client` | Overview (populated, new client) | Client | ✓/✓ | ✓ | ✓ | ✓ | ✓ | FIX | ✓ | ✓ | Create order was a tiny orphan link → hero primary (opens the modal); 'needs attention' counted open orders with no offers → shared next-step rule; follow-ups deep-link `?orderId=`; duplicate star icons |
+| `/dashboard/client/my-orders` | My orders (populated, empty) | Client | ✓/✓ | ✓ | ✓ | ✓ | ✓ | MODERNIZE | ✓ | ✓ | Narrow 3-col chip cards → full-width rows with status badge, per-state 'next step' strip, one primary action, details toggle; filter tabs with counts; 'needs your action' stat; `?orderId=` opens + highlights the order; delivery/revision actions only when the API accepts them |
+| `/dashboard/client/orders/create` | Create order modal (empty, validation, files, review) | Client | ✓/✓ | ✓ | ✓ | ✓ | ✓ | POLISH | ✓ | ✓ | Files step → shared OrderFilesPicker (per-file remove, type icon, size, inline size error); no disabled 'Previous' on step 1; review lists file names + 'amount due now' summary before Stripe |
+| `/dashboard/client/my-orders` (expanded) | Order details (pending payment, open + offer, available, in progress, delivered, revision, resubmitted, completed, cancelled) | Client | ✓/✓ | ✓ | ✓ | ✓ | ✓ | MODERNIZE | ✓ | ✓ | Expansion only revealed the full description → description, dates, client attachments (view/download), revision note, history; timeline follows UI direction with i18n badges (was hard-coded RTL + Arabic-only server labels); amber revision card |
+| `(dialog)` | Delivery review (delivered, resubmitted, revision with files) | Client | ✓/✓ | ✓ | ✓ | ✓ | ✓ | MODERNIZE | ✓ | ✓ | Native 'No file chosen' input in Arabic UI; everything stacked; one-click approve → OrderDialog, FileList rows, collapsible history, revision as second view with OrderFilesPicker, approve behind ConfirmDialog (double-click guarded); bottom sheet on phones |
+| `(dialog)` | Revision request (empty, filled) | Client | ✓/✓ | ✓ | ✓ | ✓ | ✓ | FIX | ✓ | ✓ | Could not attach files although the API accepts them; offered before any delivery (API 409) → OrderDialog + OrderFilesPicker, sent with files, shown only after a delivery; safe errors |
+| `(dialog)` | Bid offers | Client | ✓/✓ | ✓ | ✓ | ✓ | ✓ | POLISH | ✓ | ✓ | Inline-styled card-in-card → OrderDialog, amount prominent, freelancer message shown, reject as quiet text action |
+| `/dashboard/client/my-orders?paid|cancelled` | Stripe return toasts | Client | ✓/✓ | ✓ | ✓ | ✓ | ✓ | POLISH | ✓ | ✓ | EN toast rendered RTL (body hard-coded `direction: rtl`) → body follows `<html dir>`; copy unchanged (pinned by test); trusted server confirmation unchanged |
+| `/dashboard/client/financial` | Finance (populated, empty) | Client | ✓/✓ | ✓ | ✓ | ✓ | ✓ | FIX | ✓ | ✓ | Raw 'pending' payment status; wide table scrolled sideways on phones hiding Pay now → localized statuses; labelled row cards ≤640px |
+| `/dashboard/client/notifications` | Notifications (populated, empty) | Client | ✓/✓ | ✓ | ✓ | ✓ | ✓ | FIX | ✓ | ✓ | Category + unread dot shown twice per card (shared component → Freelancer fixed too) |
+| `/dashboard/client/profile` | Profile | Client | ✓/✓ | ✓ | ✓ | ✓ | ✓ | FIX | ✓ | ✓ | EN page right-aligned/RTL → global body direction fix |
+| `/register` (side effect) | Register validation | Public | ✓/✓ | ✓ | ✓ | ✓ | ✓ | FIX | ✓ | ✓ | With body now truly LTR in English, focusing the first invalid field scrolled it under the floating header → focus without scroll + centre the field (same in AR/EN). Phase 1 pixel regression: login/plans 0.00%, register static 0.00%; validation states differ only by fixed-header position in full-page captures |
+| `/dashboard/client/settings` | Settings | Client | ✓/✓ | ✓ | ✓ | ✓ | ✓ | KEEP | ✓ | ✓ | Safe error messages only |
+| `/dashboard/client/feedback` | Problems & suggestions | Client | ✓/✓ | ✓ | ✓ | ✓ | ✓ | KEEP | ✓ | ✓ | Shared with Freelancer |
+| `/dashboard/referrals` | Referrals | Client | ✓/✓ | ✓ | ✓ | ✓ | ✓ | KEEP | ✓ | ✓ | Program disabled |
+| `/dashboard/client/convert-account` | Convert account | Client | ✓/✓ | ✓ | ✓ | ✓ | ✓ | KEEP | ✓ | ✓ |  |
+| `/dashboard/client/orders` | Request marketplace | Client | ✓/✓ | ✓ | ✓ | ✓ | ✓ | KEEP | ✓ | ✓ | Shared pool (Phase 2) |
+| `/dashboard/client/orders/:id` | Marketplace order | Client | ✓/✓ | ✓ | ✓ | ✓ | ✓ | KEEP | ✓ | ✓ | Shared detail page; dormant Elite Direct panel calls `/api/api/...` (404) — reported, not activated |
+| `(shell)` | Sidebar collapsed / mobile drawer | Client | ✓/✓ | ✓ | ✓ | ✓ | ✓ | KEEP | ✓ | ✓ | Same shell as Freelancer |
+
 ## Phase 4 — Super Admin (pending)
 ## Phase 5 — Shared components (pending)
 ## Phase 6 — Final (pending)

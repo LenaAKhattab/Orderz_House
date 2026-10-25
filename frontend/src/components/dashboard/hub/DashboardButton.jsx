@@ -31,7 +31,7 @@ export default function DashboardButton({
 
   if (to) {
     return (
-      <Link to={to} className={cls} {...rest}>
+      <Link to={to} className={cls} onClick={onClick} {...rest}>
         {content}
       </Link>
     );

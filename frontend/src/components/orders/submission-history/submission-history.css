@@ -1,4 +1,4 @@
-/* RTL-safe submission timeline — no horizontal overflow */
+/* Direction-aware submission timeline — no horizontal overflow */
 
 .oh-submission-history {
   margin-top: 0.75rem;
@@ -71,61 +71,54 @@
   overflow-wrap: anywhere;
 }
 
-.oh-submission-files {
-  list-style: none;
-  margin: 10px 0 0;
-  padding: 0;
+.oh-submission-item > .od-file-list,
+.oh-submission-item > .od-muted {
+  margin-top: 10px;
 }
 
-.oh-submission-files li {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 6px 0;
-  border-top: 1px dashed rgba(148, 163, 184, 0.5);
-  font-size: 0.9rem;
-  word-break: break-word;
-}
-
-.oh-submission-files li:first-child {
-  border-top: none;
-}
-
+/* Revision request — amber, matching the "revision" accent used across order lists. */
 .oh-revision-card {
   margin-top: 10px;
   padding: 10px 12px;
-  border-radius: 10px;
-  background: rgba(139, 92, 246, 0.08);
-  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 12px;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.28);
   max-width: 100%;
+  display: grid;
+  gap: 8px;
+}
+
+.oh-revision-card__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
 }
 
 .oh-revision-card__title {
   font-weight: 800;
   font-size: 0.88rem;
-  margin: 0 0 6px;
-  color: #5b21b6;
+  color: #92400e;
 }
 
 .oh-revision-card__role {
   font-size: 0.8rem;
-  color: #6d28d9;
-  margin-bottom: 6px;
+  font-weight: 600;
+  color: #b45309;
+}
+
+.oh-revision-card__time {
+  margin-inline-start: auto;
+  font-size: 0.78rem;
+  color: #64748b;
 }
 
 .oh-revision-card__note {
   margin: 0;
   font-size: 0.9rem;
-  line-height: 1.45;
+  line-height: 1.55;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   word-break: break-word;
-}
-
-.oh-revision-card__time {
-  font-size: 0.78rem;
-  color: #64748b;
-  margin-top: 6px;
+  color: #1f2937;
 }

@@ -29,10 +29,11 @@ describe("order file view/download (R2 same-origin streaming)", () => {
     for (const t of ["image/jpeg", "image/png", "image/webp", "application/pdf"]) assert.ok(api.includes(`"${t}"`));
   });
 
-  it("submission timeline handles view/download errors", () => {
+  it("submission timeline handles view/download errors (via the shared FileList)", () => {
     const tl = read("components/orders/submission-history/SubmissionHistoryTimeline.jsx");
-    assert.equal((tl.match(/toastFileError\(e, "view"\)/g) || []).length, 2);
-    assert.equal((tl.match(/toastFileError\(e, "download"\)/g) || []).length, 2);
+    // Delivery files and revision attachments both render through FileList, which owns the localized error toasts.
+    assert.equal((tl.match(/<FileList /g) || []).length, 2);
+    assert.match(tl, /fileAccess=\{fileAccess\}/);
   });
 
   it("FileList uses action-specific localized fallbacks", () => {
@@ -45,7 +46,8 @@ describe("order file view/download (R2 same-origin streaming)", () => {
     const css = read("styles/freelancerDashboardShell.css");
     assert.ok(!/\.page-shell:has\(\.fdl-shell\)\s+footer\s*\{/.test(css));
     assert.match(css, /\.page-shell:has\(\.fdl-shell\) \.site-footer \{\s*display: none;/);
-    assert.match(read("components/orders/ClientOrderCardCompact.jsx"), /<footer className="client-order-compact__foot/);
+    assert.match(read("components/orders/ClientOrderCardCompact.jsx"), /<footer className="coc__foot"/);
+    assert.match(read("components/orders/OrderDialog.jsx"), /<footer className="oh-dialog__foot"/);
   });
 
   it("locales carry the required Arabic messages (and English equivalents)", () => {

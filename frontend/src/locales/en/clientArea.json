@@ -77,7 +77,8 @@
       "unreadDescription": "Catch up on updates to your orders.",
       "messages": "My messages",
       "notifications": "Notifications"
-    }
+    },
+    "createOrder": "Create new order"
   },
   "myOrders": {
     "title": "My orders",
@@ -101,7 +102,24 @@
     "refreshErrorTitle": "Could not refresh",
     "paymentSuccessTitle": "Payment successful",
     "paymentSuccessBid": "Bid payment was confirmed and linked to the order.",
-    "paymentSuccessFixed": "Your order was activated according to its type."
+    "paymentSuccessFixed": "Your order was activated according to its type.",
+    "statsAttention": "Needs your action",
+    "filtersAria": "Filter orders",
+    "filters": {
+      "all": "All",
+      "attention": "Needs action",
+      "active": "In progress",
+      "open": "Open",
+      "done": "Closed"
+    },
+    "filterEmpty": {
+      "all": "No orders.",
+      "attention": "Nothing needs your action right now.",
+      "active": "No orders in progress.",
+      "open": "No open orders.",
+      "done": "No closed orders."
+    },
+    "showAll": "Show all orders"
   },
   "profile": {
     "loadError": "Could not load profile.",
@@ -191,7 +209,34 @@
     "freelancerDeliveryFiles": "Freelancer delivery files",
     "rateFreelancer": "Rate your Freelancer",
     "editReview": "Edit your review",
-    "viewReview": "View your review"
+    "viewReview": "View your review",
+    "reviewDelivery": "Review delivery",
+    "showDetails": "Show details",
+    "hideDetails": "Hide details",
+    "noAttachments": "No files were attached to this order.",
+    "sections": {
+      "description": "Order description",
+      "attachments": "Your attachments ({{count}})"
+    },
+    "facts": {
+      "created": "Created",
+      "started": "Work started"
+    },
+    "next": {
+      "pay": "Complete payment to publish your order in the marketplace.",
+      "payAfterBid": "Complete payment for the selected offer so the Freelancer can start.",
+      "adminReview": "Paid — the team is reviewing your order before publishing.",
+      "reviewDelivery": "The Freelancer delivered — review the files, then approve or request a revision.",
+      "revisionSent": "Revision requested — waiting for an updated version from the Freelancer.",
+      "inProgress": "A Freelancer is working on your order. You'll be notified on delivery.",
+      "reviewBids": "Offers received: {{count}} — review them and choose one to start.",
+      "waitingBids": "Your order is live in the marketplace, waiting for offers.",
+      "published": "Your order is live in the marketplace, waiting for Freelancers.",
+      "completed": "Order completed. Delivery files stay available to you.",
+      "cancelled": "This order was cancelled.",
+      "archived": "This order is archived.",
+      "generic": "Track this order's status here."
+    }
   },
   "payNow": {
     "label": "Pay now",
@@ -201,7 +246,7 @@
   },
   "deliveryReview": {
     "titleArchive": "Freelancer delivery files",
-    "titleWorkflow": "Accept order and review attachments",
+    "titleWorkflow": "Review delivery",
     "helpArchive": "You can preview or download files the Freelancer sent at any time.",
     "helpAdmin": "Review delivery files from the Freelancer. When you approve attachments, the order is completed.",
     "helpClient": "Review delivery files from the Freelancer. When you approve attachments, the order is completed between you.",
@@ -229,7 +274,18 @@
     "openSuccessMessage": "File opened in a new tab.",
     "viewForbidden": "You are not allowed to view this file.",
     "viewError": "Could not open the attachment. Please try again.",
-    "viewErrorTitle": "Could not open"
+    "viewErrorTitle": "Could not open",
+    "approvedTitle": "Delivery approved",
+    "approvedMessage": "The order is complete. You can now rate your Freelancer.",
+    "revisionSentTitle": "Revision request sent",
+    "revisionSentMessage": "The Freelancer will be asked to upload an updated version.",
+    "backToDelivery": "Back to delivery",
+    "sendRevision": "Send revision request",
+    "deliveryFilesTitle": "Delivery files ({{count}})",
+    "historyToggle": "Submission & revision history ({{count}})",
+    "approveConfirmTitle": "Approve delivery and complete the order?",
+    "approveConfirmBody": "After approval the order is complete and no further revisions can be requested. Make sure you have reviewed all files first.",
+    "approveConfirm": "Yes, approve delivery"
   },
   "revisionRequest": {
     "title": "Request revision",

@@ -1,0 +1,62 @@
+/* Client finance — phones: each payment row becomes a labelled card instead of a sideways-scrolling table. */
+@media (max-width: 640px) {
+  .client-financial-table-scroll {
+    overflow-x: visible;
+  }
+
+  .client-financial-table,
+  .client-financial-table tbody {
+    display: block;
+    width: 100%;
+  }
+
+  .client-financial-table thead {
+    display: none;
+  }
+
+  .client-financial-table tbody tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 8px 12px;
+    padding: 12px;
+    margin-bottom: 10px;
+    border: 1px solid rgba(47, 59, 101, 0.12);
+    border-radius: 14px;
+    background: #ffffff;
+  }
+
+  .client-financial-table tbody td {
+    display: grid;
+    gap: 2px;
+    padding: 0;
+    border: 0;
+    min-width: 0;
+    font-size: 0.86rem;
+    text-align: start;
+  }
+
+  .client-financial-table tbody td[data-label]::before {
+    content: attr(data-label);
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #64748b;
+  }
+
+  .client-financial-table tbody td.cft-title {
+    grid-column: 1 / -1;
+    font-weight: 800;
+    color: #141829;
+  }
+
+  .client-financial-table tbody td.cft-action {
+    grid-column: 1 / -1;
+  }
+
+  .client-financial-table tbody td.cft-action .btn {
+    width: 100%;
+  }
+
+  .client-financial-table tbody td.cft-action--empty {
+    display: none;
+  }
+}
