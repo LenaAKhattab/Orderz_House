@@ -28,6 +28,8 @@ import SubmissionHistoryTimeline from "../../components/orders/submission-histor
 import { formatJoDate, formatJoDateTime } from "../../components/orders/order-details/orderDetailsUtils";
 import { JodMoneyDisplay } from "../../components/money/JodMoneyDisplay";
 import { validateOrderFilesSize } from "../../utils/orderUploadLimits";
+import OrderFilesPicker from "../../components/orders/OrderFilesPicker";
+import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
 
 function typeLabel(projectType, t) {
   return formatOrderProjectType(projectType, t);
@@ -190,7 +192,7 @@ export default function FreelancerMyOrderDetailsPage() {
       push({
         type: "error",
         title: t("freelancerDashboard.myOrders.details.deliveryErrorTitle"),
-        message: err?.response?.data?.message || err?.message,
+        message: getSafeApiErrorMessage(err, t("freelancerDashboard.myOrders.details.deliveryErrorTitle")),
       });
     } finally {
       setDeliveryBusy(false);
@@ -322,24 +324,6 @@ export default function FreelancerMyOrderDetailsPage() {
               </OrderSection>
             ) : null}
 
-            {order?.submissionHistory?.submissions?.length ? (
-              <OrderSection title={t("freelancerDashboard.myOrders.details.submissionHistory")} accent>
-                <SubmissionHistoryTimeline
-                  submissionHistory={order.submissionHistory}
-                  orderId={String(id)}
-                  fileAccess="freelancer"
-                />
-              </OrderSection>
-            ) : submittedDeliveryFiles.length ? (
-              <OrderSection title={t("freelancerDashboard.myOrders.details.yourDelivery")}>
-                <FileList
-                  orderId={String(id)}
-                  fileAccess="freelancer"
-                  files={submittedDeliveryFiles}
-                  emptyText={t("freelancerDashboard.common.emDash")}
-                />
-              </OrderSection>
-            ) : null}
 
             {DELIVERY_UPLOAD_ALLOWED_STATUSES.has(String(order?.orderStatus || "")) ? (
               <OrderSection title={t("freelancerDashboard.myOrders.details.deliverOrder")}>
@@ -349,29 +333,16 @@ export default function FreelancerMyOrderDetailsPage() {
                 </p>
                 <form onSubmit={submitDelivery}>
                   <div className="field">
-                    <label className="label" htmlFor="delivery-input">
-                      {t("freelancerDashboard.myOrders.details.selectFiles")}
-                    </label>
-                    <input
-                      id="delivery-input"
-                      type="file"
-                      className="input"
-                      multiple
+                    <OrderFilesPicker
+                      label={t("freelancerDashboard.myOrders.details.selectFiles")}
+                      files={deliveryFiles}
+                      onChange={setDeliveryFiles}
                       disabled={deliveryBusy}
-                      onChange={(ev) => {
-                        const list = ev.target.files ? Array.from(ev.target.files) : [];
-                        setDeliveryFiles(list.slice(0, 5));
-                      }}
                     />
-                    {deliveryFiles.length > 0 && !deliveryFilesSizeOk ? (
-                      <p className="help" style={{ color: "#b91c1c", marginTop: 6, marginBottom: 0 }}>
-                        {t("freelancerDashboard.myOrders.details.uploadSizeError")}
-                      </p>
-                    ) : null}
                   </div>
                   <button
                     type="submit"
-                    className="btn btn-primary"
+                    className="btn btn-primary od-delivery-submit"
                     disabled={deliveryBusy || !deliveryFiles.length || !deliveryFilesSizeOk}
                   >
                     {deliveryBusy
@@ -387,6 +358,27 @@ export default function FreelancerMyOrderDetailsPage() {
                 <p className="od-muted" style={{ margin: 0 }}>
                   {t("freelancerDashboard.myOrders.details.pendingReviewMessage")}
                 </p>
+              </OrderSection>
+            ) : null}
+
+            {/* History after the next action (delivery / review status), not before it. */}
+            {order?.submissionHistory?.submissions?.length ? (
+              <OrderSection title={t("freelancerDashboard.myOrders.details.submissionHistory")} accent>
+                <SubmissionHistoryTimeline
+                  hideTitle
+                  submissionHistory={order.submissionHistory}
+                  orderId={String(id)}
+                  fileAccess="freelancer"
+                />
+              </OrderSection>
+            ) : submittedDeliveryFiles.length ? (
+              <OrderSection title={t("freelancerDashboard.myOrders.details.yourDelivery")}>
+                <FileList
+                  orderId={String(id)}
+                  fileAccess="freelancer"
+                  files={submittedDeliveryFiles}
+                  emptyText={t("freelancerDashboard.common.emDash")}
+                />
               </OrderSection>
             ) : null}
           </div>

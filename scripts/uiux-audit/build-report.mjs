@@ -8,6 +8,7 @@
  *
  * Phase directory layout (outside Git):
  *   phase.json                 manifest: pages (key, name, route, classification, before/changed/result), state labels
+ *                              optional per page: productionPath (real Production URL path when route uses QA ids)
  *   before/  after/  production/   <page>-<ar|en>-<width>[-<state>]-<before|after|production>.png
  *
  * Output is a single self-contained HTML file (inline CSS/JS, no CDN/fonts/analytics) that references the
@@ -154,7 +155,7 @@ function renderDetail(key,q){
   const i=D.pages.findIndex(p=>p.key===key);if(i<0){location.hash='';return;}
   const p=D.pages[i];const s=pick(p,q);current={p,s,i};
   const prev=D.pages[(i-1+D.pages.length)%D.pages.length],next=D.pages[(i+1)%D.pages.length];
-  const prodUrl=D.productionBase+p.route;
+  const prodUrl=D.productionBase+(p.productionPath||p.route);
   const desc=p.classification==='KEEP'?'<div class="keep-note">لم يحتج إلى تعديل'+(p.note?' — '+h(p.note):'')+(p.changed?' · '+h(p.changed):'')+'</div>':'<div class="desc"><div><h4>قبل</h4><p>'+h(p.before)+'</p></div><div><h4>ماذا تغير</h4><p>'+h(p.changed)+'</p></div><div><h4>النتيجة</h4><p>'+h(p.result)+'</p></div></div>';
   const langs=[...new Set(p.shots.map(x=>x.lang))];
   let controls=seg('lang','اللغة',langs,s.lang,v=>v==='ar'?'العربية':'English');

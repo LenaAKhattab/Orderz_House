@@ -2091,9 +2091,17 @@
     justify-content: space-between;
   }
 
+  /* Courses + tip are prose cells: give them more room than the four KPIs (EN tip text was clipped). */
   .fdash-welcome--freelancer .fdash-welcome__metrics--with-courses.fdash-welcome__metrics--with-tip {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1.35fr) repeat(4, minmax(0, 1fr));
   }
+}
+
+.fdash-welcome__tip-partition,
+.fdash-welcome__tip-partition * {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
 }
 
 .fdash-welcome__actions {
@@ -2485,8 +2493,16 @@
 .fdash-btn__icon {
   display: grid;
   place-items: center;
+  flex-shrink: 0;
   width: 18px;
   height: 18px;
+}
+
+/* Icons are drawn at 20px; scale them to the (sometimes smaller) icon box instead of overflowing
+   into the label (freelancer hero CTA had the briefcase on top of its text). */
+.fdash-btn__icon svg {
+  width: 100%;
+  height: 100%;
 }
 
 .fdash-btn__icon--end {
@@ -2992,9 +3008,14 @@
     padding: 8px 10px;
   }
 
+  /* Phones: KPIs two-up; prose cells (courses, tip) span the full row. */
   .fdash-welcome__metrics {
-    grid-template-columns: 1fr !important;
-    gap: 8px;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px 12px;
+  }
+
+  .fdash-welcome__metrics > :not(.fdash-metric--inline) {
+    grid-column: 1 / -1;
   }
 
   .fdash-metric--inline {

@@ -224,6 +224,29 @@
   color: #4b5563;
 }
 
+.oh-activate-terms-panel--compact {
+  min-height: 0;
+}
+
+.oh-kyc-status {
+  display: inline-block;
+  margin: 0 0 10px;
+  padding: 3px 12px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.oh-kyc-status--missing {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.oh-kyc-status--rejected {
+  background: #fee2e2;
+  color: #b42318;
+}
+
 .oh-activate-terms__doc-title {
   margin: 0 0 10px;
   font-size: 0.98rem;

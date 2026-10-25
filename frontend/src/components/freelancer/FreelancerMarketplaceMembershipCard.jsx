@@ -158,10 +158,8 @@ export default function FreelancerMarketplaceMembershipCard({
     : null;
   const canApply = membership.canApply;
   const applicationEligible = membership.applicationEligible;
-  const statusMessageAr = membership.statusMessageAr || null;
-  const pendingBody =
-    statusMessageAr ||
-    t("freelancerDashboard.marketplaceMembership.pendingStartBody");
+  // Canonical i18n copy (backend statusMessageAr is Arabic-only and leaked into the English UI).
+  const pendingBody = t("freelancerDashboard.marketplaceMembership.pendingStartBody");
   const canStartTrial =
     membership.canStartStarterTrial === true ||
     (starterPendingStart &&
@@ -227,7 +225,7 @@ export default function FreelancerMarketplaceMembershipCard({
             {t("freelancerDashboard.marketplaceMembership.starterReadyTitle")}
           </h1>
           <p className="fp-hero__subtitle">
-            {statusMessageAr || t("freelancerDashboard.marketplaceMembership.starterReadyBody")}
+            {t("freelancerDashboard.marketplaceMembership.starterReadyBody")}
           </p>
           {gatesIncomplete ? (
             <p className="fp-upgrade-hint" style={{ marginTop: 10 }}>

@@ -367,15 +367,37 @@
 .od-file-list__name {
   flex: 1;
   min-width: 0;
+  display: grid;
+  gap: 3px;
+  justify-items: start;
 }
 
+/* Bidi-isolated (dir=auto) so Arabic names keep their extension in place; long names clamp to 2 lines. */
 .od-file-list__filename {
-  display: block;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
   font-size: 0.88rem;
   font-weight: 650;
   color: #1b2341;
-  line-height: 1.35;
-  word-break: break-word;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  unicode-bidi: plaintext;
+  text-align: start;
+}
+
+.od-file-list__type {
+  display: inline-block;
+  padding: 0 6px;
+  border-radius: 6px;
+  background: rgba(47, 59, 101, 0.08);
+  color: #2f3b65;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 1.6;
+  direction: ltr;
 }
 
 .od-file-list__actions {
@@ -811,4 +833,10 @@
     max-width: 100%;
     margin-inline: 0;
   }
+}
+
+/* Project type above its budget (a dangling "—" appeared when the amount wrapped). */
+.od-type-budget {
+  display: grid;
+  gap: 2px;
 }

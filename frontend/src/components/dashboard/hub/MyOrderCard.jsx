@@ -48,7 +48,8 @@ function primaryCtaLabel(order, t) {
   ) {
     return t("orders.card.ctaRevision");
   }
-  if (status === "pending_client_review") return t("orders.card.ctaPendingReview");
+  // Waiting on the client is a status (shown in the badge), not an action: offer "view order".
+  if (status === "pending_client_review") return t("orders.card.ctaViewOrder");
   if (status === "completed") return t("orders.card.ctaViewOrder");
   if (status === "cancelled") return t("orders.card.ctaViewDetails");
   return t("orders.card.ctaContinue");

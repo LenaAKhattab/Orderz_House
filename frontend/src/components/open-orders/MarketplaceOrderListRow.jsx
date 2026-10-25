@@ -47,9 +47,10 @@ function ApplicantsIcon() {
   );
 }
 
-function actionBtnClass({ planLocked, actionsDisabled, disabled, isGuest }) {
+function actionBtnClass({ planLocked, actionsDisabled, disabled, isGuest, submitted = false }) {
   const parts = ["oh-order-row__action-btn"];
   if (planLocked || isGuest) parts.push("oh-order-row__action-btn--locked");
+  else if (submitted) parts.push("oh-order-row__action-btn--submitted");
   else if (!actionsDisabled && !disabled) parts.push("oh-order-row__action-btn--cta");
   return parts.join(" ");
 }
@@ -75,7 +76,7 @@ function ActionButton({
     return (
       <button
         type="button"
-        className={actionBtnClass({ planLocked, actionsDisabled, disabled: bidDisabled, isGuest })}
+        className={actionBtnClass({ planLocked, actionsDisabled, disabled: bidDisabled, isGuest, submitted: order?.myBid?.status === "pending" })}
         disabled={bidDisabled}
         onClick={(e) => {
           e.stopPropagation();

@@ -218,5 +218,13 @@
     "articleMiniBidTitle": "What is Mini Bid Article?",
     "miniBidFallback": "Mini Bid is a small or focused work opportunity you can apply to using one of the bids available in your subscription. After you apply, applicants are evaluated; if you are selected, the request moves to your account for delivery.",
     "articleMiniBidFallback": "Mini Bid Article is an opportunity to write an article to a specific title, terms, word count, and requirements. You use a bid to apply; if selected, you write and submit the article through the platform, then it is reviewed before approval and payment to your account."
+  },
+  "filesPicker": {
+    "dropOrBrowse": "Drag files here or click to browse",
+    "limits": "Up to {{max}} files — {{size}} MB total maximum",
+    "maxReached": "Maximum reached ({{max}} files)",
+    "selectedAria": "Selected files ({{count}})",
+    "remove": "Remove {{name}}",
+    "tooLarge": "Total file size exceeds {{size}} MB. Remove some files."
   }
 }

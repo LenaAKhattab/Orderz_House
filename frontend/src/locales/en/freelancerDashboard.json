@@ -1200,7 +1200,9 @@
       "filesRequired": "Please upload both front and back ID images.",
       "termsRequired": "You must accept the account activation terms.",
       "goDashboard": "Go to dashboard",
-      "goArticles": "Marketplace articles"
+      "goArticles": "Marketplace articles",
+      "policyTitle": "Terms for receiving and delivering orders and tenders",
+      "policyReadTerms": "Read the full terms of use"
     }
   },
   "onboardingPanel": {

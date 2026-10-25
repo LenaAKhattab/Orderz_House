@@ -18,6 +18,12 @@ function DocIcon() {
   );
 }
 
+/** Short uppercase type label from the file name ("PDF", "DOCX"); empty when unknown. */
+function fileTypeLabel(name) {
+  const m = /.([a-z0-9]{2,5})$/i.exec(String(name || ""));
+  return m ? m[1].toUpperCase() : "";
+}
+
 function displayOrderFileName(f, defaultName) {
   const raw = String(f?.originalName || "").trim() || defaultName;
   try {
@@ -153,7 +159,10 @@ export default function FileList({ files, emptyText, orderId = null, fileAccess 
               <DocIcon />
             </span>
             <span className="od-file-list__name">
-              <span className="od-file-list__filename">{name}</span>
+              <span className="od-file-list__filename" dir="auto" title={name}>
+                {name}
+              </span>
+              {fileTypeLabel(name) ? <span className="od-file-list__type">{fileTypeLabel(name)}</span> : null}
             </span>
             {canUseApi ? (
               <span className="od-file-list__actions">

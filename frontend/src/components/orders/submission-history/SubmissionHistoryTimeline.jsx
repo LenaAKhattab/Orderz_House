@@ -16,14 +16,14 @@ function badgeClass(titleBadgeAr) {
 /**
  * @param {{ submissionHistory?: { submissions?: unknown[] }; orderId: string; fileAccess: 'client' | 'freelancer' | 'admin' }} props
  */
-export default function SubmissionHistoryTimeline({ submissionHistory, orderId, fileAccess = "freelancer" }) {
+export default function SubmissionHistoryTimeline({ submissionHistory, orderId, fileAccess = "freelancer", hideTitle = false }) {
   const { t } = useTranslation();
   const subs = Array.isArray(submissionHistory?.submissions) ? submissionHistory.submissions : [];
   if (!subs.length) return null;
 
   return (
     <section className="oh-submission-history" dir="rtl">
-      <h3 className="oh-submission-history__title">{t("ordersAdmin.orderDetails.submissionHistory.title")}</h3>
+      {hideTitle ? null : <h3 className="oh-submission-history__title">{t("ordersAdmin.orderDetails.submissionHistory.title")}</h3>}
       {subs.map((s) => (
         <SubmissionTimelineItem key={s.id} submission={s} orderId={orderId} fileAccess={fileAccess} />
       ))}
@@ -135,7 +135,7 @@ function SubmissionFilesList({ files, orderId, fileAccess }) {
     <ul className="oh-submission-files">
       {files.map((f) => (
         <li key={f.id}>
-          <span style={{ flex: "1 1 140px", minWidth: 0 }}>{f.originalName || fileDefault}</span>
+          <span style={{ flex: "1 1 140px", minWidth: 0, overflowWrap: "anywhere" }} dir="auto">{f.originalName || fileDefault}</span>
           <span style={{ display: "inline-flex", gap: 6, flexShrink: 0 }}>
             <button type="button" className="btn btn-secondary" style={{ padding: "4px 10px", fontSize: 13 }} disabled={busy} onClick={() => void onView(f)}>
               {busy === `v-${f.id}` ? loadingLabel : viewLabel}
@@ -192,7 +192,7 @@ function RevisionRequestCard({ revision, orderId, fileAccess }) {
         <ul className="oh-submission-files" style={{ marginTop: 8 }}>
           {files.map((f) => (
             <li key={f.id}>
-              <span style={{ flex: "1 1 140px", minWidth: 0 }}>{f.originalName || attachmentDefault}</span>
+              <span style={{ flex: "1 1 140px", minWidth: 0, overflowWrap: "anywhere" }} dir="auto">{f.originalName || attachmentDefault}</span>
               <span style={{ display: "inline-flex", gap: 6, flexShrink: 0 }}>
                 <button type="button" className="btn btn-secondary" style={{ padding: "4px 10px", fontSize: 13 }} disabled={busy} onClick={() => void onView(f)}>
                   {busy === `v-${f.id}` ? loadingLabel : viewLabel}

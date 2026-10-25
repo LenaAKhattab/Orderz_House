@@ -492,16 +492,15 @@ export default function FreelancerFinancialClaimsPage() {
       ) : (
         <div className="ffc-groups">
           {Object.entries(grouped).map(([groupKey, items]) => (
-            <section key={groupKey} className="ffc-surface ffc-group">
+            <section key={groupKey} className={`ffc-surface ffc-group${items.length === 0 ? " ffc-group--empty" : ""}`}>
               <div className="ffc-group__head">
                 <h2 className="ffc-group__title">
                   {claimGroupTitle(groupKey, t)} <span className="ffc-group__count">({items.length})</span>
                 </h2>
+                {items.length === 0 ? <p className="ffc-group__empty">{t(`${fc}.groupEmpty`)}</p> : null}
               </div>
+              {items.length === 0 ? null : (
               <div className="ffc-group__body">
-                {items.length === 0 ? (
-                  <p className="ffc-group__empty">{t(`${fc}.groupEmpty`)}</p>
-                ) : (
                   <div className="ffc-claims-grid">
                     {items.map((claim) => (
                       <article key={claim.id} className="ffc-claim-card">
@@ -565,8 +564,8 @@ export default function FreelancerFinancialClaimsPage() {
                       </article>
                     ))}
                   </div>
-                )}
               </div>
+              )}
             </section>
           ))}
         </div>
