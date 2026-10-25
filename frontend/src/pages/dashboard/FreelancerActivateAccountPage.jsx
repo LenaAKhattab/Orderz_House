@@ -139,7 +139,7 @@ function KycIdUploadCard({
 }
 
 export default function FreelancerActivateAccountPage() {
-  const { t, dir } = useTranslation();
+  const { t, dir, locale } = useTranslation();
   const toast = useToast();
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -299,20 +299,18 @@ export default function FreelancerActivateAccountPage() {
             <p className="oh-account-value" style={{ marginBottom: 8, color: "#4b5563" }}>
               {t("freelancerDashboard.activateAccount.kyc.pendingBody")}
             </p>
-            <p className="oh-account-value" style={{ color: "#6b7280", fontSize: 14 }}>
-              {status?.messageAr || ""}
-            </p>
+            {locale === "ar" && status?.messageAr ? (
+              <p className="oh-account-value" style={{ color: "#6b7280", fontSize: 14 }}>
+                {status.messageAr}
+              </p>
+            ) : null}
           </>
         ) : (
           <>
-            <h2 className="oh-account-card__title">
+            {/* Status badge instead of repeating the page title; upload hint shown once. */}
+            <p className={`oh-kyc-status oh-kyc-status--${isRejected ? "rejected" : "missing"}`} role="status">
               {isRejected
                 ? t("freelancerDashboard.activateAccount.kyc.rejectedTitle")
-                : t("freelancerDashboard.activateAccount.kyc.pageTitle")}
-            </h2>
-            <p className="oh-account-value" style={{ marginBottom: 8, color: "#4b5563" }}>
-              {isRejected
-                ? t("freelancerDashboard.activateAccount.kyc.uploadHint")
                 : t("freelancerDashboard.activateAccount.kyc.notVerifiedYet")}
             </p>
             <p className="oh-account-value" style={{ marginBottom: 8, color: "#4b5563" }}>

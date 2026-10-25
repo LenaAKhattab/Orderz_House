@@ -258,15 +258,17 @@ export default function FreelancerOrderDetailsPage() {
   const typeAndBudgetValue = !order ? (
     t("freelancerDashboard.common.emDash")
   ) : order?.projectType === "bidding" && order?.bidBudgetMin != null && order?.bidBudgetMax != null ? (
-    <>
-      {typeLabel(order?.projectType, t)} — <JodMoneyDisplay amount={order.bidBudgetMin} amountMax={order.bidBudgetMax} compact />
-    </>
+    <span className="od-type-budget">
+      <span>{typeLabel(order?.projectType, t)}</span>
+      <JodMoneyDisplay amount={order.bidBudgetMin} amountMax={order.bidBudgetMax} compact />
+    </span>
   ) : order?.projectType === "bidding" ? (
     typeLabel(order?.projectType, t)
   ) : (
-    <>
-      {typeLabel(order?.projectType, t)} — <JodOrderBudgetDisplay order={order} compact />
-    </>
+    <span className="od-type-budget">
+      <span>{typeLabel(order?.projectType, t)}</span>
+      <JodOrderBudgetDisplay order={order} compact />
+    </span>
   );
 
   const summaryRows = useMemo(() => {

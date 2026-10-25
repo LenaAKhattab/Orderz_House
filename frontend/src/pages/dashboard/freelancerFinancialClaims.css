@@ -1153,3 +1153,13 @@
     width: 100%;
   }
 }
+
+/* Empty groups: one compact line instead of a full card with an empty body. */
+.ffc-group--empty .ffc-group__head {
+  border-bottom: none;
+  padding-block: 8px;
+}
+
+.ffc-group--empty .ffc-group__title {
+  color: var(--dash-text-muted, #667085);
+}

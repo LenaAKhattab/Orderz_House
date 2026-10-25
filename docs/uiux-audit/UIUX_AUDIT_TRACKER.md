@@ -51,7 +51,33 @@ upgrade) · **FIX** (actual defect).
 | Footer | Public footer | Anonymous | ✓/✓ | ✓ | ✓ | ✓ | ✓ | KEEP | ✓ | ✓ | Dashboard rule stays scoped to `.site-footer` (no generic `footer` selector) |
 | `/ref/:code`, `/freelancer/legacy-join/:slug` | Referral / campaign join | Anonymous | — | — | — | — | — | — | — | — | Out of scope: referral disabled; campaign-specific slug |
 
-## Phase 2 — Freelancer (pending)
+## Phase 2 — Freelancer dashboard
+
+Staging fixtures: 3 QA freelancers (pending-start SILVER with full order history, new account, active SILVER), 1 QA client, 7 orders; cleaned after capture. 276 BEFORE / 276 AFTER; authenticated Production screenshots not captured (no legitimate Production freelancer session).
+
+| ROUTE | SURFACE | ROLE | AR/EN | DESKTOP | MOBILE | BEFORE CAPTURED | AUDITED | CHANGED | AFTER CAPTURED | DEPLOYED | NOTES |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| `/dashboard/freelancer` | Overview | Freelancer | ✓/✓ | ✓ | ✓ | ✓ | ✓ | FIX | ✓ | ✓ | Shared DashboardButton icon overflowed onto CTA label; EN tip clipped (6 equal columns); mobile KPIs one long column → 2-up. Action priority (courses first) unchanged |
+| `/dashboard/freelancer/orders` | Available orders | Freelancer | ✓/✓ | ✓ | ✓ | ✓ | ✓ | POLISH | ✓ | ✓ | Locked-order upgrade CTA was a primary button (wall of upsells) → outline secondary; 10px helper → 11.5px; applied rows get a submitted state |
+| `/dashboard/freelancer/orders/:id` | Order details (+ apply modal) | Freelancer | ✓/✓ | ✓ | ✓ | ✓ | ✓ | POLISH | ✓ | ✓ | Dangling '— مزايدة' in summary; shared FileList: bidi-isolated 2-line names + type chip |
+| `/dashboard/freelancer/my-orders` | My orders | Freelancer | ✓/✓ | ✓ | ✓ | ✓ | ✓ | POLISH | ✓ | ✓ | Rainbow CTAs; 'waiting for review' status rendered as a filled button → brand primary / amber / outline 'view order' |
+| `/dashboard/freelancer/my-orders/:id` | Order workspace (in progress, delivered, revision, completed, delivery form) | Freelancer | ✓/✓ | ✓ | ✓ | ✓ | ✓ | MODERNIZE | ✓ | ✓ | Native file input ('No file chosen' in Arabic UI) → shared OrderFilesPicker; delivery before history; duplicate history heading removed; safe localized errors |
+| `/dashboard/freelancer/plans` | Membership (pending start, active, none) | Freelancer | ✓/✓ | ✓ | ✓ | ✓ | ✓ | FIX | ✓ | ✓ | Backend Arabic statusMessageAr leaked into EN (purchased_pending_start); status truncated; 2 plan columns at 390px → 1 (dashboard-scoped) |
+| `/dashboard/freelancer/financial-claims` | Wallet & claims (+ empty) | Freelancer | ✓/✓ | ✓ | ✓ | ✓ | ✓ | POLISH | ✓ | ✓ | Four empty groups as full cards → compact one-line headers |
+| `/dashboard/freelancer/activate-account` | Identity / KYC (verified, not submitted) | Freelancer | ✓/✓ | ✓ | ✓ | ✓ | ✓ | FIX | ✓ | ✓ | Duplicate title → status badge; duplicate hint; Arabic messageAr shown in EN; policy panel title hardcoded Arabic + empty box (policy items 1–45 not supplied — content gap) |
+| `/dashboard/freelancer/notifications` | Notifications (+ empty) | Freelancer | ✓/✓ | ✓ | ✓ | ✓ | ✓ | KEEP | ✓ | ✓ |  |
+| `/dashboard/freelancer/settings` | Settings | Freelancer | ✓/✓ | ✓ | ✓ | ✓ | ✓ | KEEP | ✓ | ✓ |  |
+| `/dashboard/freelancer/feedback` | Problems & suggestions | Freelancer | ✓/✓ | ✓ | ✓ | ✓ | ✓ | KEEP | ✓ | ✓ | Text messaging surface; no change |
+| `/dashboard/freelancer/articles` | Articles | Freelancer | ✓/✓ | ✓ | ✓ | ✓ | ✓ | KEEP | ✓ | ✓ |  |
+| `/dashboard/freelancer/courses` | Courses | Freelancer | ✓/✓ | ✓ | ✓ | ✓ | ✓ | KEEP | ✓ | ✓ |  |
+| `/dashboard/freelancer/getting-started` | Getting started | Freelancer | ✓/✓ | ✓ | ✓ | ✓ | ✓ | KEEP | ✓ | ✓ |  |
+| `/dashboard/freelancer/institution-orders` | Institution orders | Freelancer | ✓/✓ | ✓ | ✓ | ✓ | ✓ | KEEP | ✓ | ✓ |  |
+| `/dashboard/freelancer/pantry` | Pantry | Freelancer | ✓/✓ | ✓ | ✓ | ✓ | ✓ | KEEP | ✓ | ✓ | Uses the pool rows (inherits pool polish) |
+| `/dashboard/referrals` | Referrals | Freelancer | ✓/✓ | ✓ | ✓ | ✓ | ✓ | KEEP | ✓ | ✓ | Program disabled |
+| `/dashboard/freelancer/convert-account` | Convert account | Freelancer | ✓/✓ | ✓ | ✓ | ✓ | ✓ | KEEP | ✓ | ✓ |  |
+| `(shell)` | Sidebar collapsed / mobile drawer | Freelancer | ✓/✓ | ✓ | ✓ | ✓ | ✓ | KEEP | ✓ | ✓ |  |
+| `/dashboard/freelancer/courses/:id, articles/:id, elite-offers/:id` | Detail sub-pages | Freelancer | — | — | — | — | — | — | — | — | Not captured: require course/article/elite-offer fixtures; deferred to Phase 5 (shared) |
+
 ## Phase 3 — Client (pending)
 ## Phase 4 — Super Admin (pending)
 ## Phase 5 — Shared components (pending)
