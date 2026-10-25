@@ -11,6 +11,7 @@ import { useTranslation } from "../i18n/LanguageProvider";
 import { resendRegisterOtpRequest } from "../services/api";
 import { getAuthApiErrorMessage, isEmailAlreadyRegisteredError, isOtpEmailSendError, isRateLimitedError } from "../utils/apiErrorMessage";
 import { ARAB_COUNTRIES, DEFAULT_DIAL_CODE } from "../constants/arabCountries";
+import { isValidEmailSyntax, normalizeEmailInput } from "../utils/emailInput";
 
 const CATEGORY_SLUGS = [
   { slug: "design", translationKey: "auth.register.categories.design" },
@@ -265,7 +266,8 @@ const Register = () => {
     if (!ARABIC_ONLY.test(firstName.trim())) return issue("firstName", "firstNameArabicOnly");
     if (!ARABIC_ONLY.test(fatherName.trim())) return issue("fatherName", "fatherNameArabicOnly");
     if (!ARABIC_ONLY.test(familyName.trim())) return issue("familyName", "familyNameArabicOnly");
-    if (!email.trim()) return issue("email", "emailRequired");
+    if (!normalizeEmailInput(email)) return issue("email", "emailRequired");
+    if (!isValidEmailSyntax(normalizeEmailInput(email))) return issue("email", "emailInvalid");
     if (password.length < 8) return issue("password", "passwordMin");
     if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) return issue("password", "passwordComplexity");
     if (password !== confirmPassword) return issue("confirmPassword", "passwordMismatch");
@@ -331,7 +333,7 @@ const Register = () => {
     submittingRef.current = true;
     setSubmitting(true);
     try {
-      await resendRegisterOtpRequest(email.trim().toLowerCase());
+      await resendRegisterOtpRequest(normalizeEmailInput(email));
       setResendCooldown(60);
     } catch (err) {
       setError(registerErrorMessage(err));
@@ -355,7 +357,7 @@ const Register = () => {
       submittingRef.current = true;
       setSubmitting(true);
       try {
-        const user = await completeRegisterWithOtp(email.trim().toLowerCase(), code);
+        const user = await completeRegisterWithOtp(normalizeEmailInput(email), code);
         const role = user?.primaryRole || user?.role;
         navigate(getDashboardPath(role), { replace: true });
       } catch (err) {
@@ -377,7 +379,7 @@ const Register = () => {
       firstName: firstName.trim(),
       fatherName: fatherName.trim(),
       familyName: familyName.trim(),
-      email: email.trim().toLowerCase(),
+      email: normalizeEmailInput(email),
       password,
       confirmPassword,
       accountType,
@@ -426,7 +428,7 @@ const Register = () => {
   };
 
   const otpSubtitle = t("auth.register.subtitleOtp", {
-    email: email.trim() || t("auth.register.subtitleOtpFallback"),
+    email: normalizeEmailInput(email) || t("auth.register.subtitleOtpFallback"),
   });
 
   return (

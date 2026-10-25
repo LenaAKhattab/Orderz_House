@@ -1,5 +1,19 @@
 const { body } = require("express-validator");
 const { FREELANCER_CATEGORY_SLUGS } = require("../constants/roles");
+const { hasInvisibleEmailChars, normalizeEmailInput } = require("../utils/emailNormalization");
+
+/** Every auth endpoint validates the same canonical email (boundary invisibles stripped, lowercased). */
+const emailField = () =>
+  body("email")
+    .customSanitizer(normalizeEmailInput)
+    .notEmpty()
+    .withMessage("البريد الإلكتروني مطلوب.")
+    .bail()
+    .custom((value) => !hasInvisibleEmailChars(value))
+    .withMessage("صيغة البريد الإلكتروني غير صالحة.")
+    .bail()
+    .isEmail()
+    .withMessage("صيغة البريد الإلكتروني غير صالحة.");
 
 const slugSet = new Set(FREELANCER_CATEGORY_SLUGS);
 
@@ -87,7 +101,7 @@ const registerValidators = [
     .withMessage("اسم العائلة يجب أن يكون بالعربية فقط.")
     .isLength({ max: 80 })
     .withMessage("اسم العائلة طويل جداً."),
-  body("email").trim().notEmpty().withMessage("البريد الإلكتروني مطلوب.").isEmail().withMessage("صيغة البريد الإلكتروني غير صالحة."),
+  emailField(),
   body("referralCode").optional({ nullable: true, checkFalsy: true }).trim().isLength({ max: 32 }),
   body("password")
     .notEmpty()
@@ -206,12 +220,12 @@ const registerValidators = [
 ];
 
 const loginValidators = [
-  body("email").trim().notEmpty().withMessage("البريد الإلكتروني مطلوب.").isEmail().withMessage("صيغة البريد الإلكتروني غير صالحة."),
+  emailField(),
   body("password").notEmpty().withMessage("كلمة المرور مطلوبة."),
 ];
 
 const verifyRegisterOtpValidators = [
-  body("email").trim().notEmpty().withMessage("البريد الإلكتروني مطلوب.").isEmail().withMessage("صيغة البريد الإلكتروني غير صالحة."),
+  emailField(),
   body("otp")
     .trim()
     .notEmpty()
@@ -221,15 +235,15 @@ const verifyRegisterOtpValidators = [
 ];
 
 const resendRegisterOtpValidators = [
-  body("email").trim().notEmpty().withMessage("البريد الإلكتروني مطلوب.").isEmail().withMessage("صيغة البريد الإلكتروني غير صالحة."),
+  emailField(),
 ];
 
 const forgotPasswordValidators = [
-  body("email").trim().notEmpty().withMessage("البريد الإلكتروني مطلوب.").isEmail().withMessage("صيغة البريد الإلكتروني غير صالحة."),
+  emailField(),
 ];
 
 const verifyForgotPasswordOtpValidators = [
-  body("email").trim().notEmpty().withMessage("البريد الإلكتروني مطلوب.").isEmail().withMessage("صيغة البريد الإلكتروني غير صالحة."),
+  emailField(),
   body("otp")
     .trim()
     .notEmpty()
@@ -239,7 +253,7 @@ const verifyForgotPasswordOtpValidators = [
 ];
 
 const resetPasswordValidators = [
-  body("email").trim().notEmpty().withMessage("البريد الإلكتروني مطلوب.").isEmail().withMessage("صيغة البريد الإلكتروني غير صالحة."),
+  emailField(),
   body("resetToken").trim().notEmpty().withMessage("رمز إعادة التعيين مطلوب."),
   body("newPassword")
     .notEmpty()
