@@ -7,7 +7,12 @@ const {
   isInProcessAutomationIntervalEnabled,
   getAutomationCronSecret,
 } = require("./fakeOrdersAutomation");
-const { printEnvironmentBanner } = require("../utils/databaseEnvironmentSafety");
+const {
+  printEnvironmentBanner,
+  evaluateMixedEnvironment,
+  resolveAppEnv,
+} = require("../utils/databaseEnvironmentSafety");
+const { evaluateStorageEnvironment } = require("./r2");
 
 function isProduction() {
   return String(process.env.NODE_ENV || "").toLowerCase() === "production";
@@ -152,6 +157,29 @@ function validateEnv() {
   }
 
   if (missing.length === 0) {
+    const appEnv = resolveAppEnv();
+    const storage = evaluateStorageEnvironment(appEnv);
+    for (const w of storage.warnings) {
+      // eslint-disable-next-line no-console
+      console.warn(`[env] storage warning: ${w}`);
+    }
+    if (!storage.ok) {
+      for (const e of storage.errors) {
+        // eslint-disable-next-line no-console
+        console.error(`[env] storage error: ${e}`);
+      }
+      process.exit(1);
+    }
+
+    // Loud, non-blocking: risky combinations are hard-gated in migrate/QA/test tooling instead.
+    const mixed = evaluateMixedEnvironment();
+    if (!mixed.ok) {
+      for (const issue of mixed.issues) {
+        // eslint-disable-next-line no-console
+        console.error(`[env] CRITICAL ${mixed.code}: ${issue}`);
+      }
+    }
+
     try {
       printEnvironmentBanner();
     } catch {

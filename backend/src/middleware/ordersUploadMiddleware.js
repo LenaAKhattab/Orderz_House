@@ -2,7 +2,11 @@ const path = require("node:path");
 const multer = require("multer");
 
 const { MAX_ORDER_UPLOAD_TOTAL_BYTES, ORDER_UPLOAD_TOTAL_SIZE_MESSAGE_AR } = require("../constants/orderUploadLimits");
-const { validateTotalUploadSize, cleanupUploadedFiles } = require("../utils/orderUploadValidation");
+const {
+  validateTotalUploadSize,
+  cleanupUploadedFiles,
+  validateUploadedFileSignatures,
+} = require("../utils/orderUploadValidation");
 
 const baseUploadsDir = path.join(__dirname, "..", "..", "uploads", "orders");
 const storage = multer.memoryStorage();
@@ -51,10 +55,17 @@ function enforceOrderUploadTotalSize(req, res, next) {
   const files = req.files;
   if (!Array.isArray(files) || files.length === 0) return next();
   const { ok } = validateTotalUploadSize(files);
-  if (ok) return next();
-  cleanupUploadedFiles(files);
-  req.files = undefined;
-  return res.status(413).json({ success: false, message: ORDER_UPLOAD_TOTAL_SIZE_MESSAGE_AR });
+  if (!ok) {
+    cleanupUploadedFiles(files);
+    req.files = undefined;
+    return res.status(413).json({ success: false, message: ORDER_UPLOAD_TOTAL_SIZE_MESSAGE_AR });
+  }
+  if (!validateUploadedFileSignatures(files).ok) {
+    cleanupUploadedFiles(files);
+    req.files = undefined;
+    return res.status(400).json({ success: false, message: "محتوى الملف لا يطابق نوعه.", code: "FILE_CONTENT_MISMATCH" });
+  }
+  return next();
 }
 
 module.exports = {

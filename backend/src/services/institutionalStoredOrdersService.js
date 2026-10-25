@@ -3,6 +3,7 @@
  */
 const { pool } = require("../config/db");
 const ordersService = require("./ordersService");
+const { sanitizeOriginalFilename } = require("../utils/orderUploadValidation");
 const fakeOrdersService = require("./fakeOrdersService");
 const base = require("./institutionalStorageService");
 const {
@@ -151,25 +152,31 @@ async function createStoredOrder({ actorUserId, storageId, body, uploadedFiles =
     );
     const order = rows[0];
 
-    // Optional Cloudinary upload — skip if helper unavailable or no files
-    if (uploadedFiles.length && typeof ordersService.uploadFilesToCloudinary === "function") {
-      const prepared = await ordersService.uploadFilesToCloudinary({
+    // Private brief files (R2 when configured; legacy Cloudinary otherwise)
+    if (uploadedFiles.length && typeof ordersService.uploadOrderFiles === "function") {
+      const prepared = await ordersService.uploadOrderFiles({
         orderId: order.id,
         files: uploadedFiles,
         purpose: "brief",
+        scope: "stored-orders",
       });
       for (const f of prepared || []) {
         await client.query(
           `INSERT INTO institutional_stored_order_files
-            (stored_order_id, original_name, mime_type, byte_size, secure_url, public_id)
-           VALUES ($1, $2, $3, $4, $5, $6)`,
+            (stored_order_id, original_name, mime_type, byte_size, secure_url, public_id,
+             storage_provider, storage_bucket, storage_key, content_sha256)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
           [
             order.id,
-            f.originalname || f.originalName || "file",
+            sanitizeOriginalFilename(f.originalname || f.originalName),
             f.mimetype || f.mimeType || null,
             Number(f.size || f.byteSize || 0) || null,
-            f.secureUrl || f.urlPath,
+            f.secureUrl || f.urlPath || null,
             f.publicId || null,
+            f.storageProvider || null,
+            f.storageBucket || null,
+            f.storageKey || null,
+            f.sha256 || null,
           ],
         );
       }
@@ -1092,19 +1099,28 @@ async function releaseOneStoredOrder(_clientUnused, { storedOrder, storage, acto
   for (const f of files) {
     await pool.query(
       `INSERT INTO order_files (
-        order_id, file_path, file_url, secure_url, public_id, original_name, mime_type, size_bytes, uploaded_by_user_id, purpose
-      ) VALUES ($1, $2, $3, $3, $4, $5, $6, $7, $8, 'brief')`,
+        order_id, file_path, file_url, secure_url, public_id, original_name, mime_type, size_bytes, uploaded_by_user_id, purpose,
+        storage_provider, storage_bucket, storage_key, content_sha256
+      ) VALUES ($1, $2, $3, $3, $4, $5, $6, $7, $8, 'brief', $9, $10, $11, $12)`,
       [
         realOrderId,
-        f.public_id || "cloudinary_asset",
+        f.storage_key || f.public_id || "cloudinary_asset",
         f.secure_url,
         f.public_id,
         f.original_name,
         f.mime_type,
         f.byte_size || 0,
         storedOrder.created_by,
+        f.storage_provider || null,
+        f.storage_bucket || null,
+        f.storage_key || null,
+        f.content_sha256 || null,
       ],
-    ).catch(() => null);
+    ).catch((err) => {
+      // eslint-disable-next-line no-console
+      console.warn("[stored-orders] brief file copy failed", { code: err?.code || null });
+      return null;
+    });
   }
 
   return realOrderId;

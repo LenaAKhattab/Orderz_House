@@ -223,12 +223,12 @@
     "downloadStartedTitle": "Download started",
     "downloadForbidden": "You are not allowed to download this file.",
     "fileNotFound": "File not found.",
-    "downloadError": "Could not download file.",
+    "downloadError": "Could not download the attachment. Please try again.",
     "downloadErrorTitle": "Download failed",
     "openSuccessTitle": "Opened",
     "openSuccessMessage": "File opened in a new tab.",
     "viewForbidden": "You are not allowed to view this file.",
-    "viewError": "Could not open file.",
+    "viewError": "Could not open the attachment. Please try again.",
     "viewErrorTitle": "Could not open"
   },
   "revisionRequest": {

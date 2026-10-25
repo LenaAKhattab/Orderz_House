@@ -1,31 +1,64 @@
-const fs = require("node:fs");
+const { pipeline } = require("node:stream/promises");
+const { openFileStream } = require("../services/fileStorageService");
 
-/**
- * Stream a prepared order file to the response, or redirect for remote URLs.
- * @param {import("express").Request} req
- * @param {import("express").Response} res
- * @param {import("express").NextFunction} next
- * @param {{ redirectUrl?: string, absPath?: string, downloadName?: string, mimeType?: string }} out
- */
-function pipeOrderFileToResponse(req, res, next, out) {
-  if (!out) return next(new Error("Missing file payload."));
-  if (out.redirectUrl) return res.redirect(302, out.redirectUrl);
-  if (!out.absPath) {
-    const err = new Error("الملف غير متاح.");
-    err.statusCode = 404;
-    return next(err);
-  }
-  const inline = String(req.query.disposition || "").toLowerCase() === "inline";
-  const cdType = inline ? "inline" : "attachment";
-  const utf8Name = String(out.downloadName || "file");
-  const encoded = encodeURIComponent(utf8Name);
-  res.setHeader("Content-Type", out.mimeType || "application/octet-stream");
-  res.setHeader("Content-Disposition", `${cdType}; filename*=UTF-8''${encoded}`);
-  const stream = fs.createReadStream(out.absPath);
-  stream.on("error", (e) => {
-    if (!res.headersSent) return next(e);
-  });
-  return stream.pipe(res);
+/** Browser-safe inline previews; everything else is served as a download. */
+const INLINE_PREVIEW_MIME = new Set(["image/jpeg", "image/png", "image/webp", "image/gif", "application/pdf"]);
+
+/** RFC 6266: ASCII fallback + UTF-8 original name (Arabic, spaces, parentheses, dots). */
+function contentDisposition(type, name) {
+  const utf8Name = String(name || "file").replace(/[\r\n"]/g, " ").trim() || "file";
+  const asciiFallback = utf8Name.replace(/[^\x20-\x7E]/g, "_").replace(/[\\%]/g, "_") || "file";
+  return `${type}; filename="${asciiFallback}"; filename*=UTF-8''${encodeURIComponent(utf8Name)}`;
 }
 
-module.exports = { pipeOrderFileToResponse };
+function sendStorageError(res, req, err, inline) {
+  const status = Number(err?.statusCode) >= 400 && Number(err?.statusCode) < 600 ? Number(err.statusCode) : 502;
+  // Technical diagnostics in logs only (no URLs / credentials).
+  // eslint-disable-next-line no-console
+  console.warn("[order-file] stream failed", {
+    path: req.originalUrl ? String(req.originalUrl).split("?")[0] : null,
+    status,
+    code: err?.code || null,
+    name: err?.name || null,
+  });
+  const message =
+    status === 404
+      ? "الملف غير موجود."
+      : inline
+        ? "تعذر فتح المرفق. حاول مرة أخرى."
+        : "تعذر تنزيل المرفق. حاول مرة أخرى.";
+  return res.status(status).json({ success: false, message, code: err?.code || "FILE_STREAM_FAILED" });
+}
+
+/**
+ * Stream an already-authorized order file (R2, legacy Cloudinary, or legacy disk) to the
+ * response. Same-origin streaming: no cross-origin redirects (the old 302 → Cloudinary path
+ * surfaced as "Network Error" in the browser).
+ * @param {{ file: object, downloadName?: string, mimeType?: string }} out
+ */
+async function pipeOrderFileToResponse(req, res, next, out) {
+  if (!out?.file) return next(new Error("Missing file payload."));
+  const requestedInline = String(req.query.disposition || "").toLowerCase() === "inline";
+  const mimeType = out.mimeType || "application/octet-stream";
+  const inline = requestedInline && INLINE_PREVIEW_MIME.has(String(mimeType).toLowerCase());
+  let opened;
+  try {
+    opened = await openFileStream(out.file);
+  } catch (err) {
+    return sendStorageError(res, req, err, requestedInline);
+  }
+  res.setHeader("Content-Type", mimeType);
+  res.setHeader("Content-Disposition", contentDisposition(inline ? "inline" : "attachment", out.downloadName));
+  res.setHeader("Cache-Control", "private, no-store");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  if (opened.contentLength) res.setHeader("Content-Length", String(opened.contentLength));
+  try {
+    await pipeline(opened.stream, res);
+  } catch (err) {
+    if (!res.headersSent) return sendStorageError(res, req, err, requestedInline);
+    res.destroy(err);
+  }
+  return undefined;
+}
+
+module.exports = { pipeOrderFileToResponse, contentDisposition, INLINE_PREVIEW_MIME };

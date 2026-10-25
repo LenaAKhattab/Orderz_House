@@ -2351,18 +2351,28 @@ function orderFileDownloadPath(orderId, fileId, scope) {
   throw new Error("Invalid order file scope.");
 }
 
+/** Types the browser may render inline; everything else (DOCX, ZIP, …) is downloaded. */
+const ORDER_FILE_INLINE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif", "application/pdf"]);
+
+/**
+ * Keep server messages only for access errors (401/403/404). Transport failures, timeouts and
+ * storage errors get an empty message so callers show their localized fallback
+ * (never a raw "Network Error").
+ */
 async function attachBlobErrorMessage(err) {
   const data = err?.response?.data;
-  const st = err?.response?.status;
-  if (data instanceof Blob && st && st >= 400) {
+  const st = Number(err?.response?.status || 0);
+  let serverMessage = "";
+  if (data instanceof Blob && st >= 400) {
     try {
-      const text = await data.text();
-      const j = JSON.parse(text);
-      if (j?.message) err.message = j.message;
+      const j = JSON.parse(await data.text());
+      if (j?.message) serverMessage = String(j.message);
+      if (j?.code) err.code = j.code;
     } catch {
       /* ignore */
     }
   }
+  err.message = st === 401 || st === 403 || st === 404 ? serverMessage : "";
   return err;
 }
 
@@ -2377,16 +2387,54 @@ export async function fetchOrderFileBlob(orderId, fileId, scope, disposition = "
   }
 }
 
+function closePreviewTab(w) {
+  try {
+    if (w && !w.closed) w.close();
+  } catch {
+    /* ignore */
+  }
+}
+
+function responseContentType(response) {
+  const header = response?.headers?.["content-type"] || response?.data?.type || "";
+  return String(header).split(";")[0].trim().toLowerCase();
+}
+
 /** Authenticated blob download for order_files by role (client | freelancer | admin). */
 export async function downloadOrderFileForRole(orderId, fileId, fileName, scope) {
   const response = await fetchOrderFileBlob(orderId, fileId, scope, "attachment");
   triggerBlobDownload(response.data, fileName);
 }
 
-/** Open file in a new tab using an authenticated inline fetch (Bearer-friendly). */
+/**
+ * Preview an order file in a new tab (images/PDF) via an authenticated same-origin fetch.
+ * The tab is opened before the first await so popup blockers allow it; unsupported types
+ * fall back to a download.
+ * @returns {Promise<{ previewed: boolean }>}
+ */
 export async function viewOrderFileForRole(orderId, fileId, fileName, scope, previewWindow = null) {
-  const response = await fetchOrderFileBlob(orderId, fileId, scope, "inline");
-  showPdfBlobInTab(previewWindow, response.data, fileName);
+  const tab = previewWindow || openPdfPreviewTab();
+  try {
+    const response = await fetchOrderFileBlob(orderId, fileId, scope, "inline");
+    const type = responseContentType(response);
+    if (!ORDER_FILE_INLINE_TYPES.has(type)) {
+      closePreviewTab(tab);
+      triggerBlobDownload(response.data, fileName);
+      return { previewed: false };
+    }
+    const blob = response.data instanceof Blob && response.data.type === type ? response.data : new Blob([response.data], { type });
+    if (tab && !tab.closed) {
+      const url = window.URL.createObjectURL(blob);
+      tab.location.href = url;
+      scheduleBlobUrlRevoke(url);
+      return { previewed: true };
+    }
+    triggerBlobDownload(blob, fileName);
+    return { previewed: false };
+  } catch (e) {
+    closePreviewTab(tab);
+    throw e;
+  }
 }
 
 export const downloadClientOrderFile = (orderId, fileId, fileName) =>

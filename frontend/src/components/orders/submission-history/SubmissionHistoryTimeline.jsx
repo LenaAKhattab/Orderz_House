@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { downloadOrderFileForRole, viewOrderFileForRole } from "../../../services/api";
+import { useToast } from "../../ui/toastContext";
 import { formatJoDateTime } from "../order-details/orderDetailsUtils";
 import { useTranslation } from "../../../i18n/LanguageProvider";
 import "../../../i18n/ordersAdminResources";
@@ -58,8 +59,36 @@ function SubmissionTimelineItem({ submission, orderId, fileAccess }) {
   );
 }
 
+function useOrderFileErrorToast() {
+  const { push } = useToast();
+  const { t } = useTranslation();
+  return useCallback(
+    (e, mode) => {
+      const st = e?.response?.status;
+      const fallback =
+        mode === "view" ? t("ordersAdmin.orderDetails.files.openError") : t("ordersAdmin.orderDetails.files.downloadError");
+      const message =
+        st === 403
+          ? e?.message || t("ordersAdmin.orderDetails.files.unauthorized")
+          : st === 404
+            ? e?.message || t("ordersAdmin.orderDetails.files.notFound")
+            : e?.message || fallback;
+      push({
+        type: "error",
+        title:
+          mode === "view"
+            ? t("ordersAdmin.orderDetails.files.openErrorTitle")
+            : t("ordersAdmin.orderDetails.files.downloadErrorTitle"),
+        message,
+      });
+    },
+    [push, t],
+  );
+}
+
 function SubmissionFilesList({ files, orderId, fileAccess }) {
   const { t } = useTranslation();
+  const toastFileError = useOrderFileErrorToast();
   const [busy, setBusy] = useState(null);
   const loadingLabel = t("ordersAdmin.orderDetails.submissionHistory.loading");
   const viewLabel = t("ordersAdmin.orderDetails.files.view");
@@ -71,11 +100,13 @@ function SubmissionFilesList({ files, orderId, fileAccess }) {
       setBusy(`v-${f.id}`);
       try {
         await viewOrderFileForRole(orderId, f.id, f.originalName, fileAccess);
+      } catch (e) {
+        toastFileError(e, "view");
       } finally {
         setBusy(null);
       }
     },
-    [orderId, fileAccess],
+    [orderId, fileAccess, toastFileError],
   );
 
   const onDownload = useCallback(
@@ -83,11 +114,13 @@ function SubmissionFilesList({ files, orderId, fileAccess }) {
       setBusy(`d-${f.id}`);
       try {
         await downloadOrderFileForRole(orderId, f.id, f.originalName, fileAccess);
+      } catch (e) {
+        toastFileError(e, "download");
       } finally {
         setBusy(null);
       }
     },
-    [orderId, fileAccess],
+    [orderId, fileAccess, toastFileError],
   );
 
   if (!files.length) {
@@ -120,6 +153,7 @@ function SubmissionFilesList({ files, orderId, fileAccess }) {
 function RevisionRequestCard({ revision, orderId, fileAccess }) {
   const { t } = useTranslation();
   const files = Array.isArray(revision.files) ? revision.files : [];
+  const toastFileError = useOrderFileErrorToast();
   const [busy, setBusy] = useState(null);
   const loadingLabel = t("ordersAdmin.orderDetails.submissionHistory.loading");
   const viewLabel = t("ordersAdmin.orderDetails.files.view");
@@ -130,6 +164,8 @@ function RevisionRequestCard({ revision, orderId, fileAccess }) {
     setBusy(`v-${f.id}`);
     try {
       await viewOrderFileForRole(orderId, f.id, f.originalName, fileAccess);
+    } catch (e) {
+      toastFileError(e, "view");
     } finally {
       setBusy(null);
     }
@@ -139,6 +175,8 @@ function RevisionRequestCard({ revision, orderId, fileAccess }) {
     setBusy(`d-${f.id}`);
     try {
       await downloadOrderFileForRole(orderId, f.id, f.originalName, fileAccess);
+    } catch (e) {
+      toastFileError(e, "download");
     } finally {
       setBusy(null);
     }

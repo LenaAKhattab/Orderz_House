@@ -389,6 +389,12 @@ function assertRuntimeEnvironmentSafe(env = process.env) {
   throw createSafetyError(result.code, result.message);
 }
 
+/** Bucket name only (not a secret); never credentials or endpoint. */
+function describePrivateStorage(env = process.env) {
+  const { isR2Configured, readR2Config } = require("../config/r2");
+  return isR2Configured(env) ? `R2 (${readR2Config(env).privateBucket})` : "legacy Cloudinary (R2 not configured)";
+}
+
 function printEnvironmentBanner(env = process.env, opts = {}) {
   const info = getDatabaseEnvironment(env);
   const stripeMode = getStripeMode(env).toUpperCase();
@@ -403,6 +409,7 @@ function printEnvironmentBanner(env = process.env, opts = {}) {
     ` DB:                ${info.db.maskedTarget}`,
     ` DB classification: ${dbClass}${info.db.isProduction ? "  <<< PRODUCTION/SHARED" : ""}`,
     ` Stripe mode:       ${stripeMode}${stripeMode === "LIVE" && info.appEnv !== "production" ? "  <<< REVIEW" : ""}`,
+    ` File storage:      ${describePrivateStorage(env)}`,
     ` Client URL:        ${info.clientUrl}`,
     "══════════════════════════════════════════════════════════",
     "",
