@@ -11,6 +11,7 @@ import { canRoleAccessPath, getProblemsSuggestionsPathForRole, LOGIN_PROBLEMS_SU
 import { getPostAuthHomePath } from "../constants/dashboardPermissions";
 import { useTranslation } from "../i18n/LanguageProvider";
 import { getAuthApiErrorMessage } from "../utils/apiErrorMessage";
+import { isValidEmailSyntax, normalizeEmailInput } from "../utils/emailInput";
 import {
   AUTH_TOAST_PASSWORD_RESET,
   getPasswordResetLoginToast,
@@ -100,9 +101,9 @@ const Login = () => {
     setError("");
     // Client-side checks first: field-level errors, focus the first invalid field, no network call.
     const nextFieldErrors = {};
-    const trimmedEmail = email.trim();
-    if (!trimmedEmail) nextFieldErrors.email = t("auth.login.validation.emailRequired");
-    else if (!/^[^s@]+@[^s@]+.[^s@]+$/.test(trimmedEmail)) nextFieldErrors.email = t("auth.login.validation.emailInvalid");
+    const normalizedEmail = normalizeEmailInput(email);
+    if (!normalizedEmail) nextFieldErrors.email = t("auth.login.validation.emailRequired");
+    else if (!isValidEmailSyntax(normalizedEmail)) nextFieldErrors.email = t("auth.login.validation.emailInvalid");
     if (!password) nextFieldErrors.password = t("auth.login.validation.passwordRequired");
     setFieldErrors(nextFieldErrors);
     if (nextFieldErrors.email || nextFieldErrors.password) {
@@ -112,7 +113,7 @@ const Login = () => {
     submittingRef.current = true;
     setSubmitting(true);
     try {
-      const user = await login(email.trim(), password);
+      const user = await login(normalizedEmail, password);
       success({ title: t("auth.login.successTitle"), message: t("auth.login.successMessage") });
       const from = location.state?.from?.pathname;
       const role = user?.primaryRole || user?.role;

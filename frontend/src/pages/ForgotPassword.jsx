@@ -11,6 +11,7 @@ import {
 } from "../services/api";
 import { useTranslation } from "../i18n/LanguageProvider";
 import { getSafeApiErrorMessage } from "../utils/apiErrorMessage";
+import { isValidEmailSyntax, normalizeEmailInput } from "../utils/emailInput";
 import { AUTH_TOAST_PASSWORD_RESET } from "../utils/guestPoolLoginToast";
 
 const ForgotPassword = () => {
@@ -58,10 +59,10 @@ const ForgotPassword = () => {
     e.preventDefault();
     if (submittingRef.current) return;
     setError("");
-    const em = email.trim().toLowerCase();
+    const em = normalizeEmailInput(email);
 
     if (step === 1) {
-      if (!em || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) {
+      if (!isValidEmailSyntax(em)) {
         setError(t("auth.forgot.validation.emailInvalid"));
         return;
       }
