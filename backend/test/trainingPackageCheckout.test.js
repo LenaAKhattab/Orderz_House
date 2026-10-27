@@ -373,7 +373,8 @@ describe("abandoned training checkout recovery (Stripe is the source of truth)",
     assert.equal(other.status, "ignored");
     const src = fs.readFileSync(path.join(__dirname, "../src/controllers/stripeWebhookController.js"), "utf8");
     assert.match(src, /eventType === "checkout\.session\.expired"/);
-    assert.match(src, /applyTrainingPackageCheckoutSessionExpired\(event\.data\.object\)/);
+    assert.ok(src.includes("applyResult = await applyCheckoutSessionExpired(event.data.object);"));
+    assert.ok(src.includes("return trainingCheckout.applyTrainingPackageCheckoutSessionExpired(session, dbPool);"));
   });
 
   it("G: complete + paid is applied through the trusted path and never sold again", async () => {

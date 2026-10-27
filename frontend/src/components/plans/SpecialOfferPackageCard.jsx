@@ -42,6 +42,8 @@ export default function SpecialOfferPackageCard({
   compact = false,
   preview = false,
   checkoutBusy = false,
+  /** Server-reconciled checkout: "resume" | "processing" | null. */
+  checkoutState = null,
   onCheckout = null,
   className = "",
 }) {
@@ -63,7 +65,13 @@ export default function SpecialOfferPackageCard({
     purchaseMode === SPECIAL_OFFER_PURCHASE_MODE.CHECKOUT
       ? tr("plans.specialOffer.cta")
       : tr("plans.specialOffer.ctaWhatsapp");
-  const ctaLabel = localizedSpecialOfferText(offer, "ctaLabel", locale) || defaultCta;
+  const checkoutProcessing = purchaseMode === SPECIAL_OFFER_PURCHASE_MODE.CHECKOUT && checkoutState === "processing";
+  const checkoutResume = purchaseMode === SPECIAL_OFFER_PURCHASE_MODE.CHECKOUT && checkoutState === "resume";
+  const ctaLabel = checkoutProcessing
+    ? tr("plans.cta.confirmingPayment")
+    : checkoutResume
+      ? tr("plans.cta.continuePayment")
+      : localizedSpecialOfferText(offer, "ctaLabel", locale) || defaultCta;
   const offerTitle = localizedSpecialOfferText(offer, "title", locale) || (locale === "en" ? defaultCta : offer.title);
   const offerSubtitle = localizedSpecialOfferText(offer, "subtitle", locale);
   const offerBadge = localizedSpecialOfferText(offer, "badgeText", locale);
@@ -112,7 +120,7 @@ export default function SpecialOfferPackageCard({
 
   const handleCheckoutClick = (e) => {
     e.preventDefault();
-    if (preview || checkoutBusy) return;
+    if (preview || checkoutBusy || checkoutProcessing) return;
     onCheckout?.(offer);
   };
 
@@ -202,9 +210,10 @@ export default function SpecialOfferPackageCard({
             <button
               type="button"
               className="oh-special-offer-card__cta"
-              disabled={checkoutBusy}
+              disabled={checkoutBusy || checkoutProcessing}
               onClick={handleCheckoutClick}
               data-special-offer-cta="checkout"
+              data-checkout-state={checkoutState || "available"}
             >
               {ctaContent}
             </button>

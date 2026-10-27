@@ -3,11 +3,12 @@
  * Does NOT grant membership; webhook M3 remains the grant source of truth.
  * STARTER trial starts from the membership panel (start-trial), not the plan card CTA.
  */
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   createMarketplaceMembershipCheckoutRequest,
   createSpecialOfferCheckoutRequest,
+  getMarketplaceMembershipCheckoutAttemptsRequest,
   startMarketplaceStarterTrialRequest,
 } from "../services/api";
 import {
@@ -24,6 +25,14 @@ import {
 } from "../lib/marketplaceMembership/marketplaceMembershipCheckoutUi";
 import { isCurrentMarketplacePlanCard } from "../lib/marketplaceMembership/marketplaceMembershipCurrentPlanUi";
 import { usePageRestore } from "./usePageRestore";
+import { membershipCheckoutStatesFromAttempts } from "../lib/marketplaceMembership/membershipCheckoutState";
+
+/** Server error codes with localized copy (server messages are Arabic-only). */
+const CHECKOUT_ERROR_KEYS = {
+  MARKETPLACE_MEMBERSHIP_PAYMENT_PROCESSING: "plans.checkoutErrors.processing",
+  MARKETPLACE_MEMBERSHIP_PAYMENT_STATUS_UNAVAILABLE: "plans.checkoutErrors.statusUnavailable",
+  PAYMENT_PROVIDER_ERROR: "plans.checkoutErrors.providerError",
+};
 
 export function useMarketplaceMembershipCheckout({
   enabled = true,
@@ -52,15 +61,60 @@ export function useMarketplaceMembershipCheckout({
     return snap;
   }, [onMembershipUpdated, user?.id]);
 
+  // Server-reconciled unresolved checkouts drive Continue payment / Confirming payment on the cards.
+  const [attemptsSnapshot, setAttemptsSnapshot] = useState(null);
+  const refreshCheckoutAttempts = useCallback(async () => {
+    if (!user?.id) return null;
+    const res = await getMarketplaceMembershipCheckoutAttemptsRequest();
+    const data = res?.data || null;
+    setAttemptsSnapshot(data);
+    if (data?.membershipChanged) await refreshMembership().catch(() => {});
+    return data;
+  }, [refreshMembership, user?.id]);
+
+  useEffect(() => {
+    if (!enabled) return;
+    void refreshCheckoutAttempts().catch(() => {});
+  }, [enabled, refreshCheckoutAttempts]);
+
   // Browser Back from Stripe Checkout restores this page from BFCache with the card still
-  // "redirecting" (disabled). Re-enable purchase and refetch the canonical membership state.
+  // "redirecting" (disabled). Re-enable purchase and refetch the canonical state.
   usePageRestore(
-    () => {
-      setCheckoutBusyPlanId(null);
-      setSpecialOfferCheckoutBusy(false);
-      void refreshMembership().catch(() => {});
+    (reason) => {
+      if (reason === "pageshow") {
+        setCheckoutBusyPlanId(null);
+        setSpecialOfferCheckoutBusy(false);
+        void refreshMembership().catch(() => {});
+      }
+      void refreshCheckoutAttempts().catch(() => {});
     },
-    { enabled },
+    { enabled, onVisible: true },
+  );
+
+  const checkoutStates = useMemo(() => membershipCheckoutStatesFromAttempts(attemptsSnapshot), [attemptsSnapshot]);
+  const hasProcessing =
+    checkoutStates.specialOffer === "processing" || Object.values(checkoutStates.byPlanCode).includes("processing");
+
+  // Genuine provider confirmation in progress: recheck periodically (non-destructive).
+  useEffect(() => {
+    if (!enabled || !hasProcessing) return undefined;
+    let attempts = 0;
+    const timer = window.setInterval(() => {
+      attempts += 1;
+      void refreshCheckoutAttempts().catch(() => {});
+      if (attempts >= 20) window.clearInterval(timer);
+    }, 10000);
+    return () => window.clearInterval(timer);
+  }, [enabled, hasProcessing, refreshCheckoutAttempts]);
+
+  const checkoutErrorMessage = useCallback(
+    (err) => {
+      const key = CHECKOUT_ERROR_KEYS[err?.response?.data?.code];
+      return key
+        ? t(key)
+        : err?.response?.data?.message || err?.message || t("freelancerDashboard.marketplaceMembership.checkoutFailed");
+    },
+    [t],
   );
 
   useEffect(() => {
@@ -96,6 +150,7 @@ export function useMarketplaceMembershipCheckout({
         title: t("freelancerDashboard.marketplaceMembership.checkoutCancelledTitle"),
         message: t("freelancerDashboard.marketplaceMembership.checkoutCancelledMessage"),
       });
+      void refreshCheckoutAttempts().catch(() => {});
       stripParams();
       return undefined;
     }
@@ -111,9 +166,10 @@ export function useMarketplaceMembershipCheckout({
     void refreshMembership().catch(() => {
       /* snapshot may lag until webhook; banner already explains */
     });
+    void refreshCheckoutAttempts().catch(() => {});
     stripParams();
     return undefined;
-  }, [enabled, location.pathname, location.search, navigate, refreshMembership, t]);
+  }, [enabled, location.pathname, location.search, navigate, refreshCheckoutAttempts, refreshMembership, t]);
 
   const startMarketplaceCheckout = useCallback(
     async (plan) => {
@@ -148,10 +204,7 @@ export function useMarketplaceMembershipCheckout({
         if (import.meta.env?.DEV) {
           console.error("[marketplace membership checkout]", err?.response?.data ?? err);
         }
-        const msg =
-          err?.response?.data?.message ||
-          err?.message ||
-          t("freelancerDashboard.marketplaceMembership.checkoutFailed");
+        const msg = checkoutErrorMessage(err);
         setCheckoutError(msg);
         push({
           type: "warning",
@@ -159,9 +212,10 @@ export function useMarketplaceMembershipCheckout({
           message: msg,
         });
         setCheckoutBusyPlanId(null);
+        void refreshCheckoutAttempts().catch(() => {});
       }
     },
-    [checkoutBusyPlanId, enabled, membershipSnapshot, push, t],
+    [checkoutBusyPlanId, checkoutErrorMessage, enabled, membershipSnapshot, push, refreshCheckoutAttempts, t],
   );
 
   const startSpecialOfferCheckout = useCallback(async () => {
@@ -179,10 +233,7 @@ export function useMarketplaceMembershipCheckout({
       if (import.meta.env?.DEV) {
         console.error("[special offer checkout]", err?.response?.data ?? err);
       }
-      const msg =
-        err?.response?.data?.message ||
-        err?.message ||
-        t("freelancerDashboard.marketplaceMembership.checkoutFailed");
+      const msg = checkoutErrorMessage(err);
       setCheckoutError(msg);
       push({
         type: "warning",
@@ -190,8 +241,9 @@ export function useMarketplaceMembershipCheckout({
         message: msg,
       });
       setSpecialOfferCheckoutBusy(false);
+      void refreshCheckoutAttempts().catch(() => {});
     }
-  }, [checkoutBusyPlanId, enabled, push, specialOfferCheckoutBusy, t]);
+  }, [checkoutBusyPlanId, checkoutErrorMessage, enabled, push, refreshCheckoutAttempts, specialOfferCheckoutBusy, t]);
 
   const startStarterTrial = useCallback(async () => {
     if (!enabled || trialBusy) return;
@@ -225,6 +277,7 @@ export function useMarketplaceMembershipCheckout({
   return {
     checkoutBusyPlanId,
     specialOfferCheckoutBusy,
+    checkoutStates,
     trialBusy,
     checkoutError,
     returnBanner,
@@ -233,5 +286,6 @@ export function useMarketplaceMembershipCheckout({
     startSpecialOfferCheckout,
     startStarterTrial,
     refreshMembership,
+    refreshCheckoutAttempts,
   };
 }

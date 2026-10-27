@@ -8,6 +8,7 @@ const {
 const { defaultCodeForHttpStatus } = require("../constants/apiErrors");
 const { shouldExposeErrorDebug } = require("../config/env");
 const { captureException } = require("../config/posthog");
+const { normalizePaymentProviderError } = require("../utils/paymentProviderError");
 
 const PUBLIC_META_MAX_KEYS = 24;
 const PUBLIC_META_FORBIDDEN = /secret|password|token|authorization|cookie|sql|stack|raw/i;
@@ -93,7 +94,9 @@ function logRequestContext(req) {
   return uid ? ` userId=${uid}` : "";
 }
 
-const errorMiddleware = (err, req, res, next) => {
+const errorMiddleware = (rawErr, req, res, next) => {
+  // Stripe errors carry the provider's status (401 on a bad server key): never surface as user-auth 401.
+  const err = normalizePaymentProviderError(rawErr);
   const statusCode = err.statusCode || 500;
 
   if (statusCode >= 500) {

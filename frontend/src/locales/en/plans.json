@@ -178,8 +178,15 @@
     "companyActivation": "Activated through company",
     "viewMembership": "View membership",
     "buyMembership": "Buy package",
+    "continuePayment": "Continue payment",
+    "confirmingPayment": "Confirming payment",
     "activateStarter": "Activate free plan",
     "startNow": "Start now"
+  },
+  "checkoutErrors": {
+    "processing": "Payment for this package is being confirmed. Refresh the page shortly.",
+    "statusUnavailable": "We couldn't verify the payment status right now. Please try again shortly.",
+    "providerError": "We couldn't reach the payment provider right now. Please try again shortly."
   },
   "membershipWait": {
     "status": "Waiting for First Order",

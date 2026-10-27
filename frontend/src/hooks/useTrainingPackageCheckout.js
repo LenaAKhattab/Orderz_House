@@ -20,6 +20,7 @@ import { trainingCheckoutStatesFromSnapshot } from "../lib/trainingCheckoutState
 const CHECKOUT_ERROR_KEYS = {
   TRAINING_PACKAGE_PAYMENT_STATUS_UNAVAILABLE: "plans.training.statusUnavailable",
   TRAINING_PACKAGE_PAYMENT_PROCESSING: "plans.training.processingNotice",
+  PAYMENT_PROVIDER_ERROR: "plans.checkoutErrors.providerError",
 };
 
 export function useTrainingPackageCheckout({ enabled = true } = {}) {
