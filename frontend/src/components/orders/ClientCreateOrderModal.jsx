@@ -4,6 +4,7 @@ import { FilePlus2, X } from "lucide-react";
 import { useAuth } from "../../context/useAuth";
 import { INTERNAL_ORDERS_LIST_REFRESH } from "../../constants/authRoutes";
 import AdminInternalOrderWizard from "./AdminInternalOrderWizard";
+import ClientPendingPaymentNotice from "./ClientPendingPaymentNotice";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import "../../i18n/clientAreaResources";
 import "../../styles/createOrderModal.css";
@@ -114,6 +115,7 @@ export default function ClientCreateOrderModal({ open, onClose }) {
           </button>
         </header>
         <div className="client-order-modal__body client-order-modal__body--admin-wizard">
+          <ClientPendingPaymentNotice />
           <AdminInternalOrderWizard
             variant="modal"
             audience="client"

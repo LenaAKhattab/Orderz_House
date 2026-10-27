@@ -64,15 +64,11 @@ describe("createClientOrder — bidding freelancer notifications", () => {
       clientOrdersCtrlSrc.includes('if (type === "fixed")'),
       "fixed branch should exist",
     );
-    const biddingReturn = clientOrdersCtrlSrc.slice(
-      clientOrdersCtrlSrc.indexOf("requiresPayment: false"),
-      clientOrdersCtrlSrc.indexOf("requiresPayment: false") + 200,
-    );
+    const fixedStart = clientOrdersCtrlSrc.indexOf('if (type === "fixed")');
+    const biddingStart = clientOrdersCtrlSrc.indexOf("requiresPayment: false", fixedStart);
+    const biddingReturn = clientOrdersCtrlSrc.slice(biddingStart, biddingStart + 200);
     assert.ok(biddingReturn.includes("requiresPayment: false"));
-    const fixedBlock = clientOrdersCtrlSrc.slice(
-      clientOrdersCtrlSrc.indexOf('if (type === "fixed")'),
-      clientOrdersCtrlSrc.indexOf("requiresPayment: false"),
-    );
+    const fixedBlock = clientOrdersCtrlSrc.slice(fixedStart, biddingStart);
     assert.ok(fixedBlock.includes("createClientFixedOrderCheckoutSession"));
     assert.ok(!biddingReturn.includes("checkoutUrl"));
   });

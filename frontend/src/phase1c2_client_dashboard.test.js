@@ -69,7 +69,7 @@ describe("Phase 1C.2 client routes", () => {
     const btn = read("components/orders/ClientFixedOrderPayNowButton.jsx");
     assert.match(btn, /createClientFixedOrderCheckoutRequest/);
     assert.match(btn, /clientArea\.payNow/);
-    assert.match(btn, /\$\{p\}\.label/);
+    assert.match(btn, /\$\{p\}\.continueLabel/);
     assert.doesNotMatch(btn, /startCheckout|in.?app purchase|training package/i);
 
     assert.equal(

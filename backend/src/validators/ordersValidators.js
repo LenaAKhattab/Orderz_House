@@ -174,6 +174,12 @@ const createInternalOrderValidators = [
 ];
 
 const createClientOrderValidators = [
+  // Per-attempt idempotency key from the Create Order form (optional for older clients).
+  body("creationKey")
+    .optional({ values: "falsy" })
+    .isString()
+    .matches(/^[A-Za-z0-9:_-]{8,120}$/)
+    .withMessage("creationKey is invalid."),
   body("orderCode")
     .optional({ values: "falsy" })
     .isString()

@@ -119,7 +119,11 @@
       "open": "لا توجد طلبات مفتوحة.",
       "done": "لا توجد طلبات منتهية."
     },
-    "showAll": "عرض كل الطلبات"
+    "showAll": "عرض كل الطلبات",
+    "paymentConfirmingTitle": "جارٍ تأكيد الدفع",
+    "paymentConfirmingMessage": "لم يصلنا تأكيد الدفع بعد. سيظهر الطلب للمستقلين فور التأكيد، ويمكنك متابعة الدفع من بطاقة الطلب.",
+    "paymentNotCompletedTitle": "لم يكتمل الدفع",
+    "paymentNotCompletedMessage": "طلبك محفوظ مع مرفقاته. يمكنك «متابعة الدفع» متى شئت أو إلغاء الطلب."
   },
   "profile": {
     "loadError": "تعذّر تحميل الملف الشخصي.",
@@ -242,7 +246,21 @@
     "label": "ادفع الآن",
     "startErrorTitle": "تعذر بدء الدفع",
     "noCheckoutUrl": "لم يُرجع الخادم رابط الدفع.",
-    "openCheckoutFallback": "تعذر فتح صفحة الدفع. حاول مرة أخرى."
+    "openCheckoutFallback": "تعذر فتح صفحة الدفع. حاول مرة أخرى.",
+    "continueLabel": "متابعة الدفع",
+    "paidTitle": "تم الدفع",
+    "paidMessage": "تم تأكيد دفع هذا الطلب وفتحه للمستقلين.",
+    "processing": "جارٍ تأكيد الدفع لهذا الطلب. حدّث الصفحة بعد قليل.",
+    "statusUnavailable": "تعذر التحقق من حالة الدفع حاليًا. حاول مرة أخرى بعد قليل.",
+    "providerError": "تعذر الاتصال بمزوّد الدفع حاليًا. حاول مرة أخرى بعد قليل.",
+    "alreadyPaid": "تم دفع هذا الطلب بالفعل.",
+    "cancelLabel": "إلغاء الطلب",
+    "cancelConfirmTitle": "إلغاء الطلب غير المدفوع؟",
+    "cancelConfirmBody": "سيُحذف هذا الطلب ومرفقاته لأنه لم يُدفع بعد، ولن يمكن الدفع عليه لاحقًا.",
+    "cancelConfirm": "إلغاء الطلب",
+    "cancelDoneTitle": "تم إلغاء الطلب",
+    "cancelDoneMessage": "أُلغي الطلب غير المدفوع.",
+    "cancelErrorTitle": "تعذر إلغاء الطلب"
   },
   "deliveryReview": {
     "titleArchive": "ملفات تسليم المستقل",
@@ -343,5 +361,10 @@
     "later": "لاحقاً",
     "saveEdit": "حفظ التعديل",
     "submitReview": "إرسال التقييم"
+  },
+  "pendingPaymentNotice": {
+    "title": "لديك طلب بانتظار الدفع",
+    "text": "أكمل دفع طلبك الحالي بدل إنشاء طلب جديد بنفس التفاصيل.",
+    "viewOrders": "عرض طلباتي"
   }
 }

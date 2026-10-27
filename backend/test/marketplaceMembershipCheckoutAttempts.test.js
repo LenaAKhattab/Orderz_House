@@ -405,8 +405,8 @@ describe("marketplace membership checkout attempts (one unresolved checkout per 
     assert.equal(first.duplicate, false);
     assert.equal(second.duplicate, true);
     assert.equal(h.attempts[0].status, "expired");
-    const order = await applyCheckoutSessionExpired({ id: "cs_order", metadata: { purpose: "client_fixed_order" } }, h.db);
-    assert.equal(order.status, "ignored");
+    const untracked = await applyCheckoutSessionExpired({ id: "cs_untracked", metadata: {} }, h.db);
+    assert.equal(untracked.status, "ignored");
     const next = await buy(h, "silver");
     assert.equal(next.checkoutState, "created");
   });

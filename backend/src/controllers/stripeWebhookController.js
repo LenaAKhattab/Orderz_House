@@ -999,7 +999,7 @@ async function applyCheckoutSessionFreelancerActivationFeeOnlyCompleted(session,
 
 /**
  * checkout.session.expired — abandoned checkout: close the matching local attempt so it never blocks
- * a new purchase (training packages, marketplace memberships). Other purposes are ignored.
+ * a new purchase (training packages, marketplace memberships, client order payments). Other purposes are ignored.
  */
 async function applyCheckoutSessionExpired(session, dbPool = pool) {
   const purpose = String(session?.metadata?.purpose || "");
@@ -1010,6 +1010,19 @@ async function applyCheckoutSessionExpired(session, dbPool = pool) {
   if (purpose === "marketplace_membership_checkout") {
     const attempts = require("../services/marketplaceMembershipCheckoutAttemptsService");
     return attempts.applyMembershipCheckoutSessionExpired(session, dbPool);
+  }
+  if (purpose === "client_fixed_order" || purpose === "client_selected_bid") {
+    // Client order checkout attempt expired: keep it in history as 'expired' (the order stays payable —
+    // «Continue payment» opens a fresh Session for the same order).
+    const sid = session?.id != null ? String(session.id).trim() : "";
+    if (!sid) return { status: "ignored", reason: "client_order_missing_session_id" };
+    const { rows } = await (dbPool || pool).query(
+      `UPDATE client_order_payments SET status = 'expired'
+        WHERE provider_checkout_session_id = $1 AND status = 'pending'
+        RETURNING id`,
+      [sid],
+    );
+    return { status: "applied", duplicate: rows.length === 0 };
   }
   return { status: "ignored", reason: "expired_session_not_tracked" };
 }
