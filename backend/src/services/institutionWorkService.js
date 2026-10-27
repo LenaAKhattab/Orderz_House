@@ -324,6 +324,8 @@ async function getInstitutionOrderBundle({ institutionId, orderId }) {
     enrichedBids.push({ ...bid, isInstitutionMember });
   }
 
+  // Same delivery timeline as the admin order review (current delivery + history + revision files).
+  await ordersService.enrichOrderWithSubmissionHistory(order, "admin");
   return {
     workType: WORK_TYPES.ORDER,
     order,
@@ -482,6 +484,7 @@ async function requestInstitutionOrderRevision({
   actorUserId,
   note,
   uploadedFiles = [],
+  actorRole = "super_admin",
 }) {
   await getInstitutionOrderBundle({ institutionId, orderId });
   const order = await ordersService.adminRequestInternalDeliveryRevision({
@@ -489,7 +492,8 @@ async function requestInstitutionOrderRevision({
     staffUserId: actorUserId,
     note,
     uploadedFiles,
-    revisionRequestedByRole: "super_admin",
+    // Record who actually asked (admins with the institutions permission are not super admins).
+    revisionRequestedByRole: actorRole === "admin" ? "admin" : "super_admin",
   });
   await institutionsService
     .writeInstitutionAudit(pool, {

@@ -56,6 +56,14 @@
   color: #64748b;
 }
 
+.oh-files-picker__types {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.74rem;
+  color: #7c8aa5;
+  overflow-wrap: anywhere;
+}
+
 .oh-files-picker__input {
   display: none;
 }
@@ -128,6 +136,11 @@
   font-size: 0.82rem;
   font-weight: 600;
   color: #b42318;
+}
+
+.oh-files-picker__error p {
+  margin: 0.15rem 0 0;
+  overflow-wrap: anywhere;
 }
 
 /* Phones: let long (often Arabic) names wrap to two lines instead of a one-word ellipsis. */

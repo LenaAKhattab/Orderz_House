@@ -20,6 +20,10 @@ import {
   adminRequestInstitutionWorkRevisionRequest,
 } from "../../services/api";
 import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
+import FileList from "../../components/orders/order-details/FileList";
+import OrderFilesPicker from "../../components/orders/OrderFilesPicker";
+import SubmissionHistoryTimeline from "../../components/orders/submission-history/SubmissionHistoryTimeline";
+import { validateOrderFilesSize } from "../../utils/orderUploadLimits";
 import { ARTICLE_PACKAGE_PLAN_LABELS_AR } from "../../admin/marketplaceArticles/marketplaceArticleFormUtils";
 
 const LIST_PATH = "/dashboard/super-admin/institutions";
@@ -71,6 +75,7 @@ export default function SuperAdminInstitutionWorkDetailPage() {
   const [activeTab, setActiveTab] = useState("details");
   const [actionBusyId, setActionBusyId] = useState(null);
   const [revisionNote, setRevisionNote] = useState("");
+  const [revisionFiles, setRevisionFiles] = useState([]);
   const [deliveryBusy, setDeliveryBusy] = useState(false);
 
   const formatDate = (value) => {
@@ -140,6 +145,14 @@ export default function SuperAdminInstitutionWorkDetailPage() {
     return list;
   }, [workType, order, article, applicants, t]);
 
+  const orderSubmissions = Array.isArray(order?.submissionHistory?.submissions) ? order.submissionHistory.submissions : [];
+  const currentSubmission = orderSubmissions.find((sub) => sub?.isCurrent) || null;
+  const currentDeliveryFiles = Array.isArray(currentSubmission?.files) ? currentSubmission.files : [];
+  const orderStatus = String(order?.orderStatus || "");
+  const canApproveOrderDelivery = orderStatus === "pending_client_review" && currentDeliveryFiles.length > 0;
+  const canReviewOrderDelivery =
+    orderStatus === "pending_client_review" || (orderStatus === "in_progress" && currentDeliveryFiles.length > 0);
+
   useEffect(() => {
     if (!tabs.some((tab) => tab.id === activeTab)) {
       setActiveTab(tabs[0]?.id || "details");
@@ -201,11 +214,12 @@ export default function SuperAdminInstitutionWorkDetailPage() {
         workType,
         workId,
         revisionNote,
-        [],
+        workType === "article" ? [] : revisionFiles,
         workType === "article" ? { applicationId } : {},
       );
       push({ type: "success", message: t("institutions.work.requestRevisionSuccess") });
       setRevisionNote("");
+      setRevisionFiles([]);
       await load();
     } catch (err) {
       push({ type: "error", message: getSafeApiErrorMessage(err) || t("institutions.work.requestRevisionError") });
@@ -474,31 +488,69 @@ export default function SuperAdminInstitutionWorkDetailPage() {
           ) : (
             <div className="grid gap-3 max-w-xl">
               <p className="m-0 text-sm text-slate-700">{t("institutions.work.orderDeliveryHint")}</p>
-              <label className="grid gap-1 text-sm">
-                <span className="text-slate-700">{t("institutions.work.revisionNoteOptional")}</span>
-                <textarea
-                  className="form-control min-h-[96px]"
-                  value={revisionNote}
-                  onChange={(e) => setRevisionNote(e.target.value)}
+              {/* Same lifecycle as the admin order review: the current delivery's files, then history. */}
+              <div>
+                <p className="m-0 mb-1 text-sm font-medium text-slate-900">{t("institutions.work.currentDeliveryFiles")}</p>
+                {currentSubmission?.message ? (
+                  <p className="m-0 mb-2 text-sm text-slate-700" dir="auto">
+                    {currentSubmission.message}
+                  </p>
+                ) : null}
+                <FileList
+                  files={currentDeliveryFiles}
+                  orderId={order?.id ? String(order.id) : null}
+                  fileAccess="admin"
+                  emptyText={t("institutions.work.noDeliveryYet")}
                 />
-              </label>
+              </div>
+              {orderSubmissions.length > 1 ? (
+                <details>
+                  <summary className="text-sm">{t("institutions.work.deliveryHistory", { count: orderSubmissions.length })}</summary>
+                  <SubmissionHistoryTimeline
+                    submissionHistory={order.submissionHistory}
+                    orderId={String(order.id)}
+                    fileAccess="admin"
+                    hideTitle
+                  />
+                </details>
+              ) : null}
+              {canReviewOrderDelivery ? (
+                <>
+                  <label className="grid gap-1 text-sm">
+                    <span className="text-slate-700">{t("institutions.work.revisionNoteRequired")}</span>
+                    <textarea
+                      className="form-control min-h-[96px]"
+                      value={revisionNote}
+                      onChange={(e) => setRevisionNote(e.target.value)}
+                    />
+                  </label>
+                  <OrderFilesPicker
+                    label={t("institutions.work.revisionFilesLabel")}
+                    files={revisionFiles}
+                    onChange={setRevisionFiles}
+                    disabled={deliveryBusy}
+                  />
+                </>
+              ) : null}
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
                   className="btn btn-primary"
-                  disabled={deliveryBusy}
+                  disabled={deliveryBusy || !canApproveOrderDelivery}
                   onClick={() => void approveDelivery()}
                 >
                   {t("institutions.work.approveDelivery")}
                 </button>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  disabled={deliveryBusy}
-                  onClick={() => void requestRevision()}
-                >
-                  {t("institutions.work.requestRevision")}
-                </button>
+                {canReviewOrderDelivery ? (
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    disabled={deliveryBusy || !revisionNote.trim() || !validateOrderFilesSize(revisionFiles).ok}
+                    onClick={() => void requestRevision()}
+                  >
+                    {t("institutions.work.requestRevision")}
+                  </button>
+                ) : null}
               </div>
             </div>
           )}

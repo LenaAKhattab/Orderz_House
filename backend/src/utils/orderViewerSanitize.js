@@ -165,7 +165,10 @@ function sanitizeFreelancerPoolOrder(order) {
   const out = {
     ...pub,
     poolEligibility: order.poolEligibility ?? null,
-    files: Array.isArray(order.files) ? order.files.map(stripDirectFileUrls) : [],
+    // Unassigned pool viewers may only see the brief; delivery / revision evidence stays private.
+    files: Array.isArray(order.files)
+      ? order.files.filter((f) => !f?.purpose || f.purpose === "brief").map(stripDirectFileUrls)
+      : [],
     myClaim: order.myClaim ?? null,
     myBid: order.myBid ?? null,
     updatedAt: order.updatedAt ?? null,
@@ -309,7 +312,8 @@ function sanitizeOrderForClient(order) {
     o.submissionHistory = sanitizeSubmissionHistoryForNonStaff(o.submissionHistory);
   }
   if (Array.isArray(o.files)) {
-    o.files = o.files.map(stripInternalFileFields);
+    // Files are served by the authenticated stream routes only — never raw Cloudinary/R2 locators.
+    o.files = o.files.map(stripDirectFileUrls);
   }
   return attachClientOrderUiFlags(o);
 }

@@ -285,7 +285,9 @@
     "historyToggle": "Submission & revision history ({{count}})",
     "approveConfirmTitle": "Approve delivery and complete the order?",
     "approveConfirmBody": "After approval the order is complete and no further revisions can be requested. Make sure you have reviewed all files first.",
-    "approveConfirm": "Yes, approve delivery"
+    "approveConfirm": "Yes, approve delivery",
+    "freelancerNote": "Freelancer note:",
+    "loadingDelivery": "Loading the current delivery…"
   },
   "revisionRequest": {
     "title": "Request revision",

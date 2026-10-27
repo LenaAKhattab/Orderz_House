@@ -2184,8 +2184,10 @@ export const adminGetInternalOrderRequest = async (orderId) => {
 };
 
 export const adminCreateInternalOrderRequest = async (formData) => {
+  // Same upload budget as client order creation: up to 5 files / 5 MB must not hit the 10 s default.
   const { data } = await api.post("/admin/orders", formData, {
     headers: { "Content-Type": "multipart/form-data" },
+    timeout: 120000,
   });
   return data;
 };
@@ -2296,7 +2298,8 @@ function triggerBlobDownload(blob, fileName) {
   document.body.appendChild(a);
   a.click();
   a.remove();
-  window.URL.revokeObjectURL(url);
+  // Revoking synchronously can cancel the download in some browsers.
+  scheduleBlobUrlRevoke(url, 30000);
 }
 
 function scheduleBlobUrlRevoke(url, ms = 120000) {
@@ -2310,14 +2313,16 @@ function scheduleBlobUrlRevoke(url, ms = 120000) {
 }
 
 /** Open a tab synchronously on user click (before await) to avoid popup blockers. */
-export function openPdfPreviewTab() {
+export function openPdfPreviewTab(label = "جاري فتح الملف…") {
   try {
     const w = window.open("about:blank", "_blank");
     if (w) {
       try {
-        w.document.title = "جاري فتح الملف…";
-        w.document.body.innerHTML =
-          '<p style="font-family:system-ui,sans-serif;padding:2rem;text-align:center">جاري تحميل الملف…</p>';
+        w.document.title = label;
+        const p = w.document.createElement("p");
+        p.setAttribute("style", "font-family:system-ui,sans-serif;padding:2rem;text-align:center");
+        p.textContent = label;
+        w.document.body.appendChild(p);
       } catch {
         /* ignore */
       }
@@ -2361,24 +2366,22 @@ function orderFileDownloadPath(orderId, fileId, scope) {
 const ORDER_FILE_INLINE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif", "application/pdf"]);
 
 /**
- * Keep server messages only for access errors (401/403/404). Transport failures, timeouts and
- * storage errors get an empty message so callers show their localized fallback
- * (never a raw "Network Error").
+ * Blob responses hide the JSON error body: expose its `code` (FILE_NOT_FOUND, STORAGE_UNAVAILABLE, …)
+ * as `err.fileErrorCode` and clear the message, so callers map status/code to localized copy
+ * (never a raw "Network Error" or an Arabic server string in the English UI).
  */
 async function attachBlobErrorMessage(err) {
   const data = err?.response?.data;
   const st = Number(err?.response?.status || 0);
-  let serverMessage = "";
   if (data instanceof Blob && st >= 400) {
     try {
       const j = JSON.parse(await data.text());
-      if (j?.message) serverMessage = String(j.message);
-      if (j?.code) err.code = j.code;
+      if (j?.code) err.fileErrorCode = String(j.code);
     } catch {
       /* ignore */
     }
   }
-  err.message = st === 401 || st === 403 || st === 404 ? serverMessage : "";
+  err.message = "";
   return err;
 }
 
@@ -2418,8 +2421,8 @@ export async function downloadOrderFileForRole(orderId, fileId, fileName, scope)
  * fall back to a download.
  * @returns {Promise<{ previewed: boolean }>}
  */
-export async function viewOrderFileForRole(orderId, fileId, fileName, scope, previewWindow = null) {
-  const tab = previewWindow || openPdfPreviewTab();
+export async function viewOrderFileForRole(orderId, fileId, fileName, scope, previewWindow = null, openingLabel) {
+  const tab = previewWindow || openPdfPreviewTab(openingLabel);
   try {
     const response = await fetchOrderFileBlob(orderId, fileId, scope, "inline");
     const type = responseContentType(response);

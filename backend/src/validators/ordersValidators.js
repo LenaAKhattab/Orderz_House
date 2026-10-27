@@ -266,6 +266,11 @@ const clientOrderBidIdParamValidators = [
   param("bidId").isInt({ min: 1 }).withMessage("يرجى تحديد العرض.").toInt(),
 ];
 
+/** Optional note sent with a freelancer delivery / resubmission (stored on the submission). */
+const freelancerDeliveryNoteValidators = [
+  body("note").optional().isString().trim().isLength({ max: 4000 }).withMessage("نص الملاحظة طويل جداً."),
+];
+
 const clientOrderRevisionNoteValidators = [
   body("note").optional().isString().trim().isLength({ max: 4000 }).withMessage("نص طلب التعديل طويل جداً."),
 ];
@@ -303,5 +308,6 @@ module.exports = {
   clientOrderBidIdBodyValidators,
   clientOrderBidIdParamValidators,
   clientOrderRevisionNoteValidators,
+  freelancerDeliveryNoteValidators,
 };
 

@@ -28,6 +28,7 @@ import DashboardSection from "../../components/dashboard/DashboardSection";
 import DashboardLoadingState from "../../components/dashboard/DashboardLoadingState";
 import DashboardEmptyState from "../../components/dashboard/DashboardEmptyState";
 import DashboardModal from "../../components/dashboard/DashboardModal";
+import FileList from "../../components/orders/order-details/FileList";
 
 function fullNameAr(f) {
   const parts = [f?.firstName, f?.fatherName, f?.familyName].filter(Boolean);
@@ -42,6 +43,11 @@ function ClaimsSkeleton() {
       <div className="oh-skel oh-skel-line" style={{ height: 10, width: "78%" }} />
     </div>
   );
+}
+
+/** Brief attachments (the order's own files, not deliveries or revision evidence). */
+function briefFilesOf(o) {
+  return (Array.isArray(o?.files) ? o.files : []).filter((f) => !f?.purpose || f.purpose === "brief");
 }
 
 function isPricedInternalBidding(o) {
@@ -65,6 +71,7 @@ export default function AdminOrdersPage() {
   const [approvingBidId, setApprovingBidId] = useState(null);
   const [deliveryModal, setDeliveryModal] = useState({ open: false, order: null, variant: "workflow" });
   const [deliveryOpeningId, setDeliveryOpeningId] = useState(null);
+  const [attachmentsModal, setAttachmentsModal] = useState({ open: false, orderId: null, order: null, loading: false });
 
   const rows = useMemo(() => (Array.isArray(orders) ? orders : []), [orders]);
 
@@ -183,6 +190,63 @@ export default function AdminOrdersPage() {
     } finally {
       setDeliveryOpeningId(null);
     }
+  };
+
+  // Brief attachments of an internal order (canonical FileList + admin download route).
+  const openAttachments = async (orderId) => {
+    setAttachmentsModal({ open: true, orderId: String(orderId), order: null, loading: true });
+    try {
+      const res = await adminGetInternalOrderRequest(orderId);
+      const order = res?.data?.order ?? res?.order;
+      if (!order) throw new Error(t("ordersAdmin.listPage.toast.orderLoadFailed"));
+      setAttachmentsModal((m) => (m.orderId === String(orderId) ? { ...m, order, loading: false } : m));
+    } catch (e) {
+      setAttachmentsModal({ open: false, orderId: null, order: null, loading: false });
+      push({
+        type: "error",
+        title: t("ordersAdmin.listPage.attachments.loadFailed"),
+        message: e?.response?.data?.message || e?.message || "",
+      });
+    }
+  };
+
+  const attachmentsButton = (o) =>
+    briefFilesOf(o).length ? (
+      <button
+        type="button"
+        className="btn btn-secondary oh-admin-orders-table__btn"
+        data-testid={`admin-order-attachments-${o.id}`}
+        disabled={attachmentsModal.loading && attachmentsModal.orderId === String(o.id)}
+        onClick={() => void openAttachments(o.id)}
+      >
+        {t("ordersAdmin.listPage.attachments.button", { count: briefFilesOf(o).length })}
+      </button>
+    ) : null;
+
+  const deliveryButtons = (o) => {
+    const receive =
+      Boolean(o?.assignedFreelancerId) &&
+      Boolean(o?.receivedAt) &&
+      !o?.isArchived &&
+      o?.orderStatus !== "completed" &&
+      o?.orderStatus !== "cancelled";
+    const archive = Boolean(o?.assignedFreelancerId) && !o?.isArchived && o?.orderStatus === "completed";
+    if (!receive && !archive) return null;
+    const opening = deliveryOpeningId === String(o.id);
+    return (
+      <button
+        type="button"
+        className="btn btn-primary oh-admin-orders-table__btn"
+        disabled={opening}
+        onClick={() => void openAdminDeliveryModal(o.id, receive ? "workflow" : "archive")}
+      >
+        {opening
+          ? t("ordersAdmin.listPage.card.loading")
+          : receive
+            ? t("ordersAdmin.listPage.card.receiveOrder")
+            : t("ordersAdmin.listPage.card.freelancerDeliveryFiles")}
+      </button>
+    );
   };
 
   const approveInternalBid = async ({ orderId, bidId }) => {
@@ -305,6 +369,7 @@ export default function AdminOrdersPage() {
                         {o.institutionalStorageName ? ` · ${o.institutionalStorageName}` : ""}
                       </span>
                     ) : null}
+                    {attachmentsButton(o)}
                     {shouldShowApplicants ? (
                       <span className="help">{t("ordersAdmin.listPage.card.claimsNotForFixed")}</span>
                     ) : null}
@@ -422,6 +487,9 @@ export default function AdminOrdersPage() {
                       </td>
                       <td className="oh-admin-orders-table__col--md oh-admin-orders-table__date">{formatJoDate(o.createdAt)}</td>
                       <td className="oh-admin-orders-table__col--actions">
+                        <span className="oh-admin-orders-table__actions">
+                        {deliveryButtons(o)}
+                        {attachmentsButton(o)}
                         {tableShowBids ? (
                           <button
                             type="button"
@@ -435,9 +503,10 @@ export default function AdminOrdersPage() {
                           </button>
                         ) : tableShowClaims ? (
                           <span className="oh-admin-orders-table__hint">{t("ordersAdmin.listPage.table.applicants")}</span>
-                        ) : (
+                        ) : !deliveryButtons(o) && !attachmentsButton(o) ? (
                           "—"
-                        )}
+                        ) : null}
+                        </span>
                       </td>
                     </tr>
                   );
@@ -545,15 +614,37 @@ export default function AdminOrdersPage() {
             void reloadOrders();
           }}
           onRevised={() => {
-            push({
-              type: "success",
-              title: t("ordersAdmin.listPage.toast.revisionSentTitle"),
-              message: t("ordersAdmin.listPage.toast.revisionSentMessage"),
-            });
             void reloadOrders();
           }}
         />
       ) : null}
+
+      <DashboardModal
+        open={attachmentsModal.open}
+        title={t("ordersAdmin.listPage.attachments.title")}
+        className="dash-ui-modal--attachments"
+        onClose={() => setAttachmentsModal({ open: false, orderId: null, order: null, loading: false })}
+      >
+        {attachmentsModal.loading || !attachmentsModal.order ? (
+          <p className="od-muted" role="status">
+            {t("ordersAdmin.listPage.card.loading")}
+          </p>
+        ) : (
+          <>
+            {attachmentsModal.order.title ? (
+              <p className="od-muted" dir="auto" style={{ marginTop: 0 }}>
+                {attachmentsModal.order.title}
+              </p>
+            ) : null}
+            <FileList
+              files={briefFilesOf(attachmentsModal.order)}
+              orderId={String(attachmentsModal.order.id)}
+              fileAccess="admin"
+              emptyText={t("ordersAdmin.listPage.attachments.empty")}
+            />
+          </>
+        )}
+      </DashboardModal>
     </>
   );
 }

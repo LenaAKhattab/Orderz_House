@@ -460,6 +460,7 @@ const submitMyOrderDelivery = async (req, res, next) => {
       freelancerUserId: req.auth.userId,
       orderId: req.params.id,
       uploadedFiles: req.files || [],
+      note: req.body?.note,
     });
     await ordersService.enrichOrderWithSubmissionHistory(order, "freelancer");
     capture(String(req.auth.userId), "order_delivered", {

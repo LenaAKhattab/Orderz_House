@@ -64,6 +64,7 @@ export default function FreelancerMyOrderDetailsPage() {
   const [busy, setBusy] = useState(true);
   const [deliveryBusy, setDeliveryBusy] = useState(false);
   const [deliveryFiles, setDeliveryFiles] = useState([]);
+  const [deliveryNote, setDeliveryNote] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -90,10 +91,13 @@ export default function FreelancerMyOrderDetailsPage() {
     };
   }, [id, push, navigate, t]);
 
+  // Poll while the order is active. Keyed on the status (not the order object): every pull replaces
+  // `order`, and depending on it re-ran this effect immediately — a back-to-back request loop.
+  const orderLoaded = Boolean(order);
+  const pollStatus = String(order?.orderStatus || "");
   useEffect(() => {
-    if (busy || !id || !order) return undefined;
-    const s = order.orderStatus;
-    if (s === "completed" || s === "cancelled") return undefined;
+    if (busy || !id || !orderLoaded) return undefined;
+    if (pollStatus === "completed" || pollStatus === "cancelled") return undefined;
 
     let cancelled = false;
     async function pull() {
@@ -111,7 +115,6 @@ export default function FreelancerMyOrderDetailsPage() {
     }
 
     const intervalMs = 12_000;
-    void pull();
     const timer = setInterval(() => {
       void pull();
     }, intervalMs);
@@ -126,7 +129,7 @@ export default function FreelancerMyOrderDetailsPage() {
       clearInterval(timer);
       document.removeEventListener("visibilitychange", onVis);
     };
-  }, [busy, id, order, navigate]);
+  }, [busy, id, orderLoaded, pollStatus, navigate]);
 
   const briefFiles = useMemo(
     () => (Array.isArray(order?.files) ? order.files.filter((f) => !f.purpose || f.purpose === "brief") : []),
@@ -136,10 +139,18 @@ export default function FreelancerMyOrderDetailsPage() {
     () => (Array.isArray(order?.files) ? order.files.filter((f) => f.purpose === "delivery") : []),
     [order?.files],
   );
-  const requestAttachments = useMemo(
-    () => (Array.isArray(order?.files) ? order.files.filter((f) => f.purpose === "revision_request") : []),
-    [order?.files],
-  );
+  // Attachments of the latest revision request only (earlier cycles stay in the submission history).
+  const requestAttachments = useMemo(() => {
+    let latest = null;
+    for (const sub of order?.submissionHistory?.submissions || []) {
+      for (const r of sub?.revisionRequests || []) {
+        if (!latest || new Date(r.createdAt || 0) > new Date(latest.createdAt || 0)) latest = r;
+      }
+    }
+    if (latest) return Array.isArray(latest.files) ? latest.files : [];
+    return Array.isArray(order?.files) ? order.files.filter((f) => f.purpose === "revision_request") : [];
+  }, [order?.files, order?.submissionHistory]);
+  const isResubmission = (order?.submissionHistory?.submissions?.length || 0) > 0;
 
   const orderPhaseLabel = useMemo(() => {
     const s = order?.orderStatus;
@@ -179,10 +190,12 @@ export default function FreelancerMyOrderDetailsPage() {
     try {
       const fd = new FormData();
       for (const f of deliveryFiles) fd.append("files", f);
+      if (deliveryNote.trim()) fd.append("note", deliveryNote.trim());
       const res = await submitFreelancerOrderDeliveryRequest(id, fd);
       const next = res?.data?.order ?? res?.order;
       if (next) setOrder(next);
       setDeliveryFiles([]);
+      setDeliveryNote("");
       push({
         type: "success",
         title: t("freelancerDashboard.myOrders.details.deliverySuccessTitle"),
@@ -192,7 +205,7 @@ export default function FreelancerMyOrderDetailsPage() {
       push({
         type: "error",
         title: t("freelancerDashboard.myOrders.details.deliveryErrorTitle"),
-        message: getSafeApiErrorMessage(err, t("freelancerDashboard.myOrders.details.deliveryErrorTitle")),
+        message: getSafeApiErrorMessage(err, t("freelancerDashboard.myOrders.details.deliveryErrorMessage")),
       });
     } finally {
       setDeliveryBusy(false);
@@ -328,7 +341,9 @@ export default function FreelancerMyOrderDetailsPage() {
             {DELIVERY_UPLOAD_ALLOWED_STATUSES.has(String(order?.orderStatus || "")) ? (
               <OrderSection title={t("freelancerDashboard.myOrders.details.deliverOrder")}>
                 <p className="od-muted" style={{ marginTop: 0 }}>
-                  {t("freelancerDashboard.myOrders.details.deliveryHint")}{" "}
+                  {isResubmission
+                    ? t("freelancerDashboard.myOrders.details.resubmitHint")
+                    : t("freelancerDashboard.myOrders.details.deliveryHint")}{" "}
                   {t("freelancerDashboard.myOrders.details.uploadSizeHelper")}
                 </p>
                 <form onSubmit={submitDelivery}>
@@ -340,6 +355,20 @@ export default function FreelancerMyOrderDetailsPage() {
                       disabled={deliveryBusy}
                     />
                   </div>
+                  <div className="field">
+                    <label htmlFor="od-delivery-note">{t("freelancerDashboard.myOrders.details.deliveryNoteLabel")}</label>
+                    <textarea
+                      id="od-delivery-note"
+                      className="od-delivery-note"
+                      rows={3}
+                      maxLength={4000}
+                      dir="auto"
+                      value={deliveryNote}
+                      disabled={deliveryBusy}
+                      placeholder={t("freelancerDashboard.myOrders.details.deliveryNotePlaceholder")}
+                      onChange={(e) => setDeliveryNote(e.target.value)}
+                    />
+                  </div>
                   <button
                     type="submit"
                     className="btn btn-primary od-delivery-submit"
@@ -347,7 +376,9 @@ export default function FreelancerMyOrderDetailsPage() {
                   >
                     {deliveryBusy
                       ? t("freelancerDashboard.myOrders.details.submitting")
-                      : t("freelancerDashboard.myOrders.details.submitDelivery")}
+                      : isResubmission
+                        ? t("freelancerDashboard.myOrders.details.resubmitDelivery")
+                        : t("freelancerDashboard.myOrders.details.submitDelivery")}
                   </button>
                 </form>
               </OrderSection>

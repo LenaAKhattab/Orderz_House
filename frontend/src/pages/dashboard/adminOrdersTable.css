@@ -68,6 +68,13 @@
   font-size: 0.8rem;
 }
 
+.oh-admin-orders-table__actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
 .oh-admin-orders-table__hint {
   font-size: 0.78rem;
   color: #64748b;

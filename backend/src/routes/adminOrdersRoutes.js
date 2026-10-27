@@ -95,10 +95,11 @@ router.post("/orders/:id/delivery/approve", ordersPerm, orderIdParam, validateRe
 router.post(
   "/orders/:id/delivery/revision",
   ordersPerm,
+  orderIdParam,
+  validateRequest,
   uploadOrderFiles,
   handleOrderUploadErrors,
   enforceOrderUploadTotalSize,
-  orderIdParam,
   clientOrderRevisionNoteValidators,
   validateRequest,
   adminOrdersController.requestInternalDeliveryRevision,

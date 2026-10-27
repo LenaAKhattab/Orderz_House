@@ -103,6 +103,16 @@ async function assertFreelancerCanAccessPoolOrder(freelancerUserId, orderOrId, c
     logBlockedAccess("pool_listing", { orderId: String(order.id), freelancerUserId: String(freelancerUserId) });
     throw notFoundError();
   }
+  // Institution-scoped pool orders (and their brief files) are visible to institution members only —
+  // the same rule pool detail / bid / take already apply.
+  if (String(order.visibility_scope || "") === "institution") {
+    const stored = require("./institutionalStoredOrdersService");
+    const access = await stored.assertUserCanViewInstitutionalOrder(freelancerUserId, order.id);
+    if (!access?.allowed) {
+      logBlockedAccess("institution_scope", { orderId: String(order.id), freelancerUserId: String(freelancerUserId) });
+      throw notFoundError();
+    }
+  }
   await planOrderValueEligibility.assertFreelancerMayAccessOrderByPlan(freelancerUserId, order, clientMaybe);
   // E1: Marketplace Membership project-value gate (additive; does not remove legacy plan gate).
   // Skip when canonical subscription is already a marketplace bridge plan — that band was

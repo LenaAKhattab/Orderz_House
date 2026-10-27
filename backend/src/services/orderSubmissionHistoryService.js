@@ -151,7 +151,7 @@ async function enrichOrderWithSubmissionHistory(order, opts = {}) {
   );
 
   const { rows: fileRows } = await runner.query(
-    `SELECT id, order_id, submission_id, revision_id, original_name, mime_type, size_bytes, uploaded_at, purpose, secure_url, file_url, public_id
+    `SELECT id, order_id, submission_id, revision_id, original_name, mime_type, size_bytes, uploaded_at, purpose, secure_url, file_url, public_id, source_missing_at
      FROM order_files
      WHERE order_id = $1 AND (purpose = 'delivery' OR purpose = 'revision_request')
      ORDER BY id ASC`,
@@ -249,6 +249,7 @@ function mapFileRow(r, staff) {
     sizeBytes: Number(r.size_bytes || 0),
     uploadedAt: r.uploaded_at || null,
     purpose: r.purpose || "delivery",
+    unavailable: r.source_missing_at != null,
   };
   if (staff) {
     base.adminMetadata = {

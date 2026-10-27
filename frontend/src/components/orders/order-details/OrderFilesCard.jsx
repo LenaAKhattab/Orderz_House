@@ -10,6 +10,7 @@ import "../../../i18n/ordersAdminResources";
  * @param {string} [props.emptyText]
  * @param {string|null} [props.orderId]
  * @param {"client"|"freelancer"|"admin"|null} [props.fileAccess]
+ * @param {string} [props.noAccessText] — replaces the sign-in hint when the viewer is signed in without file access
  */
 export default function OrderFilesCard({
   title,
@@ -17,6 +18,7 @@ export default function OrderFilesCard({
   emptyText,
   orderId = null,
   fileAccess = null,
+  noAccessText,
 }) {
   const { t } = useTranslation();
   const resolvedTitle = title ?? t("ordersAdmin.orderDetails.files.titleDefault");
@@ -29,7 +31,7 @@ export default function OrderFilesCard({
         <h3 className="od-files-card__title">{resolvedTitle}</h3>
       </div>
       <div className="od-files-card__body">
-        <FileList files={files} emptyText={resolvedEmpty} orderId={orderId} fileAccess={fileAccess} />
+        <FileList files={files} emptyText={resolvedEmpty} orderId={orderId} fileAccess={fileAccess} noAccessText={noAccessText} />
       </div>
     </section>
   );

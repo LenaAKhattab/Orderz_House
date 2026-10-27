@@ -21,6 +21,7 @@ const {
   clientOrderBidIdBodyValidators,
   clientOrderBidIdParamValidators,
   clientOrderRevisionNoteValidators,
+  freelancerDeliveryNoteValidators,
   clientOrderFileDownloadParams,
 } = require("../validators/ordersValidators");
 const freelancerReviewsController = require("../controllers/freelancerReviewsController");
@@ -243,13 +244,14 @@ router.post(
   "/client/orders/:id/delivery/revision",
   requireAuth,
   requireRole("client"),
+  orderIdParam,
+  validateRequest,
+  requireClientOwnsOrderParam,
   uploadOrderFiles,
   handleOrderUploadErrors,
   enforceOrderUploadTotalSize,
-  orderIdParam,
   clientOrderRevisionNoteValidators,
   validateRequest,
-  requireClientOwnsOrderParam,
   clientOrdersController.requestDeliveryRevision,
 );
 
@@ -362,12 +364,14 @@ router.post(
   "/freelancer/my-orders/:id/delivery",
   requireAuth,
   requireRole("freelancer"),
-  uploadOrderFiles,
-  handleOrderUploadErrors,
-  enforceOrderUploadTotalSize,
   orderIdParam,
   validateRequest,
   requireFreelancerAssignedOrderParam,
+  uploadOrderFiles,
+  handleOrderUploadErrors,
+  enforceOrderUploadTotalSize,
+  freelancerDeliveryNoteValidators,
+  validateRequest,
   ordersController.submitMyOrderDelivery,
 );
 router.get(

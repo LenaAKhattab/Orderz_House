@@ -252,7 +252,12 @@
       "phaseRevisionInProgress": "قيد تنفيذ التعديل",
       "phasePendingClientApproval": "بانتظار اعتماد العميل على التسليم",
       "phaseCompleted": "مكتمل",
-      "phaseInProgressDeliver": "قيد التنفيذ — يمكنك تسليم الملفات"
+      "phaseInProgressDeliver": "قيد التنفيذ — يمكنك تسليم الملفات",
+      "deliveryNoteLabel": "ملاحظة مع التسليم (اختياري)",
+      "deliveryNotePlaceholder": "اكتب ما أنجزته أو ما تريد لفت الانتباه إليه…",
+      "resubmitHint": "أرفق ملفات التسليم المعدّل. يبقى التسليم السابق محفوظًا في السجل.",
+      "resubmitDelivery": "إعادة التسليم",
+      "deliveryErrorMessage": "تعذر إرسال التسليم. حاول مرة أخرى."
     }
   },
   "plans": {

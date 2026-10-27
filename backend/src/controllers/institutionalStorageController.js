@@ -472,6 +472,7 @@ const requestInstitutionWorkRevision = async (req, res, next) => {
       actorUserId: actorId(req),
       note: req.body?.note || req.body?.reason || null,
       uploadedFiles: req.files || [],
+      actorRole: req.auth?.isSuperAdmin ? "super_admin" : "admin",
     });
     return res.json({ success: true, data });
   } catch (e) {

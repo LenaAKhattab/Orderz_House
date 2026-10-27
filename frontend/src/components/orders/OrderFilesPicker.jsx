@@ -1,7 +1,13 @@
 import { useId, useRef, useState } from "react";
 import { FileText, FileImage, File as FileIcon, Paperclip, X } from "lucide-react";
 import { useTranslation } from "../../i18n/LanguageProvider";
-import { MAX_ORDER_UPLOAD_TOTAL_BYTES, validateOrderFilesSize } from "../../utils/orderUploadLimits";
+import {
+  MAX_ORDER_UPLOAD_TOTAL_BYTES,
+  ORDER_UPLOAD_ACCEPT,
+  ORDER_UPLOAD_TYPES_LABEL,
+  orderUploadRejectionReason,
+  validateOrderFilesSize,
+} from "../../utils/orderUploadLimits";
 import "./order-files-picker.css";
 
 /** Western digits in both locales (matches dates/prices across the platform). */
@@ -22,7 +28,8 @@ function iconFor(file) {
 /**
  * Accessible multi-file picker for order uploads (delivery, revision, briefs).
  * Drag & drop or browse; selected files listed with name, size and remove; total-size check inline.
- * Server-side validation (MIME/signature/size) stays authoritative.
+ * Unsupported types, empty files and files over the count limit are refused with an inline message
+ * (never dropped silently). Server-side validation (MIME/signature/size) stays authoritative.
  *
  * @param {{ files: File[], onChange: (files: File[]) => void, maxFiles?: number, disabled?: boolean, label?: string, hint?: string }} props
  */
@@ -30,6 +37,7 @@ export default function OrderFilesPicker({ files, onChange, maxFiles = 5, disabl
   const { t } = useTranslation();
   const inputRef = useRef(null);
   const [dragging, setDragging] = useState(false);
+  const [rejected, setRejected] = useState([]);
   const baseId = useId();
   const hintId = `${baseId}-hint`;
   const errorId = `${baseId}-error`;
@@ -39,13 +47,27 @@ export default function OrderFilesPicker({ files, onChange, maxFiles = 5, disabl
 
   const add = (incoming) => {
     const next = [...list];
+    const refused = [];
     for (const f of Array.from(incoming || [])) {
-      if (next.length >= maxFiles) break;
-      if (!next.some((x) => x.name === f.name && x.size === f.size)) next.push(f);
+      const reason = orderUploadRejectionReason(f);
+      if (reason) {
+        refused.push({ name: f.name, reason });
+        continue;
+      }
+      if (next.some((x) => x.name === f.name && x.size === f.size)) continue;
+      if (next.length >= maxFiles) {
+        refused.push({ name: f.name, reason: "count" });
+        continue;
+      }
+      next.push(f);
     }
+    setRejected(refused);
     onChange(next);
   };
-  const remove = (idx) => onChange(list.filter((_, i) => i !== idx));
+  const remove = (idx) => {
+    setRejected([]);
+    onChange(list.filter((_, i) => i !== idx));
+  };
   const open = () => {
     if (!disabled && !full) inputRef.current?.click();
   };
@@ -62,7 +84,7 @@ export default function OrderFilesPicker({ files, onChange, maxFiles = 5, disabl
         role="button"
         tabIndex={disabled || full ? -1 : 0}
         aria-labelledby={label ? `${baseId}-label` : undefined}
-        aria-describedby={`${hintId}${!sizeOk ? ` ${errorId}` : ""}`}
+        aria-describedby={`${hintId}${!sizeOk || rejected.length ? ` ${errorId}` : ""}`}
         aria-disabled={disabled || full || undefined}
         onClick={open}
         onKeyDown={(e) => {
@@ -92,11 +114,15 @@ export default function OrderFilesPicker({ files, onChange, maxFiles = 5, disabl
               max: maxFiles,
               size: Math.round(MAX_ORDER_UPLOAD_TOTAL_BYTES / (1024 * 1024)),
             })}
+          <span className="oh-files-picker__types" dir="ltr">
+            {t("orders.filesPicker.types", { types: ORDER_UPLOAD_TYPES_LABEL })}
+          </span>
         </span>
         <input
           ref={inputRef}
           type="file"
           multiple
+          accept={ORDER_UPLOAD_ACCEPT}
           className="oh-files-picker__input"
           tabIndex={-1}
           aria-hidden="true"
@@ -136,10 +162,17 @@ export default function OrderFilesPicker({ files, onChange, maxFiles = 5, disabl
         </ul>
       ) : null}
 
-      {!sizeOk ? (
-        <p className="oh-files-picker__error" id={errorId} role="alert">
-          {t("orders.filesPicker.tooLarge", { size: Math.round(MAX_ORDER_UPLOAD_TOTAL_BYTES / (1024 * 1024)) })}
-        </p>
+      {!sizeOk || rejected.length ? (
+        <div className="oh-files-picker__error" id={errorId} role="alert">
+          {!sizeOk ? (
+            <p>{t("orders.filesPicker.tooLarge", { size: Math.round(MAX_ORDER_UPLOAD_TOTAL_BYTES / (1024 * 1024)) })}</p>
+          ) : null}
+          {rejected.map((r) => (
+            <p key={`${r.name}-${r.reason}`} data-testid="files-picker-rejected">
+              {t(`orders.filesPicker.rejected.${r.reason}`, { name: r.name, max: maxFiles })}
+            </p>
+          ))}
+        </div>
       ) : null}
     </div>
   );

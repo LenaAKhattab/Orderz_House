@@ -44,3 +44,43 @@ export function validateOrderFilesSize(files) {
     totalBytes,
   };
 }
+
+/** Must match backend `ordersUploadMiddleware` allowlist (extension → canonical MIME). */
+export const ORDER_UPLOAD_ALLOWED_EXTENSIONS = Object.freeze([
+  "pdf",
+  "jpg",
+  "jpeg",
+  "png",
+  "webp",
+  "doc",
+  "docx",
+  "xls",
+  "xlsx",
+  "ppt",
+  "pptx",
+  "txt",
+  "zip",
+]);
+
+/** `accept` attribute for order file inputs. */
+export const ORDER_UPLOAD_ACCEPT = ORDER_UPLOAD_ALLOWED_EXTENSIONS.map((ext) => `.${ext}`).join(",");
+
+/** Human list for hints ("PDF, JPG, …"). */
+export const ORDER_UPLOAD_TYPES_LABEL = "PDF, JPG, PNG, WEBP, DOC/DOCX, XLS/XLSX, PPT/PPTX, TXT, ZIP";
+
+export function orderFileExtension(name) {
+  const m = /\.([a-z0-9]{1,8})$/i.exec(String(name || ""));
+  return m ? m[1].toLowerCase() : "";
+}
+
+/**
+ * Client-side pre-check (the server stays authoritative and also verifies file signatures).
+ * @param {File} file
+ * @returns {null | "type" | "empty"} rejection reason
+ */
+export function orderUploadRejectionReason(file) {
+  if (!file) return "type";
+  if (!ORDER_UPLOAD_ALLOWED_EXTENSIONS.includes(orderFileExtension(file.name))) return "type";
+  if (Number(file.size) === 0) return "empty";
+  return null;
+}
