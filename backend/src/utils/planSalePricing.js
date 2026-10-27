@@ -7,7 +7,7 @@
  * Activation fee is never discounted here.
  */
 
-const { amountMajorToStripeMinor } = require("./stripeMoney");
+const { amountMajorToStripeMinor, chargeableStripeMinor } = require("./stripeMoney");
 const { effectiveCheckoutPriceJod } = require("./planFields");
 
 function toFiniteNumber(value) {
@@ -30,8 +30,9 @@ function applyPercentageDiscountMajor(major, percentage, currency = "JOD") {
   if (baseMinor == null || baseMinor < 1) return null;
   const pct = Number(percentage);
   if (!Number.isFinite(pct) || pct <= 0 || pct >= 100) return null;
-  const discountMinor = Math.round((baseMinor * pct) / 100);
-  const effectiveMinor = baseMinor - discountMinor;
+  // Chargeable at Stripe (JOD: last minor digit 0); the saving is whatever the rounding leaves.
+  const effectiveMinor = chargeableStripeMinor(baseMinor - Math.round((baseMinor * pct) / 100), currency);
+  const discountMinor = baseMinor - effectiveMinor;
   if (effectiveMinor < 1) return null;
   const divisor = currency.toUpperCase() === "JOD" ? 1000 : 100;
   return {

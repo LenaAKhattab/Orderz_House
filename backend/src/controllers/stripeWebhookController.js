@@ -19,6 +19,7 @@ const subscriptionAdminNotificationService = require("../services/subscriptionAd
 const notificationEventsService = require("../services/notificationEventsService");
 const { capture } = require("../config/posthog");
 const { pickFazaatTrackingLogFields } = require("../utils/fazaatStripeMetadata");
+const paymentFunnel = require("../services/stripePaymentFunnelLog");
 
 async function safeNotify(run) {
   try {
@@ -213,12 +214,17 @@ async function handleStripeWebhook(req, res) {
 
     if (eventType === "checkout.session.completed") {
       applyResult = await applyCheckoutSessionCompleted(event.data.object);
+      void paymentFunnel.recordCheckoutSessionTerminal(event.data.object, eventType, { stripe }).catch(() => {});
     } else if (eventType === "checkout.session.expired") {
       applyResult = await applyCheckoutSessionExpired(event.data.object);
+      void paymentFunnel.recordCheckoutSessionTerminal(event.data.object, eventType, { stripe }).catch(() => {});
     } else if (eventType === "payment_intent.succeeded") {
       applyResult = await applyPaymentIntentOutcome(event.data.object, "paid");
     } else if (eventType === "payment_intent.payment_failed") {
-      applyResult = await applyPaymentIntentOutcome(event.data.object, "failed");
+      // Every OrderzHouse PaymentIntent comes from Stripe Checkout, where a declined card is retried inside the
+      // same Session: a failed attempt is never terminal. Record it only — checkout.session.completed /
+      // .expired remain the only events that change order / membership / package state.
+      applyResult = await paymentFunnel.recordPaymentAttemptFailed(event.data.object, { stripe });
     } else if (eventType === "invoice.paid" || eventType === "invoice.payment_succeeded") {
       applyResult = await applyInvoicePaidEvent(event.data.object);
     } else if (eventType === "invoice.payment_failed") {

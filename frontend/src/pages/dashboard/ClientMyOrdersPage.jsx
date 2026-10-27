@@ -14,7 +14,6 @@ import DashboardHubPage from "../../components/dashboard/hub/DashboardHubPage";
 import HubMetricSkeleton from "../../components/dashboard/hub/HubMetricSkeleton";
 import { OrderCardsGridSkeleton } from "../../components/ui/Skeleton";
 import {
-  getBidCheckoutCancelledToast,
   getBidPaymentConfirmFailureToast,
   parseConfirmPaymentAxiosError,
 } from "../../utils/clientMyOrdersPaymentReturn";
@@ -143,8 +142,7 @@ export default function ClientMyOrdersPage() {
       // Stripe "back" link: the unpaid order is kept (with its attachments) — «Continue payment» resumes
       // it, «Cancel order» discards it explicitly. Nothing is deleted automatically.
       if (orderId && bidId) {
-        const toast = getBidCheckoutCancelledToast(isArabicUi);
-        push({ type: "error", title: toast.title, message: toast.message });
+        push({ type: "info", title: t(`${m}.paymentNotCompletedTitle`), message: t(`${m}.paymentNotCompletedBidMessage`) });
       } else {
         push({ type: "info", title: t(`${m}.paymentNotCompletedTitle`), message: t(`${m}.paymentNotCompletedMessage`) });
       }

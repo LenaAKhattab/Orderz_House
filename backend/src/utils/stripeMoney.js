@@ -36,4 +36,21 @@ function amountMajorToStripeMinor(amountMajor, currencyCode) {
   return Math.round(n * 100);
 }
 
-module.exports = { amountMajorToStripeMinor };
+/** Stripe charges three-decimal currencies only in whole hundredths (last minor digit 0, e.g. 5.120 JOD → 5120). */
+const STRIPE_THREE_DECIMAL_CHARGE_CURRENCIES = new Set(["BHD", "JOD", "KWD", "OMR", "TND"]);
+
+/**
+ * Round a computed minor amount (e.g. after a percentage discount) to one Stripe can charge.
+ * Whole-unit prices such as 19 / 50 JOD are already chargeable and are returned unchanged.
+ * @param {number} minor
+ * @param {string} currencyCode
+ * @returns {number}
+ */
+function chargeableStripeMinor(minor, currencyCode) {
+  const n = Math.round(Number(minor));
+  if (!Number.isFinite(n)) return n;
+  const c = String(currencyCode || "").trim().toUpperCase();
+  return STRIPE_THREE_DECIMAL_CHARGE_CURRENCIES.has(c) ? Math.round(n / 10) * 10 : n;
+}
+
+module.exports = { amountMajorToStripeMinor, chargeableStripeMinor };

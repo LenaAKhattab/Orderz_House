@@ -314,7 +314,7 @@
     "checkoutSuccessMessage": "Membership purchased successfully. Your subscription period will not start until you receive your first order. Before applying to orders, please complete identity verification and training.",
     "checkoutWebhookHint": "Payment confirmation may take a short moment if the system is still processing the webhook. Refresh shortly if membership does not appear yet.",
     "checkoutCancelledTitle": "Payment cancelled",
-    "checkoutCancelledMessage": "Payment was cancelled. You can choose a package again at any time.",
+    "checkoutCancelledMessage": "Payment was not completed. If your card was declined, try another card or contact your bank. You can choose a package again at any time.",
     "dismissBanner": "Dismiss",
     "checkoutFailedTitle": "Could not start checkout",
     "checkoutFailed": "Could not open the payment page. Please try again.",

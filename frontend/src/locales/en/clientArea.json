@@ -123,7 +123,8 @@
     "paymentConfirmingTitle": "Confirming payment",
     "paymentConfirmingMessage": "We haven't received the payment confirmation yet. The order opens to freelancers as soon as it is confirmed; you can continue the payment from the order card.",
     "paymentNotCompletedTitle": "Payment not completed",
-    "paymentNotCompletedMessage": "Your order is saved with its attachments. You can “Continue payment” any time or cancel the order."
+    "paymentNotCompletedMessage": "Your order is saved with its attachments. If your card was declined, try another card or contact your bank, then use “Continue payment”. You can also cancel the order.",
+    "paymentNotCompletedBidMessage": "The selected offer is still reserved for your order. If your card was declined, try another card or contact your bank, then use “Continue payment” — or choose another offer."
   },
   "profile": {
     "loadError": "Could not load profile.",
@@ -240,7 +241,8 @@
       "cancelled": "This order was cancelled.",
       "archived": "This order is archived.",
       "generic": "Track this order's status here."
-    }
+    },
+    "chooseAnotherOffer": "Choose another offer"
   },
   "payNow": {
     "label": "Pay now",
@@ -260,7 +262,9 @@
     "cancelConfirm": "Cancel order",
     "cancelDoneTitle": "Order cancelled",
     "cancelDoneMessage": "The unpaid order was cancelled.",
-    "cancelErrorTitle": "Could not cancel the order"
+    "cancelErrorTitle": "Could not cancel the order",
+    "bidPaidMessage": "Payment for the selected offer is confirmed and the order is assigned to the Freelancer.",
+    "reviewRequired": "A previous payment for this order needs a quick review. Please contact support and we will help."
   },
   "deliveryReview": {
     "titleArchive": "Freelancer delivery files",
@@ -330,7 +334,9 @@
     "payNowHint": "You will pay the selected bid amount now before work begins.",
     "rejectBid": "Reject bid",
     "confirmAndPay": "Confirm and pay",
-    "selectBidAndPay": "Select bid and pay"
+    "selectBidAndPay": "Select bid and pay",
+    "continuePayment": "Continue payment",
+    "awaitingPayment": "Awaiting payment"
   },
   "freelancerClaims": {
     "title": "Freelancer requests on this order",

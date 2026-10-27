@@ -1,8 +1,11 @@
 import { useRef, useState } from "react";
-import { createClientFixedOrderCheckoutRequest } from "../../services/api";
+import { createClientFixedOrderCheckoutRequest, selectClientOrderBidRequest } from "../../services/api";
 import { useToast } from "../ui/toastContext";
 import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
-import { isClientFixedOrderAwaitingStripeCheckout } from "../../utils/clientFixedOrderPayNow";
+import {
+  isClientFixedOrderAwaitingStripeCheckout,
+  isClientOrderAwaitingSelectedBidPayment,
+} from "../../utils/clientFixedOrderPayNow";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import { usePageRestore } from "../../hooks/usePageRestore";
 import "../../i18n/clientAreaResources";
@@ -11,13 +14,14 @@ import "../../i18n/clientAreaResources";
 const PAY_ERROR_KEYS = {
   CLIENT_ORDER_PAYMENT_PROCESSING: "processing",
   CLIENT_ORDER_PAYMENT_STATUS_UNAVAILABLE: "statusUnavailable",
+  CLIENT_ORDER_PAYMENT_REVIEW_REQUIRED: "reviewRequired",
   PAYMENT_PROVIDER_ERROR: "providerError",
 };
 
 /**
- * «Continue payment» for an unpaid fixed-price order: the server resumes the SAME open Stripe
- * Checkout Session (or opens a fresh one for the same order if it expired) — the order and its
- * attachments are never recreated.
+ * «Continue payment» for an unpaid client order — a fixed-price order awaiting payment, or a priced-bidding
+ * order whose selected offer awaits payment. The server resumes the SAME open Stripe Checkout Session (or
+ * opens a fresh one for the same order / offer if it expired) — nothing is recreated.
  */
 export default function ClientFixedOrderPayNowButton({ order, className = "btn btn-primary", onChanged }) {
   const { push } = useToast();
@@ -33,7 +37,9 @@ export default function ClientFixedOrderPayNowButton({ order, className = "btn b
     setBusy(false);
   });
 
-  if (!isClientFixedOrderAwaitingStripeCheckout(order)) return null;
+  const fixed = isClientFixedOrderAwaitingStripeCheckout(order);
+  const selectedBid = !fixed && isClientOrderAwaitingSelectedBidPayment(order);
+  if (!fixed && !selectedBid) return null;
 
   const onPay = async () => {
     if (inFlight.current || busy || !order?.id) return;
@@ -41,10 +47,12 @@ export default function ClientFixedOrderPayNowButton({ order, className = "btn b
     setBusy(true);
     let redirecting = false;
     try {
-      const res = await createClientFixedOrderCheckoutRequest(order.id);
+      const res = fixed
+        ? await createClientFixedOrderCheckoutRequest(order.id)
+        : await selectClientOrderBidRequest(order.id, order.selectedBidId);
       const data = res?.data || res || {};
       if (data.alreadyPaid) {
-        push({ type: "success", title: t(`${p}.paidTitle`), message: t(`${p}.paidMessage`) });
+        push({ type: "success", title: t(`${p}.paidTitle`), message: t(fixed ? `${p}.paidMessage` : `${p}.bidPaidMessage`) });
         onChanged?.();
         return;
       }
