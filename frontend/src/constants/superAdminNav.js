@@ -474,6 +474,11 @@ export function superAdminBreadcrumbKeys(pathname) {
   if (pathname.includes("/fazat-settlements")) return [...base, "dashboard.breadcrumbs.fazatSettlements"];
   if (pathname.includes("/financial-claims")) return [...base, "dashboard.breadcrumbs.financialClaims"];
   if (pathname.includes("/orders")) return [...base, "dashboard.breadcrumbs.internalRequests"];
+  if (pathname.includes("/account-restrictions")) return [...base, "dashboard.breadcrumbs.accountRestrictions"];
+  if (pathname.includes("/referrals")) return [...base, "dashboard.nav.superAdmin.referrals"];
+  if (pathname.includes("/pantry")) return [...base, "dashboard.breadcrumbs.pantry"];
+  if (pathname.includes("/notifications")) return [...base, "dashboard.breadcrumbs.notifications"];
+  if (pathname.includes("/settings")) return [...base, "dashboard.breadcrumbs.accountSettings"];
   return base;
 }
 

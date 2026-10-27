@@ -245,7 +245,9 @@
       "scopeGeneral": "عام",
       "noFiles": "لا توجد ملفات مضافة",
       "applicants": "المتقدمون",
-      "bids": "العروض"
+      "bids": "العروض",
+      "created": "تاريخ الإنشاء",
+      "filesCount": "{{count}} ملفات"
     },
     "bidsModal": {
       "title": "عروض الأسعار (مزايدة داخلية)",

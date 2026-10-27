@@ -873,3 +873,56 @@
     display: block;
   }
 }
+
+/* Inside the admin shell the generic `.oh-sa-outlet .btn` (42px, wide padding) won over the compact
+   row actions, so they overflowed the 11rem column and "Cancel" was clipped. */
+.oh-sa-outlet .oh-sa-subs-actions--compact .btn.oh-sa-subs-actions__btn {
+  min-height: 28px;
+  padding: 0.28rem 0.4rem;
+  font-size: 0.72rem;
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+/* Plan names wrap at word boundaries instead of collapsing to "الاش…". */
+.oh-sa-subs-table td.oh-sa-subs-table__plan {
+  white-space: normal;
+  overflow-wrap: normal;
+  word-break: normal;
+  line-height: 1.35;
+}
+
+/* The fixed columns added up to more than the panel (table 1088px in a 1051px wrapper at 1440),
+   so the actions column on the far edge was clipped. Narrower date columns make the table fit. */
+.oh-sa-subs-table col.oh-sa-subs-col-assigned,
+.oh-sa-subs-table col.oh-sa-subs-col-start,
+.oh-sa-subs-table col.oh-sa-subs-col-expiry {
+  width: 7.25rem;
+}
+
+.oh-sa-subs-table__actions .oh-sa-subs-actions--compact {
+  max-width: 100%;
+}
+
+/* 68rem min-width = 1088px, wider than the 1440 panel; with the narrower date columns 60rem fits. */
+.oh-sa-subs-table {
+  min-width: 60rem;
+}
+
+/* Follow the UI direction (English was forced RTL). */
+.oh-sa-subs-table-wrap {
+  direction: inherit;
+}
+
+/* Between lg and 1360px the panel is narrower than the 10-column table, so in RTL the actions column
+   sat off-screen behind a horizontal scroll. Use the existing card layout (two per row) there. */
+@media (min-width: 1024px) and (max-width: 1359px) {
+  .oh-sa-subs-table-wrap {
+    display: none;
+  }
+
+  .oh-sa-subs-mobile-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

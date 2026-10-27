@@ -245,7 +245,9 @@
       "scopeGeneral": "General",
       "noFiles": "No files added",
       "applicants": "Applicants",
-      "bids": "Bids"
+      "bids": "Bids",
+      "created": "Created",
+      "filesCount": "{{count}} files"
     },
     "bidsModal": {
       "title": "Price bids (internal bidding)",

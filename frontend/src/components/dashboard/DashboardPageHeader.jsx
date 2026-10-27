@@ -48,7 +48,7 @@ export default function DashboardPageHeader({
     <header className={`mb-5 w-full min-w-0 [direction:inherit] [text-align:inherit] ${className}`.trim()} role="banner">
       <div data-dashboard-header className={cardShell}>
         {crumbs.length > 0 ? (
-          <nav className="mb-3.5" aria-label={t("dashboard.nav.common.breadcrumbNav")}>
+          <nav className="dph__crumbs mb-3.5" aria-label={t("dashboard.nav.common.breadcrumbNav")}>
             <ol className="m-0 flex list-none flex-wrap items-center gap-x-1.5 gap-y-0.5 p-0 text-[0.75rem] font-semibold text-slate-400">
               {crumbs.map((cr, i) => {
                 const label = resolveBreadcrumbLabel(cr, t);
@@ -83,12 +83,12 @@ export default function DashboardPageHeader({
         <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-4">
           <div className="min-w-0 flex-[1_1_220px] text-start">
             {eyebrow ? (
-              <p className="mb-2 mt-0 text-[0.8rem] font-bold leading-snug tracking-wide text-slate-500">
+              <p className="dph__eyebrow mb-2 mt-0 text-[0.8rem] font-bold leading-snug tracking-wide text-slate-500">
                 {eyebrow}
               </p>
             ) : null}
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2.5">
-              <h1 className="m-0 text-[clamp(1.35rem,2.4vw,1.875rem)] font-bold leading-tight tracking-tight text-slate-900">
+              <h1 className="dph__title m-0 text-[clamp(1.35rem,2.4vw,1.875rem)] font-bold leading-tight tracking-tight text-slate-900">
                 {title}
               </h1>
               {statusBadge ? (
@@ -102,7 +102,7 @@ export default function DashboardPageHeader({
               ) : null}
             </div>
             {description ? (
-              <p className="mb-0 mt-2.5 max-w-3xl text-[0.9rem] leading-relaxed text-slate-500">{description}</p>
+              <p className="dph__desc mb-0 mt-2.5 max-w-3xl text-[0.9rem] leading-relaxed text-slate-500">{description}</p>
             ) : null}
             {alert ? <div className="mt-3.5 [&_.auth-form-error]:mb-0">{alert}</div> : null}
           </div>

@@ -190,5 +190,7 @@
   "identity": "الهوية",
   "eligibility": "الأهلية",
   "accountActive": "نشط",
-  "accountInactive": "غير نشط"
+  "accountInactive": "غير نشط",
+  "checking": "جارٍ التحقق من القيود…",
+  "checkFailed": "تعذّر التحقق من القيود"
 }

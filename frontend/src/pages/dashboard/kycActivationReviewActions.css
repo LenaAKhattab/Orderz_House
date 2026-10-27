@@ -84,3 +84,80 @@
     transform: none;
   }
 }
+
+/* Identity queue — shared dash-ui-table (Users control-center density) */
+.oh-kyc-queue .dash-ui-table td {
+  vertical-align: middle;
+}
+
+.oh-kyc-queue__name {
+  display: block;
+  font-weight: 700;
+  color: var(--dash-text, #172033);
+}
+
+.oh-kyc-queue {
+  width: 100%;
+  max-width: 100%;
+}
+
+.oh-kyc-queue__sub {
+  display: none;
+  font-size: 0.76rem;
+  color: #64748b;
+  text-align: start;
+  unicode-bidi: plaintext;
+}
+
+.oh-kyc-queue__date {
+  white-space: nowrap;
+  font-size: 0.8rem;
+  color: #475569;
+}
+
+.oh-kyc-queue__col--action {
+  width: 1%;
+  white-space: nowrap;
+  text-align: end;
+}
+
+.oh-kyc-queue__open.btn {
+  min-height: 34px;
+  padding: 4px 14px;
+  font-size: 0.82rem;
+}
+
+@media (max-width: 900px) {
+  .oh-kyc-queue__col--email,
+  .oh-kyc-queue__col--review {
+    display: none;
+  }
+
+  .oh-kyc-queue__sub {
+    display: block;
+  }
+
+  .oh-kyc-queue__sub--date {
+    display: none;
+  }
+}
+
+/* Phones: name + email + submitted date stacked, status and the open action stay visible. */
+@media (max-width: 600px) {
+  .oh-kyc-queue__col--date {
+    display: none;
+  }
+
+  .oh-kyc-queue__sub--date {
+    display: block;
+  }
+
+  .oh-kyc-queue .dash-ui-table th,
+  .oh-kyc-queue .dash-ui-table td {
+    padding: 0.55rem 0.5rem;
+  }
+
+  .oh-kyc-queue .dash-ui-table td:first-child {
+    overflow-wrap: anywhere;
+  }
+}

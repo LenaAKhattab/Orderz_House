@@ -104,6 +104,46 @@ Staging fixtures: 2 QA clients (9 orders across every lifecycle state, and a new
 | `/dashboard/client/orders/:id` | Marketplace order | Client | ✓/✓ | ✓ | ✓ | ✓ | ✓ | KEEP | ✓ | ✓ | Shared detail page; dormant Elite Direct panel calls `/api/api/...` (404) — reported, not activated |
 | `(shell)` | Sidebar collapsed / mobile drawer | Client | ✓/✓ | ✓ | ✓ | ✓ | ✓ | KEEP | ✓ | ✓ | Same shell as Freelancer |
 
-## Phase 4 — Super Admin (pending)
+## Phase 4 — Super Admin / Admin control center
+
+Staging fixtures: [UIUX-P4] client, freelancer (Annual SILVER, deliveries/revision files, pending financial claim) and a restricted freelancer (bids + messaging); existing Staging staff accounts for read-only navigation; cleaned after QA. 322 BEFORE / 322 AFTER; no authenticated Production screenshots. Modules named in the brief but not present in the product (disputes, ERP/CRM, bookings, HR, organizations/contacts, communications, people leads, agreements, report pages) were not invented. Shared change: DashboardPageHeader adopts the existing compact control-center header inside the admin shell (redundant eyebrow hidden); DashboardStatCard scorecards tightened inside the admin shell.
+
+| ROUTE | SURFACE | ROLE | AR/EN | DESKTOP | MOBILE | BEFORE CAPTURED | AUDITED | CHANGED | AFTER CAPTURED | DEPLOYED | NOTES |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| `/dashboard/super-admin` | Overview | Super Admin | ✓/✓ | ✓ | ✓ | ✓ | ✓ | KEEP | ✓ | ✓ | مركز تحكم قوي: مؤشرات، نبض المتابعة، تحميل مرحلي — مرجع تصميمي |
+| `/dashboard/super-admin/analysis` | Analytics | Super Admin | ✓/✓ | ✓ | ✓ | ✓ | ✓ | KEEP | ✓ | ✓ | مرجع تصميمي (رأس مضغوط، جداول وأشرطة) |
+| `/dashboard/super-admin/users` | Users | Super Admin | ✓/✓ | ✓ | ✓ | ✓ | ✓ | FIX | ✓ | ✓ | لوحة تفاصيل المستخدم تعرض «لا يوجد قيد نشط» قبل وصول نتيجة التحقق — لمستقل مقيَّد فعلاً (طلب القيود يستغرق 2–4.5 ث على Staging); زر «إضافة إلى قائمة القيود» يظهر أثناء التحميل لمستخدم مقيَّد; خلايا الجدول بمحاذاة يمين ثابتة في الإنجليزية |
+| `/dashboard/super-admin/account-restrictions` | Account restrictions | Super Admin | ✓/✓ | ✓ | ✓ | ✓ | ✓ | POLISH | ✓ | ✓ | مسار الشريط العلوي «الرئيسية» فقط; جداول المستخدمين/الباقات بمحاذاة يمين في الإنجليزية |
+| `/dashboard/super-admin/orders` | Internal requests | Super Admin | ✓/✓ | ✓ | ✓ | ✓ | ✓ | MODERNIZE | ✓ | ✓ | عرض البطاقات: كل بطاقة ~340px بفراغ كبير (min-height بطاقة المعرض); عرض الجدول: أعمدة مطوّرين خام (assignedFreelancerId, createdAt, files, skills)، قيم true/false، تاريخ ISO، «fixed» و«1 days» غير مترجمة، عرض أدنى 1200px; عنوان صفحة ضخم بأسلوب تسويقي |
+| `/dashboard/super-admin/financial-center` | Financial center | Super Admin | ✓/✓ | ✓ | ✓ | ✓ | ✓ | POLISH | ✓ | ✓ | رأس ضخم (عنوان ~30px + سطر «لوحة المدير الأعلى» مكرر) |
+| `/dashboard/super-admin/financial-claims` | Financial claims | Super Admin | ✓/✓ | ✓ | ✓ | ✓ | ✓ | POLISH | ✓ | ✓ | رأس ضخم ومكرر |
+| `/dashboard/super-admin/fazat-settlements` | FAZAT settlements | Super Admin | ✓/✓ | ✓ | ✓ | ✓ | ✓ | POLISH | ✓ | ✓ |  |
+| `/dashboard/super-admin/referrals` | Referrals | Super Admin | ✓/✓ | ✓ | ✓ | ✓ | ✓ | POLISH | ✓ | ✓ | 11 بطاقة مؤشر طويلة; المسار العلوي «الرئيسية» فقط |
+| `/dashboard/super-admin/training-orders` | Training requests | Super Admin | ✓/✓ | ✓ | ✓ | ✓ | ✓ | POLISH | ✓ | ✓ |  |
+| `/dashboard/super-admin/pantry` | Pantry | Super Admin | ✓/✓ | ✓ | ✓ | ✓ | ✓ | KEEP | ✓ | ✓ | مسار علوي مضاف فقط |
+| `/dashboard/super-admin/articles` | Articles | Super Admin | ✓/✓ | ✓ | ✓ | ✓ | ✓ | KEEP | ✓ | ✓ |  |
+| `/dashboard/super-admin/plans` | Plans | Super Admin | ✓/✓ | ✓ | ✓ | ✓ | ✓ | POLISH | ✓ | ✓ |  |
+| `/dashboard/super-admin/marketplace-plans` | Marketplace membership plans | Super Admin | ✓/✓ | ✓ | ✓ | ✓ | ✓ | FIX | ✓ | ✓ | بطاقات الباقات بلا تنسيق عند الفتح المباشر — ملف CSS كان مستورداً فقط في صفحات أخرى |
+| `/dashboard/super-admin/training-packages` | Training packages | Super Admin | ✓/✓ | ✓ | ✓ | ✓ | ✓ | POLISH | ✓ | ✓ |  |
+| `/dashboard/super-admin/marketplace-economy` | Marketplace economy | Super Admin | ✓/✓ | ✓ | ✓ | ✓ | ✓ | POLISH | ✓ | ✓ |  |
+| `/dashboard/super-admin/freelancer-activation-requests` | Identity / activation requests | Super Admin | ✓/✓ | ✓ | ✓ | ✓ | ✓ | MODERNIZE | ✓ | ✓ | جدول خام بأنماط مضمّنة: لا حدود، الحالة نص، «عرض» رابط نصي; التواريخ عربية دائماً حتى في الإنجليزية; عنوان ضخم وحده |
+| `/dashboard/super-admin/bildazo-author-links` | Bildazo author links | Super Admin | ✓/✓ | ✓ | ✓ | ✓ | ✓ | POLISH | ✓ | ✓ |  |
+| `/dashboard/super-admin/subscriptions` | Freelancer subscriptions | Super Admin | ✓/✓ | ✓ | ✓ | ✓ | ✓ | FIX | ✓ | ✓ | عمود الإجراءات مقصوص: الجدول 1088px داخل لوحة 1051px، فـ«إلغاء» خارج الشاشة; على 1024–1359 الجدول يحتاج تمريراً أفقياً لرؤية الإجراءات; الجدول مثبت على RTL في الإنجليزية؛ أسماء الباقات «الاش…» |
+| `/dashboard/super-admin/courses` | Courses | Super Admin | ✓/✓ | ✓ | ✓ | ✓ | ✓ | POLISH | ✓ | ✓ |  |
+| `/dashboard/super-admin/ads` | Ads | Super Admin | ✓/✓ | ✓ | ✓ | ✓ | ✓ | POLISH | ✓ | ✓ |  |
+| `/dashboard/super-admin/edit-website` | Edit website | Super Admin | ✓/✓ | ✓ | ✓ | ✓ | ✓ | POLISH | ✓ | ✓ |  |
+| `/dashboard/super-admin/institutions` | Institutions | Super Admin | ✓/✓ | ✓ | ✓ | ✓ | ✓ | POLISH | ✓ | ✓ |  |
+| `/dashboard/super-admin/institutional-order-storage` | Institutional order storage | Super Admin | ✓/✓ | ✓ | ✓ | ✓ | ✓ | POLISH | ✓ | ✓ |  |
+| `/dashboard/super-admin/admins` | Admins | Super Admin | ✓/✓ | ✓ | ✓ | ✓ | ✓ | POLISH | ✓ | ✓ |  |
+| `/dashboard/super-admin/rate-limit-exemptions` | Rate-limit exemptions | Super Admin | ✓/✓ | ✓ | ✓ | ✓ | ✓ | POLISH | ✓ | ✓ |  |
+| `/dashboard/super-admin/onboarding` | Onboarding | Super Admin | ✓/✓ | ✓ | ✓ | ✓ | ✓ | POLISH | ✓ | ✓ |  |
+| `/dashboard/super-admin/feedback` | Problems & suggestions | Super Admin | ✓/✓ | ✓ | ✓ | ✓ | ✓ | POLISH | ✓ | ✓ |  |
+| `/dashboard/super-admin/notifications` | Notifications | Super Admin | ✓/✓ | ✓ | ✓ | ✓ | ✓ | KEEP | ✓ | ✓ | المكوّن المشترك (أُصلح تكرار الفئة في المرحلة 3)؛ مسار علوي مضاف |
+| `/dashboard/super-admin/settings` | Account settings | Super Admin | ✓/✓ | ✓ | ✓ | ✓ | ✓ | POLISH | ✓ | ✓ |  |
+| `/dashboard/admin` | Admin task center | Admin | ✓/✓ | ✓ | ✓ | ✓ | ✓ | KEEP | ✓ | ✓ | بطاقات مهام مع عدادات واضحة |
+| `/dashboard/admin/articles` | Admin articles review | Admin | ✓/✓ | ✓ | ✓ | ✓ | ✓ | FIX | ✓ | ✓ | كل تحميل يطلب نقطة حملات التفعيل الخاصة بالمدير الأعلى فيعود 403 |
+| `/dashboard/admin/settings` | Admin settings | Admin | ✓/✓ | ✓ | ✓ | ✓ | ✓ | POLISH | ✓ | ✓ |  |
+| `/dashboard/super-admin` | Navigation | Super Admin | ✓/✓ | ✓ | ✓ | ✓ | ✓ | KEEP | ✓ | ✓ | 8 مجموعات منطقية، حالة نشطة واضحة، طي وقائمة جوال سليمة — لم يُعد تنظيم الوحدات |
+
 ## Phase 5 — Shared components (pending)
 ## Phase 6 — Final (pending)
