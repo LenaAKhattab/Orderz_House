@@ -27,6 +27,8 @@ describe("auth email input (incident 2026-10-25)", () => {
       // Addresses containing the letter "s" were rejected by the broken login regex.
       "sara.saleh@users.com",
       "first.last+tag@sub.example.com",
+      // Invisible characters inside the address (stored by older registrations) are removed too.
+      "omar\u200Bnabulsi@gmail.com",
     ];
     for (const raw of variants) {
       assert.ok(check(raw), `rejected ${JSON.stringify(raw)}`);
@@ -35,7 +37,7 @@ describe("auth email input (incident 2026-10-25)", () => {
   });
 
   it("rejects malformed and injection-style input", () => {
-    for (const raw of ["", "   ", "omarnabulsigmail.com", "omarnabulsi@", "@gmail.com", "omar@gmail", "omar nabulsi@gmail.com", "omar@gmail.com\nBcc: x@y.com", "omar\u200Bnabulsi@gmail.com"]) {
+    for (const raw of ["", "   ", "omarnabulsigmail.com", "omarnabulsi@", "@gmail.com", "omar@gmail", "omar nabulsi@gmail.com", "omar@gmail.com\nBcc: x@y.com"]) {
       assert.ok(!check(raw), `accepted ${JSON.stringify(raw)}`);
     }
   });

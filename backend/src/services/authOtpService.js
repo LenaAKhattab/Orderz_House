@@ -1,4 +1,5 @@
 const bcrypt = require("bcrypt");
+const { sqlEmailEquals } = require("../utils/emailNormalization");
 const crypto = require("node:crypto");
 const { pool } = require("../config/db");
 const emailService = require("./emailService");
@@ -247,7 +248,7 @@ async function resendRegistrationOtp(emailRaw) {
   try {
     await client.query("BEGIN");
     const { rows: uRows } = await client.query(
-      `SELECT id, email_verified FROM users WHERE lower(email::text) = lower($1::text) LIMIT 1 FOR UPDATE`,
+      `SELECT id, email_verified FROM users WHERE ${sqlEmailEquals("email", "$1")} LIMIT 1 FOR UPDATE`,
       [String(emailNorm)],
     );
     const user = uRows[0];
@@ -301,7 +302,7 @@ async function resendRegistrationOtp(emailRaw) {
 async function requestForgotPasswordOtp(emailRaw) {
   const emailNorm = normalizeEmail(emailRaw);
   const { rows: uRows } = await pool.query(
-    `SELECT id FROM users WHERE lower(email::text) = lower($1::text) AND is_active = TRUE LIMIT 1`,
+    `SELECT id FROM users WHERE ${sqlEmailEquals("email", "$1")} AND is_active = TRUE LIMIT 1`,
     [String(emailNorm)],
   );
   const user = uRows[0];
@@ -489,7 +490,7 @@ async function resetPasswordWithToken(emailRaw, resetTokenPlain, newPassword) {
     }
 
     const { rows: uRows } = await client.query(
-      `SELECT id FROM users WHERE lower(email::text) = lower($1::text) LIMIT 1 FOR UPDATE`,
+      `SELECT id FROM users WHERE ${sqlEmailEquals("email", "$1")} LIMIT 1 FOR UPDATE`,
       [String(emailNorm)],
     );
     const uid = uRows[0]?.id;

@@ -1,20 +1,28 @@
 /**
  * Canonical email input handling for auth forms (login, register, forgot/reset password).
- * Mirrors backend `utils/emailNormalization.js`: strip only unintended *boundary* characters,
- * lowercase, then validate. Internal characters are never removed.
+ * Mirrors backend `utils/emailNormalization.js`: invisible format characters (zero-width chars,
+ * LRM/RLM, bidi embeddings/isolates, word joiner, BOM) are removed wherever they appear — they are
+ * never part of a real address — surrounding whitespace is trimmed, then the address is lowercased.
+ * Character classes are built from code points (no escape sequences in source).
  */
 
-// Whitespace (incl. NBSP) plus invisible characters that copy/paste, autofill and RTL keyboards
-// add around an address: zero-width chars, LRM/RLM, bidi embeddings/isolates, word joiner, BOM.
-const INVISIBLE = "\\u200B-\\u200F\\u202A-\\u202E\\u2060-\\u2064\\u2066-\\u2069\\uFEFF";
-const BOUNDARY_RE = new RegExp(`^[\\s${INVISIBLE}]+|[\\s${INVISIBLE}]+$`, "g");
-const INVISIBLE_RE = new RegExp(`[${INVISIBLE}]`);
+const INVISIBLE_CHARS = (() => {
+  const codes = [0xfeff];
+  for (let c = 0x200b; c <= 0x200f; c += 1) codes.push(c);
+  for (let c = 0x202a; c <= 0x202e; c += 1) codes.push(c);
+  for (let c = 0x2060; c <= 0x2064; c += 1) codes.push(c);
+  for (let c = 0x2066; c <= 0x2069; c += 1) codes.push(c);
+  return codes.map((c) => String.fromCharCode(c)).join("");
+})();
+const INVISIBLE_GLOBAL_RE = new RegExp(`[${INVISIBLE_CHARS}]`, "g");
+const INVISIBLE_RE = new RegExp(`[${INVISIBLE_CHARS}]`);
 const EMAIL_SYNTAX_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /** @param {unknown} raw */
 export function normalizeEmailInput(raw) {
   return String(raw ?? "")
-    .replace(BOUNDARY_RE, "")
+    .replace(INVISIBLE_GLOBAL_RE, "")
+    .trim()
     .toLowerCase();
 }
 

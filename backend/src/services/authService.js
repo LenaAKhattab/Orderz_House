@@ -1,4 +1,5 @@
 const bcrypt = require("bcrypt");
+const { sqlEmailEquals } = require("../utils/emailNormalization");
 const jwt = require("jsonwebtoken");
 const crypto = require("node:crypto");
 const { pool } = require("../config/db");
@@ -166,7 +167,7 @@ async function findUserByEmail(emailNormalized) {
               preferred_withdrawal_method, payout_notes_hint, notification_preferences,
               browser_notification_status, notification_prompt_answered_at,
               onboarding_source, freelancer_member_id, must_change_password
-       FROM users WHERE lower(email::text) = lower($1::text) LIMIT 1`,
+       FROM users WHERE ${sqlEmailEquals("email", "$1")} LIMIT 1`,
       [emailNormalized],
     );
     return rows[0] || null;
@@ -181,7 +182,7 @@ async function findUserByEmail(emailNormalized) {
                 preferred_withdrawal_method, payout_notes_hint, notification_preferences,
                 browser_notification_status, notification_prompt_answered_at,
                 onboarding_source, freelancer_member_id
-         FROM users WHERE lower(email::text) = lower($1::text) LIMIT 1`,
+         FROM users WHERE ${sqlEmailEquals("email", "$1")} LIMIT 1`,
         [emailNormalized],
       );
       return rows[0] || null;
@@ -195,7 +196,7 @@ async function findUserByEmail(emailNormalized) {
                 preferred_withdrawal_method, payout_notes_hint, notification_preferences,
                 browser_notification_status, notification_prompt_answered_at,
                 onboarding_source
-         FROM users WHERE lower(email::text) = lower($1::text) LIMIT 1`,
+         FROM users WHERE ${sqlEmailEquals("email", "$1")} LIMIT 1`,
         [emailNormalized],
       );
       return rows[0] || null;
