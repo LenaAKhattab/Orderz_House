@@ -191,6 +191,7 @@ async function openClientFixedOrderCheckoutAttempt({ clientUserId, orderId, isMo
   const db = await pool.connect();
   // Paid at Stripe but not applied yet: confirmed through the trusted path after the lock is released.
   let paidSessionId = null;
+  let createdSessionId = null;
   try {
     await db.query("BEGIN");
     const { rows } = await db.query(
@@ -335,6 +336,7 @@ async function openClientFixedOrderCheckoutAttempt({ clientUserId, orderId, isMo
       success_url: successUrl,
       cancel_url: cancelUrl,
     }, { idempotencyKey });
+    createdSessionId = session.id;
     logClientCheckout({ orderId: oid, previousState: currentSid ? "expired" : "none", action: "created" });
 
     await db.query(
@@ -376,6 +378,7 @@ async function openClientFixedOrderCheckoutAttempt({ clientUserId, orderId, isMo
     );
 
     await db.query("COMMIT");
+    createdSessionId = null;
 
     if (!session.url) {
       const err = new Error("Stripe did not return a checkout URL.");
@@ -386,6 +389,10 @@ async function openClientFixedOrderCheckoutAttempt({ clientUserId, orderId, isMo
     return { checkoutUrl: session.url, sessionId: session.id, resumed: false };
   } catch (e) {
     await db.query("ROLLBACK");
+    if (createdSessionId) {
+      // Created at Stripe but not recorded locally: close it so it can never be paid.
+      await stripe.checkout.sessions.expire(createdSessionId).catch(() => {});
+    }
     throw e;
   } finally {
     db.release();
@@ -409,7 +416,14 @@ async function createClientFixedOrderCheckoutSession({ clientUserId, orderId, is
   return { checkoutUrl: null, sessionId: rows[0]?.stripe_checkout_session_id || null, alreadyPaid: true };
 }
 
-async function createClientSelectedBidCheckoutSession({ clientUserId, orderId, bidId }) {
+/**
+ * Selected-bid payment attempt, reconciled with Stripe under the order row lock (same contract as the
+ * fixed-price flow): resumes the open Session for the same offer, expires a Session opened for another
+ * offer before switching (a stale tab can never pay for an offer that is no longer selected), opens a fresh
+ * Session after expiry, and never creates one while a payment is processing or Stripe is unreachable.
+ * Returns `{ paidBidId }` when the selected offer is already paid at Stripe (applied by the caller).
+ */
+async function openClientSelectedBidCheckoutAttempt({ clientUserId, orderId, bidId }) {
   const stripe = getStripeOrNull();
   if (!stripe) {
     throwStripeNotConfigured();
@@ -427,6 +441,7 @@ async function createClientSelectedBidCheckoutSession({ clientUserId, orderId, b
   const clientUrl = requireStripeClientUrl();
 
   const db = await pool.connect();
+  let createdSessionId = null;
   try {
     await db.query("BEGIN");
 
@@ -446,6 +461,11 @@ async function createClientSelectedBidCheckoutSession({ clientUserId, orderId, b
       const err = new Error("This order does not support bid payment flow.");
       err.statusCode = 409;
       throw err;
+    }
+    if (order.assigned_freelancer_id && order.payment_status === "paid") {
+      // Stale page / second tab after the payment was applied: nothing left to pay.
+      await db.query("COMMIT");
+      return { checkoutUrl: null, sessionId: null, alreadyPaid: true };
     }
     if (!order.is_published || !order.is_open_for_pool || order.assigned_freelancer_id) {
       const err = new Error("Order is not available for bid selection.");
@@ -503,6 +523,89 @@ async function createClientSelectedBidCheckoutSession({ clientUserId, orderId, b
       const err = new Error("Could not compute payment amount for Stripe.");
       err.statusCode = 400;
       throw err;
+    }
+
+    // One canonical unresolved Checkout Session per order. The row lock above serializes double clicks /
+    // two tabs; Stripe decides whether an earlier Session can be resumed.
+    const { rows: openAttempts } = await db.query(
+      `SELECT provider_checkout_session_id AS sid, bid_id
+         FROM client_order_payments
+        WHERE order_id = $1
+          AND purpose = 'selected_bid_payment'
+          AND status = 'pending'
+          AND provider_checkout_session_id IS NOT NULL
+        ORDER BY id DESC`,
+      [oid],
+    );
+    let resumable = null;
+    let paidBidId = null;
+    for (const attempt of openAttempts) {
+      const sid = String(attempt.sid);
+      const attemptBid = attempt.bid_id != null ? Number(attempt.bid_id) : null;
+      const current = await readClientCheckoutSessionState(stripe, sid);
+      logClientCheckout({ orderId: oid, flow: "selected_bid", providerStatus: current.state, sameBid: attemptBid === bid });
+      if (current.state === "paid") {
+        if (attemptBid !== Number(order.selected_bid_id)) {
+          throw clientCheckoutError(
+            "يوجد دفع لهذا الطلب يحتاج مراجعة من الدعم قبل المتابعة.",
+            409,
+            "CLIENT_ORDER_PAYMENT_REVIEW_REQUIRED",
+          );
+        }
+        paidBidId = attemptBid;
+        break;
+      }
+      if (current.state === "processing") {
+        throw clientCheckoutError("جارٍ تأكيد الدفع لهذا الطلب. حدّث الصفحة بعد قليل.", 409, "CLIENT_ORDER_PAYMENT_PROCESSING");
+      }
+      if (current.state === "unknown") {
+        throw clientCheckoutError(
+          "تعذر التحقق من حالة الدفع حاليًا. حاول مرة أخرى بعد قليل.",
+          503,
+          "CLIENT_ORDER_PAYMENT_STATUS_UNAVAILABLE",
+        );
+      }
+      const sameSelection =
+        attemptBid === bid &&
+        Number(order.selected_bid_id) === bid &&
+        order.order_status === orderFlowService.ORDER_STATUSES.AWAITING_PAYMENT_AFTER_BID_SELECTION &&
+        Number(current.session?.amount_total) === amountMinor;
+      if (current.state === "open" && sameSelection && !resumable) {
+        resumable = { sid, url: current.session.url };
+        continue;
+      }
+      if (current.state === "open") {
+        // Opened for another offer (or a duplicate): close it at Stripe before switching.
+        try {
+          await stripe.checkout.sessions.expire(sid);
+        } catch {
+          const again = await readClientCheckoutSessionState(stripe, sid);
+          if (again.state !== "expired") {
+            throw clientCheckoutError(
+              "تعذر التحقق من حالة الدفع حاليًا. حاول مرة أخرى بعد قليل.",
+              503,
+              "CLIENT_ORDER_PAYMENT_STATUS_UNAVAILABLE",
+            );
+          }
+        }
+      }
+      await db.query(
+        `UPDATE client_order_payments
+            SET status = 'expired'
+          WHERE order_id = $1
+            AND purpose = 'selected_bid_payment'
+            AND status = 'pending'
+            AND provider_checkout_session_id = $2`,
+        [oid, sid],
+      );
+    }
+    if (paidBidId) {
+      await db.query("ROLLBACK");
+      return { paidBidId };
+    }
+    if (resumable) {
+      await db.query("COMMIT");
+      return { checkoutUrl: resumable.url, sessionId: resumable.sid, resumed: true };
     }
 
     if (order.selected_bid_id && Number(order.selected_bid_id) !== bid) {
@@ -574,6 +677,12 @@ async function createClientSelectedBidCheckoutSession({ clientUserId, orderId, b
       legacyMeta,
     );
 
+    const { rows: bidAttemptRows } = await db.query(
+      `SELECT COUNT(*)::int AS n FROM client_order_payments WHERE order_id = $1 AND purpose = 'selected_bid_payment'`,
+      [oid],
+    );
+    // Attempt-specific: a retried request for this attempt is deduplicated; a later attempt gets a new key.
+    const idempotencyKey = `client_selected_bid:${oid}:${bid}:attempt:${Number(bidAttemptRows[0]?.n || 0) + 1}`;
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       client_reference_id: `${oid}:${bid}`,
@@ -594,7 +703,14 @@ async function createClientSelectedBidCheckoutSession({ clientUserId, orderId, b
       ],
       success_url: successUrl,
       cancel_url: cancelUrl,
-    });
+    }, { idempotencyKey });
+    createdSessionId = session.id;
+    logClientCheckout({ orderId: oid, flow: "selected_bid", previousState: openAttempts.length ? "expired" : "none", action: "created" });
+    if (!session.url) {
+      const err = new Error("Stripe did not return a checkout URL.");
+      err.statusCode = 502;
+      throw err;
+    }
 
     await db.query(
       `UPDATE orders
@@ -654,19 +770,30 @@ async function createClientSelectedBidCheckoutSession({ clientUserId, orderId, b
     );
 
     await db.query("COMMIT");
-
-    if (!session.url) {
-      const err = new Error("Stripe did not return a checkout URL.");
-      err.statusCode = 502;
-      throw err;
-    }
-    return { checkoutUrl: session.url, sessionId: session.id };
+    createdSessionId = null;
+    return { checkoutUrl: session.url, sessionId: session.id, resumed: false };
   } catch (e) {
     await db.query("ROLLBACK");
+    if (createdSessionId) {
+      // Created at Stripe but not recorded locally: close it so it can never be paid.
+      await stripe.checkout.sessions.expire(createdSessionId).catch(() => {});
+    }
     throw e;
   } finally {
     db.release();
   }
+}
+
+/**
+ * Select an offer and pay / «Continue payment» for the selected offer (same order, same canonical Session).
+ * @returns {Promise<{ checkoutUrl: string|null, sessionId: string|null, resumed?: boolean, alreadyPaid?: boolean }>}
+ */
+async function createClientSelectedBidCheckoutSession({ clientUserId, orderId, bidId }) {
+  const out = await openClientSelectedBidCheckoutAttempt({ clientUserId, orderId, bidId });
+  if (!out.paidBidId) return out;
+  logClientCheckout({ orderId: Number(orderId), flow: "selected_bid", providerStatus: "paid", action: "confirm" });
+  await confirmClientSelectedBidPayment({ clientUserId, orderId, bidId: out.paidBidId });
+  return { checkoutUrl: null, sessionId: null, alreadyPaid: true };
 }
 
 async function confirmClientSelectedBidPayment({ clientUserId, orderId, bidId }) {

@@ -85,12 +85,3 @@ export function getFixedCheckoutCancelledToast(isArabic) {
   };
 }
 
-/** User cancelled Stripe Checkout for bid payment — order stays in awaiting-payment / selection flow; no draft purge. */
-export function getBidCheckoutCancelledToast(isArabic) {
-  return {
-    title: isArabic ? "تم إلغاء الدفع" : "Payment cancelled",
-    message: isArabic
-      ? "لم يكتمل دفع العرض المختار. الطلب ما يزال في انتظار الدفع؛ يمكنك فتح الطلب وإكمال الدفع لاحقاً."
-      : "Bid checkout was cancelled. The order remains awaiting payment—you can open it and complete payment when ready.",
-  };
-}

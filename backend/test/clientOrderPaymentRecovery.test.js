@@ -266,7 +266,8 @@ describe("history, webhook and creation idempotency", () => {
   it("historical audit tool: dry run by default, never changes or deletes orders", () => {
     const tool = fs.readFileSync(path.join(__dirname, "../scripts/auditClientOrderPayments.js"), "utf8");
     assert.ok(tool.includes('const APPLY = process.argv.includes("--apply");'));
-    assert.ok(tool.includes("if (APPLY && (state === \"expired\" || state === \"missing\")) {"));
+    // Only a Session that Stripe reports as expired is closed locally (never missing / unknown / open / paid).
+    assert.ok(tool.includes("if (APPLY && state === \"expired\") {"));
     assert.ok(!/DELETE FROM|UPDATE orders|TRUNCATE/i.test(tool));
     assert.equal(tool.split("UPDATE ").length - 1, 1);
   });

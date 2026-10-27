@@ -123,7 +123,8 @@
     "paymentConfirmingTitle": "جارٍ تأكيد الدفع",
     "paymentConfirmingMessage": "لم يصلنا تأكيد الدفع بعد. سيظهر الطلب للمستقلين فور التأكيد، ويمكنك متابعة الدفع من بطاقة الطلب.",
     "paymentNotCompletedTitle": "لم يكتمل الدفع",
-    "paymentNotCompletedMessage": "طلبك محفوظ مع مرفقاته. يمكنك «متابعة الدفع» متى شئت أو إلغاء الطلب."
+    "paymentNotCompletedMessage": "طلبك محفوظ مع مرفقاته. إذا رُفضت بطاقتك، جرّب بطاقة أخرى أو تواصل مع البنك المُصدِر، ثم اضغط «متابعة الدفع». ويمكنك أيضًا إلغاء الطلب.",
+    "paymentNotCompletedBidMessage": "العرض المختار ما يزال محجوزًا لطلبك. إذا رُفضت بطاقتك، جرّب بطاقة أخرى أو تواصل مع البنك المُصدِر، ثم اضغط «متابعة الدفع»، أو اختر عرضًا آخر."
   },
   "profile": {
     "loadError": "تعذّر تحميل الملف الشخصي.",
@@ -240,7 +241,8 @@
       "cancelled": "أُلغي هذا الطلب.",
       "archived": "هذا الطلب مؤرشف.",
       "generic": "تابع حالة الطلب من هنا."
-    }
+    },
+    "chooseAnotherOffer": "اختيار عرض آخر"
   },
   "payNow": {
     "label": "ادفع الآن",
@@ -260,7 +262,9 @@
     "cancelConfirm": "إلغاء الطلب",
     "cancelDoneTitle": "تم إلغاء الطلب",
     "cancelDoneMessage": "أُلغي الطلب غير المدفوع.",
-    "cancelErrorTitle": "تعذر إلغاء الطلب"
+    "cancelErrorTitle": "تعذر إلغاء الطلب",
+    "bidPaidMessage": "تم تأكيد دفع العرض المختار وإسناد الطلب للمستقل.",
+    "reviewRequired": "يوجد دفع سابق لهذا الطلب يحتاج مراجعة قصيرة. تواصل مع الدعم وسنساعدك."
   },
   "deliveryReview": {
     "titleArchive": "ملفات تسليم المستقل",
@@ -330,7 +334,9 @@
     "payNowHint": "سيتم الدفع الآن بقيمة العرض المختار قبل بدء العمل.",
     "rejectBid": "رفض العرض",
     "confirmAndPay": "تأكيد والدفع",
-    "selectBidAndPay": "اختيار العرض والدفع"
+    "selectBidAndPay": "اختيار العرض والدفع",
+    "continuePayment": "متابعة الدفع",
+    "awaitingPayment": "بانتظار الدفع"
   },
   "freelancerClaims": {
     "title": "طلبات المستقلين على هذا الطلب",

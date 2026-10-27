@@ -9,7 +9,7 @@
  *   - client_order_payments rows by status, and orders with more than one paid row
  *   - Stripe state of every `pending` payment row (open / paid / processing / expired / missing / unknown)
  *
- * With --apply, `pending` rows whose Session is proven expired or missing at Stripe are marked `expired`
+ * With --apply, only `pending` rows whose Session is definitively `expired` at Stripe are marked `expired`
  * (history only, as the checkout.session.expired webhook does). Orders are never changed or deleted, and a
  * Session paid at Stripe is only counted: it is applied through the trusted confirmation path when the client
  * opens «Continue payment» (or by the webhook), not here.
@@ -91,7 +91,7 @@ async function main() {
       // eslint-disable-next-line no-await-in-loop
       const { state } = await stripeCheckout.readClientCheckoutSessionState(stripe, row.sid);
       pendingStates[state] = (pendingStates[state] || 0) + 1;
-      if (APPLY && (state === "expired" || state === "missing")) {
+      if (APPLY && state === "expired") {
         // eslint-disable-next-line no-await-in-loop
         const r = await pool.query(
           `UPDATE client_order_payments SET status = 'expired' WHERE id = $1 AND status = 'pending'`,

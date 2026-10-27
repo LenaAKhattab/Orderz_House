@@ -112,10 +112,13 @@ export default function ClientOrderCardCompact({ order, onOrdersChange, initiall
     !orderHasAssignment(order) &&
     !order?.isArchived;
 
+  // Awaiting payment for a selected offer: «Continue payment» (footer) resumes it; the offers list stays
+  // reachable so the client can choose another offer instead.
+  const awaitingSelectedBidPayment = order?.orderStatus === "awaiting_payment_after_bid_selection";
   const showBiddingOffersButton =
     isClientOrder &&
     pricedBidding &&
-    order?.orderStatus === "open_for_bids" &&
+    (order?.orderStatus === "open_for_bids" || awaitingSelectedBidPayment) &&
     order?.isOpenForPool &&
     !orderHasAssignment(order) &&
     !order?.isArchived;
@@ -203,7 +206,13 @@ export default function ClientOrderCardCompact({ order, onOrdersChange, initiall
       </button>,
     );
   }
-  if (showBiddingOffersButton) {
+  if (showBiddingOffersButton && awaitingSelectedBidPayment) {
+    secondary.push(
+      <button key="bids" type="button" className="btn btn-secondary" onClick={() => setBidsOpen(true)}>
+        {t(`${oc}.chooseAnotherOffer`)}
+      </button>,
+    );
+  } else if (showBiddingOffersButton) {
     primary.push(
       <button key="bids" type="button" className={step.attention ? "btn btn-primary" : "btn btn-secondary"} onClick={() => setBidsOpen(true)}>
         {t(`${oc}.viewBidOffers`)}

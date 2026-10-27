@@ -242,10 +242,12 @@ const acceptFreelancerBid = async (req, res, next) => {
     return res.status(200).json({
       success: true,
       data: {
-        requiresPayment: true,
+        requiresPayment: !out.alreadyPaid,
         paymentPurpose: "selected_bid_payment",
         checkoutUrl: out.checkoutUrl,
         sessionId: out.sessionId,
+        resumed: Boolean(out.resumed),
+        alreadyPaid: Boolean(out.alreadyPaid),
       },
     });
   } catch (err) {
@@ -295,10 +297,12 @@ const selectFreelancerBid = async (req, res, next) => {
     return res.status(200).json({
       success: true,
       data: {
-        requiresPayment: true,
+        requiresPayment: !out.alreadyPaid,
         paymentPurpose: "selected_bid_payment",
         checkoutUrl: out.checkoutUrl,
         sessionId: out.sessionId,
+        resumed: Boolean(out.resumed),
+        alreadyPaid: Boolean(out.alreadyPaid),
       },
     });
   } catch (err) {

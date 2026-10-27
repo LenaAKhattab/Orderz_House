@@ -196,6 +196,8 @@ function mapOrderBase(row) {
     isInstitutionalOrder: String(row.visibility_scope || "public") === "institution",
     paymentRequired: row.payment_required,
     paymentStatus: row.payment_status,
+    /** Offer awaiting the client's payment (priced bidding) — used for «Continue payment». */
+    selectedBidId: row.selected_bid_id != null ? String(row.selected_bid_id) : null,
     paymentAmount: row.payment_amount != null ? Number(row.payment_amount) : null,
     paymentCurrency: row.payment_currency || null,
     orderStatus: row.order_status,
@@ -3649,7 +3651,10 @@ async function listOrderBidsForClient({ clientUserId, orderId }) {
   if (o.project_type !== "bidding" || !hasPricedBiddingRow(o)) {
     return { bids: [], orderSummary: { hasOpenPool: false } };
   }
-  if (o.order_status !== ORDER_STATUSES.OPEN_FOR_BIDS || !o.is_published || !o.is_open_for_pool || o.assigned_freelancer_id) {
+  // Awaiting payment for a selected offer: still listed, so the client can continue paying or pick another offer.
+  const selectable =
+    o.order_status === ORDER_STATUSES.OPEN_FOR_BIDS || o.order_status === ORDER_STATUSES.AWAITING_PAYMENT_AFTER_BID_SELECTION;
+  if (!selectable || !o.is_published || !o.is_open_for_pool || o.assigned_freelancer_id) {
     return { bids: [], orderSummary: { hasOpenPool: false } };
   }
   const all = await listOrderBidsWithFreelancers({ orderId, clientVisibleOnly: true });
