@@ -9,7 +9,7 @@ process.env.DATABASE_URL =
 const { describe, it } = require("node:test");
 const assert = require("node:assert");
 const { validationResult } = require("express-validator");
-const { normalizeEmailInput, hasInvisibleEmailChars } = require("../src/utils/emailNormalization");
+const { normalizeEmailInput, hasInvisibleEmailChars, sqlEmailEquals } = require("../src/utils/emailNormalization");
 const validators = require("../src/validators/authValidators");
 
 const BASE = "omarnabulsi@gmail.com";
@@ -43,9 +43,9 @@ describe("normalizeEmailInput", () => {
     });
   }
 
-  it("never removes internal characters", () => {
-    assert.equal(normalizeEmailInput("omar\u200Bnabulsi@gmail.com"), "omar\u200Bnabulsi@gmail.com");
-    assert.ok(hasInvisibleEmailChars(normalizeEmailInput("omar\u200Bnabulsi@gmail.com")));
+  it("removes invisible characters anywhere but keeps real address characters", () => {
+    assert.equal(normalizeEmailInput("omar\u200Bnabulsi@gmail.com"), BASE);
+    assert.ok(!hasInvisibleEmailChars(normalizeEmailInput("omar\u200Bnabulsi@gmail.com")));
     assert.equal(normalizeEmailInput("first.last+tag@sub.example.com"), "first.last+tag@sub.example.com");
   });
 
@@ -69,7 +69,7 @@ describe("auth validators use the canonical email", () => {
   for (const [name, chain] of Object.entries(chains)) {
     it(`${name}: accepts and canonicalizes legitimate variants`, async () => {
       assert.ok(Array.isArray(chain), `${name} validators exported`);
-      for (const raw of [BASE, BASE.toUpperCase(), `  ${BASE}  `, `\u00A0${BASE}`, `\u200F${BASE}\u200E`, `\u200B${BASE}\uFEFF`]) {
+      for (const raw of [BASE, BASE.toUpperCase(), `  ${BASE}  `, `\u00A0${BASE}`, `\u200F${BASE}\u200E`, `\u200B${BASE}\uFEFF`, "omar\u200Bnabulsi@gmail.com"]) {
         const r = await runEmail(chain, raw);
         assert.ok(r.ok, `${name} rejected ${JSON.stringify(raw)}: ${JSON.stringify(r.errors)}`);
         assert.equal(r.email, BASE, `${name} did not canonicalize ${JSON.stringify(raw)}`);
@@ -77,10 +77,30 @@ describe("auth validators use the canonical email", () => {
     });
 
     it(`${name}: still rejects malformed addresses`, async () => {
-      for (const raw of ["omarnabulsigmail.com", "omarnabulsi@", "@gmail.com", "omar nabulsi@gmail.com", "omar@gmail.com\nBcc: x@y.com", "omar\u200Bnabulsi@gmail.com", ""]) {
+      for (const raw of ["omarnabulsigmail.com", "omarnabulsi@", "@gmail.com", "omar nabulsi@gmail.com", "omar@gmail.com\nBcc: x@y.com", ""]) {
         const r = await runEmail(chain, raw);
         assert.ok(!r.ok, `${name} accepted ${JSON.stringify(raw)}`);
       }
     });
   }
+});
+
+describe("legacy accounts with invisible characters stored in users.email", () => {
+  it("lookups compare the stored address with invisible characters removed", () => {
+    const sql = sqlEmailEquals("email", "$1");
+    assert.ok(sql.includes("lower(email::text) = lower($1::text)"), sql);
+    assert.ok(sql.includes("regexp_replace(email::text, '["), sql);
+    assert.ok(sql.includes("'', 'g')) = lower($1::text)"), sql);
+    assert.ok(!sql.includes(String.fromCharCode(92)), "no escape sequences in SQL text");
+  });
+
+  it("login, register duplicate check and OTP user lookups use the tolerant predicate", () => {
+    const fsMod = require("node:fs");
+    const auth = fsMod.readFileSync(require.resolve("../src/services/authService.js"), "utf8");
+    const otp = fsMod.readFileSync(require.resolve("../src/services/authOtpService.js"), "utf8");
+    const tolerant = "FROM users WHERE ${sqlEmailEquals(" + '"email", "$1"' + ")}";
+    assert.equal(auth.split(tolerant).length - 1, 3);
+    assert.equal(otp.split(tolerant).length - 1, 3);
+    assert.ok(!(auth + otp).includes("FROM users WHERE lower(email::text) = lower("));
+  });
 });
