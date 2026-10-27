@@ -1,3 +1,4 @@
+import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage.js";
 /**
  * Shared helpers for Admin list pages — request races, soft refresh errors, Abort.
  * Web-Admin-List-Timeout-02 / 05
@@ -68,8 +69,8 @@ export function resolveAdminListFailure({ hasExistingRows, error, mapError }) {
   const mapped =
     typeof mapError === "function"
       ? mapError(error)
-      : error && typeof error === "object" && "message" in error
-        ? String(error.message || "")
+      : error && typeof error === "object"
+        ? getSafeApiErrorMessage(error)
         : "";
   if (hasExistingRows) {
     return {

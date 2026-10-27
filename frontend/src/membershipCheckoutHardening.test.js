@@ -36,7 +36,8 @@ describe("membership checkout hardening — authoritative card states", () => {
     for (const f of ["components/plans/PricingSection.jsx", "components/plans/AnnualPlansSection.jsx"]) {
       assert.ok(read(f).includes("checkoutState={membershipCheckoutStateForPlan(checkoutStates,"), f);
     }
-    assert.ok(read("components/plans/PricingSection.jsx").includes("checkoutState={checkoutStates?.specialOffer || null}"));
+    // Only an attempt for THIS offer version may relabel the special-offer card (UI/UX Phase 5).
+    assert.ok(read("components/plans/PricingSection.jsx").includes("checkoutState={specialOfferCheckoutState(checkoutStates, specialOffer)}"));
     const offer = read("components/plans/SpecialOfferPackageCard.jsx");
     assert.ok(offer.includes("disabled={checkoutBusy || checkoutProcessing}"));
     const page = read("pages/dashboard/FreelancerPlansPage.jsx");

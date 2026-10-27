@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getSuperadminDashboardSummaryRequest } from "../services/api";
+import { getSafeApiErrorMessage } from "../utils/apiErrorMessage.js";
 
 const REFRESH_MS = 60_000;
 
@@ -17,7 +18,7 @@ function mapSummaryError(e) {
     };
   }
   return {
-    message: e?.response?.data?.message || message || "تعذر تحميل مؤشرات المتابعة.",
+    message: getSafeApiErrorMessage(e, "تعذر تحميل مؤشرات المتابعة."),
     code: e?.response?.data?.code || "",
     canceled: false,
   };

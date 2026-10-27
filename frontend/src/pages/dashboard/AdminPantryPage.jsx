@@ -30,6 +30,7 @@ import {
 } from "../../lib/staff/adminListLoad";
 import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
 import { useTranslation } from "../../i18n/LanguageProvider";
+import { statusLabel } from "../../i18n/statusRegistry.js";
 import "../../i18n/pantryResources";
 import "./pantryPages.css";
 
@@ -1066,7 +1067,7 @@ export default function AdminPantryPage() {
                     <strong>{b.freelancerName || b.freelancerId}</strong> — {b.amount}
                     {b.durationDays ? ` / ${b.durationDays}${t("pantry.detail.dayUnit")}` : ""}
                     <div className="muted">{b.message || ""}</div>
-                    <span className="muted">{b.status}</span>
+                    <span className="muted">{statusLabel(t, "bids", b.status)}</span>
                   </div>
                   {b.status === "pending" && detail.request.status === "open_for_bids" && (
                     <div className="pantry-actions">

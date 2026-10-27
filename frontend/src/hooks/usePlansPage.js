@@ -3,6 +3,7 @@ import { getPublicPlanPageBySlugRequest } from "../services/api";
 import { isOrderzhouseFreePlan } from "../constants/orderzhousePlansCatalog";
 import { useFreelancerPlansCheckout } from "./useFreelancerPlansCheckout";
 import { useDefaultCatalogPlans } from "./useDefaultCatalogPlans";
+import { getSafeApiErrorMessage } from "../utils/apiErrorMessage.js";
 
 /**
  * Public `/plans` (no slug) uses the Super Admin-selected default catalog.
@@ -55,7 +56,7 @@ export function usePlansPage({ slug, returnPath }) {
           setSlugActivationFee(null);
           return;
         }
-        setSlugError(err?.response?.data?.message || "تعذر تحميل صفحة الباقات.");
+        setSlugError(getSafeApiErrorMessage(err, "تعذر تحميل صفحة الباقات."));
       })
       .finally(() => {
         if (!cancelled) setSlugLoading(false);

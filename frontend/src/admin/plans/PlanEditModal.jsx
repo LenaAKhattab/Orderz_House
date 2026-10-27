@@ -65,7 +65,7 @@ function PlanEditForm({ plan, submitting, onClose, onSave, planPages, canonicalP
  * }} p
  */
 export default function PlanEditModal({ plan, open, submitting, onClose, onSave, planPages = [], canonicalPlans = [] }) {
-  const { t } = useTranslation();
+  const { t, dir: uiDir } = useTranslation();
   useEffect(() => {
     if (!open) return undefined;
 
@@ -96,7 +96,7 @@ export default function PlanEditModal({ plan, open, submitting, onClose, onSave,
         role="dialog"
         aria-modal="true"
         aria-labelledby="oh-sapl-edit-title"
-        dir="rtl"
+        dir={uiDir}
       >
         <PlanEditForm
           key={String(plan.id ?? plan.name)}

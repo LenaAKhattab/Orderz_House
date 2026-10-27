@@ -122,7 +122,7 @@ export default function SuperAdminSubscriptionsList({
   onCompanyActivate,
   onWhatsApp,
 }) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const planName = (sub) => sub?.plan?.title || planTitleById[String(sub?.planId || "")] || "—";
 
   return (
@@ -193,13 +193,13 @@ export default function SuperAdminSubscriptionsList({
                   </StatusBadge>
                 </td>
                 <td className="oh-sa-subs-col-assigned oh-sa-subs-table__date" dir="ltr">
-                  {formatSubscriptionAdminDateTime(s.assignedAt)}
+                  {formatSubscriptionAdminDateTime(s.assignedAt, locale)}
                 </td>
                 <td className="oh-sa-subs-col-start oh-sa-subs-table__date" dir="ltr">
-                  {formatSubscriptionAdminDateTime(s.actualStartDate)}
+                  {formatSubscriptionAdminDateTime(s.actualStartDate, locale)}
                 </td>
                 <td className="oh-sa-subs-col-expiry oh-sa-subs-table__date" dir="ltr">
-                  {formatSubscriptionAdminDateTime(s.expiryDate)}
+                  {formatSubscriptionAdminDateTime(s.expiryDate, locale)}
                 </td>
                 <td className="oh-sa-subs-col-actions oh-sa-subs-table__actions">
                   <SubscriptionActions
@@ -247,9 +247,9 @@ export default function SuperAdminSubscriptionsList({
                 <StatusBadge tone={subscriptionPaymentTone(s)}>{subscriptionPaymentLabel(s, t)}</StatusBadge>
               </div>
               <div className="oh-sa-subs-mobile-card__dates">
-                <span dir="ltr">{t("subscriptions.list.assignedPrefix")} {formatSubscriptionAdminDateTime(s.assignedAt)}</span>
-                <span dir="ltr">{t("subscriptions.list.startPrefix")} {formatSubscriptionAdminDateTime(s.actualStartDate)}</span>
-                <span dir="ltr">{t("subscriptions.list.expiryPrefix")} {formatSubscriptionAdminDateTime(s.expiryDate)}</span>
+                <span dir="ltr">{t("subscriptions.list.assignedPrefix")} {formatSubscriptionAdminDateTime(s.assignedAt, locale)}</span>
+                <span dir="ltr">{t("subscriptions.list.startPrefix")} {formatSubscriptionAdminDateTime(s.actualStartDate, locale)}</span>
+                <span dir="ltr">{t("subscriptions.list.expiryPrefix")} {formatSubscriptionAdminDateTime(s.expiryDate, locale)}</span>
               </div>
             </div>
             <SubscriptionActions

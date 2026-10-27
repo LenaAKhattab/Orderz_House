@@ -67,6 +67,7 @@ import {
 } from "../../utils/freelancerAccountReadiness";
 
 import { trackEvent } from "../../services/analytics";
+import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage.js";
 
 
 
@@ -308,7 +309,7 @@ export default function FreelancerDashboardHome({ user }) {
 
       setSummary(null);
 
-      const msg = e?.response?.data?.message || e?.message || t("freelancerDashboard.header.loadErrorDefault");
+      const msg = getSafeApiErrorMessage(e, t("freelancerDashboard.header.loadErrorDefault"));
 
       setError(msg);
 

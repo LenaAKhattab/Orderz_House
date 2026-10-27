@@ -9,6 +9,7 @@ import {
   getPlanOrderValueRangeLabel,
 } from "../../../../utils/freelancerDashboardData";
 import { getLocalizedField } from "../../../../lib/i18n/getLocalizedField";
+import { statusLabel } from "../../../../i18n/statusRegistry.js";
 
 function paymentLabel(status, t) {
   const s = String(status || "");
@@ -16,7 +17,10 @@ function paymentLabel(status, t) {
   if (s === "pending") return t("freelancerDashboard.status.payment.pending");
   if (s === "failed") return t("freelancerDashboard.status.payment.failed");
   if (s === "not_required") return t("freelancerDashboard.status.payment.notRequired");
-  return s || t("freelancerDashboard.common.emDash");
+  if (s === "unpaid") return t("freelancerDashboard.status.payment.unpaid");
+  if (s === "refunded") return t("freelancerDashboard.status.payment.refunded");
+  if (s === "skipped_by_admin") return t("freelancerDashboard.status.payment.skippedByAdmin");
+  return s ? statusLabel(t, "payments", s) : t("freelancerDashboard.common.emDash");
 }
 
 function activationLabel(status, t) {
@@ -32,7 +36,7 @@ function subscriptionStatusLabel(status, t) {
   if (s === "assigned_not_started") return t("freelancerDashboard.status.subscription.assignedNotStarted");
   if (s === "expired") return t("freelancerDashboard.status.subscription.expired");
   if (s === "inactive") return t("freelancerDashboard.status.subscription.inactive");
-  return s || t("freelancerDashboard.common.emDash");
+  return s ? statusLabel(t, "subscriptions", s) : t("freelancerDashboard.common.emDash");
 }
 
 export default function PlanStatusCard({ subscription, eligibility, orderCounts, nowMs, loading }) {

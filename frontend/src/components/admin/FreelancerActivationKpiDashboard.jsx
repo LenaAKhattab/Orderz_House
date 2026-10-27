@@ -109,7 +109,7 @@ function SimpleBar({ ratio }) {
  * Phase A7.2 — Super Admin Activation KPI dashboard (read-only, Arabic).
  */
 export default function FreelancerActivationKpiDashboard({ campaigns = [] }) {
-  const { t } = useTranslation();
+  const { t, dir: uiDir } = useTranslation();
   const unavailableLabel = t("activation.kpi.unavailable");
   const unavailableShort = t("activation.kpi.unavailableShort");
   const formatCount = (value) => {
@@ -205,7 +205,7 @@ export default function FreelancerActivationKpiDashboard({ campaigns = [] }) {
   const notes = kpis?.metadata?.notes || [];
 
   return (
-    <div data-testid="activation-kpi-dashboard" dir="rtl" className="grid gap-4">
+    <div data-testid="activation-kpi-dashboard" dir={uiDir} className="grid gap-4">
       <div
         className="grid gap-2 rounded-[var(--dash-radius-md,12px)] border border-[color:var(--dash-border,#c9d0da)] bg-[color:var(--dash-info-bg,#eef1f6)] p-3 md:grid-cols-5"
         data-testid="activation-kpi-filters"
@@ -331,7 +331,7 @@ export default function FreelancerActivationKpiDashboard({ campaigns = [] }) {
                 data-testid="activation-kpi-funnel-table"
               >
                 <thead>
-                  <tr className="border-b border-[color:var(--dash-border,#c9d0da)] text-right">
+                  <tr className="border-b border-[color:var(--dash-border,#c9d0da)] text-start">
                     <th className="p-2 font-bold">{t("activation.kpi.colStage")}</th>
                     <th className="p-2 font-bold">{t("activation.kpi.colCount")}</th>
                     <th className="p-2 font-bold">{t("activation.kpi.colNote")}</th>
@@ -341,7 +341,7 @@ export default function FreelancerActivationKpiDashboard({ campaigns = [] }) {
                   {FUNNEL_TABLE_KEYS.map((stepKey) => {
                     const value = funnel[stepKey];
                     const unavailableReason = reasonForMetric(
-                      unavailable,
+                      unavailableMetrics,
                       `funnel.${stepKey}`,
                     );
                     return (

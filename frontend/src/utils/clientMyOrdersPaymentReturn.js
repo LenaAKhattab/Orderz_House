@@ -11,16 +11,6 @@ export function parseConfirmPaymentAxiosError(axiosLike) {
   return { status, code, message: String(message) };
 }
 
-/** Fixed-order: confirm failed after returning from Checkout — matches legacy product copy. */
-export function getFixedPaymentConfirmFailureToast(isArabic) {
-  return {
-    title: isArabic ? "فشل إنشاء المشروع" : "Project creation failed",
-    message: isArabic
-      ? "فشل إنشاء المشروع لأن عملية الدفع لم تكتمل. يرجى المحاولة مرة أخرى."
-      : "Project creation failed because the payment was not completed. Please try again.",
-  };
-}
-
 /**
  * Bid-selection: confirm failed — never use fixed-order purge messaging.
  * @param {boolean} isArabic
@@ -75,13 +65,4 @@ export function getBidPaymentConfirmFailureToast(isArabic, errInfo) {
   };
 }
 
-/** User cancelled Stripe Checkout for fixed-order creation. */
-export function getFixedCheckoutCancelledToast(isArabic) {
-  return {
-    title: isArabic ? "فشل إنشاء المشروع" : "Project creation failed",
-    message: isArabic
-      ? "فشل إنشاء المشروع لأن عملية الدفع لم تكتمل. يرجى المحاولة مرة أخرى."
-      : "Project creation failed because the payment was not completed. Please try again.",
-  };
-}
 

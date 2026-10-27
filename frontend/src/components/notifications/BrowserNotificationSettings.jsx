@@ -11,6 +11,7 @@ import {
   requestBrowserPermission,
   showBrowserNotification,
 } from "../../services/browserNotifications";
+import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage.js";
 
 export default function BrowserNotificationSettings() {
   const { user, refreshUser } = useAuth();
@@ -41,7 +42,7 @@ export default function BrowserNotificationSettings() {
         toast.error(t("notificationsUi.browser.toastDenied"));
       }
     } catch (e) {
-      toast.error(e?.response?.data?.message || e?.message || t("notificationsUi.browser.toastEnableFailed"));
+      toast.error(getSafeApiErrorMessage(e, t("notificationsUi.browser.toastEnableFailed")));
     } finally {
       setBusy(false);
     }
@@ -54,7 +55,7 @@ export default function BrowserNotificationSettings() {
       await refreshUser();
       toast.success(t("notificationsUi.browser.toastDisabled"));
     } catch (e) {
-      toast.error(e?.response?.data?.message || e?.message || t("notificationsUi.browser.toastSaveFailed"));
+      toast.error(getSafeApiErrorMessage(e, t("notificationsUi.browser.toastSaveFailed")));
     } finally {
       setBusy(false);
     }
@@ -76,7 +77,7 @@ export default function BrowserNotificationSettings() {
       });
       toast.success(t("notificationsUi.browser.toastTestSent"));
     } catch (e) {
-      toast.error(e?.response?.data?.message || e?.message || t("notificationsUi.browser.toastTestFailed"));
+      toast.error(getSafeApiErrorMessage(e, t("notificationsUi.browser.toastTestFailed")));
     } finally {
       setBusy(false);
     }

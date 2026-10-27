@@ -53,6 +53,10 @@
   flex-direction: column;
   align-items: flex-start;
   min-width: 0;
+  text-align: start;
+}
+
+:where([dir="rtl"]) .ffc-header__copy {
   text-align: right;
 }
 
@@ -336,12 +340,16 @@
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
-  text-align: right;
+  text-align: start;
   border-inline-end: 1px solid rgba(226, 232, 240, 0.55);
   border-radius: calc(var(--ffc-radius-lg) - 4px);
   transition:
     background 0.22s var(--ffc-ease),
     box-shadow 0.22s var(--ffc-ease);
+}
+
+:where([dir="rtl"]) .ffc-stat-segment {
+  text-align: right;
 }
 
 .ffc-stat-segment:first-child {
@@ -757,8 +765,12 @@
   }
 
   .ffc-dl-row dd {
-    text-align: right;
+    text-align: start;
     margin-bottom: 4px;
+  }
+
+  :where([dir="rtl"]) .ffc-dl-row dd {
+    text-align: right;
   }
 }
 

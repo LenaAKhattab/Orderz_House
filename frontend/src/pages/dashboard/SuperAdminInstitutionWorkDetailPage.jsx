@@ -19,7 +19,7 @@ import {
   adminRejectInstitutionWorkApplicantRequest,
   adminRequestInstitutionWorkRevisionRequest,
 } from "../../services/api";
-import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
+import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage.js";
 import FileList from "../../components/orders/order-details/FileList";
 import OrderFilesPicker from "../../components/orders/OrderFilesPicker";
 import SubmissionHistoryTimeline from "../../components/orders/submission-history/SubmissionHistoryTimeline";
@@ -81,7 +81,7 @@ export default function SuperAdminInstitutionWorkDetailPage() {
   const formatDate = (value) => {
     if (!value) return "—";
     try {
-      return new Date(value).toLocaleString(locale === "en" ? "en-GB" : "ar-JO");
+      return new Date(value).toLocaleString(locale === "en" ? "en-GB" : "ar-JO-u-nu-latn");
     } catch {
       return String(value);
     }

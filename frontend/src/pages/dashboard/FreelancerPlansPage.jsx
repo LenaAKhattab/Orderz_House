@@ -22,6 +22,8 @@ import { getNextUpgradePlan } from "../../utils/planSubscriptionUtils";
 import { PLAN_CATALOG } from "../../constants/planCatalogs";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import { getLocalizedField } from "../../lib/i18n/getLocalizedField";
+import { statusLabel } from "../../i18n/statusRegistry.js";
+import SecureCheckoutNote from "../../components/payments/SecureCheckoutNote";
 import "../../styles/dashboardHub.css";
 import "./freelancerPlans.css";
 
@@ -37,7 +39,7 @@ function subscriptionStatusLabel(status, t) {
   if (status === "assigned_not_started") return t("freelancerDashboard.status.subscription.assignedNotStarted");
   if (status === "expired") return t("freelancerDashboard.status.subscription.expired");
   if (status === "inactive") return t("freelancerDashboard.status.subscription.inactive");
-  return status || t("freelancerDashboard.common.emDash");
+  return status ? statusLabel(t, "subscriptions", status) : t("freelancerDashboard.common.emDash");
 }
 
 /**
@@ -128,9 +130,7 @@ export default function FreelancerPlansPage() {
       ? getFreelancerOrderEligibilityMessage(eligibility, mySubscription, t)
       : "";
   const renewalFrozen = eligibility?.reason === "account_hold_payment_failed";
-  const freezeTitle =
-    eligibility?.freezeMessage?.title ||
-    t("freelancerDashboard.status.eligibility.subscriptionRenewalFailedTitle");
+  const freezeTitle = t("freelancerDashboard.status.eligibility.subscriptionRenewalFailedTitle");
 
   const catalogAria =
     catalog === PLAN_CATALOG.MARKETPLACE_PLANS
@@ -199,6 +199,7 @@ export default function FreelancerPlansPage() {
                 t={t}
               />
             </div>
+            <SecureCheckoutNote className="fp-secure-checkout-note" />
             {packagesTab === PLANS_CATEGORY.TRAINING ? (
               <section className="fp-surface fp-pricing-wrap fp-pricing-wrap--public-match plans-page plans-page--ref">
                 {currentTraining ? (

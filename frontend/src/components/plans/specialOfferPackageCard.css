@@ -396,6 +396,11 @@
 .pricing__with-special[dir="rtl"] > .oh-special-offer-card,
 .pricing__with-special .oh-special-offer-card,
 .pricing__with-special .pricing__regular-grid {
+}
+
+:where([dir="rtl"]) .pricing__with-special[dir="rtl"] > .oh-special-offer-card,
+:where([dir="rtl"]) .pricing__with-special .oh-special-offer-card,
+:where([dir="rtl"]) .pricing__with-special .pricing__regular-grid {
   direction: rtl;
 }
 

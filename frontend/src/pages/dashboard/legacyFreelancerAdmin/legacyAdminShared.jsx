@@ -3,6 +3,7 @@ import { useTranslation } from "../../../i18n/LanguageProvider";
 import { formatLocaleDate } from "../../../i18n/formatLocale";
 import { readStoredLocale } from "../../../i18n/localePreference";
 import { fetchLegacyFreelancerIdentityBlob } from "../../../services/api";
+import { getSafeApiErrorMessage } from "../../../utils/apiErrorMessage";
 
 export function formatDate(value, locale = readStoredLocale()) {
   return formatLocaleDate(value, locale);
@@ -65,7 +66,7 @@ export function getWorkspaceTabs(t) {
 }
 
 function identityImageErrorMessage(err, t) {
-  const fromApi = err?.response?.data?.message || err?.message;
+  const fromApi = getSafeApiErrorMessage(err);
   if (fromApi && typeof fromApi === "string") return fromApi;
   return t("legacy.toast.identityImageFailed");
 }

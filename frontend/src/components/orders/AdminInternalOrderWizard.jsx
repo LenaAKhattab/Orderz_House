@@ -24,6 +24,8 @@ import { validateOrderFilesSize } from "../../utils/orderUploadLimits";
 import { getOrderCreateErrorMessage } from "../../utils/apiErrorMessage";
 import { isFixedBudgetInAllowedSpan, normalizeTemplateBudget } from "../../utils/fakeBudgetRanges";
 import { formatTrainingOrderBudget } from "../../pages/dashboard/trainingOrders/trainingOrdersDisplayUtils";
+import SecureCheckoutNote from "../payments/SecureCheckoutNote";
+import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
 
 const ADMIN_STEP_KEYS = ["core", "assignment", "files", "review"];
 const CLIENT_STEP_KEYS = ["core", "files", "review"];
@@ -584,7 +586,7 @@ export default function AdminInternalOrderWizard({
           push({
             type: "error",
             title: t("ordersAdmin.wizard.toast.categoriesLoadFailed"),
-            message: e?.response?.data?.message || e?.message,
+            message: getSafeApiErrorMessage(e),
           });
         }
       }
@@ -1606,6 +1608,7 @@ export default function AdminInternalOrderWizard({
                       </strong>
                     </div>
                     <p className="co-pay-summary__hint">{t("ordersAdmin.wizard.review.payNowHint")}</p>
+                    <SecureCheckoutNote context="order" />
                   </div>
                 ) : null}
                 <div className="oh-review__note">

@@ -1143,6 +1143,10 @@
   .plans-page--ref .pricing-card__details-label {
     flex: 1;
     min-width: 0;
+    text-align: start;
+  }
+
+  :where([dir="rtl"]) .plans-page--ref .pricing-card__details-label {
     text-align: right;
   }
 

@@ -99,6 +99,10 @@
   position: relative;
   z-index: 1;
   min-width: 0;
+  text-align: start;
+}
+
+:where([dir="rtl"]) .fc-hero__copy {
   text-align: right;
 }
 
@@ -233,8 +237,12 @@
   align-items: center;
   gap: 8px;
   padding: 10px 12px;
-  text-align: right;
+  text-align: start;
   border-inline-end: 1px solid rgba(226, 232, 240, 0.65);
+}
+
+:where([dir="rtl"]) .fc-stat-segment {
+  text-align: right;
 }
 
 .fc-stat-segment:last-child {

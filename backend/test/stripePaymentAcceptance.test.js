@@ -198,6 +198,7 @@ describe("selected-bid payment: one canonical Checkout Session per order", () =>
     assert.equal(stripeState.creates.length, 1);
     assert.equal(stripeState.creates[0].opts.idempotencyKey, "client_selected_bid:601:77:attempt:1");
     assert.equal(stripeState.creates[0].payload.line_items[0].price_data.unit_amount, 20000);
+    assert.equal(stripeState.creates[0].payload.payment_intent_data.statement_descriptor_suffix, "ORDERZHOUSE");
     assert.equal(db.order.order_status, "awaiting_payment_after_bid_selection");
     assert.equal(db.bids.get(77).status, "selected_pending_payment");
   });

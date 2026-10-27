@@ -32,7 +32,7 @@ import {
   getSafeApiErrorMessage,
   isAxiosCanceledError,
   isAxiosTimeoutError,
-} from "../../utils/apiErrorMessage";
+} from "../../utils/apiErrorMessage.js";
 import { formatJodMoney } from "../../utils/formatJodMoney";
 import InstitutionAddMemberModal from "./institutions/InstitutionAddMemberModal";
 import InstitutionCreateWorkModal from "./institutions/InstitutionCreateWorkModal";
@@ -236,7 +236,7 @@ export default function SuperAdminInstitutionDetailPage() {
   const formatDate = (value) => {
     if (!value) return "—";
     try {
-      return new Date(value).toLocaleString(locale === "en" ? "en-GB" : "ar-JO");
+      return new Date(value).toLocaleString(locale === "en" ? "en-GB" : "ar-JO-u-nu-latn");
     } catch {
       return String(value);
     }

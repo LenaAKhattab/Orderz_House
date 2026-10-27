@@ -29,6 +29,7 @@ import { plansCategoryFromDefaultSection } from "../constants/publicPlansContent
 import { createSpecialOfferCheckoutRequest } from "../services/api";
 import { useToast } from "../components/ui/toastContext";
 import { isSpecialOfferCheckoutSupported } from "../constants/specialOfferPackage";
+import { getSafeApiErrorMessage } from "../utils/apiErrorMessage.js";
 
 const Plans = () => {
   const { slug } = useParams();
@@ -152,9 +153,7 @@ const Plans = () => {
       window.location.href = url;
     } catch (err) {
       const msg =
-        err?.response?.data?.message ||
-        err?.message ||
-        t("plans.specialOffer.checkoutFailed");
+        getSafeApiErrorMessage(err, t("plans.specialOffer.checkoutFailed"));
       push({ type: "warning", message: msg });
       setSpecialOfferCheckoutBusy(false);
     }

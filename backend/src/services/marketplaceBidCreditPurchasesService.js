@@ -12,6 +12,7 @@ const Stripe = require("stripe");
 const { pool } = require("../config/db");
 const { createAppError } = require("../utils/AppError");
 const { amountMajorToStripeMinor } = require("../utils/stripeMoney");
+const { withOrderzHouseStatementDescriptor } = require("../utils/stripeStatementDescriptor");
 const { isCheckoutSessionPaymentSuccessful } = require("../utils/stripeSessionPaymentStatus");
 const {
   getPrimaryClientUrl,
@@ -331,10 +332,10 @@ async function createBidCreditPackageCheckout({
         },
       ],
       metadata: sessionMetadata,
-      payment_intent_data: {
+      payment_intent_data: withOrderzHouseStatementDescriptor({
         metadata: sessionMetadata,
         description: piDescription,
-      },
+      }),
     });
 
     const { rows: updated } = await client.query(

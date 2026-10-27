@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import "../../i18n/siteEditorResources";
 import { uploadSuperAdminWebsiteImageRequest } from "../../services/api";
+import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
 
 /**
  * Simple image picker for Super Admin website content blocks.
@@ -22,7 +23,7 @@ export default function WebsiteContentImagePicker({ value, onChange, disabled = 
       if (!url) throw new Error(t("siteEditor.errors.noServerUrl"));
       onChange(url);
     } catch (e) {
-      setError(e?.response?.data?.message || e?.message || t("siteEditor.errors.imageUploadFailed"));
+      setError(getSafeApiErrorMessage(e, t("siteEditor.errors.imageUploadFailed")));
     } finally {
       setUploading(false);
     }

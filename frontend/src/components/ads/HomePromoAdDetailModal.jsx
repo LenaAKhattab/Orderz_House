@@ -86,7 +86,7 @@ export default function HomePromoAdDetailModal({ ad, onClose }) {
     <dialog
       ref={ref}
       className="home-promo-ad-modal"
-      dir="rtl"
+      dir="auto"
       aria-modal={Boolean(ad)}
       aria-hidden={!ad}
       aria-labelledby={ad ? "home-promo-ad-modal-title" : undefined}

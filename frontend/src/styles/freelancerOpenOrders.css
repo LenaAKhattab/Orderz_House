@@ -82,17 +82,23 @@
 
 .oh-orders-market--modern .oh-orders-main {
   min-width: 0;
-  direction: rtl;
   overflow: visible;
+}
+
+:where([dir="rtl"]) .oh-orders-market--modern .oh-orders-main {
+  direction: rtl;
 }
 
 .oh-orders-filters-col {
   width: var(--oh-pool-filters-w);
   max-width: var(--oh-pool-filters-w);
   min-width: 0;
-  direction: rtl;
   justify-self: stretch;
   padding-top: 36px;
+}
+
+:where([dir="rtl"]) .oh-orders-filters-col {
+  direction: rtl;
 }
 
 .oh-orders-ineligible-note {
@@ -139,7 +145,6 @@
   align-items: center;
   justify-content: center;
   gap: 7px;
-  direction: rtl;
   min-height: 34px;
   padding: 6px 12px;
   border-radius: 999px;
@@ -156,6 +161,10 @@
     background 0.2s ease,
     border-color 0.2s ease,
     box-shadow 0.2s ease;
+}
+
+:where([dir="rtl"]) .oh-orders-plan-filter-btn {
+  direction: rtl;
 }
 
 .oh-orders-plan-filter-btn__label {
@@ -210,7 +219,7 @@
   font-weight: 600;
   line-height: 1.55;
   white-space: normal;
-  text-align: right;
+  text-align: start;
   overflow: visible;
   opacity: 0;
   visibility: hidden;
@@ -218,6 +227,10 @@
   transition:
     opacity 0.2s ease,
     visibility 0.2s ease;
+}
+
+:where([dir="rtl"]) .oh-orders-plan-filter-tooltip {
+  text-align: right;
 }
 
 .oh-orders-plan-filter-tooltip::before {
@@ -394,18 +407,22 @@
 
 /* Order card — RTL: budget (right) | center | actions (left) */
 .oh-orders-market--modern .oh-order-row--neu.fdash-surface-3d.fdash-surface-3d--soft {
-  direction: rtl;
   min-height: 112px;
   padding: 12px 14px;
   display: grid;
   grid-template-columns: minmax(118px, 140px) 1px minmax(0, 1fr) 1px minmax(112px, 138px);
   align-items: center;
   gap: 12px;
-  text-align: right;
+  text-align: start;
   cursor: pointer;
   transition:
     transform 0.22s var(--oh-pool-ease),
     box-shadow 0.22s var(--oh-pool-ease);
+}
+
+:where([dir="rtl"]) .oh-orders-market--modern .oh-order-row--neu.fdash-surface-3d.fdash-surface-3d--soft {
+  direction: rtl;
+  text-align: right;
 }
 
 .oh-orders-market--modern .oh-order-row--neu.fdash-surface-3d.fdash-surface-3d--soft:hover {
@@ -447,6 +464,10 @@
   gap: 8px;
   align-content: center;
   justify-items: end;
+  text-align: start;
+}
+
+:where([dir="rtl"]) .oh-orders-market--modern .oh-order-row__budget {
   text-align: right;
 }
 
@@ -842,8 +863,12 @@
   font-size: 0.84rem;
   font-weight: 800;
   color: #334155;
-  text-align: right;
+  text-align: start;
   flex-shrink: 0;
+}
+
+:where([dir="rtl"]) .oh-orders-market--modern .oh-orders-filters__title {
+  text-align: right;
 }
 
 .oh-orders-market--modern .oh-orders-filters__head,
@@ -913,6 +938,10 @@
 
 .oh-orders-market--modern .oh-orders-filters__item--parent .oh-orders-filters__category-title {
   flex: 1;
+  text-align: start;
+}
+
+:where([dir="rtl"]) .oh-orders-market--modern .oh-orders-filters__item--parent .oh-orders-filters__category-title {
   text-align: right;
 }
 
@@ -955,6 +984,10 @@
 
 .oh-orders-market--modern .oh-orders-filters__item span {
   flex: 1;
+  text-align: start;
+}
+
+:where([dir="rtl"]) .oh-orders-market--modern .oh-orders-filters__item span {
   text-align: right;
 }
 

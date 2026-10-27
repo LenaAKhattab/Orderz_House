@@ -14,6 +14,7 @@ import BrowserNotificationSettings from "../../components/notifications/BrowserN
 import PreferredDisplayCurrencySettings from "../../components/money/PreferredDisplayCurrencySettings";
 import { breadcrumbHomeCrumb } from "../../components/dashboard/dashboardBreadcrumbs";
 import { useTranslation } from "../../i18n/LanguageProvider";
+import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage.js";
 import "./shared/account-pages.css";
 
 const PHONE_RE = /^\+[1-9]\d{7,14}$/;
@@ -90,7 +91,7 @@ export default function FreelancerSettingsPage() {
         setFreelancerMemberId(u.freelancerMemberId || "");
       }
     } catch (e) {
-      setError(e?.response?.data?.message || e?.message || t(`${s}.loadError`));
+      setError(getSafeApiErrorMessage(e, t(`${s}.loadError`)));
     } finally {
       setLoading(false);
     }
@@ -177,7 +178,7 @@ export default function FreelancerSettingsPage() {
       await refreshUser();
       toast.success(t(`${s}.basic.saveSuccess`));
     } catch (e) {
-      toast.error(e?.response?.data?.message || e?.message || t(`${s}.basic.saveError`));
+      toast.error(getSafeApiErrorMessage(e, t(`${s}.basic.saveError`)));
     } finally {
       setSaving(false);
     }
@@ -201,7 +202,7 @@ export default function FreelancerSettingsPage() {
       await refreshUser();
       toast.success(t(`${s}.security.success`));
     } catch (e) {
-      toast.error(e?.response?.data?.message || e?.message || t(`${s}.security.error`));
+      toast.error(getSafeApiErrorMessage(e, t(`${s}.security.error`)));
     } finally {
       setPwSaving(false);
     }
@@ -222,7 +223,7 @@ export default function FreelancerSettingsPage() {
       await load();
       toast.success(t(`${s}.avatar.success`));
     } catch (err) {
-      toast.error(err?.response?.data?.message || err?.message || t(`${s}.avatar.uploadError`));
+      toast.error(getSafeApiErrorMessage(err, t(`${s}.avatar.uploadError`)));
     } finally {
       setAvatarBusy(false);
     }
@@ -236,7 +237,7 @@ export default function FreelancerSettingsPage() {
       await load();
       toast.success(t(`${s}.avatar.removeSuccess`));
     } catch (err) {
-      toast.error(err?.response?.data?.message || err?.message || t(`${s}.avatar.removeError`));
+      toast.error(getSafeApiErrorMessage(err, t(`${s}.avatar.removeError`)));
     } finally {
       setAvatarBusy(false);
     }

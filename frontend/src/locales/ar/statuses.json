@@ -12,7 +12,9 @@
     "cancelled": "ملغى",
     "closed": "مغلق",
     "draft": "مسودة",
-    "archived": "مؤرشف"
+    "archived": "مؤرشف",
+    "awaiting_payment_after_bid_selection": "بانتظار دفع العرض المختار",
+    "pending_freelancer_acceptance": "بانتظار قبول المستقل"
   },
   "subscriptions": {
     "assigned_not_started": "بانتظار أول طلب",
@@ -21,7 +23,10 @@
     "cancelled": "ملغى",
     "pending": "معلق",
     "company_approved": "موافقة الشركة",
-    "suspended": "موقوف"
+    "suspended": "موقوف",
+    "purchased_pending_start": "مدفوعة وبانتظار البدء",
+    "inactive": "غير نشط",
+    "superseded": "استُبدلت بباقة أحدث"
   },
   "kyc": {
     "pending": "قيد المراجعة",
@@ -43,7 +48,9 @@
     "pending": "بانتظار الدفع",
     "failed": "فشل",
     "refunded": "مسترد",
-    "not_required": "لا يتطلب دفعاً"
+    "not_required": "لا يتطلب دفعاً",
+    "skipped_by_admin": "مُعفى من الإدارة",
+    "expired": "انتهت جلسة الدفع"
   },
   "claims": {
     "pending": "قيد المراجعة",
@@ -51,6 +58,19 @@
     "rejected": "مرفوض",
     "paid": "مدفوع",
     "open": "مفتوح",
-    "closed": "مغلق"
+    "closed": "مغلق",
+    "accepted": "مقبولة",
+    "frozen": "مجمّدة",
+    "requires_in_person_review": "تتطلب مراجعة حضورية"
+  },
+  "articles": {
+    "draft": "مسودة",
+    "submitted": "مُرسلة للمراجعة",
+    "under_review": "قيد المراجعة",
+    "revision_requested": "مطلوب تعديل",
+    "approved": "معتمدة",
+    "rejected": "مرفوضة",
+    "published": "منشورة",
+    "closed": "مغلقة"
   }
 }

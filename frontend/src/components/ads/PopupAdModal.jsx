@@ -76,7 +76,7 @@ export default function PopupAdModal({ ad, onClose }) {
     <dialog
       ref={ref}
       className="oh-popup-ad-modal"
-      dir="rtl"
+      dir="auto"
       aria-modal="true"
       aria-labelledby="oh-popup-ad-modal-title"
       onClick={(e) => {

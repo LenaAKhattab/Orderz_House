@@ -15,6 +15,7 @@ import { useTranslation } from "../i18n/LanguageProvider";
 import { useToast } from "../components/ui/toastContext";
 import { usePageRestore } from "./usePageRestore";
 import { trainingCheckoutStatesFromSnapshot } from "../lib/trainingCheckoutState";
+import { getSafeApiErrorMessage } from "../utils/apiErrorMessage.js";
 
 /** Server error codes with localized copy (the server message is Arabic-only). */
 const CHECKOUT_ERROR_KEYS = {
@@ -171,7 +172,7 @@ export function useTrainingPackageCheckout({ enabled = true } = {}) {
         const errorCode = err?.response?.data?.code;
         const msg = CHECKOUT_ERROR_KEYS[errorCode]
           ? t(CHECKOUT_ERROR_KEYS[errorCode])
-          : err?.response?.data?.message || err?.message || t("plans.training.checkoutFailed");
+          : getSafeApiErrorMessage(err, t("plans.training.checkoutFailed"));
         setCheckoutError(msg);
         push({ type: "warning", message: msg });
         setBuyBusyCode("");

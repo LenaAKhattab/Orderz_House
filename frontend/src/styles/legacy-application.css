@@ -299,9 +299,13 @@ html[dir="ltr"] .toast-stack {
   gap: 10px;
   align-items: center;
   cursor: pointer;
-  text-align: right;
+  text-align: start;
   transition: background-color 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
   min-width: 0;
+}
+
+:where([dir="rtl"]) .oh-step {
+  text-align: right;
 }
 
 .oh-step:hover {
@@ -410,7 +414,7 @@ html[dir="ltr"] .toast-stack {
 
 .oh-select__opt {
   width: 100%;
-  text-align: right;
+  text-align: start;
   border: none;
   background: transparent;
   cursor: pointer;
@@ -419,6 +423,10 @@ html[dir="ltr"] .toast-stack {
   gap: 2px;
   transition: background-color 0.15s ease;
   font-family: inherit;
+}
+
+:where([dir="rtl"]) .oh-select__opt {
+  text-align: right;
 }
 
 .oh-select__opt:hover {
@@ -826,10 +834,14 @@ html[dir="ltr"] .toast-stack {
   padding: 8px 2px 4px;
   display: grid;
   gap: 8px;
-  direction: rtl;
-  text-align: right;
+  text-align: start;
   align-content: start;
   min-height: 140px;
+}
+
+:where([dir="rtl"]) .oh-order-card__content {
+  direction: rtl;
+  text-align: right;
 }
 
 .oh-order-card__title {
@@ -837,12 +849,16 @@ html[dir="ltr"] .toast-stack {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  text-align: right;
-  direction: rtl;
+  text-align: start;
   margin: 0 0 6px;
   font-size: 1.06rem;
   font-weight: 800;
   line-height: 1.35;
+}
+
+:where([dir="rtl"]) .oh-order-card__title {
+  direction: rtl;
+  text-align: right;
 }
 
 .oh-order-card__meta-row {
@@ -1038,10 +1054,14 @@ html[dir="ltr"] .toast-stack {
   align-items: flex-start;
   justify-content: space-between;
   gap: 14px;
-  text-align: right;
+  text-align: start;
   cursor: pointer;
   transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
   transform-origin: center;
+}
+
+:where([dir="rtl"]) .oh-order-row {
+  text-align: right;
 }
 
 .oh-order-row:hover {
@@ -1283,6 +1303,9 @@ html[dir="ltr"] .toast-stack {
 
 .oh-market-center {
   min-width: 0;
+}
+
+:where([dir="rtl"]) .oh-market-center {
   direction: rtl;
 }
 
@@ -1301,8 +1324,12 @@ html[dir="ltr"] .toast-stack {
   border-radius: 0;
   background: transparent;
   padding: 0;
-  text-align: right;
+  text-align: start;
+}
+
+:where([dir="rtl"]) .oh-orders-filters {
   direction: rtl;
+  text-align: right;
 }
 
 .oh-orders-filters--left {
@@ -1316,6 +1343,10 @@ html[dir="ltr"] .toast-stack {
   justify-content: flex-start;
   gap: 8px;
   margin-bottom: 8px;
+  text-align: start;
+}
+
+:where([dir="rtl"]) .oh-orders-filters__head {
   direction: rtl;
   text-align: right;
 }
@@ -1367,8 +1398,11 @@ html[dir="ltr"] .toast-stack {
   margin-bottom: 10px;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
-  direction: rtl;
   justify-content: flex-start;
+}
+
+:where([dir="rtl"]) .oh-orders-filters__switch {
+  direction: rtl;
 }
 
 .oh-orders-filters__switch-btn {
@@ -1452,6 +1486,12 @@ h2.oh-orders-sidebar-title {
   font-size: 1.55rem;
   font-weight: 800;
   line-height: 1.25;
+  text-align: start;
+}
+
+:where([dir="rtl"]) .oh-orders-sidebar-title,
+:where([dir="rtl"]) h1.oh-orders-sidebar-title,
+:where([dir="rtl"]) h2.oh-orders-sidebar-title {
   text-align: right;
 }
 
@@ -1664,6 +1704,10 @@ h2.oh-orders-sidebar-title {
 .order-details__top-title {
   flex: 1;
   min-width: min(620px, 100%);
+  text-align: start;
+}
+
+:where([dir="rtl"]) .order-details__top-title {
   text-align: right;
 }
 
@@ -2538,7 +2582,7 @@ body {
   text-decoration: none;
   border: none;
   background: transparent;
-  text-align: right;
+  text-align: start;
   font-family: inherit;
   cursor: pointer;
   padding: 10px 12px;
@@ -2547,6 +2591,10 @@ body {
   font-weight: 600;
   font-size: 0.9rem;
   transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+:where([dir="rtl"]) .nav-dropdown-item {
+  text-align: right;
 }
 
 .nav-dropdown-item:hover {
@@ -4533,11 +4581,16 @@ p {
 
 .fake-orders-table th,
 .fake-orders-table td {
-  text-align: right;
+  text-align: start;
   vertical-align: middle;
   padding: 10px 12px;
   border-bottom: 1px solid rgba(49, 58, 97, 0.14);
   white-space: nowrap;
+}
+
+:where([dir="rtl"]) .fake-orders-table th,
+:where([dir="rtl"]) .fake-orders-table td {
+  text-align: right;
 }
 
 .fake-orders-table td:nth-child(2) {
@@ -4666,6 +4719,10 @@ p {
 .home-hero__copy {
   max-width: min(36rem, 100%);
   padding-top: clamp(4px, 0.8vw, 12px);
+  text-align: start;
+}
+
+:where([dir="rtl"]) .home-hero__copy {
   text-align: right;
 }
 
@@ -5377,6 +5434,10 @@ p {
   color: #8b2222;
   font-size: 0.9rem;
   line-height: 1.45;
+  text-align: start;
+}
+
+:where([dir="rtl"]) .auth-form-error {
   text-align: right;
 }
 
@@ -5577,6 +5638,10 @@ p {
   gap: 12px;
   cursor: pointer;
   transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+  text-align: start;
+}
+
+:where([dir="rtl"]) .auth-select__btn {
   text-align: right;
 }
 
@@ -5654,13 +5719,17 @@ p {
   cursor: pointer;
   border-radius: 12px;
   padding: 10px 12px;
-  text-align: right;
+  text-align: start;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
   color: #1f2848;
   transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+:where([dir="rtl"]) .auth-select__opt {
+  text-align: right;
 }
 
 .auth-select__opt:hover {
@@ -6947,6 +7016,9 @@ p {
 
 /* Freelancer financial-claims modal form layout */
 .freelancer-claims-modal {
+}
+
+:where([dir="rtl"]) .freelancer-claims-modal {
   direction: rtl;
 }
 

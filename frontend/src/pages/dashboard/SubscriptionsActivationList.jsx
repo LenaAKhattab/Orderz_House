@@ -80,7 +80,7 @@ export default function SubscriptionsActivationList({
   onActivate,
   loading = false,
 }) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
 
   function subscriptionCountryHint(sub) {
     const line = formatSubscriptionPaymentCountry({
@@ -179,7 +179,7 @@ export default function SubscriptionsActivationList({
                     </StatusBadge>
                   </td>
                   <td className="oh-sa-act-col-assigned oh-sa-subs-table__date">
-                    {formatSubscriptionAdminDateTime(s.assignedAt)}
+                    {formatSubscriptionAdminDateTime(s.assignedAt, locale)}
                   </td>
                   <td className="oh-sa-act-col-paid oh-sa-subs-table__date">
                     {subscriptionPaymentDateTableCell(s, formatSubscriptionAdminDateTime)}
@@ -249,10 +249,10 @@ export default function SubscriptionsActivationList({
               ) : null}
               <div className="oh-sa-activation-card__dates">
                 <span dir="ltr">
-                  {t("subscriptions.activationList.assignedAt")} {formatSubscriptionAdminDateTime(s.assignedAt)}
+                  {t("subscriptions.activationList.assignedAt")} {formatSubscriptionAdminDateTime(s.assignedAt, locale)}
                 </span>
                 <span dir="ltr">
-                  {t("subscriptions.activationList.createdAt")} {formatSubscriptionAdminDateTime(s.createdAt)}
+                  {t("subscriptions.activationList.createdAt")} {formatSubscriptionAdminDateTime(s.createdAt, locale)}
                 </span>
                 {paymentDate ? (
                   <span dir="ltr">

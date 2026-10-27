@@ -20,7 +20,7 @@ export default function HomeStickyAdsDock({ visible, ads, openDetails, onTrackCl
   return createPortal(
     <aside
       className={`home-sticky-ads-dock${visible ? " home-sticky-ads-dock--visible" : ""}`}
-      dir="rtl"
+      dir="auto"
       aria-label={t(`${pa}.stickyDockAria`)}
       aria-hidden={!visible}
     >

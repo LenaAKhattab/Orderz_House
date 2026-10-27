@@ -34,7 +34,7 @@ function ChevronIcon({ flipped = false }) {
  * }} p
  */
 export default function HomePromoOffersCarousel({ ads, variant = "default", openDetails, onTrackClick }) {
-  const { t } = useTranslation();
+  const { t, dir } = useTranslation();
   const pa = "home.promoAds";
   const isHero = variant === "hero";
   const multi = ads.length > 1;
@@ -59,14 +59,15 @@ export default function HomePromoOffersCarousel({ ads, variant = "default", open
   const emblaOptions = useMemo(
     () => ({
       loop: multi,
-      direction: "rtl",
+      // Must match the container's direction (the page's <html dir>), or slides scroll the wrong way.
+      direction: dir === "ltr" ? "ltr" : "rtl",
       align: "start",
       slidesToScroll: 1,
       duration: 32,
       dragFree: false,
       watchDrag: true,
     }),
-    [multi],
+    [multi, dir],
   );
 
   const [emblaRef, emblaApi] = useEmblaCarousel(emblaOptions, plugins);

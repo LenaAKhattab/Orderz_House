@@ -1,4 +1,5 @@
 import { arabicDurationUnit } from "../../../utils/arTime.js";
+import { formatLocaleDateTime } from "../../../i18n/formatLocale.js";
 
 const ADMIN_DATE_PART_FMT = new Intl.DateTimeFormat("en-US", {
   timeZone: "Asia/Amman",
@@ -162,8 +163,7 @@ export function formatAdminDateTime(value) {
 }
 
 export function formatJoDateTime(value, locale = "ar") {
-  void locale;
-  return formatAdminDateTime(value);
+  return formatLocaleDateTime(value, locale);
 }
 
 export function automationStatusAr(status) {

@@ -47,6 +47,7 @@ import {
   isGuestPoolLoginToast,
   pushGuestPoolLoginToast,
 } from "../../utils/guestPoolLoginToast";
+import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage.js";
 import "../../styles/dashboardHub.css";
 import "../../styles/freelancerOpenOrders.css";
 
@@ -613,7 +614,7 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
       push({
         type: "error",
         title: t("orders.marketplace.takeOrderError"),
-        message: e?.response?.data?.message || e?.message,
+        message: getSafeApiErrorMessage(e),
       });
     } finally {
       setTakingId(null);
@@ -709,7 +710,7 @@ export default function OpenOrdersMarketplace({ layout = "dashboard" }) {
       push({
         type: "error",
         title: t("orders.marketplace.submitBidError"),
-        message: e?.response?.data?.message || e?.message,
+        message: getSafeApiErrorMessage(e),
       });
     } finally {
       setBidBusyId(null);

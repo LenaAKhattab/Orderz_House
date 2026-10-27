@@ -28,6 +28,7 @@ import "../../styles/dashboardHub.css";
 import "./freelancerFinancialClaims.css";
 import { JodMoneyDisplay } from "../../components/money/JodMoneyDisplay";
 import { aggregateFinancialClaims } from "../../utils/freelancerDashboardData";
+import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage.js";
 
 function formatDate(value, locale, emDash) {
   if (!value) return emDash;
@@ -221,7 +222,7 @@ export default function FreelancerFinancialClaimsPage() {
       push({
         type: "error",
         title: t(`${fc}.loadErrorTitle`),
-        message: e?.response?.data?.message || e?.message,
+        message: getSafeApiErrorMessage(e),
       });
     } finally {
       setBusy(false);
@@ -343,7 +344,7 @@ export default function FreelancerFinancialClaimsPage() {
       await reload();
     } catch (e) {
       const code = e?.response?.data?.code || e?.response?.data?.publicCode || e?.publicCode || "";
-      let message = e?.response?.data?.message || e?.message;
+      let message = getSafeApiErrorMessage(e);
       if (code === "FREELANCER_KYC_REQUIRED") {
         message = t(`${fc}.errors.kycRequired`);
       } else if (code === "FREELANCER_KYC_PENDING_REVIEW") {

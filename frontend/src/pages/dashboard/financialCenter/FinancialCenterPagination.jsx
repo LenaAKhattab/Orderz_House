@@ -34,7 +34,7 @@ export default function FinancialCenterPagination({
   isLoading = false,
   className = "",
 }) {
-  const { t } = useTranslation();
+  const { t, dir: uiDir } = useTranslation();
 
   const safeTotal = Math.max(0, Number(total) || 0);
   const safePageSize = FC_TABLE_PAGE_SIZE;
@@ -54,7 +54,7 @@ export default function FinancialCenterPagination({
   return (
     <div
       className={`fc-pagination${showControls ? "" : " fc-pagination--single"} ${className}`.trim()}
-      dir="rtl"
+      dir={uiDir}
     >
       <p className="fc-pagination__summary">
         {t("finance.financialCenter.pagination.showing", { from, to, total: safeTotal })}

@@ -29,6 +29,8 @@ import DashboardLoadingState from "../../components/dashboard/DashboardLoadingSt
 import DashboardEmptyState from "../../components/dashboard/DashboardEmptyState";
 import DashboardModal from "../../components/dashboard/DashboardModal";
 import FileList from "../../components/orders/order-details/FileList";
+import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
+import { statusLabel as bidStatusLabel } from "../../i18n/statusRegistry.js";
 
 function fullNameAr(f) {
   const parts = [f?.firstName, f?.fatherName, f?.familyName].filter(Boolean);
@@ -90,7 +92,7 @@ export default function AdminOrdersPage() {
       const list = res?.data?.orders ?? res?.orders;
       setOrders(Array.isArray(list) ? list : []);
     } catch (e) {
-      push({ type: "error", title: t("ordersAdmin.listPage.toast.reloadFailed"), message: e?.response?.data?.message || e?.message });
+      push({ type: "error", title: t("ordersAdmin.listPage.toast.reloadFailed"), message: getSafeApiErrorMessage(e) });
     }
   }, [push, t]);
 
@@ -103,7 +105,7 @@ export default function AdminOrdersPage() {
         const list = res?.data?.orders ?? res?.orders;
         if (!cancelled) setOrders(Array.isArray(list) ? list : []);
       } catch (e) {
-        if (!cancelled) push({ type: "error", title: t("ordersAdmin.listPage.toast.loadFailed"), message: e?.response?.data?.message || e?.message });
+        if (!cancelled) push({ type: "error", title: t("ordersAdmin.listPage.toast.loadFailed"), message: getSafeApiErrorMessage(e) });
       } finally {
         if (!cancelled) setBusy(false);
       }
@@ -185,7 +187,7 @@ export default function AdminOrdersPage() {
       push({
         type: "error",
         title: t("ordersAdmin.listPage.toast.deliveryOpenFailed"),
-        message: e?.response?.data?.message || e?.message || String(e?.message || ""),
+        message: getSafeApiErrorMessage(e),
       });
     } finally {
       setDeliveryOpeningId(null);
@@ -205,7 +207,7 @@ export default function AdminOrdersPage() {
       push({
         type: "error",
         title: t("ordersAdmin.listPage.attachments.loadFailed"),
-        message: e?.response?.data?.message || e?.message || "",
+        message: getSafeApiErrorMessage(e, ""),
       });
     }
   };
@@ -263,7 +265,7 @@ export default function AdminOrdersPage() {
       await reloadOrders();
       await loadBids(orderId);
     } catch (e) {
-      push({ type: "error", title: t("ordersAdmin.listPage.toast.bidApproveFailed"), message: e?.response?.data?.message || e?.message });
+      push({ type: "error", title: t("ordersAdmin.listPage.toast.bidApproveFailed"), message: getSafeApiErrorMessage(e) });
     } finally {
       setApprovingBidId(null);
     }
@@ -569,7 +571,7 @@ export default function AdminOrdersPage() {
                   {bidsModalList.map((b) => {
                     const name = fullNameAr(b?.freelancer) || b?.freelancer?.email || `#${b?.freelancerUserId || ""}`;
                     const status = String(b?.status || "").trim();
-                    const statusLabel = status ? getOrderStatusLabel(status, t) : "";
+                    const statusLabel = status ? bidStatusLabel(t, "bids", status) : "";
                     const canApprove = status === "pending";
                     const cur = bidsModalOrder.currencyCode || "JOD";
                     return (

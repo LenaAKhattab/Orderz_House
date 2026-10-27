@@ -34,7 +34,7 @@ function inferInitialMode(ad) {
  * @param {{ ad: object, statusLabel: string, onClose: () => void, onSubmit: (payload: object) => Promise<void> }} props
  */
 export default function AdRescheduleModal({ ad, statusLabel, onClose, onSubmit }) {
-  const { t, locale } = useTranslation();
+  const { t, locale, dir: uiDir } = useTranslation();
   const adTitle = ad?.title || t("ads.common.emDash");
 
   const [mode, setMode] = useState(() => inferInitialMode(ad));
@@ -242,7 +242,7 @@ export default function AdRescheduleModal({ ad, statusLabel, onClose, onSubmit }
 
           {mode === "schedule" ? (
             <div className="oh-ad-reschedule__schedule-block">
-              <div className="oh-ad-reschedule__quick-dates" dir="rtl">
+              <div className="oh-ad-reschedule__quick-dates" dir={uiDir}>
                 <span className="oh-ad-reschedule__quick-label">{t("ads.reschedule.shortcuts")}</span>
                 <div className="oh-ad-reschedule__quick-row" role="group" aria-label={t("ads.reschedule.shortcutsAria")}>
                   <button type="button" className="btn btn-secondary oh-ad-reschedule__chip" disabled={saving} onClick={setStartToday}>

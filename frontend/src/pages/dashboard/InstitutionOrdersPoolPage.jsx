@@ -9,7 +9,8 @@ import DashboardLoadingState from "../../components/dashboard/DashboardLoadingSt
 import { useTranslation } from "../../i18n/LanguageProvider";
 import { useToast } from "../../components/ui/toastContext";
 import { getInstitutionMembershipRequest, getInstitutionPoolOrdersRequest } from "../../services/api";
-import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
+import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage.js";
+import { getOrderStatusLabel } from "../../utils/orderFlowUi.js";
 
 export default function InstitutionOrdersPoolPage() {
   const { t } = useTranslation();
@@ -166,7 +167,7 @@ export default function InstitutionOrdersPoolPage() {
                           ? `${o.bidBudgetMin ?? "—"} – ${o.bidBudgetMax ?? "—"}`
                           : o.budget ?? "—"}
                       </td>
-                      <td>{o.orderStatus}</td>
+                      <td>{getOrderStatusLabel(o.orderStatus, t)}</td>
                       <td>
                         <Link to={`/dashboard/freelancer/orders/${o.id}`} className="btn btn-primary">
                           {t("dashboard.institutionPool.open")}

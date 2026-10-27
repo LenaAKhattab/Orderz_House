@@ -6,7 +6,7 @@ import { useToast } from "../../components/ui/toastContext";
 import { listClientMyOrdersRequest } from "../../services/api";
 import DashboardHubPage from "../../components/dashboard/hub/DashboardHubPage";
 import HubMetricSkeleton from "../../components/dashboard/hub/HubMetricSkeleton";
-import { getOrderStatusLabel } from "../../utils/orderFlowUi";
+import { getOrderStatusLabel } from "../../utils/orderFlowUi.js";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import "../../styles/dashboardHub.css";
 import "./freelancerMyOrders.css";
@@ -14,13 +14,14 @@ import "./clientFinancial.css";
 import { JodMoneyDisplay } from "../../components/money/JodMoneyDisplay";
 import ClientFixedOrderPayNowButton from "../../components/orders/ClientFixedOrderPayNowButton";
 import { isClientFixedOrderAwaitingStripeCheckout } from "../../utils/clientFixedOrderPayNow";
-import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
+import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage.js";
+import { statusLabel } from "../../i18n/statusRegistry.js";
 
 function paymentStatusLabel(s, t) {
   const key = `finance.client.paymentStatus.${String(s || "")}`;
   const label = s ? t(key) : "";
   if (label && label !== key) return label;
-  return s || "—";
+  return statusLabel(t, "payments", s);
 }
 
 function StatSegment({ tone, label, value, loading }) {

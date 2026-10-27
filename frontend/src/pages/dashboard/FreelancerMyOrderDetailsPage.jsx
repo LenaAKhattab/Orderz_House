@@ -29,7 +29,8 @@ import { formatJoDate, formatJoDateTime } from "../../components/orders/order-de
 import { JodMoneyDisplay } from "../../components/money/JodMoneyDisplay";
 import { validateOrderFilesSize } from "../../utils/orderUploadLimits";
 import OrderFilesPicker from "../../components/orders/OrderFilesPicker";
-import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
+import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage.js";
+import { getOrderStatusLabel } from "../../utils/orderFlowUi.js";
 
 function typeLabel(projectType, t) {
   return formatOrderProjectType(projectType, t);
@@ -78,7 +79,7 @@ export default function FreelancerMyOrderDetailsPage() {
           push({
             type: "error",
             title: t("freelancerDashboard.myOrders.details.loadErrorTitle"),
-            message: e?.response?.data?.message || e?.message,
+            message: getSafeApiErrorMessage(e),
           });
           navigate("/dashboard/freelancer/my-orders", { replace: true });
         }
@@ -160,7 +161,7 @@ export default function FreelancerMyOrderDetailsPage() {
     if (s === "pending_client_review") return t("freelancerDashboard.myOrders.details.phasePendingClientApproval");
     if (s === "completed") return t("freelancerDashboard.myOrders.details.phaseCompleted");
     if (s === "in_progress") return t("freelancerDashboard.myOrders.details.phaseInProgressDeliver");
-    return s || t("freelancerDashboard.common.emDash");
+    return s ? getOrderStatusLabel(s, t) : t("freelancerDashboard.common.emDash");
   }, [order?.orderStatus, order?.clientRevisionNote, t]);
 
   const deliveryFilesSizeOk = useMemo(

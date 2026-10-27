@@ -10,6 +10,7 @@ import {
 } from "../../services/api";
 import Button from "../../components/ui/Button";
 import { useTranslation } from "../../i18n/LanguageProvider";
+import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
 import "../../i18n/economyResources";
 
 /**
@@ -45,7 +46,7 @@ export default function SuperAdminBidCreditsPage() {
       setPackages(res?.data || []);
       setPkgError(null);
     } catch (err) {
-      setPkgError(err?.response?.data?.message || err?.message || "error");
+      setPkgError(getSafeApiErrorMessage(err, "error"));
     }
   }, []);
 
@@ -71,7 +72,7 @@ export default function SuperAdminBidCreditsPage() {
       await loadPurchases();
       setMessage(t("economy.bidCreditsAdmin.resolvedReview"));
     } catch (err) {
-      setMessage(err?.response?.data?.message || err?.message || "error");
+      setMessage(getSafeApiErrorMessage(err, "error"));
     } finally {
       setBusy(false);
     }
@@ -103,7 +104,7 @@ export default function SuperAdminBidCreditsPage() {
       await loadPackages();
       setMessage(t("economy.bidCreditsAdmin.packageCreated"));
     } catch (err) {
-      setMessage(err?.response?.data?.message || err?.message || "error");
+      setMessage(getSafeApiErrorMessage(err, "error"));
     } finally {
       setBusy(false);
     }
@@ -116,7 +117,7 @@ export default function SuperAdminBidCreditsPage() {
       await updateAdminBidCreditPackageRequest(pkg.id, { isActive: !pkg.isActive });
       await loadPackages();
     } catch (err) {
-      setMessage(err?.response?.data?.message || err?.message || "error");
+      setMessage(getSafeApiErrorMessage(err, "error"));
     } finally {
       setBusy(false);
     }
@@ -131,7 +132,7 @@ export default function SuperAdminBidCreditsPage() {
       setInspect(res?.data || null);
     } catch (err) {
       setInspect(null);
-      setMessage(err?.response?.data?.message || err?.message || "error");
+      setMessage(getSafeApiErrorMessage(err, "error"));
     } finally {
       setBusy(false);
     }
@@ -154,7 +155,7 @@ export default function SuperAdminBidCreditsPage() {
       setInspect(res?.data || null);
       setMessage(t("economy.bidCreditsAdmin.bidsGranted"));
     } catch (err) {
-      setMessage(err?.response?.data?.message || err?.message || "error");
+      setMessage(getSafeApiErrorMessage(err, "error"));
     } finally {
       setBusy(false);
     }

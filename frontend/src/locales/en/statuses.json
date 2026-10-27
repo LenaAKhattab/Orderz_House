@@ -12,7 +12,9 @@
     "cancelled": "Cancelled",
     "closed": "Closed",
     "draft": "Draft",
-    "archived": "Archived"
+    "archived": "Archived",
+    "awaiting_payment_after_bid_selection": "Awaiting payment for the selected offer",
+    "pending_freelancer_acceptance": "Awaiting Freelancer acceptance"
   },
   "subscriptions": {
     "assigned_not_started": "Waiting for First Order",
@@ -21,7 +23,10 @@
     "cancelled": "Cancelled",
     "pending": "Pending",
     "company_approved": "Company approved",
-    "suspended": "Suspended"
+    "suspended": "Suspended",
+    "purchased_pending_start": "Paid — awaiting start",
+    "inactive": "Inactive",
+    "superseded": "Replaced by a newer package"
   },
   "kyc": {
     "pending": "Pending",
@@ -43,7 +48,9 @@
     "pending": "Pending",
     "failed": "Failed",
     "refunded": "Refunded",
-    "not_required": "Not required"
+    "not_required": "Not required",
+    "skipped_by_admin": "Waived by admin",
+    "expired": "Payment session expired"
   },
   "claims": {
     "pending": "Pending",
@@ -51,6 +58,19 @@
     "rejected": "Rejected",
     "paid": "Paid",
     "open": "Open",
+    "closed": "Closed",
+    "accepted": "Accepted",
+    "frozen": "Frozen",
+    "requires_in_person_review": "Requires in-person review"
+  },
+  "articles": {
+    "draft": "Draft",
+    "submitted": "Submitted for review",
+    "under_review": "Under review",
+    "revision_requested": "Revision requested",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "published": "Published",
     "closed": "Closed"
   }
 }

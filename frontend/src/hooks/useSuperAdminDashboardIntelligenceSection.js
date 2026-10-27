@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { getSafeApiErrorMessage } from "../utils/apiErrorMessage.js";
 
 const REFRESH_MS = 90_000;
 
@@ -13,7 +14,7 @@ function mapError(e) {
   }
   return {
     canceled: false,
-    message: e?.response?.data?.message || message || "تعذر تحميل هذا القسم.",
+    message: getSafeApiErrorMessage(e, "تعذر تحميل هذا القسم."),
   };
 }
 

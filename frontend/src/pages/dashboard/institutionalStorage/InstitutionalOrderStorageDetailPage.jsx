@@ -43,7 +43,7 @@ import {
   adminTransitionInstitutionalStorageStatusRequest,
   adminUpdateInstitutionalBatchRequest,
 } from "../../../services/api";
-import { getSafeApiErrorMessage } from "../../../utils/apiErrorMessage";
+import { getSafeApiErrorMessage } from "../../../utils/apiErrorMessage.js";
 import "./institutionalStorageDetail.css";
 
 const BASE = "/dashboard/super-admin/institutional-order-storage";
@@ -164,7 +164,7 @@ function formatMoney(value, t) {
 function formatDate(value, locale) {
   if (!value) return "—";
   try {
-    return new Date(value).toLocaleDateString(locale === "en" ? "en-GB" : "ar-JO");
+    return new Date(value).toLocaleDateString(locale === "en" ? "en-GB" : "ar-JO-u-nu-latn");
   } catch {
     return String(value);
   }
@@ -173,7 +173,7 @@ function formatDate(value, locale) {
 function formatDateTime(value, locale) {
   if (!value) return "—";
   try {
-    return new Date(value).toLocaleString(locale === "en" ? "en-GB" : "ar-JO");
+    return new Date(value).toLocaleString(locale === "en" ? "en-GB" : "ar-JO-u-nu-latn");
   } catch {
     return String(value);
   }

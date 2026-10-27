@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { fetchSuperAdminBusinessKpis } from "../services/superAdminAnalytics";
+import { getSafeApiErrorMessage } from "../utils/apiErrorMessage.js";
 
 const REFRESH_MS = 60_000;
 
@@ -17,7 +18,7 @@ function mapBusinessKpisError(e) {
     };
   }
   return {
-    message: e?.response?.data?.message || message || "تعذر تحميل مؤشرات الأعمال.",
+    message: getSafeApiErrorMessage(e, "تعذر تحميل مؤشرات الأعمال."),
     code: e?.response?.data?.code || "",
     canceled: false,
   };

@@ -24,6 +24,16 @@ export function membershipCheckoutStatesFromAttempts(data) {
   return { byPlanCode, specialOffer };
 }
 
+/**
+ * Special-offer card: only an unresolved attempt for THIS offer (its plan tier code, e.g. special_offer_v2) may
+ * show «Continue payment» — an open checkout for an older offer version must not relabel the current one.
+ * @returns {"resume" | "processing" | null}
+ */
+export function specialOfferCheckoutState(states, offer) {
+  const code = String(offer?.planTierCode || "").trim().toLowerCase();
+  return (code && states?.byPlanCode?.[code]) || null;
+}
+
 /** @returns {"resume" | "processing" | null} */
 export function membershipCheckoutStateForPlan(states, plan) {
   const code = String(resolveMarketplaceCheckoutPlanCode(plan) || "").toLowerCase();

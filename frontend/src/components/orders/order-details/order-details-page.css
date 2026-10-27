@@ -689,8 +689,13 @@
   .od-page--pool .od-pool-title,
   .od-page--pool .od-pool-summary,
   .od-page--pool .od-pool-main {
-    direction: rtl;
     min-width: 0;
+  }
+
+  :where([dir="rtl"]) .od-page--pool .od-pool-title,
+  :where([dir="rtl"]) .od-page--pool .od-pool-summary,
+  :where([dir="rtl"]) .od-page--pool .od-pool-main {
+    direction: rtl;
   }
 
   .od-page--pool .od-pool-title {
@@ -737,6 +742,10 @@
   background: var(--background, #fff);
   border: 1px solid rgba(56, 82, 180, 0.1);
   border-radius: 12px;
+  text-align: start;
+}
+
+:where([dir="rtl"]) .od-title-card {
   text-align: right;
 }
 
