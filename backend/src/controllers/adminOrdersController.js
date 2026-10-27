@@ -275,6 +275,8 @@ const downloadInternalOrderFile = async (req, res, next) => {
     const out = await ordersService.prepareStaffOrderFileDownload({
       orderId: req.params.id,
       fileId: req.params.fileId,
+      // Operational admins: internal orders only; super admin: oversight on every order.
+      internalOnly: req.auth?.isSuperAdmin !== true,
     });
     return pipeOrderFileToResponse(req, res, next, out);
   } catch (err) {

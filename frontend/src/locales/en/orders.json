@@ -225,6 +225,12 @@
     "maxReached": "Maximum reached ({{max}} files)",
     "selectedAria": "Selected files ({{count}})",
     "remove": "Remove {{name}}",
-    "tooLarge": "Total file size exceeds {{size}} MB. Remove some files."
+    "tooLarge": "Total file size exceeds {{size}} MB. Remove some files.",
+    "types": "Allowed types: {{types}}",
+    "rejected": {
+      "type": "“{{name}}”: this file type is not supported.",
+      "empty": "“{{name}}”: the file is empty.",
+      "count": "“{{name}}”: the maximum of {{max}} files is reached."
+    }
   }
 }

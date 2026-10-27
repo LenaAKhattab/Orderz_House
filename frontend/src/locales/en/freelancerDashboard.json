@@ -252,7 +252,12 @@
       "phaseRevisionInProgress": "Revision in progress",
       "phasePendingClientApproval": "Awaiting client approval of delivery",
       "phaseCompleted": "Completed",
-      "phaseInProgressDeliver": "In progress — you can submit files"
+      "phaseInProgressDeliver": "In progress — you can submit files",
+      "deliveryNoteLabel": "Note with the delivery (optional)",
+      "deliveryNotePlaceholder": "Describe what you delivered or anything to point out…",
+      "resubmitHint": "Attach the files of the revised delivery. The previous delivery stays in the history.",
+      "resubmitDelivery": "Resubmit delivery",
+      "deliveryErrorMessage": "Could not send the delivery. Please try again."
     }
   },
   "plans": {

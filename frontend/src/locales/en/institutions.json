@@ -228,7 +228,12 @@
     "logWorkType": "Work type: ",
     "logId": "ID: ",
     "logLastLoad": "Last loaded: ",
-    "logAuditHint": "Detailed institution audit logs appear in admin reports — this page shows an operational summary only."
+    "logAuditHint": "Detailed institution audit logs appear in admin reports — this page shows an operational summary only.",
+    "currentDeliveryFiles": "Current delivery files",
+    "noDeliveryYet": "No delivery has been submitted yet.",
+    "deliveryHistory": "Delivery history ({{count}})",
+    "revisionNoteRequired": "Revision note (required)",
+    "revisionFilesLabel": "Revision attachments (optional)"
   },
   "createWork": {
     "stepsAria": "Creation steps",

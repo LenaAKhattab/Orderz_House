@@ -1,8 +1,9 @@
 import { useCallback, useState } from "react";
 import { useToast } from "../../ui/toastContext";
-import { downloadOrderFileForRole, viewOrderFileForRole } from "../../../services/api";
+import { downloadOrderFileForRole, openPdfPreviewTab, viewOrderFileForRole } from "../../../services/api";
 import { useTranslation } from "../../../i18n/LanguageProvider";
 import { getFileAccessLoginToast } from "../../../utils/guestPoolLoginToast";
+import { fileTypeLabel, isImageOrderFile, isPreviewableOrderFile, orderFileErrorKey } from "./orderFileUi";
 import "../../../i18n/ordersAdminResources";
 import "./order-details-page.css";
 
@@ -19,10 +20,15 @@ function DocIcon() {
   );
 }
 
-/** Short uppercase type label from the file name ("PDF", "DOCX"); empty when unknown. */
-function fileTypeLabel(name) {
-  const m = /.([a-z0-9]{2,5})$/i.exec(String(name || ""));
-  return m ? m[1].toUpperCase() : "";
+function ImageIcon() {
+  return (
+    <svg className="od-file-list__svg" viewBox="0 0 24 24" width="20" height="20" aria-hidden>
+      <path
+        fill="currentColor"
+        d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm0 16H5V5h14v14zm-5.04-6.71-2.75 3.54-1.96-2.36L6.5 17h11l-3.54-4.71zM8.5 10a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z"
+      />
+    </svg>
+  );
 }
 
 function displayOrderFileName(f, defaultName) {
@@ -39,46 +45,39 @@ function displayOrderFileName(f, defaultName) {
 }
 
 /**
+ * Canonical order file rows for every role and surface (brief, delivery, revision attachments).
+ * Images/PDF get «View» + «Download»; other types are download-only. A file whose stored source is
+ * gone (`unavailable` from the server, or a FILE_NOT_FOUND answer) shows a clear disabled state.
+ *
  * @param {object} props
- * @param {Array<{ id: string|number, fileUrl?: string, originalName?: string, purpose?: string }>} props.files
+ * @param {Array<{ id: string|number, originalName?: string, mimeType?: string, purpose?: string, unavailable?: boolean }>} props.files
  * @param {string} props.emptyText
  * @param {string|null} [props.orderId] — required for secure view/download
  * @param {OrderFileAccessScope|null} [props.fileAccess] — when null, file actions are hidden
+ * @param {string} [props.noAccessText] — shown instead of actions when `fileAccess` is null
  */
-export default function FileList({ files, emptyText, orderId = null, fileAccess = null }) {
+export default function FileList({ files, emptyText, orderId = null, fileAccess = null, noAccessText }) {
   const { push } = useToast();
   const { t } = useTranslation();
   const [busyId, setBusyId] = useState(null);
   const [busyAction, setBusyAction] = useState(null);
+  const [missingIds, setMissingIds] = useState(() => new Set());
 
   const defaultFileName = t("ordersAdmin.orderDetails.files.defaultFileName");
 
   const canUseApi = Boolean(orderId && fileAccess && String(orderId).trim() && String(fileAccess).trim());
 
   const toastApiError = useCallback(
-    (e, title, fallback) => {
-      const status = e?.response?.status;
-      let msg = e?.message || e?.response?.data?.message;
-      if (e?.response?.data instanceof Blob) {
-        msg =
-          msg ||
-          (status === 403
-            ? t("ordersAdmin.orderDetails.files.unauthorized")
-            : status === 404
-              ? t("ordersAdmin.orderDetails.files.notFound")
-              : null);
-      }
-      if (status === 401) {
+    (e, f, title) => {
+      const mapped = orderFileErrorKey(e);
+      if (mapped.login) {
         push(getFileAccessLoginToast(t));
         return;
       }
-      if (status === 403) msg = msg || t("ordersAdmin.orderDetails.files.unauthorized");
-      if (status === 404) msg = msg || t("ordersAdmin.orderDetails.files.notFound");
-      push({
-        type: "error",
-        title,
-        message: msg || fallback || t("ordersAdmin.orderDetails.files.genericError"),
-      });
+      if (mapped.missing) {
+        setMissingIds((prev) => new Set(prev).add(String(f.id)));
+      }
+      push({ type: "error", title, message: t(`ordersAdmin.orderDetails.files.errors.${mapped.key}`) });
     },
     [push, t],
   );
@@ -86,22 +85,18 @@ export default function FileList({ files, emptyText, orderId = null, fileAccess 
   const runView = useCallback(
     async (f) => {
       if (!canUseApi) return;
+      // Open the tab synchronously (before any await) so popup blockers allow it.
+      const tab = openPdfPreviewTab(t("ordersAdmin.orderDetails.files.opening"));
       setBusyId(f.id);
       setBusyAction("view");
       try {
         const name = displayOrderFileName(f, defaultFileName);
-        const out = await viewOrderFileForRole(orderId, f.id, name, fileAccess);
-        push(
-          out?.previewed === false
-            ? { type: "success", title: t("ordersAdmin.orderDetails.files.downloadSuccessTitle"), message: name }
-            : {
-                type: "success",
-                title: t("ordersAdmin.orderDetails.files.openSuccessTitle"),
-                message: t("ordersAdmin.orderDetails.files.openSuccessMessage"),
-              },
-        );
+        const out = await viewOrderFileForRole(orderId, f.id, name, fileAccess, tab);
+        if (out?.previewed === false) {
+          push({ type: "success", title: t("ordersAdmin.orderDetails.files.downloadSuccessTitle"), message: name });
+        }
       } catch (e) {
-        toastApiError(e, t("ordersAdmin.orderDetails.files.openErrorTitle"), t("ordersAdmin.orderDetails.files.openError"));
+        toastApiError(e, f, t("ordersAdmin.orderDetails.files.openErrorTitle"));
       } finally {
         setBusyId(null);
         setBusyAction(null);
@@ -118,17 +113,9 @@ export default function FileList({ files, emptyText, orderId = null, fileAccess 
       try {
         const name = displayOrderFileName(f, defaultFileName);
         await downloadOrderFileForRole(orderId, f.id, name, fileAccess);
-        push({
-          type: "success",
-          title: t("ordersAdmin.orderDetails.files.downloadSuccessTitle"),
-          message: name,
-        });
+        push({ type: "success", title: t("ordersAdmin.orderDetails.files.downloadSuccessTitle"), message: name });
       } catch (e) {
-        toastApiError(
-          e,
-          t("ordersAdmin.orderDetails.files.downloadErrorTitle"),
-          t("ordersAdmin.orderDetails.files.downloadError"),
-        );
+        toastApiError(e, f, t("ordersAdmin.orderDetails.files.downloadErrorTitle"));
       } finally {
         setBusyId(null);
         setBusyAction(null);
@@ -145,43 +132,51 @@ export default function FileList({ files, emptyText, orderId = null, fileAccess 
     <ul className="od-file-list">
       {files.map((f) => {
         const name = displayOrderFileName(f, defaultFileName);
+        const unavailable = f.unavailable === true || missingIds.has(String(f.id));
+        const previewable = isPreviewableOrderFile(f);
         const loading = busyId === f.id;
-        const viewLabel =
-          loading && busyAction === "view"
-            ? t("ordersAdmin.orderDetails.files.opening")
-            : t("ordersAdmin.orderDetails.files.view");
-        const dlLabel =
-          loading && busyAction === "download"
-            ? t("ordersAdmin.orderDetails.files.downloading")
-            : t("ordersAdmin.orderDetails.files.download");
+        const typeLabel = fileTypeLabel(name);
         return (
-          <li key={f.id} className="od-file-list__item">
-            <span className="od-file-list__icon">
-              <DocIcon />
-            </span>
+          <li
+            key={f.id}
+            className={`od-file-list__item${unavailable ? " od-file-list__item--unavailable" : ""}`}
+            data-file-id={String(f.id)}
+            data-file-state={unavailable ? "unavailable" : "available"}
+          >
+            <span className="od-file-list__icon">{isImageOrderFile(f) ? <ImageIcon /> : <DocIcon />}</span>
             <span className="od-file-list__name">
               <span className="od-file-list__filename" dir="auto" title={name}>
                 {name}
               </span>
-              {fileTypeLabel(name) ? <span className="od-file-list__type">{fileTypeLabel(name)}</span> : null}
+              {typeLabel ? <span className="od-file-list__type">{typeLabel}</span> : null}
             </span>
-            {canUseApi ? (
+            {unavailable ? (
+              <span className="od-file-list__actions od-file-list__missing" role="note">
+                {t("ordersAdmin.orderDetails.files.unavailable")}
+              </span>
+            ) : canUseApi ? (
               <span className="od-file-list__actions">
-                <button
-                  type="button"
-                  className="od-file-list__btn od-file-list__btn--ghost"
-                  disabled={Boolean(loading)}
-                  onClick={() => void runView(f)}
-                >
-                  {viewLabel}
-                </button>
+                {previewable ? (
+                  <button
+                    type="button"
+                    className="od-file-list__btn od-file-list__btn--ghost"
+                    disabled={Boolean(loading)}
+                    onClick={() => void runView(f)}
+                  >
+                    {loading && busyAction === "view"
+                      ? t("ordersAdmin.orderDetails.files.opening")
+                      : t("ordersAdmin.orderDetails.files.view")}
+                  </button>
+                ) : null}
                 <button type="button" className="od-file-list__btn" disabled={Boolean(loading)} onClick={() => void runDownload(f)}>
-                  {dlLabel}
+                  {loading && busyAction === "download"
+                    ? t("ordersAdmin.orderDetails.files.downloading")
+                    : t("ordersAdmin.orderDetails.files.download")}
                 </button>
               </span>
             ) : (
               <span className="od-file-list__actions od-muted" style={{ fontSize: 13 }}>
-                {t("ordersAdmin.orderDetails.files.loginHint")}
+                {noAccessText || t("ordersAdmin.orderDetails.files.loginHint")}
               </span>
             )}
           </li>

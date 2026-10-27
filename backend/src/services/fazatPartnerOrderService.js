@@ -554,6 +554,13 @@ async function getPartnerOrderByOrderzId(orderzOrderId) {
 
 async function getDeliveries(orderzOrderId) {
   const { order, partnerOrder } = await getPartnerOrderByOrderzId(orderzOrderId);
+  // getOrderById does not attach the submission timeline; the partner API documents it.
+  try {
+    // Non-staff view: no internal storage identifiers in the partner payload.
+    await require("./ordersService").enrichOrderWithSubmissionHistory(order, "partner");
+  } catch {
+    /* timeline is additive; deliveries list below still works */
+  }
   const files = Array.isArray(order.files)
     ? order.files
         .filter((f) => String(f.purpose || "") === "delivery" || String(f.purpose || "") === "revision_request")

@@ -254,8 +254,9 @@ export default function InstitutionCreateWorkModal({
       if (workType === "order") {
         const fd = pendingOrderFormRef.current;
         if (!fd) throw new Error(t("institutions.createWork.noOrderData"));
-        fd.append("workType", "order");
-        fd.append("publish", "true");
+        // set (not append): a retry after a failure must not send duplicate fields.
+        fd.set("workType", "order");
+        fd.set("publish", "true");
         await adminCreateInstitutionWorkRequest(institutionId, fd);
       } else {
         const payload = { ...(articleReview || normalizeMarketplaceArticlePayload(articleForm)), publish: true };

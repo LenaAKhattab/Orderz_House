@@ -260,6 +260,12 @@
       "cannotApprove": "This bid cannot be approved",
       "approving": "Approving…",
       "approve": "Approve"
+    },
+    "attachments": {
+      "button": "Attachments ({{count}})",
+      "title": "Order attachments",
+      "empty": "This order has no attachments.",
+      "loadFailed": "Could not load the order attachments"
     }
   },
   "orderCard": {
@@ -296,7 +302,21 @@
       "unauthorized": "You are not allowed to view this file.",
       "notFound": "File not found.",
       "openError": "Could not open the attachment. Please try again.",
-      "downloadError": "Could not download the attachment. Please try again."
+      "downloadError": "Could not download the attachment. Please try again.",
+      "unavailable": "Original file unavailable",
+      "planLockedHint": "Attachments become available when your plan covers this order.",
+      "freelancersOnlyHint": "Attachments are available to freelancers eligible for this order.",
+      "errors": {
+        "session": "Your session has expired. Please sign in again.",
+        "forbidden": "You are not allowed to access this attachment.",
+        "missing": "The original file is unavailable.",
+        "notFound": "Attachment not found.",
+        "rateLimited": "Too many requests. Please try again shortly.",
+        "storage": "File storage is temporarily unavailable. Please try again shortly.",
+        "server": "A server error occurred. Please try again shortly.",
+        "network": "Connection failed. Check your internet connection and try again.",
+        "generic": "The operation failed. Please try again."
+      }
     },
     "submissionHistory": {
       "title": "Submission and revision history",

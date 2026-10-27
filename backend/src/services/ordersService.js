@@ -517,6 +517,14 @@ async function uploadOrderFiles({ orderId, files, purpose, scope = "orders" }) {
   }
 }
 
+/** Objects uploaded inside a transaction that rolled back have no DB row: delete them (best effort). */
+async function discardUploadedObjects(files) {
+  for (const f of Array.isArray(files) ? files : []) {
+    // eslint-disable-next-line no-await-in-loop
+    await removeStoredObject(f);
+  }
+}
+
 /** @deprecated name kept for existing callers; storage is provider-neutral. */
 const uploadFilesToCloudinary = uploadOrderFiles;
 
@@ -552,7 +560,7 @@ async function getOrderById(orderId, client) {
   );
 
   const { rows: fileRows } = await runner.query(
-    `SELECT id, file_path, file_url, secure_url, public_id, original_name, mime_type, size_bytes, uploaded_at, purpose, submission_id, revision_id
+    `SELECT id, file_path, file_url, secure_url, public_id, original_name, mime_type, size_bytes, uploaded_at, purpose, submission_id, revision_id, source_missing_at
      FROM order_files
      WHERE order_id = $1
      ORDER BY id ASC`,
@@ -694,6 +702,7 @@ async function getOrderById(orderId, client) {
       purpose: r.purpose || "brief",
       submissionId: r.submission_id != null ? String(r.submission_id) : null,
       revisionRequestId: r.revision_id != null ? String(r.revision_id) : null,
+      unavailable: r.source_missing_at != null,
     })),
     bidsCount: orderBidRows.length,
     bidUsers: orderBidRows.map((r) => ({
@@ -714,6 +723,9 @@ async function getOrderById(orderId, client) {
 
 async function createInternalOrder({ actorUserId, actorRole, payload, uploadedFiles = [], options = {} }) {
   const client = await pool.connect();
+  // Objects uploaded inside this transaction; deleted again if it rolls back (no orphaned objects).
+  const uploadedForRollback = [];
+  let committed = false;
   try {
     await client.query("BEGIN");
 
@@ -960,6 +972,7 @@ async function createInternalOrder({ actorUserId, actorRole, payload, uploadedFi
       files: uploadedFiles,
       purpose: "brief",
     });
+    uploadedForRollback.push(...preparedFiles);
     await attachFiles({ orderId: orderRow.id, actorUserId, files: preparedFiles }, client);
 
     if (assignedFreelancerId) {
@@ -1045,10 +1058,12 @@ async function createInternalOrder({ actorUserId, actorRole, payload, uploadedFi
     }
 
     await client.query("COMMIT");
+    committed = true;
     scheduleRealOrderTranslation(orderRow.id, orderRow.title, orderRow.description);
     return await getOrderById(orderRow.id);
   } catch (err) {
     await client.query("ROLLBACK");
+    if (!committed) await discardUploadedObjects(uploadedForRollback);
     const institutionalStoredOrderId =
       options.institutionalStoredOrderId != null ? Number(options.institutionalStoredOrderId) : null;
     if (
@@ -1073,6 +1088,9 @@ async function createInternalOrder({ actorUserId, actorRole, payload, uploadedFi
 
 async function createClientOrder({ clientUserId, payload, uploadedFiles = [] }) {
   const client = await pool.connect();
+  // Objects uploaded inside this transaction; deleted again if it rolls back (no orphaned objects).
+  const uploadedForRollback = [];
+  let committed = false;
   try {
     await client.query("BEGIN");
 
@@ -1239,6 +1257,7 @@ async function createClientOrder({ clientUserId, payload, uploadedFiles = [] }) 
         files,
         purpose: "brief",
       });
+      uploadedForRollback.push(...preparedFiles);
       await attachFiles({ orderId: orderRow.id, actorUserId: clientUserId, files: preparedFiles }, client);
     }
 
@@ -1254,6 +1273,7 @@ async function createClientOrder({ clientUserId, payload, uploadedFiles = [] }) 
     }
 
     await client.query("COMMIT");
+    committed = true;
     scheduleRealOrderTranslation(orderRow.id, orderRow.title, orderRow.description);
     if (!isFixed) {
       scheduleClientBiddingPoolFreelancerNotifications({
@@ -1264,6 +1284,7 @@ async function createClientOrder({ clientUserId, payload, uploadedFiles = [] }) 
     return await getOrderById(orderRow.id);
   } catch (err) {
     await client.query("ROLLBACK");
+    if (!committed) await discardUploadedObjects(uploadedForRollback);
     throw err;
   } finally {
     client.release();
@@ -1402,7 +1423,7 @@ async function listClientOrders({ clientUserId, limit = 50, offset = 0 } = {}) {
       [orderIds],
     ),
     pool.query(
-      `SELECT id, order_id, file_path, file_url, secure_url, public_id, original_name, mime_type, size_bytes, uploaded_at, purpose
+      `SELECT id, order_id, file_path, file_url, secure_url, public_id, original_name, mime_type, size_bytes, uploaded_at, purpose, source_missing_at
        FROM order_files
        WHERE order_id = ANY($1::bigint[])
        ORDER BY order_id, id ASC`,
@@ -1442,6 +1463,7 @@ async function listClientOrders({ clientUserId, limit = 50, offset = 0 } = {}) {
       sizeBytes: Number(fr.size_bytes),
       uploadedAt: fr.uploaded_at,
       purpose: fr.purpose || "brief",
+      unavailable: fr.source_missing_at != null,
     });
   }
 
@@ -1607,7 +1629,7 @@ const POOL_ORDER_APPLICANTS_COUNT_SQL = `(
   ) z
 )`;
 
-const POOL_ORDER_FILES_COUNT_SQL = `(SELECT COUNT(*)::int FROM order_files f WHERE f.order_id = o.id)`;
+const POOL_ORDER_FILES_COUNT_SQL = `(SELECT COUNT(*)::int FROM order_files f WHERE f.order_id = o.id AND f.purpose = 'brief')`;
 
 function parsePageLimitOffset({ page, limit, offset, defaultLimit = 12, maxLimit = 200 } = {}) {
   const lim = Math.min(Math.max(Number(limit) || defaultLimit, 1), maxLimit);
@@ -3947,8 +3969,11 @@ async function approvePoolClaimClient({ clientUserId, orderId, claimId }) {
   }
 }
 
-async function submitFreelancerOrderDelivery({ freelancerUserId, orderId, uploadedFiles = [] }) {
+async function submitFreelancerOrderDelivery({ freelancerUserId, orderId, uploadedFiles = [], note = null }) {
   const client = await pool.connect();
+  // Objects uploaded inside this transaction; deleted again if it rolls back (no orphaned objects).
+  const uploadedForRollback = [];
+  let committed = false;
   try {
     await client.query("BEGIN");
     const { rows } = await client.query(`SELECT * FROM orders WHERE id = $1 FOR UPDATE`, [Number(orderId)]);
@@ -3976,9 +4001,11 @@ async function submitFreelancerOrderDelivery({ freelancerUserId, orderId, upload
     }
 
     await orderSubmissionHistoryService.supersedeCurrentSubmissions(client, order.id);
+    const noteText = note != null ? String(note).trim().slice(0, 4000) : "";
     const submissionRow = await orderSubmissionHistoryService.insertSubmissionRow(client, {
       orderId: order.id,
       freelancerUserId,
+      message: noteText || null,
     });
 
     const preparedFiles = await uploadFilesToCloudinary({
@@ -3986,6 +4013,7 @@ async function submitFreelancerOrderDelivery({ freelancerUserId, orderId, upload
       files,
       purpose: "delivery",
     });
+    uploadedForRollback.push(...preparedFiles);
     for (const pf of preparedFiles) {
       pf.submissionId = submissionRow.id;
     }
@@ -4031,6 +4059,7 @@ async function submitFreelancerOrderDelivery({ freelancerUserId, orderId, upload
     );
 
     await client.query("COMMIT");
+    committed = true;
     const out = await getOrderById(orderId);
     try {
       const fazatWebhookOutboundService = require("./fazatWebhookOutboundService");
@@ -4052,6 +4081,7 @@ async function submitFreelancerOrderDelivery({ freelancerUserId, orderId, upload
     return out;
   } catch (err) {
     await client.query("ROLLBACK");
+    if (!committed) await discardUploadedObjects(uploadedForRollback);
     throw err;
   } finally {
     client.release();
@@ -4124,6 +4154,9 @@ async function adminApproveInternalDelivery({ orderId }) {
 
 async function adminRequestInternalDeliveryRevision({ orderId, note, uploadedFiles = [], staffUserId, revisionRequestedByRole }) {
   const client = await pool.connect();
+  // Objects uploaded inside this transaction; deleted again if it rolls back (no orphaned objects).
+  const uploadedForRollback = [];
+  let committed = false;
   try {
     await client.query("BEGIN");
     await assertInternalOrderForAdmin({ orderId }, client);
@@ -4197,6 +4230,7 @@ async function adminRequestInternalDeliveryRevision({ orderId, note, uploadedFil
         files: revisionFiles,
         purpose: "revision_request",
       });
+      uploadedForRollback.push(...prepared);
       for (const pf of prepared) {
         pf.revisionId = revIns.id;
       }
@@ -4229,6 +4263,7 @@ async function adminRequestInternalDeliveryRevision({ orderId, note, uploadedFil
       );
     }
     await client.query("COMMIT");
+    committed = true;
     const out = await getOrderById(orderId);
     try {
       const fazatWebhookOutboundService = require("./fazatWebhookOutboundService");
@@ -4243,6 +4278,7 @@ async function adminRequestInternalDeliveryRevision({ orderId, note, uploadedFil
     return out;
   } catch (err) {
     await client.query("ROLLBACK");
+    if (!committed) await discardUploadedObjects(uploadedForRollback);
     throw err;
   } finally {
     client.release();
@@ -4250,7 +4286,12 @@ async function adminRequestInternalDeliveryRevision({ orderId, note, uploadedFil
 }
 
 /** Staff (admin / super_admin): any order type, file must belong to order. */
-async function prepareStaffOrderFileDownload({ orderId, fileId }) {
+/**
+ * Staff download. Operational admins reach only internal orders (admin_created / super_admin_created —
+ * the same scope as GET /api/admin/orders/:id); super admin keeps oversight on every order.
+ * @param {{ orderId: any, fileId: any, internalOnly?: boolean }} input internalOnly — set for non-super-admin staff
+ */
+async function prepareStaffOrderFileDownload({ orderId, fileId, internalOnly = false }) {
   const oid = Number(orderId);
   const fid = Number(fileId);
   if (!Number.isInteger(oid) || oid < 1 || !Number.isInteger(fid) || fid < 1) {
@@ -4258,14 +4299,15 @@ async function prepareStaffOrderFileDownload({ orderId, fileId }) {
     err.statusCode = 400;
     throw err;
   }
-  const { rows: oRows } = await pool.query(`SELECT id FROM orders WHERE id = $1 LIMIT 1`, [oid]);
-  if (!oRows[0]) {
+  const { rows: oRows } = await pool.query(`SELECT id, source_type FROM orders WHERE id = $1 LIMIT 1`, [oid]);
+  const internal = ["admin_created", "super_admin_created"].includes(String(oRows[0]?.source_type || ""));
+  if (!oRows[0] || (internalOnly && !internal)) {
     const err = new Error("الطلب غير موجود.");
     err.statusCode = 404;
     throw err;
   }
   const { rows } = await pool.query(
-    `SELECT id, order_id, file_path, file_url, secure_url, original_name, mime_type, storage_provider, storage_bucket, storage_key, public_id
+    `SELECT id, order_id, file_path, file_url, secure_url, original_name, mime_type, storage_provider, storage_bucket, storage_key, public_id, source_missing_at
      FROM order_files
      WHERE id = $1 AND order_id = $2
      LIMIT 1`,
@@ -4295,7 +4337,7 @@ async function prepareFreelancerOrderFileDownload({ freelancerUserId, orderId, f
     throw err;
   }
   const { rows: fr } = await pool.query(
-    `SELECT id, order_id, file_path, file_url, secure_url, original_name, mime_type, purpose, storage_provider, storage_bucket, storage_key, public_id
+    `SELECT id, order_id, file_path, file_url, secure_url, original_name, mime_type, purpose, storage_provider, storage_bucket, storage_key, public_id, source_missing_at
      FROM order_files
      WHERE id = $1 AND order_id = $2
      LIMIT 1`,
@@ -4366,6 +4408,9 @@ async function clientApproveDelivery({ clientUserId, orderId }) {
 
 async function clientRequestDeliveryRevision({ clientUserId, orderId, note, uploadedFiles = [] }) {
   const client = await pool.connect();
+  // Objects uploaded inside this transaction; deleted again if it rolls back (no orphaned objects).
+  const uploadedForRollback = [];
+  let committed = false;
   try {
     await client.query("BEGIN");
     await assertClientOwnsOrder({ clientUserId, orderId }, client);
@@ -4436,6 +4481,7 @@ async function clientRequestDeliveryRevision({ clientUserId, orderId, note, uplo
         files: revisionFiles,
         purpose: "revision_request",
       });
+      uploadedForRollback.push(...prepared);
       for (const pf of prepared) {
         pf.revisionId = revIns.id;
       }
@@ -4468,9 +4514,11 @@ async function clientRequestDeliveryRevision({ clientUserId, orderId, note, uplo
       );
     }
     await client.query("COMMIT");
+    committed = true;
     return await getOrderById(orderId);
   } catch (err) {
     await client.query("ROLLBACK");
+    if (!committed) await discardUploadedObjects(uploadedForRollback);
     throw err;
   } finally {
     client.release();
@@ -4480,7 +4528,7 @@ async function clientRequestDeliveryRevision({ clientUserId, orderId, note, uplo
 async function prepareClientOrderFileDownload({ clientUserId, orderId, fileId }) {
   await assertClientOwnsOrder({ clientUserId, orderId });
   const { rows } = await pool.query(
-    `SELECT id, order_id, file_path, file_url, secure_url, original_name, mime_type, storage_provider, storage_bucket, storage_key, public_id
+    `SELECT id, order_id, file_path, file_url, secure_url, original_name, mime_type, storage_provider, storage_bucket, storage_key, public_id, source_missing_at
      FROM order_files
      WHERE id = $1 AND order_id = $2
      LIMIT 1`,

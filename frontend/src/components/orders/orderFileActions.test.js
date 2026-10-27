@@ -15,16 +15,17 @@ const AR_DOWNLOAD = "تعذر تنزيل المرفق. حاول مرة أخرى.
 describe("order file view/download (R2 same-origin streaming)", () => {
   const api = read("services/api.js");
 
-  it("transport/storage failures never surface a raw axios message", () => {
+  it("blob errors expose the server code and never a raw axios / Arabic server message", () => {
     const fn = api.slice(api.indexOf("async function attachBlobErrorMessage"), api.indexOf("export async function fetchOrderFileBlob"));
-    assert.match(fn, /err\.message = st === 401 \|\| st === 403 \|\| st === 404 \? serverMessage : ""/);
+    assert.ok(fn.includes("err.fileErrorCode = String(j.code);"));
+    assert.ok(fn.includes('err.message = "";'));
   });
 
   it("preview keeps the real content type (images are not relabelled as PDF) and falls back to download", () => {
     const fn = api.slice(api.indexOf("export async function viewOrderFileForRole"), api.indexOf("export const downloadClientOrderFile"));
     assert.ok(!fn.includes("showPdfBlobInTab"));
     assert.match(fn, /ORDER_FILE_INLINE_TYPES\.has\(type\)/);
-    assert.match(fn, /openPdfPreviewTab\(\)/);
+    assert.ok(fn.includes("openPdfPreviewTab(openingLabel)"));
     assert.match(fn, /closePreviewTab\(tab\)/);
     for (const t of ["image/jpeg", "image/png", "image/webp", "application/pdf"]) assert.ok(api.includes(`"${t}"`));
   });
@@ -36,10 +37,12 @@ describe("order file view/download (R2 same-origin streaming)", () => {
     assert.match(tl, /fileAccess=\{fileAccess\}/);
   });
 
-  it("FileList uses action-specific localized fallbacks", () => {
+  it("FileList maps failures to localized messages by status/code", () => {
     const fl = read("components/orders/order-details/FileList.jsx");
-    assert.match(fl, /ordersAdmin\.orderDetails\.files\.openError/);
-    assert.match(fl, /ordersAdmin\.orderDetails\.files\.downloadError/);
+    assert.ok(fl.includes("orderFileErrorKey(e)"));
+    assert.ok(fl.includes("ordersAdmin.orderDetails.files.errors."));
+    assert.ok(fl.includes('t("ordersAdmin.orderDetails.files.openErrorTitle")'));
+    assert.ok(fl.includes('t("ordersAdmin.orderDetails.files.downloadErrorTitle")'));
   });
 
   it("dashboard shell hides only the site footer, not card action footers (delivery entry point)", () => {

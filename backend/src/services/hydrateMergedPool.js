@@ -47,7 +47,7 @@ async function hydrateMergedPoolOrders(idOrder, mapListOrderRow, { freelancerUse
       LEFT JOIN (
         SELECT order_id, COUNT(*)::int AS files_count
         FROM order_files
-        WHERE order_id = ANY($1::bigint[])
+        WHERE order_id = ANY($1::bigint[]) AND purpose = 'brief'
         GROUP BY order_id
       ) ofc ON ofc.order_id = o.id
       LEFT JOIN (
@@ -85,7 +85,7 @@ async function hydrateMergedPoolOrders(idOrder, mapListOrderRow, { freelancerUse
       LEFT JOIN (
         SELECT order_id, COUNT(*)::int AS files_count
         FROM order_files
-        WHERE order_id = ANY($1::bigint[])
+        WHERE order_id = ANY($1::bigint[]) AND purpose = 'brief'
         GROUP BY order_id
       ) ofc ON ofc.order_id = o.id
       LEFT JOIN (

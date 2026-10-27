@@ -21,8 +21,19 @@ import "../../i18n/clientAreaResources";
 /**
  * @param {'workflow' | 'archive'} variant — workflow: مراجعة قبل الاعتماد؛ archive: طلب مكتمل، عرض وتنزيل فقط
  * @param {'client' | 'admin'} audience — مسار API: عميل أو طلب داخلي (إدارة)
+ * @param {boolean} historyLoading — the submission history for the current state is still loading:
+ *   show a loading state instead of mixing every delivery file, and keep approval disabled.
  */
-export default function ClientDeliveryReviewModal({ open, order, onClose, onApprove, onRevised, variant = "workflow", audience = "client" }) {
+export default function ClientDeliveryReviewModal({
+  open,
+  order,
+  onClose,
+  onApprove,
+  onRevised,
+  variant = "workflow",
+  audience = "client",
+  historyLoading = false,
+}) {
   const { push } = useToast();
   const { t } = useTranslation();
   const d = "clientArea.deliveryReview";
@@ -57,9 +68,14 @@ export default function ClientDeliveryReviewModal({ open, order, onClose, onAppr
   const submissions = Array.isArray(order?.submissionHistory?.submissions) ? order.submissionHistory.submissions : [];
   // After a resubmission, review the current delivery only; earlier ones stay in the history below.
   const currentSubmission = submissions.find((s) => s?.isCurrent);
-  const reviewFiles =
-    currentSubmission && Array.isArray(currentSubmission.files) && currentSubmission.files.length ? currentSubmission.files : deliveryFiles;
-  const canApprove = !isArchive && order.orderStatus === "pending_client_review" && deliveryFiles.length > 0;
+  const waitingForHistory = historyLoading && !submissions.length;
+  const reviewFiles = waitingForHistory
+    ? []
+    : currentSubmission && Array.isArray(currentSubmission.files) && currentSubmission.files.length
+      ? currentSubmission.files
+      : deliveryFiles;
+  const currentNote = String(currentSubmission?.message || "").trim();
+  const canApprove = !isArchive && !waitingForHistory && order.orderStatus === "pending_client_review" && deliveryFiles.length > 0;
   const canRequestRevision =
     !isArchive && (order.orderStatus === "pending_client_review" || (order.orderStatus === "in_progress" && deliveryFiles.length > 0));
   const revisionFilesOk = validateOrderFilesSize(revisionFiles).ok;
@@ -195,6 +211,16 @@ export default function ClientDeliveryReviewModal({ open, order, onClose, onAppr
               <h3 className="oh-dialog-section__title" id={`${noteId}-files`}>
                 {t(`${d}.deliveryFilesTitle`, { count: reviewFiles.length })}
               </h3>
+              {currentNote ? (
+                <p className="oh-dialog-note oh-dialog-note--freelancer" dir="auto">
+                  <strong>{t(`${d}.freelancerNote`)}</strong> {currentNote}
+                </p>
+              ) : null}
+              {waitingForHistory ? (
+                <p className="od-muted" role="status">
+                  {t(`${d}.loadingDelivery`)}
+                </p>
+              ) : (
               <FileList
                 files={reviewFiles}
                 orderId={orderIdStr}
@@ -209,6 +235,7 @@ export default function ClientDeliveryReviewModal({ open, order, onClose, onAppr
                       : t(`${d}.noAttachmentsPending`)
                 }
               />
+              )}
             </section>
             {submissions.length ? (
               <details className="oh-dialog-details">

@@ -196,8 +196,10 @@ async function openR2Stream(row) {
   const bucket = row.storage_bucket || row.storageBucket;
   const key = row.storage_key || row.storageKey;
   if (!bucket || !key) throw storageError("الملف غير موجود.", 404, "FILE_NOT_FOUND");
+  // Outside the try: "R2 not configured" (503) is a server configuration state, not a provider failure.
+  const client = getR2Client();
   try {
-    const out = await getR2Client().send(new GetObjectCommand({ Bucket: bucket, Key: key }));
+    const out = await client.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
     return {
       stream: out.Body,
       contentLength: out.ContentLength != null ? Number(out.ContentLength) : null,

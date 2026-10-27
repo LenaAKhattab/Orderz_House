@@ -285,7 +285,9 @@
     "historyToggle": "سجل التسليمات والتعديلات ({{count}})",
     "approveConfirmTitle": "اعتماد التسليم وإنهاء الطلب؟",
     "approveConfirmBody": "بعد الاعتماد يُعتبر الطلب مكتملاً ولا يمكن طلب تعديلات إضافية عليه. تأكد من مراجعة جميع الملفات أولاً.",
-    "approveConfirm": "نعم، اعتمد التسليم"
+    "approveConfirm": "نعم، اعتمد التسليم",
+    "freelancerNote": "ملاحظة المستقل:",
+    "loadingDelivery": "جارٍ تحميل التسليم الحالي…"
   },
   "revisionRequest": {
     "title": "طلب تعديل",

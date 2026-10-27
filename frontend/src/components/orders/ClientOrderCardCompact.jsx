@@ -129,7 +129,13 @@ export default function ClientOrderCardCompact({ order, onOrdersChange, initiall
 
   const showReviewAction = showCompletedDeliveryArchive;
 
-  const displayOrder = detailOrder ? { ...order, ...detailOrder } : order;
+  // The list row is polled; the detail (submission history) is fetched on demand. Only merge the
+  // detail while it describes the same state as the list — a stale detail must never hide a new
+  // delivery (old files / disabled approve in the review modal).
+  const listFreshness = `${order?.orderStatus || ""}|${order?.updatedAt || ""}|${deliveryFilesCount}`;
+  const detailMatchesList =
+    Boolean(detailOrder) && String(detailOrder?.orderStatus || "") === String(order?.orderStatus || "");
+  const displayOrder = detailMatchesList ? { ...order, ...detailOrder } : order;
 
   useEffect(() => {
     if (!showReviewAction || !order?.id) {
@@ -171,7 +177,7 @@ export default function ClientOrderCardCompact({ order, onOrdersChange, initiall
     return () => {
       cancelled = true;
     };
-  }, [shouldLoadSubmissionDetail, expanded, order.id]);
+  }, [shouldLoadSubmissionDetail, expanded, order.id, listFreshness]);
 
   const refetchDetailOrder = useCallback(async () => {
     try {
@@ -378,6 +384,7 @@ export default function ClientOrderCardCompact({ order, onOrdersChange, initiall
         open={deliveryModal.open}
         variant={deliveryModal.variant}
         order={displayOrder}
+        historyLoading={deliveryModal.open && needsSubmissionDetail && !detailMatchesList}
         onClose={() => setDeliveryModal({ open: false, variant: "workflow" })}
         onApprove={() => {
           onOrdersChange?.();

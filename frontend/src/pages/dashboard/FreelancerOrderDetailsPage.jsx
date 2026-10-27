@@ -391,7 +391,14 @@ export default function FreelancerOrderDetailsPage() {
                   <OrderFilesCard
                     orderId={String(id)}
                     fileAccess={!planLocked && isFreelancer ? "freelancer" : null}
-                    files={order.files || []}
+                    noAccessText={
+                      user && isFreelancer && planLocked
+                        ? t("ordersAdmin.orderDetails.files.planLockedHint")
+                        : user && !isFreelancer
+                          ? t("ordersAdmin.orderDetails.files.freelancersOnlyHint")
+                          : undefined
+                    }
+                    files={(order.files || []).filter((f) => !f?.purpose || f.purpose === "brief")}
                     emptyText={t("freelancerDashboard.orders.noFiles")}
                   />
                 </div>
