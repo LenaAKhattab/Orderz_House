@@ -83,7 +83,8 @@ export default function MarketplaceArticlesAdminPanel({
         const [articlesRes, catsRes, campaignsRes] = await Promise.all([
           listAdminMarketplaceArticlesRequest({}, { signal }),
           getCategoriesRequest(),
-          listSuperAdminActivationCampaignsRequest().catch(() => null),
+          // Activation campaigns are a Super Admin endpoint; admins got a 403 on every load.
+          canEditPackageRequirements ? listSuperAdminActivationCampaignsRequest().catch(() => null) : Promise.resolve(null),
         ]);
         return { articlesRes, catsRes, campaignsRes };
       },
@@ -96,7 +97,7 @@ export default function MarketplaceArticlesAdminPanel({
     setCategories(Array.isArray(cats) ? cats : []);
     const campaignList = campaignsRes?.data?.campaigns || campaignsRes?.campaigns || [];
     setActivationCampaigns(Array.isArray(campaignList) ? campaignList : []);
-  }, [runListLoad]);
+  }, [runListLoad, canEditPackageRequirements]);
 
   useEffect(() => {
     void refresh();

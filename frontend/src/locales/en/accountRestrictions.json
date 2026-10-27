@@ -190,5 +190,7 @@
   "identity": "Identity",
   "eligibility": "Eligibility",
   "accountActive": "Active",
-  "accountInactive": "Inactive"
+  "accountInactive": "Inactive",
+  "checking": "Checking restrictions…",
+  "checkFailed": "Could not check restrictions"
 }

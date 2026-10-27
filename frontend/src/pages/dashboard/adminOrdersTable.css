@@ -1,0 +1,86 @@
+/* Admin requests table — operational columns on the shared dash-ui-table (Users density). */
+.oh-admin-orders-table .dash-ui-table td {
+  vertical-align: middle;
+}
+
+.oh-admin-orders-table__code {
+  white-space: nowrap;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #475569;
+  text-align: start;
+}
+
+.oh-admin-orders-table__title {
+  min-width: 14rem;
+  max-width: 26rem;
+}
+
+.oh-admin-orders-table__title-text {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  font-weight: 700;
+  color: var(--dash-text, #172033);
+  overflow-wrap: anywhere;
+}
+
+.oh-admin-orders-table__meta {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.74rem;
+  color: #64748b;
+}
+
+.oh-admin-orders-table__money,
+.oh-admin-orders-table__date {
+  white-space: nowrap;
+}
+
+.oh-admin-orders-table__status {
+  display: block;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.oh-admin-orders-table .oh-mini-chip {
+  margin-top: 4px;
+  margin-inline-end: 4px;
+  font-size: 0.7rem;
+}
+
+.oh-admin-orders-table__timing {
+  max-width: 18rem;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: #475569;
+}
+
+.oh-admin-orders-table__col--actions {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.oh-admin-orders-table__btn.btn {
+  min-height: 32px;
+  padding: 4px 12px;
+  font-size: 0.8rem;
+}
+
+.oh-admin-orders-table__hint {
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+@media (max-width: 1100px) {
+  .oh-admin-orders-table__col--lg {
+    display: none;
+  }
+}
+
+@media (max-width: 820px) {
+  .oh-admin-orders-table__col--md {
+    display: none;
+  }
+}

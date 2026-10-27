@@ -18,7 +18,17 @@ import {
 import { isAdminStaffShell, staffIdentityRequestsPath } from "../../lib/staff/staffDashboardPaths";
 import { ADMIN_LIST_SEARCH_DEBOUNCE_MS } from "../../lib/staff/adminListLoad";
 import { useAdminListLoad } from "../../hooks/useAdminListLoad";
+import StatusBadge from "../../components/dashboard/StatusBadge";
 import "./kycActivationReviewActions.css";
+
+/** Same semantic palette as the Users control center (pending = amber, approved = green…). */
+const KYC_STATUS_TONE = {
+  pending_review: "pending",
+  approved: "success",
+  rejected: "danger",
+  draft: "neutral",
+  cancelled: "inactive",
+};
 import { useTranslation } from "../../i18n/LanguageProvider";
 import "../../i18n/activationResources";
 
@@ -271,7 +281,7 @@ function RequestDetail({ id, onBack }) {
 }
 
 export default function SuperAdminFreelancerActivationRequestsPage() {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const statusLabels = useMemo(
     () => ({
       pending_review: t("activation.requests.statusLabels.pending_review"),
@@ -405,28 +415,38 @@ export default function SuperAdminFreelancerActivationRequestsPage() {
             <DashboardEmptyState title={t("activation.requests.empty")} />
           ) : null}
           {items.length > 0 ? (
-            <div style={{ overflowX: "auto" }} data-testid="admin-identity-table">
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <div className="dash-ui-table-wrap oh-kyc-queue" data-testid="admin-identity-table">
+              <table className="dash-ui-table w-full border-collapse text-[0.86rem]">
                 <thead>
                   <tr>
-                    <th align="right">{t("activation.requests.colFreelancer")}</th>
-                    <th align="right">{t("activation.requests.colEmail")}</th>
-                    <th align="right">{t("activation.requests.colStatus")}</th>
-                    <th align="right">{t("activation.requests.colSubmitted")}</th>
-                    <th align="right">{t("activation.requests.colReview")}</th>
-                    <th align="right">{t("activation.requests.colAction")}</th>
+                    <th>{t("activation.requests.colFreelancer")}</th>
+                    <th className="oh-kyc-queue__col--email">{t("activation.requests.colEmail")}</th>
+                    <th>{t("activation.requests.colStatus")}</th>
+                    <th className="oh-kyc-queue__col--date">{t("activation.requests.colSubmitted")}</th>
+                    <th className="oh-kyc-queue__col--review">{t("activation.requests.colReview")}</th>
+                    <th className="oh-kyc-queue__col--action">
+                      <span className="sr-only">{t("activation.requests.colAction")}</span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {items.map((row) => (
                     <tr key={row.id}>
-                      <td>{row.freelancerName || "—"}</td>
-                      <td>{row.freelancerEmail || "—"}</td>
-                      <td>{statusLabels[row.status] || row.status}</td>
-                      <td>{formatDate(row.submittedAt)}</td>
-                      <td>{formatDate(row.reviewedAt)}</td>
                       <td>
-                        <Link to={`${listBase}/${row.id}`}>{t("activation.requests.view")}</Link>
+                        <span className="oh-kyc-queue__name">{row.freelancerName || "—"}</span>
+                        <span className="oh-kyc-queue__sub" dir="ltr">{row.freelancerEmail || "—"}</span>
+                        <span className="oh-kyc-queue__sub oh-kyc-queue__sub--date">{formatDate(row.submittedAt, locale)}</span>
+                      </td>
+                      <td className="oh-kyc-queue__col--email" dir="ltr">{row.freelancerEmail || "—"}</td>
+                      <td>
+                        <StatusBadge tone={KYC_STATUS_TONE[row.status] || "neutral"}>{statusLabels[row.status] || row.status}</StatusBadge>
+                      </td>
+                      <td className="oh-kyc-queue__col--date oh-kyc-queue__date">{formatDate(row.submittedAt, locale)}</td>
+                      <td className="oh-kyc-queue__col--review oh-kyc-queue__date">{formatDate(row.reviewedAt, locale)}</td>
+                      <td className="oh-kyc-queue__col--action">
+                        <Link className="btn btn-secondary oh-kyc-queue__open" to={`${listBase}/${row.id}`}>
+                          {t("activation.requests.view")}
+                        </Link>
                       </td>
                     </tr>
                   ))}

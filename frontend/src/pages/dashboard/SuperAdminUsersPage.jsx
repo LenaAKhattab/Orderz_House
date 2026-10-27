@@ -428,6 +428,8 @@ function UserDetailDrawer({
   const [durationChoice, setDurationChoice] = useState("1");
   const [customMonths, setCustomMonths] = useState("1");
   const [restrictionSummary, setRestrictionSummary] = useState(null);
+  /** "loading" | "ready" | "error" — never show "no active restriction" before the check returns. */
+  const [restrictionStatus, setRestrictionStatus] = useState("loading");
 
   useEffect(() => {
     if (!open) return;
@@ -438,15 +440,24 @@ function UserDetailDrawer({
     const userId = detail?.profile?.id;
     if (!open || !userId) {
       setRestrictionSummary(null);
+      setRestrictionStatus("loading");
       return undefined;
     }
     let cancelled = false;
+    setRestrictionSummary(null);
+    setRestrictionStatus("loading");
     (async () => {
       try {
         const res = await getSuperAdminUserAccountRestrictionsRequest(userId);
-        if (!cancelled) setRestrictionSummary(res?.data || null);
+        if (!cancelled) {
+          setRestrictionSummary(res?.data || null);
+          setRestrictionStatus("ready");
+        }
       } catch {
-        if (!cancelled) setRestrictionSummary(null);
+        if (!cancelled) {
+          setRestrictionSummary(null);
+          setRestrictionStatus("error");
+        }
       }
     })();
     return () => {
@@ -602,11 +613,19 @@ function UserDetailDrawer({
                   <section className="oh-sa-users-gates" aria-label={t("accountRestrictions.drawerTitle")}>
                     <div className="oh-sa-users-gates__head">
                       <h3>{t("accountRestrictions.drawerTitle")}</h3>
-                      <StatusBadge tone={restrictionSummary?.hasActiveRestriction ? "warning" : "success"}>
-                        {restrictionSummary?.hasActiveRestriction
-                          ? t("accountRestrictions.activeHoldBadge")
-                          : t("accountRestrictions.noActive")}
-                      </StatusBadge>
+                      {restrictionStatus === "ready" ? (
+                        <StatusBadge tone={restrictionSummary?.hasActiveRestriction ? "warning" : "success"}>
+                          {restrictionSummary?.hasActiveRestriction
+                            ? t("accountRestrictions.activeHoldBadge")
+                            : t("accountRestrictions.noActive")}
+                        </StatusBadge>
+                      ) : (
+                        <StatusBadge tone={restrictionStatus === "error" ? "danger" : "neutral"}>
+                          <span role="status">
+                            {restrictionStatus === "error" ? t("accountRestrictions.checkFailed") : t("accountRestrictions.checking")}
+                          </span>
+                        </StatusBadge>
+                      )}
                     </div>
                     {restrictionSummary?.hasActiveRestriction ? (
                       <ul>
@@ -623,20 +642,22 @@ function UserDetailDrawer({
                         ))}
                       </ul>
                     ) : null}
-                    <div className="oh-sa-users-actions-row" style={{ marginTop: 10 }}>
-                      <Link
-                        className="btn btn-secondary"
-                        to={
-                          restrictionSummary?.hasActiveRestriction
-                            ? "/dashboard/super-admin/account-restrictions"
-                            : `/dashboard/super-admin/account-restrictions?add=1&userId=${encodeURIComponent(profile.id)}`
-                        }
-                      >
-                        {restrictionSummary?.hasActiveRestriction
-                          ? t("accountRestrictions.manage")
-                          : t("accountRestrictions.addFromUsers")}
-                      </Link>
-                    </div>
+                    {restrictionStatus === "ready" ? (
+                      <div className="oh-sa-users-actions-row" style={{ marginTop: 10 }}>
+                        <Link
+                          className="btn btn-secondary"
+                          to={
+                            restrictionSummary?.hasActiveRestriction
+                              ? "/dashboard/super-admin/account-restrictions"
+                              : `/dashboard/super-admin/account-restrictions?add=1&userId=${encodeURIComponent(profile.id)}`
+                          }
+                        >
+                          {restrictionSummary?.hasActiveRestriction
+                            ? t("accountRestrictions.manage")
+                            : t("accountRestrictions.addFromUsers")}
+                        </Link>
+                      </div>
+                    ) : null}
                   </section>
 
                   <div className="oh-sa-users-form-grid">

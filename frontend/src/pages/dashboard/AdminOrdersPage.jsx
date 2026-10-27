@@ -14,6 +14,10 @@ import { INTERNAL_ORDERS_LIST_REFRESH } from "../../constants/authRoutes";
 import { OrderCardsGridSkeleton } from "../../components/ui/Skeleton";
 import { getOrderDeliveryTiming } from "../../utils/orderDeliveryTiming";
 import { getOrderStatusLabel } from "../../utils/orderFlowUi";
+import { formatOrderDuration, formatOrderProjectType } from "../../lib/orders/orderDisplayFormatters";
+import { formatJoDate } from "../../components/orders/order-details/orderDetailsUtils";
+import { JodMoneyDisplay } from "../../components/money/JodMoneyDisplay";
+import "./adminOrdersTable.css";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import "../../i18n/ordersAdminResources";
 import { trackEvent } from "../../services/analytics";
@@ -343,36 +347,19 @@ export default function AdminOrdersPage() {
             );
           })
         ) : (
-          <div className="card oh-internal-orders__table-card" style={{ overflowX: "auto" }}>
-            <table className="oh-internal-orders__table" style={{ width: "100%", borderCollapse: "collapse", minWidth: 1200 }}>
+          <div className="dash-ui-table-wrap oh-admin-orders-table">
+            <table className="dash-ui-table w-full border-collapse text-[0.84rem]">
               <thead>
                 <tr>
-                  {[
-                    t("ordersAdmin.listPage.table.orderCode"),
-                    t("ordersAdmin.listPage.table.title"),
-                    t("ordersAdmin.listPage.table.scope"),
-                    t("ordersAdmin.listPage.table.description"),
-                    t("ordersAdmin.listPage.table.category"),
-                    t("ordersAdmin.listPage.table.subSubcategory"),
-                    t("ordersAdmin.listPage.table.extraCategories"),
-                    t("ordersAdmin.listPage.table.type"),
-                    t("ordersAdmin.listPage.table.budget"),
-                    t("ordersAdmin.listPage.table.currency"),
-                    t("ordersAdmin.listPage.table.duration"),
-                    t("ordersAdmin.listPage.table.status"),
-                    t("ordersAdmin.listPage.table.deliveryTiming"),
-                    t("ordersAdmin.listPage.table.inPool"),
-                    t("ordersAdmin.listPage.table.archived"),
-                    "assignedFreelancerId",
-                    "createdAt",
-                    "files",
-                    "skills",
-                    t("ordersAdmin.listPage.table.actions"),
-                  ].map((h) => (
-                    <th key={h} style={{ textAlign: "right", padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.18)", whiteSpace: "nowrap" }}>
-                      {h}
-                    </th>
-                  ))}
+                  <th>{t("ordersAdmin.listPage.table.orderCode")}</th>
+                  <th>{t("ordersAdmin.listPage.table.title")}</th>
+                  <th>{t("ordersAdmin.listPage.table.type")}</th>
+                  <th>{t("ordersAdmin.listPage.table.budget")}</th>
+                  <th className="oh-admin-orders-table__col--md">{t("ordersAdmin.listPage.table.duration")}</th>
+                  <th>{t("ordersAdmin.listPage.table.status")}</th>
+                  <th className="oh-admin-orders-table__col--lg">{t("ordersAdmin.listPage.table.deliveryTiming")}</th>
+                  <th className="oh-admin-orders-table__col--md">{t("ordersAdmin.listPage.table.created")}</th>
+                  <th className="oh-admin-orders-table__col--actions">{t("ordersAdmin.listPage.table.actions")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -392,77 +379,65 @@ export default function AdminOrdersPage() {
                     !o?.assignedFreelancerId &&
                     !o?.receivedAt &&
                     !o?.isArchived;
-                  const extra = Array.isArray(o.extraCategories)
-                    ? o.extraCategories
-                        .map((x) => `${x?.category?.name || "—"}${x?.subSubcategory?.name ? ` • ${x.subSubcategory.name}` : ""}`)
-                        .join(" | ")
-                    : "";
-                  const files = Array.isArray(o.files) ? o.files.map((f) => f.originalName || f.filePath).filter(Boolean).join(" | ") : "";
-                  const skills = Array.isArray(o.preferredSkills) ? o.preferredSkills.map((s) => s.name).filter(Boolean).join(" | ") : "";
+                  const filesCount = Array.isArray(o.files) ? o.files.length : 0;
+                  const institutional = o?.isInstitutionalOrder || o?.visibilityScope === "institution";
                   const deliveryTiming = getOrderDeliveryTiming(o, t, locale);
                   return (
                     <tr key={o.id}>
-                      <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>{o.orderCode || "—"}</td>
-                      <td dir="auto" style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>{o.title || "—"}</td>
-                      <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>
-                        {o?.isInstitutionalOrder || o?.visibilityScope === "institution" ? (
-                          <span title={[o.institutionalStorageName, ...(o.institutionalInstitutionNames || [])].filter(Boolean).join(" · ")}>
-                            {t("ordersAdmin.listPage.card.institutionalOrder")}
-                            {o.institutionalStoredOrderId ? ` (#${o.institutionalStoredOrderId})` : ""}
-                          </span>
+                      <td className="oh-admin-orders-table__code" dir="ltr">{o.orderCode || "—"}</td>
+                      <td className="oh-admin-orders-table__title">
+                        <span className="oh-admin-orders-table__title-text" dir="auto" title={o.title || ""}>
+                          {o.title || "—"}
+                        </span>
+                        <span className="oh-admin-orders-table__meta">
+                          {[
+                            o.category?.name,
+                            institutional ? t("ordersAdmin.listPage.card.institutionalOrder") : null,
+                            filesCount ? t("ordersAdmin.listPage.table.filesCount", { count: filesCount }) : null,
+                          ]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </span>
+                      </td>
+                      <td>{formatOrderProjectType(o.projectType, t)}</td>
+                      <td className="oh-admin-orders-table__money">
+                        {pricedBidding ? (
+                          <JodMoneyDisplay amount={o.bidBudgetMin} amountMax={o.bidBudgetMax} compact />
+                        ) : o.projectType === "bidding" || o.budget == null ? (
+                          "—"
                         ) : (
-                          t("ordersAdmin.listPage.table.scopeGeneral")
+                          <JodMoneyDisplay amount={o.budget} compact />
                         )}
                       </td>
-                      <td dir="auto" style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)", maxWidth: 420 }}>{o.description?.trim() ? o.description : t("orders.marketplace.card.noDescription")}</td>
-                      <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>{o.category?.name || "—"}</td>
-                      <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>{o.subSubcategory?.name || "—"}</td>
-                      <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>{extra || "—"}</td>
-                      <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>{o.projectType || "—"}</td>
-                      <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>{o.projectType === "bidding" ? "—" : (o.budget ?? "—")}</td>
-                      <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>{o.projectType === "bidding" ? "—" : "JOD"}</td>
-                      <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>{o.durationValue ? `${o.durationValue} ${o.durationUnit || ""}` : "—"}</td>
-                      <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>{getOrderStatusLabel(o.orderStatus, t)}</td>
-                      <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)", maxWidth: 360 }}>
-                        {deliveryTiming ? (
-                          <div style={{ display: "grid", gap: 6 }}>
-                            <span>{deliveryTiming.message}</span>
-                            {deliveryTiming.completionMessage ? (
-                              <span style={{ fontSize: "0.88em", color: "var(--text-muted)" }}>{deliveryTiming.completionMessage}</span>
-                            ) : null}
-                          </div>
+                      <td className="oh-admin-orders-table__col--md">{o.durationValue ? formatOrderDuration(o, locale, t) : "—"}</td>
+                      <td>
+                        <span className="oh-admin-orders-table__status">{getOrderStatusLabel(o.orderStatus, t)}</span>
+                        {o.isArchived ? <span className="oh-mini-chip">{t("ordersAdmin.listPage.table.archived")}</span> : null}
+                        {o.isOpenForPool && !o.isArchived ? (
+                          <span className="oh-mini-chip oh-mini-chip--emph">{t("ordersAdmin.listPage.table.inPool")}</span>
+                        ) : null}
+                      </td>
+                      <td className="oh-admin-orders-table__col--lg oh-admin-orders-table__timing">
+                        {deliveryTiming ? deliveryTiming.message : "—"}
+                      </td>
+                      <td className="oh-admin-orders-table__col--md oh-admin-orders-table__date">{formatJoDate(o.createdAt)}</td>
+                      <td className="oh-admin-orders-table__col--actions">
+                        {tableShowBids ? (
+                          <button
+                            type="button"
+                            className="btn btn-secondary oh-admin-orders-table__btn"
+                            onClick={() => {
+                              setBidsModalOrderId(o.id);
+                              void loadBids(o.id);
+                            }}
+                          >
+                            {t("ordersAdmin.listPage.table.bids")}
+                          </button>
+                        ) : tableShowClaims ? (
+                          <span className="oh-admin-orders-table__hint">{t("ordersAdmin.listPage.table.applicants")}</span>
                         ) : (
                           "—"
                         )}
-                      </td>
-                      <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>{String(Boolean(o.isOpenForPool))}</td>
-                      <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>{String(Boolean(o.isArchived))}</td>
-                      <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>{o.assignedFreelancerId || "—"}</td>
-                      <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)" }}>{o.createdAt || "—"}</td>
-                      <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)", maxWidth: 420 }}>
-                        {files || t("ordersAdmin.listPage.table.noFiles")}
-                      </td>
-                      <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)", maxWidth: 320 }}>{skills || "—"}</td>
-                      <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(56,82,180,0.10)", whiteSpace: "nowrap" }}>
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                          {tableShowClaims ? (
-                            <span className="help">{t("ordersAdmin.listPage.table.applicants")}</span>
-                          ) : null}
-                          {tableShowBids ? (
-                            <button
-                              type="button"
-                              className="btn btn-secondary"
-                              style={{ fontSize: "0.85rem", padding: "6px 10px" }}
-                              onClick={() => {
-                                setBidsModalOrderId(o.id);
-                                void loadBids(o.id);
-                              }}
-                            >
-                              {t("ordersAdmin.listPage.table.bids")}
-                            </button>
-                          ) : null}
-                          {!tableShowClaims && !tableShowBids ? "—" : null}
-                        </div>
                       </td>
                     </tr>
                   );

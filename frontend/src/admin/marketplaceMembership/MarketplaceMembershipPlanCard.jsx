@@ -4,6 +4,9 @@ import { Trash2 } from "lucide-react";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import "../../i18n/planAdminResources";
 import { formatMarketplaceAccessLabel, formatMarketplacePriceLabel } from "./marketplacePlanFormUtils";
+// The card owns its styles: Marketplace Plans rendered unstyled on direct load because only
+// other pages (training packages, special offer, articles) imported this sheet.
+import "./marketplace-membership-plans.css";
 
 /**
  * Admin card for Marketplace Membership plans (independent of legacy plan cards).
