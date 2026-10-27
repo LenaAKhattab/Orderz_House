@@ -213,6 +213,10 @@ async function handleStripeWebhook(req, res) {
 
     if (eventType === "checkout.session.completed") {
       applyResult = await applyCheckoutSessionCompleted(event.data.object);
+    } else if (eventType === "checkout.session.expired") {
+      // Abandoned checkout: close the local attempt so it never blocks a new purchase.
+      const trainingCheckout = require("../services/trainingPackageCheckoutService");
+      applyResult = await trainingCheckout.applyTrainingPackageCheckoutSessionExpired(event.data.object);
     } else if (eventType === "payment_intent.succeeded") {
       applyResult = await applyPaymentIntentOutcome(event.data.object, "paid");
     } else if (eventType === "payment_intent.payment_failed") {

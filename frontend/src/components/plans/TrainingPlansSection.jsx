@@ -11,7 +11,8 @@ import "../../styles/plansPage.css";
 export default function TrainingPlansSection({
   purchaseMode = false,
   currentPackageCode = "",
-  pendingPackageCode = "",
+  /** packageCode → "resume" | "processing" (server-reconciled checkout state). */
+  checkoutStates = {},
   onBuy,
   buyBusyCode = "",
 }) {
@@ -34,9 +35,7 @@ export default function TrainingPlansSection({
           const purchaseState =
             currentPackageCode && code === currentPackageCode
               ? "current"
-              : pendingPackageCode && code === pendingPackageCode
-                ? "pending"
-                : "available";
+              : checkoutStates[code] || "available";
           return (
             <TrainingPlanCard
               key={pkg.id || code}

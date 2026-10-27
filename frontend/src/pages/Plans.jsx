@@ -18,6 +18,7 @@ import {
 } from "../components/plans/plansLayoutUtils";
 import { usePlansPage } from "../hooks/usePlansPage";
 import { usePublicPlansContent } from "../hooks/usePublicPlansContent";
+import { usePageRestore } from "../hooks/usePageRestore";
 import {
   DEFAULT_PLANS_CATEGORY,
   PLANS_CATEGORY,
@@ -53,6 +54,8 @@ const Plans = () => {
   } = usePlansPage({ slug, returnPath });
   const { t, dir, locale } = useTranslation();
   const [specialOfferCheckoutBusy, setSpecialOfferCheckoutBusy] = useState(false);
+  // Browser Back from Stripe (BFCache restore) must not leave the offer CTA stuck on "redirecting".
+  usePageRestore(() => setSpecialOfferCheckoutBusy(false));
 
   const isMainCatalog = !slug;
   const plansContent = usePublicPlansContent({ enabled: isMainCatalog });

@@ -102,6 +102,7 @@ export default function FreelancerPlansPage() {
   const {
     current: currentTraining,
     pending: pendingTraining,
+    checkoutStates: trainingCheckoutStates,
     waiting: trainingPaymentWaiting,
     buyBusyCode: trainingBuyBusyCode,
     checkoutError: trainingCheckoutError,
@@ -212,6 +213,7 @@ export default function FreelancerPlansPage() {
                     </div>
                   </header>
                 ) : null}
+                {/* Only genuine provider confirmation (success return / Stripe "complete" unpaid) — never an open checkout. */}
                 {trainingPaymentWaiting || pendingTraining ? (
                   <p className="fp-checkout-banner__message" role="status" data-testid="training-payment-waiting">
                     {t("plans.training.waiting")}
@@ -221,11 +223,7 @@ export default function FreelancerPlansPage() {
                 <TrainingPlansSection
                   purchaseMode
                   currentPackageCode={currentTraining?.packageCode || ""}
-                  pendingPackageCode={
-                    trainingPaymentWaiting
-                      ? pendingTraining?.packageCode || ""
-                      : pendingTraining?.packageCode || ""
-                  }
+                  checkoutStates={trainingCheckoutStates}
                   onBuy={startTrainingCheckout}
                   buyBusyCode={trainingBuyBusyCode}
                 />
