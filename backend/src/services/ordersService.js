@@ -1086,6 +1086,12 @@ async function createInternalOrder({ actorUserId, actorRole, payload, uploadedFi
   }
 }
 
+/** Per-attempt key sent by the Create Order form (letters, digits, ':', '_', '-'; 8–120 chars). */
+function normalizeClientCreationKey(raw) {
+  const key = String(raw ?? "").trim();
+  return /^[A-Za-z0-9:_-]{8,120}$/.test(key) ? key : null;
+}
+
 async function createClientOrder({ clientUserId, payload, uploadedFiles = [] }) {
   const client = await pool.connect();
   // Objects uploaded inside this transaction; deleted again if it rolls back (no orphaned objects).
@@ -1100,6 +1106,26 @@ async function createClientOrder({ clientUserId, payload, uploadedFiles = [] }) 
       const err = new Error("Only client accounts can create client orders.");
       err.statusCode = 403;
       throw err;
+    }
+
+    // One creation attempt = one order: a resubmission of the same attempt (double click, retry after a
+    // slow response, browser Back + resubmit) returns the existing order — before any file is uploaded.
+    const creationKey = normalizeClientCreationKey(payload.creationKey);
+    if (creationKey) {
+      await client.query(
+        `SELECT pg_advisory_xact_lock(hashtext('client_order_creation:' || $2::text), $1::int)`,
+        [Number(clientUserId), creationKey],
+      );
+      const { rows: existingRows } = await client.query(
+        `SELECT id FROM orders WHERE created_by_user_id = $1 AND client_creation_key = $2 LIMIT 1`,
+        [Number(clientUserId), creationKey],
+      );
+      if (existingRows[0]) {
+        await client.query("COMMIT");
+        committed = true;
+        const existing = await getOrderById(existingRows[0].id);
+        return { ...existing, idempotentReplay: true };
+      }
     }
 
     const chainResult = await assertCategoryChain(
@@ -1153,7 +1179,8 @@ async function createClientOrder({ clientUserId, payload, uploadedFiles = [] }) 
         is_published, is_open_for_pool,
         is_archived,
         payment_required, payment_status,
-        order_status
+        order_status,
+        client_creation_key
       ) VALUES (
         $1,$2,$3,
         $4,$5,
@@ -1169,7 +1196,8 @@ async function createClientOrder({ clientUserId, payload, uploadedFiles = [] }) 
         $15, $16,
         FALSE,
         $17, $18,
-        $19
+        $19,
+        $20
       )
       RETURNING *`,
       [
@@ -1192,6 +1220,7 @@ async function createClientOrder({ clientUserId, payload, uploadedFiles = [] }) 
         initialPaymentRequired,
         initialPaymentStatus,
         initialOrderStatus,
+        creationKey,
       ],
     );
 

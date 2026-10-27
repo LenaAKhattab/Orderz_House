@@ -319,7 +319,8 @@ describe("delivery lifecycle hardening", () => {
 
   it("objects uploaded inside a rolled-back transaction are deleted (5 upload paths)", () => {
     assert.equal(svc.split("if (!committed) await discardUploadedObjects(uploadedForRollback);").length - 1, 5);
-    assert.equal(svc.split("committed = true;").length - 1, 5);
+    // 5 upload paths + the client creation replay (commits before any upload).
+    assert.equal(svc.split("committed = true;").length - 1, 6);
     assert.equal(svc.split("uploadedForRollback.push(...").length - 1, 5);
   });
 

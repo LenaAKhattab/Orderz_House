@@ -119,7 +119,11 @@
       "open": "No open orders.",
       "done": "No closed orders."
     },
-    "showAll": "Show all orders"
+    "showAll": "Show all orders",
+    "paymentConfirmingTitle": "Confirming payment",
+    "paymentConfirmingMessage": "We haven't received the payment confirmation yet. The order opens to freelancers as soon as it is confirmed; you can continue the payment from the order card.",
+    "paymentNotCompletedTitle": "Payment not completed",
+    "paymentNotCompletedMessage": "Your order is saved with its attachments. You can “Continue payment” any time or cancel the order."
   },
   "profile": {
     "loadError": "Could not load profile.",
@@ -242,7 +246,21 @@
     "label": "Pay now",
     "startErrorTitle": "Could not start payment",
     "noCheckoutUrl": "The server did not return a checkout link.",
-    "openCheckoutFallback": "Could not open the payment page. Try again."
+    "openCheckoutFallback": "Could not open the payment page. Try again.",
+    "continueLabel": "Continue payment",
+    "paidTitle": "Payment received",
+    "paidMessage": "The payment for this order is confirmed and it is now open to freelancers.",
+    "processing": "The payment for this order is being confirmed. Refresh the page shortly.",
+    "statusUnavailable": "We couldn't verify the payment status right now. Please try again shortly.",
+    "providerError": "We couldn't reach the payment provider right now. Please try again shortly.",
+    "alreadyPaid": "This order has already been paid.",
+    "cancelLabel": "Cancel order",
+    "cancelConfirmTitle": "Cancel the unpaid order?",
+    "cancelConfirmBody": "This unpaid order and its attachments will be deleted and can no longer be paid.",
+    "cancelConfirm": "Cancel order",
+    "cancelDoneTitle": "Order cancelled",
+    "cancelDoneMessage": "The unpaid order was cancelled.",
+    "cancelErrorTitle": "Could not cancel the order"
   },
   "deliveryReview": {
     "titleArchive": "Freelancer delivery files",
@@ -343,5 +361,10 @@
     "later": "Later",
     "saveEdit": "Save changes",
     "submitReview": "Submit review"
+  },
+  "pendingPaymentNotice": {
+    "title": "You have an order awaiting payment",
+    "text": "Complete the payment for your existing order instead of creating a new one with the same details.",
+    "viewOrders": "View my orders"
   }
 }

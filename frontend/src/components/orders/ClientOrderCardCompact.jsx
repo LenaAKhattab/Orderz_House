@@ -25,6 +25,7 @@ import { getClientOrderByIdRequest, getClientOrderReviewStatusRequest } from "..
 import { orderHasAssignment } from "../../utils/orderPrivacyUi";
 import { JodMoneyDisplay } from "../money/JodMoneyDisplay";
 import ClientFixedOrderPayNowButton from "./ClientFixedOrderPayNowButton";
+import ClientFixedOrderCancelButton from "./ClientFixedOrderCancelButton";
 import "./client-order-card.css";
 
 function bidderDisplayName(bidUser) {
@@ -352,7 +353,8 @@ export default function ClientOrderCardCompact({ order, onOrdersChange, initiall
       ) : null}
 
       <footer className="coc__foot">
-        <ClientFixedOrderPayNowButton order={order} />
+        <ClientFixedOrderPayNowButton order={order} onChanged={onOrdersChange} />
+        <ClientFixedOrderCancelButton order={order} onChanged={onOrdersChange} />
         {primary}
         {secondary}
         <button

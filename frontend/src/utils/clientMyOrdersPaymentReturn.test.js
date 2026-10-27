@@ -55,16 +55,16 @@ describe("clientMyOrdersPaymentReturn", () => {
 });
 
 describe("ClientMyOrdersPage payment-return wiring", () => {
-  it("pay-cancel is only invoked for fixed-order branches (two await call sites)", () => {
-    const n = (clientMyOrdersPageSource.match(/await cancelClientFixedOrderPaymentRequest/g) || []).length;
-    assert.equal(n, 2);
+  it("a Stripe return never discards the order (pay-cancel is an explicit client action only)", () => {
+    assert.equal((clientMyOrdersPageSource.match(/cancelClientFixedOrderPaymentRequest/g) || []).length, 0);
   });
 
-  it("fixed payment confirm failure still triggers pay-cancel (regression)", () => {
-    assert.match(
-      clientMyOrdersPageSource,
-      /else if \(orderId\) \{\s*\n\s*try \{\s*\n\s*await cancelClientFixedOrderPaymentRequest/s,
-    );
+  it("fixed payment confirm failure keeps the order and explains it is confirming", () => {
+    const paidBlock = clientMyOrdersPageSource.indexOf('if (paid === "1")');
+    const catchStart = clientMyOrdersPageSource.indexOf("} catch (e) {", paidBlock);
+    const catchEnd = clientMyOrdersPageSource.indexOf("} finally {", catchStart);
+    const fixedBranch = clientMyOrdersPageSource.slice(catchStart, catchEnd).split("} else if (orderId)")[1] || "";
+    assert.match(fixedBranch, /paymentConfirmingMessage/);
   });
 
   it("bid payment confirm failure uses bid toast helper, not pay-cancel", () => {

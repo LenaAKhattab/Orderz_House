@@ -67,6 +67,7 @@ const createClientOrder = async (req, res, next) => {
       durationValue: req.body.durationValue,
       durationUnit: req.body.durationUnit,
       preferredSkills: parsePreferredSkills(req.body.preferredSkills),
+      creationKey: req.body.creationKey || null,
     };
 
     const order = await ordersService.createClientOrder({
@@ -74,6 +75,32 @@ const createClientOrder = async (req, res, next) => {
       payload,
       uploadedFiles: req.files || [],
     });
+    if (order.idempotentReplay) {
+      // Same creation attempt resubmitted (double click / retry / browser Back): the order already
+      // exists — resume its checkout (same open Session, or a fresh one if it expired). Never discard it.
+      const replayOrder = sanitizeOrderForClient(order);
+      const awaitingPayment =
+        String(order.projectType || "") === "fixed" && String(order.orderStatus || "") === "pending_payment";
+      if (!awaitingPayment) {
+        return res.status(200).json({ success: true, data: { order: replayOrder, requiresPayment: false, replayed: true } });
+      }
+      const resumed = await stripeCheckoutService.createClientFixedOrderCheckoutSession({
+        clientUserId: req.auth.userId,
+        orderId: order.id,
+        isMobile: isMobileClient(req),
+      });
+      return res.status(200).json({
+        success: true,
+        data: {
+          order: replayOrder,
+          requiresPayment: !resumed.alreadyPaid,
+          paymentPurpose: "fixed_order_creation",
+          checkoutUrl: resumed.checkoutUrl || null,
+          sessionId: resumed.sessionId || null,
+          replayed: true,
+        },
+      });
+    }
     capture(String(req.auth.userId), "client_order_created", {
       orderId: String(order.id),
       projectType: type,

@@ -137,7 +137,42 @@ async function insertPendingPayment({
   );
 }
 
-async function createClientFixedOrderCheckoutSession({ clientUserId, orderId, isMobile = false }) {
+/** Safe, client-facing checkout error (no provider detail). */
+function clientCheckoutError(message, statusCode, publicCode) {
+  const err = new Error(message);
+  err.statusCode = statusCode;
+  err.exposeToClient = true;
+  err.publicCode = publicCode;
+  return err;
+}
+
+function logClientCheckout(fields) {
+  // Ids and states only — never the checkout URL, email or card data.
+  // eslint-disable-next-line no-console
+  console.log(JSON.stringify({ component: "client_order_checkout_reconcile", ...fields }));
+}
+
+/**
+ * Current state of a client order Checkout Session at Stripe (the source of truth):
+ * open | paid | processing | expired | missing | unknown (provider unreachable).
+ */
+async function readClientCheckoutSessionState(stripe, sessionId) {
+  let session;
+  try {
+    session = await stripe.checkout.sessions.retrieve(String(sessionId));
+  } catch (err) {
+    const missing =
+      err?.type === "StripeInvalidRequestError" && (err?.code === "resource_missing" || Number(err?.statusCode) === 404);
+    return { state: missing ? "missing" : "unknown", session: null };
+  }
+  const status = String(session?.status || "").toLowerCase();
+  if (status === "open" && session.url) return { state: "open", session };
+  if (status === "complete") return { state: isCheckoutSessionPaymentSuccessful(session) ? "paid" : "processing", session };
+  if (status === "expired" || status === "open") return { state: "expired", session };
+  return { state: "unknown", session };
+}
+
+async function openClientFixedOrderCheckoutAttempt({ clientUserId, orderId, isMobile = false }) {
   const stripe = getStripeOrNull();
   if (!stripe) {
     throwStripeNotConfigured();
@@ -154,6 +189,8 @@ async function createClientFixedOrderCheckoutSession({ clientUserId, orderId, is
   const clientUrl = requireStripeClientUrl();
 
   const db = await pool.connect();
+  // Paid at Stripe but not applied yet: confirmed through the trusted path after the lock is released.
+  let paidSessionId = null;
   try {
     await db.query("BEGIN");
     const { rows } = await db.query(
@@ -189,6 +226,44 @@ async function createClientFixedOrderCheckoutSession({ clientUserId, orderId, is
       err.statusCode = 409;
       throw err;
     }
+
+    // One canonical unresolved Checkout Session per pending order. The row lock above serializes double
+    // clicks / two tabs; Stripe decides whether the current Session can be resumed.
+    const currentSid = order.stripe_checkout_session_id ? String(order.stripe_checkout_session_id) : "";
+    if (currentSid) {
+      const current = await readClientCheckoutSessionState(stripe, currentSid);
+      logClientCheckout({ orderId: oid, previousState: "pending_payment", providerStatus: current.state });
+      if (current.state === "open") {
+        await db.query("COMMIT");
+        return { checkoutUrl: current.session.url, sessionId: currentSid, resumed: true };
+      }
+      if (current.state === "processing") {
+        throw clientCheckoutError("جارٍ تأكيد الدفع لهذا الطلب. حدّث الصفحة بعد قليل.", 409, "CLIENT_ORDER_PAYMENT_PROCESSING");
+      }
+      if (current.state === "unknown") {
+        throw clientCheckoutError(
+          "تعذر التحقق من حالة الدفع حاليًا. حاول مرة أخرى بعد قليل.",
+          503,
+          "CLIENT_ORDER_PAYMENT_STATUS_UNAVAILABLE",
+        );
+      }
+      if (current.state === "paid") {
+        paidSessionId = currentSid;
+        await db.query("ROLLBACK");
+      } else {
+        // expired / missing: keep the attempt in history, then open a fresh Session for the SAME order.
+        await db.query(
+          `UPDATE client_order_payments
+              SET status = 'expired'
+            WHERE order_id = $1
+              AND purpose = 'fixed_order_creation'
+              AND status = 'pending'
+              AND provider_checkout_session_id = $2`,
+          [oid, currentSid],
+        );
+      }
+    }
+    if (paidSessionId) return null;
 
     const stripeCurrency = "jod";
     const budget = order.budget != null ? Number(order.budget) : null;
@@ -233,6 +308,12 @@ async function createClientFixedOrderCheckoutSession({ clientUserId, orderId, is
       clientUrl,
     });
 
+    const { rows: attemptRows } = await db.query(
+      `SELECT COUNT(*)::int AS n FROM client_order_payments WHERE order_id = $1 AND purpose = 'fixed_order_creation'`,
+      [oid],
+    );
+    // Attempt-specific: a retried request for this attempt is deduplicated; a later attempt gets a new key.
+    const idempotencyKey = `client_fixed_order:${oid}:attempt:${Number(attemptRows[0]?.n || 0) + 1}`;
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       client_reference_id: String(oid),
@@ -253,7 +334,8 @@ async function createClientFixedOrderCheckoutSession({ clientUserId, orderId, is
       ],
       success_url: successUrl,
       cancel_url: cancelUrl,
-    });
+    }, { idempotencyKey });
+    logClientCheckout({ orderId: oid, previousState: currentSid ? "expired" : "none", action: "created" });
 
     await db.query(
       `UPDATE orders
@@ -301,13 +383,30 @@ async function createClientFixedOrderCheckoutSession({ clientUserId, orderId, is
       throw err;
     }
 
-    return { checkoutUrl: session.url, sessionId: session.id };
+    return { checkoutUrl: session.url, sessionId: session.id, resumed: false };
   } catch (e) {
     await db.query("ROLLBACK");
     throw e;
   } finally {
     db.release();
+    if (paidSessionId) {
+      logClientCheckout({ orderId: oid, previousState: "pending_payment", providerStatus: "paid", action: "confirm" });
+    }
   }
+}
+
+/**
+ * Pay / continue paying a pending fixed-price client order. Reuses the open Checkout Session, opens a
+ * fresh one for the SAME order when it expired, applies a provider-confirmed payment through the trusted
+ * confirmation path, and never creates a second Session while one is processing or Stripe is unreachable.
+ * @returns {Promise<{ checkoutUrl: string|null, sessionId: string|null, resumed?: boolean, alreadyPaid?: boolean }>}
+ */
+async function createClientFixedOrderCheckoutSession({ clientUserId, orderId, isMobile = false }) {
+  const out = await openClientFixedOrderCheckoutAttempt({ clientUserId, orderId, isMobile });
+  if (out) return out;
+  const { rows } = await pool.query(`SELECT stripe_checkout_session_id FROM orders WHERE id = $1`, [Number(orderId)]);
+  await confirmClientFixedOrderPayment({ clientUserId, orderId, sessionId: rows[0]?.stripe_checkout_session_id || null });
+  return { checkoutUrl: null, sessionId: rows[0]?.stripe_checkout_session_id || null, alreadyPaid: true };
 }
 
 async function createClientSelectedBidCheckoutSession({ clientUserId, orderId, bidId }) {
@@ -924,7 +1023,65 @@ async function confirmClientFixedOrderPayment({ clientUserId, orderId, sessionId
   }
 }
 
+/**
+ * Explicit «Cancel order» for an unpaid fixed-price order. The Stripe Session(s) are expired first so
+ * the discarded order can never be paid; a provider-confirmed payment is applied instead of discarding,
+ * and nothing is discarded while Stripe is unreachable.
+ */
 async function cancelClientFixedOrderPaymentAttempt({ clientUserId, orderId }) {
+  const uid = Number(clientUserId);
+  const oid = Number(orderId);
+  const { rows } = await pool.query(
+    `SELECT id, created_by_user_id, source_type, project_type, order_status, payment_status, stripe_checkout_session_id
+       FROM orders WHERE id = $1`,
+    [oid],
+  );
+  const order = rows[0];
+  const awaiting =
+    order &&
+    Number(order.created_by_user_id) === uid &&
+    order.source_type === "client_created" &&
+    order.project_type === "fixed" &&
+    order.order_status === orderFlowService.ORDER_STATUSES.PENDING_PAYMENT &&
+    String(order.payment_status || "") !== "paid";
+  if (awaiting) {
+    const { rows: pendingRows } = await pool.query(
+      `SELECT provider_checkout_session_id FROM client_order_payments
+        WHERE order_id = $1 AND purpose = 'fixed_order_creation' AND status = 'pending'
+          AND provider_checkout_session_id IS NOT NULL`,
+      [oid],
+    );
+    const sessionIds = [...new Set([order.stripe_checkout_session_id, ...pendingRows.map((r) => r.provider_checkout_session_id)].filter(Boolean))];
+    const stripe = getStripeOrNull();
+    if (sessionIds.length && !stripe) {
+      throw clientCheckoutError("تعذر التحقق من حالة الدفع حاليًا. حاول مرة أخرى بعد قليل.", 503, "CLIENT_ORDER_PAYMENT_STATUS_UNAVAILABLE");
+    }
+    for (const sid of sessionIds) {
+      // eslint-disable-next-line no-await-in-loop
+      const st = await readClientCheckoutSessionState(stripe, sid);
+      logClientCheckout({ orderId: oid, previousState: "pending_payment", providerStatus: st.state, action: "discard_check" });
+      if (st.state === "paid") {
+        // eslint-disable-next-line no-await-in-loop
+        await confirmClientFixedOrderPayment({ clientUserId: uid, orderId: oid, sessionId: sid }).catch(() => {});
+        throw clientCheckoutError("تم دفع هذا الطلب بالفعل.", 409, "CLIENT_ORDER_ALREADY_PAID");
+      }
+      if (st.state === "processing") {
+        throw clientCheckoutError("جارٍ تأكيد الدفع لهذا الطلب. حدّث الصفحة بعد قليل.", 409, "CLIENT_ORDER_PAYMENT_PROCESSING");
+      }
+      if (st.state === "unknown") {
+        throw clientCheckoutError("تعذر التحقق من حالة الدفع حاليًا. حاول مرة أخرى بعد قليل.", 503, "CLIENT_ORDER_PAYMENT_STATUS_UNAVAILABLE");
+      }
+      if (st.state === "open") {
+        try {
+          // eslint-disable-next-line no-await-in-loop
+          await stripe.checkout.sessions.expire(String(sid));
+        } catch {
+          throw clientCheckoutError("تعذر إلغاء جلسة الدفع حاليًا. حاول مرة أخرى بعد قليل.", 503, "CLIENT_ORDER_PAYMENT_STATUS_UNAVAILABLE");
+        }
+      }
+    }
+  }
+  // Ownership / status rules (and the deletion of the unpaid draft) stay in the canonical purge.
   return ordersService.purgeClientUnpaidFixedOrderDraft({ clientUserId, orderId });
 }
 
@@ -1697,6 +1854,7 @@ async function recordFreelancerSubscriptionCheckoutCancelled({ freelancerUserId,
 
 module.exports = {
   getStripeOrNull,
+  readClientCheckoutSessionState,
   createClientFixedOrderCheckoutSession,
   createClientSelectedBidCheckoutSession,
   confirmClientSelectedBidPayment,

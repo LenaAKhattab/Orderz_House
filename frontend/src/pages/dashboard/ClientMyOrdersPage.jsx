@@ -4,11 +4,11 @@ import { ClipboardList, Inbox, RefreshCw } from "lucide-react";
 import { useClientCreateOrderModal } from "../../context/ClientCreateOrderModalContext";
 import { useToast } from "../../components/ui/toastContext";
 import {
-  cancelClientFixedOrderPaymentRequest,
   confirmClientFixedOrderPaidRequest,
   confirmClientOrderBidPaidRequest,
   listClientMyOrdersRequest,
 } from "../../services/api";
+import { usePageRestore } from "../../hooks/usePageRestore";
 import ClientOrderCardCompact from "../../components/orders/ClientOrderCardCompact";
 import DashboardHubPage from "../../components/dashboard/hub/DashboardHubPage";
 import HubMetricSkeleton from "../../components/dashboard/hub/HubMetricSkeleton";
@@ -16,8 +16,6 @@ import { OrderCardsGridSkeleton } from "../../components/ui/Skeleton";
 import {
   getBidCheckoutCancelledToast,
   getBidPaymentConfirmFailureToast,
-  getFixedCheckoutCancelledToast,
-  getFixedPaymentConfirmFailureToast,
   parseConfirmPaymentAxiosError,
 } from "../../utils/clientMyOrdersPaymentReturn";
 import { orderHasAssignment } from "../../utils/orderPrivacyUi";
@@ -132,13 +130,9 @@ export default function ClientMyOrdersPage() {
             const toast = getBidPaymentConfirmFailureToast(isArabicUi, parseConfirmPaymentAxiosError(e));
             push({ type: "error", title: toast.title, message: toast.message });
           } else if (orderId) {
-            try {
-              await cancelClientFixedOrderPaymentRequest(orderId);
-            } catch {
-              // best-effort cleanup — fixed-order unpaid draft only
-            }
-            const toast = getFixedPaymentConfirmFailureToast(isArabicUi);
-            push({ type: "error", title: toast.title, message: toast.message });
+            // Never discard the order here: the payment may still be confirming (webhook), and the
+            // client can always «Continue payment» from the order card.
+            push({ type: "info", title: t(`${m}.paymentConfirmingTitle`), message: t(`${m}.paymentConfirmingMessage`) });
           }
         } finally {
           navigate(location.pathname, { replace: true });
@@ -146,25 +140,23 @@ export default function ClientMyOrdersPage() {
         }
       })();
     } else if (cancelled === "1") {
-      (async () => {
-        if (orderId && !bidId) {
-          try {
-            await cancelClientFixedOrderPaymentRequest(orderId);
-          } catch {
-            // best-effort cleanup
-          }
-        }
-        if (orderId && bidId) {
-          const toast = getBidCheckoutCancelledToast(isArabicUi);
-          push({ type: "error", title: toast.title, message: toast.message });
-        } else {
-          const toast = getFixedCheckoutCancelledToast(isArabicUi);
-          push({ type: "error", title: toast.title, message: toast.message });
-        }
-        navigate(location.pathname, { replace: true });
-      })();
+      // Stripe "back" link: the unpaid order is kept (with its attachments) — «Continue payment» resumes
+      // it, «Cancel order» discards it explicitly. Nothing is deleted automatically.
+      if (orderId && bidId) {
+        const toast = getBidCheckoutCancelledToast(isArabicUi);
+        push({ type: "error", title: toast.title, message: toast.message });
+      } else {
+        push({ type: "info", title: t(`${m}.paymentNotCompletedTitle`), message: t(`${m}.paymentNotCompletedMessage`) });
+      }
+      navigate(location.pathname, { replace: true });
+      void loadSilent();
     }
   }, [isArabicUi, location.pathname, location.search, loadSilent, navigate, push, t]);
+
+  // Browser Back from Stripe can restore this page from BFCache: refetch the canonical order state.
+  usePageRestore((reason) => {
+    if (reason === "pageshow") void loadSilent();
+  });
 
   useEffect(() => {
     if (busy) return undefined;

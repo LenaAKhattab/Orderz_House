@@ -5,6 +5,7 @@ import { useAuth } from "../../context/useAuth";
 import { useToast } from "../ui/toastContext";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import "../../i18n/ordersAdminResources";
+import { clientCreationKey, newCreationInstanceId } from "../../lib/orders/clientOrderCreationKey";
 import {
   adminCreateInternalOrderRequest,
   createClientOrderRequest,
@@ -423,6 +424,10 @@ export default function AdminInternalOrderWizard({
 
   const explicitSubmitClickRef = useRef(false);
   const submitInFlightRef = useRef(false);
+  // Client orders: one creation attempt = one order. The key is stable for this form instance and its
+  // exact content, so a resubmission (double click, retry, browser Back from Stripe + submit again)
+  // returns the SAME order and resumes its checkout; any edit makes it a new, intentional attempt.
+  const creationInstanceRef = useRef(newCreationInstanceId());
   const hydratingCategoryRef = useRef(false);
   const [files, setFiles] = useState([]);
   const [stepIdx, setStepIdx] = useState(0);
@@ -761,6 +766,9 @@ export default function AdminInternalOrderWizard({
         fd.append("archive", String(!form.assignedFreelancerId && archiveOnCreate));
       }
       files.forEach((f) => fd.append("files", f));
+      if (isClientAudience) {
+        fd.append("creationKey", clientCreationKey(creationInstanceRef.current, form, files));
+      }
 
       const res = onSubmitFormData
         ? await onSubmitFormData(fd, { form, files })
@@ -787,6 +795,7 @@ export default function AdminInternalOrderWizard({
         return;
       }
       // Reset for next order; skill names stay in local history for the searchable list only.
+      creationInstanceRef.current = newCreationInstanceId();
       setFiles([]);
       setStepIdx(0);
       setAttempted({});
