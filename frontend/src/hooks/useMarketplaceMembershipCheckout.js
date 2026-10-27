@@ -23,6 +23,7 @@ import {
   resolveMarketplaceCheckoutPlanCode,
 } from "../lib/marketplaceMembership/marketplaceMembershipCheckoutUi";
 import { isCurrentMarketplacePlanCard } from "../lib/marketplaceMembership/marketplaceMembershipCurrentPlanUi";
+import { usePageRestore } from "./usePageRestore";
 
 export function useMarketplaceMembershipCheckout({
   enabled = true,
@@ -50,6 +51,17 @@ export function useMarketplaceMembershipCheckout({
     }
     return snap;
   }, [onMembershipUpdated, user?.id]);
+
+  // Browser Back from Stripe Checkout restores this page from BFCache with the card still
+  // "redirecting" (disabled). Re-enable purchase and refetch the canonical membership state.
+  usePageRestore(
+    () => {
+      setCheckoutBusyPlanId(null);
+      setSpecialOfferCheckoutBusy(false);
+      void refreshMembership().catch(() => {});
+    },
+    { enabled },
+  );
 
   useEffect(() => {
     if (!enabled) return undefined;

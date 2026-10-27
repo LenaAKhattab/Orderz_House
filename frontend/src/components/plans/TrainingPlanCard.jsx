@@ -89,22 +89,31 @@ export default function TrainingPlanCard({
           <p className="training-card__purchased" data-testid="training-package-purchased">
             {t("plans.training.purchased")}
           </p>
-        ) : purchaseMode && purchaseState === "pending" ? (
-          <p className="training-card__purchased" data-testid="training-package-pending">
-            {t("plans.training.waiting")}
+        ) : purchaseMode && purchaseState === "processing" ? (
+          <p className="training-card__purchased" role="status" data-testid="training-package-processing">
+            {t("plans.training.processing")}
           </p>
         ) : purchaseMode ? (
           <button
             type="button"
             className={[
               "training-card__btn",
-              pkg.featured ? "training-card__btn--primary" : "training-card__btn--outline",
+              pkg.featured || purchaseState === "resume"
+                ? "training-card__btn--primary"
+                : "training-card__btn--outline",
             ].join(" ")}
             disabled={buyBusy}
             onClick={() => onBuy?.(pkg)}
             data-testid={`training-buy-${pkg.id || pkg.code}`}
+            data-checkout-state={purchaseState}
           >
-            <span>{buyBusy ? t("plans.training.buyBusy") : t("plans.training.buyCta")}</span>
+            <span>
+              {buyBusy
+                ? t("plans.training.buyBusy")
+                : purchaseState === "resume"
+                  ? t("plans.training.resumeCta")
+                  : t("plans.training.buyCta")}
+            </span>
           </button>
         ) : (
           <a

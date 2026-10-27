@@ -22,6 +22,7 @@ import { useTranslation } from "../i18n/LanguageProvider";
 import { useToast } from "../components/ui/toastContext";
 import { trackEvent } from "../services/analytics";
 import { isBlockingSubscription } from "../utils/planSubscriptionUtils";
+import { usePageRestore } from "./usePageRestore";
 
 function normalizePublicActivationFee(fee) {
   if (!fee || typeof fee !== "object") return null;
@@ -56,6 +57,9 @@ export function useFreelancerPlansCheckout({
   );
   const [checkoutBusyPlanId, setCheckoutBusyPlanId] = useState(null);
   const handledToastSearchesRef = useRef(new Set());
+
+  // Browser Back from Stripe (BFCache restore) must not leave the plan CTA stuck on "redirecting".
+  usePageRestore(() => setCheckoutBusyPlanId(null));
 
   const resolvedActivationFee = useMemo(() => {
     if (activationFeeStatus && typeof activationFeeStatus === "object") {

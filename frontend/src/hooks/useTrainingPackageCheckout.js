@@ -1,8 +1,10 @@
 /**
  * Authenticated training-package Stripe checkout.
- * Success redirect never marks a package paid — status comes from the server.
+ * Success redirect never marks a package paid — status comes from the server, which reconciles
+ * unresolved attempts with Stripe. An abandoned checkout (browser Back, closed tab) is resumable
+ * ("continue payment") or, once expired, buyable again — never a permanent pending lock.
  */
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   cancelTrainingPackageCheckoutRequest,
@@ -11,6 +13,14 @@ import {
 } from "../services/api";
 import { useTranslation } from "../i18n/LanguageProvider";
 import { useToast } from "../components/ui/toastContext";
+import { usePageRestore } from "./usePageRestore";
+import { trainingCheckoutStatesFromSnapshot } from "../lib/trainingCheckoutState";
+
+/** Server error codes with localized copy (the server message is Arabic-only). */
+const CHECKOUT_ERROR_KEYS = {
+  TRAINING_PACKAGE_PAYMENT_STATUS_UNAVAILABLE: "plans.training.statusUnavailable",
+  TRAINING_PACKAGE_PAYMENT_PROCESSING: "plans.training.processingNotice",
+};
 
 export function useTrainingPackageCheckout({ enabled = true } = {}) {
   const { t } = useTranslation();
@@ -42,6 +52,18 @@ export function useTrainingPackageCheckout({ enabled = true } = {}) {
     };
   }, [enabled, refresh]);
 
+  // Browser Back from Stripe restores this page from BFCache with the redirect still "busy".
+  usePageRestore(
+    (reason) => {
+      if (reason === "pageshow") {
+        setBuyBusyCode("");
+        setCheckoutError("");
+      }
+      void refresh().catch(() => {});
+    },
+    { enabled, onVisible: true },
+  );
+
   useEffect(() => {
     if (!enabled) return undefined;
     const q = new URLSearchParams(location.search || "");
@@ -65,10 +87,11 @@ export function useTrainingPackageCheckout({ enabled = true } = {}) {
 
     if (state === "cancelled") {
       setWaiting(false);
-      if (sessionId) {
-        cancelTrainingPackageCheckoutRequest(sessionId).catch(() => {});
-      }
-      void refresh().catch(() => {});
+      // Not authoritative: the server reconciles the attempt with Stripe (open stays resumable).
+      const reconcile = sessionId
+        ? cancelTrainingPackageCheckoutRequest(sessionId).catch(() => {})
+        : Promise.resolve();
+      void reconcile.then(() => refresh()).catch(() => {});
       strip();
       return undefined;
     }
@@ -97,9 +120,14 @@ export function useTrainingPackageCheckout({ enabled = true } = {}) {
           setWaiting(false);
           return;
         }
-        if (attempts >= 6) return;
       } catch {
-        if (attempts >= 6) return;
+        /* retry below */
+      }
+      if (cancelled) return;
+      // After the return window the card follows the server state (processing / resume / buy).
+      if (attempts >= 6) {
+        setWaiting(false);
+        return;
       }
       timer = window.setTimeout(poll, 2000);
     };
@@ -110,6 +138,21 @@ export function useTrainingPackageCheckout({ enabled = true } = {}) {
     };
   }, [enabled, refresh, waiting]);
 
+  const checkoutStates = useMemo(() => trainingCheckoutStatesFromSnapshot(snapshot), [snapshot]);
+  const hasProcessing = Object.values(checkoutStates).includes("processing");
+
+  // Genuine provider confirmation in progress: recheck periodically (non-destructive).
+  useEffect(() => {
+    if (!enabled || !hasProcessing || waiting) return undefined;
+    let attempts = 0;
+    const timer = window.setInterval(() => {
+      attempts += 1;
+      void refresh().catch(() => {});
+      if (attempts >= 20) window.clearInterval(timer);
+    }, 10000);
+    return () => window.clearInterval(timer);
+  }, [enabled, hasProcessing, refresh, waiting]);
+
   const startTrainingCheckout = useCallback(
     async (pkg) => {
       const code = String(pkg?.code || pkg?.id || "").trim();
@@ -118,24 +161,30 @@ export function useTrainingPackageCheckout({ enabled = true } = {}) {
       setBuyBusyCode(code);
       setCheckoutError("");
       try {
+        // The server resumes an open Stripe session or creates a new one after reconciling.
         const res = await createTrainingPackageCheckoutRequest(code);
         const url = res?.data?.checkoutUrl;
         if (!url) throw new Error(t("plans.training.checkoutMissingUrl"));
         window.location.href = url;
       } catch (err) {
-        const msg = err?.response?.data?.message || err?.message || t("plans.training.checkoutFailed");
+        const errorCode = err?.response?.data?.code;
+        const msg = CHECKOUT_ERROR_KEYS[errorCode]
+          ? t(CHECKOUT_ERROR_KEYS[errorCode])
+          : err?.response?.data?.message || err?.message || t("plans.training.checkoutFailed");
         setCheckoutError(msg);
         push({ type: "warning", message: msg });
         setBuyBusyCode("");
+        void refresh().catch(() => {});
       }
     },
-    [buyBusyCode, enabled, push, snapshot?.current?.packageCode, t],
+    [buyBusyCode, enabled, push, refresh, snapshot?.current?.packageCode, t],
   );
 
   return {
     snapshot,
     current: snapshot?.current || null,
     pending: snapshot?.pending || null,
+    checkoutStates,
     waiting,
     buyBusyCode,
     checkoutError,
