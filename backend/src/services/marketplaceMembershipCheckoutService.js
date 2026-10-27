@@ -6,7 +6,6 @@
  * Success redirect must never activate membership.
  */
 
-const crypto = require("crypto");
 const Stripe = require("stripe");
 const { pool } = require("../config/db");
 const { createAppError } = require("../utils/AppError");
@@ -229,120 +228,16 @@ async function createMarketplaceMembershipCheckoutSession(input = {}, deps = {})
 
   const stripe = deps.stripe || getStripeOrNull();
   if (!stripe) throwStripeNotConfigured();
-
-  // Referral discount: server-side, from the referred user's snapshotted policy only.
-  const { resolveReferralDiscount } = require("./referralDiscountService");
-  const { PAYMENT_TYPES: REFERRAL_PAYMENT_TYPES } = require("../domain/referralPolicy");
-  const discount = await (deps.resolveReferralDiscount || resolveReferralDiscount)(
-    {
-      userId: freelancerUserId,
-      paymentType: REFERRAL_PAYMENT_TYPES.MARKETPLACE_MEMBERSHIP,
-      listAmountMinor: resolved.expectedAmountMinor,
-    },
-    db,
-  );
-  const chargeMinor = discount.discountMinor > 0 ? discount.chargeMinor : resolved.expectedAmountMinor;
-
   const clientUrl = requireStripeClientUrl();
   const returnUrls = buildFreelancerMarketplaceMembershipCheckoutReturnUrls(clientUrl);
+  const attempts = deps.attempts || require("./marketplaceMembershipCheckoutAttemptsService");
+  const marketplacePlanId = Number(resolved.plan.id);
 
-  const nonce = crypto.randomBytes(8).toString("hex");
-  const idempotencyKey = buildMarketplaceMembershipCheckoutIdempotencyKey(
-    freelancerUserId,
-    resolved.plan.id,
-    nonce,
-  );
-
-  const sessionMetadata = mergeStripeCheckoutMetadata(
-    buildFazaatStripeMetadata({
-      paymentContext: PAYMENT_CONTEXT.MARKETPLACE_MEMBERSHIP,
-      purpose: MARKETPLACE_MEMBERSHIP_CHECKOUT_PURPOSE,
-      userId: freelancerUserId,
-      userEmail: user.email,
-      marketplacePlanId: resolved.plan.id,
-      planId: resolved.plan.id,
-      planCode: resolved.planCode,
-      durationDays: resolved.durationDays,
-      expectedAmountMinor: resolved.expectedAmountMinor,
-      flow: MARKETPLACE_MEMBERSHIP_CHECKOUT_FLOW,
-      currency: resolved.currency,
-    }),
-    {
-      purpose: MARKETPLACE_MEMBERSHIP_CHECKOUT_PURPOSE,
-      flow: MARKETPLACE_MEMBERSHIP_CHECKOUT_FLOW,
-      freelancerUserId: String(freelancerUserId),
-      marketplacePlanId: String(resolved.plan.id),
-      planCode: resolved.planCode,
-      ...(resolved.durationMonths
-        ? { durationMonths: String(resolved.durationMonths) }
-        : { durationDays: String(resolved.durationDays) }),
-      expectedAmountMinor: String(resolved.expectedAmountMinor),
-      // Explicit: term does not start at payment — first real order (M4).
-      termStartPolicy: "first_real_order",
-      ...(discount.discountMinor > 0
-        ? {
-            referralDiscountMinor: String(discount.discountMinor),
-            referralListAmountMinor: String(resolved.expectedAmountMinor),
-          }
-        : {}),
-      ...(input.extraMetadata && typeof input.extraMetadata === "object"
-        ? Object.fromEntries(
-            Object.entries(input.extraMetadata)
-              .filter(([, v]) => v != null && String(v).trim() !== "")
-              .map(([k, v]) => [String(k).slice(0, 40), String(v).slice(0, 500)]),
-          )
-        : {}),
-    },
-  );
-
-  const productName =
-    lineItemProductNameForContext(PAYMENT_CONTEXT.MARKETPLACE_MEMBERSHIP) ||
-    "FAZAAT - Orderz House - Marketplace Membership";
-  const piDescription =
-    paymentIntentDescriptionForContext(PAYMENT_CONTEXT.MARKETPLACE_MEMBERSHIP) || productName;
-  const planLabel =
-    resolved.plan.nameEn || resolved.plan.nameAr || String(resolved.planCode).toUpperCase();
-
-  const session = await stripe.checkout.sessions.create(
-    {
-      mode: MARKETPLACE_MEMBERSHIP_CHECKOUT_MODE,
-      success_url: returnUrls.successUrl,
-      cancel_url: returnUrls.cancelUrl,
-      client_reference_id: `marketplace_membership:${freelancerUserId}:${resolved.plan.id}`,
-      line_items: [
-        {
-          quantity: 1,
-          price_data: {
-            currency: String(resolved.currency).toLowerCase(),
-            unit_amount: chargeMinor,
-            product_data: {
-              name: productName,
-              description: resolved.durationMonths
-                ? `${planLabel} · ${resolved.durationMonths} months`
-                : `${planLabel} · ${resolved.durationDays} days`,
-            },
-          },
-        },
-      ],
-      metadata: sessionMetadata,
-      payment_intent_data: {
-        metadata: sessionMetadata,
-        description: piDescription,
-      },
-    },
-    { idempotencyKey },
-  );
-
-  return {
-    checkoutUrl: session.url,
-    sessionId: session.id,
+  const baseResult = {
     planCode: resolved.planCode,
     marketplacePlanId: String(resolved.plan.id),
     durationDays: resolved.durationDays,
     durationMonths: resolved.durationMonths,
-    amountJod: chargeMinor / 1000,
-    listAmountJod: resolved.priceJod,
-    referralDiscountJod: discount.discountMinor / 1000,
     currency: resolved.currency,
     mode: MARKETPLACE_MEMBERSHIP_CHECKOUT_MODE,
     // Explicit product contract for clients / tests
@@ -351,6 +246,152 @@ async function createMarketplaceMembershipCheckoutSession(input = {}, deps = {})
     grantsOn: "webhook_m3",
     termStartsOn: "first_real_order_m4",
   };
+
+  // One unresolved attempt per freelancer + plan: serialize, reconcile with Stripe, then decide.
+  const outcome = await attempts.withMembershipCheckoutLock(db, freelancerUserId, marketplacePlanId, async (tx) => {
+    const { resumable } = await attempts.reconcileForPurchase(tx, {
+      freelancerUserId,
+      marketplacePlanId,
+      planCode: resolved.planCode,
+      stripe,
+      deps,
+    });
+    if (resumable) {
+      return {
+        ...baseResult,
+        checkoutUrl: resumable.checkoutUrl,
+        sessionId: resumable.sessionId,
+        checkoutAttemptId: resumable.attemptId,
+        checkoutState: "resume",
+        resumed: true,
+      };
+    }
+
+    // Referral discount: server-side, from the referred user's snapshotted policy only.
+    const { resolveReferralDiscount } = require("./referralDiscountService");
+    const { PAYMENT_TYPES: REFERRAL_PAYMENT_TYPES } = require("../domain/referralPolicy");
+    const discount = await (deps.resolveReferralDiscount || resolveReferralDiscount)(
+      {
+        userId: freelancerUserId,
+        paymentType: REFERRAL_PAYMENT_TYPES.MARKETPLACE_MEMBERSHIP,
+        listAmountMinor: resolved.expectedAmountMinor,
+      },
+      tx,
+    );
+    const chargeMinor = discount.discountMinor > 0 ? discount.chargeMinor : resolved.expectedAmountMinor;
+
+    const attemptId = await attempts.insertPendingAttempt(tx, {
+      freelancerUserId,
+      marketplacePlanId,
+      planCode: resolved.planCode,
+      amountMinor: chargeMinor,
+      currency: resolved.currency,
+    });
+    // Attempt-specific: a retry of this attempt is deduplicated by Stripe; a new attempt gets a new key.
+    const idempotencyKey = buildMarketplaceMembershipCheckoutIdempotencyKey(attemptId);
+
+    const sessionMetadata = mergeStripeCheckoutMetadata(
+      buildFazaatStripeMetadata({
+        paymentContext: PAYMENT_CONTEXT.MARKETPLACE_MEMBERSHIP,
+        purpose: MARKETPLACE_MEMBERSHIP_CHECKOUT_PURPOSE,
+        userId: freelancerUserId,
+        userEmail: user.email,
+        marketplacePlanId: resolved.plan.id,
+        planId: resolved.plan.id,
+        planCode: resolved.planCode,
+        durationDays: resolved.durationDays,
+        expectedAmountMinor: resolved.expectedAmountMinor,
+        flow: MARKETPLACE_MEMBERSHIP_CHECKOUT_FLOW,
+        currency: resolved.currency,
+      }),
+      {
+        purpose: MARKETPLACE_MEMBERSHIP_CHECKOUT_PURPOSE,
+        flow: MARKETPLACE_MEMBERSHIP_CHECKOUT_FLOW,
+        freelancerUserId: String(freelancerUserId),
+        marketplacePlanId: String(resolved.plan.id),
+        planCode: resolved.planCode,
+        checkoutAttemptId: String(attemptId),
+        ...(resolved.durationMonths
+          ? { durationMonths: String(resolved.durationMonths) }
+          : { durationDays: String(resolved.durationDays) }),
+        expectedAmountMinor: String(resolved.expectedAmountMinor),
+        // Explicit: term does not start at payment — first real order (M4).
+        termStartPolicy: "first_real_order",
+        ...(discount.discountMinor > 0
+          ? {
+              referralDiscountMinor: String(discount.discountMinor),
+              referralListAmountMinor: String(resolved.expectedAmountMinor),
+            }
+          : {}),
+        ...(input.extraMetadata && typeof input.extraMetadata === "object"
+          ? Object.fromEntries(
+              Object.entries(input.extraMetadata)
+                .filter(([, v]) => v != null && String(v).trim() !== "")
+                .map(([k, v]) => [String(k).slice(0, 40), String(v).slice(0, 500)]),
+            )
+          : {}),
+      },
+    );
+
+    const productName =
+      lineItemProductNameForContext(PAYMENT_CONTEXT.MARKETPLACE_MEMBERSHIP) ||
+      "FAZAAT - Orderz House - Marketplace Membership";
+    const piDescription =
+      paymentIntentDescriptionForContext(PAYMENT_CONTEXT.MARKETPLACE_MEMBERSHIP) || productName;
+    const planLabel =
+      resolved.plan.nameEn || resolved.plan.nameAr || String(resolved.planCode).toUpperCase();
+
+    let session;
+    try {
+      session = await stripe.checkout.sessions.create(
+        {
+          mode: MARKETPLACE_MEMBERSHIP_CHECKOUT_MODE,
+          success_url: returnUrls.successUrl,
+          cancel_url: returnUrls.cancelUrl,
+          client_reference_id: `marketplace_membership:${freelancerUserId}:${resolved.plan.id}`,
+          line_items: [
+            {
+              quantity: 1,
+              price_data: {
+                currency: String(resolved.currency).toLowerCase(),
+                unit_amount: chargeMinor,
+                product_data: {
+                  name: productName,
+                  description: resolved.durationMonths
+                    ? `${planLabel} · ${resolved.durationMonths} months`
+                    : `${planLabel} · ${resolved.durationDays} days`,
+                },
+              },
+            },
+          ],
+          metadata: sessionMetadata,
+          payment_intent_data: {
+            metadata: sessionMetadata,
+            description: piDescription,
+          },
+        },
+        { idempotencyKey },
+      );
+    } catch (err) {
+      // Keep the failed attempt (audit trail), then surface the provider error.
+      await attempts.markAttemptFailed(tx, attemptId, "stripe_create_failed");
+      return { error: err };
+    }
+
+    await attempts.attachSessionToAttempt(tx, attemptId, session.id);
+    return {
+      ...baseResult,
+      checkoutUrl: session.url,
+      sessionId: session.id,
+      checkoutAttemptId: String(attemptId),
+      checkoutState: "created",
+      amountJod: chargeMinor / 1000,
+      listAmountJod: resolved.priceJod,
+      referralDiscountJod: discount.discountMinor / 1000,
+    };
+  });
+  if (outcome.error) throw outcome.error;
+  return outcome;
 }
 
 function metaPick(meta, ...keys) {

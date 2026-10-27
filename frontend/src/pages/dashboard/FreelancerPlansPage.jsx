@@ -75,6 +75,7 @@ export default function FreelancerPlansPage() {
   const {
     checkoutBusyPlanId: marketplaceCheckoutBusyPlanId,
     specialOfferCheckoutBusy,
+    checkoutStates: marketplaceCheckoutStates,
     trialBusy,
     checkoutError: marketplaceCheckoutError,
     returnBanner,
@@ -249,6 +250,7 @@ export default function FreelancerPlansPage() {
                     currentMarketplaceMembership={membership}
                     onCta={startMarketplaceCheckout}
                     checkoutBusyPlanId={marketplaceCheckoutBusyPlanId}
+                    checkoutStates={marketplaceCheckoutStates}
                   />
                 </section>
               </>
@@ -279,6 +281,7 @@ export default function FreelancerPlansPage() {
                   currentMarketplaceMembership={membership}
                   hasBlockingSubscription={false}
                   checkoutBusyPlanId={marketplaceCheckoutBusyPlanId}
+                  checkoutStates={marketplaceCheckoutStates}
                   specialOfferCheckoutBusy={specialOfferCheckoutBusy}
                   activationFeeNeedsPayment={false}
                   activationFee={null}

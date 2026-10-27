@@ -214,9 +214,7 @@ async function handleStripeWebhook(req, res) {
     if (eventType === "checkout.session.completed") {
       applyResult = await applyCheckoutSessionCompleted(event.data.object);
     } else if (eventType === "checkout.session.expired") {
-      // Abandoned checkout: close the local attempt so it never blocks a new purchase.
-      const trainingCheckout = require("../services/trainingPackageCheckoutService");
-      applyResult = await trainingCheckout.applyTrainingPackageCheckoutSessionExpired(event.data.object);
+      applyResult = await applyCheckoutSessionExpired(event.data.object);
     } else if (eventType === "payment_intent.succeeded") {
       applyResult = await applyPaymentIntentOutcome(event.data.object, "paid");
     } else if (eventType === "payment_intent.payment_failed") {
@@ -999,6 +997,23 @@ async function applyCheckoutSessionFreelancerActivationFeeOnlyCompleted(session,
   }
 }
 
+/**
+ * checkout.session.expired — abandoned checkout: close the matching local attempt so it never blocks
+ * a new purchase (training packages, marketplace memberships). Other purposes are ignored.
+ */
+async function applyCheckoutSessionExpired(session, dbPool = pool) {
+  const purpose = String(session?.metadata?.purpose || "");
+  if (purpose === "training_package_purchase") {
+    const trainingCheckout = require("../services/trainingPackageCheckoutService");
+    return trainingCheckout.applyTrainingPackageCheckoutSessionExpired(session, dbPool);
+  }
+  if (purpose === "marketplace_membership_checkout") {
+    const attempts = require("../services/marketplaceMembershipCheckoutAttemptsService");
+    return attempts.applyMembershipCheckoutSessionExpired(session, dbPool);
+  }
+  return { status: "ignored", reason: "expired_session_not_tracked" };
+}
+
 async function applyCheckoutSessionCompleted(session, dbPool = pool) {
   const meta = session.metadata || {};
   logStripeWebhook({
@@ -1029,6 +1044,11 @@ async function applyCheckoutSessionCompleted(session, dbPool = pool) {
     const bridge = require("../services/referralPaymentBridge");
     const { PAYMENT_TYPES } = require("../domain/referralPolicy");
     await bridge.processCheckoutSession(session, PAYMENT_TYPES.MARKETPLACE_MEMBERSHIP, result);
+    if (result?.status === "applied" || result?.status === "already_applied") {
+      // Close the checkout attempt ledger row (no-op for sessions created before the ledger).
+      const attempts = require("../services/marketplaceMembershipCheckoutAttemptsService");
+      await attempts.markAttemptPaidForSession(session, dbPool);
+    }
     return result;
   }
   if (purpose === "training_package_purchase") {
@@ -1619,6 +1639,7 @@ async function applyBidPackageProviderRefundOrDisputeRecordOnly(obj, eventType) 
 module.exports = {
   handleStripeWebhook,
   applyCheckoutSessionCompleted,
+  applyCheckoutSessionExpired,
   applyPaymentIntentOutcome,
   claimStripeWebhookEvent,
   markStripeWebhookEventProcessed,

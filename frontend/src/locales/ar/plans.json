@@ -178,8 +178,15 @@
     "companyActivation": "يتم التفعيل عبر الشركة",
     "viewMembership": "عرض العضوية",
     "buyMembership": "اشترِ الباقة",
+    "continuePayment": "متابعة الدفع",
+    "confirmingPayment": "جارٍ تأكيد الدفع",
     "activateStarter": "تفعيل الباقة المجانية",
     "startNow": "ابدأ الآن"
+  },
+  "checkoutErrors": {
+    "processing": "جارٍ تأكيد الدفع لهذه الباقة. حدّث الصفحة بعد قليل.",
+    "statusUnavailable": "تعذر التحقق من حالة الدفع حاليًا. حاول مرة أخرى بعد قليل.",
+    "providerError": "تعذر الاتصال بمزوّد الدفع حاليًا. حاول مرة أخرى بعد قليل."
   },
   "membershipWait": {
     "status": "بانتظار أول طلب",

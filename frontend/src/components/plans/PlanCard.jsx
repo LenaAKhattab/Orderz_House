@@ -91,6 +91,8 @@ const PlanCard = ({
   onCta,
   hasBlockingSubscription = false,
   checkoutBusy = false,
+  /** Marketplace membership: server-reconciled checkout — "resume" | "processing" | null. */
+  checkoutState = null,
   activationFeeNeedsPayment = false,
   activationFee = null,
   membershipDashboardPath = "/dashboard/freelancer/plans",
@@ -154,18 +156,26 @@ const PlanCard = ({
         ? t("plans.days", { count: durationDays })
         : null;
 
+  const marketplaceCheckoutProcessing =
+    isMarketplaceMembership && !isMarketplaceCurrentPlan && checkoutState === "processing";
+  const marketplaceCheckoutResume =
+    isMarketplaceMembership && !isMarketplaceCurrentPlan && checkoutState === "resume";
   const ctaLabel = isMarketplaceMembership
     ? checkoutBusy
       ? t("common.loading.redirecting")
       : isMarketplaceCurrentPlan
         ? t("plans.cta.currentPlan")
-        : typeof onCta === "function"
-          ? isPaidMarketplaceMembershipTierCode(resolveMarketplaceCheckoutPlanCode(plan))
-            ? t("plans.cta.buyMembership")
-            : isStarterMarketplaceMembershipTierCode(resolveMarketplaceCheckoutPlanCode(plan))
-              ? t("plans.cta.viewMembership")
+        : marketplaceCheckoutProcessing
+          ? t("plans.cta.confirmingPayment")
+          : marketplaceCheckoutResume && typeof onCta === "function"
+            ? t("plans.cta.continuePayment")
+            : typeof onCta === "function"
+              ? isPaidMarketplaceMembershipTierCode(resolveMarketplaceCheckoutPlanCode(plan))
+                ? t("plans.cta.buyMembership")
+                : isStarterMarketplaceMembershipTierCode(resolveMarketplaceCheckoutPlanCode(plan))
+                  ? t("plans.cta.viewMembership")
+                  : customButtonLabel || t("plans.cta.viewMembership")
               : customButtonLabel || t("plans.cta.viewMembership")
-          : customButtonLabel || t("plans.cta.viewMembership")
     : freePlanPayFee
       ? t("plans.cta.payActivationFee")
       : customButtonLabel
@@ -206,6 +216,7 @@ const PlanCard = ({
     ? isLoggedNonFreelancer ||
       isMarketplaceCurrentPlan ||
       isStarterMarketplaceMembershipTierCode(resolveMarketplaceCheckoutPlanCode(plan)) ||
+      marketplaceCheckoutProcessing ||
       (typeof onCta === "function" && checkoutBusy)
     : isLoggedNonFreelancer ||
       isCurrentPlanLocked ||
@@ -236,7 +247,7 @@ const PlanCard = ({
         return;
       }
       if (!isFreelancer) return;
-      if (isMarketplaceCurrentPlan || checkoutBusy) return;
+      if (isMarketplaceCurrentPlan || checkoutBusy || marketplaceCheckoutProcessing) return;
       if (typeof onCta === "function") {
         onCta(plan);
         return;
@@ -427,6 +438,7 @@ const PlanCard = ({
           variant={usePrimaryCta ? "primary" : "secondary"}
           disabled={isLocked}
           onClick={handleCtaClick}
+          data-checkout-state={isMarketplaceMembership ? checkoutState || "available" : undefined}
         >
           {ctaLabel}
         </Button>

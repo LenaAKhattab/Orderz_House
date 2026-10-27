@@ -29,8 +29,13 @@ function normalizeMarketplaceCheckoutPlanCode(raw) {
     .toLowerCase();
 }
 
-function buildMarketplaceMembershipCheckoutIdempotencyKey(freelancerUserId, planId, nonce) {
-  return `marketplace_membership_checkout:freelancer:${Number(freelancerUserId)}:plan:${Number(planId)}:${String(nonce)}`;
+/**
+ * Stripe idempotency key for one canonical checkout attempt (marketplace_membership_checkout_attempts.id):
+ * a retried request for the same attempt reuses the key; a new attempt (after expiry) gets a new one.
+ * No user data in the key.
+ */
+function buildMarketplaceMembershipCheckoutIdempotencyKey(checkoutAttemptId) {
+  return `marketplace_membership_checkout:attempt:${Number(checkoutAttemptId)}`;
 }
 
 module.exports = {

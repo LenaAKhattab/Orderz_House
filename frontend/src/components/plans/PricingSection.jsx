@@ -12,6 +12,7 @@ import {
   resolvePublicPlansGridClassName,
 } from "./plansLayoutUtils";
 import { normalizePublicSpecialOffer } from "../../constants/specialOfferPackage";
+import { membershipCheckoutStateForPlan } from "../../lib/marketplaceMembership/membershipCheckoutState";
 import "../../styles/publicPlans.css";
 import "../../styles/plansPage.css";
 
@@ -26,6 +27,8 @@ const PricingSection = ({
   hasBlockingSubscription = false,
   loading = false,
   checkoutBusyPlanId = null,
+  /** Membership: server-reconciled checkout states ({ byPlanCode, specialOffer }). */
+  checkoutStates = null,
   variant = "public",
   pageTitle = null,
   pageSubtitle = null,
@@ -94,6 +97,7 @@ const PricingSection = ({
           onCta={onCta}
           hasBlockingSubscription={hasBlockingSubscription}
           checkoutBusy={checkoutBusyPlanId != null && String(checkoutBusyPlanId) === String(p.id)}
+          checkoutState={membershipCheckoutStateForPlan(checkoutStates, p)}
           activationFeeNeedsPayment={activationFeeNeedsPayment}
           activationFee={activationFee}
         />
@@ -144,6 +148,7 @@ const PricingSection = ({
             offer={specialOffer}
             t={t}
             checkoutBusy={specialOfferCheckoutBusy}
+            checkoutState={checkoutStates?.specialOffer || null}
             onCheckout={onSpecialOfferCheckout}
           />
           <div className="pricing__regular-grid">{planCards}</div>

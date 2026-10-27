@@ -96,8 +96,8 @@ describe("M2 constants + return URLs", () => {
 
   it("builds idempotency key", () => {
     assert.equal(
-      buildMarketplaceMembershipCheckoutIdempotencyKey(7, 3, "abc"),
-      "marketplace_membership_checkout:freelancer:7:plan:3:abc",
+      buildMarketplaceMembershipCheckoutIdempotencyKey(42),
+      "marketplace_membership_checkout:attempt:42",
     );
   });
 });

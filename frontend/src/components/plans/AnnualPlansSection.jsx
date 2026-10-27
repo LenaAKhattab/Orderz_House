@@ -3,6 +3,7 @@ import PlanCard from "./PlanCard";
 import PlansApplicationNote from "./PlansApplicationNote";
 import { PlanCardsRowSkeleton } from "../ui/Skeleton";
 import { resolvePublicPlansGridClassName } from "./plansLayoutUtils";
+import { membershipCheckoutStateForPlan } from "../../lib/marketplaceMembership/membershipCheckoutState";
 import "../../styles/publicPlans.css";
 import "../../styles/plansPage.css";
 
@@ -17,6 +18,8 @@ export default function AnnualPlansSection({
   currentMarketplaceMembership = null,
   onCta,
   checkoutBusyPlanId = null,
+  /** Server-reconciled checkout states ({ byPlanCode }). */
+  checkoutStates = null,
 }) {
   const { t } = useTranslation();
   const list = Array.isArray(plans) ? plans : [];
@@ -43,6 +46,7 @@ export default function AnnualPlansSection({
               onCta={onCta}
               membershipDashboardPath="/dashboard/freelancer/plans?type=annual"
               checkoutBusy={checkoutBusyPlanId != null && String(checkoutBusyPlanId) === String(plan.id)}
+              checkoutState={membershipCheckoutStateForPlan(checkoutStates, plan)}
             />
           ))}
         </div>

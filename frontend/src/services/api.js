@@ -831,6 +831,12 @@ export const cancelTrainingPackageCheckoutRequest = async (sessionId) => {
   return data;
 };
 
+/** Caller's unresolved membership checkouts, reconciled with Stripe server-side (no URLs / session ids). */
+export const getMarketplaceMembershipCheckoutAttemptsRequest = async () => {
+  const { data } = await api.get("/freelancer/marketplace-membership/checkout-attempts", { timeout: 30000 });
+  return data;
+};
+
 export const createMarketplaceMembershipCheckoutRequest = async (planCode) => {
   const code = typeof planCode === "string" ? planCode.trim() : "";
   if (!code) {

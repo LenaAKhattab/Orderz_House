@@ -39,6 +39,12 @@ router.post(
   marketplaceMembershipsController.createMarketplaceMembershipCheckout,
 );
 
+/** Caller's unresolved membership checkouts (open | processing | unknown), reconciled with Stripe. */
+router.get(
+  "/marketplace-membership/checkout-attempts",
+  marketplaceMembershipsController.getMyMarketplaceMembershipCheckoutAttempts,
+);
+
 /** Alias matching plural resource naming used in M2 design notes. */
 router.post(
   "/marketplace-memberships/checkout",

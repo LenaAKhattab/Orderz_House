@@ -167,8 +167,26 @@ async function createMarketplaceMembershipCheckout(req, res, next) {
   }
 }
 
+/**
+ * GET /api/freelancer/marketplace-membership/checkout-attempts
+ * The caller's own unresolved checkouts, reconciled with Stripe: [{ marketplacePlanId, planCode, state }]
+ * with state open | processing | unknown. Never returns checkout URLs or session ids
+ * (resuming goes through POST checkout, which re-checks ownership and eligibility).
+ */
+async function getMyMarketplaceMembershipCheckoutAttempts(req, res, next) {
+  try {
+    const attemptsService = require("../services/marketplaceMembershipCheckoutAttemptsService");
+    const freelancerUserId = req.auth?.userId ?? req.user?.sub ?? req.user?.id;
+    const data = await attemptsService.listMembershipCheckoutAttempts(freelancerUserId);
+    return res.json({ success: true, data });
+  } catch (err) {
+    return next(err);
+  }
+}
+
 module.exports = {
   getMyMarketplaceMembership,
+  getMyMarketplaceMembershipCheckoutAttempts,
   listAdminMarketplaceMemberships,
   getAdminMarketplaceMembership,
   runMembershipCyclesReconcileTick,
