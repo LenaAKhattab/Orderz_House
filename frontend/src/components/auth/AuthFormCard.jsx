@@ -30,12 +30,17 @@ const AuthFormCard = ({  title,
 
       {children}
 
-      <p className="oh-auth-footer-note">
-        {footerText}{" "}
-        <Link to={footerLinkTo} className={tw.authInlineLink}>
-          {footerLinkText}
-        </Link>
-      </p>
+      {/* No footer props (e.g. legacy join): render nothing rather than an empty link to the current page. */}
+      {footerText || footerLinkText ? (
+        <p className="oh-auth-footer-note">
+          {footerText}{" "}
+          {footerLinkText ? (
+            <Link to={footerLinkTo} className={tw.authInlineLink}>
+              {footerLinkText}
+            </Link>
+          ) : null}
+        </p>
+      ) : null}
     </section>
   );
 };

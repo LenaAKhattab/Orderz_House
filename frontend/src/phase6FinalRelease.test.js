@@ -112,6 +112,27 @@ describe("payment trust: membership status load failure", () => {
   });
 });
 
+describe("accessibility (automated 1280 pass)", () => {
+  it("account settings: every visible label is tied to its field; notification switches are named", () => {
+    for (const f of ["ClientSettingsPage.jsx", "StaffAccountSettingsPage.jsx", "FreelancerSettingsPage.jsx"]) {
+      const src = read(`pages/dashboard/${f}`);
+      assert.ok(!src.includes('<label className="oh-account-label">'), `${f}: label without htmlFor`);
+      for (const [, id] of src.matchAll(/htmlFor="([^"]+)"/g)) assert.ok(src.includes(`id="${id}"`), `${f}: no field with id ${id}`);
+      assert.ok(src.includes("aria-label={label}"), `${f}: notification switch name`);
+    }
+  });
+
+  it("home partners anchor id is unique (desktop dock observer must not resolve the hidden mobile list)", () => {
+    assert.ok(!read("components/sections/mobile/HomeMobilePartners.jsx").includes('id="home-partners-anchor"'));
+    assert.ok(read("components/sections/PartnersSection.jsx").includes('id="home-partners-anchor"'));
+  });
+
+  it("auth card renders no empty footer link when no footer props are given", () => {
+    const src = read("components/auth/AuthFormCard.jsx");
+    assert.ok(src.includes("{footerText || footerLinkText ? (") && src.includes("{footerLinkText ? ("));
+  });
+});
+
 describe("training orders admin: one date format per page", () => {
   it("round cards / rounds table use the UI-locale format (status bar already did): no 10/28 vs 28/10 on one page", () => {
     const iso = "2026-10-28T08:44:00Z";

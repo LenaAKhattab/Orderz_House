@@ -212,28 +212,28 @@ export default function StaffAccountSettingsPage({ heroKicker, heroTitle, heroLe
       <DashboardSection title={t("opsAdmin.staffAccount.sectionProfile")}>
         <div className="oh-account-form-grid oh-account-form-grid--2">
           <div>
-            <label className="oh-account-label">{t("opsAdmin.staffAccount.firstName")}</label>
-            <input className="oh-account-input" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+            <label className="oh-account-label" htmlFor="staff-firstName">{t("opsAdmin.staffAccount.firstName")}</label>
+            <input id="staff-firstName" className="oh-account-input" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
           </div>
           <div>
-            <label className="oh-account-label">{t("opsAdmin.staffAccount.fatherName")}</label>
-            <input className="oh-account-input" value={fatherName} onChange={(e) => setFatherName(e.target.value)} />
+            <label className="oh-account-label" htmlFor="staff-fatherName">{t("opsAdmin.staffAccount.fatherName")}</label>
+            <input id="staff-fatherName" className="oh-account-input" value={fatherName} onChange={(e) => setFatherName(e.target.value)} />
           </div>
           <div>
-            <label className="oh-account-label">{t("opsAdmin.staffAccount.familyName")}</label>
-            <input className="oh-account-input" value={familyName} onChange={(e) => setFamilyName(e.target.value)} />
+            <label className="oh-account-label" htmlFor="staff-familyName">{t("opsAdmin.staffAccount.familyName")}</label>
+            <input id="staff-familyName" className="oh-account-input" value={familyName} onChange={(e) => setFamilyName(e.target.value)} />
           </div>
           <div>
-            <label className="oh-account-label">{t("opsAdmin.staffAccount.email")}</label>
-            <input className="oh-account-input" disabled readOnly value={authUser?.email || ""} />
+            <label className="oh-account-label" htmlFor="staff-email">{t("opsAdmin.staffAccount.email")}</label>
+            <input id="staff-email" className="oh-account-input" disabled readOnly value={authUser?.email || ""} />
           </div>
           <div>
-            <label className="oh-account-label">{t("opsAdmin.staffAccount.phone")}</label>
-            <input className="oh-account-input" dir="ltr" value={phone} onChange={(e) => setPhone(e.target.value)} />
+            <label className="oh-account-label" htmlFor="staff-phone">{t("opsAdmin.staffAccount.phone")}</label>
+            <input id="staff-phone" className="oh-account-input" dir="ltr" value={phone} onChange={(e) => setPhone(e.target.value)} />
           </div>
           <div>
-            <label className="oh-account-label">{t("opsAdmin.staffAccount.whatsapp")}</label>
-            <input className="oh-account-input" dir="ltr" value={whatsApp} onChange={(e) => setWhatsApp(e.target.value)} />
+            <label className="oh-account-label" htmlFor="staff-whatsapp">{t("opsAdmin.staffAccount.whatsapp")}</label>
+            <input id="staff-whatsapp" className="oh-account-input" dir="ltr" value={whatsApp} onChange={(e) => setWhatsApp(e.target.value)} />
           </div>
         </div>
         <p className="oh-account-value oh-account-page__hint">{t("opsAdmin.staffAccount.emailReadonlyHint")}</p>
@@ -247,8 +247,8 @@ export default function StaffAccountSettingsPage({ heroKicker, heroTitle, heroLe
       <DashboardSection title={t("opsAdmin.staffAccount.sectionSecurity")}>
         <div className="oh-account-form-grid">
           <div>
-            <label className="oh-account-label">{t("opsAdmin.staffAccount.currentPassword")}</label>
-            <input
+            <label className="oh-account-label" htmlFor="staff-currentPassword">{t("opsAdmin.staffAccount.currentPassword")}</label>
+            <input id="staff-currentPassword"
               type="password"
               className="oh-account-input"
               dir="ltr"
@@ -259,8 +259,8 @@ export default function StaffAccountSettingsPage({ heroKicker, heroTitle, heroLe
           </div>
           <div className="oh-account-form-grid oh-account-form-grid--2">
             <div>
-              <label className="oh-account-label">{t("opsAdmin.staffAccount.newPassword")}</label>
-              <input
+              <label className="oh-account-label" htmlFor="staff-newPassword">{t("opsAdmin.staffAccount.newPassword")}</label>
+              <input id="staff-newPassword"
                 type="password"
                 className="oh-account-input"
                 dir="ltr"
@@ -270,8 +270,8 @@ export default function StaffAccountSettingsPage({ heroKicker, heroTitle, heroLe
               />
             </div>
             <div>
-              <label className="oh-account-label">{t("opsAdmin.staffAccount.confirmPassword")}</label>
-              <input
+              <label className="oh-account-label" htmlFor="staff-confirmPassword">{t("opsAdmin.staffAccount.confirmPassword")}</label>
+              <input id="staff-confirmPassword"
                 type="password"
                 className="oh-account-input"
                 dir="ltr"
@@ -301,6 +301,7 @@ export default function StaffAccountSettingsPage({ heroKicker, heroTitle, heroLe
             <input
               type="checkbox"
               className="oh-account-switch"
+              aria-label={label}
               checked={Boolean(notif[key])}
               onChange={(e) => setNotif((prev) => ({ ...prev, [key]: e.target.checked }))}
             />

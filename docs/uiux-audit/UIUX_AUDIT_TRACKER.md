@@ -217,10 +217,15 @@ Staging data / capture timing, or intended date fix). Report: `%USERPROFILE%\Ord
 | `/dashboard/super-admin/training-orders` | Rounds / status | Super Admin | FIX | Arabic page mixed `28/10/2026 11:44` (status bar) and `10/28/2026 11:44 AM` (round cards, rounds table, last run) → one UI-locale format |
 | `/dashboard/freelancer/orders/:id` | Held offer | Freelancer | POLISH | Neutral «عرضك قيد المراجعة قبل أن يظهر للعميل.» from existing `myBid.underReview` (no moderation reasons) |
 | `constants/authRoutes.js` | Navigation guards | Admin / SA | FIX | 5 Super-Admin-only pages + `/dashboard/referrals` missing from the role map (offered then bounced) → mirrored App.jsx guards |
+| Account settings (client, freelancer, admin, super admin) | Forms | All | FIX (a11y) | 30 labels not tied to their fields (152 unlabeled field-loads in the 1280 pass) → `htmlFor`/`id` (existing freelancer pattern); notification switches named |
+| `/` | Partners | Anonymous | FIX (a11y) | Duplicate `id="home-partners-anchor"` (mobile + desktop lists) — desktop sticky-ads observer resolved the hidden mobile list → id only on the desktop section |
+| Auth card (legacy join) | Footer | Anonymous | FIX (a11y) | Empty link to the current page when no footer props → footer rendered only with content |
 | Stale tests | Backend / frontend | — | FIX (tests) | Rate-limit config (public GETs on `public_read`), recurring price `prices.retrieve` before reuse, «Training Packages» label, CRLF-safe source reads |
 
 Result: duplicate GET overhead 577 → 57 extra requests per 510 loads (remaining = 30 s poll ticks inside slow pages + intermittent
 `/orders` pool ×2 in 1/18 loads); total API requests 4,367 → 3,846; overflow 0; page errors 0; raw technical text 0; `dir` mismatches 0.
+Desktop 1280 pass (AR/EN, 280 loads, every route) with automated accessibility counts: overflow 0, page errors 0; after the a11y fixes
+images without alt 0, unnamed buttons 0, unnamed links 0, unlabeled fields 0, duplicate ids 0, `lang` correct on every load.
 
 ### Coverage map (App.jsx, 140 route patterns)
 
@@ -241,6 +246,8 @@ Result: duplicate GET overhead 577 → 57 extra requests per 510 loads (remainin
 | Misleading «no membership» on load failure | RESOLVED |
 | Navigation role map vs router | RESOLVED |
 | `/orders` pool fetched twice in 1/18 loads | TECHNICAL_DEBT_ACCEPTED (low) |
+| Settings labels, home duplicate id, empty auth footer link | RESOLVED (a11y pass) |
+| Two `<h1>` on some pages (home hero + section, settings) | TECHNICAL_DEBT_ACCEPTED (low) |
 | Stripe Elements / Arabic hosted checkout | PRODUCT_DECISION_REQUIRED |
 | PostHog frontend key; Bildazo on Staging | EXTERNAL_CONFIGURATION |
 | Activation terms 1–45 | CONTENT_REQUIRED |

@@ -391,24 +391,24 @@ export default function FreelancerSettingsPage() {
         </div>
         <div className="oh-account-form-grid" style={{ marginTop: 14 }}>
           <div>
-            <label className="oh-account-label">{t(`${s}.basic.website`)}</label>
-            <input className="oh-account-input" dir="ltr" value={websiteUrl} onChange={(e) => setWebsiteUrl(e.target.value)} placeholder="https://" />
+            <label className="oh-account-label" htmlFor="fs-website">{t(`${s}.basic.website`)}</label>
+            <input id="fs-website" className="oh-account-input" dir="ltr" value={websiteUrl} onChange={(e) => setWebsiteUrl(e.target.value)} placeholder="https://" />
           </div>
           <div>
-            <label className="oh-account-label">LinkedIn</label>
-            <input className="oh-account-input" dir="ltr" value={linkedinUrl} onChange={(e) => setLinkedinUrl(e.target.value)} />
+            <label className="oh-account-label" htmlFor="fs-linkedin">LinkedIn</label>
+            <input id="fs-linkedin" className="oh-account-input" dir="ltr" value={linkedinUrl} onChange={(e) => setLinkedinUrl(e.target.value)} />
           </div>
           <div>
-            <label className="oh-account-label">GitHub</label>
-            <input className="oh-account-input" dir="ltr" value={githubUrl} onChange={(e) => setGithubUrl(e.target.value)} />
+            <label className="oh-account-label" htmlFor="fs-github">GitHub</label>
+            <input id="fs-github" className="oh-account-input" dir="ltr" value={githubUrl} onChange={(e) => setGithubUrl(e.target.value)} />
           </div>
           <div>
-            <label className="oh-account-label">Behance</label>
-            <input className="oh-account-input" dir="ltr" value={behanceUrl} onChange={(e) => setBehanceUrl(e.target.value)} />
+            <label className="oh-account-label" htmlFor="fs-behance">Behance</label>
+            <input id="fs-behance" className="oh-account-input" dir="ltr" value={behanceUrl} onChange={(e) => setBehanceUrl(e.target.value)} />
           </div>
           <div>
-            <label className="oh-account-label">{t(`${s}.basic.portfolio`)}</label>
-            <input className="oh-account-input" dir="ltr" value={portfolioUrl} onChange={(e) => setPortfolioUrl(e.target.value)} />
+            <label className="oh-account-label" htmlFor="fs-portfolio">{t(`${s}.basic.portfolio`)}</label>
+            <input id="fs-portfolio" className="oh-account-input" dir="ltr" value={portfolioUrl} onChange={(e) => setPortfolioUrl(e.target.value)} />
           </div>
         </div>
         <div className="oh-account-actions">
@@ -465,8 +465,8 @@ export default function FreelancerSettingsPage() {
         <h2 className="oh-account-card__title">{t(`${s}.security.title`)}</h2>
         <div className="oh-account-form-grid">
           <div>
-            <label className="oh-account-label">{t(`${s}.security.currentPassword`)}</label>
-            <input
+            <label className="oh-account-label" htmlFor="fs-currentPassword">{t(`${s}.security.currentPassword`)}</label>
+            <input id="fs-currentPassword"
               type="password"
               className="oh-account-input"
               dir="ltr"
@@ -477,8 +477,8 @@ export default function FreelancerSettingsPage() {
           </div>
           <div className="oh-account-form-grid oh-account-form-grid--2">
             <div>
-              <label className="oh-account-label">{t(`${s}.security.newPassword`)}</label>
-              <input
+              <label className="oh-account-label" htmlFor="fs-newPassword">{t(`${s}.security.newPassword`)}</label>
+              <input id="fs-newPassword"
                 type="password"
                 className="oh-account-input"
                 dir="ltr"
@@ -488,8 +488,8 @@ export default function FreelancerSettingsPage() {
               />
             </div>
             <div>
-              <label className="oh-account-label">{t(`${s}.security.confirmPassword`)}</label>
-              <input
+              <label className="oh-account-label" htmlFor="fs-confirmPassword">{t(`${s}.security.confirmPassword`)}</label>
+              <input id="fs-confirmPassword"
                 type="password"
                 className="oh-account-input"
                 dir="ltr"
@@ -531,6 +531,7 @@ export default function FreelancerSettingsPage() {
             <input
               type="checkbox"
               className="oh-account-switch"
+              aria-label={label}
               checked={Boolean(notif[key])}
               onChange={(e) => setNotif((prev) => ({ ...prev, [key]: e.target.checked }))}
             />
