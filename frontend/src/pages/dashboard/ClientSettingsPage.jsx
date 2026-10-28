@@ -238,28 +238,28 @@ export default function ClientSettingsPage() {
         <h2 className="oh-account-card__title">{t(`${s}.basicInfo`)}</h2>
         <div className="oh-account-form-grid oh-account-form-grid--2">
           <div>
-            <label className="oh-account-label">{t(`${s}.firstName`)}</label>
-            <input className="oh-account-input" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+            <label className="oh-account-label" htmlFor="cs-firstName">{t(`${s}.firstName`)}</label>
+            <input id="cs-firstName" className="oh-account-input" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
           </div>
           <div>
-            <label className="oh-account-label">{t(`${s}.fatherName`)}</label>
-            <input className="oh-account-input" value={fatherName} onChange={(e) => setFatherName(e.target.value)} />
+            <label className="oh-account-label" htmlFor="cs-fatherName">{t(`${s}.fatherName`)}</label>
+            <input id="cs-fatherName" className="oh-account-input" value={fatherName} onChange={(e) => setFatherName(e.target.value)} />
           </div>
           <div>
-            <label className="oh-account-label">{t(`${s}.familyName`)}</label>
-            <input className="oh-account-input" value={familyName} onChange={(e) => setFamilyName(e.target.value)} />
+            <label className="oh-account-label" htmlFor="cs-familyName">{t(`${s}.familyName`)}</label>
+            <input id="cs-familyName" className="oh-account-input" value={familyName} onChange={(e) => setFamilyName(e.target.value)} />
           </div>
           <div>
-            <label className="oh-account-label">{t(`${s}.companyName`)}</label>
-            <input className="oh-account-input" value={companyName} onChange={(e) => setCompanyName(e.target.value)} />
+            <label className="oh-account-label" htmlFor="cs-companyName">{t(`${s}.companyName`)}</label>
+            <input id="cs-companyName" className="oh-account-input" value={companyName} onChange={(e) => setCompanyName(e.target.value)} />
           </div>
           <div>
-            <label className="oh-account-label">{t(`${s}.phoneE164`)}</label>
-            <input className="oh-account-input" dir="ltr" value={phone} onChange={(e) => setPhone(e.target.value)} />
+            <label className="oh-account-label" htmlFor="cs-phoneE164">{t(`${s}.phoneE164`)}</label>
+            <input id="cs-phoneE164" className="oh-account-input" dir="ltr" value={phone} onChange={(e) => setPhone(e.target.value)} />
           </div>
           <div>
-            <label className="oh-account-label">{t(`${s}.whatsappE164`)}</label>
-            <input className="oh-account-input" dir="ltr" value={whatsApp} onChange={(e) => setWhatsApp(e.target.value)} />
+            <label className="oh-account-label" htmlFor="cs-whatsappE164">{t(`${s}.whatsappE164`)}</label>
+            <input id="cs-whatsappE164" className="oh-account-input" dir="ltr" value={whatsApp} onChange={(e) => setWhatsApp(e.target.value)} />
           </div>
         </div>
         <div className="oh-account-actions">
@@ -276,12 +276,12 @@ export default function ClientSettingsPage() {
         </p>
         <div className="oh-account-form-grid oh-account-form-grid--2">
           <div>
-            <label className="oh-account-label">{t(`${s}.billingName`)}</label>
-            <input className="oh-account-input" value={billingName} onChange={(e) => setBillingName(e.target.value)} />
+            <label className="oh-account-label" htmlFor="cs-billingName">{t(`${s}.billingName`)}</label>
+            <input id="cs-billingName" className="oh-account-input" value={billingName} onChange={(e) => setBillingName(e.target.value)} />
           </div>
           <div>
-            <label className="oh-account-label">{t(`${s}.countryIso`)}</label>
-            <input
+            <label className="oh-account-label" htmlFor="cs-countryIso">{t(`${s}.countryIso`)}</label>
+            <input id="cs-countryIso"
               className="oh-account-input"
               dir="ltr"
               maxLength={2}
@@ -291,12 +291,12 @@ export default function ClientSettingsPage() {
             />
           </div>
           <div style={{ gridColumn: "1 / -1" }}>
-            <label className="oh-account-label">{t(`${s}.city`)}</label>
-            <input className="oh-account-input" value={billingCity} onChange={(e) => setBillingCity(e.target.value)} />
+            <label className="oh-account-label" htmlFor="cs-city">{t(`${s}.city`)}</label>
+            <input id="cs-city" className="oh-account-input" value={billingCity} onChange={(e) => setBillingCity(e.target.value)} />
           </div>
           <div style={{ gridColumn: "1 / -1" }}>
-            <label className="oh-account-label">{t(`${s}.billingNotes`)}</label>
-            <textarea className="oh-account-textarea" style={{ minHeight: 88 }} value={billingNotes} onChange={(e) => setBillingNotes(e.target.value)} />
+            <label className="oh-account-label" htmlFor="cs-billingNotes">{t(`${s}.billingNotes`)}</label>
+            <textarea id="cs-billingNotes" className="oh-account-textarea" style={{ minHeight: 88 }} value={billingNotes} onChange={(e) => setBillingNotes(e.target.value)} />
           </div>
         </div>
         <div className="oh-account-actions">
@@ -310,8 +310,8 @@ export default function ClientSettingsPage() {
         <h2 className="oh-account-card__title">{t(`${s}.securityTitle`)}</h2>
         <div className="oh-account-form-grid">
           <div>
-            <label className="oh-account-label">{t(`${s}.currentPassword`)}</label>
-            <input
+            <label className="oh-account-label" htmlFor="cs-currentPassword">{t(`${s}.currentPassword`)}</label>
+            <input id="cs-currentPassword"
               type="password"
               className="oh-account-input"
               dir="ltr"
@@ -322,8 +322,8 @@ export default function ClientSettingsPage() {
           </div>
           <div className="oh-account-form-grid oh-account-form-grid--2">
             <div>
-              <label className="oh-account-label">{t(`${s}.newPassword`)}</label>
-              <input
+              <label className="oh-account-label" htmlFor="cs-newPassword">{t(`${s}.newPassword`)}</label>
+              <input id="cs-newPassword"
                 type="password"
                 className="oh-account-input"
                 dir="ltr"
@@ -333,8 +333,8 @@ export default function ClientSettingsPage() {
               />
             </div>
             <div>
-              <label className="oh-account-label">{t(`${s}.confirmPassword`)}</label>
-              <input
+              <label className="oh-account-label" htmlFor="cs-confirmPassword">{t(`${s}.confirmPassword`)}</label>
+              <input id="cs-confirmPassword"
                 type="password"
                 className="oh-account-input"
                 dir="ltr"
@@ -374,6 +374,7 @@ export default function ClientSettingsPage() {
             <input
               type="checkbox"
               className="oh-account-switch"
+              aria-label={label}
               checked={Boolean(notif[key])}
               onChange={(e) => setNotif((prev) => ({ ...prev, [key]: e.target.checked }))}
             />

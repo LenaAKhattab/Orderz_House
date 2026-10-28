@@ -15,7 +15,8 @@ export default function HomeMobilePartners() {
           <p className="hm-partners__subtitle">{t("home.partners.subtitle")}</p>
         </header>
 
-        <ul id="home-partners-anchor" className="hm-partners__grid" aria-label={t("home.partners.logosAria")}>
+        {/* No id: "home-partners-anchor" belongs to the desktop PartnersSection (sticky ads dock observer). */}
+        <ul className="hm-partners__grid" aria-label={t("home.partners.logosAria")}>
           {PARTNER_LOGOS.map((item) => (
             <li key={item.id} className="hm-partners__grid-cell">
               <a
