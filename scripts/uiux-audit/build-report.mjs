@@ -163,7 +163,7 @@ function renderDetail(key,q){
   if(s.states.length>1)controls+=seg('state','الحالة',s.states,s.state,v=>L[v]||v);
   controls+='<div class="ctl"><span>العرض</span><div class="seg"><button data-mode="side" aria-pressed="'+(view.mode==='side')+'">مقارنة متجاورة</button><button data-mode="slider" aria-pressed="'+(view.mode==='slider')+'">سحب للمقارنة</button></div></div>';
   if(view.mode==='side')controls+='<label class="ctl"><input type="checkbox" id="sync" '+(view.sync?'checked':'')+'> <span>مزامنة التمرير</span></label>';
-  const sh=s.shot||{};const tag=s.lang.toUpperCase()+' · '+s.width+(s.state!=='default'?' · '+(L[s.state]||s.state):'');
+  const sh=s.shot||{};const tag=(s.lang||'').toUpperCase()+' · '+s.width+(s.state!=='default'?' · '+(L[s.state]||s.state):'');
   let body;
   if(view.mode==='slider'&&sh.before&&sh.after){
     body='<div class="pane slider-pane"><div class="pane-h"><span dir="ltr"><span class="lbl-after">بعد</span> ⟵ اسحب ⟶ <span class="lbl-before">قبل</span></span><small>'+h(tag)+'</small></div><div class="scroll" id="sl-scroll"><div class="slider-tags"><b>بعد</b><b>قبل</b></div><div class="stack" id="stack" style="--x:50%"><img src="'+h(sh.before)+'" alt="قبل"><img class="after-layer" src="'+h(sh.after)+'" alt="بعد"><div class="divider"></div></div></div><input class="range" id="range" type="range" min="0" max="100" value="50" aria-label="موضع المقارنة"></div>';
@@ -171,9 +171,11 @@ function renderDetail(key,q){
     const pane=(kind,lbl)=>'<div class="pane"><div class="pane-h"><span class="lbl-'+kind+'">'+lbl+'</span><small>'+h(tag)+'</small></div><div class="scroll" data-kind="'+kind+'">'+(sh[kind]?'<img loading="lazy" src="'+h(sh[kind])+'" alt="'+lbl+'" data-open="'+kind+'">':'<div class="missing">لا توجد لقطة</div>')+'</div></div>';
     body='<div class="pair">'+pane('before','قبل')+pane('after','بعد')+'</div>';
   }
+  // Non-visual changes (network, navigation guards, held-offer status) carry no captures.
+  if(!p.shots.length){controls='';body='<div class="missing">تغيير غير بصري — مُتحقَّق منه باختبارات العقد وفحص الشبكة/الزحف، لذلك لا توجد لقطات قبل/بعد.</div>';}
   const prods=p.shots.filter(x=>x.production);
   const prod=prods.length?'<section class="prod"><h3>النسخة على الإنتاج</h3><p class="sub" style="margin:0 0 8px">لقطات بعد النشر للتحقق من مطابقة «بعد» — ليست جزءًا من مقارنة قبل/بعد.</p><div class="prod-grid">'+prods.map(x=>'<figure class="'+(x===sh?'cur':'')+'"><img loading="lazy" src="'+h(x.production)+'" alt="production" data-prod="'+h(x.production)+'"><figcaption>'+x.lang.toUpperCase()+' · '+x.width+(x.state!=='default'?' · '+h(L[x.state]||x.state):'')+'</figcaption></figure>').join('')+'</div></section>':'';
-  app.innerHTML='<div class="top"><div class="nav"><a class="btn" href="#/">العودة لجميع الصفحات</a><a class="btn" href="#/page/'+encodeURIComponent(prev.key)+'" title="'+h(prev.name)+'">→ الصفحة السابقة</a><a class="btn" href="#/page/'+encodeURIComponent(next.key)+'" title="'+h(next.name)+'">الصفحة التالية ←</a></div><div class="nav"><span class="sub" dir="ltr">'+(i+1)+' / '+D.pages.length+'</span><a class="btn btn-primary" href="'+h(prodUrl)+'" target="_blank" rel="noopener noreferrer">فتح الصفحة على الإنتاج ↗</a></div></div><div class="detail-head"><div class="detail-title"><h2>'+h(p.name)+'</h2><span class="badge b-'+p.classification+'">'+p.classification+'</span><span class="route">'+h(p.route)+'</span><span class="sub">'+p.pairs+' مقارنة</span></div>'+desc+'</div><div class="controls">'+controls+'</div>'+body+prod;
+  app.innerHTML='<div class="top"><div class="nav"><a class="btn" href="#/">العودة لجميع الصفحات</a><a class="btn" href="#/page/'+encodeURIComponent(prev.key)+'" title="'+h(prev.name)+'">→ الصفحة السابقة</a><a class="btn" href="#/page/'+encodeURIComponent(next.key)+'" title="'+h(next.name)+'">الصفحة التالية ←</a></div><div class="nav"><span class="sub" dir="ltr">'+(i+1)+' / '+D.pages.length+'</span>'+(/[:*]/.test(p.productionPath||p.route)?'':'<a class="btn btn-primary" href="'+h(prodUrl)+'" target="_blank" rel="noopener noreferrer">فتح الصفحة على الإنتاج ↗</a>')+'</div></div><div class="detail-head"><div class="detail-title"><h2>'+h(p.name)+'</h2><span class="badge b-'+p.classification+'">'+p.classification+'</span><span class="route">'+h(p.route)+'</span><span class="sub">'+p.pairs+' مقارنة</span></div>'+desc+'</div><div class="controls">'+controls+'</div>'+body+prod;
   document.title=p.name+' — '+D.title;
   const base={lang:s.lang,w:s.width,state:s.state};
   app.querySelectorAll('[data-lang]').forEach(b=>b.onclick=()=>go(p.key,{...base,lang:b.dataset.lang}));
@@ -239,6 +241,32 @@ export function buildPhaseReport(phaseDir, { masterHref = "../../index.html" } =
   return { out, pages: pages.length, counts };
 }
 
+/**
+ * Optional FINAL SUMMARY (root summary.json). Page/capture/classification totals are computed from the phase
+ * manifests and screenshots; summary.json only adds facts the screenshots cannot know (routes, fixes, registers).
+ */
+function renderFinalSummary(root, phases) {
+  const file = path.join(root, "summary.json");
+  if (!fs.existsSync(file)) return "";
+  const s = JSON.parse(fs.readFileSync(file, "utf8"));
+  const sum = (f) => phases.reduce((n, p) => n + f(p), 0);
+  const classTotals = Object.fromEntries(CLASSES.map((c) => [c, sum((p) => p.classes[c] || 0)]));
+  const tiles = [
+    [s.routesTotal, "مسار في التطبيق"],
+    [s.routesAudited, "مسار مُدقَّق"],
+    [sum((p) => p.pages), "صفحة/سطح في التقارير"],
+    [sum((p) => p.counts.before + p.counts.after + p.counts.production), "لقطة (قبل/بعد/إنتاج)"],
+    [sum((p) => p.counts.pairs), "مقارنة قبل/بعد"],
+    ...CLASSES.map((c) => [classTotals[c], c]),
+  ];
+  const tileHtml = tiles.filter(([v]) => v != null).map(([v, l]) => `<div class="stat"><b>${esc(v)}</b><span>${esc(l)}</span></div>`).join("");
+  const list = (title, items) =>
+    Array.isArray(items) && items.length
+      ? `<section class="fs-block"><h3>${esc(title)} <small>(${items.length})</small></h3><ul>${items.map((i) => `<li>${esc(i)}</li>`).join("")}</ul></section>`
+      : "";
+  return `<section class="final-summary"><h2>${esc(s.title || "الملخص النهائي")}</h2>${s.verdict ? `<p class="sub"><b>${esc(s.verdict)}</b>${s.verdictNote ? ` — ${esc(s.verdictNote)}` : ""}</p>` : ""}<div class="stats">${tileHtml}</div><div class="fs-grid">${(s.sections || []).map((x) => list(x.title, x.items)).join("")}</div></section><style>.final-summary{margin-top:28px}.final-summary h2{font-size:1.25rem;margin:0 0 8px}.fs-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px;margin-top:14px}.fs-block{background:#fff;border:1px solid #e3e8f0;border-radius:14px;padding:12px 16px}.fs-block h3{font-size:.95rem;margin:0 0 6px}.fs-block ul{margin:0;padding-inline-start:18px;font-size:.85rem;line-height:1.7}</style>`;
+}
+
 /** Master index: one card per phase that has a manifest (no placeholder phases). */
 export function buildMaster(root) {
   const phases = fs
@@ -248,13 +276,15 @@ export function buildMaster(root) {
       const { manifest, pages, counts } = collectPhase(path.join(root, d.name));
       const thumbPage = pages.find((p) => p.classification !== "KEEP") || pages[0];
       const s = thumbPage && thumbPage.shots.find((x) => x.after && x.lang === "ar" && x.width === 1440);
-      return { dir: d.name, order: manifest.order || 0, title: manifest.title, pages: pages.length, changed: pages.filter((p) => p.classification !== "KEEP").length, counts, thumb: s ? `${d.name}/${s.after.replace(/^\.\.\//, "")}` : null };
+      const classes = Object.fromEntries(CLASSES.map((c) => [c, pages.filter((p) => p.classification === c).length]));
+      return { dir: d.name, order: manifest.order || 0, title: manifest.title, pages: pages.length, changed: pages.filter((p) => p.classification !== "KEEP").length, counts, classes, thumb: s ? `${d.name}/${s.after.replace(/^\.\.\//, "")}` : null };
     })
     .sort((a, b) => a.order - b.order);
+  const summaryHtml = renderFinalSummary(root, phases);
   const cards = phases
     .map((p) => `<a class="card phase-card" href="${esc(p.dir)}/report/index.html"><div class="thumb">${p.thumb ? `<img loading="lazy" src="${esc(p.thumb)}" alt="">` : ""}</div><div class="card-body"><div class="card-title">${esc(p.title)}</div><div class="meta-row"><span>${p.pages} صفحة · ${p.changed} معدّلة</span><span>${p.counts.pairs} مقارنة</span></div></div></a>`)
     .join("");
-  const html = `<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OrderzHouse — تدقيق واجهة المستخدم</title><style>${CSS}</style></head><body><main class="wrap"><div class="top"><div><h1>OrderzHouse — تدقيق واجهة المستخدم</h1><p class="sub">اختر مرحلة ← صفحة ← مقارنة (قبل يمين / بعد يسار).</p></div></div><div class="grid">${cards}</div></main></body></html>`;
+  const html = `<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OrderzHouse — تدقيق واجهة المستخدم</title><style>${CSS}</style></head><body><main class="wrap"><div class="top"><div><h1>OrderzHouse — تدقيق واجهة المستخدم</h1><p class="sub">اختر مرحلة ← صفحة ← مقارنة (قبل يمين / بعد يسار).</p></div></div><div class="grid">${cards}</div>${summaryHtml}</main></body></html>`;
   const out = path.join(root, "index.html");
   fs.writeFileSync(out, html);
   return { out, phases: phases.length };

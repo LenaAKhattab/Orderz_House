@@ -40,7 +40,12 @@ describe("api rate limit config", () => {
     assert.strictEqual(shouldSkipGeneralApiRateLimit({ path: "/health" }), true);
     assert.strictEqual(shouldSkipGeneralApiRateLimit({ path: "/auth/login" }), true);
     assert.strictEqual(shouldSkipGeneralApiRateLimit({ path: "/auth/logout" }), true);
-    assert.strictEqual(shouldSkipGeneralApiRateLimit({ path: "/public/popup-ads" }), false);
+    // Public GET chrome has its own dedicated public_read limiter (still rate-limited, separate bucket).
+    assert.strictEqual(shouldSkipGeneralApiRateLimit({ method: "GET", path: "/public/popup-ads" }), true);
+    // Everything else — e.g. payment and file routes — stays in the global bucket.
+    assert.strictEqual(shouldSkipGeneralApiRateLimit({ method: "POST", path: "/client/orders/5/pay-checkout" }), false);
+    assert.strictEqual(shouldSkipGeneralApiRateLimit({ method: "GET", path: "/orders/5/files/9/download" }), false);
+    assert.strictEqual(shouldSkipGeneralApiRateLimit({ method: "POST", path: "/public/popup-ads" }), false);
   });
 });
 

@@ -42,7 +42,8 @@ import "./trainingOrdersAdmin.css";
 const BASE = "/dashboard/super-admin/training-orders";
 
 function OperationalDateTime({ value }) {
-  const formatted = formatAdminDateTime(value);
+  const { locale } = useTranslation();
+  const formatted = formatAdminDateTime(value, locale);
   if (formatted === "—") return <span>—</span>;
   return (
     <span className="oh-training-num" dir="ltr">
@@ -52,8 +53,9 @@ function OperationalDateTime({ value }) {
 }
 
 function OperationalPeriodLines({ startsAt, expiresAt, t }) {
-  const from = startsAt ? formatAdminDateTime(startsAt) : null;
-  const to = expiresAt ? formatAdminDateTime(expiresAt) : null;
+  const { locale } = useTranslation();
+  const from = startsAt ? formatAdminDateTime(startsAt, locale) : null;
+  const to = expiresAt ? formatAdminDateTime(expiresAt, locale) : null;
   if (!from && !to) return <span>—</span>;
   return (
     <span className="oh-training-period-lines oh-training-metric-row__value">
@@ -697,7 +699,7 @@ export default function TrainingOrdersOverviewPage() {
                                   {getAutomationStatusLabel(settings.lastAutomationStatus, t)}
                                 </span>
                                 <span className="oh-training-period-lines__line oh-training-num" dir="ltr">
-                                  {formatAdminDateTime(settings.lastAutomationRunAt)}
+                                  <OperationalDateTime value={settings.lastAutomationRunAt} />
                                 </span>
                               </span>
                             ) : (

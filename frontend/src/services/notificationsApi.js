@@ -1,4 +1,5 @@
 import api from "./httpClient";
+import { shareInFlight } from "./shareInFlight";
 
 /** Dispatched on `window` after notification-worthy events (e.g. subscription payment) so the bell refetches. */
 export const NOTIFICATIONS_REFRESH_EVENT = "orderz-notifications-refresh";
@@ -8,10 +9,9 @@ export const listMyNotificationsRequest = async (params = {}) => {
   return data;
 };
 
-export const getUnreadNotificationsCountRequest = async () => {
-  const { data } = await api.get("/notifications/unread-count");
-  return data;
-};
+export const getUnreadNotificationsCountRequest = () =>
+  // Bell + sidebar badge mount together: one request while it is in flight.
+  shareInFlight("notifications:unread-count", async () => (await api.get("/notifications/unread-count")).data);
 
 export const markNotificationReadRequest = async (notificationId) => {
   const { data } = await api.post(`/notifications/${notificationId}/read`);

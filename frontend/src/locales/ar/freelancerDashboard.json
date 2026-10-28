@@ -187,7 +187,8 @@
     "submitBid": "تقديم عرض سعر",
     "taking": "جارٍ الاستلام…",
     "registered": "تم التسجيل",
-    "takeOrder": "استلام الطلب"
+    "takeOrder": "استلام الطلب",
+    "bidUnderReview": "عرضك قيد المراجعة قبل أن يظهر للعميل."
   },
   "myOrders": {
     "title": "طلباتي الحالية",
@@ -355,7 +356,9 @@
     "bidsPerMonth": "العروض / شهر",
     "articleAccessLevel": "مستوى الوصول للمقالات",
     "articleAccessLevelHint": "يسمح بالوصول/التقدّم لمستويات المقال حتى هذا المستوى — وليس تقديماً مجانياً أو غير محدود.",
-    "engineComingSoon": "محرك Priority Bid قريبًا — هذا العرض للمحاسبة فقط."
+    "engineComingSoon": "محرك Priority Bid قريبًا — هذا العرض للمحاسبة فقط.",
+    "loadErrorTitle": "تعذّر تحميل حالة عضويتك",
+    "loadErrorHint": "هذا لا يغيّر عضويتك. حدّث الصفحة قبل شراء أي باقة."
   },
   "bidCredits": {
     "title": "العروض المتاحة",

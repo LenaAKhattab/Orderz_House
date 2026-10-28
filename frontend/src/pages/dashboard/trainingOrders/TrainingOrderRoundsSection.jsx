@@ -78,9 +78,11 @@ function roundRowClassName(status) {
 
 function RoundPeriodCell({ startsAt, expiresAt, t }) {
 
-  const from = formatAdminDateTime(startsAt);
+  const { locale } = useTranslation();
 
-  const to = formatAdminDateTime(expiresAt);
+  const from = formatAdminDateTime(startsAt, locale);
+
+  const to = formatAdminDateTime(expiresAt, locale);
 
   if (from === "—" && to === "—") return "—";
 

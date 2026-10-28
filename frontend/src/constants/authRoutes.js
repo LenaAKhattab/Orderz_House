@@ -99,7 +99,6 @@ export const DASHBOARD_TITLE = {
   "/dashboard/super-admin/edit-website/footer-app-downloads": "تحميل التطبيق",
   "/how-it-works/freelancer": "طريقة العمل كمستقل",
   "/how-it-works/client": "طريقة الطلب للعميل",
-  "/dashboard/admin/orders": "الطلبات الداخلية",
   "/dashboard/admin/orders/create": "إنشاء طلب داخلي",
 };
 
@@ -251,6 +250,13 @@ const STAFF_DASHBOARD_ROLES = [ROLE.SUPER_ADMIN, ROLE.ADMIN];
 /** Which role may open which dashboard URL (exact path). Permission checks apply separately in route guards. */
 const DASHBOARD_PATH_TO_ROLES = {
   [DASHBOARD_PATH[ROLE.SUPER_ADMIN]]: STAFF_DASHBOARD_ROLES,
+  // Mirror App.jsx RequireRole guards (super admin only) so nav / post-login return never offer a bounce.
+  "/dashboard/super-admin/users": [ROLE.SUPER_ADMIN],
+  "/dashboard/super-admin/referrals": [ROLE.SUPER_ADMIN],
+  "/dashboard/super-admin/account-restrictions": [ROLE.SUPER_ADMIN],
+  "/dashboard/super-admin/rate-limit-exemptions": [ROLE.SUPER_ADMIN],
+  "/dashboard/super-admin/feedback/topics": [ROLE.SUPER_ADMIN],
+  "/dashboard/referrals": [ROLE.CLIENT, ROLE.FREELANCER],
   "/dashboard/super-admin/plans": [ROLE.SUPER_ADMIN],
   "/dashboard/super-admin/marketplace-plans": [ROLE.SUPER_ADMIN],
   "/dashboard/super-admin/training-packages": [ROLE.SUPER_ADMIN],

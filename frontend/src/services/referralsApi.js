@@ -1,4 +1,5 @@
 import api from "./httpClient";
+import { shareInFlight } from "./shareInFlight";
 
 export function captureReferralRequest(payload) {
   return api.post("/referrals/capture", payload);
@@ -16,8 +17,11 @@ export function cancelReferralWithdrawalRequest(id) {
   return api.post(`/referrals/withdrawals/${id}/cancel`);
 }
 
+// Page header summary and the overview tab load the same range together: share the in-flight request.
 export function getReferralOverviewRequest(params) {
-  return api.get("/super-admin/referrals/overview", { params });
+  return shareInFlight(`referrals:overview:${JSON.stringify(params || {})}`, () =>
+    api.get("/super-admin/referrals/overview", { params }),
+  );
 }
 
 export function getReferralTopRequest(params) {

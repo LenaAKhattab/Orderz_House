@@ -50,6 +50,10 @@
 
 .fn-header__copy {
   min-width: 0;
+  text-align: start;
+}
+
+:where([dir="rtl"]) .fn-header__copy {
   text-align: right;
 }
 
@@ -88,12 +92,16 @@
   align-items: center;
   gap: 12px;
   padding: 12px 14px;
-  text-align: right;
+  text-align: start;
   border-inline-end: 1px solid rgba(148, 163, 184, 0.7);
   border-radius: calc(var(--fn-radius-lg) - 8px);
   transition:
     background 0.22s var(--fn-ease),
     box-shadow 0.22s var(--fn-ease);
+}
+
+:where([dir="rtl"]) .fn-stat-segment {
+  text-align: right;
 }
 
 .fn-stat-segment:last-child {

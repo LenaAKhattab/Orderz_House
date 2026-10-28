@@ -30,9 +30,14 @@
 .oh-site-pages-table th,
 .oh-site-pages-table td {
   padding: 12px 14px;
-  text-align: right;
+  text-align: start;
   border-bottom: 1px solid rgba(226, 232, 240, 0.95);
   font-size: 0.88rem;
+}
+
+:where([dir="rtl"]) .oh-site-pages-table th,
+:where([dir="rtl"]) .oh-site-pages-table td {
+  text-align: right;
 }
 
 .oh-site-pages-table th {

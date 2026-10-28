@@ -59,8 +59,13 @@
 .pantry-table td {
   padding: 0.65rem 0.75rem;
   border-bottom: 1px solid #f2f4f7;
-  text-align: right;
+  text-align: start;
   vertical-align: top;
+}
+
+:where([dir="rtl"]) .pantry-table th,
+:where([dir="rtl"]) .pantry-table td {
+  text-align: right;
 }
 
 .pantry-table th {

@@ -114,11 +114,15 @@
   background: #fff;
   border-radius: 12px;
   padding: 0.7rem 0.65rem;
-  text-align: right;
+  text-align: start;
   font-weight: 700;
   font-size: 0.85rem;
   cursor: pointer;
   color: #0f172a;
+}
+
+:where([dir="rtl"]) .oh-articles-hub__quick-btn {
+  text-align: right;
 }
 
 .oh-articles-hub__quick-btn span {
@@ -286,8 +290,13 @@
 .oh-articles-hub__table-wrap td {
   padding: 0.5rem 0.55rem;
   border-bottom: 1px solid var(--oh-ah-border);
-  text-align: right;
+  text-align: start;
   white-space: nowrap;
+}
+
+:where([dir="rtl"]) .oh-articles-hub__table-wrap th,
+:where([dir="rtl"]) .oh-articles-hub__table-wrap td {
+  text-align: right;
 }
 
 .oh-articles-hub__table-wrap th {

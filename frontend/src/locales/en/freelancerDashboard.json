@@ -187,7 +187,8 @@
     "submitBid": "Submit bid",
     "taking": "Accepting…",
     "registered": "Registered",
-    "takeOrder": "Take order"
+    "takeOrder": "Take order",
+    "bidUnderReview": "Your offer is being reviewed before it is shown to the client."
   },
   "myOrders": {
     "title": "My current orders",
@@ -355,7 +356,9 @@
     "bidsPerMonth": "Bids / month",
     "articleAccessLevel": "Article access level",
     "articleAccessLevelHint": "Eligible to access/apply to Article levels up to this level — not free or unlimited applications.",
-    "engineComingSoon": "Priority Bid engine coming soon — this view is accounting only."
+    "engineComingSoon": "Priority Bid engine coming soon — this view is accounting only.",
+    "loadErrorTitle": "Couldn't load your membership status",
+    "loadErrorHint": "This does not change your membership. Refresh the page before buying a package."
   },
   "bidCredits": {
     "title": "Available Bids",

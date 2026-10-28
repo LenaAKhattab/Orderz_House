@@ -322,6 +322,12 @@ export default function FreelancerOrderDetailsPage() {
                 : t("freelancerDashboard.orders.submitBid")}
         </button>
       ) : null}
+      {/* Neutral status already exposed by the API (myBid.underReview) — no moderation reasons. */}
+      {isFreelancer && order?.myBid?.underReview ? (
+        <p className="od-bid-review-note" role="status">
+          {t("freelancerDashboard.orders.bidUnderReview")}
+        </p>
+      ) : null}
       {isPoolAvailable && isFreelancer && !isPricedBidding ? (
         <button
           type="button"
