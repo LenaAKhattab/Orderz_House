@@ -236,6 +236,10 @@
 
 .oh-admin-courses__composer-preview-body {
   padding: 0.85rem 0.9rem 0.95rem;
+  text-align: start;
+}
+
+:where([dir="rtl"]) .oh-admin-courses__composer-preview-body {
   text-align: right;
 }
 

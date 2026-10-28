@@ -155,10 +155,16 @@ export const ROUND_STATUS_AR = {
   stopped: "متوقفة",
 };
 
-export function formatAdminDateTime(value) {
+/**
+ * @param {string|number|Date|null|undefined} value
+ * @param {string} [locale] UI locale: same day/month order as the rest of the page (formatJoDateTime).
+ *   Without it: fixed en-US M/D/YYYY h:mm AM/PM.
+ */
+export function formatAdminDateTime(value, locale) {
   if (!value) return "—";
   const d = new Date(value);
   if (!Number.isFinite(d.getTime())) return "—";
+  if (locale) return formatLocaleDateTime(d, locale);
   return `${ADMIN_DATE_PART_FMT.format(d)} ${ADMIN_TIME_PART_FMT.format(d)}`;
 }
 
@@ -185,10 +191,9 @@ export function roundSourceAr(source) {
 }
 
 export function formatRoundPeriod(startsAt, expiresAt, locale = "ar") {
-  const start = formatAdminDateTime(startsAt);
-  const end = formatAdminDateTime(expiresAt);
+  const start = formatAdminDateTime(startsAt, locale);
+  const end = formatAdminDateTime(expiresAt, locale);
   if (start === "—" && end === "—") return "—";
-  void locale;
   return `${start} → ${end}`;
 }
 

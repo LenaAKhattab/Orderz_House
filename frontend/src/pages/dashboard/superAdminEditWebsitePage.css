@@ -415,6 +415,10 @@
   font-size: 0.78rem;
   color: var(--dash-text-secondary, #4b5563);
   direction: ltr;
+  text-align: start;
+}
+
+:where([dir="rtl"]) .oh-website-hiw-page-card__path {
   text-align: right;
 }
 

@@ -91,7 +91,8 @@ describe("plan localized display", () => {
 
 describe("plan tabs and taxonomy", () => {
   it("uses the requested English plan tab labels", () => {
-    assert.equal(tEn("plans.categories.training"), "Training Plans");
+    // Renamed with the standalone Training Packages product (0833b09); mirrors «باقات التدريب».
+    assert.equal(tEn("plans.categories.training"), "Training Packages");
     assert.equal(tEn("plans.categories.membership"), "OrderzHouse Marketplace Membership");
     assert.equal(tAr("plans.categories.training"), "باقات التدريب");
     assert.equal(tAr("plans.categories.membership"), "عضوية سوق أوردرز هاوس");

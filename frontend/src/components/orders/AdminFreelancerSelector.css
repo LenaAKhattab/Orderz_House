@@ -75,13 +75,17 @@
   align-items: flex-start;
   gap: 12px;
   padding: 10px 12px;
-  text-align: right;
+  text-align: start;
   border: 0;
   border-bottom: 1px solid rgba(56, 82, 180, 0.08);
   background: transparent;
   cursor: pointer;
   color: inherit;
   font: inherit;
+}
+
+:where([dir="rtl"]) .oh-admin-fl-sel__row {
+  text-align: right;
 }
 
 .oh-admin-fl-sel__row:last-child {

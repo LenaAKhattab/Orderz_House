@@ -77,16 +77,17 @@ export default function FreelancerMarketplaceMembershipCard({
     );
   }
 
+  // A failed status load is not "no membership": saying so would invite a member to buy again.
   if (error && !snapshot) {
     return (
-      <header className="fp-surface fp-hero fp-hero--membership">
+      <header className="fp-surface fp-hero fp-hero--membership" role="status">
         <div className="fp-hero__copy">
           <span className="fp-hero__eyebrow">
             <Crown size={14} strokeWidth={2} aria-hidden />
             {t("freelancerDashboard.marketplaceMembership.title")}
           </span>
-          <h1 className="fp-hero__title">{t("freelancerDashboard.marketplaceMembership.none")}</h1>
-          <p className="fp-hero__subtitle">{t("freelancerDashboard.marketplaceMembership.noneHint")}</p>
+          <h1 className="fp-hero__title">{t("freelancerDashboard.marketplaceMembership.loadErrorTitle")}</h1>
+          <p className="fp-hero__subtitle">{t("freelancerDashboard.marketplaceMembership.loadErrorHint")}</p>
         </div>
       </header>
     );

@@ -123,9 +123,17 @@ describe("migration and frontend hardcoding guards", () => {
 
 describe("ensureStripeRecurringPriceForPlan reuses stored price", () => {
   it("reuses price when amount minor matches and does not create Stripe objects", async () => {
+    const retrieved = [];
     const stripe = {
       products: { create: async () => assert.fail("should not create product") },
-      prices: { create: async () => assert.fail("should not create price") },
+      prices: {
+        create: async () => assert.fail("should not create price"),
+        // The stored Price is verified at Stripe (exists + same live/test mode as the key) before reuse.
+        retrieve: async (id) => {
+          retrieved.push(id);
+          return { id, object: "price" };
+        },
+      },
     };
     const planRow = {
       id: 99,
@@ -143,6 +151,7 @@ describe("ensureStripeRecurringPriceForPlan reuses stored price", () => {
     const out = await ensureStripeRecurringPriceForPlan({ stripe, planRow }, fakeClient);
     assert.strictEqual(out.priceId, "price_x");
     assert.strictEqual(out.amountMinor, 15000);
+    assert.deepStrictEqual(retrieved, ["price_x"]);
   });
 
   it("creates a new price when stored amount drifts (never edits live price)", async () => {

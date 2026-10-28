@@ -1819,6 +1819,10 @@ a.sa-attention-card:hover {
   flex-direction: column;
   gap: 0.12rem;
   min-width: 0;
+  text-align: start;
+}
+
+:where([dir="rtl"]) .sa-attention-card__body {
   text-align: right;
 }
 
@@ -1827,8 +1831,12 @@ a.sa-attention-card:hover {
   font-weight: 900;
   color: var(--dash-text, #172033);
   line-height: 1.35;
-  text-align: right;
+  text-align: start;
   unicode-bidi: plaintext;
+}
+
+:where([dir="rtl"]) .sa-attention-card__title {
+  text-align: right;
 }
 
 .sa-attention-card__desc {
@@ -1836,6 +1844,10 @@ a.sa-attention-card:hover {
   font-weight: 600;
   color: var(--dash-text-secondary, #4b5563);
   line-height: 1.4;
+  text-align: start;
+}
+
+:where([dir="rtl"]) .sa-attention-card__desc {
   text-align: right;
 }
 
@@ -3321,6 +3333,11 @@ a.sa-attention-card:hover {
 
 .sa-analytics--premium .dash-ui-section__title,
 .sa-analytics--premium .dash-ui-section__desc {
+  text-align: start;
+}
+
+:where([dir="rtl"]) .sa-analytics--premium .dash-ui-section__title,
+:where([dir="rtl"]) .sa-analytics--premium .dash-ui-section__desc {
   text-align: right;
 }
 
@@ -3338,6 +3355,14 @@ a.sa-attention-card:hover {
 .sa-analytics--premium .dash-ui-stat-card__hint,
 .sa-analytics--premium .dash-ui-stat-card__trend,
 .sa-analytics--premium .sa-metric-scope {
+  text-align: start;
+}
+
+:where([dir="rtl"]) .sa-analytics--premium .dash-ui-stat-card__label,
+:where([dir="rtl"]) .sa-analytics--premium .dash-ui-stat-card__value,
+:where([dir="rtl"]) .sa-analytics--premium .dash-ui-stat-card__hint,
+:where([dir="rtl"]) .sa-analytics--premium .dash-ui-stat-card__trend,
+:where([dir="rtl"]) .sa-analytics--premium .sa-metric-scope {
   text-align: right;
 }
 
@@ -3355,6 +3380,12 @@ a.sa-attention-card:hover {
 .sa-collapsible__head-copy,
 .sa-collapsible__title,
 .sa-collapsible__desc {
+  text-align: start;
+}
+
+:where([dir="rtl"]) .sa-collapsible__head-copy,
+:where([dir="rtl"]) .sa-collapsible__title,
+:where([dir="rtl"]) .sa-collapsible__desc {
   text-align: right;
 }
 
@@ -3377,8 +3408,12 @@ a.sa-attention-card:hover {
 }
 
 .sa-forecast-premium__copy {
-  text-align: right;
+  text-align: start;
   min-width: 0;
+}
+
+:where([dir="rtl"]) .sa-forecast-premium__copy {
+  text-align: right;
 }
 
 .sa-forecast-premium__growth {
@@ -3400,11 +3435,19 @@ a.sa-attention-card:hover {
 }
 
 .sa-forecast-premium__metric {
-  text-align: right;
+  text-align: start;
   align-items: flex-start;
 }
 
+:where([dir="rtl"]) .sa-forecast-premium__metric {
+  text-align: right;
+}
+
 .sa-forecast-premium__disclaimer {
+  text-align: start;
+}
+
+:where([dir="rtl"]) .sa-forecast-premium__disclaimer {
   text-align: right;
 }
 
@@ -3426,6 +3469,14 @@ a.sa-attention-card:hover {
 .sa-date-filter__module-desc,
 .sa-date-filter__current,
 .sa-date-filter__hint {
+  text-align: start;
+}
+
+:where([dir="rtl"]) .sa-date-filter__head,
+:where([dir="rtl"]) .sa-date-filter__module-title,
+:where([dir="rtl"]) .sa-date-filter__module-desc,
+:where([dir="rtl"]) .sa-date-filter__current,
+:where([dir="rtl"]) .sa-date-filter__hint {
   text-align: right;
 }
 
@@ -3450,6 +3501,10 @@ a.sa-attention-card:hover {
 }
 
 .sa-hero-status-chip {
+  text-align: start;
+}
+
+:where([dir="rtl"]) .sa-hero-status-chip {
   text-align: right;
 }
 
@@ -3458,6 +3513,14 @@ a.sa-attention-card:hover {
 .sa-attention-side-panel__title,
 .sa-attention-side-panel__desc,
 .sa-attention-side-panel__footer {
+  text-align: start;
+}
+
+:where([dir="rtl"]) .sa-attention-side-panel__head,
+:where([dir="rtl"]) .sa-attention-side-panel__head-copy,
+:where([dir="rtl"]) .sa-attention-side-panel__title,
+:where([dir="rtl"]) .sa-attention-side-panel__desc,
+:where([dir="rtl"]) .sa-attention-side-panel__footer {
   text-align: right;
 }
 
@@ -3471,6 +3534,12 @@ a.sa-attention-card:hover {
 .sa-attention-panel__summary,
 .sa-attention-panel__empty-title,
 .sa-attention-panel__empty-desc {
+  text-align: start;
+}
+
+:where([dir="rtl"]) .sa-attention-panel__summary,
+:where([dir="rtl"]) .sa-attention-panel__empty-title,
+:where([dir="rtl"]) .sa-attention-panel__empty-desc {
   text-align: right;
 }
 
@@ -3479,6 +3548,14 @@ a.sa-attention-card:hover {
 .sa-section-notice,
 .sa-period-banner,
 .sa-home-preview {
+  text-align: start;
+}
+
+:where([dir="rtl"]) .sa-section-scope-label,
+:where([dir="rtl"]) .sa-section-highlights,
+:where([dir="rtl"]) .sa-section-notice,
+:where([dir="rtl"]) .sa-period-banner,
+:where([dir="rtl"]) .sa-home-preview {
   text-align: right;
 }
 
@@ -3486,6 +3563,13 @@ a.sa-attention-card:hover {
 .sa-exec-compare-grid .dash-ui-stat-card__value,
 .sa-exec-compare-grid .dash-ui-stat-card__hint,
 .sa-exec-compare-grid .dash-ui-stat-card__trend {
+  text-align: start;
+}
+
+:where([dir="rtl"]) .sa-exec-compare-grid .dash-ui-stat-card__label,
+:where([dir="rtl"]) .sa-exec-compare-grid .dash-ui-stat-card__value,
+:where([dir="rtl"]) .sa-exec-compare-grid .dash-ui-stat-card__hint,
+:where([dir="rtl"]) .sa-exec-compare-grid .dash-ui-stat-card__trend {
   text-align: right;
 }
 

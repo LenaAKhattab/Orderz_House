@@ -30,8 +30,13 @@
 .oh-rle-table td {
   padding: 0.55rem 0.65rem;
   border-bottom: 1px solid #e8e6e1;
-  text-align: right;
+  text-align: start;
   vertical-align: top;
+}
+
+:where([dir="rtl"]) .oh-rle-table th,
+:where([dir="rtl"]) .oh-rle-table td {
+  text-align: right;
 }
 
 .oh-rle-user {
@@ -118,12 +123,16 @@
 
 .oh-rle-user-results button {
   width: 100%;
-  text-align: right;
+  text-align: start;
   border: 0;
   background: transparent;
   padding: 0.45rem 0.65rem;
   cursor: pointer;
   font: inherit;
+}
+
+:where([dir="rtl"]) .oh-rle-user-results button {
+  text-align: right;
 }
 
 .oh-rle-user-results button:hover,

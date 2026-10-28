@@ -323,13 +323,17 @@
   font-weight: 800;
   font-size: clamp(0.52rem, 2cqi, 0.68rem);
   line-height: 1.25;
-  text-align: right;
+  text-align: start;
   cursor: pointer;
   transition:
     background 0.2s ease,
     border-color 0.2s ease,
     box-shadow 0.2s ease,
     color 0.2s ease;
+}
+
+:where([dir="rtl"]) .home-hero-ipad-sidebar__item {
+  text-align: right;
 }
 
 .home-hero-ipad-sidebar__item:hover {
@@ -733,6 +737,10 @@
   border: 1px solid rgba(56, 82, 180, 0.14);
   background: linear-gradient(180deg, #ffffff 0%, rgba(251, 252, 255, 0.92) 100%);
   box-shadow: 0 8px 18px -12px rgba(56, 82, 180, 0.14);
+  text-align: start;
+}
+
+:where([dir="rtl"]) .home-hero-ipad-plan-card {
   text-align: right;
 }
 

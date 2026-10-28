@@ -299,6 +299,10 @@
   align-items: flex-start;
   justify-content: center;
   gap: 0.35rem;
+  text-align: start;
+}
+
+:where([dir="rtl"]) .ppm__copy {
   text-align: right;
 }
 

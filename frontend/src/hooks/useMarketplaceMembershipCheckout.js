@@ -51,16 +51,22 @@ export function useMarketplaceMembershipCheckout({
   const [checkoutError, setCheckoutError] = useState("");
   const [returnBanner, setReturnBanner] = useState(null);
   const handledReturnRef = useRef(new Set());
+  // Callers may pass an inline callback: keep it out of the dependency chain of the attempts loader, otherwise
+  // every render re-runs the load effect (10+ checkout-attempts requests per visit to the plans page).
+  const onMembershipUpdatedRef = useRef(onMembershipUpdated);
+  useEffect(() => {
+    onMembershipUpdatedRef.current = onMembershipUpdated;
+  }, [onMembershipUpdated]);
 
   const refreshMembership = useCallback(async () => {
     if (!user?.id) return null;
     invalidateFreelancerSessionCache();
     const snap = await fetchFreelancerMarketplaceMembershipCached(user.id, { force: true });
-    if (typeof onMembershipUpdated === "function") {
-      onMembershipUpdated(snap);
+    if (typeof onMembershipUpdatedRef.current === "function") {
+      onMembershipUpdatedRef.current(snap);
     }
     return snap;
-  }, [onMembershipUpdated, user?.id]);
+  }, [user?.id]);
 
   // Server-reconciled unresolved checkouts drive Continue payment / Confirming payment on the cards.
   const [attemptsSnapshot, setAttemptsSnapshot] = useState(null);

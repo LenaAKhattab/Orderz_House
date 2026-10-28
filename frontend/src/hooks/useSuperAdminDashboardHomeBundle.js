@@ -292,7 +292,9 @@ export function useSuperAdminDashboardHomeBundle(periodQuery = null) {
   );
 
   const requestExecutive = useCallback(() => {
-    if (executiveRef.current || executiveLoading) {
+    // The abort ref is set synchronously by loadExecutive: the hook and the analytics panel both request in the
+    // same commit, before executiveLoading state updates.
+    if (executiveRef.current || executiveLoading || executiveAbortRef.current) {
       devLog("executive-kpis deduped (already loaded or in flight)");
       return;
     }

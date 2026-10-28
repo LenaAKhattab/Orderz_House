@@ -864,9 +864,14 @@
 .aos-table th,
 .aos-table td {
   padding: 0.75rem 0.55rem;
-  text-align: right;
+  text-align: start;
   border-bottom: 1px solid var(--aos-line-soft);
   vertical-align: middle;
+}
+
+:where([dir="rtl"]) .aos-table th,
+:where([dir="rtl"]) .aos-table td {
+  text-align: right;
 }
 
 .aos-table th {

@@ -24,9 +24,14 @@
 .oh-admin-ads__table th,
 .oh-admin-ads__table td {
   padding: 10px 12px;
-  text-align: right;
+  text-align: start;
   border-bottom: 1px solid rgba(241, 245, 249, 0.95);
   white-space: nowrap;
+}
+
+:where([dir="rtl"]) .oh-admin-ads__table th,
+:where([dir="rtl"]) .oh-admin-ads__table td {
+  text-align: right;
 }
 
 .oh-admin-ads__table th {
@@ -73,6 +78,10 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  text-align: start;
+}
+
+:where([dir="rtl"]) .oh-admin-ads__field {
   text-align: right;
 }
 
@@ -206,13 +215,17 @@
 }
 
 .oh-admin-ads__layout-card {
-  text-align: right;
+  text-align: start;
   border-radius: 12px;
   border: 2px solid rgba(226, 232, 240, 0.95);
   padding: 10px 12px;
   background: var(--dash-card, #fcfcfd);
   cursor: pointer;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+:where([dir="rtl"]) .oh-admin-ads__layout-card {
+  text-align: right;
 }
 
 .oh-admin-ads__layout-card:hover {
@@ -442,6 +455,10 @@
   flex-direction: column;
   gap: 2px;
   align-items: flex-end;
+  text-align: start;
+}
+
+:where([dir="rtl"]) .oh-admin-ads__appear-cell {
   text-align: right;
 }
 
@@ -563,7 +580,7 @@
   flex-direction: column;
   align-items: stretch;
   gap: 8px;
-  text-align: right;
+  text-align: start;
   padding: 14px 14px 12px;
   border-radius: 14px;
   border: 2px solid #e2e8f0;
@@ -575,6 +592,10 @@
     box-shadow 0.15s ease;
   font: inherit;
   color: inherit;
+}
+
+:where([dir="rtl"]) .oh-ad-reschedule-card {
+  text-align: right;
 }
 
 .oh-ad-reschedule-card:hover:not(:disabled) {
@@ -1048,13 +1069,17 @@
 }
 
 .oh-admin-preset-card {
-  text-align: right;
+  text-align: start;
   border-radius: 14px;
   border: 2px solid #e2e8f0;
   padding: 10px 12px;
   background: var(--dash-card, #fcfcfd);
   cursor: pointer;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+:where([dir="rtl"]) .oh-admin-preset-card {
+  text-align: right;
 }
 
 .oh-admin-preset-card:hover {
@@ -1586,9 +1611,13 @@
     background 0.15s ease,
     border-color 0.15s ease,
     box-shadow 0.15s ease;
-  text-align: right;
+  text-align: start;
   line-height: 1.35;
   max-width: 100%;
+}
+
+:where([dir="rtl"]) .oh-admin-ads__theme-pill {
+  text-align: right;
 }
 
 .oh-admin-ads__theme-pill:hover {
@@ -1729,6 +1758,10 @@
   flex-shrink: 0;
   padding: 20px 24px 14px;
   border-bottom: 1px solid rgba(226, 232, 240, 0.95);
+  text-align: start;
+}
+
+:where([dir="rtl"]) .oh-admin-ads__template-picker-head {
   text-align: right;
 }
 
@@ -1778,13 +1811,17 @@
   margin: 0;
   padding: 12px 12px 10px;
   cursor: pointer;
-  text-align: right;
+  text-align: start;
   font: inherit;
   color: inherit;
   background: var(--dash-card, #fcfcfd);
   border-radius: 14px;
   border: 2px solid rgba(226, 232, 240, 0.95);
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+:where([dir="rtl"]) .oh-admin-ads__template-picker-choice {
+  text-align: right;
 }
 
 .oh-admin-ads__template-picker-choice:hover {
@@ -2318,8 +2355,12 @@
   border-radius: 14px;
   background: var(--dash-card-muted, #f9fafb);
   cursor: pointer;
-  text-align: right;
+  text-align: start;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+:where([dir="rtl"]) .oh-admin-ads__template-tile {
+  text-align: right;
 }
 
 .oh-admin-ads__template-tile:hover {

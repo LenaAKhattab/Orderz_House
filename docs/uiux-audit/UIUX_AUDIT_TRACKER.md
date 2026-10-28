@@ -198,4 +198,52 @@ Staging fixtures: [UIUX-P5] client (unpaid fixed order, failed-payment order, pr
 | Explicit freelancer-facing restriction notice | Phase 5 audit | PRODUCT_DECISION_REQUIRED (current design hides moderation) |
 | Notifications volume (11.6M rows / 11 GB in Production) | Phase 5 audit | PRODUCT_DECISION_REQUIRED (retention policy) |
 
-## Phase 6 — Final (pending)
+## Phase 6 — Final whole-platform consistency / release candidate
+
+Staging fixtures: [UIUX-P6] client, freelancer, restricted freelancer + tagged orders (pending, failed, bidding, assigned); cleaned after QA.
+Metrics crawl (Playwright, Staging API in-process + `vite preview`): every route × 6 views (AR/EN, 390 / 768 / 1024 / 1440) —
+overflow, page/console errors, failed requests, API 4xx/5xx, duplicate GETs, raw technical text, `html[dir]`.
+Baseline 510 loads (85 routes) → after 510 loads + gap crawls 342 loads (56 previously uncovered route URLs) + 42 targeted re-crawl loads.
+38 BEFORE / 38 AFTER captures for visual changes (Arabic pixel parity 0.00% on alignment-only pairs; remaining Arabic deltas traced to
+Staging data / capture timing, or intended date fix). Report: `%USERPROFILE%\OrderzHouse-UIUX-Audit\Phase-06-Final\report\index.html`.
+
+| ROUTE | SURFACE | ROLE | CLASS | NOTES |
+|---|---|---|---|---|
+| 19 admin / shared CSS files (48 rules) | Analytics, admins, rate limits, site pages, edit website, ads, articles hub, pantry, training orders, admin overview, notifications, plans, home offers / hero | All | FIX / POLISH | Last unscoped `text-align: right` → `start` + `:where([dir="rtl"])` restore (zero specificity, same cascade slot); scan now 0 |
+| `/dashboard/freelancer/articles/:id` | Article detail | Freelancer | FIX | Request loop: `useArticlesT` returned a new `t` every render → 53 GETs of `/application` per minute → stable `useCallback` |
+| `/dashboard/freelancer/plans` | Packages | Freelancer | FIX | Request loop: inline membership callback in the attempts-loader dependency chain → 10–11 `checkout-attempts` per visit → ref; API calls per load 24 → 13. Membership load failure no longer shown as «no active membership» (would invite a duplicate purchase) |
+| Dashboard layout (all roles) | Bell + sidebar badge | All | FIX | `unread-count` fetched twice per page → `shareInFlight` (one request while pending, nothing cached after) — also membership plans, popup ads, checkout attempts, institution membership, done projects, referral overview |
+| `/dashboard/super-admin` | Home / analytics | Super Admin | FIX | `executive-kpis` ×2 (hook + panel same commit) → abort-ref dedupe. `/analytics/visitors` 500 whenever PostHog timed out / unconfigured (`events = null`) and re-requested 5–6× → zeros + `meta.posthogError` (200) |
+| `/dashboard/super-admin/training-orders` | Rounds / status | Super Admin | FIX | Arabic page mixed `28/10/2026 11:44` (status bar) and `10/28/2026 11:44 AM` (round cards, rounds table, last run) → one UI-locale format |
+| `/dashboard/freelancer/orders/:id` | Held offer | Freelancer | POLISH | Neutral «عرضك قيد المراجعة قبل أن يظهر للعميل.» from existing `myBid.underReview` (no moderation reasons) |
+| `constants/authRoutes.js` | Navigation guards | Admin / SA | FIX | 5 Super-Admin-only pages + `/dashboard/referrals` missing from the role map (offered then bounced) → mirrored App.jsx guards |
+| Stale tests | Backend / frontend | — | FIX (tests) | Rate-limit config (public GETs on `public_read`), recurring price `prices.retrieve` before reuse, «Training Packages» label, CRLF-safe source reads |
+
+Result: duplicate GET overhead 577 → 57 extra requests per 510 loads (remaining = 30 s poll ticks inside slow pages + intermittent
+`/orders` pool ×2 in 1/18 loads); total API requests 4,367 → 3,846; overflow 0; page errors 0; raw technical text 0; `dir` mismatches 0.
+
+### Coverage map (App.jsx, 140 route patterns)
+
+| CLASS | COUNT | ROUTES |
+|---|---|---|
+| AUDITED | 127 | Phases 1–5 routes + Phase 6 gap crawl (admin shell ×12, Super Admin detail / CMS / footer editors, institutions, storage, legacy campaigns, training sub-pages, `/find-work`, `/community`, `/blog`, `/plans/:slug`, `/dashboard` redirect, `/unauthorized`, 404s, legacy join, `my-bonuses` guard) |
+| DISABLED | 8 | Elite Direct offer page (engine OFF), referrals ×3 (program off), `bid-credits`, `subscriptions/activation`, `admin/subscriptions`, `admin/membership-activations` (deprecated, hidden) |
+| LEGACY_REDIRECT | 5 | `legacy-freelancer-invites`, `footer-app-downloads`, `training-orders/rounds`, `client/my_orders`, `financial-user` |
+
+### Final issue register
+
+| ITEM | STATUS |
+|---|---|
+| Direction / alignment (all CSS) | RESOLVED (contract tests) |
+| Request storms (article page, plans page) and duplicate dashboard reads | RESOLVED (contract tests + re-crawl) |
+| Super Admin visitors 500 | RESOLVED (backend test) |
+| Training-orders mixed date formats | RESOLVED |
+| Misleading «no membership» on load failure | RESOLVED |
+| Navigation role map vs router | RESOLVED |
+| `/orders` pool fetched twice in 1/18 loads | TECHNICAL_DEBT_ACCEPTED (low) |
+| Stripe Elements / Arabic hosted checkout | PRODUCT_DECISION_REQUIRED |
+| PostHog frontend key; Bildazo on Staging | EXTERNAL_CONFIGURATION |
+| Activation terms 1–45 | CONTENT_REQUIRED |
+| Explicit restriction notice; admin create-without-view; multi-membership | PRODUCT_DECISION_REQUIRED (PERMISSION_POLICY / business policy) |
+| Unpaid-order retention; notifications volume | PRODUCT_DECISION_REQUIRED (DATA_RETENTION) |
+| Elite Direct, referrals | DISABLED (verified no `/api/api`, localized unavailable state) |

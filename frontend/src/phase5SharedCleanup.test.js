@@ -14,7 +14,8 @@ import {
 import { formatJoDateTime } from "./pages/dashboard/trainingOrders/trainingOrdersDisplayUtils.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const read = (p) => readFileSync(join(here, p), "utf8");
+// Normalize line endings: Windows checkouts (core.autocrlf) give CRLF, source contracts below assume LF.
+const read = (p) => readFileSync(join(here, p), "utf8").replace(/\r\n/g, "\n");
 const json = (p) => JSON.parse(read(p));
 function walk(dir, ext, out = []) {
   for (const e of readdirSync(dir, { withFileTypes: true })) {

@@ -18,7 +18,9 @@ function normalizeRange(range) {
   return posthogAnalyticsService.RANGE_PRESETS[r] ? r : "7d";
 }
 
-function buildConversionSummary(eventCounts = {}) {
+function buildConversionSummary(eventCountsIn) {
+  // `events` is null when PostHog failed / is not configured: degrade to zeros instead of a 500.
+  const eventCounts = eventCountsIn || {};
   const signups = Math.trunc(Number(eventCounts.signup_completed) || 0);
   const logins = Math.trunc(Number(eventCounts.user_logged_in) || 0);
   const subs = Math.trunc(Number(eventCounts.subscription_purchased) || 0);

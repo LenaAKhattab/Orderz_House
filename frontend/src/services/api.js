@@ -3,6 +3,7 @@ import api, {
   ADMIN_LIST_TIMEOUT_MS,
   ADMIN_LIST_HEAVY_TIMEOUT_MS,
 } from "./httpClient";
+import { shareInFlight } from "./shareInFlight";
 
 export { default } from "./httpClient";
 export {
@@ -157,10 +158,8 @@ export const listPublicPlansRequest = async () => {
 };
 
 /** Marketplace Membership catalog — one of three Admin-selectable default catalogs. */
-export const listPublicMarketplaceMembershipPlansRequest = async () => {
-  const { data } = await api.get("/marketplace-membership-plans");
-  return data;
-};
+export const listPublicMarketplaceMembershipPlansRequest = () =>
+  shareInFlight("public:marketplace-membership-plans", async () => (await api.get("/marketplace-membership-plans")).data);
 
 /** Public special-offer package (null when hidden). */
 export const getPublicSpecialOfferPackageRequest = async () => {
@@ -832,10 +831,10 @@ export const cancelTrainingPackageCheckoutRequest = async (sessionId) => {
 };
 
 /** Caller's unresolved membership checkouts, reconciled with Stripe server-side (no URLs / session ids). */
-export const getMarketplaceMembershipCheckoutAttemptsRequest = async () => {
-  const { data } = await api.get("/freelancer/marketplace-membership/checkout-attempts", { timeout: 30000 });
-  return data;
-};
+export const getMarketplaceMembershipCheckoutAttemptsRequest = () =>
+  shareInFlight("freelancer:membership-checkout-attempts", async () =>
+    (await api.get("/freelancer/marketplace-membership/checkout-attempts", { timeout: 30000 })).data,
+  );
 
 export const createMarketplaceMembershipCheckoutRequest = async (planCode) => {
   const code = typeof planCode === "string" ? planCode.trim() : "";
@@ -2154,10 +2153,8 @@ export const adminGetInstitutionalSchedulerHealthRequest = async () => {
   return data;
 };
 
-export const getInstitutionMembershipRequest = async () => {
-  const { data } = await api.get("/institution/membership");
-  return data;
-};
+export const getInstitutionMembershipRequest = () =>
+  shareInFlight("institution:membership", async () => (await api.get("/institution/membership")).data);
 
 export const getInstitutionPoolOrdersRequest = async (params = {}) => {
   const { data } = await api.get("/institution/orders/pool", { params });
@@ -2461,13 +2458,15 @@ export const listPortalFinancialClaimsRequest = async (params = {}) => {
   return data;
 };
 
-export const listPortalDoneProjectsRequest = async (params = {}) => {
-  const { data } = await api.get("/portal/financial-claims/done-projects", {
-    params: { ...params, _ts: Date.now() },
-    headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
+// Mount reload and the search effect ask together with the same params: share the in-flight request.
+export const listPortalDoneProjectsRequest = (params = {}) =>
+  shareInFlight(`portal:done-projects:${JSON.stringify(params)}`, async () => {
+    const { data } = await api.get("/portal/financial-claims/done-projects", {
+      params: { ...params, _ts: Date.now() },
+      headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
+    });
+    return data;
   });
-  return data;
-};
 
 export const createPortalFinancialClaimRequest = async (payload) => {
   const { data } = await api.post("/portal/financial-claims", payload);
@@ -3637,10 +3636,10 @@ export const postPublicAdClickRequest = async (adId, params = {}) => {
 };
 
 /** Active popup ads for current pathname (optional auth for audience targeting). */
-export const getPublicPopupAdsRequest = async ({ pathname = "/" } = {}) => {
-  const { data } = await api.get("/public/popup-ads", { params: { pathname }, timeout: 12000 });
-  return data;
-};
+export const getPublicPopupAdsRequest = ({ pathname = "/" } = {}) =>
+  shareInFlight(`public:popup-ads:${pathname}`, async () =>
+    (await api.get("/public/popup-ads", { params: { pathname }, timeout: 12000 })).data,
+  );
 
 export const postPublicPopupAdImpressionRequest = async (adId) => {
   await api.post(`/public/popup-ads/${adId}/impression`, {}, {

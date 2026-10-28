@@ -62,6 +62,10 @@
 
 .fp-hero__copy {
   min-width: 0;
+  text-align: start;
+}
+
+:where([dir="rtl"]) .fp-hero__copy {
   text-align: right;
 }
 
