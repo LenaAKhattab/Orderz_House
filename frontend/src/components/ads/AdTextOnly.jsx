@@ -15,7 +15,7 @@ export default function AdTextOnly({ ad, className = "", onTrackClick, compact }
 
   const inner = (
     <article
-      className={`relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-5 text-right shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl ${className}`.trim()}
+      className={`relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-5 text-start shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl ${className}`.trim()}
       style={{
         backgroundColor: ad.backgroundColor || "#ffffff",
         borderColor: ad.borderColor || undefined,

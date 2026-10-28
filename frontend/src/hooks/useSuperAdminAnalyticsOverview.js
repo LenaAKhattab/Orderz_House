@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { fetchSuperAdminOverview } from "../services/superAdminAnalytics";
+import { getSafeApiErrorMessage } from "../utils/apiErrorMessage.js";
 
 const REFRESH_MS = 60_000;
 
@@ -17,7 +18,7 @@ function mapAnalyticsError(e) {
     };
   }
   return {
-    message: e?.response?.data?.message || message || "تعذر تحميل لوحة التحليلات.",
+    message: getSafeApiErrorMessage(e, "تعذر تحميل لوحة التحليلات."),
     code: e?.response?.data?.code || "",
     canceled: false,
   };

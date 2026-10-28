@@ -27,12 +27,14 @@ export function showBrowserNotification({ title, body, link, tag }) {
   if (!isBrowserNotificationSupported()) return null;
   if (Notification.permission !== "granted") return null;
 
-  const n = new Notification(title || "إشعار جديد", {
+  // Follow the UI language (set on <html lang> by the language provider).
+  const lang = typeof document !== "undefined" && document.documentElement.lang === "en" ? "en" : "ar";
+  const n = new Notification(title || (lang === "en" ? "New notification" : "إشعار جديد"), {
     body: body || "",
     tag: tag || undefined,
     icon: "/logo.png",
-    dir: "rtl",
-    lang: "ar",
+    dir: lang === "en" ? "ltr" : "rtl",
+    lang,
   });
 
   n.onclick = (ev) => {

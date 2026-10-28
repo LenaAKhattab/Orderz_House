@@ -86,7 +86,7 @@ export default function AdCarousel({ ad, className = "", onTrackClick, compact }
           </>
         ) : null}
       </div>
-      <div className="p-5 text-right" dir="rtl">
+      <div className="p-5 text-start" dir="auto">
         <h3 className="text-lg font-extrabold" style={{ color: ad.titleColor || "#0f172a" }}>
           {truncateText(ad.title, compact ? 52 : 76)}
         </h3>

@@ -14,7 +14,7 @@ import { useTranslation } from "../../i18n/LanguageProvider";
 import "../../i18n/opsAdminResources";
 import { useToast } from "../../components/ui/toastContext";
 import { listSuperAdminFeedbackCategoriesRequest, listSuperAdminFeedbackRequest } from "../../services/api";
-import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
+import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage.js";
 import {
   FEEDBACK_PRIORITIES,
   FEEDBACK_STATUSES,
@@ -77,6 +77,9 @@ export default function SuperAdminFeedbackPage() {
   const [priorityFilter, setPriorityFilter] = useState("");
 
   const useDynamicCategoryFilter = filterCategories.length > 0;
+  // Only a selected category depends on whether DB categories loaded — an empty filter must not refetch (and
+  // abort the first page) when the category list arrives.
+  const categoryQueryKey = !categoryFilter ? "" : `${useDynamicCategoryFilter ? "categoryId" : "type"}:${categoryFilter}`;
 
   useEffect(() => {
     const timer = window.setTimeout(() => setDebouncedQ(searchInput.trim()), ADMIN_LIST_SEARCH_DEBOUNCE_MS);
@@ -117,9 +120,9 @@ export default function SuperAdminFeedbackPage() {
         listSuperAdminFeedbackRequest(
           {
             q: debouncedQ || undefined,
-            ...(useDynamicCategoryFilter
-              ? { categoryId: categoryFilter || undefined }
-              : { type: categoryFilter || undefined }),
+            ...(categoryQueryKey
+              ? { [categoryQueryKey.split(":")[0]]: categoryQueryKey.slice(categoryQueryKey.indexOf(":") + 1) }
+              : {}),
             status: statusFilter || undefined,
             userRole: roleFilter || undefined,
             priority: priorityFilter || undefined,
@@ -144,8 +147,7 @@ export default function SuperAdminFeedbackPage() {
   }, [
     runListLoad,
     debouncedQ,
-    categoryFilter,
-    useDynamicCategoryFilter,
+    categoryQueryKey,
     statusFilter,
     roleFilter,
     priorityFilter,

@@ -9,6 +9,8 @@ import {
 } from "./marketplaceArticleFormUtils";
 import { formatActivationBudgetState } from "../../constants/freelancerActivationCampaign";
 import { useArticlesT } from "./useArticlesT";
+import { statusLabel } from "../../i18n/statusRegistry.js";
+import { useTranslation } from "../../i18n/LanguageProvider";
 
 export default function MarketplaceArticleCard({
   article,
@@ -17,6 +19,7 @@ export default function MarketplaceArticleCard({
   activationCampaigns = [],
 }) {
   const { t, locale } = useArticlesT();
+  const { t: globalT } = useTranslation();
   if (!article) return null;
   const value =
     article.articleValueJod != null
@@ -49,7 +52,7 @@ export default function MarketplaceArticleCard({
         </div>
         <div className="oh-mmp-card__badges">
           <StatusBadge tone={article.status === "published" ? "success" : "neutral"}>
-            {article.status}
+            {statusLabel(globalT, "articles", article.status)}
           </StatusBadge>
           {article.isFakeOrTraining ? (
             <StatusBadge tone="warning">{t("common.training")}</StatusBadge>

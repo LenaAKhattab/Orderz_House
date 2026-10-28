@@ -12,7 +12,7 @@ import {
   resolvePublicPlansGridClassName,
 } from "./plansLayoutUtils";
 import { normalizePublicSpecialOffer } from "../../constants/specialOfferPackage";
-import { membershipCheckoutStateForPlan } from "../../lib/marketplaceMembership/membershipCheckoutState";
+import { membershipCheckoutStateForPlan, specialOfferCheckoutState } from "../../lib/marketplaceMembership/membershipCheckoutState";
 import "../../styles/publicPlans.css";
 import "../../styles/plansPage.css";
 
@@ -148,7 +148,7 @@ const PricingSection = ({
             offer={specialOffer}
             t={t}
             checkoutBusy={specialOfferCheckoutBusy}
-            checkoutState={checkoutStates?.specialOffer || null}
+            checkoutState={specialOfferCheckoutState(checkoutStates, specialOffer)}
             onCheckout={onSpecialOfferCheckout}
           />
           <div className="pricing__regular-grid">{planCards}</div>

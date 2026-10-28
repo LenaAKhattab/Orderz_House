@@ -17,6 +17,7 @@ import DashboardEmptyState from "../../components/dashboard/DashboardEmptyState"
 import BrowserNotificationSettings from "../../components/notifications/BrowserNotificationSettings";
 import { breadcrumbHomeCrumb } from "../../components/dashboard/dashboardBreadcrumbs";
 import { useTranslation } from "../../i18n/LanguageProvider";
+import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
 import "../../i18n/opsAdminResources";
 import "./shared/account-pages.css";
 
@@ -58,7 +59,7 @@ export default function StaffAccountSettingsPage({ heroKicker, heroTitle, heroLe
         setNotif(mergeNotificationPrefs(u.notificationPreferences));
       }
     } catch (e) {
-      setError(e?.response?.data?.message || e?.message || t("opsAdmin.staffAccount.loadFailed"));
+      setError(getSafeApiErrorMessage(e, t("opsAdmin.staffAccount.loadFailed")));
     } finally {
       setLoading(false);
     }
@@ -100,7 +101,7 @@ export default function StaffAccountSettingsPage({ heroKicker, heroTitle, heroLe
       await refreshUser();
       toast.success(t("opsAdmin.staffAccount.savedSettings"));
     } catch (e) {
-      toast.error(e?.response?.data?.message || e?.message || t("opsAdmin.staffAccount.saveFailed"));
+      toast.error(getSafeApiErrorMessage(e, t("opsAdmin.staffAccount.saveFailed")));
     } finally {
       setSaving(false);
     }
@@ -119,7 +120,7 @@ export default function StaffAccountSettingsPage({ heroKicker, heroTitle, heroLe
       setConfirmPassword("");
       toast.success(t("opsAdmin.staffAccount.passwordUpdated"));
     } catch (e) {
-      toast.error(e?.response?.data?.message || e?.message || t("opsAdmin.staffAccount.passwordChangeFailed"));
+      toast.error(getSafeApiErrorMessage(e, t("opsAdmin.staffAccount.passwordChangeFailed")));
     } finally {
       setPwSaving(false);
     }
@@ -140,7 +141,7 @@ export default function StaffAccountSettingsPage({ heroKicker, heroTitle, heroLe
       await load();
       toast.success(t("opsAdmin.staffAccount.avatarUpdated"));
     } catch (err) {
-      toast.error(err?.response?.data?.message || err?.message || t("opsAdmin.staffAccount.uploadFailed"));
+      toast.error(getSafeApiErrorMessage(err, t("opsAdmin.staffAccount.uploadFailed")));
     } finally {
       setAvatarBusy(false);
     }
@@ -154,7 +155,7 @@ export default function StaffAccountSettingsPage({ heroKicker, heroTitle, heroLe
       await load();
       toast.success(t("opsAdmin.staffAccount.avatarRemoved"));
     } catch (err) {
-      toast.error(err?.response?.data?.message || err?.message || t("opsAdmin.staffAccount.removeFailed"));
+      toast.error(getSafeApiErrorMessage(err, t("opsAdmin.staffAccount.removeFailed")));
     } finally {
       setAvatarBusy(false);
     }

@@ -17,7 +17,7 @@ describe("bid amount modal polish", () => {
     assert.match(modalSrc, /orders\.bid\.summaryLabel/);
     assert.match(modalSrc, /orders\.bid\.inputHelper/);
     assert.match(cssSrc, /\.oh-bid-modal[\s\S]*border-radius: 1\.5rem/);
-    assert.match(enLocale, /"sendTitle": "Send your offer for this project"/);
+    assert.match(enLocale, /"sendTitle": "Send your offer for this order"/);
     assert.match(enLocale, /"submitting": "Sending\.\.\."/);
   });
 });

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { getAdminFreelancersForAssignment } from "../../services/api";
 import { SelectPanelBusySkeleton } from "../ui/Skeleton";
 import { useTranslation } from "../../i18n/LanguageProvider";
+import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
 import "../../i18n/ordersAdminResources";
 import "./AdminFreelancerSelector.css";
 
@@ -66,7 +67,7 @@ export default function AdminFreelancerSelector({ active, value, selectedFreelan
       setFreelancers(Array.isArray(list) ? list : []);
     } catch (e) {
       setFreelancers([]);
-      setError(e?.response?.data?.message || e?.message || t("ordersAdmin.freelancerSelector.loadFailed"));
+      setError(getSafeApiErrorMessage(e, t("ordersAdmin.freelancerSelector.loadFailed")));
     } finally {
       setLoading(false);
     }

@@ -1,3 +1,4 @@
+import { formatLocaleDateTime } from "../../i18n/formatLocale.js";
 import { getFreelancerOrderEligibilityMessage } from "../../utils/freelancerEligibilityUi.js";
 import { getTranslation } from "../../lib/translation/getTranslation.js";
 import "../../i18n/subscriptionsResources.js";
@@ -32,8 +33,9 @@ export function formatSubscriptionAdminDate(value) {
 /**
  * Stable Arabic admin date/time: DD/MM/YYYY، h:mm م|ص (Latin digits, Amman TZ).
  */
-export function formatSubscriptionAdminDateTime(value) {
+export function formatSubscriptionAdminDateTime(value, locale = "ar") {
   if (!value) return "—";
+  if (locale === "en") return formatLocaleDateTime(value, "en");
 
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "—";
@@ -42,7 +44,7 @@ export function formatSubscriptionAdminDateTime(value) {
     const datePart = formatSubscriptionAdminDate(value);
     if (datePart === "—") return "—";
 
-    const timePart = new Intl.DateTimeFormat("ar", {
+    const timePart = new Intl.DateTimeFormat("ar-JO-u-nu-latn", {
       timeZone: SUBSCRIPTION_ADMIN_TZ,
       hour: "numeric",
       minute: "2-digit",

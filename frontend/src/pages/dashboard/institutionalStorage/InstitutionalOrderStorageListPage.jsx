@@ -16,7 +16,7 @@ import {
   adminListInstitutionalStoragesRequest,
   adminListInstitutionsRequest,
 } from "../../../services/api";
-import { getSafeApiErrorMessage, isAxiosTimeoutError } from "../../../utils/apiErrorMessage";
+import { getSafeApiErrorMessage, isAxiosTimeoutError } from "../../../utils/apiErrorMessage.js";
 
 const BASE = "/dashboard/super-admin/institutional-order-storage";
 const PAGE_SIZE_OPTIONS = [10, 20, 50];
@@ -63,7 +63,7 @@ function formatMoney(value, t) {
 function formatDate(value, locale) {
   if (!value) return "—";
   try {
-    return new Date(value).toLocaleDateString(locale === "en" ? "en-GB" : "ar-JO");
+    return new Date(value).toLocaleDateString(locale === "en" ? "en-GB" : "ar-JO-u-nu-latn");
   } catch {
     return String(value);
   }
@@ -72,7 +72,7 @@ function formatDate(value, locale) {
 function formatDateTime(value, locale) {
   if (!value) return "—";
   try {
-    return new Date(value).toLocaleString(locale === "en" ? "en-GB" : "ar-JO");
+    return new Date(value).toLocaleString(locale === "en" ? "en-GB" : "ar-JO-u-nu-latn");
   } catch {
     return String(value);
   }

@@ -8,6 +8,7 @@ import {
   getCachedSpecialOfferPackage,
 } from "../services/freelancerSessionCache";
 import { catalogSourceForPlanCatalog, isMarketplacePlanCatalog } from "../constants/planCatalogs";
+import { getSafeApiErrorMessage } from "../utils/apiErrorMessage.js";
 
 const LOAD_ERROR_AR = "تعذر تحميل الباقات الافتراضية.";
 
@@ -106,7 +107,7 @@ export function useDefaultCatalogPlans({
           setSpecialOfferPackage(null);
           setCatalogResolved(false);
         }
-        setError(err?.response?.data?.message || err?.message || LOAD_ERROR_AR);
+        setError(getSafeApiErrorMessage(err, LOAD_ERROR_AR));
       })
       .finally(() => {
         if (cancelled || generation !== generationRef.current) return;

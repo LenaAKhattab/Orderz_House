@@ -41,6 +41,7 @@ import { isPoolOrderAvailable, poolFixedParticipationPending } from "../../utils
 import { isPoolOrderTakenAsAssignment } from "../../utils/poolOrderTakeOutcome";
 import { Lock } from "lucide-react";
 import ClientEliteDirectOfferPanel from "./ClientEliteDirectOfferPanel";
+import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage.js";
 
 function typeLabel(projectType, t) {
   return formatOrderProjectType(projectType, t);
@@ -104,7 +105,7 @@ export default function FreelancerOrderDetailsPage() {
         if (!cancelled) setOrder(resPool?.data?.order || null);
       } catch (e) {
         if (!cancelled) {
-          push({ type: "error", title: t("orders.details.loadError"), message: e?.response?.data?.message || e?.message });
+          push({ type: "error", title: t("orders.details.loadError"), message: getSafeApiErrorMessage(e) });
           navigate(isClient ? "/dashboard/client/orders" : "/dashboard/freelancer/orders", { replace: true });
         }
       } finally {
@@ -182,7 +183,7 @@ export default function FreelancerOrderDetailsPage() {
       push({
         type: "error",
         title: t("orders.marketplace.takeOrderError"),
-        message: e?.response?.data?.message || e?.message,
+        message: getSafeApiErrorMessage(e),
       });
     } finally {
       setTaking(false);
@@ -239,7 +240,7 @@ export default function FreelancerOrderDetailsPage() {
       push({
         type: "error",
         title: t("orders.marketplace.submitBidError"),
-        message: e?.response?.data?.message || e?.message,
+        message: getSafeApiErrorMessage(e),
       });
     } finally {
       setBidBusy(false);

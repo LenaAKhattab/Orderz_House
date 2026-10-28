@@ -967,18 +967,22 @@
 .sa-collapsible__trigger {
   display: grid;
   grid-template-columns: auto 1fr auto auto;
-  direction: rtl;
   width: 100%;
   align-items: center;
   gap: 0.55rem 0.65rem;
   border: none;
   background: transparent;
   cursor: pointer;
-  text-align: right;
+  text-align: start;
   font: inherit;
   color: inherit;
   padding: 0.95rem 1.15rem;
   transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+:where([dir="rtl"]) .sa-collapsible__trigger {
+  direction: rtl;
+  text-align: right;
 }
 
 .sa-collapsible__trigger:focus-visible {
@@ -1695,6 +1699,10 @@
   align-items: center;
   gap: 0.35rem;
   padding: 0 0.1rem;
+  text-align: start;
+}
+
+:where([dir="rtl"]) .sa-attention-panel__group-head {
   direction: rtl;
   text-align: right;
 }
@@ -1744,7 +1752,6 @@
 .sa-attention-card {
   display: grid;
   grid-template-columns: auto 1fr auto;
-  direction: rtl;
   align-items: center;
   gap: 0.55rem 0.65rem;
   padding: 0.55rem 0.65rem;
@@ -1753,8 +1760,13 @@
   background: var(--dash-card, #fcfcfd);
   text-decoration: none;
   color: inherit;
-  text-align: right;
+  text-align: start;
   transition: border-color 0.12s, box-shadow 0.12s, transform 0.12s;
+}
+
+:where([dir="rtl"]) .sa-attention-card {
+  direction: rtl;
+  text-align: right;
 }
 
 a.sa-attention-card:hover {
@@ -2288,6 +2300,10 @@ a.sa-attention-card:hover {
   background: linear-gradient(165deg, #eef3ff 0%, #f8fafc 42%, #f1f5f9 100%);
   padding: 0 0 1.25rem;
   border-radius: 14px;
+  text-align: start;
+}
+
+:where([dir="rtl"]) .sa-analytics--premium {
   direction: rtl;
   text-align: right;
 }
@@ -2423,6 +2439,10 @@ a.sa-attention-card:hover {
   border: 1px solid color-mix(in oklab, #93c5fd 32%, var(--sa-line));
   background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
   box-shadow: var(--sa-shadow-soft);
+  text-align: start;
+}
+
+:where([dir="rtl"]) .sa-date-filter--control {
   direction: rtl;
   text-align: right;
 }
@@ -2522,6 +2542,10 @@ a.sa-attention-card:hover {
   min-width: 0;
   max-width: 100%;
   align-self: start;
+  text-align: start;
+}
+
+:where([dir="rtl"]) .sa-dashboard-side-column {
   direction: rtl;
   text-align: right;
 }
@@ -2532,6 +2556,10 @@ a.sa-attention-card:hover {
   flex-direction: column;
   gap: 0.35rem;
   align-self: start;
+  text-align: start;
+}
+
+:where([dir="rtl"]) .sa-dashboard-main-column {
   direction: rtl;
   text-align: right;
 }
@@ -2599,6 +2627,10 @@ a.sa-attention-card:hover {
   position: sticky;
   top: 0;
   z-index: 1;
+  text-align: start;
+}
+
+:where([dir="rtl"]) .sa-attention-side-panel {
   direction: rtl;
   text-align: right;
 }
@@ -2724,7 +2756,6 @@ a.sa-attention-card:hover {
   display: flex;
   flex-wrap: nowrap;
   flex-direction: row;
-  direction: rtl;
   align-items: flex-start;
   gap: 0.5rem;
   width: 100%;
@@ -2734,10 +2765,15 @@ a.sa-attention-card:hover {
   padding: 0.55rem 0.6rem;
   min-height: 0;
   min-width: 0;
-  text-align: right;
+  text-align: start;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
   border-inline-start-width: 3px;
   border-inline-start-style: solid;
+}
+
+:where([dir="rtl"]) .sa-attention-side-panel .sa-attention-card {
+  direction: rtl;
+  text-align: right;
 }
 
 .sa-attention-side-panel .sa-attention-card--urgent {
@@ -3266,11 +3302,19 @@ a.sa-attention-card:hover {
 
 /* RTL alignment — Super Admin home dashboard (grid stays LTR for column placement) */
 .sa-analytics--premium .dash-ui-section {
+  text-align: start;
+}
+
+:where([dir="rtl"]) .sa-analytics--premium .dash-ui-section {
   direction: rtl;
   text-align: right;
 }
 
 .sa-analytics--premium .dash-ui-section__head {
+  text-align: start;
+}
+
+:where([dir="rtl"]) .sa-analytics--premium .dash-ui-section__head {
   direction: rtl;
   text-align: right;
 }
@@ -3281,6 +3325,10 @@ a.sa-attention-card:hover {
 }
 
 .sa-analytics--premium .dash-ui-stat-card {
+  text-align: start;
+}
+
+:where([dir="rtl"]) .sa-analytics--premium .dash-ui-stat-card {
   direction: rtl;
   text-align: right;
 }
@@ -3298,6 +3346,9 @@ a.sa-attention-card:hover {
 }
 
 .sa-analytics--premium .dash-ui-stat-card__trend {
+}
+
+:where([dir="rtl"]) .sa-analytics--premium .dash-ui-stat-card__trend {
   direction: rtl;
 }
 
@@ -3308,11 +3359,19 @@ a.sa-attention-card:hover {
 }
 
 .sa-forecast-premium {
+  text-align: start;
+}
+
+:where([dir="rtl"]) .sa-forecast-premium {
   direction: rtl;
   text-align: right;
 }
 
 .sa-forecast-premium__top {
+  text-align: start;
+}
+
+:where([dir="rtl"]) .sa-forecast-premium__top {
   direction: rtl;
   text-align: right;
 }
@@ -3323,14 +3382,21 @@ a.sa-attention-card:hover {
 }
 
 .sa-forecast-premium__growth {
-  direction: rtl;
-  text-align: right;
+  text-align: start;
   justify-content: flex-start;
 }
 
-.sa-forecast-premium__metrics {
+:where([dir="rtl"]) .sa-forecast-premium__growth {
   direction: rtl;
+  text-align: right;
+}
+
+.sa-forecast-premium__metrics {
   justify-content: flex-start;
+}
+
+:where([dir="rtl"]) .sa-forecast-premium__metrics {
+  direction: rtl;
 }
 
 .sa-forecast-premium__metric {
@@ -3344,6 +3410,10 @@ a.sa-attention-card:hover {
 
 .sa-date-filter__presets,
 .sa-date-filter__custom {
+}
+
+:where([dir="rtl"]) .sa-date-filter__presets,
+:where([dir="rtl"]) .sa-date-filter__custom {
   direction: rtl;
 }
 
@@ -3360,6 +3430,9 @@ a.sa-attention-card:hover {
 }
 
 .sa-date-filter__field {
+}
+
+:where([dir="rtl"]) .sa-date-filter__field {
   direction: rtl;
 }
 
@@ -3369,8 +3442,11 @@ a.sa-attention-card:hover {
 }
 
 .sa-hero-status-chips {
-  direction: rtl;
   justify-content: flex-start;
+}
+
+:where([dir="rtl"]) .sa-hero-status-chips {
+  direction: rtl;
 }
 
 .sa-hero-status-chip {
@@ -3386,6 +3462,9 @@ a.sa-attention-card:hover {
 }
 
 .sa-attention-side-panel__head-actions {
+}
+
+:where([dir="rtl"]) .sa-attention-side-panel__head-actions {
   direction: rtl;
 }
 
@@ -3411,6 +3490,10 @@ a.sa-attention-card:hover {
 }
 
 .sa-control-header--premium {
+  text-align: start;
+}
+
+:where([dir="rtl"]) .sa-control-header--premium {
   direction: rtl;
   text-align: right;
 }

@@ -136,7 +136,7 @@ function StatCards({ stats, statsPayload, mode }) {
 }
 
 export default function HeroDashboardMockup({ statsPayload }) {
-  const { t } = useTranslation();
+  const { t, dir: uiDir } = useTranslation();
   const hm = "home.heroMockup";
   const hs = "home.heroStrip";
   const analyticsStats = useMemo(
@@ -211,7 +211,7 @@ export default function HeroDashboardMockup({ statsPayload }) {
             </button>
           </aside>
 
-          <div className="home-hero__dash-main" dir="rtl">
+          <div className="home-hero__dash-main" dir={uiDir}>
             <header className="home-hero__dash-head">
               <div className="home-hero__dash-head-text">
                 <p className="home-hero__dash-welcome">{t(`${hm}.welcome`)}</p>

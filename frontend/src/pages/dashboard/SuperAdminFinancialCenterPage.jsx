@@ -48,6 +48,7 @@ import FinancialCenterRowActions from "./financialCenter/FinancialCenterRowActio
 import FinancialCenterPagination, { FC_TABLE_PAGE_SIZE } from "./financialCenter/FinancialCenterPagination";
 import { allocationPaidBadge, getAuditActionLabel } from "./financialCenter/financialCenterAuditLabels";
 import { getFinancialDepartmentLabel } from "./financialCenter/financialDepartmentLabels";
+import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
 import "./financialCenter/superAdminFinancialCenter.css";
 
 const FC_EMPLOYEE_PATH = (id) => `/dashboard/super-admin/financial-center/employees/${id}`;
@@ -235,7 +236,7 @@ function AllocationAddButton({ onClick, t }) {
 }
 
 export default function SuperAdminFinancialCenterPage() {
-  const { t } = useTranslation();
+  const { t, dir: uiDir } = useTranslation();
   const { push } = useToast();
   const navigate = useNavigate();
   const [monthFilter, setMonthFilter] = useState(currentMonthKey());
@@ -289,7 +290,7 @@ export default function SuperAdminFinancialCenterPage() {
       setSummary(sumRes?.data?.summary || null);
       setDepartments(deptRes?.data?.departments || []);
     } catch (e) {
-      push(e?.response?.data?.message || e?.message || t("finance.financialCenter.loadError"), "error");
+      push(getSafeApiErrorMessage(e, t("finance.financialCenter.loadError")), "error");
     } finally {
       setSummaryLoading(false);
     }
@@ -308,7 +309,7 @@ export default function SuperAdminFinancialCenterPage() {
       setPeople(peopleRes?.data?.people || []);
       setPeopleTotal(peopleRes?.data?.total ?? 0);
     } catch (e) {
-      push(e?.response?.data?.message || e?.message || t("finance.financialCenter.loadError"), "error");
+      push(getSafeApiErrorMessage(e, t("finance.financialCenter.loadError")), "error");
     } finally {
       setPeopleLoading(false);
     }
@@ -330,7 +331,7 @@ export default function SuperAdminFinancialCenterPage() {
       setRows(rowsRes?.data?.rows || []);
       setBonusRowsTotal(rowsRes?.data?.total ?? 0);
     } catch (e) {
-      push(e?.response?.data?.message || e?.message || t("finance.financialCenter.loadError"), "error");
+      push(getSafeApiErrorMessage(e, t("finance.financialCenter.loadError")), "error");
     } finally {
       setRowsLoading(false);
     }
@@ -480,7 +481,7 @@ export default function SuperAdminFinancialCenterPage() {
       setPersonModal(null);
       await reloadAll();
     } catch (e) {
-      push(e?.response?.data?.message || t("finance.financialCenter.personSaveError"), "error");
+      push(getSafeApiErrorMessage(e, t("finance.financialCenter.personSaveError")), "error");
     } finally {
       setActionBusy(false);
     }
@@ -520,7 +521,7 @@ export default function SuperAdminFinancialCenterPage() {
       setAccountModal(null);
       await reloadAll();
     } catch (e) {
-      push(e?.response?.data?.message || t("finance.financialCenter.accountCreateError"), "error");
+      push(getSafeApiErrorMessage(e, t("finance.financialCenter.accountCreateError")), "error");
     } finally {
       setActionBusy(false);
     }
@@ -536,7 +537,7 @@ export default function SuperAdminFinancialCenterPage() {
       push(suspend ? t("finance.financialCenter.accountSuspendedOk") : t("finance.financialCenter.accountActivatedOk"), "success");
       await reloadAll();
     } catch (e) {
-      push(e?.response?.data?.message || t("finance.financialCenter.accountUpdateError"), "error");
+      push(getSafeApiErrorMessage(e, t("finance.financialCenter.accountUpdateError")), "error");
     } finally {
       setActionBusy(false);
     }
@@ -576,7 +577,7 @@ export default function SuperAdminFinancialCenterPage() {
       });
       setBonusModal(r.id);
     } catch (e) {
-      push(e?.response?.data?.message || t("finance.financialCenter.loadRowError"), "error");
+      push(getSafeApiErrorMessage(e, t("finance.financialCenter.loadRowError")), "error");
     } finally {
       setActionBusy(false);
     }
@@ -626,7 +627,7 @@ export default function SuperAdminFinancialCenterPage() {
       setBonusModal(null);
       await reloadAll();
     } catch (e) {
-      push(e?.response?.data?.message || t("finance.financialCenter.saveBonusError"), "error");
+      push(getSafeApiErrorMessage(e, t("finance.financialCenter.saveBonusError")), "error");
     } finally {
       setActionBusy(false);
     }
@@ -643,7 +644,7 @@ export default function SuperAdminFinancialCenterPage() {
         setDetailRow(res?.data?.row || null);
       }
     } catch (e) {
-      push(e?.response?.data?.message || t("finance.financialCenter.actionFailed"), "error");
+      push(getSafeApiErrorMessage(e, t("finance.financialCenter.actionFailed")), "error");
     } finally {
       setActionBusy(false);
     }
@@ -729,7 +730,7 @@ export default function SuperAdminFinancialCenterPage() {
       setDetailRow(res?.data?.row || null);
       setReceivedModal(false);
     } catch (e) {
-      push(e?.response?.data?.message || t("finance.financialCenter.actionFailed"), "error");
+      push(getSafeApiErrorMessage(e, t("finance.financialCenter.actionFailed")), "error");
     } finally {
       setActionBusy(false);
     }
@@ -1116,7 +1117,7 @@ export default function SuperAdminFinancialCenterPage() {
           </>
         }
       >
-        <div className="dash-ui-modal__form" dir="rtl">
+        <div className="dash-ui-modal__form" dir={uiDir}>
           <DashboardFieldGroup label={`${t("finance.financialCenter.colName")} *`}>
             <input
               className="input"
@@ -1280,7 +1281,7 @@ export default function SuperAdminFinancialCenterPage() {
           </>
         }
       >
-        <div className="dash-ui-modal__form" dir="rtl">
+        <div className="dash-ui-modal__form" dir={uiDir}>
           <DashboardFieldGroup label={`${t("finance.financialCenter.colTitle")} *`}>
             <input
               className="input"
@@ -1537,7 +1538,7 @@ export default function SuperAdminFinancialCenterPage() {
           </>
         }
       >
-        <div className="dash-ui-modal__form" dir="rtl">
+        <div className="dash-ui-modal__form" dir={uiDir}>
           <DashboardFieldGroup label={t("finance.financialCenter.loginEmail")}>
             <input
               className="input"
@@ -1733,7 +1734,7 @@ export default function SuperAdminFinancialCenterPage() {
           </>
         }
       >
-        <div className="dash-ui-modal__form" dir="rtl">
+        <div className="dash-ui-modal__form" dir={uiDir}>
           <DashboardFieldGroup label={t("finance.financialCenter.receivedStatus")}>
             <select
               className="input"

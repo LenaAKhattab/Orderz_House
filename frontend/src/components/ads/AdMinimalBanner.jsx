@@ -19,7 +19,7 @@ export default function AdMinimalBanner({ ad, className = "", onTrackClick }) {
         backgroundColor: ad.backgroundColor || "#ffffff",
         borderColor: ad.borderColor || undefined,
       }}
-      dir="rtl"
+      dir="auto"
     >
       <div className="absolute start-2 top-2">
         <AdSponsoredLabel className="rounded bg-white/95 px-1.5 py-0.5 text-[0.58rem] shadow-sm" />
@@ -38,7 +38,7 @@ export default function AdMinimalBanner({ ad, className = "", onTrackClick }) {
           ◆
         </div>
       )}
-      <div className="min-w-0 flex-1 pt-3 text-right">
+      <div className="min-w-0 flex-1 pt-3 text-start">
         <p className="truncate text-sm font-extrabold" style={{ color: ad.titleColor || "#0f172a" }}>
           {truncateText(ad.title, 64)}
         </p>

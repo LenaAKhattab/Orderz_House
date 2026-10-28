@@ -145,5 +145,57 @@ Staging fixtures: [UIUX-P4] client, freelancer (Annual SILVER, deliveries/revisi
 | `/dashboard/admin/settings` | Admin settings | Admin | ✓/✓ | ✓ | ✓ | ✓ | ✓ | POLISH | ✓ | ✓ |  |
 | `/dashboard/super-admin` | Navigation | Super Admin | ✓/✓ | ✓ | ✓ | ✓ | ✓ | KEEP | ✓ | ✓ | 8 مجموعات منطقية، حالة نشطة واضحة، طي وقائمة جوال سليمة — لم يُعد تنظيم الوحدات |
 
-## Phase 5 — Shared components (pending)
+## Phase 5 — Shared UI, deferred states, payment trust
+
+Staging fixtures: [UIUX-P5] client (unpaid fixed order, failed-payment order, priced bidding order with an offer), freelancer (assigned order), restricted freelancer (bids + messaging, 14-day expiry); cleaned after QA. 80 BEFORE / 80 AFTER (AR/EN, 390–1440); Arabic pixel parity verified per pair (differences traced to Staging data churn / external embeds). Report: `%USERPROFILE%\OrderzHouse-UIUX-Audit\Phase-05-Shared\report\index.html`.
+
+| ROUTE | SURFACE | ROLE | AR/EN | DESKTOP | MOBILE | BEFORE CAPTURED | AUDITED | CHANGED | AFTER CAPTURED | DEPLOYED | NOTES |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| `/dashboard/freelancer/orders` | Available orders | Freelancer | ✓/✓ | ✓ | ✓ | ✓ | ✓ | FIX | ✓ | ✓ | Unconditional `direction: rtl` made the English pool RTL → scoped to `:where([dir="rtl"])` (zero specificity, same cascade slot) + `text-align: start`; Arabic unchanged incl. children of LTR-forced grids |
+| `/dashboard/freelancer/orders/:id` | Pool order details | Freelancer | ✓/✓ | ✓ | ✓ | ✓ | ✓ | FIX | ✓ | ✓ | Same direction fix; raw axios error text → `getSafeApiErrorMessage` |
+| `/dashboard/freelancer/plans` | Packages | Freelancer | ✓/✓ | ✓ | ✓ | ✓ | ✓ | MODERNIZE | ✓ | ✓ | Shared `SecureCheckoutNote` before Stripe (JOD, card / Apple Pay / Google Pay, page shown in English, nothing charged on return); renewal-failure copy from AR/EN keys |
+| `/dashboard/client/my-orders` (offers) | Confirm selected offer | Client | ✓/✓ | ✓ | ✓ | ✓ | ✓ | MODERNIZE | ✓ | ✓ | Trust note + «الطلب» terminology |
+| `/dashboard/client/orders/create` (review) | Create order — amount due | Client | ✓/✓ | — | — | — | ✓ | POLISH | — | ✓ | Trust note added under the existing payment summary (covered by contract test) |
+| `/dashboard/freelancer/my-orders/:id` | Order workspace | Freelancer | ✓/✓ | ✓ | ✓ | ✓ | ✓ | FIX | ✓ | ✓ | Raw `ready_for_work` → canonical label; delivery-lock copy explains why/when (policy unchanged) |
+| `/dashboard/freelancer/elite-offers/:offerId` | Elite direct offer (dormant) | Freelancer | ✓/✓ | ✓ | ✓ | ✓ | ✓ | FIX | ✓ | ✓ | `/api/api/...` 404 → correct paths; localized unavailable state; engine stays OFF |
+| `/dashboard/freelancer/courses/:id` | Course detail | Freelancer | ✓/✓ | ✓ | ✓ | ✓ | ✓ | POLISH | ✓ | ✓ | Deferred from Phase 2; English alignment |
+| `/dashboard/freelancer/articles/:id` | Article detail | Freelancer | ✓/✓ | ✓ | ✓ | ✓ | ✓ | POLISH | ✓ | ✓ | Deferred from Phase 2; manuscript statuses via registry |
+| `/dashboard/freelancer/orders` (restricted) | Restricted Freelancer | Freelancer | ✓/✓ | ✓ | ✓ | ✓ | ✓ | KEEP | ✓ | ✓ | Hold-capable by design (bids held «قيد المراجعة», no moderation details) |
+| `/dashboard/freelancer/notifications` | Notifications | Freelancer | ✓/✓ | ✓ | ✓ | ✓ | ✓ | KEEP | ✓ | ✓ | Migration 212 `idx_notifications_actor_user_id` (user deletion: 6,347 ms → 6.7 ms on Staging) |
+| `/about`, `/` | About, Home | Anonymous | ✓/✓ | ✓ | ✓ | ✓ | ✓ | FIX / POLISH | ✓ | ✓ | Steps / promo ads / hero mockup no longer forced RTL; carousel follows page direction |
+| `/plans?type=membership` | Special offer card | Anonymous / Freelancer | ✓/✓ | ✓ | ✓ | ✓ | ✓ | POLISH | ✓ | ✓ | English grid direction; «متابعة الدفع» only for the exact offer version (`planTierCode`) |
+| `/dashboard/client/financial` | Finance | Client | ✓/✓ | ✓ | ✓ | ✓ | ✓ | POLISH | ✓ | ✓ | `failed`/`expired` payment statuses via registry |
+| `/dashboard/super-admin/subscriptions`, `/training-orders` | Admin dates | Super Admin | ✓/✓ | ✓ | — | ✓ | ✓ | FIX | ✓ | ✓ | Arabic «م/ص» + Arabic-Indic digits in English; AM/PM in Arabic → UI-locale formatting |
+| `/dashboard/super-admin/financial-center` | Financial modals | Super Admin | ✓/✓ | ✓ | — | ✓ | ✓ | POLISH | ✓ | ✓ | Modals follow UI direction (`useTranslation().dir`) |
+| `/dashboard/super-admin/users` (drawer) | Restriction summary | Super Admin | — | — | — | — | ✓ | PERFORMANCE | — | ✓ | Sequential 13 queries → concurrent groups (Staging median 1,870 → 944 ms; Production RTT ≈ 93 ms/query) |
+| `/dashboard/super-admin/feedback` | Feedback list | Super Admin | — | — | — | — | ✓ | FIX | — | ✓ | First page aborted + refetched when categories loaded (`useDynamicCategoryFilter` dependency) → stable key |
+| `/dashboard/super-admin/freelancer-activation-requests` | Activation KPI funnel | Super Admin | — | — | — | — | ✓ | FIX | — | ✓ | `unavailable` undefined (ReferenceError) → `unavailableMetrics` |
+
+### Deferred inventory — final classification
+
+| ITEM | SOURCE | STATUS |
+|---|---|---|
+| Freelancer detail routes (courses/:id, articles/:id, elite-offers/:id) | Phase 2 | RESOLVED |
+| Restriction summary 2–4.5 s | Phase 4 | RESOLVED (PERFORMANCE: concurrent lookups, live/uncached) |
+| `notifications.actor_user_id` index | Phase 4 | RESOLVED (migration 212, measured) |
+| Feedback duplicate fetch | Phase 4 | RESOLVED (real app refetch, not StrictMode) |
+| Elite Direct `/api/api` + raw client/freelancer UI | Phase 3 | RESOLVED (paths); activation = PRODUCT_DECISION_REQUIRED (engine OFF) |
+| «فشل إنشاء المشروع» stale copy | Phase 4 | RESOLVED (dead helpers removed; «الطلب» terminology in order contexts) |
+| Hard-coded RTL / dates / raw statuses / raw errors (client, freelancer, shared) | Phase 5 audit | RESOLVED |
+| Admin raw errors (orders, staff settings, financial center, bid credits, analytics hooks, list loader, image pickers) | Phase 5 audit | RESOLVED (`getSafeApiErrorMessage`) |
+| Admin raw statuses (article card, pantry bids, order bids, legacy subscription history, course-progress / analytics labels) | Phase 5 audit | RESOLVED (status registry / translator passed) |
+| Operator diagnostic codes (bid-credit fulfil/reversal codes, campaign & article-ops run status, Arabic eligibility reason in admin) | Phase 5 audit | KEEP (internal Super Admin diagnostics) |
+| Special-offer old-version «متابعة الدفع» | Payment hardening | RESOLVED |
+| Statement descriptor | Payment acceptance | RESOLVED (`ORDERZHOUSE` suffix on one-time Checkout; subscriptions unchanged) |
+| Arabic hosted Checkout | Payment acceptance | EXTERNAL (Stripe Checkout has no `ar`); Elements/embedded = PRODUCT_DECISION_REQUIRED (future) |
+| PostHog frontend key | Phase 4 | EXTERNAL (no `VITE_POSTHOG_KEY` in the Production build) |
+| Bildazo 503 on Staging | Phase 4 | EXTERNAL (Staging has no Bildazo configuration; handled 503; Production configured) |
+| Activation policy terms 1–45 | Phase 2 | CONTENT_REQUIRED (owner) |
+| 180 historical unpaid orders | Client payment | PRODUCT_DECISION_REQUIRED (retention); shown as «بانتظار الدفع» |
+| Multi-plan membership checkouts | Payment hardening | PRODUCT_DECISION_REQUIRED (UI explains via trust note) |
+| Admin create-only permission cannot view created orders | File audit | PRODUCT_DECISION_REQUIRED / PERMISSION_POLICY |
+| Delivery edit while awaiting review | File audit | KEEP (policy unchanged; locked state now explained) |
+| Explicit freelancer-facing restriction notice | Phase 5 audit | PRODUCT_DECISION_REQUIRED (current design hides moderation) |
+| Notifications volume (11.6M rows / 11 GB in Production) | Phase 5 audit | PRODUCT_DECISION_REQUIRED (retention policy) |
+
 ## Phase 6 — Final (pending)

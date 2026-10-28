@@ -33,7 +33,7 @@ export default function AdSplit({ ad, className = "", onTrackClick, compact }) {
   ) : null;
 
   const textEl = (
-    <div className="flex flex-1 flex-col justify-center p-5 text-right" dir="rtl">
+    <div className="flex flex-1 flex-col justify-center p-5 text-start" dir="auto">
       <h3 className="text-lg font-extrabold" style={{ color: ad.titleColor || "#0f172a" }}>
         {truncateText(ad.title, compact ? 52 : 76)}
       </h3>

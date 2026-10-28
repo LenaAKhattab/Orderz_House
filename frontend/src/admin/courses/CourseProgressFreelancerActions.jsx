@@ -371,15 +371,15 @@ export default function CourseProgressFreelancerActions({
               </div>
               <div>
                 <dt>{t("courses.progressActions.companyApproval")}</dt>
-                <dd>{activationStatusLabel(displaySub?.activationStatus || sub?.activationStatus)}</dd>
+                <dd>{activationStatusLabel(displaySub?.activationStatus || sub?.activationStatus, t)}</dd>
               </div>
               <div>
                 <dt>{t("courses.progressActions.paymentStatus")}</dt>
-                <dd>{paymentStatusLabel(displaySub?.paymentStatus || sub?.paymentStatus)}</dd>
+                <dd>{paymentStatusLabel(displaySub?.paymentStatus || sub?.paymentStatus, t)}</dd>
               </div>
               <div>
                 <dt>{t("courses.progressActions.subscriptionStatus")}</dt>
-                <dd>{subscriptionStatusLabel(displaySub?.status || sub?.subscriptionStatus)}</dd>
+                <dd>{subscriptionStatusLabel(displaySub?.status || sub?.subscriptionStatus, t)}</dd>
               </div>
               <div>
                 <dt>{t("courses.progressActions.expiryDate")}</dt>

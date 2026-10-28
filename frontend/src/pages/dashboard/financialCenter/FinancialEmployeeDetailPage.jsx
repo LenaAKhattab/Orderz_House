@@ -67,7 +67,7 @@ function DetailField({ label, children }) {
 export default function FinancialEmployeeDetailPage() {
   const { personId } = useParams();
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, dir: uiDir } = useTranslation();
   const { push } = useToast();
 
   const [loading, setLoading] = useState(true);
@@ -478,7 +478,7 @@ export default function FinancialEmployeeDetailPage() {
           </>
         }
       >
-        <div className="dash-ui-modal__form" dir="rtl">
+        <div className="dash-ui-modal__form" dir={uiDir}>
           <DashboardFieldGroup label={`${t("finance.financialCenter.colName")} *`}>
             <input
               className="input"
@@ -571,7 +571,7 @@ export default function FinancialEmployeeDetailPage() {
           </>
         }
       >
-        <div className="dash-ui-modal__form" dir="rtl">
+        <div className="dash-ui-modal__form" dir={uiDir}>
           <DashboardFieldGroup label={t("finance.financialCenter.loginEmail")}>
             <input
               className="input"

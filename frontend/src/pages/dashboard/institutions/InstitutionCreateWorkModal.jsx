@@ -7,7 +7,7 @@ import "../../../i18n/institutionsResources";
 import { useTranslation } from "../../../i18n/LanguageProvider";
 import { useToast } from "../../../components/ui/toastContext";
 import { adminCreateInstitutionWorkRequest, getCategoriesRequest } from "../../../services/api";
-import { getSafeApiErrorMessage } from "../../../utils/apiErrorMessage";
+import { getSafeApiErrorMessage } from "../../../utils/apiErrorMessage.js";
 import {
   ARTICLE_TARGET_PLAN_OPTIONS,
   formatDerivedPlanRequirementsSummaryAr,
@@ -381,7 +381,7 @@ export default function InstitutionCreateWorkModal({
                       key={opt.id}
                       type="button"
                       className={[
-                        "rounded-xl border p-4 text-right transition",
+                        "rounded-xl border p-4 text-start transition",
                         workType === opt.id
                           ? "border-emerald-400 bg-emerald-50 shadow-sm"
                           : "border-slate-200 bg-white hover:border-slate-300",

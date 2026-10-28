@@ -1,5 +1,6 @@
+import { getSafeApiErrorMessage } from "../../../utils/apiErrorMessage";
 export function widgetErrMsg(e) {
-  return e?.response?.data?.message || e?.message || "حدث خطأ غير متوقع.";
+  return getSafeApiErrorMessage(e, "حدث خطأ غير متوقع.");
 }
 
 /** @returns {Promise<{ status: 'success', data: T } | { status: 'error', error: string }>} */

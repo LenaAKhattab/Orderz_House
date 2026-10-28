@@ -322,7 +322,7 @@
   "biddingOffers": {
     "title": "Bid offers from Freelancers",
     "allowedRange": "Allowed bid range:",
-    "paymentHint": "After you select a bid you will go to payment first. Work with the chosen Freelancer starts only after successful payment.",
+    "paymentHint": "After you select an offer you will go to payment first. Work on the order with the chosen Freelancer starts only after successful payment.",
     "loadError": "Could not load bids.",
     "checkoutSessionError": "Could not create payment session.",
     "acceptError": "Could not accept bid.",

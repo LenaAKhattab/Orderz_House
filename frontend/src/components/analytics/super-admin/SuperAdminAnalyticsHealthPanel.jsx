@@ -4,6 +4,7 @@ import { getAnalyticsDiagnostics, isAnalyticsEnabled, isDevTrackingDisabled } fr
 import StatusBadge from "../../dashboard/StatusBadge";
 import DashboardLoadingState from "../../dashboard/DashboardLoadingState";
 import { useTranslation } from "../../../i18n/LanguageProvider";
+import { getSafeApiErrorMessage } from "../../../utils/apiErrorMessage";
 import "./registerAnalysisLocale";
 
 function toneFromOk(ok) {
@@ -15,7 +16,7 @@ function toneFromOk(ok) {
 function fmtTime(iso) {
   if (!iso) return "—";
   try {
-    return new Intl.DateTimeFormat("ar", { dateStyle: "short", timeStyle: "short" }).format(new Date(iso));
+    return new Intl.DateTimeFormat(document.documentElement.lang === "en" ? "en-US" : "ar-JO-u-nu-latn", { dateStyle: "short", timeStyle: "short" }).format(new Date(iso));
   } catch {
     return "—";
   }
@@ -57,7 +58,7 @@ export default function SuperAdminAnalyticsHealthPanel() {
       const res = await getSuperadminAnalyticsHealthRequest();
       setHealth(res?.data || null);
     } catch (e) {
-      setError(e?.response?.data?.message || e?.message || t("analysis.health.loadError"));
+      setError(getSafeApiErrorMessage(e, t("analysis.health.loadError")));
     } finally {
       setLoading(false);
     }

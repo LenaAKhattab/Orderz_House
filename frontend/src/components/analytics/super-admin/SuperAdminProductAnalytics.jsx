@@ -90,8 +90,8 @@ function buildCopyText(sub, t) {
   if (planTitle) lines.push(`${t("analysis.product.copyPlan")}: ${planTitle}`);
   const price = formatPlanPriceLabel(sub?.plan);
   if (price && price !== "—") lines.push(`${t("analysis.product.copyPlanPrice")}: ${price}`);
-  lines.push(`${t("analysis.product.copyActivation")}: ${activationStatusLabel(sub?.activationStatus)}`);
-  lines.push(`${t("analysis.product.copySubscription")}: ${subscriptionStatusLabel(sub?.status)}`);
+  lines.push(`${t("analysis.product.copyActivation")}: ${activationStatusLabel(sub?.activationStatus, t)}`);
+  lines.push(`${t("analysis.product.copySubscription")}: ${subscriptionStatusLabel(sub?.status, t)}`);
   return lines.join("\n");
 }
 

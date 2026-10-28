@@ -30,7 +30,7 @@ export default function HomePromoOffersSection({
   showTitle = true,
   variant = "default",
 }) {
-  const { t } = useTranslation();
+  const { t, dir: uiDir } = useTranslation();
   const pa = "home.promoAds";
   const tracked = useRef(new Set());
   const triggerRef = useRef(/** @type {HTMLElement | null} */ (null));
@@ -112,7 +112,7 @@ export default function HomePromoOffersSection({
       <section
         ref={sectionRef}
         className={sectionClass}
-        dir="rtl"
+        dir={uiDir}
         aria-labelledby={showTitle ? "home-promo-offers-heading" : undefined}
         aria-label={showTitle ? undefined : t(`${pa}.offersSectionAria`)}
       >

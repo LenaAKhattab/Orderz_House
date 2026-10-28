@@ -4,6 +4,7 @@ import "../../i18n/adsResources";
 import { AD_VISUAL_ASSETS, resolveAdVisualAssetLabel } from "../../components/ads/adVisualAssets";
 import { adminUploadAdImageRequest } from "../../services/adsService";
 import AdUrlThumb from "./AdUrlThumb";
+import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
 
 /**
  * @param {{
@@ -52,7 +53,7 @@ export default function AdVisualImagePicker({
       if (!url) throw new Error(t("ads.images.noServerUrl"));
       setBackgroundUrl(url);
     } catch (e) {
-      setUploadError(e?.response?.data?.message || e?.message || t("ads.images.uploadFailed"));
+      setUploadError(getSafeApiErrorMessage(e, t("ads.images.uploadFailed")));
     } finally {
       setUploading(false);
     }

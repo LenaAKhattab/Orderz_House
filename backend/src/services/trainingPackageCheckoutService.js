@@ -8,6 +8,7 @@ const crypto = require("crypto");
 const Stripe = require("stripe");
 const { createAppError } = require("../utils/AppError");
 const { amountMajorToStripeMinor } = require("../utils/stripeMoney");
+const { withOrderzHouseStatementDescriptor } = require("../utils/stripeStatementDescriptor");
 const { isCheckoutSessionPaymentSuccessful } = require("../utils/stripeSessionPaymentStatus");
 const {
   getPrimaryClientUrl,
@@ -446,11 +447,11 @@ async function createTrainingPackageCheckoutSession(input = {}, deps = {}) {
             },
           ],
           metadata,
-          payment_intent_data: {
+          payment_intent_data: withOrderzHouseStatementDescriptor({
             metadata,
             description:
               paymentIntentDescriptionForContext(PAYMENT_CONTEXT.TRAINING_PACKAGE) || productName,
-          },
+          }),
         },
         // Attempt-specific: a retry of this attempt is deduplicated; a new attempt gets a new key.
         { idempotencyKey: `training_pkg_checkout_${purchaseId}` },

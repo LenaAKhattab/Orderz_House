@@ -24,7 +24,7 @@ export default function AdImageBackground({ ad, className = "", onTrackClick, co
   );
 
   const body = (
-    <div className="relative z-10 flex min-h-[220px] flex-col justify-end p-5 text-right text-white sm:min-h-[260px]" dir="rtl">
+    <div className="relative z-10 flex min-h-[220px] flex-col justify-end p-5 text-start text-white sm:min-h-[260px]" dir="auto">
       <h3 className="text-xl font-extrabold leading-snug drop-shadow-sm">{truncateText(ad.title, compact ? 48 : 72)}</h3>
       {ad.subtitle ? <p className="mt-1 text-sm font-semibold opacity-95">{truncateText(ad.subtitle, 90)}</p> : null}
       {ad.description ? (

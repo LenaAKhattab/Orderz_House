@@ -3,11 +3,9 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import {
-  getBidPaymentConfirmFailureToast,
-  getFixedPaymentConfirmFailureToast,
-  parseConfirmPaymentAxiosError,
-} from "./clientMyOrdersPaymentReturn.js";
+import * as paymentReturn from "./clientMyOrdersPaymentReturn.js";
+
+const { getBidPaymentConfirmFailureToast, parseConfirmPaymentAxiosError } = paymentReturn;
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const clientMyOrdersPageSource = readFileSync(join(__dirname, "../pages/dashboard/ClientMyOrdersPage.jsx"), "utf8");
@@ -33,9 +31,10 @@ describe("clientMyOrdersPaymentReturn", () => {
     assert.equal(t.variant, "state");
   });
 
-  it("fixed payment failure copy is unchanged (project creation framing)", () => {
-    const t = getFixedPaymentConfirmFailureToast(false);
-    assert.match(t.message, /Project creation failed/i);
+  it("no stale 'project creation failed' copy (a Stripe return never discards the order)", () => {
+    assert.equal(paymentReturn.getFixedPaymentConfirmFailureToast, undefined);
+    assert.equal(paymentReturn.getFixedCheckoutCancelledToast, undefined);
+    assert.ok(!/فشل إنشاء المشروع|Project creation failed/.test(readFileSync(join(__dirname, "clientMyOrdersPaymentReturn.js"), "utf8")));
   });
 
   it("parseConfirmPaymentAxiosError reads axios shape", () => {
@@ -47,10 +46,9 @@ describe("clientMyOrdersPaymentReturn", () => {
     assert.equal(p.message, "x");
   });
 
-  it("bid generic failure copy is not the fixed-order ‘project creation’ message", () => {
+  it("bid generic failure copy never shows the raw server message", () => {
     const bid = getBidPaymentConfirmFailureToast(false, { status: 500, message: "internal" });
-    const fixed = getFixedPaymentConfirmFailureToast(false);
-    assert.notEqual(bid.message, fixed.message);
+    assert.notEqual(bid.message, "internal");
   });
 });
 

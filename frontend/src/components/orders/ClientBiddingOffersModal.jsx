@@ -10,6 +10,7 @@ import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
 import OrderDialog from "./OrderDialog";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import { usePageRestore } from "../../hooks/usePageRestore";
+import SecureCheckoutNote from "../payments/SecureCheckoutNote";
 import "../../i18n/clientAreaResources";
 
 /** Server codes with localized copy (clientArea.payNow.*). */
@@ -173,7 +174,12 @@ export default function ClientBiddingOffersModal({ open, orderId, order, onClose
                   {bid.message}
                 </p>
               ) : null}
-              {confirmBidId === bid.id ? <p className="oh-bid__confirm-hint">{t(`${b}.payNowHint`)}</p> : null}
+              {confirmBidId === bid.id ? (
+                <>
+                  <p className="oh-bid__confirm-hint">{t(`${b}.payNowHint`)}</p>
+                  <SecureCheckoutNote context="order" />
+                </>
+              ) : null}
               <div className="oh-bid__actions">
                 {bid.status === "selected_pending_payment" ? (
                   <button type="button" className="btn btn-primary" disabled={busy} onClick={() => accept(bid.id)}>

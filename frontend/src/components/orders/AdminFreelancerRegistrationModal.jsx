@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { adminGetFreelancerRegistrationRequest } from "../../services/api";
 import { useToast } from "../ui/toastContext";
 import { useTranslation } from "../../i18n/LanguageProvider";
+import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
 import "../../i18n/opsAdminResources";
 
 function formatJoDateTime(value, locale) {
@@ -27,7 +28,7 @@ function Row({ label, value, dir }) {
 
 export default function AdminFreelancerRegistrationModal({ open, freelancerUserId, onClose }) {
   const { push } = useToast();
-  const { t, locale } = useTranslation();
+  const { t, locale, dir: uiDir } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [profile, setProfile] = useState(null);
 
@@ -49,7 +50,7 @@ export default function AdminFreelancerRegistrationModal({ open, freelancerUserI
           push({
             type: "error",
             title: t("opsAdmin.freelancerRegModal.loadErrorTitle"),
-            message: e?.response?.data?.message || e?.message || t("opsAdmin.freelancerRegModal.genericError"),
+            message: getSafeApiErrorMessage(e, t("opsAdmin.freelancerRegModal.genericError")),
           });
         }
       } finally {
@@ -81,7 +82,7 @@ export default function AdminFreelancerRegistrationModal({ open, freelancerUserI
         if (e.target === e.currentTarget && !loading) onClose?.();
       }}
     >
-      <div className="client-order-modal" role="dialog" aria-modal="true" aria-labelledby="admin-fl-reg-title" dir="rtl" onMouseDown={(ev) => ev.stopPropagation()}>
+      <div className="client-order-modal" role="dialog" aria-modal="true" aria-labelledby="admin-fl-reg-title" dir={uiDir} onMouseDown={(ev) => ev.stopPropagation()}>
         <header className="client-order-modal__head">
           <div>
             <h2 id="admin-fl-reg-title" className="client-order-modal__title">

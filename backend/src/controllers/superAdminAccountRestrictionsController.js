@@ -87,16 +87,16 @@ async function revoke(req, res, next) {
 async function userSummary(req, res, next) {
   try {
     const userId = req.params.userId;
-    const summary = await restrictionsService.getUserRestrictionSummary(userId);
-    const audit = await restrictionsService.listAuditForUser(userId, { limit: 30 });
-    let eligibility = null;
-    let subscription = null;
-    try {
-      eligibility = await subscriptionsService.canFreelancerTakeOrders(userId);
-      subscription = await subscriptionsService.getCurrentSubscriptionForFreelancer(userId);
-    } catch {
-      /* optional enrichment */
-    }
+    // Independent lookups run concurrently (each DB round trip is ~90 ms in Production). The audit is read after
+    // the summary, whose expiry sweep may append an `auto_expired` entry. Nothing is cached: always live state.
+    const optional = (p) => p.catch(() => null); // optional enrichment
+    const [[summary, audit], eligibility, subscription] = await Promise.all([
+      restrictionsService
+        .getUserRestrictionSummary(userId)
+        .then(async (s) => [s, await restrictionsService.listAuditForUser(userId, { limit: 30 })]),
+      optional(subscriptionsService.canFreelancerTakeOrders(userId)),
+      optional(subscriptionsService.getCurrentSubscriptionForFreelancer(userId)),
+    ]);
     return res.json({
       success: true,
       data: {

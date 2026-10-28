@@ -33,10 +33,8 @@ export function getFreelancerOrderEligibilityMessage(eligibility, subscription =
       return t("freelancerDashboard.status.eligibility.activationFeeUnpaid");
     }
     if (reason === "account_hold_payment_failed") {
-      return (
-        eligibility?.freezeMessage?.message ||
-        t("freelancerDashboard.status.eligibility.subscriptionRenewalFailed")
-      );
+      // Canonical AR/EN copy (the API's freezeMessage is Arabic-only).
+      return t("freelancerDashboard.status.eligibility.subscriptionRenewalFailed");
     }
     if (reason === "plan_configuration_error") {
       return t("freelancerDashboard.status.eligibility.planConfigurationError");

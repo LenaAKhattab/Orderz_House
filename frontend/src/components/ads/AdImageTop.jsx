@@ -17,7 +17,7 @@ export default function AdImageTop({ ad, className = "", onTrackClick, compact }
   const href = primaryHref(ad);
   const body = (
     <div
-      className="flex flex-col p-5 text-right"
+      className="flex flex-col p-5 text-start"
       style={{ color: ad.textColor || undefined, textAlign: ad.textAlign || "right" }}
     >
       <h3

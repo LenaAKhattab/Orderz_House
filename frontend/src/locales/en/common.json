@@ -85,5 +85,10 @@
   "a11y": {
     "explain": "Explanation: {{label}}",
     "dataScope": "Data scope: {{scope}}"
+  },
+  "secureCheckout": {
+    "lead": "You will continue to Stripe's secure payment page to pay in Jordanian dinars (JOD) by card — Apple Pay or Google Pay may appear on supported devices.",
+    "returnOrder": "If you come back without paying, nothing is charged and your order stays saved — use “Continue payment” any time.",
+    "returnPackage": "If you come back without paying, nothing is charged and you can continue later."
   }
 }

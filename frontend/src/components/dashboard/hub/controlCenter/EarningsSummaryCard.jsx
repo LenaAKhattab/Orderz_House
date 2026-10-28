@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "../../../../i18n/LanguageProvider";
 import { formatMoneyJod, formatJoDateMedium } from "../../../../utils/freelancerDashboardData";
 import WidgetLoadError from "./WidgetLoadError";
+import { statusLabel } from "../../../../i18n/statusRegistry.js";
 
 function claimStatusLabel(status, t) {
   const s = String(status || "");
@@ -9,7 +10,9 @@ function claimStatusLabel(status, t) {
   if (s === "pending") return t("freelancerDashboard.status.claim.pending");
   if (s === "accepted") return t("freelancerDashboard.status.claim.accepted");
   if (s === "requires_in_person_review") return t("freelancerDashboard.status.claim.requiresInPersonReview");
-  return s || t("freelancerDashboard.common.emDash");
+  if (s === "rejected") return t("freelancerDashboard.status.claim.rejected");
+  if (s === "frozen") return t("freelancerDashboard.status.claim.frozen");
+  return s ? statusLabel(t, "claims", s) : t("freelancerDashboard.common.emDash");
 }
 
 export default function EarningsSummaryCard({ summary, loadState = "ok", loadError = "", onRetry, loading }) {

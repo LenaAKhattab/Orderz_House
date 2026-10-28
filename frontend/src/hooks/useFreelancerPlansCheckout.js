@@ -23,6 +23,7 @@ import { useToast } from "../components/ui/toastContext";
 import { trackEvent } from "../services/analytics";
 import { isBlockingSubscription } from "../utils/planSubscriptionUtils";
 import { usePageRestore } from "./usePageRestore";
+import { getSafeApiErrorMessage } from "../utils/apiErrorMessage.js";
 
 function normalizePublicActivationFee(fee) {
   if (!fee || typeof fee !== "object") return null;
@@ -302,7 +303,7 @@ export function useFreelancerPlansCheckout({
       if (import.meta.env?.DEV) {
         console.error("[freelancer checkout]", err?.response?.data ?? err);
       }
-      setError(err?.response?.data?.message || t("plans.errors.loadFailed"));
+      setError(getSafeApiErrorMessage(err, t("plans.errors.loadFailed")));
     } finally {
       setCheckoutBusyPlanId(null);
     }

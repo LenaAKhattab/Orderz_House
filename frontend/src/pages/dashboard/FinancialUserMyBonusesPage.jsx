@@ -8,7 +8,7 @@ import StatusBadge from "../../components/dashboard/StatusBadge";
 import { useToast } from "../../components/ui/toastContext";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import { getFinancialUserMyBonusesRequest, getFinancialUserSummaryRequest } from "../../services/api";
-import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
+import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage.js";
 import { monthOptions } from "./financialCenter/financialCenterCalculations";
 import FinancialCenterScrollSelect from "./financialCenter/FinancialCenterScrollSelect";
 import FinancialCenterTableWrap from "./financialCenter/FinancialCenterTableWrap";
@@ -20,7 +20,7 @@ function formatDate(value) {
   if (!value) return "—";
   const d = new Date(value);
   if (!Number.isFinite(d.getTime())) return "—";
-  return new Intl.DateTimeFormat("ar-JO-u-nu-latn", { dateStyle: "medium", timeStyle: "short" }).format(d);
+  return new Intl.DateTimeFormat(document.documentElement.lang === "en" ? "en-US" : "ar-JO-u-nu-latn", { dateStyle: "medium", timeStyle: "short" }).format(d);
 }
 
 function sourceLabel(type, t) {

@@ -180,6 +180,9 @@
   border: 1px solid rgba(226, 232, 240, 0.95);
   border-radius: 14px;
   background: var(--dash-card, #fcfcfd);
+}
+
+:where([dir="rtl"]) .oh-sa-subs-table-wrap {
   direction: rtl;
 }
 

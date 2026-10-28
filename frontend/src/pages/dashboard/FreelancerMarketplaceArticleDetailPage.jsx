@@ -35,7 +35,8 @@ import {
   requiredTierCodeForArticleLevel,
   shouldShowArticlePlanUpgradeCta,
 } from "../../constants/planUpgradeCta";
-import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
+import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage.js";
+import { statusLabel } from "../../i18n/statusRegistry.js";
 
 function eligibilityMessage(eligibility, t, locale) {
   if (!eligibility) return null;
@@ -474,7 +475,7 @@ export default function FreelancerMarketplaceArticleDetailPage() {
                         ? t("freelancer.detail.revisionRequested")
                         : manuscript.status === "approved"
                           ? t("freelancer.detail.finalApproved")
-                          : manuscript.status}
+                          : statusLabel(t, "articles", manuscript.status)}
                   </p>
                 ) : null}
                 {manuscript?.reviewerNotes && manuscript.status === "revision_requested" ? (

@@ -22,7 +22,7 @@ export default function AdCtas({ ad, inline = false, onNavigate }) {
   const secondaryCls = "border border-slate-200/90 bg-white/90 text-slate-800 hover:bg-white";
 
   return (
-    <div className={wrapCls} dir="rtl">
+    <div className={wrapCls} dir="auto">
       {ad.ctaText && ad.ctaUrl ? (
         <a
           href={ad.ctaUrl}

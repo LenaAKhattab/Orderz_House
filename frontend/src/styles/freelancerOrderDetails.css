@@ -314,6 +314,10 @@
     display: grid !important;
     grid-template-columns: minmax(0, 1fr);
     gap: 18px;
+  }
+
+  :where([dir="rtl"]) .oh-order-details--dashboard .order-details-layout,
+  :where([dir="rtl"]) .oh-order-details--dashboard .oh-order-details__layout.od-pool-shell {
     direction: rtl;
   }
 
@@ -430,6 +434,10 @@
   align-items: center;
   justify-content: flex-start;
   gap: 12px;
+  text-align: start;
+}
+
+:where([dir="rtl"]) .oh-order-details--dashboard .od-section-head {
   direction: rtl;
   text-align: right;
 }
@@ -459,12 +467,19 @@
   align-items: center;
   justify-content: flex-start;
   gap: 12px;
+}
+
+:where([dir="rtl"]) .oh-order-details--dashboard .oh-order-details-neu .od-summary__row-line {
   direction: rtl;
 }
 
 .oh-order-details--dashboard .oh-order-details-neu .od-summary__row-copy {
   flex: 1;
   min-width: 0;
+  text-align: start;
+}
+
+:where([dir="rtl"]) .oh-order-details--dashboard .oh-order-details-neu .od-summary__row-copy {
   text-align: right;
 }
 
@@ -473,6 +488,11 @@
   flex: 1;
   min-width: 0;
   margin: 0;
+  text-align: start;
+}
+
+:where([dir="rtl"]) .oh-order-details--dashboard .oh-order-details-neu .od-files-card__title,
+:where([dir="rtl"]) .oh-order-details--dashboard .oh-order-details-neu .od-description__label {
   text-align: right;
 }
 

@@ -26,6 +26,7 @@ import {
 import { isCurrentMarketplacePlanCard } from "../lib/marketplaceMembership/marketplaceMembershipCurrentPlanUi";
 import { usePageRestore } from "./usePageRestore";
 import { membershipCheckoutStatesFromAttempts } from "../lib/marketplaceMembership/membershipCheckoutState";
+import { getSafeApiErrorMessage } from "../utils/apiErrorMessage.js";
 
 /** Server error codes with localized copy (server messages are Arabic-only). */
 const CHECKOUT_ERROR_KEYS = {
@@ -112,7 +113,7 @@ export function useMarketplaceMembershipCheckout({
       const key = CHECKOUT_ERROR_KEYS[err?.response?.data?.code];
       return key
         ? t(key)
-        : err?.response?.data?.message || err?.message || t("freelancerDashboard.marketplaceMembership.checkoutFailed");
+        : getSafeApiErrorMessage(err, t("freelancerDashboard.marketplaceMembership.checkoutFailed"));
     },
     [t],
   );
@@ -259,8 +260,7 @@ export function useMarketplaceMembershipCheckout({
       });
     } catch (err) {
       const msg =
-        err?.response?.data?.message ||
-        t("freelancerDashboard.marketplaceMembership.starterTrialFailed");
+        getSafeApiErrorMessage(err, t("freelancerDashboard.marketplaceMembership.starterTrialFailed"));
       setCheckoutError(msg);
       push({
         type: "warning",

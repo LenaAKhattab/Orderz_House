@@ -673,8 +673,12 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 10px 12px;
-  direction: rtl;
   justify-content: flex-start;
+  text-align: start;
+}
+
+:where([dir="rtl"]) .oh-ad-reschedule__quick-dates {
+  direction: rtl;
   text-align: right;
 }
 
@@ -691,8 +695,11 @@
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
-  direction: rtl;
   justify-content: flex-start;
+}
+
+:where([dir="rtl"]) .oh-ad-reschedule__quick-row {
+  direction: rtl;
 }
 
 .oh-ad-reschedule__chip {

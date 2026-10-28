@@ -300,7 +300,7 @@ export default function PremiumPromoBanner({ ad, previewMode = false, onTrackCli
 
   if (structure === "ribbon_strip") {
     return (
-      <article className={shellClass} dir="rtl" style={bgStyle}>
+      <article className={shellClass} dir="auto" style={bgStyle}>
         {cornerRibbonEl}
         <div className="ppm__ribbon" aria-hidden />
         <div className={decorClass} style={{ opacity: surface.decorOpacity ?? 0.35 }} aria-hidden />
@@ -322,7 +322,7 @@ export default function PremiumPromoBanner({ ad, previewMode = false, onTrackCli
 
   if (structure === "luxury_center") {
     return (
-      <article className={shellClass} dir="rtl" style={bgStyle}>
+      <article className={shellClass} dir="auto" style={bgStyle}>
         {cornerRibbonEl}
         <div className={decorClass} style={{ opacity: surface.decorOpacity ?? 0.4 }} aria-hidden />
         <div className="ppm__shell">
@@ -340,7 +340,7 @@ export default function PremiumPromoBanner({ ad, previewMode = false, onTrackCli
 
   if (structure === "minimal_clean") {
     return (
-      <article className={shellClass} dir="rtl" style={bgStyle}>
+      <article className={shellClass} dir="auto" style={bgStyle}>
         {cornerRibbonEl}
         <div className="ppm__shell">
           {imgs.showForeground ? visualCol : null}
@@ -359,7 +359,7 @@ export default function PremiumPromoBanner({ ad, previewMode = false, onTrackCli
 
   if (structure === "product_focus") {
     return (
-      <article className={shellClass} dir="rtl" style={bgStyle}>
+      <article className={shellClass} dir="auto" style={bgStyle}>
         {cornerRibbonEl}
         <div className={decorClass} style={{ opacity: surface.decorOpacity ?? 0.5 }} aria-hidden />
         <div className="ppm__badge-slot ppm__badge-slot--tr">{topBadge}</div>
@@ -376,7 +376,7 @@ export default function PremiumPromoBanner({ ad, previewMode = false, onTrackCli
 
   if (structure === "business_partner") {
     return (
-      <article className={shellClass} dir="rtl" style={bgStyle}>
+      <article className={shellClass} dir="auto" style={bgStyle}>
         {cornerRibbonEl}
         <div className={decorClass} style={{ opacity: surface.decorOpacity ?? 0.28 }} aria-hidden />
         <div className="ppm__badge-slot ppm__badge-slot--tr">{topBadge}</div>
@@ -392,7 +392,7 @@ export default function PremiumPromoBanner({ ad, previewMode = false, onTrackCli
   }
 
   return (
-    <article className={shellClass} dir="rtl" style={bgStyle}>
+    <article className={shellClass} dir="auto" style={bgStyle}>
       {cornerRibbonEl}
       <div className={decorClass} style={{ opacity: surface.decorOpacity ?? 0.55 }} aria-hidden />
       <div className="ppm__badge-slot ppm__badge-slot--tr">{topBadge}</div>

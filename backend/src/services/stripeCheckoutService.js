@@ -6,6 +6,7 @@ const {
   PURPOSE_BID,
 } = require("../utils/stripeCheckoutReconcile");
 const { amountMajorToStripeMinor } = require("../utils/stripeMoney");
+const { withOrderzHouseStatementDescriptor } = require("../utils/stripeStatementDescriptor");
 const orderFlowService = require("./orderFlowService");
 const subscriptionsService = require("./subscriptionsService");
 const ordersService = require("./ordersService");
@@ -114,9 +115,7 @@ async function getUserEmailById(userId, db) {
 
 function buildCheckoutPaymentIntentData(sessionMetadata, paymentContext) {
   const description = paymentIntentDescriptionForContext(paymentContext);
-  return description
-    ? { metadata: sessionMetadata, description }
-    : { metadata: sessionMetadata };
+  return withOrderzHouseStatementDescriptor(description ? { metadata: sessionMetadata, description } : { metadata: sessionMetadata });
 }
 
 async function insertPendingPayment({

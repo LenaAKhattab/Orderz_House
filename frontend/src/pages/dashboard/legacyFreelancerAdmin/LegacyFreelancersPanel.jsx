@@ -41,6 +41,7 @@ import LegacySmartSuggestField from "../../../components/legacy/LegacySmartSugge
 import LegacySearchableSelect from "../../../components/legacy/LegacySearchableSelect";
 import { listJordanCityOptions, CITY_OTHER_VALUE, CITY_OTHER_LABEL_AR } from "../../../constants/jordanCities";
 import { DEFAULT_DIAL_CODE, toPhonePayload } from "../../../utils/legacyPhone";
+import { statusLabel } from "../../../i18n/statusRegistry.js";
 
 const EMPTY_CREATE = {
   firstName: "",
@@ -1219,7 +1220,7 @@ function LegacyFreelancerDetailDrawer({
                         <span>
                           {formatDate(h.startsAt)} → {formatDate(h.expiresAt)} · {h.durationMonths || "—"}{" "}
                           {t("legacy.common.months")} ·{" "}
-                          {h.status}
+                          {statusLabel(t, "subscriptions", h.status)}
                         </span>
                       </div>
                     </li>

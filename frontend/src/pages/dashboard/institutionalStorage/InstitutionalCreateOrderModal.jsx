@@ -18,7 +18,7 @@ export default function InstitutionalCreateOrderModal({
   storageName = "",
   triggerRef = null,
 }) {
-  const { t } = useTranslation();
+  const { t, dir: uiDir } = useTranslation();
   const titleId = useId();
   const subtitleId = useId();
   const panelRef = useRef(null);
@@ -115,7 +115,7 @@ export default function InstitutionalCreateOrderModal({
           aria-modal="true"
           aria-labelledby={titleId}
           aria-describedby={subtitleId}
-          dir="rtl"
+          dir={uiDir}
           onMouseDown={(e) => e.stopPropagation()}
         >
           <header className="client-order-modal__head co-modal-ref__head">
