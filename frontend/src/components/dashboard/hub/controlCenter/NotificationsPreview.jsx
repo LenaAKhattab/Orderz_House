@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useTranslation } from "../../../../i18n/LanguageProvider";
 import WidgetLoadError from "./WidgetLoadError";
+import { getNotificationText } from "../../../../utils/notificationDisplay";
 
 function fmtShort(value, locale) {
   if (!value) return "";
@@ -56,8 +57,8 @@ export default function NotificationsPreview({
               className={n.isRead ? "fdash-cc-notif-item" : "fdash-cc-notif-item fdash-cc-notif-item--unread"}
             >
               <Link to={n.link || "/dashboard/freelancer/notifications"} className="fdash-cc-notif-item__link">
-                <strong>{n.title || t("freelancerDashboard.controlCenter.notifications.defaultTitle")}</strong>
-                <span>{n.message || ""}</span>
+                <strong>{getNotificationText(n, locale).title || t("freelancerDashboard.controlCenter.notifications.defaultTitle")}</strong>
+                <span>{getNotificationText(n, locale).message}</span>
                 <time dateTime={n.createdAt}>{fmtShort(n.createdAt, locale)}</time>
               </Link>
             </li>

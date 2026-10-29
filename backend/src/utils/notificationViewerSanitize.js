@@ -21,12 +21,14 @@ function stripOrderNumberMetadata(meta) {
   return out;
 }
 
-/** Non-staff API: no actor user/account ids; metadata redacted; actor is display-only. */
+/** Non-staff API: no actor user/account ids or dedupe key; metadata redacted; actor is display-only. */
 function sanitizeNotificationForViewer(mapped, viewerRole) {
   if (!mapped || typeof mapped !== "object") return mapped;
   if (isStaffRole(viewerRole)) return { ...mapped, metadata: mapped.metadata && typeof mapped.metadata === "object" ? { ...mapped.metadata } : {} };
   const out = { ...mapped };
   delete out.actorUserId;
+  // Dedupe keys embed internal ids (rounds, items, recipients) and no client reads them.
+  delete out.dedupeKey;
   const meta0 = stripNotificationMetadata(mapped.metadata);
   out.metadata = stripOrderNumberMetadata(meta0);
   if (out.actor) {

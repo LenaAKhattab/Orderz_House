@@ -85,6 +85,50 @@ async function notifyUsers({
   );
 }
 
+/**
+ * Batched per-recipient dedupe (`${dedupeKey}_u${userId}`): one multi-row insert for the whole list.
+ * Returns only newly inserted rows — a retry with the same key creates no row and no push.
+ */
+async function notifyUsersDeduped({
+  userIds = [],
+  recipientRole = null,
+  actorUserId = null,
+  type,
+  title,
+  message,
+  entityType,
+  entityId = null,
+  link = null,
+  priority = "medium",
+  metadata = {},
+  dedupeKey,
+}, client) {
+  const ids = [...new Set((Array.isArray(userIds) ? userIds : []).map((x) => Number(x)).filter((n) => Number.isInteger(n) && n > 0))];
+  if (!ids.length) return [];
+  if (!dedupeKey) {
+    const err = new Error("dedupeKey is required.");
+    err.statusCode = 400;
+    throw err;
+  }
+  return notificationService.createManyIfNotExists(
+    ids.map((uid) => ({
+      recipientUserId: uid,
+      recipientRole,
+      actorUserId,
+      type,
+      title,
+      message,
+      entityType,
+      entityId,
+      link,
+      priority,
+      metadata,
+      dedupeKey: `${dedupeKey}_u${uid}`,
+    })),
+    getRunner(client),
+  );
+}
+
 async function notifyOrderOwner({
   order,
   actorUserId = null,
@@ -248,6 +292,7 @@ async function notifySubscriptionOwner({
 module.exports = {
   getRoleUserIds,
   notifyUsers,
+  notifyUsersDeduped,
   notifyOrderOwner,
   notifyAssignedFreelancer,
   notifyAdmins,

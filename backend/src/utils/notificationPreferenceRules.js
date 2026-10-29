@@ -24,6 +24,7 @@ const TYPE_CATEGORY = {
   "user.account.reactivated": "general",
 
   "order.created": "orders",
+  "order.pool.summary": "orders",
   "order.assigned": "orders",
   "order.freelancer.assigned": "orders",
   "order.freelancer.rejected": "orders",

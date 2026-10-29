@@ -97,6 +97,21 @@ export function getNotificationDetails(n, canShowOrderReference = false, options
   return parts.join(" - ");
 }
 
+/**
+ * Title/message for the viewer's locale. Rows store Arabic; producers that also have English copy send it in
+ * metadata.titleEn / metadata.messageEn (e.g. order.pool.summary). Falls back to the stored text.
+ */
+export function getNotificationText(n, locale = "ar") {
+  const title = String(n?.title || "").trim();
+  const message = String(n?.message || "").trim();
+  if (locale !== "en") return { title, message };
+  const meta = n?.metadata && typeof n.metadata === "object" ? n.metadata : {};
+  return {
+    title: String(meta.titleEn || "").trim() || title,
+    message: String(meta.messageEn || "").trim() || message,
+  };
+}
+
 export function getNotificationTypeIconKind(type) {
   const raw = String(type || "").toLowerCase();
   if (raw.includes("feedback") || raw.includes("message") || raw.includes("chat")) return "message";

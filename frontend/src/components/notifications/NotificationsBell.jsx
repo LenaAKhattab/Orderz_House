@@ -10,7 +10,7 @@ import {
 import { useAuth } from "../../context/useAuth";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import "../../i18n/notificationsUiResources";
-import { getNotificationDetails } from "../../utils/notificationDisplay";
+import { getNotificationDetails, getNotificationText } from "../../utils/notificationDisplay";
 import { resolveSafeInternalNavPath } from "../../utils/safeInternalNavPath";
 
 function fmtDate(value, locale) {
@@ -176,6 +176,7 @@ export default function NotificationsBell({ notificationsPagePath, variant = "na
                   topicPrefix: t("freelancerDashboard.notificationsPage.feedbackTopicPrefix"),
                 });
                 const unread = !n.isRead;
+                const text = getNotificationText(n, locale);
                 return (
                   <button
                     key={n.id}
@@ -185,10 +186,10 @@ export default function NotificationsBell({ notificationsPagePath, variant = "na
                   >
                     <div className="notif-bell__item-top">
                       <span className="notif-bell__item-dot" aria-hidden />
-                      <div className="notif-bell__item-title">{n.title || t("notificationsUi.bell.newNotification")}</div>
+                      <div className="notif-bell__item-title">{text.title || t("notificationsUi.bell.newNotification")}</div>
                     </div>
                     {details ? <div className="notif-bell__item-actor">{details}</div> : null}
-                    {n.message ? <div className="notif-bell__item-msg">{n.message}</div> : null}
+                    {text.message ? <div className="notif-bell__item-msg">{text.message}</div> : null}
                     <div className="notif-bell__item-time">{fmtDate(n.createdAt, locale)}</div>
                   </button>
                 );

@@ -1,6 +1,11 @@
 /**
  * Pool-entry notifications for fake/training orders that have become actually visible.
- * Presentation matches normal marketplace "new order" alerts (no training/fake wording).
+ *
+ * One summary notification per eligible freelancer per training round (not one per order): the first
+ * dispatch that finds visible, undispatched items of a round notifies with the round's committed visible
+ * count; later stagger batches of the same round are marked dispatched without notifying (the marketplace
+ * list refreshes on its own). Training wording is used only when the round shows the training badge to
+ * freelancers; otherwise the copy stays neutral (no training/fake wording).
  *
  * Fan-out runs AFTER visibility commits — never inside the generation advisory lock.
  */
@@ -9,37 +14,55 @@ const { pool } = require("../config/db");
 const notificationEventsService = require("./notificationEventsService");
 
 const DEFAULT_ITEM_BATCH = 25;
-const DEFAULT_RECIPIENT_CHUNK = 80;
+const DEFAULT_RECIPIENT_CHUNK = 200;
+
+const POOL_SUMMARY_NOTIFICATION_TYPE = "order.pool.summary";
+const POOL_SUMMARY_LINK = "/dashboard/freelancer/orders";
 
 const FORBIDDEN_CONTENT_RE =
   /وهمي|تدريبي|تجريبي|جولة|fake|training|simulated|simulation|round/i;
 
-function buildPoolEntryNotificationCopy({ categoryName, subcategoryName, orderTitle } = {}) {
-  const title = "طلب جديد متاح";
-  const order = String(orderTitle || "").trim();
-  const category = String(categoryName || "").trim();
-  const subcategory = String(subcategoryName || "").trim();
+const AR_PLURAL = new Intl.PluralRules("ar");
 
-  let message;
-  if (category && subcategory && order) {
-    message = `طلب جديد في «${category}» — «${subcategory}»: ${order}`;
-  } else if (category && order) {
-    message = `طلب جديد في «${category}»: ${order}`;
-  } else if (order) {
-    message = `طلب جديد متاح: ${order}`;
-  } else if (category && subcategory) {
-    message = `طلب جديد في «${category}» — «${subcategory}»`;
-  } else if (category) {
-    message = `طلب جديد في «${category}»`;
-  } else {
-    message = "طلب جديد متاح في الطلبات.";
+/** Arabic count phrase with number agreement (1, 2, 3–10, 11–99, 100+ forms). */
+function arabicOrdersCountPhrase(count, training) {
+  const n = Math.max(0, Math.floor(Number(count) || 0));
+  switch (AR_PLURAL.select(n)) {
+    case "one":
+      return training ? "طلب تدريبي جديد واحد مناسب لك" : "طلب جديد واحد مناسب لك";
+    case "two":
+      return training ? "طلبان تدريبيان جديدان مناسبان لك" : "طلبان جديدان مناسبان لك";
+    case "few":
+      return training ? `${n} طلبات تدريبية جديدة مناسبة لك` : `${n} طلبات جديدة مناسبة لك`;
+    case "many":
+      return training ? `${n} طلبًا تدريبيًا جديدًا مناسبًا لك` : `${n} طلبًا جديدًا مناسبًا لك`;
+    default:
+      return training ? `${n} طلب تدريبي جديد مناسب لك` : `${n} طلب جديد مناسب لك`;
   }
-
-  return { title, message };
 }
 
-function poolVisibleNotificationDedupeKey(roundItemId, userId) {
-  return `order_pool_visible_ri${Number(roundItemId)}_u${Number(userId)}`;
+/**
+ * Summary copy for one training round. Arabic is stored in title/message; English travels in metadata
+ * (titleEn/messageEn) for English-locale clients. Never includes round ids or order titles.
+ */
+function buildPoolSummaryNotificationCopy({ count, showTrainingBadge = false } = {}) {
+  const n = Math.max(1, Math.floor(Number(count) || 0));
+  const training = Boolean(showTrainingBadge);
+  const kindEn = training ? "training orders" : "orders";
+  return {
+    title: training ? "تمت إضافة مجموعة جديدة من الطلبات التدريبية" : "تمت إضافة مجموعة جديدة من الطلبات",
+    message: `يتوفر الآن ${arabicOrdersCountPhrase(n, training)}.`,
+    titleEn: `A new batch of ${kindEn} was added`,
+    messageEn:
+      n === 1
+        ? `1 new ${training ? "training order" : "order"} suitable for you is now available.`
+        : `${n} new ${kindEn} suitable for you are now available.`,
+  };
+}
+
+/** Base key; notifyUsersDeduped appends `_u{userId}` → one row per recipient per round. */
+function poolRoundSummaryDedupeBase(roundId) {
+  return `pool_round_summary_r${Number(roundId)}`;
 }
 
 /**
@@ -74,22 +97,8 @@ async function listFakeOrderPoolNotificationRecipientIds(client) {
   return rows.map((r) => Number(r.id)).filter((n) => Number.isInteger(n) && n > 0);
 }
 
-async function loadDueVisibleUndispatchedRoundItems(runner, { limit = DEFAULT_ITEM_BATCH } = {}) {
-  const lim = Math.min(100, Math.max(1, Math.floor(Number(limit) || DEFAULT_ITEM_BATCH)));
-  const { rows } = await runner.query(
-    `SELECT
-       ri.id AS round_item_id,
-       ri.fake_order_id,
-       fo.title AS order_title,
-       c.name AS category_name,
-       sc.name AS subcategory_name
-     FROM fake_order_round_items ri
-     INNER JOIN fake_order_rounds fr ON fr.id = ri.round_id
-     INNER JOIN fake_orders fo ON fo.id = ri.fake_order_id
-     LEFT JOIN categories c ON c.id = fo.category_id
-     LEFT JOIN subcategories sc ON sc.id = fo.subcategory_id
-     WHERE ri.pool_notification_dispatched_at IS NULL
-       AND ri.status = 'active'
+/** Shared "listed in the marketplace right now" predicate for round items (ri / fr / fo aliases). */
+const VISIBLE_ROUND_ITEM_WHERE_SQL = `ri.status = 'active'
        AND fr.status = 'active'
        AND ri.visible_from <= NOW()
        AND ri.visible_until > NOW()
@@ -97,7 +106,21 @@ async function loadDueVisibleUndispatchedRoundItems(runner, { limit = DEFAULT_IT
        AND fo.is_published = TRUE
        AND fo.is_open_for_pool = TRUE
        AND fo.assigned_freelancer_id IS NULL
-       AND fo.order_status IN ('published', 'open_for_freelancers', 'open_for_bids')
+       AND fo.order_status IN ('published', 'open_for_freelancers', 'open_for_bids')`;
+
+async function loadDueVisibleUndispatchedRoundItems(runner, { limit = DEFAULT_ITEM_BATCH } = {}) {
+  const lim = Math.min(100, Math.max(1, Math.floor(Number(limit) || DEFAULT_ITEM_BATCH)));
+  const { rows } = await runner.query(
+    `SELECT
+       ri.id AS round_item_id,
+       ri.round_id,
+       ri.fake_order_id,
+       fr.show_fake_badge_to_freelancers AS show_training_badge
+     FROM fake_order_round_items ri
+     INNER JOIN fake_order_rounds fr ON fr.id = ri.round_id
+     INNER JOIN fake_orders fo ON fo.id = ri.fake_order_id
+     WHERE ri.pool_notification_dispatched_at IS NULL
+       AND ${VISIBLE_ROUND_ITEM_WHERE_SQL}
        AND (SELECT training_orders_enabled FROM fake_order_settings WHERE id = 1) = TRUE
      ORDER BY ri.visible_from ASC, ri.id ASC
      LIMIT $1`,
@@ -105,87 +128,101 @@ async function loadDueVisibleUndispatchedRoundItems(runner, { limit = DEFAULT_IT
   );
   return rows.map((r) => ({
     roundItemId: Number(r.round_item_id),
+    roundId: Number(r.round_id),
     fakeOrderId: Number(r.fake_order_id),
-    orderTitle: r.order_title || "",
-    categoryName: r.category_name || null,
-    subcategoryName: r.subcategory_name || null,
+    showTrainingBadge: r.show_training_badge === true,
   }));
 }
 
-async function markRoundItemPoolNotificationDispatched(runner, roundItemId) {
-  await runner.query(
+/** True once any item of the round was dispatched — its summary already went out (or predates summaries). */
+async function roundSummaryAlreadyDispatched(runner, roundId) {
+  const { rows } = await runner.query(
+    `SELECT EXISTS (
+       SELECT 1 FROM fake_order_round_items
+       WHERE round_id = $1 AND pool_notification_dispatched_at IS NOT NULL
+     ) AS dispatched`,
+    [Number(roundId)],
+  );
+  return rows[0]?.dispatched === true;
+}
+
+/** Committed, currently listed orders of the round — the number the summary announces. */
+async function countRoundVisibleCommittedItems(runner, roundId) {
+  const { rows } = await runner.query(
+    `SELECT COUNT(*)::int AS c
+     FROM fake_order_round_items ri
+     INNER JOIN fake_order_rounds fr ON fr.id = ri.round_id
+     INNER JOIN fake_orders fo ON fo.id = ri.fake_order_id
+     WHERE ri.round_id = $1
+       AND ${VISIBLE_ROUND_ITEM_WHERE_SQL}`,
+    [Number(roundId)],
+  );
+  return Number(rows[0]?.c) || 0;
+}
+
+async function markRoundItemsPoolNotificationDispatched(runner, roundItemIds) {
+  const ids = roundItemIds.map(Number).filter((n) => Number.isInteger(n) && n > 0);
+  if (!ids.length) return 0;
+  const { rowCount } = await runner.query(
     `UPDATE fake_order_round_items
      SET pool_notification_dispatched_at = NOW(),
          updated_at = NOW()
-     WHERE id = $1
+     WHERE id = ANY($1::bigint[])
        AND pool_notification_dispatched_at IS NULL`,
-    [Number(roundItemId)],
+    [ids],
   );
+  return Number(rowCount) || 0;
 }
 
-async function notifyRecipientsForRoundItem(item, recipientIds, { chunkSize = DEFAULT_RECIPIENT_CHUNK } = {}) {
-  const oid = Number(item.fakeOrderId);
-  const rid = Number(item.roundItemId);
-  const { title, message } = buildPoolEntryNotificationCopy({
-    categoryName: item.categoryName,
-    subcategoryName: item.subcategoryName,
-    orderTitle: item.orderTitle,
+async function notifyRecipientsForRoundSummary(round, recipientIds, runner, { chunkSize = DEFAULT_RECIPIENT_CHUNK } = {}) {
+  const { title, message, titleEn, messageEn } = buildPoolSummaryNotificationCopy({
+    count: round.visibleCount,
+    showTrainingBadge: round.showTrainingBadge,
   });
-
-  const link = `/dashboard/freelancer/orders/${encodeURIComponent(String(oid))}`;
-  const metadata = {
-    orderId: String(oid),
-    projectName: String(item.orderTitle || "").trim() || undefined,
-    categoryName: item.categoryName ? String(item.categoryName) : undefined,
-    subcategoryName: item.subcategoryName ? String(item.subcategoryName) : undefined,
-  };
-  Object.keys(metadata).forEach((k) => {
-    if (metadata[k] === undefined) delete metadata[k];
-  });
-
-  const chunk = Math.min(200, Math.max(10, Math.floor(Number(chunkSize) || DEFAULT_RECIPIENT_CHUNK)));
-  let notifiedOrDeduped = 0;
+  const chunk = Math.min(500, Math.max(10, Math.floor(Number(chunkSize) || DEFAULT_RECIPIENT_CHUNK)));
+  let created = 0;
   let failed = 0;
 
-  // Sequential recipient chunks — avoid unbounded Promise.all fan-out.
+  // Sequential recipient chunks; each chunk is one multi-row insert (ON CONFLICT dedupe → no duplicate push).
   for (let i = 0; i < recipientIds.length; i += chunk) {
     const slice = recipientIds.slice(i, i + chunk);
     try {
       // eslint-disable-next-line no-await-in-loop
-      await notificationEventsService.notifyUsers({
-        userIds: slice,
-        recipientRole: "freelancer",
-        actorUserId: null,
-        type: "order.created",
-        title,
-        message,
-        entityType: "order",
-        entityId: oid,
-        link,
-        priority: "medium",
-        metadata,
-        // notifyUsers appends `_u{userId}` → order_pool_visible_ri{id}_u{uid}
-        dedupeKey: `order_pool_visible_ri${rid}`,
-      });
-      notifiedOrDeduped += slice.length;
+      const rows = await notificationEventsService.notifyUsersDeduped(
+        {
+          userIds: slice,
+          recipientRole: "freelancer",
+          actorUserId: null,
+          type: POOL_SUMMARY_NOTIFICATION_TYPE,
+          title,
+          message,
+          entityType: "marketplace",
+          entityId: null,
+          link: POOL_SUMMARY_LINK,
+          priority: "medium",
+          metadata: { visibleCount: round.visibleCount, titleEn, messageEn },
+          dedupeKey: poolRoundSummaryDedupeBase(round.roundId),
+        },
+        runner,
+      );
+      created += Array.isArray(rows) ? rows.length : 0;
     } catch (err) {
       failed += slice.length;
       // eslint-disable-next-line no-console
-      console.error("[fakeOrderPoolNotify] recipient chunk failed", {
-        roundItemId: rid,
-        fakeOrderId: oid,
+      console.error("[fakeOrderPoolNotify] summary recipient chunk failed", {
+        roundId: round.roundId,
         chunkSize: slice.length,
         message: err?.message || err,
       });
     }
   }
 
-  return { notifiedOrDeduped, failed, title, message };
+  return { created, failed };
 }
 
 /**
- * Central dispatcher: currently visible round items with null dispatch timestamp.
- * Safe to call repeatedly (dedupe keys + dispatch stamp).
+ * Central dispatcher: currently visible round items with null dispatch timestamp, grouped by round.
+ * Safe to call repeatedly and concurrently (per-recipient dedupe keys + dispatch stamp).
  */
 async function dispatchNewlyVisibleFakeOrderNotifications(options = {}) {
   const itemLimit = options.itemLimit != null ? Number(options.itemLimit) : DEFAULT_ITEM_BATCH;
@@ -206,38 +243,64 @@ async function dispatchNewlyVisibleFakeOrderNotifications(options = {}) {
   }
 
   if (!items.length) {
-    return { ok: true, processed: 0, marked: 0, recipientCount: 0 };
+    return { ok: true, processed: 0, marked: 0, summarizedRounds: 0, silentRounds: 0, summaryRows: 0, recipientCount: 0 };
   }
 
-  const recipientIds = await listFakeOrderPoolNotificationRecipientIds(runner);
+  const rounds = new Map();
+  for (const item of items) {
+    if (!rounds.has(item.roundId)) {
+      rounds.set(item.roundId, { roundId: item.roundId, showTrainingBadge: item.showTrainingBadge, itemIds: [] });
+    }
+    rounds.get(item.roundId).itemIds.push(item.roundItemId);
+  }
+
+  let recipientIds = null;
   let marked = 0;
   let failedItems = 0;
+  let summarizedRounds = 0;
+  let silentRounds = 0;
+  let summaryRows = 0;
 
-  for (const item of items) {
+  for (const round of rounds.values()) {
     try {
       // eslint-disable-next-line no-await-in-loop
-      const result = await notifyRecipientsForRoundItem(item, recipientIds, { chunkSize: recipientChunkSize });
-      if (result.failed > 0 && result.notifiedOrDeduped < recipientIds.length) {
-        // Leave undispatched so remaining recipients can be attempted on retry.
-        // Recipients that already got rows are protected by dedupe_key.
-        failedItems += 1;
+      if (await roundSummaryAlreadyDispatched(runner, round.roundId)) {
+        // Later stagger batch of an announced round: no new notification.
+        // eslint-disable-next-line no-await-in-loop
+        marked += await markRoundItemsPoolNotificationDispatched(runner, round.itemIds);
+        silentRounds += 1;
+        continue;
+      }
+      // eslint-disable-next-line no-await-in-loop
+      const visibleCount = await countRoundVisibleCommittedItems(runner, round.roundId);
+      if (visibleCount < 1) continue;
+      // eslint-disable-next-line no-await-in-loop
+      if (!recipientIds) recipientIds = await listFakeOrderPoolNotificationRecipientIds(runner);
+      // eslint-disable-next-line no-await-in-loop
+      const result = await notifyRecipientsForRoundSummary({ ...round, visibleCount }, recipientIds, runner, {
+        chunkSize: recipientChunkSize,
+      });
+      summaryRows += result.created;
+      if (result.failed > 0) {
+        // Leave undispatched so remaining recipients are attempted on retry.
+        // Recipients that already got the summary are protected by dedupe_key.
+        failedItems += round.itemIds.length;
         // eslint-disable-next-line no-console
-        console.warn("[fakeOrderPoolNotify] partial fan-out; leaving undispatched", {
-          roundItemId: item.roundItemId,
+        console.warn("[fakeOrderPoolNotify] partial summary fan-out; leaving undispatched", {
+          roundId: round.roundId,
           failed: result.failed,
-          ok: result.notifiedOrDeduped,
           recipients: recipientIds.length,
         });
         continue;
       }
       // eslint-disable-next-line no-await-in-loop
-      await markRoundItemPoolNotificationDispatched(runner, item.roundItemId);
-      marked += 1;
+      marked += await markRoundItemsPoolNotificationDispatched(runner, round.itemIds);
+      summarizedRounds += 1;
     } catch (err) {
-      failedItems += 1;
+      failedItems += round.itemIds.length;
       // eslint-disable-next-line no-console
-      console.error("[fakeOrderPoolNotify] item failed", {
-        roundItemId: item.roundItemId,
+      console.error("[fakeOrderPoolNotify] round failed", {
+        roundId: round.roundId,
         message: err?.message || err,
       });
     }
@@ -248,7 +311,10 @@ async function dispatchNewlyVisibleFakeOrderNotifications(options = {}) {
     processed: items.length,
     marked,
     failedItems,
-    recipientCount: recipientIds.length,
+    summarizedRounds,
+    silentRounds,
+    summaryRows,
+    recipientCount: recipientIds ? recipientIds.length : 0,
   };
 }
 
@@ -265,13 +331,16 @@ function scheduleDispatchNewlyVisibleFakeOrderNotifications(options = {}) {
 }
 
 module.exports = {
-  buildPoolEntryNotificationCopy,
-  poolVisibleNotificationDedupeKey,
+  buildPoolSummaryNotificationCopy,
+  poolRoundSummaryDedupeBase,
   listFakeOrderPoolNotificationRecipientIds,
   loadDueVisibleUndispatchedRoundItems,
+  countRoundVisibleCommittedItems,
   dispatchNewlyVisibleFakeOrderNotifications,
   scheduleDispatchNewlyVisibleFakeOrderNotifications,
   FORBIDDEN_CONTENT_RE,
+  POOL_SUMMARY_NOTIFICATION_TYPE,
+  POOL_SUMMARY_LINK,
   DEFAULT_ITEM_BATCH,
   DEFAULT_RECIPIENT_CHUNK,
 };

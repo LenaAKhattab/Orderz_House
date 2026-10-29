@@ -1,7 +1,7 @@
 const { pool } = require("../config/db");
 const { sanitizeNotificationForViewer } = require("../utils/notificationViewerSanitize");
 const { isAllowedByPreferences } = require("../utils/notificationPreferenceRules");
-const { getUserNotificationPreferences } = require("./notificationPreferenceCache");
+const { getUserNotificationPreferences, getManyUserNotificationPreferences } = require("./notificationPreferenceCache");
 const realtimeHub = require("./notificationRealtimeHub");
 const { queuePushForNotification } = require("./fcmPushService");
 
@@ -233,6 +233,68 @@ async function createIfNotExists(data, dedupeKey, client) {
   return mapNotification(existing.rows[0] || null);
 }
 
+/**
+ * Batched createIfNotExists: one multi-row insert; every item must carry its own dedupe key.
+ * Preferences are checked per recipient (one batched lookup); realtime + push only for newly inserted rows.
+ * Returns the inserted notifications (already-existing dedupe keys are skipped silently).
+ */
+async function createManyIfNotExists(items, client) {
+  if (!Array.isArray(items) || items.length === 0) return [];
+  const runner = getRunner(client);
+  const inputs = items.map((item) => normalizeCreateInput(item));
+  if (inputs.some((input) => !input.dedupeKey)) {
+    const err = new Error("dedupeKey is required for every item.");
+    err.statusCode = 400;
+    throw err;
+  }
+  let prefsByUser;
+  try {
+    prefsByUser = await getManyUserNotificationPreferences(inputs.map((input) => input.recipientUserId), runner);
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error("[notifications] batched preference check failed:", err?.message || err);
+    prefsByUser = new Map();
+  }
+  const allowed = inputs.filter((input) =>
+    isAllowedByPreferences(prefsByUser.get(input.recipientUserId) || {}, input.type, input.priority),
+  );
+  if (!allowed.length) return [];
+  const values = [];
+  const placeholders = allowed.map((item, idx) => {
+    const base = idx * 12;
+    values.push(
+      item.recipientUserId,
+      item.recipientRole,
+      item.actorUserId,
+      item.type,
+      item.title,
+      item.message,
+      item.entityType,
+      item.entityId,
+      item.link,
+      item.priority,
+      JSON.stringify(item.metadata || {}),
+      item.dedupeKey,
+    );
+    return `($${base + 1},$${base + 2},$${base + 3},$${base + 4},$${base + 5},$${base + 6},$${base + 7},$${base + 8},$${base + 9},$${base + 10},$${base + 11}::jsonb,$${base + 12})`;
+  });
+  const { rows } = await runner.query(
+    `INSERT INTO notifications (
+      recipient_user_id, recipient_role, actor_user_id, type, title, message,
+      entity_type, entity_id, link, priority, metadata, dedupe_key
+    ) VALUES ${placeholders.join(",")}
+    ON CONFLICT (dedupe_key) WHERE dedupe_key IS NOT NULL DO NOTHING
+    RETURNING *`,
+    values,
+  );
+  const mapped = rows.map(mapNotification);
+  mapped.forEach((n) => {
+    publishRealtime(n);
+    queuePushForNotification(n);
+  });
+  return mapped;
+}
+
 async function markAsRead(notificationId, userId, client, viewerRole) {
   const runner = getRunner(client);
   const nid = Number(notificationId);
@@ -370,6 +432,7 @@ module.exports = {
   createNotification,
   createManyNotifications,
   createIfNotExists,
+  createManyIfNotExists,
   markAsRead,
   markAllAsRead,
   getUserNotifications,
