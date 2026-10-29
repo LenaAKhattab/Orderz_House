@@ -6,8 +6,7 @@
 #   - DB: stripe_webhook_events received/processed/failed in the window
 # Usage: bash scripts/orderzhouse-stripe-webhook-health.sh [HOURS]   (default 24)
 # Exit: 0 OK, 1 WARN, 2 ALERT, 3 check could not run.
-# Daily run (VPS): /etc/cron.d/orderzhouse-stripe-webhook-health
-#   15 6 * * * root bash /root/Orderz_House/scripts/orderzhouse-stripe-webhook-health.sh 24 >> /var/log/orderzhouse-stripe-webhook-health.log 2>&1
+# Daily run (VPS): /etc/cron.d/orderzhouse-stripe-webhook-health → scripts/orderzhouse-stripe-webhook-health-cron.sh
 set -uo pipefail
 
 HOURS="${1:-24}"
