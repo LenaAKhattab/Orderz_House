@@ -9,6 +9,7 @@ import { NotificationRealtimeContext } from "./notificationRealtimeContext";
 import "../i18n/notificationsUiResources";
 import { getTranslation } from "../lib/translation/getTranslation.js";
 import { readStoredLocale } from "../i18n/localePreference.js";
+import { getNotificationText } from "../utils/notificationDisplay.js";
 
 export function NotificationRealtimeProvider({ children }) {
   const { user } = useAuth();
@@ -34,9 +35,11 @@ export function NotificationRealtimeProvider({ children }) {
         return;
       }
 
+      const locale = readStoredLocale();
+      const text = getNotificationText(notification, locale);
       showBrowserNotification({
-        title: notification.title || getTranslation("notificationsUi.bell.newNotification", readStoredLocale()),
-        body: notification.message || "",
+        title: text.title || getTranslation("notificationsUi.bell.newNotification", locale),
+        body: text.message,
         link: notification.link,
         tag: notification.id ? String(notification.id) : undefined,
       });

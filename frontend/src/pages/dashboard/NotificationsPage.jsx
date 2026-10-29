@@ -28,7 +28,7 @@ import HubMetricSkeleton from "../../components/dashboard/hub/HubMetricSkeleton"
 import NotificationListSkeleton from "../../components/dashboard/hub/NotificationListSkeleton";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import "../../i18n/notificationsUiResources";
-import { getNotificationDetails, getNotificationTypeIconKind } from "../../utils/notificationDisplay";
+import { getNotificationDetails, getNotificationText, getNotificationTypeIconKind } from "../../utils/notificationDisplay";
 import { resolveSafeInternalNavPath } from "../../utils/safeInternalNavPath";
 import { createAdminListRequestGate } from "../../lib/staff/adminListLoad";
 import "../../styles/dashboardHub.css";
@@ -225,7 +225,8 @@ export default function NotificationsPage() {
         categoryPrefix: t("freelancerDashboard.notificationsPage.feedbackCategoryPrefix"),
         topicPrefix: t("freelancerDashboard.notificationsPage.feedbackTopicPrefix"),
       });
-      const hay = [n.title, n.message, details, n.type].filter(Boolean).join(" ").toLowerCase();
+      const text = getNotificationText(n, locale);
+      const hay = [text.title, text.message, details, n.type].filter(Boolean).join(" ").toLowerCase();
       return hay.includes(q);
     });
   }, [items, searchQuery, canShowOrderReference, locale, t]);
@@ -397,10 +398,11 @@ export default function NotificationsPage() {
                 categoryPrefix: t("freelancerDashboard.notificationsPage.feedbackCategoryPrefix"),
                 topicPrefix: t("freelancerDashboard.notificationsPage.feedbackTopicPrefix"),
               });
-              const message = String(n.message || "").trim();
+              const text = getNotificationText(n, locale);
+              const message = text.message;
               const category = notificationCategory(n.type, t);
               const relativeTime = fmtRelativeTime(n.createdAt, t, locale);
-              const cardTitle = n.title || t("freelancerDashboard.notificationsPage.newNotification");
+              const cardTitle = text.title || t("freelancerDashboard.notificationsPage.newNotification");
               const isFeedbackNotif = String(n?.type || "").startsWith("feedback.");
               // Feedback: show labeled category/topic details first; keep message as secondary body.
               const description = isFeedbackNotif

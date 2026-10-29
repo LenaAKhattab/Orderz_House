@@ -1,5 +1,5 @@
 /**
- * Fake-order pool-entry notification dispatcher — unit + source contract tests.
+ * Fake-order pool notifications — one summary per freelancer per training round (R1A growth control).
  * Run: node --test test/fakeOrderPoolNotifications.test.js
  */
 process.env.DATABASE_URL =
@@ -12,6 +12,7 @@ const path = require("node:path");
 
 const servicePath = path.join(__dirname, "..", "src", "services", "fakeOrderPoolNotificationService.js");
 const fakeOrdersPath = path.join(__dirname, "..", "src", "services", "fakeOrdersService.js");
+const ordersServicePath = path.join(__dirname, "..", "src", "services", "ordersService.js");
 const migrationPath = path.join(
   __dirname,
   "..",
@@ -20,87 +21,514 @@ const migrationPath = path.join(
   "121_fake_order_round_items_pool_notification_dispatched.sql",
 );
 
-function loadDispatcherWithMocks({ queryImpl, notifyUsersImpl, getRoleUserIdsImpl }) {
-  const dbPath = require.resolve("../src/config/db");
-  const eventsPath = require.resolve("../src/services/notificationEventsService");
-  const targetPath = require.resolve("../src/services/fakeOrderPoolNotificationService");
-  delete require.cache[dbPath];
-  delete require.cache[eventsPath];
-  delete require.cache[targetPath];
+const MODULE_IDS = [
+  "../src/config/db",
+  "../src/services/notificationEventsService",
+  "../src/services/notificationService",
+  "../src/services/notificationPreferenceCache",
+  "../src/services/notificationRealtimeHub",
+  "../src/services/fcmPushService",
+  "../src/services/fakeOrderPoolNotificationService",
+];
 
-  require.cache[dbPath] = {
-    id: dbPath,
-    filename: dbPath,
-    loaded: true,
-    exports: { pool: { query: queryImpl } },
-  };
-  require.cache[eventsPath] = {
-    id: eventsPath,
-    filename: eventsPath,
-    loaded: true,
-    exports: {
-      getRoleUserIds: getRoleUserIdsImpl || (async () => [101, 102]),
-      notifyUsers: notifyUsersImpl,
+function clearModules() {
+  for (const id of MODULE_IDS) delete require.cache[require.resolve(id)];
+}
+
+function stubModule(id, exports) {
+  const p = require.resolve(id);
+  require.cache[p] = { id: p, filename: p, loaded: true, exports };
+}
+
+function loadDispatcherWithMocks({ queryImpl, notifyUsersDedupedImpl, getRoleUserIdsImpl }) {
+  clearModules();
+  stubModule("../src/config/db", { pool: { query: queryImpl } });
+  stubModule("../src/services/notificationEventsService", {
+    getRoleUserIds: getRoleUserIdsImpl || (async () => [101, 102]),
+    notifyUsersDeduped: notifyUsersDedupedImpl,
+    notifyUsers: async () => {
+      throw new Error("per-order notifyUsers must not be used for training rounds");
     },
-  };
-  // eslint-disable-next-line global-require, import/no-dynamic-require
+  });
+  // eslint-disable-next-line global-require
   return require("../src/services/fakeOrderPoolNotificationService");
 }
 
-describe("buildPoolEntryNotificationCopy", () => {
+const SETTINGS_ALL = { training_orders_enabled: true, show_to_all_freelancers: true, show_to_all_visitors: false };
+
+/**
+ * In-memory model of the dispatcher's SQL: due items, per-round visible counts, dispatch stamps.
+ * items: { roundItemId, roundId, badge?, visible? (default true) }
+ */
+function makeDb({ settings = SETTINGS_ALL, items = [], visibleCountByRound = null, planRecipients = [] }) {
+  const state = {
+    dispatched: new Set(items.filter((i) => i.dispatched).map((i) => i.roundItemId)),
+    queries: [],
+    updates: [],
+  };
+  const queryImpl = async (sql, params) => {
+    const text = String(sql);
+    state.queries.push(text);
+    if (text.includes("FROM fake_order_settings WHERE id = 1") && text.includes("SELECT *")) {
+      return { rows: [settings] };
+    }
+    if (text.includes("pool_notification_dispatched_at IS NULL") && text.includes("ORDER BY ri.visible_from")) {
+      const due = items.filter((i) => i.visible !== false && !state.dispatched.has(i.roundItemId));
+      return {
+        rows: due.slice(0, Number(params[0])).map((i) => ({
+          round_item_id: i.roundItemId,
+          round_id: i.roundId,
+          fake_order_id: 1000 + i.roundItemId,
+          show_training_badge: i.badge === true,
+        })),
+      };
+    }
+    if (text.includes("SELECT EXISTS") && text.includes("pool_notification_dispatched_at IS NOT NULL")) {
+      const rid = Number(params[0]);
+      return { rows: [{ dispatched: items.some((i) => i.roundId === rid && state.dispatched.has(i.roundItemId)) }] };
+    }
+    if (text.includes("COUNT(*)::int AS c") && text.includes("ri.round_id = $1")) {
+      const rid = Number(params[0]);
+      const c = visibleCountByRound && rid in visibleCountByRound
+        ? visibleCountByRound[rid]
+        : items.filter((i) => i.roundId === rid && i.visible !== false).length;
+      return { rows: [{ c }] };
+    }
+    if (text.includes("UPDATE fake_order_round_items") && text.includes("pool_notification_dispatched_at = NOW()")) {
+      const ids = params[0].map(Number);
+      state.updates.push(ids);
+      let rowCount = 0;
+      for (const id of ids) {
+        if (!state.dispatched.has(id)) {
+          state.dispatched.add(id);
+          rowCount += 1;
+        }
+      }
+      return { rowCount };
+    }
+    if (text.includes("fake_order_settings_plans")) {
+      return { rows: planRecipients.map((id) => ({ id })) };
+    }
+    return { rows: [] };
+  };
+  return { state, queryImpl };
+}
+
+/** Mimics notifyUsersDeduped: per-recipient key `${base}_u${uid}`, conflict → no row. */
+function makeDedupedNotifier({ failOnCall = null } = {}) {
+  const calls = [];
+  const rowsByKey = new Map();
+  let n = 0;
+  const impl = async (payload) => {
+    n += 1;
+    calls.push(payload);
+    if (failOnCall === n) throw new Error("simulated chunk failure");
+    const inserted = [];
+    for (const uid of payload.userIds) {
+      const key = `${payload.dedupeKey}_u${uid}`;
+      if (rowsByKey.has(key)) continue;
+      const row = { id: String(rowsByKey.size + 1), recipientUserId: String(uid), ...payload, dedupeKey: key };
+      rowsByKey.set(key, row);
+      inserted.push(row);
+    }
+    return inserted;
+  };
+  return { calls, rowsByKey, impl };
+}
+
+afterEach(() => clearModules());
+
+describe("buildPoolSummaryNotificationCopy", () => {
   // eslint-disable-next-line global-require
-  const { buildPoolEntryNotificationCopy, FORBIDDEN_CONTENT_RE } = require("../src/services/fakeOrderPoolNotificationService");
+  const { buildPoolSummaryNotificationCopy, FORBIDDEN_CONTENT_RE } = require("../src/services/fakeOrderPoolNotificationService");
 
-  it("includes category, subcategory, and title", () => {
-    const { title, message } = buildPoolEntryNotificationCopy({
-      categoryName: "البرمجة",
-      subcategoryName: "تطوير مواقع الويب",
-      orderTitle: "تطوير صفحة تعريفية لشركة",
-    });
-    assert.equal(title, "طلب جديد متاح");
-    assert.equal(
-      message,
-      "طلب جديد في «البرمجة» — «تطوير مواقع الويب»: تطوير صفحة تعريفية لشركة",
-    );
-    assert.equal(FORBIDDEN_CONTENT_RE.test(title), false);
-    assert.equal(FORBIDDEN_CONTENT_RE.test(message), false);
+  it("neutral copy (badge hidden) never reveals training orders", () => {
+    for (const count of [1, 2, 3, 10, 11, 99, 100, 101, 1234]) {
+      const c = buildPoolSummaryNotificationCopy({ count, showTrainingBadge: false });
+      for (const s of [c.title, c.message, c.titleEn, c.messageEn]) {
+        assert.equal(FORBIDDEN_CONTENT_RE.test(s), false, `${count}: ${s}`);
+      }
+      assert.equal(c.title, "تمت إضافة مجموعة جديدة من الطلبات");
+    }
   });
 
-  it("omits subcategory gracefully", () => {
-    const { message } = buildPoolEntryNotificationCopy({
-      categoryName: "التصميم",
-      subcategoryName: "",
-      orderTitle: "تصميم هوية بصرية لمشروع ناشئ",
-    });
-    assert.equal(message, "طلب جديد في «التصميم»: تصميم هوية بصرية لمشروع ناشئ");
-    assert.doesNotMatch(message, /undefined|null|«»/);
+  it("training copy (badge shown) uses the requested wording", () => {
+    const c = buildPoolSummaryNotificationCopy({ count: 7, showTrainingBadge: true });
+    assert.equal(c.title, "تمت إضافة مجموعة جديدة من الطلبات التدريبية");
+    assert.equal(c.message, "يتوفر الآن 7 طلبات تدريبية جديدة مناسبة لك.");
+    assert.equal(c.titleEn, "A new batch of training orders was added");
+    assert.equal(c.messageEn, "7 new training orders suitable for you are now available.");
   });
 
-  it("falls back to title only when categories missing", () => {
-    const { message } = buildPoolEntryNotificationCopy({
-      categoryName: null,
-      subcategoryName: null,
-      orderTitle: "مشروع مستقل",
-    });
-    assert.equal(message, "طلب جديد متاح: مشروع مستقل");
+  it("Arabic and English number agreement: singular, dual, few, many, hundreds", () => {
+    const m = (count) => buildPoolSummaryNotificationCopy({ count }).message;
+    assert.equal(m(1), "يتوفر الآن طلب جديد واحد مناسب لك.");
+    assert.equal(m(2), "يتوفر الآن طلبان جديدان مناسبان لك.");
+    assert.equal(m(3), "يتوفر الآن 3 طلبات جديدة مناسبة لك.");
+    assert.equal(m(10), "يتوفر الآن 10 طلبات جديدة مناسبة لك.");
+    assert.equal(m(11), "يتوفر الآن 11 طلبًا جديدًا مناسبًا لك.");
+    assert.equal(m(25), "يتوفر الآن 25 طلبًا جديدًا مناسبًا لك.");
+    assert.equal(m(100), "يتوفر الآن 100 طلب جديد مناسب لك.");
+    assert.equal(m(1234), "يتوفر الآن 1234 طلبًا جديدًا مناسبًا لك.");
+    assert.equal(buildPoolSummaryNotificationCopy({ count: 1 }).messageEn, "1 new order suitable for you is now available.");
+    assert.equal(buildPoolSummaryNotificationCopy({ count: 2 }).messageEn, "2 new orders suitable for you are now available.");
   });
 });
 
-describe("migration 121 rollout safety", () => {
-  it("adds pool_notification_dispatched_at and backfills existing rows", () => {
-    const sql = fs.readFileSync(migrationPath, "utf8");
-    assert.match(sql, /pool_notification_dispatched_at TIMESTAMPTZ NULL/);
-    assert.match(sql, /UPDATE fake_order_round_items/);
-    assert.match(sql, /SET pool_notification_dispatched_at = COALESCE/);
-    assert.match(sql, /idx_fake_round_items_pool_notify_due/);
+describe("dispatchNewlyVisibleFakeOrderNotifications — one summary per freelancer per round", () => {
+  let notifier;
+  beforeEach(() => {
+    notifier = makeDedupedNotifier();
+  });
+
+  it("a round with several visible orders creates one summary per recipient (not one per order)", async () => {
+    const db = makeDb({
+      items: [
+        { roundItemId: 11, roundId: 7 },
+        { roundItemId: 12, roundId: 7 },
+        { roundItemId: 13, roundId: 7 },
+      ],
+    });
+    const svc = loadDispatcherWithMocks({
+      queryImpl: db.queryImpl,
+      getRoleUserIdsImpl: async () => [101, 102, 103],
+      notifyUsersDedupedImpl: notifier.impl,
+    });
+    const out = await svc.dispatchNewlyVisibleFakeOrderNotifications();
+    assert.equal(notifier.calls.length, 1);
+    assert.equal(notifier.rowsByKey.size, 3, "3 recipients × 1 round = 3 rows");
+    const call = notifier.calls[0];
+    assert.deepEqual(call.userIds, [101, 102, 103]);
+    assert.equal(call.type, "order.pool.summary");
+    assert.equal(call.dedupeKey, "pool_round_summary_r7");
+    assert.equal(call.link, "/dashboard/freelancer/orders");
+    assert.equal(call.entityType, "marketplace");
+    assert.equal(call.entityId, null);
+    assert.equal(call.metadata.visibleCount, 3);
+    assert.match(call.message, /3 طلبات جديدة/);
+    assert.deepEqual(db.state.updates, [[11, 12, 13]], "all due items of the round stamped in one update");
+    assert.equal(out.summarizedRounds, 1);
+    assert.equal(out.summaryRows, 3);
+    assert.equal(out.marked, 3);
+  });
+
+  it("no internal round/order ids or titles in the user-visible fields", async () => {
+    const db = makeDb({ items: [{ roundItemId: 51, roundId: 4242 }] });
+    const svc = loadDispatcherWithMocks({ queryImpl: db.queryImpl, notifyUsersDedupedImpl: notifier.impl });
+    await svc.dispatchNewlyVisibleFakeOrderNotifications();
+    const call = notifier.calls[0];
+    const visible = JSON.stringify([call.title, call.message, call.link, call.metadata]);
+    assert.doesNotMatch(visible, /4242|1051|\b51\b/);
+  });
+
+  it("retry after success: later stagger batch of the same round is marked silently (no new rows)", async () => {
+    const items = [
+      { roundItemId: 21, roundId: 9 },
+      { roundItemId: 22, roundId: 9, visible: false },
+    ];
+    const db = makeDb({ items });
+    const svc = loadDispatcherWithMocks({ queryImpl: db.queryImpl, notifyUsersDedupedImpl: notifier.impl });
+    await svc.dispatchNewlyVisibleFakeOrderNotifications();
+    assert.equal(notifier.calls.length, 1);
+    items[1].visible = true; // next stagger batch becomes visible
+    const second = await svc.dispatchNewlyVisibleFakeOrderNotifications();
+    assert.equal(notifier.calls.length, 1, "no second summary for the same round");
+    assert.equal(second.silentRounds, 1);
+    assert.equal(second.marked, 1);
+    const third = await svc.dispatchNewlyVisibleFakeOrderNotifications();
+    assert.equal(third.processed, 0);
+  });
+
+  it("dedupe on retry: repeated dispatch with the same round key inserts nothing new", async () => {
+    const db = makeDb({ items: [{ roundItemId: 31, roundId: 3 }] });
+    const svc = loadDispatcherWithMocks({ queryImpl: db.queryImpl, notifyUsersDedupedImpl: notifier.impl });
+    await svc.dispatchNewlyVisibleFakeOrderNotifications();
+    db.state.dispatched.clear(); // simulate a lost dispatch stamp (crash between insert and stamp)
+    const retry = await svc.dispatchNewlyVisibleFakeOrderNotifications();
+    assert.equal(notifier.calls.length, 2);
+    assert.equal(notifier.calls[1].dedupeKey, notifier.calls[0].dedupeKey);
+    assert.equal(retry.summaryRows, 0, "same per-recipient keys → no new rows (and therefore no pushes)");
+    assert.equal(notifier.rowsByKey.size, 2);
+  });
+
+  it("partial fan-out failure leaves items undispatched; retry completes only missing recipients", async () => {
+    notifier = makeDedupedNotifier({ failOnCall: 2 });
+    const recipients = Array.from({ length: 25 }, (_, i) => 500 + i);
+    const db = makeDb({ items: [{ roundItemId: 41, roundId: 5 }] });
+    const svc = loadDispatcherWithMocks({
+      queryImpl: db.queryImpl,
+      getRoleUserIdsImpl: async () => recipients,
+      notifyUsersDedupedImpl: notifier.impl,
+    });
+    const first = await svc.dispatchNewlyVisibleFakeOrderNotifications({ recipientChunkSize: 10 });
+    assert.equal(first.ok, false);
+    assert.equal(first.marked, 0, "not stamped while some recipients are missing");
+    assert.equal(notifier.rowsByKey.size, 15, "chunks 1 and 3 succeeded");
+    const second = await svc.dispatchNewlyVisibleFakeOrderNotifications({ recipientChunkSize: 10 });
+    assert.equal(second.ok, true);
+    assert.equal(second.summaryRows, 10, "only the failed chunk's recipients get rows on retry");
+    assert.equal(notifier.rowsByKey.size, 25, "exactly one summary per recipient overall");
+    assert.equal(second.marked, 1);
+  });
+
+  it("announced count is the committed visible count, not requested or loaded item count", async () => {
+    // Round requested 20, only 17 committed/visible; 3 due items loaded this pass.
+    const db = makeDb({
+      items: [
+        { roundItemId: 61, roundId: 12 },
+        { roundItemId: 62, roundId: 12 },
+        { roundItemId: 63, roundId: 12 },
+      ],
+      visibleCountByRound: { 12: 17 },
+    });
+    const svc = loadDispatcherWithMocks({ queryImpl: db.queryImpl, notifyUsersDedupedImpl: notifier.impl });
+    await svc.dispatchNewlyVisibleFakeOrderNotifications();
+    assert.equal(notifier.calls[0].metadata.visibleCount, 17);
+    assert.match(notifier.calls[0].message, /17 طلبًا/);
+    assert.match(notifier.calls[0].metadata.messageEn, /^17 new orders/);
+  });
+
+  it("round with nothing visible any more announces nothing and stamps nothing", async () => {
+    const db = makeDb({ items: [{ roundItemId: 71, roundId: 13 }], visibleCountByRound: { 13: 0 } });
+    const svc = loadDispatcherWithMocks({ queryImpl: db.queryImpl, notifyUsersDedupedImpl: notifier.impl });
+    const out = await svc.dispatchNewlyVisibleFakeOrderNotifications();
+    assert.equal(notifier.calls.length, 0);
+    assert.equal(out.marked, 0);
+  });
+
+  it("two rounds due at once → one summary per round, wording per round badge", async () => {
+    const db = makeDb({
+      items: [
+        { roundItemId: 81, roundId: 20, badge: false },
+        { roundItemId: 82, roundId: 21, badge: true },
+        { roundItemId: 83, roundId: 21, badge: true },
+      ],
+    });
+    const svc = loadDispatcherWithMocks({ queryImpl: db.queryImpl, notifyUsersDedupedImpl: notifier.impl });
+    const out = await svc.dispatchNewlyVisibleFakeOrderNotifications();
+    assert.equal(notifier.calls.length, 2);
+    assert.equal(out.summarizedRounds, 2);
+    const [a, b] = notifier.calls;
+    assert.equal(a.dedupeKey, "pool_round_summary_r20");
+    assert.equal(a.title, "تمت إضافة مجموعة جديدة من الطلبات");
+    assert.equal(b.dedupeKey, "pool_round_summary_r21");
+    assert.equal(b.title, "تمت إضافة مجموعة جديدة من الطلبات التدريبية");
+  });
+
+  it("rounds already dispatched under the per-order scheme stay silent after deploy", async () => {
+    const db = makeDb({
+      items: [
+        { roundItemId: 91, roundId: 30, dispatched: true },
+        { roundItemId: 92, roundId: 30 },
+      ],
+    });
+    const svc = loadDispatcherWithMocks({ queryImpl: db.queryImpl, notifyUsersDedupedImpl: notifier.impl });
+    const out = await svc.dispatchNewlyVisibleFakeOrderNotifications();
+    assert.equal(notifier.calls.length, 0);
+    assert.equal(out.silentRounds, 1);
+    assert.equal(out.marked, 1);
+  });
+
+  it("plan-restricted audience uses the settings plans query, not all freelancers", async () => {
+    let usedGetRole = false;
+    const db = makeDb({
+      settings: { training_orders_enabled: true, show_to_all_freelancers: false, show_to_all_visitors: false },
+      items: [{ roundItemId: 1, roundId: 1 }],
+      planRecipients: [201],
+    });
+    const svc = loadDispatcherWithMocks({
+      queryImpl: db.queryImpl,
+      getRoleUserIdsImpl: async () => {
+        usedGetRole = true;
+        return [999];
+      },
+      notifyUsersDedupedImpl: notifier.impl,
+    });
+    await svc.dispatchNewlyVisibleFakeOrderNotifications();
+    assert.equal(usedGetRole, false);
+    assert.deepEqual(notifier.calls[0].userIds, [201]);
+  });
+
+  it("empty due set (pre-marked / rollout) creates no notifications", async () => {
+    const db = makeDb({ items: [] });
+    const svc = loadDispatcherWithMocks({ queryImpl: db.queryImpl, notifyUsersDedupedImpl: notifier.impl });
+    const out = await svc.dispatchNewlyVisibleFakeOrderNotifications();
+    assert.equal(out.processed, 0);
+    assert.equal(notifier.calls.length, 0);
+  });
+});
+
+describe("notificationService.createManyIfNotExists — preferences, dedupe, one push per new row", () => {
+  let pushes;
+  let realtime;
+  let inserts;
+
+  function loadNotificationService({ prefs = {}, existingKeys = new Set() } = {}) {
+    clearModules();
+    pushes = [];
+    realtime = [];
+    inserts = [];
+    const store = new Set(existingKeys);
+    stubModule("../src/config/db", {
+      pool: {
+        query: async (sql, params) => {
+          const text = String(sql);
+          assert.match(text, /ON CONFLICT \(dedupe_key\) WHERE dedupe_key IS NOT NULL DO NOTHING/);
+          inserts.push(params.length / 12);
+          const rows = [];
+          for (let i = 0; i < params.length; i += 12) {
+            const key = params[i + 11];
+            if (store.has(key)) continue;
+            store.add(key);
+            rows.push({
+              id: rows.length + 1,
+              recipient_user_id: params[i],
+              recipient_role: params[i + 1],
+              type: params[i + 3],
+              title: params[i + 4],
+              message: params[i + 5],
+              entity_type: params[i + 6],
+              entity_id: params[i + 7],
+              link: params[i + 8],
+              priority: params[i + 9],
+              metadata: JSON.parse(params[i + 10]),
+              dedupe_key: key,
+            });
+          }
+          return { rows };
+        },
+      },
+    });
+    stubModule("../src/services/notificationPreferenceCache", {
+      getUserNotificationPreferences: async (uid) => prefs[uid] || {},
+      getManyUserNotificationPreferences: async (ids) => new Map(ids.map((uid) => [uid, prefs[uid] || {}])),
+      invalidateUserNotificationPreferences: () => {},
+    });
+    stubModule("../src/services/notificationRealtimeHub", { publish: (uid) => realtime.push(uid) });
+    stubModule("../src/services/fcmPushService", { queuePushForNotification: (n) => pushes.push(n.recipientUserId) });
+    // eslint-disable-next-line global-require
+    const notificationService = require("../src/services/notificationService");
+    // eslint-disable-next-line global-require
+    const events = require("../src/services/notificationEventsService");
+    return { notificationService, events, store };
+  }
+
+  const payload = {
+    recipientRole: "freelancer",
+    type: "order.pool.summary",
+    title: "تمت إضافة مجموعة جديدة من الطلبات",
+    message: "يتوفر الآن 3 طلبات جديدة مناسبة لك.",
+    entityType: "marketplace",
+    entityId: null,
+    link: "/dashboard/freelancer/orders",
+    priority: "medium",
+    metadata: { visibleCount: 3 },
+    dedupeKey: "pool_round_summary_r7",
+  };
+
+  it("one multi-row insert; one push + one realtime event per inserted summary", async () => {
+    const { events } = loadNotificationService();
+    const rows = await events.notifyUsersDeduped({ ...payload, userIds: [1, 2, 3] });
+    assert.equal(rows.length, 3);
+    assert.deepEqual(inserts, [3], "single INSERT with 3 rows");
+    assert.deepEqual(pushes, ["1", "2", "3"]);
+    assert.equal(realtime.length, 3);
+    assert.deepEqual(rows.map((r) => r.dedupeKey), ["pool_round_summary_r7_u1", "pool_round_summary_r7_u2", "pool_round_summary_r7_u3"]);
+  });
+
+  it("retry with the same keys: no rows, no push", async () => {
+    const { events } = loadNotificationService();
+    await events.notifyUsersDeduped({ ...payload, userIds: [1, 2] });
+    pushes.length = 0;
+    const again = await events.notifyUsersDeduped({ ...payload, userIds: [1, 2] });
+    assert.equal(again.length, 0);
+    assert.equal(pushes.length, 0);
+  });
+
+  it("recipient who turned off order notifications gets no row and no push", async () => {
+    const { events } = loadNotificationService({ prefs: { 2: { orders: false } } });
+    const rows = await events.notifyUsersDeduped({ ...payload, userIds: [1, 2, 3] });
+    assert.deepEqual(rows.map((r) => r.recipientUserId), ["1", "3"]);
+    assert.deepEqual(pushes, ["1", "3"]);
+    assert.deepEqual(inserts, [2]);
+  });
+
+  it("all recipients opted out → no insert at all", async () => {
+    const { events } = loadNotificationService({ prefs: { 1: { orders: false } } });
+    const rows = await events.notifyUsersDeduped({ ...payload, userIds: [1] });
+    assert.equal(rows.length, 0);
+    assert.deepEqual(inserts, []);
+  });
+
+  it("every batched item must carry a dedupe key", async () => {
+    const { notificationService } = loadNotificationService();
+    await assert.rejects(
+      notificationService.createManyIfNotExists([{ ...payload, recipientUserId: 1, dedupeKey: null }]),
+      /dedupeKey is required/,
+    );
+    await assert.rejects(
+      // eslint-disable-next-line global-require
+      require("../src/services/notificationEventsService").notifyUsersDeduped({ ...payload, userIds: [1], dedupeKey: "" }),
+      /dedupeKey is required/,
+    );
+  });
+});
+
+describe("real client/admin orders keep per-order order.created notifications", () => {
+  const ordersSrc = fs.readFileSync(ordersServicePath, "utf8");
+  const serviceSrc = fs.readFileSync(servicePath, "utf8");
+
+  it("client bidding broadcast: order.created per real order, order-scoped dedupe", () => {
+    const start = ordersSrc.indexOf("function scheduleClientBiddingPoolFreelancerNotifications(");
+    const fn = ordersSrc.slice(start, ordersSrc.indexOf("\n}\n", start));
+    assert.match(fn, /notificationEventsService\.notifyUsers\(/);
+    assert.match(fn, /type: "order\.created"/);
+    assert.match(fn, /dedupeKey: `order_bidding_created_\$\{String\(oid\)\}`/);
+    assert.match(fn, /link: `\/dashboard\/freelancer\/orders\/\$\{encodeURIComponent\(String\(oid\)\)\}`/);
+  });
+
+  it("admin-created pool order broadcast and client owner confirmation are unchanged", () => {
+    assert.match(ordersSrc, /dedupeKey: `order_created_pool_\$\{String\(orderRow\.id\)\}`/);
+    assert.match(ordersSrc, /dedupeKey: `order_created_\$\{String\(orderRow\.id\)\}`/);
+  });
+
+  it("training summary path never touches real orders or the order.created type", () => {
+    assert.doesNotMatch(serviceSrc, /type: "order\.created"/);
+    assert.doesNotMatch(serviceSrc, /FROM orders\b/);
+    assert.doesNotMatch(serviceSrc, /notifyUsers\(/);
+  });
+
+  it("mixed: a real-order broadcast and a training summary for the same freelancer are independent rows", async () => {
+    const notifier = makeDedupedNotifier();
+    const db = makeDb({ items: [{ roundItemId: 101, roundId: 40 }] });
+    const realOrderCalls = [];
+    clearModules();
+    stubModule("../src/config/db", { pool: { query: db.queryImpl } });
+    stubModule("../src/services/notificationEventsService", {
+      getRoleUserIds: async () => [7],
+      notifyUsersDeduped: notifier.impl,
+      notifyUsers: async (p) => {
+        realOrderCalls.push(p);
+        return [];
+      },
+    });
+    // eslint-disable-next-line global-require
+    const svc = require("../src/services/fakeOrderPoolNotificationService");
+    // eslint-disable-next-line global-require
+    const events = require("../src/services/notificationEventsService");
+    // Real order broadcast (same shape ordersService sends) — untouched by the training dispatcher.
+    await events.notifyUsers({ userIds: [7], type: "order.created", entityType: "order", entityId: 555, dedupeKey: "order_bidding_created_555" });
+    await svc.dispatchNewlyVisibleFakeOrderNotifications();
+    assert.equal(realOrderCalls.length, 1);
+    assert.equal(realOrderCalls[0].type, "order.created");
+    assert.equal(notifier.calls.length, 1);
+    assert.equal(notifier.calls[0].type, "order.pool.summary");
+    assert.notEqual(notifier.calls[0].dedupeKey, realOrderCalls[0].dedupeKey);
   });
 });
 
 describe("wiring — createFakeOrder must not notify; visibility paths schedule dispatch", () => {
   const fakeOrdersSrc = fs.readFileSync(fakeOrdersPath, "utf8");
-  const serviceSrc = fs.readFileSync(servicePath, "utf8");
-  // eslint-disable-next-line global-require
-  const { FORBIDDEN_CONTENT_RE } = require("../src/services/fakeOrderPoolNotificationService");
 
   it("createFakeOrder does not schedule pool notifications", () => {
     const start = fakeOrdersSrc.indexOf("async function createFakeOrder(");
@@ -128,281 +556,47 @@ describe("wiring — createFakeOrder must not notify; visibility paths schedule 
     assert.match(fakeOrdersSrc, /rotate_training_round_now/);
   });
 
-  it("dispatcher uses order.created and round-item dedupe base key", () => {
-    assert.match(serviceSrc, /type: "order\.created"/);
-    assert.match(serviceSrc, /order_pool_visible_ri\$\{rid\}/);
-    assert.match(serviceSrc, /طلب جديد متاح/);
-    const titleLine = serviceSrc.match(/const title = "([^"]+)"/);
-    assert.ok(titleLine);
-    assert.equal(FORBIDDEN_CONTENT_RE.test(titleLine[1]), false);
-  });
-
   it("dispatcher queries only currently visible undispatched items", () => {
+    const serviceSrc = fs.readFileSync(servicePath, "utf8");
     assert.match(serviceSrc, /pool_notification_dispatched_at IS NULL/);
     assert.match(serviceSrc, /ri\.visible_from <= NOW\(\)/);
     assert.match(serviceSrc, /ri\.visible_until > NOW\(\)/);
   });
 });
 
-describe("dispatchNewlyVisibleFakeOrderNotifications behavior", () => {
-  let notifyCalls;
-  let markedIds;
-  let queries;
-
-  beforeEach(() => {
-    notifyCalls = [];
-    markedIds = [];
-    queries = [];
-  });
-
-  afterEach(() => {
-    const dbPath = require.resolve("../src/config/db");
-    const eventsPath = require.resolve("../src/services/notificationEventsService");
-    const targetPath = require.resolve("../src/services/fakeOrderPoolNotificationService");
-    delete require.cache[dbPath];
-    delete require.cache[eventsPath];
-    delete require.cache[targetPath];
-  });
-
-  function makeQueryImpl({ settings, items = [], recipientsMode = "show_all" }) {
-    return async (sql, params) => {
-      const text = String(sql);
-      queries.push({ text, params });
-      if (text.includes("FROM fake_order_settings WHERE id = 1") && text.includes("SELECT *")) {
-        return { rows: [settings] };
-      }
-      if (text.includes("pool_notification_dispatched_at IS NULL") && text.includes("SELECT")) {
-        return {
-          rows: items.map((it) => ({
-            round_item_id: it.roundItemId,
-            fake_order_id: it.fakeOrderId,
-            order_title: it.orderTitle,
-            category_name: it.categoryName,
-            subcategory_name: it.subcategoryName,
-          })),
-        };
-      }
-      if (text.includes("UPDATE fake_order_round_items") && text.includes("pool_notification_dispatched_at = NOW()")) {
-        markedIds.push(Number(params[0]));
-        return { rowCount: 1 };
-      }
-      if (text.includes("FROM users u") && text.includes("fake_order_settings_plans")) {
-        return { rows: recipientsMode === "plan_only" ? [{ id: 201 }] : [] };
-      }
-      return { rows: [] };
-    };
-  }
-
-  it("A/B: only currently visible items are notified; future groups are absent from due query results", async () => {
-    const visibleNow = {
-      roundItemId: 11,
-      fakeOrderId: 501,
-      orderTitle: "طلب فوري",
-      categoryName: "البرمجة",
-      subcategoryName: "مواقع",
-    };
-    // Future items are simply not returned by the due query (visible_from > NOW filtered in SQL).
-    const svc = loadDispatcherWithMocks({
-      queryImpl: makeQueryImpl({
-        settings: { training_orders_enabled: true, show_to_all_freelancers: true, show_to_all_visitors: false },
-        items: [visibleNow],
-      }),
-      getRoleUserIdsImpl: async () => [101],
-      notifyUsersImpl: async (payload) => {
-        notifyCalls.push(payload);
-        return [{ id: 1 }];
-      },
-    });
-
-    const out = await svc.dispatchNewlyVisibleFakeOrderNotifications({ itemLimit: 10 });
-    assert.equal(out.processed, 1);
-    assert.equal(out.marked, 1);
-    assert.equal(notifyCalls.length, 1);
-    assert.equal(notifyCalls[0].entityId, 501);
-    assert.equal(notifyCalls[0].dedupeKey, "order_pool_visible_ri11");
-    assert.equal(notifyCalls[0].type, "order.created");
-    assert.match(notifyCalls[0].message, /البرمجة/);
-    assert.match(notifyCalls[0].message, /مواقع/);
-    assert.match(notifyCalls[0].message, /طلب فوري/);
-    assert.doesNotMatch(notifyCalls[0].title + notifyCalls[0].message, /وهمي|تدريبي|تجريبي|جولة|fake|training|round/i);
-    assert.equal(notifyCalls[0].link, "/dashboard/freelancer/orders/501");
-    assert.equal(markedIds[0], 11);
-  });
-
-  it("D: repeated dispatch marks already-handled items and does not re-notify when due set empty", async () => {
-    let pass = 0;
-    const settings = { training_orders_enabled: true, show_to_all_freelancers: true, show_to_all_visitors: false };
-    const svc = loadDispatcherWithMocks({
-      queryImpl: async (sql, params) => {
-        const text = String(sql);
-        if (text.includes("FROM fake_order_settings") && text.includes("SELECT *")) {
-          return { rows: [settings] };
-        }
-        if (text.includes("pool_notification_dispatched_at IS NULL") && text.includes("SELECT")) {
-          pass += 1;
-          if (pass === 1) {
-            return {
-              rows: [
-                {
-                  round_item_id: 22,
-                  fake_order_id: 600,
-                  order_title: "عنوان",
-                  category_name: "تصميم",
-                  subcategory_name: null,
-                },
-              ],
-            };
-          }
-          return { rows: [] };
-        }
-        if (text.includes("pool_notification_dispatched_at = NOW()")) {
-          markedIds.push(Number(params[0]));
-          return { rowCount: 1 };
-        }
-        return { rows: [] };
-      },
-      getRoleUserIdsImpl: async () => [101, 102],
-      notifyUsersImpl: async (payload) => {
-        notifyCalls.push(payload);
-        return [];
-      },
-    });
-
-    const first = await svc.dispatchNewlyVisibleFakeOrderNotifications();
-    const second = await svc.dispatchNewlyVisibleFakeOrderNotifications();
-    assert.equal(first.processed, 1);
-    assert.equal(second.processed, 0);
-    assert.equal(notifyCalls.length, 1);
-    assert.deepEqual(notifyCalls[0].userIds, [101, 102]);
-  });
-
-  it("E: per-user dedupe key base is round-item scoped for re-entry", () => {
-    // eslint-disable-next-line global-require
-    const { poolVisibleNotificationDedupeKey } = require("../src/services/fakeOrderPoolNotificationService");
-    assert.equal(poolVisibleNotificationDedupeKey(9, 55), "order_pool_visible_ri9_u55");
-    assert.notEqual(poolVisibleNotificationDedupeKey(9, 55), poolVisibleNotificationDedupeKey(10, 55));
-  });
-
-  it("F: plan-restricted audience uses settings plans query, not all freelancers", async () => {
-    let usedPlanQuery = false;
-    let usedGetRole = false;
-    const svc = loadDispatcherWithMocks({
-      queryImpl: async (sql) => {
-        const text = String(sql);
-        if (text.includes("FROM fake_order_settings") && text.includes("SELECT *")) {
-          return {
-            rows: [
-              {
-                training_orders_enabled: true,
-                show_to_all_freelancers: false,
-                show_to_all_visitors: false,
-              },
-            ],
-          };
-        }
-        if (text.includes("pool_notification_dispatched_at IS NULL") && text.includes("SELECT")) {
-          return {
-            rows: [
-              {
-                round_item_id: 1,
-                fake_order_id: 1,
-                order_title: "ت",
-                category_name: "ك",
-                subcategory_name: null,
-              },
-            ],
-          };
-        }
-        if (text.includes("fake_order_settings_plans")) {
-          usedPlanQuery = true;
-          return { rows: [{ id: 201 }] };
-        }
-        if (text.includes("pool_notification_dispatched_at = NOW()")) {
-          return { rowCount: 1 };
-        }
-        return { rows: [] };
-      },
-      getRoleUserIdsImpl: async () => {
-        usedGetRole = true;
-        return [999];
-      },
-      notifyUsersImpl: async (payload) => {
-        notifyCalls.push(payload);
-        return [];
-      },
-    });
-
-    await svc.dispatchNewlyVisibleFakeOrderNotifications();
-    assert.equal(usedPlanQuery, true);
-    assert.equal(usedGetRole, false);
-    assert.deepEqual(notifyCalls[0].userIds, [201]);
-  });
-
-  it("H: emergency-promoted items are notified when returned by due query", async () => {
-    const svc = loadDispatcherWithMocks({
-      queryImpl: makeQueryImpl({
-        settings: { training_orders_enabled: true, show_to_all_freelancers: true, show_to_all_visitors: false },
-        items: [
-          {
-            roundItemId: 77,
-            fakeOrderId: 707,
-            orderTitle: "بعد الترقية",
-            categoryName: "محتوى",
-            subcategoryName: "كتابة",
-          },
-        ],
-      }),
-      getRoleUserIdsImpl: async () => [101],
-      notifyUsersImpl: async (payload) => {
-        notifyCalls.push(payload);
-        return [{ id: "n1" }];
-      },
-    });
-    const out = await svc.dispatchNewlyVisibleFakeOrderNotifications();
-    assert.equal(out.marked, 1);
-    assert.equal(notifyCalls[0].dedupeKey, "order_pool_visible_ri77");
-  });
-
-  it("K: empty due set (pre-marked / rollout) creates no notifications", async () => {
-    const svc = loadDispatcherWithMocks({
-      queryImpl: makeQueryImpl({
-        settings: { training_orders_enabled: true, show_to_all_freelancers: true, show_to_all_visitors: false },
-        items: [],
-      }),
-      getRoleUserIdsImpl: async () => [101],
-      notifyUsersImpl: async (payload) => {
-        notifyCalls.push(payload);
-        return [];
-      },
-    });
-    const out = await svc.dispatchNewlyVisibleFakeOrderNotifications();
-    assert.equal(out.processed, 0);
-    assert.equal(notifyCalls.length, 0);
-  });
-
-  it("J: createIfNotExists path is used via notifyUsers dedupeKey (push only on insert)", () => {
-    const eventsSrc = fs.readFileSync(
-      path.join(__dirname, "..", "src", "services", "notificationEventsService.js"),
-      "utf8",
-    );
-    const notifSrc = fs.readFileSync(
-      path.join(__dirname, "..", "src", "services", "notificationService.js"),
-      "utf8",
-    );
-    assert.match(eventsSrc, /createIfNotExists/);
-    assert.match(eventsSrc, /\$\{dedupeKey\}_u\$\{uid\}/);
-    assert.match(notifSrc, /ON CONFLICT \(dedupe_key\)/);
-    assert.match(notifSrc, /queuePushForNotification\(mapped\)/);
-    // Push only when rows\[0\] exists (new insert), not when returning existing.
-    const createIf = notifSrc.slice(notifSrc.indexOf("async function createIfNotExists"), notifSrc.indexOf("async function markAsRead"));
-    assert.match(createIf, /if \(rows\[0\]\)[\s\S]*queuePushForNotification/);
+describe("migration 121 rollout safety", () => {
+  it("adds pool_notification_dispatched_at and backfills existing rows", () => {
+    const sql = fs.readFileSync(migrationPath, "utf8");
+    assert.match(sql, /pool_notification_dispatched_at TIMESTAMPTZ NULL/);
+    assert.match(sql, /UPDATE fake_order_round_items/);
+    assert.match(sql, /SET pool_notification_dispatched_at = COALESCE/);
+    assert.match(sql, /idx_fake_round_items_pool_notify_due/);
   });
 });
 
 describe("preference mapping", () => {
-  it("order.created and training.order.visible map to orders category", () => {
+  it("order.pool.summary shares the orders category with order.created (backend + frontend mirror)", () => {
+    // eslint-disable-next-line global-require
     const rules = require("../src/utils/notificationPreferenceRules");
     assert.equal(rules.getCategoryForType("order.created"), "orders");
-    assert.equal(rules.getCategoryForType("training.order.visible"), "orders");
+    assert.equal(rules.getCategoryForType("order.pool.summary"), "orders");
+    assert.equal(rules.isAllowedByPreferences({ orders: false }, "order.pool.summary", "medium"), false);
+    assert.equal(rules.isAllowedByPreferences({}, "order.pool.summary", "medium"), true);
+    const feRules = fs.readFileSync(
+      path.join(__dirname, "..", "..", "frontend", "src", "utils", "notificationPreferenceRules.js"),
+      "utf8",
+    );
+    assert.match(feRules, /"order\.pool\.summary": "orders"/);
+  });
+});
+
+describe("viewer sanitize hides dedupe keys (they embed internal round ids)", () => {
+  it("non-staff: dedupeKey removed; staff: kept", () => {
+    // eslint-disable-next-line global-require
+    const { sanitizeNotificationForViewer } = require("../src/utils/notificationViewerSanitize");
+    const n = { id: "1", type: "order.pool.summary", dedupeKey: "pool_round_summary_r7_u3", metadata: { visibleCount: 3 } };
+    assert.equal("dedupeKey" in sanitizeNotificationForViewer(n, "freelancer"), false);
+    assert.equal(sanitizeNotificationForViewer(n, "admin").dedupeKey, "pool_round_summary_r7_u3");
+    assert.equal(sanitizeNotificationForViewer(n, "freelancer").metadata.visibleCount, 3);
   });
 });

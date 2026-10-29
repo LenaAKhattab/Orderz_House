@@ -6,6 +6,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   getNotificationDetails,
+  getNotificationText,
   getNotificationTypeIconKind,
   resolveFeedbackNotificationCategoryLabel,
 } from "./notificationDisplay.js";
@@ -179,5 +180,41 @@ describe("notificationDisplay — feedback.created details", () => {
     assert.equal(getNotificationTypeIconKind("feedback.created"), "message");
     assert.equal(getNotificationTypeIconKind("feedback.status.resolved"), "message");
     assert.equal(getNotificationTypeIconKind("order.created"), "order");
+  });
+});
+
+describe("getNotificationText (training-round summary, R1A)", () => {
+  const summary = {
+    type: "order.pool.summary",
+    title: "تمت إضافة مجموعة جديدة من الطلبات",
+    message: "يتوفر الآن 12 طلبًا جديدًا مناسبًا لك.",
+    entityType: "marketplace",
+    entityId: null,
+    metadata: {
+      visibleCount: 12,
+      titleEn: "A new batch of orders was added",
+      messageEn: "12 new orders suitable for you are now available.",
+    },
+  };
+
+  it("Arabic locale shows the stored Arabic text", () => {
+    assert.deepEqual(getNotificationText(summary, "ar"), { title: summary.title, message: summary.message });
+  });
+
+  it("English locale prefers metadata English copy", () => {
+    assert.deepEqual(getNotificationText(summary, "en"), {
+      title: "A new batch of orders was added",
+      message: "12 new orders suitable for you are now available.",
+    });
+  });
+
+  it("English locale falls back to stored text when no English copy exists", () => {
+    const legacy = { type: "order.created", title: "طلب جديد متاح", message: "نص", metadata: {} };
+    assert.deepEqual(getNotificationText(legacy, "en"), { title: "طلب جديد متاح", message: "نص" });
+  });
+
+  it("summary has no order details line and an order icon", () => {
+    assert.equal(getNotificationDetails(summary, true, { locale: "ar" }), "");
+    assert.equal(getNotificationTypeIconKind(summary.type), "order");
   });
 });
