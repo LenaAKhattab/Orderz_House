@@ -10,11 +10,13 @@
  *   node scripts/notificationsRetention.js                      # dry run
  *   node scripts/notificationsRetention.js --explain [--analyze] # plan of one delete batch per rule (read-only)
  *   node scripts/notificationsRetention.js --apply --confirm=DELETE_EXPIRED_NOTIFICATIONS \
- *        [--batch-size=5000] [--sleep-ms=250] [--max-rows=N]
+ *        [--batch-size=5000] [--sleep-ms=250] [--max-rows=N] [--resume=<target key>@<cursor>]
  *     Production additionally requires ALLOW_PRODUCTION_NOTIFICATION_RETENTION=1.
  *
  * Apply deletes in bounded batches (one short transaction each), pauses between batches, stops on the first
- * error, and is safe to re-run (resumes from the oldest remaining eligible row). Deleting rows does NOT shrink
+ * error, and is safe to re-run (resumes from the oldest remaining eligible row). For consecutive bounded runs
+ * before vacuum, pass the previous run's target `key` and `cursor` (e.g. --resume=order.created[freelancer]@
+ * 2026-08-17T23:06:30.354Z) so the first batch does not re-walk the rows that run deleted. Deleting rows does NOT shrink
  * the relation on disk: space becomes reusable inside PostgreSQL after (auto)vacuum. No VACUUM FULL / pg_repack.
  * Connects to the DIRECT endpoint (same host without `-pooler`). Never prints connection strings.
  */
@@ -30,9 +32,16 @@ const retention = require("../src/services/notificationRetentionService");
 const CONFIRM_TOKEN = "DELETE_EXPIRED_NOTIFICATIONS";
 
 function parseArgs(argv) {
-  const args = { apply: false, explain: false, analyze: false, confirm: null, batchSize: 5000, sleepMs: 250, maxRows: null, chunkSize: 250000 };
+  const args = { apply: false, explain: false, analyze: false, confirm: null, batchSize: 5000, sleepMs: 250, maxRows: null, chunkSize: 250000, resume: null };
   for (const a of argv) {
     if (a === "--apply") args.apply = true;
+    else if (a.startsWith("--resume=")) {
+      const raw = a.slice("--resume=".length);
+      const at = raw.lastIndexOf("@");
+      if (at < 1 || at === raw.length - 1) throw new Error("--resume expects <target key>@<ISO timestamp>");
+      args.resume = { key: raw.slice(0, at), after: raw.slice(at + 1) };
+      if (Number.isNaN(new Date(args.resume.after).getTime())) throw new Error("--resume: invalid timestamp");
+    }
     else if (a === "--explain") args.explain = true;
     else if (a === "--analyze") args.analyze = true;
     else if (a.startsWith("--confirm=")) args.confirm = a.slice("--confirm=".length);
@@ -69,6 +78,7 @@ function directUrl(raw) {
 async function main(argv = process.argv.slice(2)) {
   const args = parseArgs(argv);
   if (args.apply && args.explain) throw new Error("--apply and --explain are exclusive");
+  if (args.resume && !args.apply) throw new Error("--resume only applies to --apply");
   assertApplyAllowed(args);
   const url = directUrl(process.env.DATABASE_URL);
   const client = new Client({ connectionString: url, ssl: resolvePoolSsl(url) });
@@ -90,9 +100,10 @@ async function main(argv = process.argv.slice(2)) {
         batchSize: args.batchSize,
         sleepMs: args.sleepMs,
         maxRows: args.maxRows,
+        resume: args.resume,
         onProgress: (p, t) => {
           if (p.batches % 20 === 0) {
-            console.log(`NOTIFICATIONS_RETENTION_PROGRESS ${JSON.stringify({ deleted: p.deleted, batches: p.batches, type: t.type, cursor: t.cursor })}`);
+            console.log(`NOTIFICATIONS_RETENTION_PROGRESS ${JSON.stringify({ deleted: p.deleted, batches: p.batches, key: t.key, cursor: t.cursor })}`);
           }
         },
       });

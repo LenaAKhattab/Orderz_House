@@ -151,7 +151,14 @@ function listDeleteTargets() {
       targets.push({ type: rule.type, class: rule.class, days, onlyRoles: null, exceptRoles: except ? [...except] : null });
     }
   }
-  return targets;
+  return targets.map((t) => ({ ...t, key: targetKey(t) }));
+}
+
+/** Stable target id for progress output and --resume: `type`, `type[role]` or `type[!role]`. */
+function targetKey(target) {
+  if (target.onlyRoles) return `${target.type}[${target.onlyRoles.join(",")}]`;
+  if (target.exceptRoles) return `${target.type}[!${target.exceptRoles.join(",")}]`;
+  return target.type;
 }
 
 function assertPolicyConsistent() {
@@ -386,6 +393,12 @@ async function explainTargets(client, { now = new Date(), batchSize = 5000, anal
 /**
  * Bounded-batch delete. Each batch is its own autocommit statement (no long transaction).
  * Stops on the first error (throws with progress attached). Idempotent and resumable: eligibility is age-based.
+ *
+ * `resume` ({ key, after }) starts one target at the `cursor` a previous run printed for it. Until vacuum cleans
+ * them, rows deleted by earlier runs still sit at the start of the (type, created_at) index, so a run starting
+ * from -infinity must walk all of them in its first batch (minutes on millions of rows → statement timeout).
+ * Rows below the cursor were already deleted by that run; a cursor that is too late can only leave rows behind
+ * (the next dry run shows them), never delete outside the policy.
  */
 async function runApply(client, {
   now = new Date(),
@@ -393,18 +406,26 @@ async function runApply(client, {
   sleepMs = 250,
   maxRows = null,
   statementTimeoutMs = 60000,
+  resume = null,
   onProgress = null,
 } = {}) {
   assertPolicyConsistent();
   const limit = Math.min(50000, Math.max(100, Math.floor(Number(batchSize) || 5000)));
   const cap = maxRows != null && Number(maxRows) > 0 ? Math.floor(Number(maxRows)) : null;
+  const targets = listDeleteTargets();
+  if (resume) {
+    const resumeAt = new Date(resume.after);
+    if (!targets.some((t) => t.key === resume.key)) throw new Error(`--resume: unknown target ${resume.key}`);
+    if (Number.isNaN(resumeAt.getTime())) throw new Error("--resume: invalid timestamp");
+  }
   const progress = { mode: "apply", asOf: new Date(now).toISOString(), batchSize: limit, deleted: 0, batches: 0, targets: [] };
+  if (resume) progress.resumed = { key: resume.key, after: new Date(resume.after).toISOString() };
   await client.query(`SET statement_timeout = ${Math.floor(statementTimeoutMs)}`);
-  for (const target of listDeleteTargets()) {
+  for (const target of targets) {
     const cutoff = cutoffFor(target.days, now);
-    const t = { type: target.type, onlyRoles: target.onlyRoles, exceptRoles: target.exceptRoles, days: target.days, cutoff: cutoff.toISOString(), deleted: 0, cursor: null };
+    const t = { key: target.key, type: target.type, onlyRoles: target.onlyRoles, exceptRoles: target.exceptRoles, days: target.days, cutoff: cutoff.toISOString(), deleted: 0, cursor: null };
     progress.targets.push(t);
-    let lowerBound = "-infinity";
+    let lowerBound = resume && resume.key === target.key ? new Date(resume.after) : "-infinity";
     for (;;) {
       if (cap != null && progress.deleted >= cap) return { ...progress, stoppedAt: "max_rows" };
       const thisLimit = cap != null ? Math.min(limit, cap - progress.deleted) : limit;
@@ -442,6 +463,7 @@ module.exports = {
   ageBucketLabels,
   resolveRule,
   listDeleteTargets,
+  targetKey,
   assertPolicyConsistent,
   dryRunChunkSql,
   summarizeDryRun,

@@ -275,6 +275,60 @@ describe("runApply — bounded, resumable, idempotent, stop-on-error", () => {
   });
 });
 
+describe("runApply --resume (consecutive bounded runs before vacuum)", () => {
+  it("targets have stable unique keys", () => {
+    const keys = retention.listDeleteTargets().map((t) => t.key);
+    assert.ok(keys.includes("order.created[freelancer]"));
+    assert.ok(keys.includes("order.created[!freelancer]"));
+    assert.ok(keys.includes("user.registered"));
+    assert.equal(new Set(keys).size, keys.length);
+  });
+
+  it("starts only the matching target at the cursor; others still start at -infinity", async () => {
+    const client = makeTableClient(seedRows());
+    const firstParams = [];
+    const query = client.query.bind(client);
+    client.query = async (sql, params) => {
+      if (params && !firstParams.some((p) => p[0] === params[0] && p[1].getTime() === params[1].getTime())) firstParams.push(params);
+      return query(sql, params);
+    };
+    const cursor = daysAgo(50);
+    const out = await retention.runApply(client, { now: NOW, batchSize: 100, sleepMs: 0, resume: { key: "order.created[freelancer]", after: cursor } });
+    const discovery = firstParams.find((p) => p[0] === "order.created" && p[1].getTime() === retention.cutoffFor(30, NOW).getTime());
+    assert.equal(new Date(discovery[2]).toISOString(), cursor);
+    const fallback = firstParams.find((p) => p[0] === "order.created" && p[1].getTime() === retention.cutoffFor(365, NOW).getTime());
+    assert.equal(fallback[2], "-infinity");
+    assert.deepEqual(out.resumed, { key: "order.created[freelancer]", after: cursor });
+    assert.equal(out.targets[0].key, "order.created[freelancer]");
+  });
+
+  it("a cursor can only leave rows behind, never delete outside the policy", async () => {
+    const client = makeTableClient(seedRows());
+    // Seed has old freelancer order.created at 40..62 days; resume after 50 days → 40..50 deleted, 51..62 left.
+    const out = await retention.runApply(client, { now: NOW, batchSize: 100, sleepMs: 0, resume: { key: "order.created[freelancer]", after: daysAgo(50) } });
+    const leftDiscovery = client.table.filter((r) => r.type === "order.created" && r.recipient_role === "freelancer");
+    assert.equal(out.targets[0].deleted, 11);
+    assert.equal(leftDiscovery.length, 12 + 4, "12 older than the cursor (left for the next dry run) + 4 recent");
+    assert.ok(client.table.some((r) => r.type === "payment_success"));
+    assert.ok(client.table.some((r) => r.type === "unknown.type"));
+  });
+
+  it("unknown target key or invalid timestamp is refused before any delete", async () => {
+    const client = makeTableClient(seedRows());
+    await assert.rejects(retention.runApply(client, { now: NOW, sleepMs: 0, resume: { key: "payment_success", after: daysAgo(50) } }), /unknown target/);
+    await assert.rejects(retention.runApply(client, { now: NOW, sleepMs: 0, resume: { key: "order.created[freelancer]", after: "not-a-date" } }), /invalid timestamp/);
+    assert.equal(client.log.batches.length, 0);
+  });
+
+  it("CLI parses --resume=<key>@<ISO> and rejects malformed values", () => {
+    const args = cli.parseArgs(["--apply", "--resume=order.created[freelancer]@2026-08-17T23:06:30.354Z"]);
+    assert.deepEqual(args.resume, { key: "order.created[freelancer]", after: "2026-08-17T23:06:30.354Z" });
+    assert.throws(() => cli.parseArgs(["--resume=order.created[freelancer]"]), /expects/);
+    assert.throws(() => cli.parseArgs(["--resume=@2026-08-17T23:06:30Z"]), /expects/);
+    assert.throws(() => cli.parseArgs(["--resume=order.created[freelancer]@yesterday"]), /invalid timestamp/);
+  });
+});
+
 describe("CLI guards", () => {
   it("default is dry run", () => {
     const args = cli.parseArgs([]);
