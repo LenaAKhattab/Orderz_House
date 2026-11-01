@@ -11,7 +11,7 @@ import { useAuth } from "../../context/useAuth";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import "../../i18n/notificationsUiResources";
 import { getNotificationDetails, getNotificationText } from "../../utils/notificationDisplay";
-import { resolveSafeInternalNavPath } from "../../utils/safeInternalNavPath";
+import { resolveNotificationNavPath } from "../../utils/resolveNotificationNavPath";
 
 function fmtDate(value, locale) {
   if (!value) return "";
@@ -111,7 +111,7 @@ export default function NotificationsBell({ notificationsPagePath, variant = "na
       }
       setOpen(false);
       setUnreadCount((v) => Math.max(0, v - (n?.isRead ? 0 : 1)));
-      navigate(resolveSafeInternalNavPath(n?.link, notificationsPagePath));
+      navigate(resolveNotificationNavPath(n, notificationsPagePath));
     },
     [navigate, notificationsPagePath],
   );

@@ -309,7 +309,8 @@
     "approveConfirmBody": "After approval the order is complete and no further revisions can be requested. Make sure you have reviewed all files first.",
     "approveConfirm": "Yes, approve delivery",
     "freelancerNote": "Freelancer note:",
-    "loadingDelivery": "Loading the current delivery…"
+    "loadingDelivery": "Loading the current delivery…",
+    "loadDeliveryFailed": "Could not load delivery details. Please try again."
   },
   "revisionRequest": {
     "title": "Request revision",

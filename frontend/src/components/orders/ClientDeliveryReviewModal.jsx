@@ -33,6 +33,7 @@ export default function ClientDeliveryReviewModal({
   variant = "workflow",
   audience = "client",
   historyLoading = false,
+  historyLoadFailed = false,
 }) {
   const { push } = useToast();
   const { t } = useTranslation();
@@ -214,6 +215,11 @@ export default function ClientDeliveryReviewModal({
               {currentNote ? (
                 <p className="oh-dialog-note oh-dialog-note--freelancer" dir="auto">
                   <strong>{t(`${d}.freelancerNote`)}</strong> {currentNote}
+                </p>
+              ) : null}
+              {historyLoadFailed ? (
+                <p className="oh-dialog-error" role="alert">
+                  {t(`${d}.loadDeliveryFailed`, { defaultValue: "تعذر تحميل تفاصيل التسليم. حاول مرة أخرى." })}
                 </p>
               ) : null}
               {waitingForHistory ? (

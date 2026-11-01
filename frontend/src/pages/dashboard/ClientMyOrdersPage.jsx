@@ -57,6 +57,10 @@ export default function ClientMyOrdersPage() {
     const params = new URLSearchParams(location.search || "");
     return params.get("paid") || params.get("cancelled") ? null : params.get("orderId");
   }, [location.search]);
+  const openReviewFromNotification = useMemo(() => {
+    const params = new URLSearchParams(location.search || "");
+    return params.get("openReview") === "1" || params.get("openReview") === "true";
+  }, [location.search]);
   const scrolledToRef = useRef(null);
 
   const load = useCallback(async () => {
@@ -312,6 +316,10 @@ export default function ClientMyOrdersPage() {
                 onOrdersChange={load}
                 initiallyExpanded={String(order.id) === String(focusOrderId)}
                 highlighted={String(order.id) === String(focusOrderId)}
+                autoOpenDeliveryReview={
+                  String(order.id) === String(focusOrderId) &&
+                  (openReviewFromNotification || order?.orderStatus === "pending_client_review")
+                }
               />
             ))}
           </div>
