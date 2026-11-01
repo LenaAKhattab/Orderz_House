@@ -4064,36 +4064,35 @@ async function submitFreelancerOrderDelivery({ freelancerUserId, orderId, upload
     );
 
     const actorIdentity = await getUserIdentitySnapshot(freelancerUserId, client);
-    await safeNotify(() =>
-      notificationService.createNotification(
-        {
-          recipientUserId: Number(order.created_by_user_id),
-          recipientRole: order.created_by_role || null,
-          actorUserId: Number(freelancerUserId),
-          type: "order.delivery.submitted",
-          title: "تم إرسال تسليم جديد",
-          message: "أُرسل تسليم جديد لهذا الطلب — يرجى المراجعة.",
-          entityType: "order",
-          entityId: Number(orderId),
-          link:
-            order.source_type === "client_created"
-              ? `/dashboard/client/my-orders`
-              : `/dashboard/${String(order.created_by_role || "").trim() === "super_admin" ? "super-admin" : "admin"}/orders`,
-          priority: "high",
-          metadata: {
-            orderId: String(orderId),
-            submissionId: String(submissionRow.id),
-            projectName: order.title || null,
-            actorName: actorIdentity?.fullName || null,
-            source: "delivery_submitted",
-          },
-        },
-        client,
-      ),
-    );
+    // Persist delivery + order status first. Notification (and realtime push) must run AFTER
+    // COMMIT so reviewers never open a deep link before the submission is readable.
+    const deliveryNotifyPayload = {
+      recipientUserId: Number(order.created_by_user_id),
+      recipientRole: order.created_by_role || null,
+      actorUserId: Number(freelancerUserId),
+      type: "order.delivery.submitted",
+      title: "تم إرسال تسليم جديد",
+      message: "أُرسل تسليم جديد لهذا الطلب — يرجى المراجعة.",
+      entityType: "order",
+      entityId: Number(orderId),
+      link:
+        order.source_type === "client_created"
+          ? `/dashboard/client/my-orders?orderId=${encodeURIComponent(String(orderId))}&openReview=1`
+          : `/dashboard/${String(order.created_by_role || "").trim() === "super_admin" ? "super-admin" : "admin"}/orders?orderId=${encodeURIComponent(String(orderId))}&openReview=1`,
+      priority: "high",
+      metadata: {
+        orderId: String(orderId),
+        submissionId: String(submissionRow.id),
+        projectName: order.title || null,
+        actorName: actorIdentity?.fullName || null,
+        source: "delivery_submitted",
+        openReview: true,
+      },
+    };
 
     await client.query("COMMIT");
     committed = true;
+    await safeNotify(() => notificationService.createNotification(deliveryNotifyPayload));
     const out = await getOrderById(orderId);
     try {
       const fazatWebhookOutboundService = require("./fazatWebhookOutboundService");

@@ -330,4 +330,21 @@ describe("delivery lifecycle hardening", () => {
     assert.ok(inst.includes('revisionRequestedByRole: actorRole === "admin" ? "admin" : "super_admin",'));
     assert.ok(read("src/services/fazatPartnerOrderService.js").includes('enrichOrderWithSubmissionHistory(order, "partner")'));
   });
+
+  it("delivery notification fires AFTER COMMIT and deep-links to the exact order review", () => {
+    const start = svc.indexOf("async function submitFreelancerOrderDelivery");
+    const end = svc.indexOf("async function assertInternalOrderForAdmin");
+    assert.ok(start > 0 && end > start);
+    const fn = svc.slice(start, end);
+    assert.ok(fn.includes("await client.query(\"COMMIT\");"));
+    assert.ok(fn.includes("await safeNotify(() => notificationService.createNotification(deliveryNotifyPayload));"));
+    const commitAt = fn.indexOf("await client.query(\"COMMIT\");");
+    const notifyAt = fn.indexOf("await safeNotify(() => notificationService.createNotification(deliveryNotifyPayload));");
+    assert.ok(commitAt > 0 && notifyAt > commitAt, "notification must run after COMMIT");
+    assert.ok(fn.includes("openReview=1"));
+    assert.ok(fn.includes("orderId=${encodeURIComponent(String(orderId))}"));
+    assert.ok(fn.includes('type: "order.delivery.submitted"'));
+    assert.ok(fn.includes("submissionId: String(submissionRow.id)"));
+  });
 });
+

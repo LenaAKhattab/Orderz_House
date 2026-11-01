@@ -29,7 +29,7 @@ import NotificationListSkeleton from "../../components/dashboard/hub/Notificatio
 import { useTranslation } from "../../i18n/LanguageProvider";
 import "../../i18n/notificationsUiResources";
 import { getNotificationDetails, getNotificationText, getNotificationTypeIconKind } from "../../utils/notificationDisplay";
-import { resolveSafeInternalNavPath } from "../../utils/safeInternalNavPath";
+import { resolveNotificationNavPath } from "../../utils/resolveNotificationNavPath";
 import { createAdminListRequestGate } from "../../lib/staff/adminListLoad";
 import "../../styles/dashboardHub.css";
 import "./notifications-page.css";
@@ -245,7 +245,7 @@ export default function NotificationsPage() {
   const handleOpen = useCallback(
     async (n) => {
       await handleRead(n);
-      navigate(resolveSafeInternalNavPath(n?.link, "/dashboard"));
+      navigate(resolveNotificationNavPath(n, "/dashboard"));
     },
     [handleRead, navigate],
   );

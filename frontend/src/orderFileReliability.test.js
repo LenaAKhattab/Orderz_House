@@ -116,9 +116,15 @@ describe("delivery / revision workflow UI", () => {
     const card = read("components/orders/ClientOrderCardCompact.jsx");
     assert.ok(card.includes("const displayOrder = detailMatchesList ? { ...order, ...detailOrder } : order;"));
     assert.ok(card.includes("}, [shouldLoadSubmissionDetail, expanded, order.id, listFreshness]);"));
-    assert.ok(card.includes("historyLoading={deliveryModal.open && needsSubmissionDetail && !detailMatchesList}"));
+    assert.ok(
+      card.includes(
+        "historyLoading={deliveryModal.open && needsSubmissionDetail && !detailMatchesList && !detailLoadError}",
+      ),
+    );
+    assert.ok(card.includes("historyLoadFailed={deliveryModal.open && detailLoadError}"));
     const modal = read("components/orders/ClientDeliveryReviewModal.jsx");
     assert.ok(modal.includes("const waitingForHistory = historyLoading && !submissions.length;"));
+    assert.ok(modal.includes("historyLoadFailed"));
     assert.ok(modal.includes("!waitingForHistory && order.orderStatus === \"pending_client_review\""));
     assert.ok(modal.includes("currentSubmission?.message"));
   });
@@ -128,9 +134,24 @@ describe("delivery / revision workflow UI", () => {
     assert.ok(page.includes("data-testid={`admin-order-attachments-${o.id}`}"));
     assert.ok(page.includes('fileAccess="admin"'));
     assert.ok(page.includes("{deliveryButtons(o)}"));
+    assert.ok(page.includes('params.get("orderId")'));
+    assert.ok(page.includes('params.get("openReview")'));
+    assert.ok(page.includes("deliveryWaiting"));
+    assert.ok(page.includes('pending_client_review'));
     assert.equal(page.split("revisionSentTitle").length - 1, 0, "single success toast (modal owns it)");
     for (const l of ["ar", "en"]) assert.ok(json(`locales/${l}/ordersAdmin.json`).listPage.attachments.button, l);
   });
+
+  it("client my-orders deep-links open the delivery review for the focused order", () => {
+    const page = read("pages/dashboard/ClientMyOrdersPage.jsx");
+    assert.ok(page.includes("openReviewFromNotification"));
+    assert.ok(page.includes("autoOpenDeliveryReview="));
+    assert.ok(page.includes('params.get("openReview")'));
+    for (const l of ["ar", "en"]) {
+      assert.ok(json(`locales/${l}/clientArea.json`).deliveryReview.loadDeliveryFailed, l);
+    }
+  });
+
 
   it("admin order creation with files uses the upload timeout (not the 10 s default)", () => {
     const api = read("services/api.js");

@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useMemo, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, CircleAlert, CircleCheck, Clock3, PencilLine, CreditCard, Users, Archive } from "lucide-react";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import "../../i18n/clientAreaResources";
@@ -79,17 +79,25 @@ const STEP_ICON = {
 /**
  * بطاقة طلب العميل (قائمة «طلباتي»): الحالة، الخطوة التالية، والإجراء الأساسي — والتفاصيل عند التوسيع.
  */
-export default function ClientOrderCardCompact({ order, onOrdersChange, initiallyExpanded = false, highlighted = false }) {
+export default function ClientOrderCardCompact({
+  order,
+  onOrdersChange,
+  initiallyExpanded = false,
+  highlighted = false,
+  autoOpenDeliveryReview = false,
+}) {
   const { t, locale, dir } = useTranslation();
   const oc = "clientArea.orderCard";
   const [expanded, setExpanded] = useState(initiallyExpanded);
   const [detailOrder, setDetailOrder] = useState(null);
+  const [detailLoadError, setDetailLoadError] = useState(false);
   const [claimsOpen, setClaimsOpen] = useState(false);
   const [bidsOpen, setBidsOpen] = useState(false);
   const [deliveryModal, setDeliveryModal] = useState({ open: false, variant: "workflow" });
   const [revisionOpen, setRevisionOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewStatus, setReviewStatus] = useState(null);
+  const autoOpenedRef = useRef(false);
   const badge = useMemo(() => clientStatusMeta(order, t), [order, t]);
   const step = useMemo(() => getClientOrderNextStep(order), [order]);
   const pricedBidding = useMemo(() => isPricedBidding(order), [order]);
@@ -137,8 +145,13 @@ export default function ClientOrderCardCompact({ order, onOrdersChange, initiall
   // detail while it describes the same state as the list — a stale detail must never hide a new
   // delivery (old files / disabled approve in the review modal).
   const listFreshness = `${order?.orderStatus || ""}|${order?.updatedAt || ""}|${deliveryFilesCount}`;
-  const detailMatchesList =
-    Boolean(detailOrder) && String(detailOrder?.orderStatus || "") === String(order?.orderStatus || "");
+  const detailFileCount = Array.isArray(detailOrder?.files)
+    ? detailOrder.files.filter((f) => f?.purpose === "delivery").length
+    : 0;
+  const detailFreshness = detailOrder
+    ? `${detailOrder?.orderStatus || ""}|${detailOrder?.updatedAt || ""}|${detailFileCount}`
+    : "";
+  const detailMatchesList = Boolean(detailOrder) && detailFreshness === listFreshness;
   const displayOrder = detailMatchesList ? { ...order, ...detailOrder } : order;
 
   useEffect(() => {
@@ -165,17 +178,21 @@ export default function ClientOrderCardCompact({ order, onOrdersChange, initiall
 
   useEffect(() => {
     if (!shouldLoadSubmissionDetail) {
-      if (!expanded) queueMicrotask(() => setDetailOrder(null));
+      if (!expanded) queueMicrotask(() => {
+        setDetailOrder(null);
+        setDetailLoadError(false);
+      });
       return undefined;
     }
     let cancelled = false;
     (async () => {
       try {
+        setDetailLoadError(false);
         const res = await getClientOrderByIdRequest(order.id);
         const next = res?.data?.order;
         if (!cancelled && next) setDetailOrder(next);
       } catch {
-        /* ignore — timeline optional if endpoint unavailable */
+        if (!cancelled) setDetailLoadError(true);
       }
     })();
     return () => {
@@ -183,13 +200,22 @@ export default function ClientOrderCardCompact({ order, onOrdersChange, initiall
     };
   }, [shouldLoadSubmissionDetail, expanded, order.id, listFreshness]);
 
+  useEffect(() => {
+    if (!autoOpenDeliveryReview || autoOpenedRef.current) return;
+    if (order?.orderStatus !== "pending_client_review") return;
+    autoOpenedRef.current = true;
+    setExpanded(true);
+    setDeliveryModal({ open: true, variant: "workflow" });
+  }, [autoOpenDeliveryReview, order?.orderStatus]);
+
   const refetchDetailOrder = useCallback(async () => {
     try {
+      setDetailLoadError(false);
       const res = await getClientOrderByIdRequest(order.id);
       const next = res?.data?.order;
       if (next) setDetailOrder(next);
     } catch {
-      /* ignore */
+      setDetailLoadError(true);
     }
   }, [order.id]);
 
@@ -395,7 +421,8 @@ export default function ClientOrderCardCompact({ order, onOrdersChange, initiall
         open={deliveryModal.open}
         variant={deliveryModal.variant}
         order={displayOrder}
-        historyLoading={deliveryModal.open && needsSubmissionDetail && !detailMatchesList}
+        historyLoading={deliveryModal.open && needsSubmissionDetail && !detailMatchesList && !detailLoadError}
+        historyLoadFailed={deliveryModal.open && detailLoadError}
         onClose={() => setDeliveryModal({ open: false, variant: "workflow" })}
         onApprove={() => {
           onOrdersChange?.();

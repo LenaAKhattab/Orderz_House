@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import ClientDeliveryReviewModal from "../../components/orders/ClientDeliveryReviewModal";
 import OrderCard from "../../components/orders/OrderCard";
@@ -74,6 +74,17 @@ export default function AdminOrdersPage() {
   const [deliveryModal, setDeliveryModal] = useState({ open: false, order: null, variant: "workflow" });
   const [deliveryOpeningId, setDeliveryOpeningId] = useState(null);
   const [attachmentsModal, setAttachmentsModal] = useState({ open: false, orderId: null, order: null, loading: false });
+  const deepLinkOpenedRef = useRef(null);
+
+  const focusOrderId = useMemo(() => {
+    const params = new URLSearchParams(location.search || "");
+    const id = String(params.get("orderId") || "").trim();
+    return /^\d+$/.test(id) ? id : null;
+  }, [location.search]);
+  const openReviewFromNotification = useMemo(() => {
+    const params = new URLSearchParams(location.search || "");
+    return params.get("openReview") === "1" || params.get("openReview") === "true";
+  }, [location.search]);
 
   const rows = useMemo(() => (Array.isArray(orders) ? orders : []), [orders]);
 
@@ -175,7 +186,7 @@ export default function AdminOrdersPage() {
     };
   }, [busy]);
 
-  const openAdminDeliveryModal = async (orderId, variant) => {
+  const openAdminDeliveryModal = useCallback(async (orderId, variant) => {
     const key = String(orderId);
     setDeliveryOpeningId(key);
     try {
@@ -192,7 +203,20 @@ export default function AdminOrdersPage() {
     } finally {
       setDeliveryOpeningId(null);
     }
-  };
+  }, [push, t]);
+
+  useEffect(() => {
+    if (busy || !focusOrderId) return;
+    if (deepLinkOpenedRef.current === focusOrderId) return;
+    const target = rows.find((o) => String(o?.id) === String(focusOrderId));
+    if (!target) return;
+    deepLinkOpenedRef.current = focusOrderId;
+    const shouldOpenReview =
+      openReviewFromNotification || String(target.orderStatus || "") === "pending_client_review";
+    if (!shouldOpenReview) return;
+    const variant = target.orderStatus === "completed" ? "archive" : "workflow";
+    void openAdminDeliveryModal(focusOrderId, variant);
+  }, [busy, focusOrderId, openReviewFromNotification, rows, openAdminDeliveryModal]);
 
   // Brief attachments of an internal order (canonical FileList + admin download route).
   const openAttachments = async (orderId) => {
@@ -226,9 +250,10 @@ export default function AdminOrdersPage() {
     ) : null;
 
   const deliveryButtons = (o) => {
+    const deliveryWaiting = String(o?.orderStatus || "") === "pending_client_review";
     const receive =
       Boolean(o?.assignedFreelancerId) &&
-      Boolean(o?.receivedAt) &&
+      (Boolean(o?.receivedAt) || deliveryWaiting) &&
       !o?.isArchived &&
       o?.orderStatus !== "completed" &&
       o?.orderStatus !== "cancelled";
@@ -349,9 +374,10 @@ export default function AdminOrdersPage() {
             const bids = Array.isArray(bidsByOrderId[orderKey]) ? bidsByOrderId[orderKey] : null;
             const bidsBusy = Boolean(bidsBusyByOrderId[orderKey]);
             const bidsCountSuffix = bids !== null && !bidsBusy ? ` (${bids.length})` : "";
+            const deliveryWaiting = String(o?.orderStatus || "") === "pending_client_review";
             const showDeliveryReceive =
               Boolean(o?.assignedFreelancerId) &&
-              Boolean(o?.receivedAt) &&
+              (Boolean(o?.receivedAt) || deliveryWaiting) &&
               !o?.isArchived &&
               o?.orderStatus !== "completed" &&
               o?.orderStatus !== "cancelled";
