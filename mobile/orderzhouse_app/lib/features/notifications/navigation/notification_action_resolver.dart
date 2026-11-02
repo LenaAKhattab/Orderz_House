@@ -184,6 +184,15 @@ NotificationActionTarget? _resolveFromDashboardLink(
     );
   }
 
+  // Training-round summary (order.pool.summary): the available-orders list, not one order.
+  if (path == '/dashboard/freelancer/orders') {
+    if (role != 'freelancer') return null;
+    return const NotificationActionTarget(
+      route: AppRoutes.marketplace,
+      buttonLabel: 'فتح الطلبات المتاحة',
+    );
+  }
+
   final poolMatch = RegExp(r'^/dashboard/freelancer/orders/(\d+)$').firstMatch(path);
   if (poolMatch != null) {
     if (role != 'freelancer') return null;

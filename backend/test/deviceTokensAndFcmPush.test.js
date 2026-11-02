@@ -191,7 +191,7 @@ describe("fcmPushService", () => {
       filename: tokensPath,
       loaded: true,
       exports: {
-        listActiveTokensForUser: async () => [{ id: 1, token: "bad".padEnd(40, "0"), platform: "android" }],
+        listActiveTokensForUsers: async () => [{ id: 1, userId: 5, token: "bad".padEnd(40, "0"), platform: "android" }],
         deactivateTokensByValues: async (tokens) => {
           revoked.push(...tokens);
           return tokens.length;
@@ -221,11 +221,9 @@ describe("fcmPushService", () => {
         credential: { cert: () => ({}) },
         initializeApp: () => ({}),
         messaging: () => ({
-          send: async () => {
-            const err = new Error("invalid");
-            err.code = "messaging/registration-token-not-registered";
-            throw err;
-          },
+          sendEach: async (messages) => ({
+            responses: messages.map(() => ({ success: false, error: { code: "messaging/registration-token-not-registered" } })),
+          }),
         }),
       },
     };

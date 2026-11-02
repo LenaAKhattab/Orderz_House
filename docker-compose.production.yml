@@ -22,6 +22,9 @@ services:
       - NODE_OPTIONS=--require /opt/oh-neon-ipv6.js
     volumes:
       - ./backend/ops/neonIpv6Dial.js:/opt/oh-neon-ipv6.js:ro
+      # Firebase Admin credential for FCM push (host file, root-only, never in Git). backend/.env points
+      # FIREBASE_SERVICE_ACCOUNT_PATH at this path; without the mount the container cannot read it.
+      - /etc/orderzhouse/firebase-service-account.json:/etc/orderzhouse/firebase-service-account.json:ro
 
   frontend:
     extra_hosts:
