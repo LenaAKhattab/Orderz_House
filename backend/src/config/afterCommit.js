@@ -141,9 +141,12 @@ function nextIsolationSavepointName() {
 /**
  * Runs `fn` so that a database error inside it cannot abort `runner`'s open transaction.
  *
- * Inside a transaction: SAVEPOINT → fn → RELEASE. If `fn` throws: ROLLBACK TO SAVEPOINT → RELEASE, then the
- * error is rethrown unchanged (callers keep their own semantics: best-effort callers swallow it, others fail as
- * before). Work registered with runAfterCommit() inside `fn` is discarded together with the rolled-back writes.
+ * Inside a transaction: SAVEPOINT → fn. If `fn` throws: ROLLBACK TO SAVEPOINT → RELEASE, then the error is
+ * rethrown unchanged (callers keep their own semantics: best-effort callers swallow it, others fail as before).
+ * Work registered with runAfterCommit() inside `fn` is discarded together with the rolled-back writes.
+ * On success the savepoint is deliberately NOT released: PostgreSQL releases it at COMMIT (or with an enclosing
+ * RELEASE / ROLLBACK TO), and every database round trip costs ~95 ms on Production — one extra statement per
+ * notification instead of two. The tracker keeps its marker, so an enclosing ROLLBACK TO still discards work.
  * Outside a transaction (pool, autocommit client, unknown runner) `fn` simply runs — no extra round trips.
  *
  * `onError(err, txState)` is told whether the surrounding transaction is still usable ("survived") or not
@@ -172,12 +175,6 @@ async function runInSavepoint(runner, fn, { onError } = {}) {
       /* transaction unusable: the caller's COMMIT will not commit (tracked above) */
     }
     if (onError) onError(err, txState);
-    throw err;
-  }
-  try {
-    await runner.query(`RELEASE SAVEPOINT ${name}`);
-  } catch (err) {
-    if (onError) onError(err, "aborted");
     throw err;
   }
   return result;

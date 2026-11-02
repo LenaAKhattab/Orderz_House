@@ -133,7 +133,7 @@ describe("afterCommit.runInSavepoint", () => {
     assert.equal(await afterCommit.runInSavepoint(null, () => "pool"), "pool");
   });
 
-  it("inside a transaction: SAVEPOINT → fn → RELEASE with unique internal names", async () => {
+  it("inside a transaction: one SAVEPOINT per section (unique internal names), no RELEASE round trip on success", async () => {
     const sim = pgSim();
     await sim.client.query("BEGIN");
     await afterCommit.runInSavepoint(sim.client, async () => {
@@ -144,8 +144,9 @@ describe("afterCommit.runInSavepoint", () => {
     assert.equal(sps.length, 3);
     assert.equal(new Set(sps).size, 3, "no name collision, even nested");
     for (const name of sps) assert.match(name, /^OH_ISO_SP_\d+$/);
-    assert.equal(sim.statements.filter((s) => s.startsWith("RELEASE")).length, 3);
+    assert.equal(sim.statements.filter((s) => s.startsWith("RELEASE")).length, 0, "released by COMMIT instead");
     assert.equal(sim.status(), "active");
+    assert.equal((await sim.client.query("COMMIT")).command, "COMMIT");
   });
 
   it("failure: ROLLBACK TO + RELEASE, error rethrown unchanged, transaction survives", async () => {
@@ -425,6 +426,31 @@ describe("notificationService — best-effort insert isolation (PostgreSQL seman
     await sim.client.query("INSERT INTO business VALUES ($1)", ["after_admin_notify"]);
     assert.equal((await sim.client.query("COMMIT")).command, "COMMIT");
     assert.deepEqual(sim.committed.business, ["after_admin_notify"]);
+  });
+
+  it("notifyUsers with a dedupe key: batched per 500 recipients — one savepoint per chunk, same per-user keys", async () => {
+    load();
+    // eslint-disable-next-line global-require
+    const events = require("../src/services/notificationEventsService");
+    const sim = pgSim();
+    const userIds = Array.from({ length: 1200 }, (_, i) => i + 1);
+    await sim.client.query("BEGIN");
+    await sim.client.query("INSERT INTO business VALUES ($1)", ["lesson_added"]);
+    const rows = await events.notifyUsers({ userIds, type: "course.lesson.added", title: "درس جديد", message: "m", entityType: "course", entityId: 3, dedupeKey: "course_lessons_added_3_1" }, sim.client);
+    const again = await events.notifyUsers({ userIds: [1, 2], type: "course.lesson.added", title: "درس جديد", message: "m", entityType: "course", entityId: 3, dedupeKey: "course_lessons_added_3_1" }, sim.client);
+    await tick();
+    assert.equal(realtime.length, 0, "nothing before COMMIT");
+    assert.equal((await sim.client.query("COMMIT")).command, "COMMIT");
+    await tick();
+    const inserts = sim.statements.filter((s) => s.startsWith("INSERT INTO NOTIFICATIONS"));
+    assert.equal(inserts.length, 3 + 1, "1200 recipients → 3 batched statements (+1 for the retry)");
+    assert.equal(rows.length, 1200);
+    assert.equal(again.length, 0, "dedupe: a retry creates no row and no push");
+    assert.equal(sim.committed.notifications.length, 1200);
+    assert.ok(sim.committed.notifications.every((n) => n.dedupe_key === `course_lessons_added_3_1_u${n.recipient_user_id}`));
+    assert.equal(realtime.length, 1200);
+    assert.equal(pushes.length, 1200);
+    assert.deepEqual(sim.committed.business, ["lesson_added"]);
   });
 
   it("logging is content-free and bounded (rate limited with a suppressed count)", async () => {
