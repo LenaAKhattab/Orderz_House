@@ -1,4 +1,5 @@
 const { Pool } = require("pg");
+const { instrumentClient } = require("./afterCommit");
 
 if (!process.env.DATABASE_URL) {
   throw new Error("DATABASE_URL is missing. Please configure backend/.env.");
@@ -66,13 +67,15 @@ async function ensureStatementTimeout(client) {
   client.__ohStatementTimeoutMs = STATEMENT_TIMEOUT_MS;
 }
 
-// Apply statement_timeout after checkout (Neon pooler rejects startup `options`).
+// Apply statement_timeout after checkout (Neon pooler rejects startup `options`), and make the client
+// transaction-aware so notification side effects wait for COMMIT (see ./afterCommit).
 // Support both callback and Promise forms of pg.Pool#connect.
 const checkout = pool.connect.bind(pool);
 pool.connect = function connectWithStatementTimeout(cb) {
   if (typeof cb === "function") {
     return checkout((err, client) => {
       if (err) return cb(err);
+      instrumentClient(client);
       ensureStatementTimeout(client).then(
         () => cb(null, client),
         (setErr) => {
@@ -90,6 +93,7 @@ pool.connect = function connectWithStatementTimeout(cb) {
     });
   }
   return checkout().then(async (client) => {
+    instrumentClient(client);
     try {
       await ensureStatementTimeout(client);
     } catch (setErr) {
