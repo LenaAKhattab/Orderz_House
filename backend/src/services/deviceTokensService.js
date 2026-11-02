@@ -71,6 +71,19 @@ async function upsertPushToken(userId, body, client) {
     [uid, input.token, input.platform, input.deviceId, input.appVersion],
   );
 
+  // One install = one live token: older tokens of this install (rotated, or left by the account that
+  // used it before) stop receiving pushes — whoever is signed in now owns the device.
+  if (input.deviceId) {
+    await runner.query(
+      `UPDATE user_device_tokens
+       SET is_active = FALSE,
+           revoked_at = NOW(),
+           updated_at = NOW()
+       WHERE device_id = $1 AND token <> $2 AND is_active = TRUE`,
+      [input.deviceId, input.token],
+    );
+  }
+
   return {
     id: String(rows[0].id),
     userId: String(rows[0].user_id),
@@ -135,6 +148,29 @@ async function listActiveTokensForUser(userId, client) {
   }));
 }
 
+/**
+ * Active push targets for many recipients in one query — one token per physical install
+ * (device_id), newest first, so a rotated-but-not-yet-rejected token cannot double-deliver.
+ */
+async function listActiveTokensForUsers(userIds, client) {
+  const ids = [...new Set((Array.isArray(userIds) ? userIds : []).map(Number).filter((n) => Number.isInteger(n) && n > 0))];
+  if (!ids.length) return [];
+  const runner = getRunner(client);
+  const { rows } = await runner.query(
+    `SELECT DISTINCT ON (user_id, COALESCE(device_id, token)) id, user_id, token, platform
+     FROM user_device_tokens
+     WHERE user_id = ANY($1::bigint[]) AND is_active = TRUE
+     ORDER BY user_id, COALESCE(device_id, token), last_seen_at DESC, id DESC`,
+    [ids],
+  );
+  return rows.map((r) => ({
+    id: Number(r.id),
+    userId: Number(r.user_id),
+    token: r.token,
+    platform: r.platform,
+  }));
+}
+
 async function deactivateTokensByValues(tokens, client) {
   const list = (Array.isArray(tokens) ? tokens : [])
     .map((t) => String(t || "").trim())
@@ -161,5 +197,6 @@ module.exports = {
   deactivatePushToken,
   deactivateAllPushTokensForUser,
   listActiveTokensForUser,
+  listActiveTokensForUsers,
   deactivateTokensByValues,
 };

@@ -108,6 +108,16 @@ void main() {
       expect(target?.route, AppRoutes.poolOrderPath('789'));
     });
 
+    test('training-round summary opens the marketplace (freelancer only)', () {
+      final summary = _notification(
+        actionUrl: '/dashboard/freelancer/orders',
+        entityType: 'marketplace',
+        recipientRole: 'freelancer',
+      );
+      expect(resolveNotificationAction(summary, currentUserRole: 'freelancer')?.route, AppRoutes.marketplace);
+      expect(resolveNotificationAction(summary, currentUserRole: 'client'), isNull);
+    });
+
     test('freelancer financial claims via link', () {
       final target = resolveNotificationAction(
         _notification(
