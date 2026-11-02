@@ -56,6 +56,7 @@ const submissionsService = require("./marketplaceArticleSubmissionsService");
 const eligibility = require("./marketplaceMembershipEligibilityService");
 const marketplaceMembershipCyclesService = require("./marketplaceMembershipCyclesService");
 const notificationService = require("./notificationService");
+const { runAfterCommit } = require("../config/afterCommit");
 const articleBidEconomics = require("./marketplaceArticleApplicationBidCreditService");
 
 function toIdString(value) {
@@ -1455,8 +1456,9 @@ async function selectArticleApplication({
       await collectionService.markRoundAssigned(client, article.current_bid_collection_round_id);
       if (ownClient) await client.query("COMMIT");
 
-      try {
-        await notificationService.createIfNotExists(
+      // Caller-owned client may still be inside its transaction: notify only after that COMMIT.
+      runAfterCommit(client, () =>
+        notificationService.createIfNotExists(
           {
             recipientUserId: Number(row.freelancer_user_id),
             recipientRole: "freelancer",
@@ -1470,10 +1472,8 @@ async function selectArticleApplication({
             metadata: selectionSource ? { selectionSource } : undefined,
           },
           `article_application_selected:${id}`,
-        );
-      } catch {
-        /* non-blocking */
-      }
+        ),
+      );
 
       await maybeStartMembershipAfterArticleSelection(row.freelancer_user_id, id);
 
@@ -1517,8 +1517,9 @@ async function selectArticleApplication({
     await collectionService.markRoundAssigned(client, article.current_bid_collection_round_id);
     if (ownClient) await client.query("COMMIT");
 
-    try {
-      await notificationService.createIfNotExists(
+    // Caller-owned client may still be inside its transaction: notify only after that COMMIT.
+    runAfterCommit(client, () =>
+      notificationService.createIfNotExists(
         {
           recipientUserId: Number(row.freelancer_user_id),
           recipientRole: "freelancer",
@@ -1532,10 +1533,8 @@ async function selectArticleApplication({
           metadata: selectionSource ? { selectionSource } : undefined,
         },
         `article_application_selected:${id}`,
-      );
-    } catch {
-      /* non-blocking */
-    }
+      ),
+    );
 
     await maybeStartMembershipAfterArticleSelection(row.freelancer_user_id, id);
 

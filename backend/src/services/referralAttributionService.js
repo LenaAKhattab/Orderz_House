@@ -9,6 +9,7 @@ const {
 const { readCookieToken, buildAttributionCookie, COOKIE_NAME } = require("./referralCookie");
 const { getCurrentPolicy, ensureReferralCode } = require("./referralPolicyService");
 const notificationService = require("./notificationService");
+const { runAfterCommit } = require("../config/afterCommit");
 
 function normalizePhone(value) {
   return String(value || "").replace(/\D/g, "");
@@ -126,8 +127,10 @@ async function attachOnRegistration({ userId, role, phone, fullName, manualCode,
         [codeRow.id, choice.visitId, userId],
       );
     }
-    try {
-      await notificationService.createNotification({
+    // Registration may still be inside its transaction on `client`: notify only after COMMIT.
+    runAfterCommit(client, async () => {
+      try {
+        await notificationService.createNotification({
         recipientUserId: Number(codeRow.user_id),
         recipientRole: codeRow.role,
         actorUserId: null,
@@ -140,11 +143,12 @@ async function attachOnRegistration({ userId, role, phone, fullName, manualCode,
         priority: "medium",
         metadata: { titleEn: "New referral registration", messageEn: "A new user joined through your referral link." },
         dedupeKey: `referral_registration_${userId}`,
-      });
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error(JSON.stringify({ component: "referral", event: "registration_notify_failed", message: error?.message }));
-    }
+        });
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error(JSON.stringify({ component: "referral", event: "registration_notify_failed", message: error?.message }));
+      }
+    });
     return {
       attached: true,
       referralId: Number(inserted.rows[0].id),

@@ -4,6 +4,7 @@ const { isAllowedByPreferences } = require("../utils/notificationPreferenceRules
 const { getUserNotificationPreferences, getManyUserNotificationPreferences } = require("./notificationPreferenceCache");
 const realtimeHub = require("./notificationRealtimeHub");
 const { queuePushForNotification } = require("./fcmPushService");
+const { runAfterCommit } = require("../config/afterCommit");
 
 function getRunner(client) {
   return client || pool;
@@ -116,6 +117,21 @@ function publishRealtime(mapped) {
   }
 }
 
+/**
+ * Realtime + push for committed notifications only. Inside an open transaction on `runner` they wait for
+ * COMMIT (and never happen on rollback); otherwise they run now. Failures stay best-effort.
+ */
+function dispatchExternally(runner, notifications) {
+  const list = notifications.filter(Boolean);
+  if (!list.length) return;
+  runAfterCommit(runner, () => {
+    for (const n of list) {
+      publishRealtime(n);
+      queuePushForNotification(n);
+    }
+  });
+}
+
 async function createNotification(data, client) {
   const runner = getRunner(client);
   const input = normalizeCreateInput(data);
@@ -144,8 +160,7 @@ async function createNotification(data, client) {
     ],
   );
   const mapped = mapNotification(rows[0]);
-  publishRealtime(mapped);
-  queuePushForNotification(mapped);
+  dispatchExternally(runner, [mapped]);
   return mapped;
 }
 
@@ -187,10 +202,7 @@ async function createManyNotifications(items, client) {
     values,
   );
   const mapped = rows.map(mapNotification);
-  mapped.forEach((n) => {
-    publishRealtime(n);
-    queuePushForNotification(n);
-  });
+  dispatchExternally(runner, mapped);
   return mapped;
 }
 
@@ -224,8 +236,7 @@ async function createIfNotExists(data, dedupeKey, client) {
   );
   if (rows[0]) {
     const mapped = mapNotification(rows[0]);
-    publishRealtime(mapped);
-    queuePushForNotification(mapped);
+    dispatchExternally(runner, [mapped]);
     return mapped;
   }
   if (!input.dedupeKey) return null;
@@ -288,10 +299,7 @@ async function createManyIfNotExists(items, client) {
     values,
   );
   const mapped = rows.map(mapNotification);
-  mapped.forEach((n) => {
-    publishRealtime(n);
-    queuePushForNotification(n);
-  });
+  dispatchExternally(runner, mapped);
   return mapped;
 }
 

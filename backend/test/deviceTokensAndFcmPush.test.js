@@ -250,17 +250,19 @@ describe("fcmPushService", () => {
 });
 
 describe("notificationService push hook", () => {
-  it("queues push after create without awaiting FCM", () => {
+  it("queues push after create without awaiting FCM (after COMMIT when inside a transaction)", () => {
     assert.ok(notifSrc.includes('require("./fcmPushService")'));
-    assert.ok(notifSrc.includes("queuePushForNotification(mapped)"));
     assert.ok(notifSrc.includes("async function createManyNotifications"));
+    const helper = notifSrc.slice(notifSrc.indexOf("function dispatchExternally"), notifSrc.indexOf("async function createNotification"));
+    assert.match(helper, /runAfterCommit\(runner, \(\) => \{/);
+    assert.match(helper, /queuePushForNotification\(n\)/);
     // Must not await sendPushForNotification inside create paths.
     const createFn = notifSrc.slice(
       notifSrc.indexOf("async function createNotification"),
       notifSrc.indexOf("async function createManyNotifications"),
     );
     assert.ok(!createFn.includes("await sendPushForNotification"));
-    assert.ok(createFn.includes("queuePushForNotification"));
+    assert.ok(createFn.includes("dispatchExternally(runner, [mapped])"));
   });
 });
 

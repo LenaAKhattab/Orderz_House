@@ -1,10 +1,13 @@
 const { pool } = require("../config/db");
 const { calculateCommissionMinor, refundAdjustment, PAYMENT_TYPES } = require("../domain/referralPolicy");
 const notificationService = require("./notificationService");
+const { runAfterCommit } = require("../config/afterCommit");
 
 const SUPPORTED_TYPES = new Set(Object.values(PAYMENT_TYPES));
 
-async function notifyReferrer(input) {
+/** Created after `client`'s transaction commits (immediately when there is none). */
+function notifyReferrer(input, client) {
+  runAfterCommit(client, async () => {
   try {
     await notificationService.createNotification({
       recipientUserId: Number(input.userId),
@@ -24,6 +27,7 @@ async function notifyReferrer(input) {
     // eslint-disable-next-line no-console
     console.error(JSON.stringify({ component: "referral", event: "notify_failed", message: error?.message }));
   }
+  });
 }
 
 async function insertLedger(client, row) {
@@ -85,7 +89,7 @@ async function evaluateBonuses(client, referrerUserId) {
       entityId: Number(awarded.rows[0].id),
       dedupeKey: `referral_bonus_${rule.id}_${referrerUserId}`,
       metadata: { titleEn: "Referral bonus", messageEn: "A referral bonus was added to your available balance." },
-    });
+    }, client);
   }
 }
 
@@ -140,7 +144,7 @@ async function promoteMaturedCommissions(client, referrerUserId = null, { limit 
       entityId: Number(row.id),
       dedupeKey: `referral_available_${row.id}`,
       metadata: { titleEn: "Referral commission available", messageEn: "A referral commission is now available to withdraw." },
-    });
+    }, client);
   }
   for (const id of referrers) await evaluateBonuses(client, id);
   return rows.length;
@@ -304,7 +308,7 @@ async function processReferralCommissionForPayment(input, client = pool) {
       entityId: Number(commissionId),
       dedupeKey: `referral_pending_${commissionId}`,
       metadata: { titleEn: "Referral commission pending", messageEn: "A referral commission was recorded and is in the hold period." },
-    });
+    }, db);
     if (holdDays === 0) await promoteMaturedCommissions(db, row.referrer_user_id);
     if (ownClient) await db.query("COMMIT");
     return { created: true, commissionId: Number(commissionId), commissionMinor, policyVersionId: Number(row.policy_version_id) };
