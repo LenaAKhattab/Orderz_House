@@ -4,8 +4,8 @@
 # Founder-approved policy lives in the tool: discovery 30 days; transactional/moderation/system 365 days;
 # financial, security and unknown types are never deleted.
 #
-# Bounded: 5,000-row batches (one short transaction each), 250 ms pause, at most 100,000 rows per run,
-# stop at the first DB error. Per-target cursors persist in $STATE_FILE so each run starts where the last
+# Bounded: 5,000-row batches (one short transaction each), 250 ms pause, at most 250,000 rows per run through
+# 2026-12-15 UTC (inclusive) and 100,000 from 2026-12-16 on — automatic, no intervention; stop at the first DB error. Per-target cursors persist in $STATE_FILE so each run starts where the last
 # one stopped instead of re-walking deleted-but-unvacuumed index entries; losing the file is safe (slower).
 # Pre-check (container running + read-only eligibility count) must pass or nothing is deleted.
 #
@@ -16,11 +16,33 @@
 #   /etc/logrotate.d/orderzhouse-notifications-retention  →  /var/log/orderzhouse/notifications-retention.log
 # Read results: tail /var/log/orderzhouse/notifications-retention.log ; journalctl -t orderzhouse-notification-retention
 # Exit: 0 complete, 1 max rows reached (backlog continues next run), 2 deletion stopped on error, 3 pre-check failed.
+# `--resolve-max-rows [YYYY-MM-DD]` prints the cap for that UTC date (default today) and exits — no side effects.
 set -uo pipefail
 
 BATCH_SIZE=5000
 SLEEP_MS=250
-MAX_ROWS=100000
+# Temporary cap (founder decision 2026-11-02): pre-R1A rows age out at 80k–214k/day until ~2026-11-28,
+# above the normal 100,000. Inclusive end date, UTC.
+TEMP_MAX_ROWS=250000
+TEMP_CAP_UNTIL=2026-12-15
+DEFAULT_MAX_ROWS=100000
+
+resolve_max_rows() {
+  local day="$1"
+  [[ "$day" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || return 1
+  if [[ "$day" > "$TEMP_CAP_UNTIL" ]]; then
+    echo "$DEFAULT_MAX_ROWS"
+  else
+    echo "$TEMP_MAX_ROWS"
+  fi
+}
+
+if [ "${1:-}" = "--resolve-max-rows" ]; then
+  resolve_max_rows "${2:-$(date -u +%Y-%m-%d)}" || { echo "invalid date (expected YYYY-MM-DD)" >&2; exit 3; }
+  exit 0
+fi
+
+MAX_ROWS=$(resolve_max_rows "$(date -u +%Y-%m-%d)")
 C=orderzhouse-backend
 TAG=orderzhouse-notification-retention
 LOG_DIR=/var/log/orderzhouse
@@ -54,7 +76,8 @@ count_total() {
 
 exec 9>"$LOCK_FILE"
 flock -n 9 || finish 3 "precheck_failed=already_running"
-log "run_started batch_size=$BATCH_SIZE sleep_ms=$SLEEP_MS max_rows=$MAX_ROWS"
+[ -n "$MAX_ROWS" ] || finish 3 "precheck_failed=max_rows_unresolved"
+log "run_started batch_size=$BATCH_SIZE sleep_ms=$SLEEP_MS max_rows=$MAX_ROWS temp_cap_until=$TEMP_CAP_UNTIL"
 
 # Pre-check 1: backend container running.
 [ "$(docker inspect -f '{{.State.Running}}' "$C" 2>/dev/null)" = "true" ] || finish 3 "precheck_failed=container_not_running"
