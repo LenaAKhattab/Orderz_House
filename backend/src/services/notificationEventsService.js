@@ -6,6 +6,9 @@ function getRunner(client) {
   return client || pool;
 }
 
+/** Recipients per batched insert (12 bind parameters each; PostgreSQL allows 65,535 per statement). */
+const DEDUPED_FANOUT_CHUNK = 500;
+
 async function getRoleUserIds(roleNames = [], client) {
   const roles = [...new Set((Array.isArray(roleNames) ? roleNames : []).map((x) => String(x || "").trim()).filter(Boolean))];
   if (!roles.length) return [];
@@ -44,13 +47,14 @@ async function notifyUsers({
   if (!ids.length) return [];
   const runner = getRunner(client);
   if (dedupeKey) {
+    // Per-recipient dedupe keys (`${dedupeKey}_u${uid}`), inserted in batches: one statement — and, inside a
+    // transaction, one savepoint — per chunk instead of per recipient (courses can have thousands of assignees).
     const out = [];
-    for (const uid of ids) {
-      // Per-recipient dedupe avoids collisions across different recipients.
+    for (let i = 0; i < ids.length; i += DEDUPED_FANOUT_CHUNK) {
       // eslint-disable-next-line no-await-in-loop
-      const n = await notificationService.createIfNotExists(
+      const rows = await notifyUsersDeduped(
         {
-          recipientUserId: uid,
+          userIds: ids.slice(i, i + DEDUPED_FANOUT_CHUNK),
           recipientRole,
           actorUserId,
           type,
@@ -61,11 +65,11 @@ async function notifyUsers({
           link,
           priority,
           metadata,
+          dedupeKey,
         },
-        `${dedupeKey}_u${uid}`,
         runner,
       );
-      if (n) out.push(n);
+      out.push(...rows);
     }
     return out;
   }
