@@ -1,4 +1,5 @@
 const { pool } = require("../config/db");
+const { runInSavepoint } = require("../config/afterCommit");
 const notificationService = require("./notificationService");
 
 function getRunner(client) {
@@ -9,7 +10,8 @@ async function getRoleUserIds(roleNames = [], client) {
   const roles = [...new Set((Array.isArray(roleNames) ? roleNames : []).map((x) => String(x || "").trim()).filter(Boolean))];
   if (!roles.length) return [];
   const runner = getRunner(client);
-  const { rows } = await runner.query(
+  // Recipient lookup may run on the caller's transaction client: isolate it like the notification insert.
+  const { rows } = await runInSavepoint(runner, () => runner.query(
     `SELECT DISTINCT u.id
      FROM users u
      LEFT JOIN user_roles ur ON ur.user_id = u.id
@@ -20,7 +22,7 @@ async function getRoleUserIds(roleNames = [], client) {
          OR r.name = ANY($1::text[])
        )`,
     [roles],
-  );
+  ));
   return rows.map((r) => Number(r.id)).filter((n) => Number.isInteger(n) && n > 0);
 }
 

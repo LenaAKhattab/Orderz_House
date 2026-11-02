@@ -8,6 +8,7 @@
  */
 
 const { pool } = require("../config/db");
+const { runInSavepoint } = require("../config/afterCommit");
 const { createAppError } = require("../utils/AppError");
 const {
   getMarketplaceEconomySettings,
@@ -687,13 +688,16 @@ async function notifyDeadlineReconcileOutcome({
       );
       let applicantIds = Array.isArray(applicantUserIds) ? applicantUserIds : null;
       if (!applicantIds) {
-        const { rows: applicants } = await client.query(
-          `SELECT DISTINCT freelancer_user_id
-             FROM order_freelancer_bids
-            WHERE order_id = $1
-              AND COALESCE(is_fake_bid, FALSE) = FALSE
-              AND status = ANY($2::text[])`,
-          [orderId, NORMAL_ORDER_VALID_APPLICATION_STATUSES],
+        // Best-effort block on the reconcile transaction: isolate this read so a failure cannot abort it.
+        const { rows: applicants } = await runInSavepoint(client, () =>
+          client.query(
+            `SELECT DISTINCT freelancer_user_id
+               FROM order_freelancer_bids
+              WHERE order_id = $1
+                AND COALESCE(is_fake_bid, FALSE) = FALSE
+                AND status = ANY($2::text[])`,
+            [orderId, NORMAL_ORDER_VALID_APPLICATION_STATUSES],
+          ),
         );
         applicantIds = applicants.map((row) => Number(row.freelancer_user_id));
       }

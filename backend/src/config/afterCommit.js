@@ -10,6 +10,14 @@
  *
  * Use it for externally visible side effects only (realtime, push, follow-up notifications) — business writes
  * belong inside the transaction itself.
+ *
+ * runInSavepoint() isolates best-effort database work (notification inserts) from the caller's transaction:
+ * a failure there rolls back to its own savepoint instead of aborting the business transaction.
+ *
+ * Coverage limits (by design, documented + guarded by tests): only clients checked out through db.js
+ * (pool.connect) are tracked, and only promise-style client.query("BEGIN") calls. A transaction opened on a
+ * client created with `new Client()` or via callback-style query("BEGIN", cb) looks like autocommit here:
+ * side effects would run immediately and no savepoint would be used. No notification producer does that today.
  */
 
 const STATE = Symbol("ohAfterCommitState");
@@ -121,6 +129,60 @@ function isInTransaction(runner) {
   return Boolean(runner && runner[STATE] && runner[STATE].inTx);
 }
 
+const ISOLATION_SAVEPOINT_PREFIX = "oh_iso_sp_";
+let isolationSeq = 0;
+
+/** Internal savepoint names: fixed prefix + process-local counter. Never derived from input. */
+function nextIsolationSavepointName() {
+  isolationSeq = isolationSeq >= Number.MAX_SAFE_INTEGER ? 1 : isolationSeq + 1;
+  return `${ISOLATION_SAVEPOINT_PREFIX}${isolationSeq}`;
+}
+
+/**
+ * Runs `fn` so that a database error inside it cannot abort `runner`'s open transaction.
+ *
+ * Inside a transaction: SAVEPOINT → fn → RELEASE. If `fn` throws: ROLLBACK TO SAVEPOINT → RELEASE, then the
+ * error is rethrown unchanged (callers keep their own semantics: best-effort callers swallow it, others fail as
+ * before). Work registered with runAfterCommit() inside `fn` is discarded together with the rolled-back writes.
+ * Outside a transaction (pool, autocommit client, unknown runner) `fn` simply runs — no extra round trips.
+ *
+ * `onError(err, txState)` is told whether the surrounding transaction is still usable ("survived") or not
+ * ("aborted": the savepoint could not be created or rolled back — the transaction had already failed or the
+ * connection broke). Sequential use only: never run two isolated sections concurrently on one client.
+ */
+async function runInSavepoint(runner, fn, { onError } = {}) {
+  if (!isInTransaction(runner)) return fn();
+  const name = nextIsolationSavepointName();
+  try {
+    await runner.query(`SAVEPOINT ${name}`);
+  } catch (err) {
+    if (onError) onError(err, "aborted");
+    throw err;
+  }
+  let result;
+  try {
+    result = await fn();
+  } catch (err) {
+    let txState = "aborted";
+    try {
+      await runner.query(`ROLLBACK TO SAVEPOINT ${name}`);
+      await runner.query(`RELEASE SAVEPOINT ${name}`);
+      txState = "survived";
+    } catch {
+      /* transaction unusable: the caller's COMMIT will not commit (tracked above) */
+    }
+    if (onError) onError(err, txState);
+    throw err;
+  }
+  try {
+    await runner.query(`RELEASE SAVEPOINT ${name}`);
+  } catch (err) {
+    if (onError) onError(err, "aborted");
+    throw err;
+  }
+  return result;
+}
+
 /**
  * Runs `fn` now, or — when `runner` is inside an open transaction — once after that transaction commits.
  * @returns {"immediate" | "deferred"}
@@ -139,5 +201,7 @@ module.exports = {
   instrumentClient,
   isInTransaction,
   runAfterCommit,
+  runInSavepoint,
   classifyStatement,
+  ISOLATION_SAVEPOINT_PREFIX,
 };
