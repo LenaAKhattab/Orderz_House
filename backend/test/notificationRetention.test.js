@@ -500,7 +500,11 @@ describe("cron wrapper contract (scripts/orderzhouse-notifications-retention-cro
   it("fixed approved bounds; canonical tool with explicit confirmation", () => {
     assert.match(code, /^BATCH_SIZE=5000$/m);
     assert.match(code, /^SLEEP_MS=250$/m);
-    assert.match(code, /^MAX_ROWS=100000$/m);
+    assert.match(code, /^TEMP_MAX_ROWS=250000$/m);
+    assert.match(code, /^TEMP_CAP_UNTIL=2026-12-15$/m);
+    assert.match(code, /^DEFAULT_MAX_ROWS=100000$/m);
+    assert.match(code, /^MAX_ROWS=\$\(resolve_max_rows "\$\(date -u \+%Y-%m-%d\)"\)$/m);
+    assert.match(code, /\[ -n "\$MAX_ROWS" \] \|\| finish 3/);
     assert.match(code, /TOOL="node scripts\/notificationsRetention\.js"/);
     assert.match(code, /--apply \\\n\s+--confirm=DELETE_EXPIRED_NOTIFICATIONS --batch-size="\$BATCH_SIZE" --sleep-ms="\$SLEEP_MS" --max-rows="\$MAX_ROWS"/);
     assert.match(code, /--state-file="\$CONTAINER_STATE"/);
@@ -521,6 +525,48 @@ describe("cron wrapper contract (scripts/orderzhouse-notifications-retention-cro
     const apply = code.indexOf("$TOOL --apply");
     assert.ok(precheck > 0 && count > precheck && apply > count);
     assert.match(code, /flock -n 9 \|\| finish 3/);
+  });
+
+  it("temporary 250k cap through 2026-12-15 UTC, then 100k (real bash, deterministic dates)", (t) => {
+    const { spawnSync } = require("node:child_process");
+    const script = path.join(__dirname, "..", "..", "scripts", "orderzhouse-notifications-retention-cron.sh");
+    const probe = spawnSync("bash", ["--version"], { encoding: "utf8" });
+    if (probe.error) {
+      t.skip("bash not available");
+      return;
+    }
+    const resolve = (day) => spawnSync("bash", [script, "--resolve-max-rows", day], { encoding: "utf8" });
+    const cases = {
+      "2026-11-02": "250000",
+      "2026-11-28": "250000",
+      "2026-12-14": "250000",
+      "2026-12-15": "250000",
+      "2026-12-16": "100000",
+      "2027-01-01": "100000",
+      "2030-06-30": "100000",
+    };
+    for (const [day, cap] of Object.entries(cases)) {
+      const r = resolve(day);
+      assert.equal(r.status, 0, `${day}: ${r.stderr}`);
+      assert.equal(r.stdout.trim(), cap, day);
+    }
+    for (const bad of ["2026-12-1", "15/12/2026", "2026-12-16; rm -rf /", ""]) {
+      const r = resolve(bad);
+      if (bad === "") continue; // empty → today (covered below)
+      assert.equal(r.status, 3, `rejects ${JSON.stringify(bad)}`);
+      assert.equal(r.stdout.trim(), "");
+    }
+    const today = spawnSync("bash", [script, "--resolve-max-rows"], { encoding: "utf8" });
+    assert.ok(["250000", "100000"].includes(today.stdout.trim()));
+  });
+
+  it("both caps stay bounded below the proven 500k pass; batch size and confirmation unchanged", () => {
+    const caps = [...code.matchAll(/^(?:TEMP|DEFAULT)_MAX_ROWS=(\d+)$/gm)].map((m) => Number(m[1]));
+    assert.deepEqual(caps.sort((a, b) => a - b), [100000, 250000]);
+    assert.ok(caps.every((n) => n > 0 && n < 500000));
+    assert.match(code, /--confirm=DELETE_EXPIRED_NOTIFICATIONS --batch-size="\$BATCH_SIZE" --sleep-ms="\$SLEEP_MS" --max-rows="\$MAX_ROWS"/);
+    const resolveIdx = code.indexOf('if [ "${1:-}" = "--resolve-max-rows" ]');
+    assert.ok(resolveIdx > 0 && resolveIdx < code.indexOf("install -d"), "resolve mode exits before any side effect");
   });
 
   it("aggregates-only log + syslog severity by exit code", () => {
