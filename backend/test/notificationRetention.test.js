@@ -354,3 +354,182 @@ describe("CLI guards", () => {
     assert.throws(() => cli.parseArgs(["--delete-everything"]), /unknown argument/);
   });
 });
+
+describe("R1C scheduled run — invariants under the daily settings (5,000 / 100,000, stored cursors)", () => {
+  function scheduledSeed() {
+    const rows = [];
+    // Discovery: old (eligible) and fresh (< 30 days, must stay).
+    for (let i = 0; i < 40; i += 1) rows.push({ type: "order.created", recipient_role: "freelancer", created_at: new Date(daysAgo(31 + i)) });
+    for (let i = 0; i < 10; i += 1) rows.push({ type: "order.created", recipient_role: "freelancer", created_at: new Date(daysAgo(29 - i)) });
+    for (let i = 0; i < 5; i += 1) rows.push({ type: "order.pool.summary", recipient_role: "freelancer", created_at: new Date(daysAgo(31 + i)) });
+    rows.push({ type: "order.pool.summary", recipient_role: "freelancer", created_at: new Date(daysAgo(2)) });
+    // 365-day classes: younger stays, older goes.
+    for (const type of ["user.registered", "feedback.created", "plan.updated", "order.bid.submitted"]) {
+      rows.push({ type, recipient_role: "client", created_at: new Date(daysAgo(364)) });
+      rows.push({ type, recipient_role: "client", created_at: new Date(daysAgo(366)) });
+    }
+    rows.push({ type: "order.created", recipient_role: "client", created_at: new Date(daysAgo(200)) });
+    // Never deleted, regardless of age.
+    for (const type of PROTECTED_TYPES) {
+      rows.push({ type, recipient_role: "freelancer", created_at: new Date(daysAgo(3000)) });
+    }
+    return rows;
+  }
+  const PROTECTED_TYPES = ["payment_success", "financial_claim.paid", "order.payment.started", "user.account.suspended", "user.account.deactivated", "some.unknown.type"];
+
+  it("deletes only policy-eligible rows; protected classes survive at any age", async () => {
+    const client = makeTableClient(scheduledSeed());
+    const out = await retention.runApply(client, { now: NOW, batchSize: 5000, sleepMs: 0, maxRows: 100000 });
+    assert.equal(out.stoppedAt, "complete");
+    assert.equal(out.deleted, 40 + 5 + 4, "40 old discovery + 5 old summaries + 4 × 366-day rows");
+    const left = client.table;
+    for (const type of PROTECTED_TYPES) assert.ok(left.some((r) => r.type === type), `${type} kept`);
+    assert.equal(left.filter((r) => r.type === "order.created" && r.recipient_role === "freelancer").length, 10, "discovery < 30 days kept");
+    assert.equal(left.filter((r) => r.type === "order.pool.summary").length, 1);
+    for (const type of ["user.registered", "feedback.created", "plan.updated", "order.bid.submitted"]) {
+      assert.equal(left.filter((r) => r.type === type).length, 1, `${type}: 364-day row kept`);
+    }
+    assert.ok(left.some((r) => r.type === "order.created" && r.recipient_role === "client"), "client confirmation < 365 days kept");
+  });
+
+  it("stored cursors start each target where the last run stopped; resume overrides its key", async () => {
+    const client = makeTableClient(scheduledSeed());
+    const firstLower = new Map();
+    const query = client.query.bind(client);
+    client.query = async (sql, params) => {
+      if (params && !firstLower.has(`${params[0]}|${params[1].getTime()}`)) firstLower.set(`${params[0]}|${params[1].getTime()}`, params[2]);
+      return query(sql, params);
+    };
+    const cursors = { "order.created[freelancer]": daysAgo(50), "order.pool.summary": daysAgo(33), "bogus.key": "x" };
+    const out = await retention.runApply(client, { now: NOW, batchSize: 5000, sleepMs: 0, maxRows: 100000, cursors });
+    const key = (type, days) => `${type}|${retention.cutoffFor(days, NOW).getTime()}`;
+    assert.equal(new Date(firstLower.get(key("order.created", 30))).toISOString(), daysAgo(50));
+    assert.equal(new Date(firstLower.get(key("order.pool.summary", 30))).toISOString(), daysAgo(33));
+    assert.equal(firstLower.get(key("user.registered", 365)), "-infinity");
+    assert.equal(out.targets.find((t) => t.key === "order.created[freelancer]").startedAt, daysAgo(50));
+    const client2 = makeTableClient(scheduledSeed());
+    const out2 = await retention.runApply(client2, { now: NOW, batchSize: 5000, sleepMs: 0, cursors, resume: { key: "order.created[freelancer]", after: daysAgo(45) } });
+    assert.equal(out2.targets[0].startedAt, daysAgo(45));
+  });
+
+  it("max-rows bounds a run and the next runs (with stored cursors) finish the backlog", async () => {
+    const rows = Array.from({ length: 23000 }, (_, i) => ({ type: "order.created", recipient_role: "freelancer", created_at: new Date(NOW.getTime() - (31 * 86400000) - i * 1000) }));
+    const client = makeTableClient(rows);
+    const first = await retention.runApply(client, { now: NOW, batchSize: 5000, sleepMs: 0, maxRows: 10000 });
+    assert.equal(first.stoppedAt, "max_rows");
+    assert.equal(first.deleted, 10000);
+    assert.ok(client.log.batches.every((n) => n <= 5000));
+    const second = await retention.runApply(client, { now: NOW, batchSize: 5000, sleepMs: 0, maxRows: 10000, cursors: { "order.created[freelancer]": first.targets[0].cursor } });
+    const third = await retention.runApply(client, { now: NOW, batchSize: 5000, sleepMs: 0, maxRows: 10000, cursors: { "order.created[freelancer]": second.targets[0].cursor } });
+    assert.equal(second.deleted + third.deleted, 13000);
+    assert.equal(third.stoppedAt, "complete");
+    assert.equal(client.table.length, 0);
+  });
+});
+
+describe("countEligible (read-only pre-check / before-after numbers)", () => {
+  it("counts each target with the delete predicate inside a READ ONLY transaction", async () => {
+    const statements = [];
+    const client = {
+      async query(sql, params) {
+        const text = String(sql).trim().replace(/\s+/g, " ");
+        statements.push({ text, params });
+        if (/^SELECT COUNT\(\*\)::bigint AS n FROM notifications/.test(text)) {
+          return { rows: [{ n: params[0] === "order.created" && /= ANY/.test(text) ? "12" : "0" }] };
+        }
+        return { rows: [] };
+      },
+    };
+    const out = await retention.countEligible(client, { now: NOW, cursors: { "order.created[freelancer]": daysAgo(40) } });
+    assert.equal(out.mode, "count");
+    assert.equal(out.total, 12);
+    assert.equal(out.byKey["order.created[freelancer]"], 12);
+    assert.equal(out.byKey["order.created[!freelancer]"], 0);
+    assert.ok(!("payment_success" in out.byKey) && !("user.account.suspended" in out.byKey), "protected classes are not targets");
+    assert.equal(statements[0].text, "BEGIN READ ONLY");
+    assert.equal(statements[statements.length - 1].text, "ROLLBACK");
+    for (const s of statements) assert.doesNotMatch(s.text, /\b(DELETE|UPDATE|INSERT)\b/);
+    const discovery = statements.find((s) => s.params && s.params[0] === "order.created" && /= ANY/.test(s.text));
+    assert.match(discovery.text, /WHERE type = \$1 AND created_at < \$2 AND created_at >= \$3 AND recipient_role = ANY\(\$4::text\[\]\)/);
+    assert.equal(new Date(discovery.params[2]).toISOString(), daysAgo(40));
+    assert.equal(discovery.params[1].toISOString(), retention.cutoffFor(30, NOW).toISOString());
+  });
+});
+
+describe("CLI state file and modes", () => {
+  const os = require("node:os");
+  const fs = require("node:fs");
+  const path = require("node:path");
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "r1c-state-"));
+  const file = path.join(dir, "state.json");
+
+  it("--count and --state-file parse; modes are exclusive", () => {
+    const a = cli.parseArgs(["--count", `--state-file=${file}`]);
+    assert.equal(a.count, true);
+    assert.equal(a.stateFile, file);
+    assert.doesNotThrow(() => cli.assertModesValid(a));
+    assert.throws(() => cli.assertModesValid(cli.parseArgs(["--count", "--apply"])), /exclusive/);
+    assert.throws(() => cli.assertModesValid(cli.parseArgs(["--explain", "--count"])), /exclusive/);
+    assert.throws(() => cli.assertModesValid(cli.parseArgs([`--state-file=${file}`])), /only applies/);
+    assert.throws(() => cli.assertModesValid(cli.parseArgs(["--count", "--resume=order.created[freelancer]@2026-10-01T00:00:00Z"])), /--resume only applies/);
+  });
+
+  it("missing or corrupt state is safe (start at the oldest row); unknown keys and bad dates are dropped", () => {
+    assert.deepEqual(cli.readState(path.join(dir, "nope.json")), { status: "missing", cursors: {} });
+    fs.writeFileSync(file, "{not json");
+    assert.deepEqual(cli.readState(file), { status: "invalid", cursors: {} });
+    fs.writeFileSync(file, JSON.stringify({ cursors: { "order.created[freelancer]": "2026-10-03T07:36:13.109Z", payment_success: "2026-01-01T00:00:00Z", "order.pool.summary": "garbage" } }));
+    assert.deepEqual(cli.readState(file), { status: "ok", cursors: { "order.created[freelancer]": "2026-10-03T07:36:13.109Z" } });
+  });
+
+  it("writeState keeps previous cursors, advances moved ones, and replaces the file atomically", () => {
+    const prev = { "order.created[freelancer]": "2026-10-03T07:36:13.109Z", "order.pool.summary": "2026-10-01T00:00:00.000Z" };
+    const cursors = cli.writeState(file, prev, { asOf: "2026-11-03T03:15:00.000Z", targets: [{ key: "order.created[freelancer]", cursor: "2026-10-04T03:15:00.000Z" }, { key: "user.registered", cursor: null }] });
+    assert.deepEqual(cursors, { "order.created[freelancer]": "2026-10-04T03:15:00.000Z", "order.pool.summary": "2026-10-01T00:00:00.000Z" });
+    assert.deepEqual(cli.readState(file).cursors, cursors);
+    assert.equal(fs.existsSync(`${file}.tmp`), false);
+  });
+});
+
+describe("cron wrapper contract (scripts/orderzhouse-notifications-retention-cron.sh)", () => {
+  const fs = require("node:fs");
+  const path = require("node:path");
+  const src = fs.readFileSync(path.join(__dirname, "..", "..", "scripts", "orderzhouse-notifications-retention-cron.sh"), "utf8").replace(/\r\n/g, "\n");
+  const code = src.split("\n").filter((l) => !l.trim().startsWith("#")).join("\n");
+
+  it("fixed approved bounds; canonical tool with explicit confirmation", () => {
+    assert.match(code, /^BATCH_SIZE=5000$/m);
+    assert.match(code, /^SLEEP_MS=250$/m);
+    assert.match(code, /^MAX_ROWS=100000$/m);
+    assert.match(code, /TOOL="node scripts\/notificationsRetention\.js"/);
+    assert.match(code, /--apply \\\n\s+--confirm=DELETE_EXPIRED_NOTIFICATIONS --batch-size="\$BATCH_SIZE" --sleep-ms="\$SLEEP_MS" --max-rows="\$MAX_ROWS"/);
+    assert.match(code, /--state-file="\$CONTAINER_STATE"/);
+    assert.doesNotMatch(code, /--resume|VACUUM|pg_repack|CLUSTER/);
+  });
+
+  it("Production allow flag only on the apply exec; no credentials anywhere", () => {
+    const allow = code.match(/ALLOW_PRODUCTION_NOTIFICATION_RETENTION=1/g) || [];
+    assert.equal(allow.length, 1);
+    assert.match(code, /docker exec -e ALLOW_PRODUCTION_NOTIFICATION_RETENTION=1 "\$C" \$TOOL --apply/);
+    assert.doesNotMatch(src, /DATABASE_URL|postgres(ql)?:\/\/|PASSWORD|whsec_|sk_live/i);
+    assert.doesNotMatch(code, /^\s*export /m);
+  });
+
+  it("pre-check runs before deletion and stops the run when it fails", () => {
+    const precheck = code.indexOf('finish 3 "precheck_failed=container_not_running"');
+    const count = code.indexOf('finish 3 "precheck_failed=count_query"');
+    const apply = code.indexOf("$TOOL --apply");
+    assert.ok(precheck > 0 && count > precheck && apply > count);
+    assert.match(code, /flock -n 9 \|\| finish 3/);
+  });
+
+  it("aggregates-only log + syslog severity by exit code", () => {
+    assert.match(code, /LOG_FILE="\$LOG_DIR\/notifications-retention\.log"/);
+    assert.match(code, /TAG=orderzhouse-notification-retention/);
+    assert.match(code, /0\) priority=user\.info/);
+    assert.match(code, /1\) priority=user\.warning/);
+    assert.match(code, /\*\) priority=user\.err/);
+    assert.match(code, /logger -t "\$TAG" -p "\$priority"/);
+    assert.match(code, /chmod 640 "\$LOG_FILE"/);
+  });
+});

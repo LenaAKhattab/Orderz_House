@@ -9,17 +9,22 @@
  * Usage:
  *   node scripts/notificationsRetention.js                      # dry run
  *   node scripts/notificationsRetention.js --explain [--analyze] # plan of one delete batch per rule (read-only)
+ *   node scripts/notificationsRetention.js --count [--state-file=<path>]   # eligible rows per target now (read-only)
  *   node scripts/notificationsRetention.js --apply --confirm=DELETE_EXPIRED_NOTIFICATIONS \
- *        [--batch-size=5000] [--sleep-ms=250] [--max-rows=N] [--resume=<target key>@<cursor>]
+ *        [--batch-size=5000] [--sleep-ms=250] [--max-rows=N] [--resume=<target key>@<cursor>] [--state-file=<path>]
  *     Production additionally requires ALLOW_PRODUCTION_NOTIFICATION_RETENTION=1.
  *
  * Apply deletes in bounded batches (one short transaction each), pauses between batches, stops on the first
  * error, and is safe to re-run (resumes from the oldest remaining eligible row). For consecutive bounded runs
  * before vacuum, pass the previous run's target `key` and `cursor` (e.g. --resume=order.created[freelancer]@
- * 2026-08-17T23:06:30.354Z) so the first batch does not re-walk the rows that run deleted. Deleting rows does NOT shrink
- * the relation on disk: space becomes reusable inside PostgreSQL after (auto)vacuum. No VACUUM FULL / pg_repack.
+ * 2026-08-17T23:06:30.354Z) so the first batch does not re-walk the rows that run deleted. `--state-file` does this
+ * for every target automatically: it reads the cursors the previous run stored and writes the new ones (also after
+ * a stopped run). A missing or unreadable state file means "start at the oldest row" — slower, never unsafe.
+ * Deleting rows does NOT shrink the relation on disk: space becomes reusable inside PostgreSQL after (auto)vacuum.
+ * No VACUUM FULL / pg_repack.
  * Connects to the DIRECT endpoint (same host without `-pooler`). Never prints connection strings.
  */
+const fs = require("node:fs");
 const { loadBackendEnv } = require("../src/config/loadBackendEnv");
 
 loadBackendEnv({ profile: "default", failClosed: false, quiet: true });
@@ -32,7 +37,7 @@ const retention = require("../src/services/notificationRetentionService");
 const CONFIRM_TOKEN = "DELETE_EXPIRED_NOTIFICATIONS";
 
 function parseArgs(argv) {
-  const args = { apply: false, explain: false, analyze: false, confirm: null, batchSize: 5000, sleepMs: 250, maxRows: null, chunkSize: 250000, resume: null };
+  const args = { apply: false, explain: false, analyze: false, count: false, confirm: null, batchSize: 5000, sleepMs: 250, maxRows: null, chunkSize: 250000, resume: null, stateFile: null };
   for (const a of argv) {
     if (a === "--apply") args.apply = true;
     else if (a.startsWith("--resume=")) {
@@ -44,6 +49,8 @@ function parseArgs(argv) {
     }
     else if (a === "--explain") args.explain = true;
     else if (a === "--analyze") args.analyze = true;
+    else if (a === "--count") args.count = true;
+    else if (a.startsWith("--state-file=")) args.stateFile = a.slice("--state-file=".length) || null;
     else if (a.startsWith("--confirm=")) args.confirm = a.slice("--confirm=".length);
     else if (a.startsWith("--batch-size=")) args.batchSize = Number(a.slice("--batch-size=".length));
     else if (a.startsWith("--sleep-ms=")) args.sleepMs = Number(a.slice("--sleep-ms=".length));
@@ -69,6 +76,47 @@ function assertApplyAllowed(args, env = process.env) {
   }
 }
 
+function assertModesValid(args) {
+  const modes = [args.apply, args.explain, args.count].filter(Boolean).length;
+  if (modes > 1) throw new Error("--apply, --explain and --count are exclusive");
+  if (args.resume && !args.apply) throw new Error("--resume only applies to --apply");
+  if (args.stateFile && !args.apply && !args.count) throw new Error("--state-file only applies to --apply or --count");
+}
+
+/** Cursors from a previous run; only current target keys with valid timestamps. Never throws. */
+function readState(file) {
+  if (!file) return { status: "none", cursors: {} };
+  let raw;
+  try {
+    raw = fs.readFileSync(file, "utf8");
+  } catch {
+    return { status: "missing", cursors: {} };
+  }
+  try {
+    const parsed = JSON.parse(raw);
+    const keys = new Set(retention.listDeleteTargets().map((t) => t.key));
+    const cursors = {};
+    for (const [key, at] of Object.entries(parsed?.cursors || {})) {
+      if (keys.has(key) && typeof at === "string" && !Number.isNaN(new Date(at).getTime())) cursors[key] = new Date(at).toISOString();
+    }
+    return { status: "ok", cursors };
+  } catch {
+    return { status: "invalid", cursors: {} };
+  }
+}
+
+/** Keeps previous cursors and advances the ones this run moved; atomic replace. */
+function writeState(file, previous, progress) {
+  const cursors = { ...previous };
+  for (const t of progress?.targets || []) {
+    if (t.cursor) cursors[t.key] = t.cursor;
+  }
+  const tmp = `${file}.tmp`;
+  fs.writeFileSync(tmp, `${JSON.stringify({ updatedAt: progress?.asOf || new Date().toISOString(), cursors })}\n`, { mode: 0o640 });
+  fs.renameSync(tmp, file);
+  return cursors;
+}
+
 function directUrl(raw) {
   const u = new URL(String(raw || ""));
   u.hostname = u.hostname.replace("-pooler.", ".");
@@ -77,9 +125,9 @@ function directUrl(raw) {
 
 async function main(argv = process.argv.slice(2)) {
   const args = parseArgs(argv);
-  if (args.apply && args.explain) throw new Error("--apply and --explain are exclusive");
-  if (args.resume && !args.apply) throw new Error("--resume only applies to --apply");
+  assertModesValid(args);
   assertApplyAllowed(args);
+  const state = readState(args.stateFile);
   const url = directUrl(process.env.DATABASE_URL);
   const client = new Client({ connectionString: url, ssl: resolvePoolSsl(url) });
   client.on("error", (err) => console.error("NOTIFICATIONS_RETENTION_CLIENT_ERROR", err?.code || "error"));
@@ -94,19 +142,36 @@ async function main(argv = process.argv.slice(2)) {
       }
       return;
     }
+    if (args.count) {
+      const out = await retention.countEligible(client, { now, cursors: state.cursors });
+      console.log(`NOTIFICATIONS_RETENTION_COUNT ${JSON.stringify({ ...out, state: state.status })}`);
+      return;
+    }
     if (args.apply) {
-      const out = await retention.runApply(client, {
-        now,
-        batchSize: args.batchSize,
-        sleepMs: args.sleepMs,
-        maxRows: args.maxRows,
-        resume: args.resume,
-        onProgress: (p, t) => {
-          if (p.batches % 20 === 0) {
-            console.log(`NOTIFICATIONS_RETENTION_PROGRESS ${JSON.stringify({ deleted: p.deleted, batches: p.batches, key: t.key, cursor: t.cursor })}`);
-          }
-        },
-      });
+      let out = null;
+      let failure = null;
+      try {
+        out = await retention.runApply(client, {
+          now,
+          batchSize: args.batchSize,
+          sleepMs: args.sleepMs,
+          maxRows: args.maxRows,
+          resume: args.resume,
+          cursors: state.cursors,
+          onProgress: (p, t) => {
+            if (p.batches % 20 === 0) {
+              console.log(`NOTIFICATIONS_RETENTION_PROGRESS ${JSON.stringify({ deleted: p.deleted, batches: p.batches, key: t.key, cursor: t.cursor })}`);
+            }
+          },
+        });
+      } catch (err) {
+        failure = err;
+      }
+      const progress = out || failure?.retentionProgress || null;
+      if (args.stateFile && progress) writeState(args.stateFile, state.cursors, progress);
+      const stoppedAt = failure ? "error" : out.stoppedAt;
+      console.log(`NOTIFICATIONS_RETENTION_SUMMARY deleted=${progress?.deleted || 0} batches=${progress?.batches || 0} stoppedAt=${stoppedAt} state=${state.status}${failure ? ` error=${String(failure.code || "error").slice(0, 40)}` : ""}`);
+      if (failure) throw failure;
       console.log(`NOTIFICATIONS_RETENTION ${JSON.stringify(out)}`);
       return;
     }
@@ -131,4 +196,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { parseArgs, assertApplyAllowed, CONFIRM_TOKEN };
+module.exports = { parseArgs, assertApplyAllowed, assertModesValid, readState, writeState, CONFIRM_TOKEN };

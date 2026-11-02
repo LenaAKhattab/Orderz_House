@@ -390,6 +390,49 @@ async function explainTargets(client, { now = new Date(), batchSize = 5000, anal
   return out;
 }
 
+/** Stored cursor for a target (valid date only), else the start of the index. */
+function startBoundFor(target, cursors) {
+  const raw = cursors && typeof cursors === "object" ? cursors[target.key] : null;
+  if (!raw) return "-infinity";
+  const at = new Date(raw);
+  return Number.isNaN(at.getTime()) ? "-infinity" : at;
+}
+
+/**
+ * Read-only count of rows each delete target would remove now — same predicate as the delete batches,
+ * starting at the stored cursors (rows below a cursor were already deleted). Aggregates only.
+ */
+async function countEligible(client, { now = new Date(), cursors = null, statementTimeoutMs = 120000 } = {}) {
+  assertPolicyConsistent();
+  const byKey = {};
+  let total = 0;
+  await client.query("BEGIN READ ONLY");
+  try {
+    await client.query(`SET LOCAL statement_timeout = ${Math.floor(statementTimeoutMs)}`);
+    for (const target of listDeleteTargets()) {
+      const params = [target.type, cutoffFor(target.days, now), startBoundFor(target, cursors)];
+      if (target.onlyRoles) params.push(target.onlyRoles);
+      else if (target.exceptRoles) params.push(target.exceptRoles);
+      const roleSql = target.onlyRoles
+        ? " AND recipient_role = ANY($4::text[])"
+        : target.exceptRoles
+          ? " AND (recipient_role IS NULL OR recipient_role <> ALL($4::text[]))"
+          : "";
+      // eslint-disable-next-line no-await-in-loop
+      const { rows } = await client.query(
+        `SELECT COUNT(*)::bigint AS n FROM notifications WHERE type = $1 AND created_at < $2 AND created_at >= $3${roleSql}`,
+        params,
+      );
+      const n = Number(rows[0]?.n) || 0;
+      byKey[target.key] = n;
+      total += n;
+    }
+  } finally {
+    await client.query("ROLLBACK");
+  }
+  return { mode: "count", asOf: new Date(now).toISOString(), total, byKey };
+}
+
 /**
  * Bounded-batch delete. Each batch is its own autocommit statement (no long transaction).
  * Stops on the first error (throws with progress attached). Idempotent and resumable: eligibility is age-based.
@@ -399,6 +442,9 @@ async function explainTargets(client, { now = new Date(), batchSize = 5000, anal
  * from -infinity must walk all of them in its first batch (minutes on millions of rows → statement timeout).
  * Rows below the cursor were already deleted by that run; a cursor that is too late can only leave rows behind
  * (the next dry run shows them), never delete outside the policy.
+ *
+ * `cursors` ({ [key]: ISO }) does the same for every target at once — the scheduled job keeps the cursors each
+ * run printed and passes them back the next day. `resume` overrides `cursors` for its key.
  */
 async function runApply(client, {
   now = new Date(),
@@ -407,6 +453,7 @@ async function runApply(client, {
   maxRows = null,
   statementTimeoutMs = 60000,
   resume = null,
+  cursors = null,
   onProgress = null,
 } = {}) {
   assertPolicyConsistent();
@@ -425,7 +472,8 @@ async function runApply(client, {
     const cutoff = cutoffFor(target.days, now);
     const t = { key: target.key, type: target.type, onlyRoles: target.onlyRoles, exceptRoles: target.exceptRoles, days: target.days, cutoff: cutoff.toISOString(), deleted: 0, cursor: null };
     progress.targets.push(t);
-    let lowerBound = resume && resume.key === target.key ? new Date(resume.after) : "-infinity";
+    let lowerBound = resume && resume.key === target.key ? new Date(resume.after) : startBoundFor(target, cursors);
+    if (lowerBound !== "-infinity") t.startedAt = new Date(lowerBound).toISOString();
     for (;;) {
       if (cap != null && progress.deleted >= cap) return { ...progress, stoppedAt: "max_rows" };
       const thisLimit = cap != null ? Math.min(limit, cap - progress.deleted) : limit;
@@ -473,5 +521,6 @@ module.exports = {
   cutoffFor,
   runDryRun,
   explainTargets,
+  countEligible,
   runApply,
 };
