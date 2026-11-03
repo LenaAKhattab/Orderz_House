@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/errors/api_error_message.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/checkout_funnel_telemetry.dart';
 import '../../../core/widgets/oh_widgets.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../data/client_order_models.dart';
@@ -52,6 +53,18 @@ class _PaymentReturnScreenState extends ConsumerState<PaymentReturnScreen> {
       isCancel: widget.params.isCancel,
     );
     setState(() => _state = initial);
+
+    final sid = widget.params.sessionId?.trim() ?? '';
+    if (sid.isNotEmpty && isAuth) {
+      // ignore: unawaited_futures
+      CheckoutFunnelTelemetry.record(
+        eventType: widget.params.isCancel
+            ? 'checkout_cancel_returned'
+            : 'checkout_success_returned',
+        stripeCheckoutSessionId: sid,
+        paymentFlow: 'client_fixed',
+      );
+    }
 
     if (shouldAttemptPaymentConfirmOnReturn(
       isAuthenticated: isAuth,

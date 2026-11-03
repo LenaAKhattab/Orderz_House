@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../config/environment_config.dart';
+import 'checkout_funnel_telemetry.dart';
 
 /// Result of attempting to open a Stripe Checkout URL externally.
 class StripeCheckoutLaunchResult {
@@ -46,6 +47,17 @@ Future<StripeCheckoutLaunchResult> launchStripeCheckoutUrl(String checkoutUrl) a
 
   if (!EnvironmentConfig.isSafeExternalLaunchUrl(trimmed, isRelease: kReleaseMode)) {
     return const StripeCheckoutLaunchResult(launched: false);
+  }
+
+  final sid = CheckoutFunnelTelemetry.sessionIdFromCheckoutUrl(trimmed);
+  if (sid != null) {
+    // Best-effort; do not await long — fire and continue to Stripe.
+    // ignore: unawaited_futures
+    CheckoutFunnelTelemetry.record(
+      eventType: 'checkout_redirect_started',
+      stripeCheckoutSessionId: sid,
+      paymentFlow: 'client_fixed',
+    );
   }
 
   final uri = Uri.parse(trimmed);

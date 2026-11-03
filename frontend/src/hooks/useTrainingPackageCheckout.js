@@ -88,6 +88,15 @@ export function useTrainingPackageCheckout({ enabled = true } = {}) {
     };
 
     if (state === "cancelled") {
+      if (sessionId) {
+        void import("../lib/paymentCheckoutFunnelTelemetry.js").then(({ recordCheckoutFunnelEvent }) => {
+          recordCheckoutFunnelEvent({
+            eventType: "checkout_cancel_returned",
+            stripeCheckoutSessionId: sessionId,
+            paymentFlow: "training",
+          });
+        });
+      }
       setWaiting(false);
       // Not authoritative: the server reconciles the attempt with Stripe (open stays resumable).
       const reconcile = sessionId
@@ -98,6 +107,15 @@ export function useTrainingPackageCheckout({ enabled = true } = {}) {
       return undefined;
     }
 
+    if (sessionId) {
+      void import("../lib/paymentCheckoutFunnelTelemetry.js").then(({ recordCheckoutFunnelEvent }) => {
+        recordCheckoutFunnelEvent({
+          eventType: "checkout_success_returned",
+          stripeCheckoutSessionId: sessionId,
+          paymentFlow: "training",
+        });
+      });
+    }
     returnSessionRef.current = sessionId;
     setWaiting(true);
     strip();
@@ -167,7 +185,12 @@ export function useTrainingPackageCheckout({ enabled = true } = {}) {
         const res = await createTrainingPackageCheckoutRequest(code);
         const url = res?.data?.checkoutUrl;
         if (!url) throw new Error(t("plans.training.checkoutMissingUrl"));
-        window.location.href = url;
+        const { redirectToStripeCheckout } = await import("../lib/paymentCheckoutFunnelTelemetry.js");
+        redirectToStripeCheckout({
+          checkoutUrl: url,
+          sessionId: res?.data?.sessionId,
+          paymentFlow: "training",
+        });
       } catch (err) {
         const errorCode = err?.response?.data?.code;
         const msg = CHECKOUT_ERROR_KEYS[errorCode]

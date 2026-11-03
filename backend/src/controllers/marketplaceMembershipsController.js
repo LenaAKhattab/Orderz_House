@@ -154,12 +154,12 @@ async function createMarketplaceMembershipCheckout(req, res, next) {
     const checkoutService = require("../services/marketplaceMembershipCheckoutService");
     const freelancerUserId = req.auth?.userId ?? req.user?.sub ?? req.user?.id;
     const planCode = req.body?.planCode ?? req.body?.tierCode;
+    const { parseAllowlistedUiLocale, channelFromRequest } = require("../utils/requestUiLocale");
     const result = await checkoutService.createMarketplaceMembershipCheckoutSession({
       freelancerUserId,
       planCode,
-      locale: String(req.headers["accept-language"] || "ar").toLowerCase().startsWith("en")
-        ? "en"
-        : "ar",
+      locale: parseAllowlistedUiLocale(req.headers["accept-language"] || req.body?.locale, "ar"),
+      channel: channelFromRequest(req),
     });
     return res.status(201).json({ success: true, data: result });
   } catch (err) {

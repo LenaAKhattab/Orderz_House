@@ -392,6 +392,47 @@ async function createMarketplaceMembershipCheckoutSession(input = {}, deps = {})
     };
   });
   if (outcome.error) throw outcome.error;
+
+  // First-party funnel (best-effort; never affects payment).
+  try {
+    const { emitServerFunnelEvent, normalizeLocale, normalizeChannel } = require("./paymentCheckoutFunnelTelemetry");
+    const planCode = String(outcome.planCode || resolved.planCode || "").toLowerCase();
+    const paymentFlow =
+      input.extraMetadata?.specialOfferPackage || input.extraMetadata?.specialOfferPlanId
+        ? "special_offer"
+        : planCode === "annual_basic"
+          ? "annual_silver"
+          : planCode
+            ? `membership_${planCode}`
+            : "membership";
+    const channel = normalizeChannel(input.channel) || "web";
+    const locale = normalizeLocale(input.locale);
+    const attemptId = outcome.checkoutAttemptId;
+    if (attemptId) {
+      void emitServerFunnelEvent({
+        eventType: "checkout_requested",
+        paymentFlow,
+        channel,
+        locale,
+        localRef: `mca:${attemptId}`,
+        actorUserId: freelancerUserId,
+      });
+    }
+    if (outcome.sessionId && attemptId) {
+      void emitServerFunnelEvent({
+        eventType: "checkout_session_created",
+        paymentFlow,
+        channel,
+        locale,
+        stripeCheckoutSessionId: outcome.sessionId,
+        localRef: `mca:${attemptId}`,
+        actorUserId: freelancerUserId,
+      });
+    }
+  } catch {
+    /* ignore telemetry errors */
+  }
+
   return outcome;
 }
 
