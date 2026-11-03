@@ -316,8 +316,8 @@ async function loadFunnelTelemetryAggregates(db, { fromSec, toSec } = {}) {
 
   return {
     available: true,
-    instrumentationStartedAt: boundary.rows[0]?.started_at
-      ? new Date(boundary.rows[0].started_at).toISOString()
+    instrumentationStartedAt: boundary[0]?.started_at
+      ? new Date(boundary[0].started_at).toISOString()
       : null,
     byType,
     byFlow,
