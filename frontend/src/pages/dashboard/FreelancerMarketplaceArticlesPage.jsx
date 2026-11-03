@@ -6,6 +6,7 @@ import DashboardEmptyState from "../../components/dashboard/DashboardEmptyState"
 import DashboardLoadingState from "../../components/dashboard/DashboardLoadingState";
 import DashboardErrorState from "../../components/dashboard/DashboardErrorState";
 import { useArticlesT } from "../../admin/marketplaceArticles/useArticlesT";
+import { useTranslation } from "../../i18n/LanguageProvider";
 import {
   listPublishedMarketplaceArticlesRequest,
   getFreelancerBildazoAuthorLinkRequest,
@@ -27,6 +28,7 @@ import { isBildazoAuthorLinked } from "../../constants/bildazoAuthorTerms";
 
 export default function FreelancerMarketplaceArticlesPage() {
   const { t, locale } = useArticlesT();
+  const { t: tRoot } = useTranslation();
   const isEn = locale === "en";
   const [articles, setArticles] = useState([]);
   const [bildazoLink, setBildazoLink] = useState(null);
@@ -70,7 +72,7 @@ export default function FreelancerMarketplaceArticlesPage() {
     } finally {
       setLoading(false);
     }
-  }, [isEn]);
+  }, [t]);
 
   useEffect(() => {
     void refresh();
@@ -125,9 +127,7 @@ export default function FreelancerMarketplaceArticlesPage() {
                 setTrialActivateError(
                   freelancerTrialActivateErrorMessage(err, { isEn }) ||
                     getSafeApiErrorMessage(err) ||
-                    (isEn
-                      ? "Could not grant trial Bids. Try again."
-                      : t("freelancer.list.trialError")),
+                    tRoot("platformPages.freelancerArticles.trialError"),
                 );
               } finally {
                 setTrialActivating(false);

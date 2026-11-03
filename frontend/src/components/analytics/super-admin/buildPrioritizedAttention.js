@@ -1,5 +1,7 @@
 import { formatInt } from "./superAdminHomeBundleUi";
 import { ATTENTION_SCOPE } from "./dashboardMetricScope";
+import { pt } from "../../../i18n/activeLocale";
+import { legacyArabicUiLocale } from "../../../admin/adminLocale";
 
 const SEVERITY = { urgent: 3, medium: 2, info: 1 };
 
@@ -15,12 +17,14 @@ const ALERT_SEVERITY = {
 };
 
 const SEVERITY_META = {
-  [SEVERITY.urgent]: { icon: "🔴", label: "عاجل" },
-  [SEVERITY.medium]: { icon: "🟡", label: "متوسط" },
-  [SEVERITY.info]: { icon: "🔵", label: "معلومة" },
+  [SEVERITY.urgent]: { icon: "🔴", labelKey: "urgent" },
+  [SEVERITY.medium]: { icon: "🟡", labelKey: "medium" },
+  [SEVERITY.info]: { icon: "🔵", labelKey: "info" },
 };
 
 export function buildPrioritizedAttention(attentionData) {
+  // Copy was Arabic in both AR and EN UIs (kept); German / Dutch / Romanian get their own.
+  const loc = legacyArabicUiLocale();
   const alerts = (attentionData?.alerts || [])
     .filter((a) => Number(a.count) > 0)
     .map((a) => {
@@ -30,9 +34,13 @@ export function buildPrioritizedAttention(attentionData) {
         ...a,
         severity,
         severityIcon: meta.icon,
-        severityLabel: meta.label,
+        severityLabel: pt(`platformAdmin.analytics.attention.severity.${meta.labelKey}`, undefined, loc),
         badgeCount: Number(a.count),
-        description: `${formatInt(a.count)} بانتظار المتابعة`,
+        description: pt(
+          "platformAdmin.analytics.attention.awaitingFollowUp",
+          { count: formatInt(a.count, loc) },
+          loc,
+        ),
         scopeLabel: ATTENTION_SCOPE,
       };
     });

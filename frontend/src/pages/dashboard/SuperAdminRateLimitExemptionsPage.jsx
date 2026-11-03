@@ -21,6 +21,7 @@ import {
   isAllowedRateLimitExemptionScope,
 } from "../../constants/rateLimitExemptions";
 import { useTranslation } from "../../i18n/LanguageProvider";
+import { pickIntlTag } from "../../i18n/intlLocale.js";
 import "../../i18n/opsAdminResources";
 import "./superAdminRateLimitExemptionsPage.css";
 
@@ -28,7 +29,7 @@ function formatJoDateTime(value, locale) {
   if (!value) return "—";
   const d = new Date(value);
   if (!Number.isFinite(d.getTime())) return "—";
-  const tag = locale === "ar" ? "ar-JO-u-nu-latn" : "en-GB";
+  const tag = pickIntlTag(locale, { ar: "ar-JO-u-nu-latn", en: "en-GB" });
   return new Intl.DateTimeFormat(tag, {
     timeZone: "Asia/Amman",
     dateStyle: "medium",

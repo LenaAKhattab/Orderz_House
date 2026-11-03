@@ -1,14 +1,22 @@
+import { localeFromEnFlag } from "../i18n/activeLocale.js";
+import { pickIntlTag } from "../i18n/intlLocale.js";
+
 /** @param {Record<string, unknown> | null | undefined} user */
 export function fullNameAr(user) {
   const parts = [user?.firstName, user?.fatherName, user?.familyName].filter(Boolean);
   return parts.join(" ").trim();
 }
 
-export function fmtDateMedium(value) {
+/**
+ * @param {unknown} value
+ * @param {string} [locale] Arabic date unless a locale is given; follows German / Dutch / Romanian UIs.
+ */
+export function fmtDateMedium(value, locale = localeFromEnFlag(false)) {
   if (!value) return "";
   const d = new Date(value);
   if (!Number.isFinite(d.getTime())) return "";
-  return new Intl.DateTimeFormat("ar-JO-u-nu-latn", { dateStyle: "medium" }).format(d);
+  const tag = pickIntlTag(locale, { ar: "ar-JO-u-nu-latn", en: "en-JO-u-nu-latn" });
+  return new Intl.DateTimeFormat(tag, { dateStyle: "medium" }).format(d);
 }
 
 /** Default toggles when API returns empty preferences. */

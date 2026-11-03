@@ -33,6 +33,7 @@ import { resolveNotificationNavPath } from "../../utils/resolveNotificationNavPa
 import { createAdminListRequestGate } from "../../lib/staff/adminListLoad";
 import "../../styles/dashboardHub.css";
 import "./notifications-page.css";
+import { pickIntlTag } from "../../i18n/intlLocale";
 
 const PAGE_SIZE = 8;
 
@@ -49,7 +50,7 @@ function fmtDate(value, locale) {
   if (!value) return "";
   const d = new Date(value);
   if (!Number.isFinite(d.getTime())) return "";
-  const tag = locale === "en" ? "en-JO-u-nu-latn" : "ar-JO-u-nu-latn";
+  const tag = pickIntlTag(locale, { en: "en-JO-u-nu-latn", ar: "ar-JO-u-nu-latn" });
   return new Intl.DateTimeFormat(tag, { dateStyle: "medium", timeStyle: "short" }).format(d);
 }
 

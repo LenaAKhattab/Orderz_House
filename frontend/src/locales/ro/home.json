@@ -1,0 +1,309 @@
+{
+  "heroIpad": {
+    "free": "Gratuit",
+    "dayUnit": "zile",
+    "brand": "OrderzHouse",
+    "sidebarNavAria": "Navigare între secțiuni",
+    "menuOpen": "Deschideți meniul",
+    "menuClose": "Închideți meniul",
+    "loading": "Se încarcă",
+    "nav": {
+      "overview": {
+        "label": "Panou de control",
+        "title": "Panou de control",
+        "description": "Indicatori rapizi și un rezumat care se schimbă în funcție de rolul dumneavoastră pe platformă."
+      },
+      "services": {
+        "label": "Servicii",
+        "title": "Servicii",
+        "description": "Categoriile de servicii, la fel ca pe pagina publică de servicii."
+      },
+      "plans": {
+        "label": "Pachete",
+        "title": "Pachete",
+        "description": "Pachetele de abonament pentru freelanceri, la fel ca pe pagina publică de pachete."
+      },
+      "orders": {
+        "label": "Comenzi",
+        "title": "Comenzi și marketplace",
+        "description": "Lista comenzilor deschise și stadiul execuției pentru freelanceri."
+      },
+      "auth": {
+        "label": "Conectare",
+        "title": "Conectare",
+        "description": "Fluxul de conectare și de creare a contului pe platformă."
+      }
+    },
+    "overview": {
+      "kicker": "Bun venit în panoul de control",
+      "hint": "Conținutul se schimbă în funcție de rol: client, freelancer sau administrator."
+    },
+    "services": {
+      "kicker": "Categorii de servicii",
+      "loadError": "Categoriile nu au putut fi încărcate. Verificați conexiunea la server.",
+      "empty": "Nu există categorii active în acest moment.",
+      "footHint": "Date din tabelul categoriilor active ale platformei."
+    },
+    "plans": {
+      "loadError": "Pachetele nu au putut fi încărcate. Verificați conexiunea la server.",
+      "empty": "Nu există pachete vizibile în acest moment.",
+      "popularBadge": "Cel mai popular",
+      "footHint": "Date din pachetele active afișate pe platformă."
+    },
+    "orders": {
+      "table": {
+        "order": "Comandă",
+        "status": "Stare",
+        "budget": "Buget"
+      },
+      "loadError": "Galeria de comenzi nu a putut fi încărcată. Verificați conexiunea la server.",
+      "empty": "Nu există comenzi în galerie în acest moment.",
+      "footHint": "Aceleași date ca în galeria publică de comenzi (/orders).",
+      "projectType": {
+        "fixed": "Preț fix",
+        "bidding": "Licitație"
+      }
+    },
+    "auth": {
+      "title": "Începeți-vă parcursul pe platformă",
+      "lede": "Alegeți tipul de cont potrivit pentru a continua.",
+      "roles": {
+        "client": {
+          "title": "Client",
+          "description": "Publicați comenzi și găsiți cei mai buni freelanceri."
+        },
+        "freelancer": {
+          "title": "Freelancer",
+          "description": "Primiți comenzi și începeți lucrul cu ușurință."
+        }
+      },
+      "continue": "Continuați",
+      "signIn": "Conectare",
+      "signUp": "Creați un cont"
+    },
+    "analytics": {
+      "kpiVisits": "Vizite",
+      "kpiVisitsValue": "12,4k",
+      "kpiVisitsDelta": "↑ 9%",
+      "kpiActiveOrders": "Comenzi active",
+      "kpiActiveOrdersValue": "124",
+      "kpiActiveOrdersDelta": "↑ 3%",
+      "kpiRevenue": "Venituri",
+      "kpiRevenueValue": "4.280 JOD",
+      "kpiRevenueDelta": "↑ 6%",
+      "weeklyOrdersTitle": "Comenzi săptămânale",
+      "weeklyOrdersCaption": "Ultimele 10 zile",
+      "topServicesTitle": "Cele mai solicitate servicii",
+      "topServicesBarsAria": "Grafic cu bare relative pe categorii",
+      "completionRateTitle": "Rata de finalizare",
+      "completionRateValue": "82%",
+      "completionRateSub": "Livrare la timp",
+      "userActivityLabel": "Activitatea utilizatorilor",
+      "serviceBars": {
+        "dev": "Dezvoltare",
+        "design": "Design",
+        "content": "Conținut",
+        "biz": "Afaceri",
+        "acad": "Academic"
+      }
+    },
+    "lite": {
+      "dashboard": "Panou de control",
+      "statActivity": "Activitate",
+      "statActivityValue": "128",
+      "statOrders": "Comenzi",
+      "statOrdersValue": "24",
+      "statComplete": "Finalizate",
+      "statCompleteValue": "96%",
+      "quickGlance": "Pe scurt",
+      "recentActivity": "Activitate recentă",
+      "rowDesign": "Comandă de design",
+      "rowDev": "Serviciu de dezvoltare",
+      "pillInProgress": "În desfășurare",
+      "pillNew": "Nou"
+    }
+  },
+  "hero": {
+    "title": "O singură platformă care vă conectează cu serviciile și freelancerii potriviți",
+    "lead": "Începeți-vă comanda cu ușurință, comparați serviciile disponibile și urmăriți fiecare pas într-un singur loc, până obțineți rezultatele de care aveți nevoie.",
+    "leadShort": "Începeți-vă comanda cu ușurință, comparați serviciile disponibile și urmăriți fiecare pas într-un singur loc.",
+    "startNow": "Începeți acum",
+    "browseServicesNow": "Răsfoiți serviciile noastre acum",
+    "ctaPrimary": "Plasați comanda acum",
+    "ctaSecondary": "Explorați serviciile",
+    "greeting": "Bun venit la",
+    "searchPlaceholder": "Căutați un serviciu sau o categorie...",
+    "searchAria": "Căutați un serviciu",
+    "featuredAria": "Primii pași",
+    "statsAria": "Statisticile platformei",
+    "adsAria": "Promoții",
+    "logoAlt": "Sigla Orderz House",
+    "featured": {
+      "startOrder": "Comandați serviciile noastre acum",
+      "startOrderTag": "Client",
+      "exploreServices": "Alăturați-vă nouă acum",
+      "exploreTag": "Freelancer"
+    }
+  },
+  "categories": {
+    "title": "Descoperiți categoriile",
+    "titleAccent": "în câteva secunde",
+    "subtitle": "Alegeți domeniul potrivit și începeți-vă comanda în câteva minute",
+    "featuredTitle": "Servicii recomandate",
+    "viewAll": "Vedeți tot",
+    "latestOrders": "Cele mai noi comenzi",
+    "ordersListAria": "Lista celor mai noi comenzi",
+    "loadError": "Comenzile nu au putut fi încărcate.",
+    "emptyOrders": "Nu există comenzi disponibile în acest moment."
+  },
+  "orders": {
+    "fallbackTitle": "Comandă fără titlu",
+    "fallbackCategory": "Comandă"
+  },
+  "featuredServices": {
+    "frontendDevelopment": "Dezvoltare frontend",
+    "backendDevelopment": "Dezvoltare backend",
+    "mobileApps": "Aplicații mobile",
+    "artificialIntelligence": "Inteligență artificială",
+    "graphicDesign": "Design grafic",
+    "uiUxDesign": "Design UI/UX",
+    "digitalMarketing": "Marketing digital",
+    "contentWriting": "Redactare de conținut",
+    "specialRequests": "Solicitări speciale",
+    "specialRequestsWhatsappMessage": "Bună ziua, aș dori să trimit o solicitare specială prin Orderz House."
+  },
+  "faq": {
+    "title": "Întrebări frecvente",
+    "subtitle": "Răspunsuri rapide și clare la cele mai frecvente întrebări.",
+    "whyBrand": "De ce Orderz House?",
+    "quote": "O singură platformă pentru a solicita servicii, a compara oferte și a vă urmări proiectul până la livrare — cu toată claritatea.",
+    "mobilePromoText": "Solicitați servicii, comparați oferte și urmăriți-vă proiectul cu claritate.",
+    "cta": "Începeți",
+    "englishUnavailable": "Conținutul în limba engleză nu este încă disponibil pentru acest element.",
+    "items": {
+      "trust": {
+        "question": "Este Orderz House o platformă de încredere, iar serviciile oferite sunt recunoscute?",
+        "answer": "Funcționăm pe baza unor politici clare pentru comenzi și evaluări, iar starea comenzii o puteți urmări din panoul de control. Recunoașterea oficială depinde de politicile angajatorilor; vă recomandăm să păstrați dovezile de livrare și comunicările în cadrul platformei."
+      },
+      "worth": {
+        "question": "Merită serviciile plătite ale platformei investiția?",
+        "answer": "Depinde de nevoile dumneavoastră: puteți compara ofertele freelancerilor, citi recenziile și stabili domeniul lucrării înainte de a vă angaja. Începeți cu o comandă mică pentru a evalua calitatea, apoi extindeți colaborarea când sunteți mulțumit(ă)."
+      },
+      "plus": {
+        "question": "Ce includ pachetele premium sau opțiunile avansate și sunt potrivite pentru mine?",
+        "answer": "Dacă există pachete sau opțiuni suplimentare, acestea sunt explicate pe pagina de prețuri sau în setări. Verificați ce include fiecare nivel și alegeți varianta potrivită pentru dimensiunea echipei sau volumul comenzilor dumneavoastră."
+      },
+      "free": {
+        "question": "Există resurse sau ghiduri gratuite pentru utilizatori?",
+        "answer": "Oferim conținut util, întrebări frecvente și pagini explicative pe site. Consultați secțiunea de ajutor sau blogul, atunci când sunt disponibile, pentru noutăți."
+      },
+      "popular": {
+        "question": "Ce tipuri de comenzi sunt cele mai populare pe platformă?",
+        "answer": "Acest lucru se schimbă în timp; comenzile de programare, design și redactare de conținut sunt adesea cele mai active. Răsfoiți categoriile pentru a vedea ce este disponibil acum."
+      },
+      "career": {
+        "question": "Cum mă ajută platforma să găsesc freelancerul potrivit sau să îmi finalizez proiectul?",
+        "answer": "Alegeți categoria, detaliile și termenul limită; apoi freelancerii relevanți vă pot vedea comanda. Comparați ofertele și comunicați în siguranță în cadrul comenzii înainte de a decide."
+      },
+      "business": {
+        "question": "Ce servicii oferă platforma pentru echipe sau companii și cum sunt stabilite prețurile?",
+        "answer": "Dacă aveți nevoi recurente sau un volum mai mare, consultați pagina de contact sau serviciile pentru companii, dacă sunt listate, ori contactați asistența pentru o ofertă adaptată echipei dumneavoastră."
+      }
+    }
+  },
+  "partners": {
+    "title": "Parteneri de succes",
+    "subtitle": "Suntem mândri să colaborăm cu organizații de top care au contribuit la construirea unor povești de succes remarcabile.",
+    "logosAria": "Siglele partenerilor",
+    "visitSite": "Vizitați site-ul {{name}}"
+  },
+  "metrics": {
+    "activeUsers": "Utilizatori activi",
+    "activeSub": "Activitate pe platformă · ultimele 7 zile",
+    "views": "Vizualizări ale site-ului",
+    "viewsSub": "Total vizite înregistrate",
+    "availableOrders": "Comenzi disponibile",
+    "availableSub": "Deschise pentru candidaturi acum",
+    "completedOrders": "Comenzi finalizate",
+    "completedSub": "Comenzi reale finalizate, plus runde de formare finalizate după începutul actualei perioade de urmărire",
+    "zeroViews": "Nicio vizualizare înregistrată încă",
+    "zeroActive": "Nicio activitate în ultimele 7 zile",
+    "statsAria": "Statisticile platformei",
+    "degraded": "Statisticile nu sunt disponibile în acest moment",
+    "dbUnavailable": "Statisticile platformei sunt temporar indisponibile",
+    "devTrackingDisabled": "Urmărirea este dezactivată în mediul de dezvoltare"
+  },
+  "partnersTrustedTagline": "Peste 150 de companii ne acordă încrederea",
+  "promoAds": {
+    "sponsored": "Reclamă",
+    "noImages": "Fără imagini",
+    "previous": "Anterior",
+    "next": "Următor",
+    "slideN": "Diapozitivul {{n}}",
+    "defaultImageAlt": "Imaginea reclamei",
+    "brandFallback": "Orderz House",
+    "offersSectionTitle": "Oferte și reclame recomandate",
+    "offersSectionAria": "Oferte și reclame",
+    "showMore": "Afișați mai mult",
+    "discountUpTo": "Reducere de până la {{n}}%",
+    "discountPercent": "Reducere {{n}}%",
+    "discountShort": "Reducere {{n}}%",
+    "closeAd": "Închideți reclama",
+    "stickyDockAria": "Oferte recomandate — flotant",
+    "stickyEyebrow": "Oferte și reclame",
+    "carouselRole": "Carusel",
+    "carouselHeroAria": "Reclame recomandate — carusel",
+    "carouselOffersAria": "Oferte și reclame recomandate — carusel",
+    "previousAd": "Reclama anterioară",
+    "nextAd": "Reclama următoare",
+    "dotsAria": "Indicatori de diapozitive",
+    "slideOf": "Diapozitivul {{current}} din {{total}}",
+    "offerDetailAria": "Vedeți detaliile reclamei: {{title}}",
+    "closeDetailModal": "Închideți fereastra cu detalii",
+    "noExtraDescription": "Nicio descriere suplimentară.",
+    "discountLabel": "Reducere:",
+    "phoneLabel": "Telefon:",
+    "whatsapp": "WhatsApp",
+    "loadingAds": "Se încarcă reclamele…"
+  },
+  "heroStrip": {
+    "open": "Deschise",
+    "openHint": "Comenzi care așteaptă să înceapă",
+    "inProgress": "În desfășurare",
+    "inProgressHint": "Comenzi active",
+    "completed": "Finalizate",
+    "completedHint": "Comenzi încheiate",
+    "views": "Vizualizări",
+    "viewsHint": "Total pe site",
+    "activeUsers": "Utilizatori activi",
+    "activeUsersHint": "Săptămâna aceasta",
+    "loadingStat": "Se încarcă statistica…"
+  },
+  "heroMockup": {
+    "analyticsCaption": "Indicatori privind vizitatorii și activitatea pe platformă",
+    "projectsCaption": "Comenzi și proiecte dintr-o privire",
+    "previewAria": "Previzualizarea panoului de control",
+    "sectionsAria": "Secțiunile panoului de control",
+    "overviewTitle": "Prezentare generală și statistici",
+    "projectsTitle": "Proiecte și comenzi",
+    "welcome": "Bun venit"
+  },
+  "hiw": {
+    "defaultTitle": "Cum funcționează",
+    "illustrationAlt": "Ilustrație",
+    "empty": "Nu există conținut de afișat în acest moment.",
+    "loading": "Se încarcă…",
+    "unavailableTitle": "Pagină indisponibilă",
+    "unavailableText": "Este posibil ca această pagină să fie ascunsă sau ca linkul să fie greșit.",
+    "loadFailed": "Pagina nu a putut fi încărcată. Încercați din nou."
+  },
+  "publicSite": {
+    "loading": "Se încarcă pagina…",
+    "unavailableTitle": "Pagină indisponibilă",
+    "unavailableText": "Este posibil ca această pagină să nu fie publicată sau ca linkul să fie greșit.",
+    "loadFailedTitle": "Pagina nu a putut fi încărcată",
+    "loadFailedText": "Pagina nu a putut fi încărcată. Încercați din nou.",
+    "fallbackTitle": "Pagină publică",
+    "englishUnavailable": "Conținutul în limba engleză nu este încă disponibil pentru această pagină."
+  }
+}

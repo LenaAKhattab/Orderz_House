@@ -1,0 +1,77 @@
+{
+  "money": {
+    "jodAmount": "{{amount}} JOD (dinar)"
+  },
+  "planPrice": {
+    "free": "Gratis",
+    "total": "Totaal {{total}}"
+  },
+  "taxonomy": {
+    "contentWriting": "Contentschrijven",
+    "design": "Vormgeving",
+    "programming": "Programmeren"
+  },
+  "courseTitles": {
+    "freeContentWritingLevel1": "Gratis training contentschrijven – niveau 1",
+    "contentWritingLevel1": "Training contentschrijven – niveau 1",
+    "contentWritingLevel2": "Training contentschrijven – niveau 2",
+    "freeContentWritingLevel2": "Gratis training contentschrijven – niveau 2",
+    "freeDesign": "Gratis designtraining",
+    "freelanceOperationsDiploma": "Diploma digitale freelance-operations"
+  },
+  "faq": {
+    "translationUnavailable": "Dit item is nog niet beschikbaar in uw taal."
+  },
+  "membership": {
+    "tiers": {
+      "starter": {
+        "tagline": "Om te beginnen"
+      },
+      "silver": {
+        "tagline": "Om te groeien"
+      },
+      "pro": {
+        "tagline": "Voor professionals"
+      },
+      "elite": {
+        "tagline": "Maximale toegang"
+      }
+    },
+    "withdrawalOff": "Geen directe uitbetaling van bedragen",
+    "withdrawalOn": "Uitbetaling beschikbaar",
+    "viewMembership": "Lidmaatschap bekijken"
+  },
+  "chunkReload": {
+    "message": "De sitebestanden zijn bijgewerkt. Vernieuw de pagina.",
+    "refresh": "Pagina vernieuwen"
+  },
+  "browserNotification": {
+    "newNotification": "Nieuwe melding"
+  },
+  "adminList": {
+    "refreshSoftNote": "De lijst kon nu niet worden vernieuwd. U kunt het opnieuw proberen.",
+    "rateLimitNote": "Er zijn te veel verzoeken in korte tijd verzonden. Wacht even en probeer het opnieuw.",
+    "loadFailed": "De lijst kon niet worden geladen. Probeer het opnieuw."
+  },
+  "plansLoad": {
+    "defaultCatalogFailed": "De standaardpakketten konden niet worden geladen.",
+    "planPageFailed": "De pakkettenpagina kon niet worden geladen."
+  },
+  "superAdminLoad": {
+    "analyticsTimeout": "Het laden van analyses duurde langer dan verwacht. Probeer het zo meteen opnieuw.",
+    "analyticsFailed": "Het analysedashboard kon niet worden geladen.",
+    "businessKpisTimeout": "Bedrijfsindicatoren konden nu niet worden geladen.",
+    "businessKpisFailed": "Bedrijfsindicatoren konden niet worden geladen.",
+    "sectionTimeout": "Dit onderdeel duurde langer dan verwacht om te laden.",
+    "sectionFailed": "Dit onderdeel kon niet worden geladen.",
+    "summaryTimeout": "Het laden van de indicatoren duurde langer dan verwacht.",
+    "summaryFailed": "De follow-up-indicatoren konden niet worden geladen."
+  },
+  "api": {
+    "invalidMembershipPlanCode": "Ongeldige Marketplace-pakketcode.",
+    "identityImageUnavailable": "De identiteitsafbeelding kon nu niet worden geladen. Probeer het opnieuw.",
+    "invalidPlanId": "Ongeldige pakket-ID.",
+    "invalidCheckoutSessionId": "Ongeldige betalingssessie-ID.",
+    "openingFile": "Bestand wordt geopend…"
+  }
+}

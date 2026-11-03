@@ -17,6 +17,8 @@ import {
   attachableActivationWaves,
 } from "./marketplaceArticleFormUtils";
 import { useArticlesT } from "./useArticlesT";
+import { isNewLocale, localizeSystemText } from "../../i18n/systemContent";
+import { useTranslation } from "../../i18n/LanguageProvider";
 
 const BID_DURATION_I18N_KEY = {
   24: "bidDuration.h24",
@@ -33,8 +35,13 @@ function BildazoCategorySearchSelect({
   error,
   onSelect,
   t,
+  locale,
 }) {
   const [query, setQuery] = useState("");
+  /** Bildazo category names are system content: Arabic / English unchanged; de / nl / ro translated. */
+  const categoryLabel = (c) =>
+    (isNewLocale(locale) ? localizeSystemText(locale, { ar: c.nameAr, en: c.nameEn }) : c.nameAr || c.nameEn) ||
+    c.slug;
   const [open, setOpen] = useState(false);
 
   const selected = useMemo(
@@ -91,7 +98,7 @@ function BildazoCategorySearchSelect({
       {error ? <span className="oh-mmp-form__error">{error || t("form.bildazoLoadError")}</span> : null}
       {selected ? (
         <p className="oh-mmp-form__hint" style={{ margin: 0 }} data-testid="bildazo-category-selected">
-          {selected.nameAr || selected.nameEn || selected.slug}
+          {categoryLabel(selected)}
           {selected.path ? ` · ${selected.path}` : ""}
         </p>
       ) : null}
@@ -112,7 +119,7 @@ function BildazoCategorySearchSelect({
                     setOpen(false);
                   }}
                 >
-                  <strong>{c.nameAr || c.nameEn || c.slug}</strong>
+                  <strong>{categoryLabel(c)}</strong>
                   {c.path ? <span>{c.path}</span> : null}
                 </button>
               </li>
@@ -146,6 +153,7 @@ export default function MarketplaceArticleFormModal({
   onCategoryChange,
 }) {
   const { t, locale } = useArticlesT();
+  const { t: tr } = useTranslation();
   const isCreate = mode === "create";
   const isInline = variant === "inline";
   const [form, setForm] = useState(getInitialMarketplaceArticleFormState);
@@ -246,6 +254,7 @@ export default function MarketplaceArticleFormModal({
               value={form.bildazoCategoryId}
               disabled={submitting}
               t={t}
+              locale={locale}
               loading={categoriesLoading}
               error={categoriesError}
               onSelect={(c) => {
@@ -547,7 +556,7 @@ export default function MarketplaceArticleFormModal({
 
   return (
     <div className="oh-mmp-modal" role="dialog" aria-modal="true">
-      <button type="button" className="oh-mmp-modal__backdrop" aria-label="Close" onClick={onClose} />
+      <button type="button" className="oh-mmp-modal__backdrop" aria-label={tr("platformAdmin.common.close")} onClick={onClose} />
       <div className="oh-mmp-modal__panel">
         <div className="oh-mmp-modal__header">
           <h2>{heading}</h2>

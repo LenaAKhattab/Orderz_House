@@ -24,8 +24,11 @@ import {
   ARTICLE_WRITING_SOURCE_LABELS_AR,
   isFairRankingEligible,
   isRecommendedArticleApplicant,
-  writingModeLabelAr,
+  writingModeLabel,
 } from "./marketplaceArticleFormUtils";
+import { useTranslation } from "../../i18n/LanguageProvider";
+import { intlTagOrDefault } from "../../i18n/intlLocale";
+import { isNewLocale, localizeSystemText } from "../../i18n/systemContent";
 import { adminBildazoPublishCopy } from "../../constants/bildazoArticlePublish";
 import { activationAssignmentErrorMessage } from "../../constants/freelancerActivationCampaign";
 import { formatManuscriptTermsAdmin } from "../../constants/freelancerActivationEarnedBalance";
@@ -34,6 +37,11 @@ import {
   findFairRankingCandidate,
   isActivationFairRankingApplied,
 } from "../../constants/freelancerActivationFairDistribution";
+
+/** Arabic / English keep the historical Arabic label; German / Dutch / Romanian get their own. */
+function adminWritingModeLabel(mode, locale) {
+  return writingModeLabel(mode, { locale: isNewLocale(locale) ? locale : "ar" });
+}
 
 function ActivationFairBadges({ activationFairness, locale }) {
   const badges = activationFairBadges(activationFairness, { isEn: locale === "en" });
@@ -125,7 +133,7 @@ function BildazoPublishPreviewBlock({ applicationId, attachedPreview, t, locale 
         {t("common.writingSource")}:{" "}
         {t(`writingSources.${payload.writingSource}`) || payload.writingSource || "—"}
         {" · "}
-        {t("common.mode")}: {writingModeLabelAr(meta.writingMode)}
+        {t("common.mode")}: {adminWritingModeLabel(meta.writingMode, locale)}
       </div>
       <div>
         {t("common.category")}: {meta.categoryName || "—"}
@@ -157,6 +165,7 @@ export default function MarketplaceArticleApplicationsPanel({
   onRelisted,
 }) {
   const { t, locale } = useArticlesT();
+  const { t: tr } = useTranslation();
   const [applications, setApplications] = useState([]);
   const [bidCollection, setBidCollection] = useState(null);
   const [fairRanking, setFairRanking] = useState(null);
@@ -340,7 +349,11 @@ export default function MarketplaceArticleApplicationsPanel({
             <ul style={{ margin: 0, paddingInlineStart: 18, fontSize: "0.85rem" }}>
               {autoAssignment.candidates.slice(0, 12).map((c) => (
                 <li key={c.id || c.applicationId}>
-                  #{c.candidateRank || "—"} app {c.applicationId} · weight {c.weight}
+                  {tr("platformAdmin.articleApplications.autoAssignCandidate", {
+                    rank: c.candidateRank || "—",
+                    applicationId: c.applicationId,
+                    weight: c.weight,
+                  })}
                   {c.selected ? t("applications.selected") : ""}
                   {Array.isArray(c.reasonTags) && c.reasonTags.length
                     ? ` · ${c.reasonTags.join(", ")}`
@@ -396,9 +409,12 @@ export default function MarketplaceArticleApplicationsPanel({
         </h5>
         {!isFairRankingEligible(fairRanking) ? (
           <p style={{ margin: 0, opacity: 0.8 }}>
-            {locale === "ar" && fairRanking?.messageAr
-              ? fairRanking.messageAr
-              : fairRanking?.messageEn || t("applications.fairRankingPending")}
+            {isNewLocale(locale)
+              ? localizeSystemText(locale, { ar: fairRanking?.messageAr, en: fairRanking?.messageEn }) ||
+                t("applications.fairRankingPending")
+              : locale === "ar" && fairRanking?.messageAr
+                ? fairRanking.messageAr
+                : fairRanking?.messageEn || t("applications.fairRankingPending")}
           </p>
         ) : (
           <>
@@ -416,9 +432,15 @@ export default function MarketplaceArticleApplicationsPanel({
                   </strong>
                   <div style={{ fontSize: "0.88rem", opacity: 0.85 }}>
                     {t("common.status")}: {c.status}
-                    {c.submittedAt ? ` · ${new Date(c.submittedAt).toLocaleString()}` : ""}
+                    {c.submittedAt ? ` · ${new Date(c.submittedAt).toLocaleString(intlTagOrDefault(locale))}` : ""}
                     {c.rankingReason
-                      ? ` · ${locale === "en" ? c.rankingReasonEn || c.rankingReason : c.rankingReason}`
+                      ? ` · ${
+                          isNewLocale(locale)
+                            ? localizeSystemText(locale, { ar: c.rankingReason, en: c.rankingReasonEn })
+                            : locale === "en"
+                              ? c.rankingReasonEn || c.rankingReason
+                              : c.rankingReason
+                        }`
                       : ""}
                   </div>
                   {isActivationFairRankingApplied(fairRanking) ? (
@@ -497,7 +519,7 @@ export default function MarketplaceArticleApplicationsPanel({
                   {app.bildazoCategorySlugSnapshot ? ` · ${app.bildazoCategorySlugSnapshot}` : ""}
                   {app.bildazoCategoryIdSnapshot ? ` · id ${app.bildazoCategoryIdSnapshot}` : ""}
                   {" · "}
-                  {t("common.writingMode")}: {writingModeLabelAr(app.writingModeSnapshot)}
+                  {t("common.writingMode")}: {adminWritingModeLabel(app.writingModeSnapshot, locale)}
                   {" · "}
                   {t("applications.wordsRefs")}: {app.requiredWordCountSnapshot ?? "—"} /{" "}
                   {app.requiredReferencesCountSnapshot ?? 0}

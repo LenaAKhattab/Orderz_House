@@ -26,6 +26,7 @@ import { isFixedBudgetInAllowedSpan, normalizeTemplateBudget } from "../../utils
 import { formatTrainingOrderBudget } from "../../pages/dashboard/trainingOrders/trainingOrdersDisplayUtils";
 import SecureCheckoutNote from "../payments/SecureCheckoutNote";
 import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
+import { pluralDurationUnit } from "./durationUnitLabel";
 
 const ADMIN_STEP_KEYS = ["core", "assignment", "files", "review"];
 const CLIENT_STEP_KEYS = ["core", "files", "review"];
@@ -35,12 +36,9 @@ function formatReviewDuration(value, unit, locale, t) {
   const n = Number(value);
   if (!Number.isFinite(n) || n <= 0) return null;
   const du = "ordersAdmin.wizard.durationUnits";
-  if (locale === "en") {
-    let label;
-    if (unit === "days") label = n === 1 ? t(`${du}.day`) : t(`${du}.days`);
-    else if (unit === "hours") label = n === 1 ? t(`${du}.hour`) : t(`${du}.hours`);
-    else label = n === 1 ? t(`${du}.minute`) : t(`${du}.minutes`);
-    return `${n} ${label}`;
+  // Latin-script locales: per-locale plural rules. Arabic keeps its dual / 3–10 forms below.
+  if (locale !== "ar") {
+    return `${n} ${pluralDurationUnit(t, locale, unit, n)}`;
   }
   let label;
   if (unit === "days") {
@@ -1511,7 +1509,7 @@ export default function AdminInternalOrderWizard({
                 {!isFakeOrder ? (
                 <CreateOrderReviewRow label={isFakePoolMode ? tpl("reviewSkills") : t("ordersAdmin.wizard.review.skills")}>
                   {Array.isArray(form.preferredSkills) && form.preferredSkills.length
-                    ? form.preferredSkills.join(isFakePoolMode ? ", " : locale === "ar" ? "، " : ", ")
+                    ? form.preferredSkills.join(isFakePoolMode ? ", " : t("platformComponents.listSeparator"))
                     : isFakePoolMode
                       ? tpl("reviewSkillsNone")
                       : t("ordersAdmin.wizard.review.skillsNone")}

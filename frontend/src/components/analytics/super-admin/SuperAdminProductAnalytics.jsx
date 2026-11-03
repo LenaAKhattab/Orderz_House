@@ -27,6 +27,7 @@ import {
 import { resolveFreelancerWhatsapp } from "../../../admin/subscriptions/subscriptionWhatsApp";
 import SubscriptionWhatsAppModal from "../../../pages/dashboard/SubscriptionWhatsAppModal";
 import { useTranslation } from "../../../i18n/LanguageProvider";
+import { pickIntlTag } from "../../../i18n/intlLocale";
 import {
   localizeAnalyticsAlertTitle,
   localizeAnalyticsMetricLabel,
@@ -512,7 +513,7 @@ export default function SuperAdminProductAnalytics() {
 
   const weekdayFmt = useMemo(
     () =>
-      new Intl.DateTimeFormat(locale === "ar" ? "ar-JO-u-nu-latn" : "en-US-u-nu-latn", { weekday: "short" }),
+      new Intl.DateTimeFormat(pickIntlTag(locale, { ar: "ar-JO-u-nu-latn", en: "en-US-u-nu-latn" }), { weekday: "short" }),
     [locale],
   );
 

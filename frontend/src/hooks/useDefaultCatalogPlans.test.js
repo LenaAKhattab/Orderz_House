@@ -170,9 +170,11 @@ describe("Super Admin default catalog button UX", () => {
     const marketplace = read("pages/dashboard/SuperAdminMarketplacePlansPage.jsx");
     const labels = read("constants/planCatalogs.js");
     assert.match(nav, /PLAN_CATALOG_NAV/);
-    assert.match(labels, /الباقات الرئيسية/);
-    assert.match(labels, /باقات الصفحات/);
-    assert.match(labels, /باقات العمل/);
+    const catalogLabelsAr = JSON.parse(read("locales/ar/platformConstants.json")).planCatalogs;
+    assert.match(labels, /planCatalogs\.\$\{id\}/);
+    assert.match(catalogLabelsAr.main_plans, /الباقات الرئيسية/);
+    assert.match(catalogLabelsAr.page_plans, /باقات الصفحات/);
+    assert.match(catalogLabelsAr.marketplace_plans, /باقات العمل/);
     assert.match(nav, /labelKey/);
     assert.match(nav, /\/dashboard\/super-admin\/plans\?section=core/);
     assert.match(nav, /\/dashboard\/super-admin\/plans\?section=pages/);

@@ -4,12 +4,13 @@ import { useToast } from "../ui/toastContext";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
 import "../../i18n/opsAdminResources";
+import { pickIntlTag } from "../../i18n/intlLocale";
 
 function formatJoDateTime(value, locale) {
   if (!value) return "—";
   const d = new Date(value);
   if (!Number.isFinite(d.getTime())) return "—";
-  const tag = locale === "ar" ? "ar-JO-u-nu-latn" : "en-GB";
+  const tag = pickIntlTag(locale, { ar: "ar-JO-u-nu-latn", en: "en-GB" });
   return new Intl.DateTimeFormat(tag, { dateStyle: "medium", timeStyle: "short" }).format(d);
 }
 

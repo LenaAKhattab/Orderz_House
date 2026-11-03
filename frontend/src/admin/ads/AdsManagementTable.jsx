@@ -4,12 +4,13 @@ import { getAdAdminStatus, formatCtr } from "./adAdminStatus";
 import { priorityLabel } from "../../components/ads/bannerAdMeta";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import "../../i18n/adsResources";
+import { pickIntlTag } from "../../i18n/intlLocale";
 
 function fmtDate(iso, locale) {
   if (!iso) return "—";
   try {
     const d = new Date(iso);
-    return Number.isNaN(d.getTime()) ? "—" : d.toLocaleString(locale === "en" ? "en" : "ar");
+    return Number.isNaN(d.getTime()) ? "—" : d.toLocaleString(pickIntlTag(locale, { ar: "ar", en: "en" }));
   } catch {
     return "—";
   }

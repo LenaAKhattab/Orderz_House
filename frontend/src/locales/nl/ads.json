@@ -1,0 +1,578 @@
+{
+  "common": {
+    "preview": "Voorbeeld",
+    "cancel": "Annuleren",
+    "close": "Sluiten",
+    "save": "Opslaan",
+    "delete": "Verwijderen",
+    "edit": "Bewerken",
+    "enable": "Inschakelen",
+    "disable": "Uitschakelen",
+    "next": "Volgende",
+    "previous": "Vorige",
+    "retry": "Opnieuw proberen",
+    "refresh": "Vernieuwen",
+    "reset": "Herstellen",
+    "fullPreview": "Volledig voorbeeld",
+    "noTitle": "Zonder titel",
+    "emDash": "—",
+    "uploading": "Uploaden…",
+    "saving": "Opslaan…",
+    "savingEllipsis": "Opslaan...",
+    "deleting": "Verwijderen…",
+    "working": "Bezig…",
+    "loading": "Laden…",
+    "guidelines": "Richtlijnen",
+    "selected": "Geselecteerd",
+    "summary": "Samenvatting",
+    "enabledSuffix": " · Ingeschakeld",
+    "disabledSuffix": " · Uitgeschakeld"
+  },
+  "page": {
+    "eyebrow": "Dashboard",
+    "title": "Advertentiebeheer",
+    "description": "Snel bouwen, live voorbeeld en duidelijke publicatiestappen.",
+    "breadcrumbHome": "Startpagina",
+    "breadcrumbAds": "Advertenties",
+    "newAd": "Nieuwe advertentie",
+    "popupAds": "Pop-upadvertenties",
+    "editAd": "Advertentie bewerken",
+    "buildNew": "Nieuwe advertentie maken",
+    "draftUnsaved": "Niet-opgeslagen concept · {{relative}}",
+    "synced": "Gesynchroniseerd",
+    "previewAria": "Voorbeeld van de advertentie",
+    "actionsTitle": "Advertentieacties",
+    "saveDraft": "Opslaan als concept",
+    "publish": "Advertentie publiceren",
+    "allAdsTitle": "Alle advertenties",
+    "allAdsDescription": "Snelle bewerkingen, statistieken en statusbeheer.",
+    "emptyAds": "Nog geen advertenties.",
+    "loadErrorFallback": "Probeer het opnieuw.",
+    "dragReorderHint": "Sleep kaarten om de volgorde te wijzigen",
+    "discardConfirm": "Niet-opgeslagen wijzigingen gaan verloren. Doorgaan?",
+    "deleteConfirm": "Deze advertentie definitief verwijderen?",
+    "relativeNow": "Nu",
+    "relativeSeconds": "{{sec}} s geleden",
+    "relativeMinutes": "{{min}} min geleden",
+    "adminNotePrompt": "{{action}}\nReden voor deze actie (minimaal 3 tekens):"
+  },
+  "toast": {
+    "fixFieldsTitle": "Controleer de velden",
+    "fixFieldsMessage": "Corrigeer de gemarkeerde fouten en probeer het opnieuw.",
+    "savedTitle": "Opgeslagen",
+    "createdTitle": "Aangemaakt",
+    "publishedMessage": "De advertentie is gepubliceerd.",
+    "draftSavedMessage": "Concept opgeslagen.",
+    "saveFailedTitle": "Opslaan mislukt",
+    "checkFields": "Controleer de velden.",
+    "reasonRequiredTitle": "Reden vereist",
+    "reasonRequiredMessage": "Voer een reden van minimaal 3 tekens in.",
+    "updatedTitle": "Bijgewerkt",
+    "enabledMessage": "De advertentie is ingeschakeld.",
+    "disabledMessage": "De advertentie is uitgeschakeld.",
+    "errorTitle": "Fout",
+    "deletedTitle": "Verwijderd",
+    "deleteFailedTitle": "Verwijderen mislukt",
+    "reorderSuccessTitle": "Volgorde bijgewerkt",
+    "reorderFailedTitle": "Volgorde kon niet worden gewijzigd",
+    "loadFailedTitle": "Laden mislukt",
+    "uploadSuccessTitle": "Afbeelding geüpload",
+    "uploadFailedTitle": "Uploaden mislukt"
+  },
+  "actions": {
+    "enableAd": "Advertentie inschakelen",
+    "disableAd": "Advertentie uitschakelen",
+    "deleteAd": "Advertentie verwijderen",
+    "reorderAds": "Volgorde van advertenties wijzigen"
+  },
+  "validation": {
+    "companyNameRequired": "Bedrijfsnaam is verplicht.",
+    "titleRequired": "Titel is verplicht.",
+    "ctaTextRequired": "Tekst voor de actieknop is verplicht.",
+    "openModeInvalid": "Ongeldige manier om de link te openen.",
+    "whatsappInvalid": "Voer een geldig WhatsApp-nummer in (minimaal 6 cijfers).",
+    "ctaUrlRequired": "Actielink is verplicht.",
+    "ctaUrlInvalid": "Actielink is ongeldig.",
+    "ctaUrlInternal": "Interne paden moeten beginnen met /",
+    "imageUrlInvalid": "Afbeeldings-URL is ongeldig.",
+    "logoUrlInvalid": "Logo-URL is ongeldig.",
+    "backgroundImageUrlInvalid": "URL van achtergrondafbeelding is ongeldig.",
+    "selectedAssetRequired": "Kies een kant-en-klare afbeelding uit de lijst.",
+    "backgroundImageRequired": "Upload een achtergrondafbeelding of plak een geldige URL.",
+    "imageRequired": "Upload een afbeelding of plak een geldige URL.",
+    "salePercentInteger": "Voer een geheel getal tussen 0 en 100 in.",
+    "salePercentRange": "Voer een kortingspercentage tussen 0 en 100 in.",
+    "phoneInvalid": "Het telefoonnummer bevat ongeldige tekens.",
+    "whatsappCharsInvalid": "Het WhatsApp-nummer bevat ongeldige tekens.",
+    "endBeforeStart": "De einddatum moet na de begindatum liggen.",
+    "adminNoteRequired": "Reden van de actie is verplicht (minimaal 3 tekens)."
+  },
+  "status": {
+    "draft": {
+      "label": "Concept",
+      "description": "De advertentie is niet gepubliceerd en is niet zichtbaar voor bezoekers."
+    },
+    "expired": {
+      "label": "Verlopen",
+      "description": "De weergaveperiode is afgelopen."
+    },
+    "scheduled": {
+      "label": "Gepland",
+      "description": "Wordt zichtbaar op het begintijdstip."
+    },
+    "live": {
+      "label": "Nu live",
+      "description": "De advertentie is zichtbaar voor bezoekers volgens de planning."
+    }
+  },
+  "builderSteps": {
+    "content": {
+      "label": "Inhoud",
+      "short": "1"
+    },
+    "design": {
+      "label": "Ontwerp",
+      "short": "2"
+    },
+    "offer": {
+      "label": "Aanbieding en korting",
+      "short": "3"
+    },
+    "images": {
+      "label": "Afbeeldingen",
+      "short": "4"
+    },
+    "publish": {
+      "label": "Publiceren",
+      "short": "5"
+    },
+    "orderStats": {
+      "label": "Volgorde en statistieken",
+      "short": "6"
+    },
+    "navAria": "Stappen van de advertentiebouwer"
+  },
+  "layouts": {
+    "image_top": {
+      "label": "Afbeelding boven",
+      "description": "Ideaal wanneer een duidelijke hoofdafbeelding boven de tekst staat."
+    },
+    "image_background": {
+      "label": "Afbeelding als achtergrond",
+      "description": "Voor visuele advertenties met tekst over de afbeelding."
+    },
+    "text_only": {
+      "label": "Alleen tekst",
+      "description": "Voor meldingen en aanbiedingen met alleen tekst."
+    },
+    "split": {
+      "label": "Afbeelding en tekst naast elkaar",
+      "description": "Toont een afbeelding naast de tekst."
+    },
+    "minimal_banner": {
+      "label": "Minimale banner",
+      "description": "Compacte advertentie voor kleine ruimtes."
+    },
+    "carousel": {
+      "label": "Meerdere afbeeldingen",
+      "description": "Voor meer dan één afbeelding in één advertentie."
+    }
+  },
+  "layoutHints": {
+    "image_top": "Voeg minimaal één afbeelding toe om deze advertentie te laten opvallen.",
+    "image_background": "Deze lay-out heeft minimaal één afbeelding nodig.",
+    "text_only": "Richt u op titel en beschrijving; afbeeldingen zijn optioneel.",
+    "split": "Minimaal één afbeelding wordt aanbevolen voor een goede balans.",
+    "minimal_banner": "Houd de tekst kort; de banner is ontworpen voor een kleine ruimte.",
+    "carousel": "Voeg twee of meer afbeeldingen toe voor een goede carrouselweergave."
+  },
+  "placements": {
+    "home_right_panel": {
+      "label": "Rechterkolom van de startpagina"
+    },
+    "home_after_hero": {
+      "label": "Onder de hero",
+      "note": "Let op: deze plaatsing is mogelijk nog niet ingeschakeld op de openbare site."
+    },
+    "services_page": {
+      "label": "Dienstenpagina",
+      "note": "Let op: deze plaatsing is mogelijk nog niet ingeschakeld op de openbare site."
+    },
+    "global_sidebar": {
+      "label": "Algemene zijbalk",
+      "note": "Let op: deze plaatsing is mogelijk nog niet ingeschakeld op de openbare site."
+    }
+  },
+  "positions": {
+    "imageTop": "Bovenaan de advertentie",
+    "imageBottom": "Onderaan de advertentie",
+    "left": "Links",
+    "right": "Rechts",
+    "background": "Achtergrond",
+    "textTop": "Boven",
+    "textMiddle": "Midden",
+    "textBottom": "Onder"
+  },
+  "fontSize": {
+    "small": "Klein",
+    "normal": "Normaal",
+    "medium": "Middel",
+    "large": "Groot"
+  },
+  "fontWeight": {
+    "normal": "Normaal",
+    "medium": "Halfvet",
+    "bold": "Vet"
+  },
+  "stylePresets": {
+    "classic_navy": "Klassiek blauw",
+    "soft_sky": "Zacht hemelsblauw",
+    "clean_white": "Strak wit",
+    "premium_dark": "Premium donker",
+    "warm_offer": "Warme aanbieding",
+    "success_green": "Succesgroen"
+  },
+  "bannerColorPresets": {
+    "blue_white": "Professioneel blauw",
+    "cream_navy": "Modern donker",
+    "red_sale": "Uitverkoop-rood",
+    "navy_gold": "Luxe goud",
+    "green_nature": "Strak licht"
+  },
+  "bannerTemplates": {
+    "classic_split": {
+      "label": "Klassiek gesplitst",
+      "hint": "Tekst rechts + afbeelding links — algemene aanbiedingen"
+    },
+    "product_focus": {
+      "label": "Productfocus",
+      "hint": "Grote afbeelding + korting op de afbeelding"
+    },
+    "luxury_center": {
+      "label": "Luxe gecentreerd",
+      "hint": "Gecentreerde kop — premium uitstraling"
+    },
+    "ribbon_strip": {
+      "label": "Lintstrook",
+      "hint": "Horizontale strook — snelle melding"
+    },
+    "business_partner": {
+      "label": "Zakelijke promotie",
+      "hint": "Partnerschap / B2B — afbeelding van een handdruk"
+    },
+    "minimal_clean": {
+      "label": "Minimalistisch",
+      "hint": "Grote kop — geen zware decoratie"
+    }
+  },
+  "visualAssets": {
+    "handshake": { "label": "Handdruk / partnerschap" },
+    "gold_confetti": { "label": "Gouden feest" },
+    "smiley_face": { "label": "Smiley" },
+    "red_gift": { "label": "Rode cadeaudoos" },
+    "gold_gifts": { "label": "Gouden cadeaus" }
+  },
+  "priorityOptions": {
+    "0": "Normaal",
+    "50": "Uitgelicht",
+    "100": "Hoog"
+  },
+  "openModes": {
+    "NEW_TAB": "Openen in nieuw tabblad",
+    "SAME_TAB": "Openen op dezelfde pagina",
+    "INTERNAL_ROUTE": "Interne route",
+    "WHATSAPP": "WhatsApp"
+  },
+  "form": {
+    "advancedOptions": "Geavanceerde opties",
+    "companyName": "Bedrijfsnaam *",
+    "companyPlaceholder": "bijv. Cadeauwinkel",
+    "adTitle": "Titel van de advertentie *",
+    "titlePlaceholder": "bijv. Speciale korting",
+    "subtitle": "Ondertitel",
+    "subtitlePlaceholder": "bijv. Tijdelijke aanbieding",
+    "description": "Beschrijving van de advertentie",
+    "descriptionPlaceholder": "Korte beschrijving voor weergave",
+    "themeHint": "Kies een kleurthema — dit wordt toegepast op achtergrond, tekst, knoppen en badges.",
+    "salePercent": "Korting %",
+    "badgeText": "Badgetekst",
+    "badgePlaceholder": "Exclusief",
+    "ctaText": "Knoptekst *",
+    "ctaPlaceholder": "Profiteer van de aanbieding",
+    "openLink": "Link openen",
+    "ctaUrl": "Knoplink *",
+    "whatsapp": "WhatsApp *",
+    "phoneDisplay": "Weergegeven telefoonnummer",
+    "logoUrl": "Logo-URL",
+    "publishState": "Status",
+    "draftPill": "Concept",
+    "publishedPill": "Gepubliceerd",
+    "priority": "Prioriteit",
+    "start": "Begin",
+    "end": "Einde",
+    "adminNote": "Reden van de actie *",
+    "adminNotePlaceholder": "Verplicht bij opslaan",
+    "internalNotesTitle": "Interne notities",
+    "teamNotes": "Teamnotities",
+    "statsHint": "Sla de advertentie eerst op om gedetailleerde statistieken in de tabel te zien.",
+    "impressions": "Vertoningen",
+    "clicks": "Klikken",
+    "quickTheme": "Snel thema",
+    "quickThemeAria": "Snelle thema's",
+    "designTemplateTitle": "Ontwerp en sjabloon",
+    "designTemplateHint": "Kies de bannervorm (lay-out) en daarna hieronder een kleurthema",
+    "colorTheme": "Kleurthema",
+    "pickBannerShape": "Bannervorm kiezen",
+    "pickBannerSub": "Horizontaal voorbeeld per lay-out — kleuren kunnen later worden gewijzigd.",
+    "savedFontSize": "Eerder opgeslagen grootte",
+    "savedFontWeight": "Eerder opgeslagen dikte"
+  },
+  "colors": {
+    "sectionTitle": "Kleuren",
+    "sectionHint": "Pas de kleuren van de horizontale banner aan — de lay-out ligt vast; alleen de kleuren veranderen.",
+    "quickPick": "Snelle kleurkeuze (optioneel)",
+    "quickPickAria": "Snelle kleurkeuze",
+    "bgPrimary": "Primaire achtergrond",
+    "bgSecondary": "Secundaire achtergrond",
+    "mainText": "Kleur van hoofdtekst",
+    "subText": "Kleur van secundaire tekst",
+    "ctaButton": "Kleur van CTA-knop",
+    "ctaButtonText": "Kleur van knoptekst",
+    "badge": "Badgekleur",
+    "badgeText": "Kleur van badgetekst",
+    "saleCircle": "Kleur van kortingscirkel",
+    "saleCircleText": "Tekstkleur van kortingscirkel",
+    "controlsHint": "Tekst- en badgekleuren vindt u in stap 1. Hier: kaartstijl, achtergrond, knop en optioneel kleurverloop.",
+    "pickPreset": "Kies een vooraf ingestelde stijl",
+    "resetColors": "Kleuren herstellen",
+    "customizeCard": "Kaart aanpassen",
+    "adBackground": "Achtergrond van de advertentie",
+    "buttonColor": "Knopkleur",
+    "advancedSummary": "Geavanceerde opties",
+    "advancedBorderHint": "Kaartrand, handmatige knoptekst of achtergrondverloop — optioneel.",
+    "cardBorder": "Kleur van kaartrand",
+    "buttonTextOverride": "Knoptekst (automatisch overschrijven)",
+    "autoFromButton": "Automatisch op basis van knopkleur",
+    "gradientTitle": "Achtergrondverloop",
+    "gradientHint": "Optioneel — laat leeg of kies geen verloop.",
+    "gradientQuickAria": "Vooraf ingestelde kleurverlopen",
+    "gradientStart": "Begin van verloop",
+    "gradientEnd": "Einde van verloop",
+    "colorPicker": "Kleurkiezer",
+    "customColorHint": "Stem de kleur nauwkeurig af en kies daarna zo nodig hierboven een passend staal.",
+    "savedNotInList": "Opgeslagen kleur staat niet in de lijst — wordt nog steeds getoond in het voorbeeld en op de openbare site.",
+    "savedNotInListCompact": "Opgeslagen kleur staat hierboven niet in de lijst — wordt getoond in het voorbeeld; aanpassen via geavanceerde opties.",
+    "pickColorAria": "Kleur kiezen"
+  },
+  "gradients": {
+    "none": "Geen verloop",
+    "sky": "Hemelsblauw verloop",
+    "dark": "Donker verloop",
+    "warm": "Warm verloop",
+    "green": "Groen verloop",
+    "purple": "Paars verloop"
+  },
+  "palette": {
+    "default": "Standaard",
+    "navy": "Marineblauw",
+    "blue": "Blauw",
+    "sky": "Hemelsblauw",
+    "green": "Groen",
+    "gold": "Goud",
+    "red": "Rood",
+    "purple": "Paars",
+    "gray": "Grijs",
+    "black": "Zwart",
+    "white": "Wit",
+    "orange": "Oranje",
+    "pink": "Roze",
+    "darkGray": "Donkergrijs",
+    "light": "Licht",
+    "blueGray": "Blauwgrijs",
+    "dark": "Donker",
+    "nearTransparent": "Bijna transparant",
+    "offWhite": "Gebroken wit",
+    "cream": "Crème",
+    "auto": "Automatisch",
+    "lightSky": "Licht hemelsblauw",
+    "lightBlue": "Lichtblauw",
+    "lightGreen": "Lichtgroen",
+    "lightGold": "Lichtgoud",
+    "lightPurple": "Lichtpaars",
+    "lightPink": "Lichtroze",
+    "lightGray": "Lichtgrijs",
+    "none": "Geen",
+    "unset": "Niet ingesteld",
+    "customColor": "Aangepaste kleur",
+    "savedColor": "Opgeslagen kleur"
+  },
+  "images": {
+    "sectionTitle": "Afbeeldingen",
+    "sectionHint": "Kant-en-klare zijafbeelding of eigen achtergrond",
+    "pickReadyImage": "Kies een kant-en-klare afbeelding",
+    "optionalBackground": "Achtergrondafbeelding (optioneel)",
+    "backgroundHint": "Wordt gebruikt als achtergrond van de banner met een lichte overlay, zodat de tekst leesbaar blijft.",
+    "backgroundLabel": "Achtergrond",
+    "removeBackground": "Achtergrond verwijderen",
+    "uploadFromDevice": "Uploaden vanaf apparaat",
+    "orPasteUrl": "Of plak een afbeeldings-URL (https)",
+    "noServerUrl": "De server heeft geen URL teruggegeven.",
+    "uploadFailed": "Uploaden van de afbeelding mislukt.",
+    "managerHint": "Voeg één afbeeldings-URL toe voor de advertentie. Alleen als URL opgeslagen (hier geen bestandsupload).",
+    "adImage": "Advertentieafbeelding",
+    "addUrlForPreview": "Voeg een URL toe om een voorbeeld van de afbeelding te zien",
+    "imageUrl": "Afbeeldings-URL",
+    "urlHint": "De URL moet beginnen met https:// of een pad zijn dat begint met /",
+    "altText": "Alt-tekst",
+    "altHint": "Wordt gebruikt voor toegankelijkheid en als voorbeeld wanneer de afbeelding niet laadt",
+    "addImage": "+ Afbeelding toevoegen"
+  },
+  "textBlocks": {
+    "hint": "Gebruik extra tekstblokken voor kenmerken of opmerkingen; stel de kleur van elk blok ernaast in.",
+    "blockIndex": "Blok {{index}}",
+    "duplicate": "Blok dupliceren",
+    "extraText": "Extra tekst",
+    "textPosition": "Tekstpositie",
+    "fontSize": "Lettergrootte",
+    "fontWeight": "Letterdikte",
+    "addBlock": "+ Tekstblok toevoegen"
+  },
+  "table": {
+    "image": "Afbeelding",
+    "title": "Titel",
+    "company": "Bedrijf",
+    "status": "Status",
+    "start": "Begin",
+    "end": "Einde",
+    "impressions": "Vertoningen",
+    "clicks": "Klikken",
+    "ctr": "CTR",
+    "lastClick": "Laatste klik",
+    "actions": "Acties",
+    "impressionsAbbr": "vert.",
+    "clicksAbbr": "klik",
+    "impressionsTitle": "Vertoningen",
+    "clicksTitle": "Klikken"
+  },
+  "reorder": {
+    "empty": "Nog geen advertenties.",
+    "dragTitle": "Slepen om de volgorde te wijzigen"
+  },
+  "preview": {
+    "liveTitle": "Live voorbeeld",
+    "syncing": "Bijwerken…",
+    "emptyHint": "Voorbeeldtekst voor lege velden.",
+    "fallbacks": {
+      "companyName": "Cadeauwinkel",
+      "title": "Exclusieve advertentie",
+      "subtitle": "Trek de aandacht",
+      "description": "Voeg een korte beschrijving toe om de aandacht te trekken…",
+      "ctaText": "Profiteer nu van de aanbieding",
+      "badgeText": "Tijdelijke aanbieding"
+    },
+    "templateDemo": {
+      "title": "Vandaag 40% korting",
+      "subtitle": "Tijdelijke aanbieding",
+      "companyName": "Cadeauwinkel",
+      "badgeText": "Exclusieve aanbieding",
+      "ctaText": "Profiteer van de aanbieding"
+    }
+  },
+  "reschedule": {
+    "title": "Zichtbaarheid van advertentie beheren",
+    "subtitle": "Kies hoe de advertentie aan gebruikers wordt getoond; u kunt de planning altijd wijzigen.",
+    "adLabel": "Advertentie:",
+    "currentStatus": "Huidige status:",
+    "howToShow": "Hoe moet deze advertentie worden getoond?",
+    "optionsAria": "Zichtbaarheidsopties",
+    "modes": {
+      "immediate": {
+        "label": "Direct live zetten (geen planning)",
+        "description": "Zichtbaar voor bezoekers zolang dit hier is ingeschakeld, zonder begin- of eindtijd."
+      },
+      "scheduled": {
+        "label": "Specifieke tijden plannen",
+        "description": "Stel een begin- en/of eindtijd in voor de zichtbaarheid."
+      },
+      "paused": {
+        "label": "Advertentie pauzeren",
+        "description": "Verborgen voor gebruikers totdat u de advertentie weer inschakelt."
+      }
+    },
+    "outcomeImmediate": "Resultaat: de advertentie wordt direct getoond en blijft zichtbaar zolang ze is ingeschakeld, zonder begin- of eindplanning.",
+    "outcomeHidden": "Resultaat: de advertentie wordt verborgen voor gebruikers.",
+    "outcomeRange": "Resultaat: de advertentie wordt getoond van {{start}} tot {{end}}.",
+    "outcomeFrom": "Resultaat: de advertentie start op {{start}} zonder einddatum.",
+    "outcomeUntil": "Resultaat: de advertentie wordt direct getoond en eindigt op {{end}}.",
+    "outcomeDefault": "Resultaat: de advertentie wordt direct getoond zonder einddatum.",
+    "shortcuts": "Snelkeuzes:",
+    "shortcutsAria": "Snelkeuzes voor datum",
+    "today": "Vandaag",
+    "tomorrow": "Morgen",
+    "nextWeek": "Over een week",
+    "noEnd": "Geen einddatum",
+    "startLabel": "Begin van zichtbaarheid",
+    "startHint": "Laat het begin leeg om direct te starten.",
+    "endLabel": "Einde van zichtbaarheid",
+    "endHint": "Laat het einde leeg voor geen einddatum.",
+    "endBeforeStart": "De einddatum kan niet vóór de begindatum liggen.",
+    "endInPast": "Waarschuwing: de einddatum ligt in het verleden, dus de advertentie wordt als verlopen weergegeven en is niet zichtbaar voor gebruikers.",
+    "saveChanges": "Wijzigingen opslaan"
+  },
+  "popup": {
+    "modalTitle": "Beheer van pop-upadvertenties",
+    "loading": "Pop-upadvertenties laden…",
+    "currentList": "Huidige advertenties",
+    "newAd": "Nieuwe advertentie",
+    "empty": "Nog geen pop-upadvertenties. Maak een nieuwe aan.",
+    "selectHint": "Selecteer een advertentie in de lijst of klik op Nieuwe advertentie om er een aan te maken.",
+    "enable": "Pop-upadvertentie inschakelen",
+    "titleAr": "Titel (Arabisch)",
+    "titleEn": "Titel (Engels, optioneel)",
+    "bodyAr": "Tekst (Arabisch)",
+    "bodyEn": "Tekst (Engels, optioneel)",
+    "imageField": "Afbeelding (URL of upload)",
+    "uploadImage": "Afbeelding uploaden",
+    "buttonText": "Knoptekst",
+    "buttonUrl": "Knop-URL",
+    "openNewTab": "Link openen in nieuw tabblad",
+    "audience": "Doelgroep",
+    "pageScope": "Paginabereik",
+    "frequency": "Weergavefrequentie",
+    "audienceOptions": {
+      "all": "Iedereen",
+      "guests": "Alleen gasten",
+      "freelancer": "Freelancers",
+      "client": "Klanten",
+      "staff": "Medewerkers"
+    },
+    "pageScopeOptions": {
+      "all": "Alle pagina's",
+      "home": "Startpagina",
+      "public": "Openbare site (geen dashboard)",
+      "dashboard": "Dashboards"
+    },
+    "frequencyOptions": {
+      "session": "Eenmaal per sessie",
+      "day": "Eenmaal per dag",
+      "every_visit": "Bij elk paginabezoek",
+      "first_login_only": "Alleen bij eerste keer inloggen",
+      "every_login": "Bij elke keer inloggen"
+    },
+    "firstLoginHint": "Alleen voor ingelogde gebruikers. Wordt eenmaal na het inloggen getoond; niet opnieuw na sluiten of bekijken. Niet zichtbaar voor gasten.",
+    "firstLoginGuests": " Met doelgroep \"Alleen gasten\" verschijnt deze advertentie niet.",
+    "everyLoginHint": "Alleen voor ingelogde gebruikers. Wordt na elke keer inloggen getoond, maar niet opnieuw in dezelfde sessie na sluiten. Niet zichtbaar voor gasten.",
+    "scheduleStart": "Begin weergave (optioneel)",
+    "scheduleEnd": "Einde weergave (optioneel)",
+    "deleteConfirm": "Deze pop-upadvertentie verwijderen?",
+    "updatedMessage": "Pop-upadvertentie bijgewerkt.",
+    "createdMessage": "Pop-upadvertentie aangemaakt.",
+    "hintTitle": "Zo werken pop-upadvertenties",
+    "hint1": "Er wordt steeds maar één advertentie tegelijk getoond, op volgorde.",
+    "hint2": "Na het sluiten wordt de ingestelde weergavefrequentie gevolgd (sessie / dag / bezoek / eerste keer inloggen / elke keer inloggen).",
+    "hint3": "Met \"Alleen bij eerste keer inloggen\" wordt de advertentie eenmaal getoond na de eerste keer dat de gebruiker inlogt, en daarna nooit meer na sluiten of bekijken.",
+    "hint4": "Met \"Bij elke keer inloggen\" wordt de advertentie na elke keer inloggen getoond, maar niet opnieuw in dezelfde sessie na sluiten.",
+    "hint5": "De doelgroep is gebaseerd op de gebruikersrol of de gaststatus.",
+    "hint6": "De weergave kan worden gepland met een begin- en einddatum."
+  }
+}

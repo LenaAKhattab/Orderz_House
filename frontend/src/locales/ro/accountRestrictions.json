@@ -1,0 +1,197 @@
+{
+  "title": "Restricții de cont",
+  "subtitle": "Rețineri pentru verificare în marketplace aplicate freelancerilor — separate de dezactivarea contului.",
+  "listTitle": "Conturi restricționate",
+  "listCount": "Restricții: {{count}}",
+  "searchPlaceholder": "Căutați după nume, e-mail sau ID utilizator",
+  "filterAria": "Filtrați restricțiile",
+  "primaryTabs": {
+    "users": "Utilizatori",
+    "plans": "Pachete",
+    "aria": "Secțiuni restricții de cont"
+  },
+  "tabs": {
+    "active": "Active",
+    "expired": "Expirate",
+    "revoked": "Ridicate",
+    "all": "Toate"
+  },
+  "plans": {
+    "listTitle": "Restricții de pachet",
+    "listCount": "Pachete: {{count}}",
+    "emptyTitle": "Niciun pachet de afișat",
+    "emptyDescription": "Pachetele standard de abonament de membru din marketplace vor apărea aici.",
+    "addPlan": "+ Restricționați un pachet",
+    "restrictPlan": "Restricționați pachetul",
+    "restrictAgain": "Restricționați din nou",
+    "marketplaceMembership": "Abonament de membru marketplace",
+    "impactConfirmTitle": "Confirmați restricția de pachet",
+    "impactConfirmBody": "Această restricție se va aplica tuturor utilizatorilor al căror pachet curent este {{tier}}, inclusiv oricui trece la acest pachet cât timp restricția este activă.",
+    "impactCount": "Utilizatori afectați în prezent: {{count}}",
+    "alreadyActive": "Acest pachet are deja o restricție activă",
+    "selectPlan": "Selectați pachetul",
+    "changePlan": "Schimbați pachetul",
+    "currentSubscribers": "Abonați actuali",
+    "existingRestriction": "Restricție existentă",
+    "notRestricted": "Nerestricționat",
+    "inheritedLabel": "Moștenită de la pachetul: {{tier}}",
+    "saveOk": "Restricția de pachet a fost adăugată.",
+    "updateOk": "Restricția de pachet a fost actualizată.",
+    "revokeOk": "Restricția de pachet a fost ridicată.",
+    "extendOk": "Restricția de pachet a fost prelungită.",
+    "columns": {
+      "plan": "Pachet",
+      "code": "Cod",
+      "subscribers": "Abonați actuali",
+      "status": "Starea restricției",
+      "scope": "Domeniu",
+      "startsAt": "Începe la",
+      "expiresAt": "Expiră la",
+      "addedBy": "Adăugată de",
+      "actions": "Acțiuni"
+    },
+    "statusLabels": {
+      "ACTIVE": "Restricționat",
+      "EXPIRED": "Expirat",
+      "REVOKED": "Restricție ridicată",
+      "NONE": "Nerestricționat"
+    },
+    "sections": {
+      "plan": "Pachet",
+      "restriction": "Restricție",
+      "impact": "Impact",
+      "audit": "Jurnal de audit"
+    },
+    "drawerTitle": "Restricție de pachet",
+    "addWorkflowTitle": "Restricționați un pachet"
+  },
+  "emptyTitle": "Momentan nu există conturi restricționate.",
+  "emptyDescription": "Adăugați un utilizator pentru a-i restricționa activitatea în marketplace.",
+  "addUser": "+ Adăugați utilizator",
+  "addRestriction": "Adăugați restricție",
+  "edit": "Editați domeniul",
+  "revoke": "Ridicați restricția",
+  "extend": "Prelungiți durata",
+  "viewDetails": "Vedeți detaliile",
+  "viewHistory": "Vedeți jurnalul de activitate",
+  "viewLog": "Vedeți jurnalul",
+  "restrictAgain": "Restricționați din nou",
+  "manage": "Gestionați restricția",
+  "addFromUsers": "Adăugați restricție",
+  "columns": {
+    "user": "Utilizator",
+    "userId": "ID utilizator",
+    "email": "E-mail",
+    "plan": "Pachet curent",
+    "status": "Starea restricției",
+    "scope": "Domeniu",
+    "addedAt": "Adăugată la",
+    "expiresAt": "Expiră la",
+    "addedBy": "Adăugată de",
+    "actions": "Acțiuni"
+  },
+  "statusLabels": {
+    "ACTIVE": "Restricționat",
+    "EXPIRED": "Expirat",
+    "REVOKED": "Restricție ridicată"
+  },
+  "restrictionTypeLabel": "Restricție de cont",
+  "scopes": "Domeniul restricției",
+  "scopeMode": {
+    "all": "Întregul marketplace",
+    "custom": "Domeniu personalizat"
+  },
+  "scopesLabels": {
+    "ALL_MARKETPLACE": "Întregul marketplace",
+    "bids": "Oferte",
+    "direct_claims": "Preluări directe",
+    "order_assignments": "Atribuiri de comenzi",
+    "articles": "Articole",
+    "competitions": "Concursuri",
+    "messaging": "Mesagerie"
+  },
+  "duration": {
+    "label": "Durată",
+    "none": "Fără expirare",
+    "h24": "24 de ore",
+    "d3": "3 zile",
+    "d7": "7 zile",
+    "d30": "30 de zile",
+    "custom": "Dată personalizată"
+  },
+  "internalReason": "Motiv intern",
+  "internalReasonPlaceholder": "Introduceți motivul intern al acestei restricții...",
+  "internalNote": "Notă internă",
+  "internalNotePlaceholder": "Notă administrativă opțională…",
+  "noExpiry": "Fără expirare",
+  "activeHoldBadge": "Restricție activă",
+  "noActive": "Nicio restricție activă",
+  "drawerTitle": "Restricții de cont",
+  "detailsTitle": "Detaliile restricției",
+  "sections": {
+    "user": "Utilizator",
+    "restriction": "Restricție",
+    "activity": "Activitate în timpul restricției",
+    "audit": "Cronologie de audit"
+  },
+  "activity": {
+    "heldBids": "Oferte reținute",
+    "heldClaims": "Preluări directe reținute",
+    "heldArticles": "Articole reținute",
+    "releases": "Eliberări",
+    "rejects": "Respinse la verificare",
+    "empty": "Nu este înregistrată nicio activitate reținută.",
+    "heldBidOrderLine": "Comandă #{{orderId}} · {{amount}} JOD"
+  },
+  "addWorkflow": {
+    "title": "Adăugați un utilizator la restricții",
+    "searchLabel": "Căutați freelancerul",
+    "searchPlaceholder": "Nume, e-mail sau ID utilizator",
+    "noResults": "Niciun rezultat corespunzător.",
+    "selectUser": "Selectați",
+    "changeUser": "Schimbați utilizatorul",
+    "hasActive": "Există deja o restricție activă",
+    "confirmTitle": "Confirmați restricția",
+    "confirmBody": "Activitatea acestui utilizator în marketplace va fi restricționată conform domeniului selectat. Continuați?",
+    "confirmAdd": "Adăugați restricție"
+  },
+  "extendWorkflow": {
+    "title": "Prelungiți durata",
+    "confirm": "Prelungiți"
+  },
+  "editWorkflow": {
+    "title": "Editați domeniul",
+    "confirm": "Salvați modificările"
+  },
+  "revokeWorkflow": {
+    "title": "Ridicați restricția",
+    "description": "Restricția activă va fi ridicată. Înregistrările istorice rămân intacte.",
+    "confirm": "Ridicați restricția",
+    "reasonOptional": "Motivul ridicării (opțional)"
+  },
+  "form": {
+    "reasonRequired": "Motivul intern este obligatoriu",
+    "save": "Salvați",
+    "cancel": "Anulați",
+    "close": "Închideți",
+    "working": "Se procesează…"
+  },
+  "heldBids": "Oferte în curs de verificare",
+  "releaseBid": "Eliberați oferta către client",
+  "rejectBid": "Respingeți oferta și restituiți creditele",
+  "loadError": "Restricțiile nu au putut fi încărcate.",
+  "saveOk": "Restricția a fost adăugată.",
+  "updateOk": "Restricția a fost actualizată.",
+  "revokeOk": "Restricția a fost ridicată.",
+  "extendOk": "Restricția a fost prelungită.",
+  "privacyNote": "Motivele interne nu sunt afișate niciodată freelancerilor sau clienților.",
+  "refresh": "Reîmprospătați",
+  "actionsFor": "Acțiuni pentru {{name}}",
+  "unnamed": "Fără nume",
+  "identity": "Identitate",
+  "eligibility": "Eligibilitate",
+  "accountActive": "Activ",
+  "accountInactive": "Inactiv",
+  "checking": "Se verifică restricțiile…",
+  "checkFailed": "Restricțiile nu au putut fi verificate"
+}

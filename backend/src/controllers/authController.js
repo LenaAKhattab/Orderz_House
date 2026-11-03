@@ -5,6 +5,7 @@ const { createPublicApiError } = require("../utils/publicApiError");
 const { clearAuthCookie } = require("../utils/authCookie");
 const { sendAuthSuccess } = require("../utils/authSessionResponse");
 const { capture, identify, captureException } = require("../config/posthog");
+const { resolveRequestLocale } = require("../utils/requestLocale");
 
 async function safeNotify(run) {
   try {
@@ -20,6 +21,7 @@ const register = async (req, res, next) => {
     const out = await authService.registerUser({
       ...req.body,
       referralCookie: req.cookies?.oh_ref || null,
+      locale: resolveRequestLocale(req, req.body?.locale),
     });
     return res.status(201).json({
       success: true,
@@ -78,7 +80,10 @@ const verifyRegisterOtp = async (req, res, next) => {
 
 const resendRegisterOtp = async (req, res, next) => {
   try {
-    await authOtpService.resendRegistrationOtp(req.body.email);
+    await authOtpService.resendRegistrationOtp(
+      req.body.email,
+      resolveRequestLocale(req, req.body?.locale),
+    );
     return res.status(200).json({
       success: true,
       message:
@@ -91,7 +96,10 @@ const resendRegisterOtp = async (req, res, next) => {
 
 const forgotPassword = async (req, res, next) => {
   try {
-    await authOtpService.requestForgotPasswordOtp(req.body.email);
+    await authOtpService.requestForgotPasswordOtp(
+      req.body.email,
+      resolveRequestLocale(req, req.body?.locale),
+    );
     return res.status(200).json({
       success: true,
       message: "إذا كان البريد الإلكتروني مسجلاً، سيتم إرسال رمز التحقق",

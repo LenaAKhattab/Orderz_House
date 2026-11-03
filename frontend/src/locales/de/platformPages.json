@@ -1,0 +1,62 @@
+{
+  "trainingOrders": {
+    "roundStatus": {
+      "scheduled": "Geplant",
+      "active": "Aktiv",
+      "expired": "Abgelaufen",
+      "stopped": "Gestoppt"
+    },
+    "fakeOrderStatus": {
+      "active": "Aktiv",
+      "expired": "Abgelaufen",
+      "stopped": "Gestoppt"
+    },
+    "automationStatus": {
+      "success": "Erfolg",
+      "skipped_no_templates": "Übersprungen — keine Vorlagen",
+      "skipped_lock": "Übersprungen — Sperre",
+      "failed": "Fehlgeschlagen"
+    },
+    "roundSource": {
+      "automation": "Automatisch",
+      "manual": "Manuell"
+    },
+    "widgetError": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut."
+  },
+  "common": {
+    "listJoiner": ", ",
+    "jodSuffix": "JOD"
+  },
+  "freelancerArticles": {
+    "trialError": "Test-Bids konnten nicht gutgeschrieben werden. Erneut versuchen."
+  },
+  "superAdminPlans": {
+    "deactivateBlocked": "Dieses Paket kann nicht entfernt werden, da es mit Nutzern oder aktuellen Datensätzen verknüpft ist. Sie können es stattdessen deaktivieren.",
+    "showingPage": "Pakete für: {{title}}",
+    "confirmDeactivateBody": "Sind Sie sicher? Dieses Paket wird für neue Nutzung ausgeblendet. Bestehende Abonnements und historische Datensätze werden nicht gelöscht."
+  },
+  "articleDetail": {
+    "manuscriptTermsCopy": "Ich stimme den Eigentums- und Veröffentlichungsbedingungen für diesen Artikel zu und verstehe, dass er bei Annahme gemäß Plattformrichtlinie unter meinem Namen auf Bildazo veröffentlicht werden kann."
+  },
+  "eliteDirectOffer": {
+    "title": "Elite Direct-Angebot",
+    "description": "Senden Sie ein privates zeitlich begrenztes Angebot an einen Elite-Freelancer.",
+    "targetLabel": "Elite-Freelancer-Nutzer-ID",
+    "send": "Angebot senden",
+    "cancel": "Abbrechen",
+    "offerLine": "#{{id}} → Freelancer-ID {{freelancerId}} — {{status}}",
+    "status": {
+      "pending": "ausstehend",
+      "accepted": "angenommen",
+      "declined": "abgelehnt",
+      "expired": "abgelaufen",
+      "cancelled": "storniert"
+    }
+  },
+  "publicSite": {
+    "translationUnavailable": "Diese Seite ist in Ihrer Sprache noch nicht verfügbar und wird daher in der Originalsprache angezeigt."
+  },
+  "accountDeletion": {
+    "mailSubject": "Orderz House – Antrag auf Kontolöschung"
+  }
+}

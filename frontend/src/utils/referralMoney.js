@@ -1,19 +1,26 @@
-import { CURRENCY_LABELS } from "../constants/displayCurrencies.js";
+import { isNewLocale } from "../i18n/systemContent.js";
+import { currencyLabel, numberFormatFor } from "./localeFormat.js";
 
 // Referral amounts arrive from the API in integer fils (1 JOD = 1000). Display only — no math.
-const FILS_FORMAT = new Intl.NumberFormat("en-US", {
+const FILS_OPTIONS = Object.freeze({
   minimumFractionDigits: 0,
   maximumFractionDigits: 3,
 });
 
+const PERCENT_OPTIONS = Object.freeze({ style: "percent", maximumFractionDigits: 4 });
+
 export function formatMinorJod(minor, locale = "ar") {
   const n = Number(minor);
   const value = Number.isFinite(n) ? n / 1000 : 0;
-  return `${FILS_FORMAT.format(value)} ${locale === "en" ? "JOD" : CURRENCY_LABELS.JOD}`;
+  return `${numberFormatFor(locale, FILS_OPTIONS).format(value)} ${currencyLabel("JOD", locale)}`;
 }
 
 export function formatCommissionRate(row, locale = "ar") {
-  if (row?.calculationMode === "percentage") return `${(Number(row.percentageBps) || 0) / 100}%`;
+  if (row?.calculationMode === "percentage") {
+    const percent = (Number(row.percentageBps) || 0) / 100;
+    // German / Dutch / Romanian: locale percent format ("2,5 %"); Arabic / English unchanged.
+    return isNewLocale(locale) ? numberFormatFor(locale, PERCENT_OPTIONS).format(percent / 100) : `${percent}%`;
+  }
   if (row?.calculationMode === "fixed") return formatMinorJod(row.fixedAmountMinor, locale);
   return "—";
 }

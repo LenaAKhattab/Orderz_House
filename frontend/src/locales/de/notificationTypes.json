@@ -1,0 +1,295 @@
+{
+  "fallback": {
+    "order": "Auftragsaktualisierung",
+    "wallet": "Zahlungsaktualisierung",
+    "course": "Schulungsaktualisierung",
+    "message": "Neue Nachricht",
+    "bell": "Neue Benachrichtigung"
+  },
+  "details": {
+    "category": "Kategorie",
+    "topic": "Fertiges Thema"
+  },
+  "types": {
+    "ad_created": {
+      "title": "Anzeige erstellt",
+      "message": "Eine neue Anzeige wurde erstellt."
+    },
+    "ad_expired": {
+      "title": "Anzeige abgelaufen",
+      "message": "Eine Anzeige hat ihr Enddatum erreicht und wird nicht mehr angezeigt."
+    },
+    "ad_published": {
+      "title": "Anzeige veröffentlicht",
+      "message": "Eine Anzeige ist jetzt live auf der Plattform."
+    },
+    "ad_scheduled": {
+      "title": "Anzeige geplant",
+      "message": "Eine Anzeige wurde zur Veröffentlichung geplant."
+    },
+    "ad_unpublished": {
+      "title": "Anzeige offline",
+      "message": "Eine Anzeige wurde offline genommen."
+    },
+    "ad_updated": {
+      "title": "Anzeige aktualisiert",
+      "message": "Eine Anzeige wurde aktualisiert."
+    },
+    "bid_pool_allocated": {
+      "title": "Sie haben Bids erhalten",
+      "message": "{{allocatedBids}} Bids wurden Ihrem Guthaben gutgeschrieben."
+    },
+    "bid_pool_returned_unused": {
+      "title": "Unbenutzte Bids an den Pool zurückgegeben",
+      "message": "Unbenutzte Bids wurden an den Verteilungspool zurückgegeben."
+    },
+    "course_assigned": {
+      "title": "Ihnen wurde ein Schulungskurs zugewiesen",
+      "message": "Ein neuer Kurs wurde Ihrem Konto zugewiesen."
+    },
+    "course_completed": {
+      "title": "Kurs abgeschlossen",
+      "message": "Gut gemacht! Sie haben alle Lektionen dieses Kurses abgeschlossen."
+    },
+    "course_lesson_added": {
+      "title": "Neue Lektionen hinzugefügt",
+      "message": "Neue Lektionen wurden zu einem Ihrer Kurse hinzugefügt."
+    },
+    "course_lesson_completed": {
+      "title": "Lektionsabschluss erfasst",
+      "message": "Ihre Lektion wurde als abgeschlossen markiert."
+    },
+    "elite_direct_offer_accepted": {
+      "title": "Elite Direct-Angebot angenommen",
+      "message": "Der Freelancer hat Ihr Elite Direct-Angebot angenommen."
+    },
+    "elite_direct_offer_created": {
+      "title": "Neues Elite Direct-Angebot",
+      "message": "Sie haben ein privates Elite Direct-Angebot erhalten — prüfen Sie es und nehmen Sie an oder lehnen Sie ab, bevor es abläuft."
+    },
+    "elite_direct_offer_declined": {
+      "title": "Elite Direct-Angebot abgelehnt",
+      "message": "Der Freelancer hat das Elite Direct-Angebot abgelehnt. Sie können ein neues Angebot an einen anderen Elite-Freelancer senden."
+    },
+    "elite_direct_offer_expired": {
+      "title": "Elite Direct-Angebot abgelaufen",
+      "message": "Das Angebot ist ohne Annahme abgelaufen. Sie können ein neues Angebot an einen anderen Elite-Freelancer senden."
+    },
+    "feedback_created": {
+      "title": "Neues Feedback erhalten",
+      "message": "Ein Nutzer hat einen neuen Problembericht oder Vorschlag eingereicht."
+    },
+    "feedback_status_resolved": {
+      "title": "Ihr Feedback wurde aktualisiert",
+      "message": "Ihr Feedback wurde als gelöst markiert."
+    },
+    "financial_claim_created": {
+      "title": "Ihr Zahlungsanspruch wurde eingereicht",
+      "message": "Ihr Zahlungsanspruch wurde erstellt und wird nun geprüft."
+    },
+    "financial_claim_paid": {
+      "title": "Zahlungsanspruch ausgezahlt",
+      "message": "Die Zahlung wurde erfasst und der Anspruch als bezahlt abgeschlossen."
+    },
+    "financial_claim_pricing_updated": {
+      "title": "Anspruchspreise aktualisiert",
+      "message": "Die Preisdetails und der fällige Betrag für Ihren Anspruch wurden aktualisiert."
+    },
+    "financial_claim_status_changed": {
+      "title": "Status des Zahlungsanspruchs aktualisiert",
+      "message": "Der Status Ihres Zahlungsanspruchs wurde aktualisiert."
+    },
+    "freelancer_review_received": {
+      "title": "Neue Bewertung von einem Kunden",
+      "message": "Ein Kunde hat eine Bewertung zu einem Ihrer Aufträge hinterlassen."
+    },
+    "general_test": {
+      "title": "Testbenachrichtigung",
+      "message": "Ihre Browser-Benachrichtigungseinstellungen wurden aktualisiert."
+    },
+    "order_applications_admin_review_required": {
+      "title": "Bewerbungsfrist erreicht",
+      "message": "Bewerbungen wurden zum Fristende geschlossen. Sie können mit den aktuellen Bewerbern fortfahren."
+    },
+    "order_applications_deadline_cancelled": {
+      "title": "Auftrag benötigt Admin-Prüfung",
+      "message": "Die Bewerbungsfrist endete, bevor die Zielanzahl an Bewerbern erreicht wurde. Eine Admin-Prüfung ist erforderlich."
+    },
+    "order_applications_deadline_reached": {
+      "title": "Bewerbungsfrist erreicht",
+      "message": "Bewerbungen wurden zum Fristende geschlossen. Sie können mit den aktuellen Bewerbern fortfahren."
+    },
+    "order_applications_target_reached": {
+      "title": "Bewerberziel erreicht",
+      "message": "Bewerbungen wurden automatisch geschlossen, nachdem die erforderliche Anzahl an Bewerbern erreicht wurde."
+    },
+    "order_assigned": {
+      "title": "Projekt angenommen",
+      "message": "Ein Freelancer hat das Projekt angenommen und mit der Arbeit begonnen."
+    },
+    "order_bid_refunded": {
+      "title": "Bids zurückgegeben",
+      "message": "Ihre verfügbaren Bids wurden zurückgegeben, nachdem der Auftrag ohne Auswahl geschlossen oder storniert wurde."
+    },
+    "order_bid_rejected": {
+      "title": "Ihr Angebot wurde nicht ausgewählt",
+      "message": "Das Angebot eines anderen Freelancers wurde für dieses Projekt angenommen."
+    },
+    "order_bid_selected": {
+      "title": "Ihr Angebot wurde ausgewählt — Zahlung ausstehend",
+      "message": "Der Kunde hat Ihr Angebot ausgewählt. Die Zuweisung wird nach Abschluss der Zahlung bestätigt."
+    },
+    "order_bid_submitted": {
+      "title": "Neues Angebot erhalten",
+      "message": "Ein Freelancer hat ein Angebot für Ihr Projekt eingereicht."
+    },
+    "order_bid_updated": {
+      "title": "Angebot aktualisiert",
+      "message": "Ein Freelancer hat sein Angebot für Ihr Projekt aktualisiert."
+    },
+    "order_claim_withdrawn": {
+      "title": "Bewerbung zurückgezogen",
+      "message": "Der Freelancer hat seine Bewerbung für das Projekt zurückgezogen."
+    },
+    "order_created": {
+      "title": "Neues Ausschreibungsprojekt",
+      "message": "Ein neues Projekt wurde zur Ausschreibung veröffentlicht."
+    },
+    "order_delivery_approved": {
+      "title": "Lieferung freigegeben",
+      "message": "Die Lieferung wurde freigegeben und das Projekt erfolgreich abgeschlossen."
+    },
+    "order_delivery_submitted": {
+      "title": "Neue Lieferung eingereicht",
+      "message": "Eine neue Lieferung wurde für diesen Auftrag eingereicht — bitte prüfen Sie sie."
+    },
+    "order_freelancer_assigned": {
+      "title": "Ihnen wurde ein Projekt zugewiesen",
+      "message": "Sie wurden für die Arbeit am Projekt freigegeben."
+    },
+    "order_freelancer_rejected": {
+      "title": "Ihre Bewerbung wurde nicht ausgewählt",
+      "message": "Für dieses Projekt wurde ein anderer Freelancer ausgewählt."
+    },
+    "order_message_received": {
+      "title": "Neue Nachricht zu einem Auftrag",
+      "message": "Sie haben eine neue Nachricht zu einem Ihrer Aufträge."
+    },
+    "order_payment_started": {
+      "title": "Zahlung gestartet",
+      "message": "Eine Zahlungssitzung für den Auftrag wurde erstellt. Schließen Sie die Zahlung ab, um fortzufahren."
+    },
+    "order_pool_summary": {
+      "title": "Neue Auftragscharge hinzugefügt",
+      "message": "Neue für Sie passende Aufträge sind jetzt verfügbar: {{visibleCount}}."
+    },
+    "order_pool_summary_training": {
+      "title": "Neue Charge Schulungsaufträge hinzugefügt",
+      "message": "Neue für Sie passende Schulungsaufträge sind jetzt verfügbar: {{visibleCount}}."
+    },
+    "order_review_reminder": {
+      "title": "Bewerten Sie Ihre Erfahrung mit dem Freelancer",
+      "message": "Erzählen Sie uns von Ihrem abgeschlossenen Projekt — es dauert weniger als eine Minute."
+    },
+    "order_revision_requested": {
+      "title": "Überarbeitungen angefordert",
+      "message": "Der Kunde hat Überarbeitungen der Lieferung angefordert."
+    },
+    "pantry_bid_refunded": {
+      "title": "Bids zurückgegeben",
+      "message": "Ihre verfügbaren Bids wurden zurückgegeben, nachdem der Bayt-Al-Mooneh-Auftrag ohne Zuweisung geschlossen wurde."
+    },
+    "payment_client_order_failed": {
+      "title": "Zahlung fehlgeschlagen",
+      "message": "Die Zahlung für den Auftrag konnte nicht abgeschlossen werden. Bitte versuchen Sie es erneut."
+    },
+    "payment_client_order_succeeded": {
+      "title": "Zahlung erfolgreich",
+      "message": "Die Zahlung wurde erhalten und der Auftrag ist jetzt für Freelancer offen."
+    },
+    "plan_created": {
+      "title": "Neues Paket erstellt",
+      "message": "Ein neues Paket wurde erstellt."
+    },
+    "plan_deleted": {
+      "title": "Paket deaktiviert",
+      "message": "Ein Paket wurde deaktiviert oder für neue Nutzung ausgeblendet."
+    },
+    "plan_updated": {
+      "title": "Paket aktualisiert",
+      "message": "Die Einstellungen eines Pakets wurden aktualisiert."
+    },
+    "referral_bonus": {
+      "title": "Empfehlungsbonus",
+      "message": "Ein Empfehlungsbonus wurde Ihrem verfügbaren Guthaben gutgeschrieben."
+    },
+    "referral_commission_available": {
+      "title": "Empfehlungsprovision verfügbar",
+      "message": "Eine Empfehlungsprovision steht jetzt zur Auszahlung bereit."
+    },
+    "referral_commission_pending": {
+      "title": "Empfehlungsprovision ausstehend",
+      "message": "Eine Empfehlungsprovision wurde erfasst und befindet sich in der Haltefrist."
+    },
+    "referral_registration": {
+      "title": "Neue Empfehlungsregistrierung",
+      "message": "Ein neuer Nutzer ist über Ihren Empfehlungslink beigetreten."
+    },
+    "subscription_assigned": {
+      "title": "Ihnen wurde ein Abonnement zugewiesen",
+      "message": "Die Administration hat Ihrem Konto ein Abonnementpaket zugewiesen."
+    },
+    "subscription_company_activated": {
+      "title": "Ihr Abonnement wurde aktiviert",
+      "message": "Ihr Abonnement wurde freigegeben und Sie können Projekte erhalten."
+    },
+    "subscription_company_activation_pending": {
+      "title": "Abonnement wartet auf Aktivierung",
+      "message": "Ein Abonnement wurde bezahlt und wartet auf Aktivierung durch das Unternehmen."
+    },
+    "subscription_payment_started": {
+      "title": "Abonnementzahlung gestartet",
+      "message": "Eine Zahlungssitzung für das Abonnement wurde erstellt. Schließen Sie die Zahlung ab, um fortzufahren."
+    },
+    "subscription_started": {
+      "title": "Ihr Abonnement hat begonnen",
+      "message": "Ihr Abonnement begann mit Ihrem ersten angenommenen Projekt."
+    },
+    "subscription_renewal_failed": {
+      "title": "Abonnementverlängerung fehlgeschlagen",
+      "message": "Die Zahlung für Ihre Abonnementverlängerung ist fehlgeschlagen. Aktualisieren Sie Ihre Zahlungsmethode, um Ihr Abonnement zu behalten."
+    },
+    "payment_success": {
+      "title": "Abonnement aktiviert",
+      "message": "Ihr Freelancer-Abonnement wurde erfolgreich aktiviert."
+    },
+    "payment_failed": {
+      "title": "Zahlung fehlgeschlagen",
+      "message": "Die Abonnementzahlung konnte nicht abgeschlossen werden. Bitte versuchen Sie es erneut."
+    },
+    "payment_cancelled": {
+      "title": "Zahlung storniert",
+      "message": "Die Abonnementzahlung wurde storniert."
+    },
+    "user_account_activated": {
+      "title": "Ihr Konto wurde aktiviert",
+      "message": "Ihr Konto ist aktiv und Sie können die Plattform jetzt nutzen."
+    },
+    "user_account_deactivated": {
+      "title": "Ihr Konto wurde deaktiviert",
+      "message": "Ihr Konto wurde deaktiviert. Wenden Sie sich bei Fragen an den Support."
+    },
+    "user_account_reactivated": {
+      "title": "Ihr Konto wurde reaktiviert",
+      "message": "Ihr Konto ist wieder aktiv und Sie können die Plattform nutzen."
+    },
+    "user_account_suspended": {
+      "title": "Ihr Konto wurde gesperrt",
+      "message": "Ihr Konto wurde gesperrt. Wenden Sie sich bei Fragen an den Support."
+    },
+    "user_registered": {
+      "title": "Ihr Konto wurde erstellt",
+      "message": "Willkommen bei Orderz House."
+    }
+  }
+}

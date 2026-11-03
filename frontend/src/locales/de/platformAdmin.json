@@ -1,0 +1,111 @@
+{
+  "economyForm": {
+    "fields": {
+      "commissionPct": "Provision %",
+      "cashFee": "Barzahlungsgebühr",
+      "eliteOrdersPerCycle": "Elite-Aufträge / Zyklus",
+      "offerDuration": "Angebotsdauer",
+      "carryForwardDays": "Übertrag-Tage",
+      "maxCarryForward": "Max. Übertrag",
+      "assignmentStrategy": "Zuweisungsstrategie",
+      "fairLookback": "Fair Distribution Rückblick (Tage)",
+      "fairnessWeight": "Fairness-Gewicht",
+      "tokenWeight": "Token-Gewicht",
+      "performanceWeight": "Leistungs-Gewicht",
+      "recencyWeight": "Aktualitäts-Gewicht",
+      "workloadWeight": "Auslastungs-Gewicht",
+      "minApplicants": "Min. Bewerber",
+      "maxApplicants": "Max. Bewerber",
+      "defaultApplicants": "Standard-Bewerber",
+      "minBidCost": "Min. Bid-Kosten",
+      "maxBidCost": "Max. Bid-Kosten",
+      "defaultBidCost": "Standard-Bid-Kosten",
+      "minApplicationHours": "Min. Bewerbungsstunden",
+      "maxApplicationHours": "Max. Bewerbungsstunden",
+      "defaultApplicationHours": "Standard-Bewerbungsstunden",
+      "minExecutionHours": "Min. Ausführungsstunden",
+      "maxExecutionHours": "Max. Ausführungsstunden",
+      "defaultExecutionHours": "Standard-Ausführungsstunden",
+      "articleMinBids": "Artikel min. erforderliche Bids",
+      "articleDefaultBids": "Artikel Standard erforderliche Bids",
+      "pantryMinBids": "Pantry min. erforderliche Bids",
+      "pantryDefaultBids": "Pantry Standard erforderliche Bids"
+    },
+    "validation": {
+      "moneyPositive": "{{label}}: muss > 0 sein.",
+      "moneyNonNeg": "{{label}}: muss ≥ 0 sein.",
+      "percentRange": "{{label}}: muss 0–100 sein.",
+      "intRange": "{{label}}: Ganzzahl zwischen {{min}} und {{max}}.",
+      "invalidValue": "{{label}}: ungültiger Wert.",
+      "hybridUnavailable": "{{label}}: HYBRID nicht verfügbar, bis die Gewichtungsrichtlinie definiert ist (FAIR_DISTRIBUTION_HYBRID_WEIGHT_POLICY_REQUIRED).",
+      "minOrderInvalid": "Mindest-Auftragswert ungültig.",
+      "maxOrderInvalid": "Maximal-Auftragswert ungültig."
+    },
+    "strategies": {
+      "HIGHEST_TOKEN_ONLY": "Höchste Berechtigung zuerst",
+      "FAIR_DISTRIBUTION_FIRST": "Faire Verteilung zuerst",
+      "HYBRID": "HYBRID (nicht verfügbar — Gewichtungsrichtlinie erforderlich)"
+    }
+  },
+  "articleApplications": {
+    "autoAssignCandidate": "#{{rank}} Bew. {{applicationId}} · Gewicht {{weight}}"
+  },
+  "common": {
+    "close": "Schließen"
+  },
+  "planCard": {
+    "priceJod": "{{amount}} JOD (Dinar)",
+    "orderRange": {
+      "between": "{{min}} JOD bis {{max}} JOD",
+      "from": "Ab {{min}} JOD",
+      "upTo": "Bis {{max}} JOD"
+    },
+    "features": {
+      "selfSubscribeAllowed": "Direkter Selbstkauf",
+      "requiresCompanyVisit": "Aktivierung durch Vor-Ort-Besuch",
+      "isVisible": "Im Shop sichtbar",
+      "isFeatured": "Hervorgehobenes Paket im Storefront",
+      "isPopular": "Als beliebtestes markiert"
+    }
+  },
+  "analytics": {
+    "leaderboards": {
+      "sub": {
+        "freelancers": "abgeschlossene Aufträge",
+        "clients": "Ausgaben",
+        "courses": "eingeschrieben",
+        "categories": "Aufträge"
+      },
+      "titles": {
+        "freelancers": "Top-Freelancer",
+        "clients": "Top-Kunden",
+        "courses": "Top-Kurse",
+        "categories": "Top-Kategorien"
+      }
+    },
+    "snapshot": {
+      "newSubscriptions": "+{{count}} neues Abonnement",
+      "newSubscriptions_plural": "+{{count}} neue Abonnements",
+      "newOrders": "+{{count}} neuer Auftrag",
+      "newOrders_plural": "+{{count}} neue Aufträge",
+      "newClaims": "+{{count}} Zahlungsanspruch",
+      "newClaims_plural": "+{{count}} Zahlungsansprüche",
+      "periodRevenue": "Umsatz im Zeitraum: {{amount}}",
+      "topCategory": "Top-Kategorie: {{name}}"
+    },
+    "attention": {
+      "severity": {
+        "urgent": "Dringend",
+        "medium": "Mittel",
+        "info": "Information"
+      },
+      "awaitingFollowUp": "{{count}} warten auf Follow-up"
+    },
+    "forecasts": {
+      "orders": "Aufträge",
+      "subscriptions": "neue Abonnements",
+      "revenue": "Umsatz"
+    },
+    "periodBanner": "Daten basierend auf: {{label}}"
+  }
+}

@@ -6,6 +6,9 @@ import {
   formatMoney,
   orderPriceText,
 } from "../../lib/orders/formatMarketplaceBudget";
+import { localeFromEnFlag, pt } from "../../i18n/activeLocale";
+import { pluralCategoryFor } from "../../i18n/plural";
+import { pluralDurationUnit } from "../orders/durationUnitLabel";
 
 export { formatBudgetRange, formatMarketplaceBudget, formatMoney, orderPriceText };
 
@@ -16,13 +19,19 @@ function getCategoryName(item, locale = "ar") {
   return getLocalizedField(item, "name", locale);
 }
 
+/** Arabic project-type label (legacy helper; the name is kept for compatibility). */
 export function typeLabelAr(projectType) {
-  if (projectType === "fixed") return "سعر ثابت";
-  if (projectType === "bidding") return "مزايدة";
+  if (projectType === "fixed") return pt("platformComponents.openOrders.projectType.fixed", undefined, "ar");
+  if (projectType === "bidding") return pt("platformComponents.openOrders.projectType.bidding", undefined, "ar");
   return "—";
 }
 
-export function shortDescription(text, max = 180, { emptyLabel = "لا يوجد وصف" } = {}) {
+/** Default empty label: Arabic for the Arabic / English UI (unchanged), translated for de / nl / ro. */
+export function shortDescription(
+  text,
+  max = 180,
+  { emptyLabel = pt("platformComponents.openOrders.noDescription", undefined, localeFromEnFlag(false)) } = {},
+) {
   const s = String(text || "").trim();
   if (!s) return emptyLabel;
   if (s.length <= max) return s;
@@ -40,19 +49,26 @@ export function isBiddingOrder(order) {
   return order?.projectType === "bidding" && order?.bidBudgetMin != null && order?.bidBudgetMax != null;
 }
 
-function englishDurationUnit(value, unit, labels) {
-  const n = Number(value);
-  if (!Number.isFinite(n)) return labels?.days || "days";
+const DURATION_LABEL_FORMS = Object.freeze({
+  days: ["day", "days"],
+  hours: ["hour", "hours"],
+  minutes: ["minute", "minutes"],
+});
 
-  if (unit === "days") return n === 1 ? labels?.day || "day" : labels?.days || "days";
-  if (unit === "hours") return n === 1 ? labels?.hour || "hour" : labels?.hours || "hours";
-  if (unit === "minutes") return n === 1 ? labels?.minute || "minute" : labels?.minutes || "minutes";
-  return String(unit || "");
+/** Latin-script locales (en / de / nl / ro): caller labels when given, else the catalog; plural rules per locale. */
+function latinDurationUnit(value, unit, locale, labels) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return labels?.days || pluralDurationUnit(null, locale, "days", 2);
+
+  const forms = DURATION_LABEL_FORMS[unit];
+  if (!forms) return String(unit || "");
+  const label = pluralCategoryFor(locale, n) === "one" ? labels?.[forms[0]] : labels?.[forms[1]];
+  return label || pluralDurationUnit(null, locale, unit, n);
 }
 
 /**
  * Format a delivery duration for marketplace cards.
- * English: number before unit ("5 days"). Arabic: number before unit ("5 أيام").
+ * Latin-script locales: number before unit ("5 days"). Arabic: number before unit ("5 أيام").
  *
  * @param {number|string} value
  * @param {string} unit - "days" | "hours" | "minutes"
@@ -64,8 +80,8 @@ export function formatDuration(value, unit, locale = "ar", labels = null) {
   const normalizedUnit = String(unit || "").toLowerCase();
   if (!Number.isFinite(n) || n <= 0 || !normalizedUnit) return "—";
 
-  if (locale === "en") {
-    return `${n} ${englishDurationUnit(n, normalizedUnit, labels)}`;
+  if (locale !== "ar") {
+    return `${n} ${latinDurationUnit(n, normalizedUnit, locale, labels)}`;
   }
   return `${n} ${arabicDurationUnit(n, normalizedUnit)}`;
 }

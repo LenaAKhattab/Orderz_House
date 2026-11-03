@@ -1,0 +1,77 @@
+{
+  "money": {
+    "jodAmount": "{{amount}} JOD (dinar)"
+  },
+  "planPrice": {
+    "free": "Gratuit",
+    "total": "Totaal {{total}}"
+  },
+  "taxonomy": {
+    "contentWriting": "Redactare conținut",
+    "design": "Design grafic",
+    "programming": "Programare"
+  },
+  "courseTitles": {
+    "freeContentWritingLevel1": "Gratuit training contentschrijven – niveadvs. 1",
+    "contentWritingLevel1": "Instruire contentschrijven – niveadvs. 1",
+    "contentWritingLevel2": "Instruire contentschrijven – niveadvs. 2",
+    "freeContentWritingLevel2": "Gratuit training contentschrijven – niveadvs. 2",
+    "freeDesign": "Gratuit designtraining",
+    "freelanceOperationsDiploma": "Diploma digitale freelance-operations"
+  },
+  "faq": {
+    "translationUnavailable": "Dit item is nog nu disponibil in dvs. taal."
+  },
+  "membership": {
+    "tiers": {
+      "starter": {
+        "tagline": "Om te beginnen"
+      },
+      "silver": {
+        "tagline": "Om te groeien"
+      },
+      "pro": {
+        "tagline": "Voor professionals"
+      },
+      "elite": {
+        "tagline": "Maximale toegang"
+      }
+    },
+    "withdrawalOff": "Geen directe uitplată van bedragen",
+    "withdrawalOn": "Uitplată disponibil",
+    "viewMembership": "Abonament bekijken"
+  },
+  "chunkReload": {
+    "message": "De sitebestanden zijn bijgewerkt. Verniedvs. de pagină.",
+    "refresh": "Pagină vernieuwen"
+  },
+  "browserNotification": {
+    "newNotification": "Noue notificare"
+  },
+  "adminList": {
+    "refreshSoftNote": "De lijst kon ndvs. nu worden vernieuwd. Dvs. kunt het opniedvs. proberen.",
+    "rateLimitNote": "Er zijn te veel cerereen in korte tijd verzonden. Wacht even en probeer het opnieuw.",
+    "loadFailed": "De lijst kon nu worden geladen. Încercați din nou."
+  },
+  "plansLoad": {
+    "defaultCatalogFailed": "De standaardpachetten konden nu worden geladen.",
+    "planPageFailed": "De pachettenpagină kon nu worden geladen."
+  },
+  "superAdminLoad": {
+    "analyticsTimeout": "Het laden van analyses duurde langer dan verwacht. Probeer het zo meteen opnieuw.",
+    "analyticsFailed": "Het analysedashboard kon nu worden geladen.",
+    "businessKpisTimeout": "Bedrijfsindicatoren konden ndvs. nu worden geladen.",
+    "businessKpisFailed": "Bedrijfsindicatoren konden nu worden geladen.",
+    "sectionTimeout": "Dit onderdeel duurde langer dan verwacht om te laden.",
+    "sectionFailed": "Dit onderdeel kon nu worden geladen.",
+    "summaryTimeout": "Het laden van de indicatoren duurde langer dan verwacht.",
+    "summaryFailed": "De follow-up-indicatoren konden nu worden geladen."
+  },
+  "api": {
+    "invalidMembershipPlanCode": "Ongeldige Marketplace-pachetcode.",
+    "identityImageUnavailable": "De identiteitsafbeelding kon ndvs. nu worden geladen. Încercați din nou.",
+    "invalidPlanId": "Ongeldige pachet-ID.",
+    "invalidCheckoutSessionId": "Ongeldige platăssessie-ID.",
+    "openingFile": "Bestand wordt geopend…"
+  }
+}

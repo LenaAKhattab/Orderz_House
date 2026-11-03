@@ -1,0 +1,436 @@
+{
+  "feedback": {
+    "types": {
+      "problem": "Störungsmeldung",
+      "suggestion": "Vorschlag",
+      "other": "Sonstiges Feedback"
+    },
+    "statuses": {
+      "new": "Neu",
+      "in_review": "In Prüfung",
+      "resolved": "Gelöst",
+      "closed": "Geschlossen"
+    },
+    "priorities": {
+      "low": "Niedrig",
+      "normal": "Mittel",
+      "high": "Hoch",
+      "urgent": "Dringend"
+    },
+    "roles": {
+      "client": "Kunde",
+      "freelancer": "Freelancer (Anbieter)"
+    }
+  },
+  "planUpgradeCta": {
+    "courseTierHelper": "Verfügbar nach Upgrade Ihres Pakets",
+    "internalConfigurationHeadline": "Ihre Paketberechtigung konnte gerade nicht geprüft werden. Bitte wenden Sie sich an den Support.",
+    "noActivePlanHeadline": "Aktivieren Sie Ihr Paket, um Aufträge zu erhalten",
+    "viewPlans": "Pakete anzeigen",
+    "courseHeadline": "Dieser Kurs ist in höheren Paketen verfügbar",
+    "upgradePlan": "Paket upgraden",
+    "orderValueExceedsHeadline": "Der Wert dieses Auftrags überschreitet das Limit Ihres aktuellen Pakets"
+  },
+  "bildazoArticlePublish": {
+    "freelancer": {
+      "published": "Ihr Artikel wurde auf Bildazo veröffentlicht.",
+      "needsManualReview": "Ihr Artikel wurde in OrderzHouse angenommen. Die Bildazo-Veröffentlichung benötigt eine Admin-Prüfung.",
+      "pending": "Ihr Artikel wurde in OrderzHouse angenommen. Die Bildazo-Veröffentlichung wird verknüpft."
+    },
+    "admin": {
+      "notStarted": "Bildazo-Veröffentlichung: nicht gestartet",
+      "published": "Auf Bildazo veröffentlicht",
+      "already_imported": "Bereits nach Bildazo importiert",
+      "needs_manual_review": "Bildazo-Prüfung erforderlich",
+      "failed": "Bildazo-Veröffentlichung fehlgeschlagen",
+      "pending": "Bildazo-Veröffentlichung ausstehend",
+      "skipped": "Bildazo-Veröffentlichung übersprungen (deaktiviert)"
+    }
+  },
+  "bildazoAuthorTerms": {
+    "termsCopy": "Ich stimme den Artikel-Veröffentlichungsbedingungen und der Verknüpfung mit meinem Bildazo-Autorenkonto zu. Ich verstehe, dass ein angenommener Artikel zur Prüfung gesendet und unter meinem Namen auf Bildazo veröffentlicht werden kann.",
+    "writerRole": "Autor",
+    "errors": {
+      "passwordWeak": "Das Passwort muss mindestens 8 Zeichen lang sein und einen Buchstaben sowie eine Zahl enthalten.",
+      "passwordMismatch": "Die Passwortbestätigung stimmt nicht überein.",
+      "terms": "Sie müssen die Bedingungen zur Verknüpfung des Autorenkontos akzeptieren.",
+      "fullName": "Der vollständige Name ist erforderlich, um das Autorenkonto zu erstellen.",
+      "existingCredentials": "Geben Sie die E-Mail-Adresse und das Passwort des Bildazo-Kontos ein."
+    },
+    "failures": {
+      "INVALID_CREDENTIALS": "Das Bildazo-Konto konnte nicht verifiziert werden. Prüfen Sie E-Mail und Passwort.",
+      "ACCOUNT_UNAVAILABLE": "Dieses Bildazo-Konto kann derzeit nicht verknüpft werden.",
+      "ENDPOINT_UNAVAILABLE": "Die Bildazo-Verknüpfung ist vorübergehend nicht verfügbar. Versuchen Sie es später erneut.",
+      "TIMEOUT": "Bildazo konnte nicht erreicht werden. Prüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
+      "failed": "Die Bildazo-Verknüpfung konnte nicht abgeschlossen werden. Versuchen Sie es erneut."
+    }
+  },
+  "jordanCities": {
+    "other": "Sonstige",
+    "cities": {
+      "amman": "Amman",
+      "zarqa": "Zarqa",
+      "irbid": "Irbid",
+      "russeifa": "Russeifa",
+      "salt": "Salt",
+      "aqaba": "Akaba",
+      "madaba": "Madaba",
+      "jerash": "Gerasa",
+      "ajloun": "Ajloun",
+      "mafraq": "Mafraq",
+      "karak": "Karak",
+      "tafilah": "Tafilah",
+      "maan": "Ma'an",
+      "ramtha": "Ramtha",
+      "sahab": "Sahab",
+      "naour": "Naour",
+      "wadiAlSeer": "Wadi Al-Seer",
+      "marka": "Marka",
+      "sweileh": "Sweileh",
+      "jubeiha": "Jubeiha",
+      "khalda": "Khalda",
+      "tlaaAlAli": "Tla'a Al-Ali",
+      "shmeisani": "Shmeisani",
+      "abdali": "Abdali",
+      "jabalAlHussein": "Jabal Al-Hussein",
+      "jabalAlNasr": "Jabal Al-Nasr",
+      "markaNorth": "North Marka",
+      "quweismeh": "Quweismeh",
+      "abuNseir": "Abu Nseir",
+      "tabarbour": "Tabarbour",
+      "yasmeen": "Al-Yasmeen",
+      "yadoudeh": "Al-Yadoudeh",
+      "muqabalain": "Al-Muqabalain",
+      "marjAlHamam": "Marj Al-Hamam",
+      "jizah": "Al-Jizah",
+      "muwaqqar": "Al-Muwaqqar",
+      "hisban": "Hisban",
+      "fuheis": "Fuheis",
+      "mahis": "Mahis",
+      "ainAlBasha": "Ain Al-Basha",
+      "deirAlla": "Deir Alla",
+      "southShuna": "South Shuna",
+      "northShuna": "North Shuna",
+      "azraq": "Azraq",
+      "safawi": "Safawi",
+      "husn": "Al-Husn",
+      "beitRas": "Beit Ras",
+      "kafrYuba": "Kafr Yuba",
+      "kafrJayez": "Kafr Jayez",
+      "nuaimeh": "Al-Nuaimeh",
+      "soum": "Soum",
+      "northMazar": "Al-Mazar Al-Shamali",
+      "kafrAwan": "Kafr Awan",
+      "kufranjah": "Kufranjah",
+      "anjara": "Anjara",
+      "sukhur": "Sukhur",
+      "deirAbiSaid": "Deir Abi Said",
+      "southMazar": "Al-Mazar Al-Janoubi",
+      "mutah": "Mu'tah",
+      "thaniyah": "Al-Thaniyah",
+      "faqqu": "Faqqu",
+      "qasr": "Al-Qasr",
+      "ghorAlSafi": "Ghor Al-Safi",
+      "ghorAlMazraa": "Ghor Al-Mazra'a",
+      "middleJordanValley": "Mittleres Jordantal",
+      "wadiMusa": "Wadi Musa",
+      "petra": "Petra",
+      "shoubak": "Shoubak",
+      "hasa": "Al-Hasa",
+      "jafr": "Al-Jafr",
+      "quwaira": "Al-Quwaira",
+      "disi": "Disi",
+      "haql": "Haql",
+      "ruwaished": "Ruwaished",
+      "salhiyah": "Al-Salhiyah",
+      "khalidiyah": "Al-Khalidiyah",
+      "samaAlSarhan": "Sama Al-Sarhan",
+      "rehab": "Rehab",
+      "manara": "Al-Manara",
+      "housha": "Housha",
+      "khirbetAlSamra": "Khirbet Al-Samra"
+    }
+  },
+  "freelancerActivationKpi": {
+    "unavailable": "Nicht verfügbar",
+    "unavailableShort": "k. A.",
+    "schemaNotReady": "Die Aktivierungs-Engine-Datenbank ist nicht bereit. Wenden Sie die Engine-Migrationen in dieser Umgebung an, bevor Sie dieses Dashboard nutzen.",
+    "loadError": "Aktivierungs-KPIs konnten gerade nicht geladen werden.",
+    "notesTitle": "Hinweise zur KPI-Genauigkeit",
+    "notesIntro": "Einige Kennzahlen sind nicht verfügbar, weil ihre Quelle noch nicht zuverlässig angebunden ist.",
+    "daysUnit": "{{value}} Tage",
+    "funnel": {
+      "trialActivatedUsers": "Test aktiviert",
+      "firstBidUsers": "Erste Bewerbung",
+      "firstAssignmentUsers": "Erste Zuweisung",
+      "firstAcceptedWorkUsers": "Erste angenommene Arbeit",
+      "firstPublishedWorkUsers": "Erster veröffentlichter Artikel",
+      "silverCtaShownUsers": "Silver-CTA angezeigt",
+      "silverPaymentStartedUsers": "Upgrade gestartet",
+      "silverPaidUsers": "Silver-Abonnent"
+    },
+    "funnelSteps": {
+      "registeredUsers": "Registrierung",
+      "verifiedUsers": "Verifiziert",
+      "trainingCompletedUsers": "Schulung abgeschlossen",
+      "trialActivatedUsers": "Test aktiviert",
+      "firstBidUsers": "Erste Bewerbung",
+      "firstAssignmentUsers": "Erste Zuweisung",
+      "firstAcceptedWorkUsers": "Erste angenommene Arbeit",
+      "firstPublishedWorkUsers": "Erster veröffentlichter Artikel",
+      "silverCtaShownUsers": "Silver-CTA angezeigt",
+      "silverPaymentStartedUsers": "Upgrade gestartet",
+      "silverPaidUsers": "Silver-Abonnent"
+    },
+    "rates": {
+      "trialActivatedToPaidRate": "Test → Silver",
+      "firstAcceptedToPaidRate": "Erste Annahme → Silver",
+      "firstPublishedToPaidRate": "Erste Veröffentlichung → Silver",
+      "ctaShownToPaymentStartedRate": "CTA angezeigt → Upgrade gestartet",
+      "paymentStartedToPaidRate": "Upgrade gestartet → bezahlt/aktiv"
+    },
+    "timing": {
+      "averageTimeToFirstBid": "Ø Zeit bis erste Bewerbung",
+      "averageTimeToFirstWin": "Ø Zeit bis erste Zuweisung",
+      "averageTimeToFirstAccepted": "Ø Zeit bis erste Annahme",
+      "averageTimeToFirstPublished": "Ø Zeit bis erste Veröffentlichung"
+    },
+    "quality": {
+      "acceptedArticleCount": "Angenommene Artikel",
+      "rejectedArticleCount": "Abgelehnte Artikel",
+      "revisionRequestedCount": "Überarbeitungsanfragen",
+      "publishedArticleCount": "Veröffentlichte Artikel",
+      "articleAcceptanceRate": "Annahmerate",
+      "articleRejectionRate": "Ablehnungsrate",
+      "revisionRate": "Überarbeitungsrate"
+    },
+    "financial": {
+      "campaignBudgetTotalJod": "Kampagnenbudget",
+      "campaignBudgetReservedJod": "Reserviert",
+      "campaignBudgetUsedJod": "Verwendet",
+      "campaignBudgetRemainingJod": "Verbleibend",
+      "pendingFreelancerEarnedJod": "Ausstehendes Verdienstguthaben",
+      "costPerPaidFreelancer": "Kosten pro zahlendem Freelancer",
+      "subscriptionRevenueJod": "Abonnementumsatz",
+      "workInventoryReserveAllocatedJod": "Arbeitsinventar-Reserve (zugewiesen)",
+      "workInventoryReserveActiveJod": "Arbeitsinventar-Reserve (aktiv)"
+    }
+  },
+  "freelancerActivationFairDistribution": {
+    "reasons": {
+      "preferred_activation_candidate": "Bevorzugter Aktivierungskandidat",
+      "first_work_opportunity": "Erste Arbeitschance",
+      "no_previous_accepted_work": "Keine zuvor angenommene Arbeit",
+      "no_previous_win": "Kein vorheriger Gewinn",
+      "low_workload": "Geringe Auslastung",
+      "waiting": "Warten {{days}} Tage",
+      "paid_membership": "Kostenpflichtige Mitgliedschaft"
+    }
+  },
+  "freelancerActivationEarnedBalance": {
+    "miniArticleTerms": "Ich stimme den Eigentums- und Veröffentlichungsbedingungen für diesen Artikel zu und verstehe, dass er bei Annahme gemäß Plattformrichtlinie unter meinem Namen auf Bildazo veröffentlicht werden kann.",
+    "earnedBalanceHelper": "Dieses Guthaben zeigt den Wert angenommener Arbeit auf der Plattform. Auszahlungen oder Finanzansprüche folgen der Unternehmensrichtlinie und werden nicht vom Abonnement beeinflusst.",
+    "statuses": {
+      "pending": "Ausstehend",
+      "settled_externally": "Erfasst",
+      "voided": "Ungültig"
+    },
+    "terms": {
+      "notRecorded": "Bedingungen: nicht erfasst",
+      "notAccepted": "Bedingungen: nicht akzeptiert",
+      "accepted": "Bedingungen akzeptiert · {{version}} · {{at}}"
+    }
+  },
+  "freelancerActivationCampaign": {
+    "budgetErrors": {
+      "ACTIVATION_CAMPAIGN_BUDGET_INSUFFICIENT": "Das Kampagnenbudget reicht nicht aus, um diesen Artikel zuzuweisen.",
+      "ACTIVATION_WAVE_BUDGET_INSUFFICIENT": "Das Wellenbudget reicht nicht aus, um diesen Artikel zuzuweisen."
+    },
+    "budgetStates": {
+      "reserved": "Reserviert",
+      "used": "Verwendet",
+      "released": "Freigegeben",
+      "not_reserved": "Nicht reserviert"
+    }
+  },
+  "freelancerActivationTrial": {
+    "applyErrors": {
+      "FREELANCER_TRIAL_REQUIRED": "Aktivieren Sie die Arbeitsphase im Test, bevor Sie sich auf Mini-Artikel bewerben.",
+      "FREELANCER_TRIAL_EXPIRED": "Ihre Arbeitsphase im Test ist beendet. Fahren Sie mit Silver fort.",
+      "FREELANCER_TRIAL_DAILY_BID_LIMIT_REACHED": "Sie haben das heutige Test-Bid-Limit erreicht.",
+      "FREELANCER_TRIAL_BID_LIMIT_REACHED": "Sie haben das Test-Bid-Limit erreicht.",
+      "FREELANCER_TRIAL_WORK_CAP_REACHED": "Sie haben das Testlimit für angenommene Arbeit erreicht.",
+      "FREELANCER_TRIAL_MINI_ARTICLES_ONLY": "Der Test erlaubt nur Bewerbungen auf Mini-Artikel.",
+      "FREELANCER_TRIAL_BID_GRANT_FAILED": "Test-Bids konnten nicht gutgeschrieben werden. Der Test wurde nicht abgeschlossen. Versuchen Sie es erneut.",
+      "ACTIVATION_CAMPAIGN_EMERGENCY_STOPPED": "Diese Kampagne wurde vorübergehend vom Admin gestoppt.",
+      "ACTIVATION_CAMPAIGN_PAUSED": "Diese Kampagne wurde vorübergehend vom Admin pausiert.",
+      "ACTIVATION_WAVE_PAUSED": "Bewerbungen für diese Chance sind vorübergehend pausiert.",
+      "ACTIVATION_CAMPAIGN_NOT_ACTIVE": "Bewerbungen für diese Chance sind vorübergehend pausiert.",
+      "ACTIVATION_WAVE_NOT_ACTIVE": "Bewerbungen für diese Chance sind vorübergehend pausiert."
+    }
+  },
+  "freelancerActivationArticleOps": {
+    "planTiers": {
+      "starter": "Test / Kostenlos",
+      "trial": "Test",
+      "silver": "Silver-Paket",
+      "pro": "Pro-Paket",
+      "elite": "Elite-Paket"
+    }
+  },
+  "freelancerActivationConversion": {
+    "defaultError": "Das Silver-Upgrade konnte gerade nicht gestartet werden. Versuchen Sie es erneut oder öffnen Sie die Paketseite.",
+    "success": "Ihr Silver-Aktivierungsantrag wurde gesendet. Das Abonnement startet nach Freigabe durch das Unternehmen.",
+    "upgradeButton": "Upgrade auf Silver – {{price}} JOD",
+    "errors": {
+      "FREELANCER_ACTIVATION_ENGINE_DISABLED": "Die Aktivierungsphase im Test ist derzeit nicht aktiviert.",
+      "FREELANCER_SILVER_CONVERSION_BLOCKED": "Das Silver-Upgrade kann in Ihrem aktuellen Status nicht gestartet werden.",
+      "FREELANCER_SILVER_PLAN_NOT_FOUND": "Das Silver-Paket ist derzeit nicht verfügbar. Prüfen Sie die Paketseite.",
+      "ACTIVATION_REQUEST_ALREADY_PENDING": "Sie haben bereits einen Aktivierungsantrag in Prüfung für dieses Paket.",
+      "MARKETPLACE_PLAN_NOT_FOUND": "Das Marketplace-Paket ist derzeit nicht verfügbar."
+    }
+  },
+  "specialOfferPackage": {
+    "accessLevels": {
+      "starter": "STARTER-Stufe",
+      "silver": "SILVER-Stufe",
+      "pro": "PRO-Stufe",
+      "elite": "ELITE-Stufe"
+    },
+    "lockedWarning": "Dieses Sonderangebot wurde von Nutzern gekauft; Preis und Leistungen sind eingefroren. Sie können es ausblenden oder ein neues Angebot erstellen; bestehende Käufer behalten die Leistungen, für die sie bezahlt haben.",
+    "refundSectionTitles": {
+      "monthlyRefund": "Monatliche Rückerstattung",
+      "inactiveMonths": "Inaktive Monate",
+      "ordersIncome": "Auftragseinnahmen",
+      "importantNotice": "Wichtiger Hinweis"
+    }
+  },
+  "displayCurrencies": {
+    "symbols": {
+      "JOD": "JOD",
+      "SAR": "SAR",
+      "AED": "AED",
+      "QAR": "QAR",
+      "KWD": "KWD",
+      "BHD": "BHD",
+      "OMR": "OMR",
+      "EGP": "EGP"
+    },
+    "disclaimer": "Ungefährer Wert basierend auf dem aktuellen Wechselkurs.",
+    "officialCurrency": "Die offizielle Währung bei Orderz House ist der Jordanische Dinar (JOD).",
+    "indicative": "Der umgerechnete Wert dient nur der Orientierung und ist kein Endpreis oder eine finanzielle Verpflichtung.",
+    "preferenceLabel": "Bevorzugte Anzeigewährung",
+    "preferenceHint": "Diese Währung dient nur der Anzeige; alle Berechnungen erfolgen in Jordanischen Dinar (JOD).",
+    "autoByCountry": "Automatisch nach Land"
+  },
+  "homeAnalyticsMetrics": {
+    "metrics": {
+      "active": {
+        "label": "Aktive Nutzer",
+        "sub": "Plattformaktivität · letzte 7 Tage",
+        "tooltip": "Anzahl eindeutiger Besucher (Browser-Sitzungen oder angemeldete Konten), die die Website in den letzten 7 Tagen besucht haben. Wiederholtes Aktualisieren im selben Browser zählt als ein Besucher.",
+        "stripLabel": "Aktive Nutzer"
+      },
+      "views": {
+        "label": "Seitenaufrufe",
+        "sub": "Erfasste Besuche gesamt",
+        "tooltip": "Der Zähler steigt einmal pro aktiver Sitzung (30 Minuten). Aktualisieren oder Zurückkehren innerhalb derselben Sitzung erhöht ihn nicht.",
+        "stripLabel": "Seitenaufrufe"
+      },
+      "availableOrders": {
+        "label": "Verfügbare Anfragen",
+        "sub": "Jetzt offen für Bewerbungen",
+        "tooltip": "Echte offene Anfragen im Marktplatz plus die Schulungsanfragen, die derzeit für Freelancer sichtbar sind.",
+        "stripLabel": "Jetzt verfügbar"
+      },
+      "completedOrders": {
+        "label": "Abgeschlossene Anfragen",
+        "sub": "Abgeschlossene Kundenanfragen",
+        "tooltip": "Echte abgeschlossene Kundenanfragen plus Schulungsanfragen aus Runden, die nach Start der aktuellen Zählung endeten — ältere historische Runden sind nicht enthalten.",
+        "stripLabel": "Abgeschlossene Anfragen"
+      }
+    },
+    "adminHelp": {
+      "title": "Was ist der Unterschied zwischen den beiden Kennzahlen?",
+      "visitors": "Startseiten-Zähler: ein Besuch pro Sitzung (30 Minuten). Aktualisieren oder Navigieren innerhalb derselben Sitzung zählt nicht erneut.",
+      "active": "Aktive Nutzer: eindeutige Besucher (Sitzung oder Konto), die die Website in den letzten 7 Tagen geöffnet haben, aus der lokalen Datenbank.",
+      "activeBody": "Eindeutige Besucher (Sitzung oder Konto), die die Website in den letzten 7 Tagen geöffnet haben, aus der lokalen Datenbank."
+    }
+  },
+  "legacyEducationOptions": {
+    "levels": {
+      "belowSecondary": "Unter Sekundarstufe",
+      "secondary": "Sekundarstufe",
+      "diploma": "Diplom",
+      "bachelor": "Bachelorabschluss",
+      "higherDiploma": "Höheres Diplom",
+      "master": "Masterabschluss",
+      "doctorate": "Doktorgrad",
+      "other": "Sonstiges"
+    },
+    "graduationNotYet": "Noch nicht abgeschlossen"
+  },
+  "legacyFreelancerWorkFields": {
+    "fields": {
+      "content_writing": "Content-Erstellung",
+      "design": "Gestaltung",
+      "programming": "Programmierung"
+    },
+    "required": "Bitte wählen Sie mindestens einen Arbeitsbereich aus."
+  },
+  "bildazoAuthorAdmin": {
+    "statusFilters": {
+      "all": "Alle",
+      "pending_new_account": "Neues Konto – Anfrage",
+      "pending_existing_account": "Bestehendes Konto – Anfrage",
+      "pending_external_verification": "Externe Verifizierung",
+      "needs_manual_review": "Manuelle Prüfung",
+      "linked": "Verknüpft",
+      "failed": "Fehlgeschlagen",
+      "blocked": "Blockiert"
+    }
+  },
+  "howItWorksPages": {
+    "navLabels": {
+      "freelancer": "So funktioniert es für Freelancer",
+      "client": "So bestellen Kunden"
+    },
+    "blockTypes": {
+      "title": "Titel",
+      "text": "Fließtext",
+      "image": "Bild",
+      "text_image": "Text + Bild"
+    }
+  },
+  "rateLimitExemptions": {
+    "scopes": {
+      "order_create": "Auftragserstellung (order_create)",
+      "fake_order_create": "Fake-Schulungsaufträge (fake_order_create)",
+      "training_bulk": "Massen-Schulungsgenerierung (training_bulk)",
+      "admin_write": "Admin-Schreibvorgänge (admin_write)"
+    },
+    "modes": {
+      "bypass": "Limit umgehen (bypass)",
+      "increased_limit": "Höheres Limit (increased_limit)"
+    }
+  },
+  "partnerLogos": {
+    "alts": {
+      "bildazo": "Bildazo",
+      "studyzhouse": "StudyzHouse",
+      "battech": "Battechno"
+    },
+    "subtitle": "Wir sind stolz auf Partnerschaften mit führenden Organisationen, die bemerkenswerte Erfolgsgeschichten mitgestaltet haben."
+  },
+  "freelancerOrderTenderPolicy": {
+    "title": "Bedingungen für den Empfang und die Ausführung von Aufträgen und Ausschreibungen"
+  },
+  "homeFeaturedServices": {
+    "specialRequestsWhatsappMessage": "Hallo, ich möchte eine Sonderanfrage über Orderz House stellen."
+  },
+  "planCatalogs": {
+    "main_plans": "Hauptpakete",
+    "page_plans": "Seitenpakete",
+    "marketplace_plans": "Arbeits-Mitgliedschaften"
+  }
+}

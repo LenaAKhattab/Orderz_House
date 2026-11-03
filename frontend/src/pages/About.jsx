@@ -119,7 +119,7 @@ function RevealSection({ children, className = "" }) {
 }
 
 const About = () => {
-  const { t, dir } = useTranslation();
+  const { t, dir, locale } = useTranslation();
 
   const coreValues = [
     { title: t("about.values.excellence.title"), body: t("about.values.excellence.body"), Icon: IconStar },
@@ -136,7 +136,7 @@ const About = () => {
   ];
 
   return (
-    <main className="about-page page-content" lang={dir === "rtl" ? "ar" : "en"} dir={dir}>
+    <main className="about-page page-content" lang={locale} dir={dir}>
       <div className="about-page__inner">
         <RevealSection>
           <PublicPageHeader

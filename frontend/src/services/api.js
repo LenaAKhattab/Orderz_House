@@ -4,6 +4,13 @@ import api, {
   ADMIN_LIST_HEAVY_TIMEOUT_MS,
 } from "./httpClient";
 import { shareInFlight } from "./shareInFlight";
+import { localeFromEnFlag, pt } from "../i18n/activeLocale.js";
+
+/**
+ * Client-side guard / fallback messages. They were Arabic-only (also on the English UI): Arabic and English keep
+ * the Arabic copy, German / Dutch / Romanian get their catalog translation.
+ */
+const apiClientMessage = (key) => pt(`platformCore.api.${key}`, undefined, localeFromEnFlag(false));
 
 export { default } from "./httpClient";
 export {
@@ -839,7 +846,7 @@ export const getMarketplaceMembershipCheckoutAttemptsRequest = () =>
 export const createMarketplaceMembershipCheckoutRequest = async (planCode) => {
   const code = typeof planCode === "string" ? planCode.trim() : "";
   if (!code) {
-    throw new Error("رمز باقة Marketplace غير صالح.");
+    throw new Error(apiClientMessage("invalidMembershipPlanCode"));
   }
   const { data } = await api.post(
     "/freelancer/marketplace-membership/checkout",
@@ -1212,7 +1219,7 @@ export const fetchSuperAdminFreelancerActivationKycFileBlob = async (id, side, o
       } catch {
         json = null;
       }
-      const err = new Error(json?.message || "تعذر تحميل صورة الهوية الآن. حاول مرة أخرى.");
+      const err = new Error(json?.message || apiClientMessage("identityImageUnavailable"));
       err.response = { status: response.status, data: json || { message: err.message } };
       throw err;
     }
@@ -1226,7 +1233,7 @@ export const fetchSuperAdminFreelancerActivationKycFileBlob = async (id, side, o
       try {
         const text = await blob.text();
         const json = JSON.parse(text);
-        const wrapped = new Error(json?.message || "تعذر تحميل صورة الهوية الآن. حاول مرة أخرى.");
+        const wrapped = new Error(json?.message || apiClientMessage("identityImageUnavailable"));
         wrapped.response = { status: err.response?.status, data: json };
         throw wrapped;
       } catch (parseErr) {
@@ -1292,7 +1299,7 @@ export const getFreelancerCoursesFocusRequest = async () => {
 export const createFreelancerSubscriptionCheckoutRequest = async (planId) => {
   const id = Number(planId);
   if (!Number.isInteger(id) || id < 1) {
-    throw new Error("معرّف الباقة غير صالح.");
+    throw new Error(apiClientMessage("invalidPlanId"));
   }
   const { data } = await api.post("/freelancer/subscriptions/checkout", { planId: id });
   return data;
@@ -1302,7 +1309,7 @@ export const createFreelancerSubscriptionCheckoutRequest = async (planId) => {
 export const confirmFreelancerSubscriptionCheckoutRequest = async (sessionId) => {
   const sid = typeof sessionId === "string" ? sessionId.trim() : "";
   if (!sid || sid.length > 255) {
-    throw new Error("معرّف جلسة الدفع غير صالح.");
+    throw new Error(apiClientMessage("invalidCheckoutSessionId"));
   }
   const { data } = await api.post("/freelancer/subscriptions/confirm-checkout", { sessionId: sid });
   return data;
@@ -1312,7 +1319,7 @@ export const confirmFreelancerSubscriptionCheckoutRequest = async (sessionId) =>
 export const notifyFreelancerSubscriptionCheckoutCancelledRequest = async (sessionId) => {
   const sid = typeof sessionId === "string" ? sessionId.trim() : "";
   if (!sid || sid.length > 255) {
-    throw new Error("معرّف جلسة الدفع غير صالح.");
+    throw new Error(apiClientMessage("invalidCheckoutSessionId"));
   }
   const { data } = await api.post("/freelancer/subscriptions/checkout-cancel-notify", { sessionId: sid });
   return data;
@@ -2310,7 +2317,7 @@ function scheduleBlobUrlRevoke(url, ms = 120000) {
 }
 
 /** Open a tab synchronously on user click (before await) to avoid popup blockers. */
-export function openPdfPreviewTab(label = "جاري فتح الملف…") {
+export function openPdfPreviewTab(label = apiClientMessage("openingFile")) {
   try {
     const w = window.open("about:blank", "_blank");
     if (w) {
@@ -2760,7 +2767,7 @@ export const fetchLegacyFreelancerIdentityBlob = async (userId, side, options = 
       } catch {
         json = null;
       }
-      const err = new Error(json?.message || "تعذر تحميل صورة الهوية الآن. حاول مرة أخرى.");
+      const err = new Error(json?.message || apiClientMessage("identityImageUnavailable"));
       err.response = { status: response.status, data: json || { message: err.message } };
       throw err;
     }
@@ -2774,7 +2781,7 @@ export const fetchLegacyFreelancerIdentityBlob = async (userId, side, options = 
       try {
         const text = await blob.text();
         const json = JSON.parse(text);
-        const wrapped = new Error(json?.message || "تعذر تحميل صورة الهوية الآن. حاول مرة أخرى.");
+        const wrapped = new Error(json?.message || apiClientMessage("identityImageUnavailable"));
         wrapped.response = { status: err.response?.status, data: json };
         throw wrapped;
       } catch (parseErr) {

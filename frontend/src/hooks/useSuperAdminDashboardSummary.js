@@ -1,8 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getSuperadminDashboardSummaryRequest } from "../services/api";
 import { getSafeApiErrorMessage } from "../utils/apiErrorMessage.js";
+import { localeFromEnFlag, pt } from "../i18n/activeLocale.js";
 
 const REFRESH_MS = 60_000;
+
+/** Arabic-only legacy copy: unchanged on the Arabic / English UI, translated for German / Dutch / Romanian. */
+const loadErrorText = (key) => pt(`platformCore.superAdminLoad.${key}`, undefined, localeFromEnFlag(false));
 
 function mapSummaryError(e) {
   const code = e?.code || "";
@@ -12,13 +16,13 @@ function mapSummaryError(e) {
   }
   if (code === "ECONNABORTED" || /timeout/i.test(message)) {
     return {
-      message: "استغرق تحميل المؤشرات وقتًا أطول من المتوقع.",
+      message: loadErrorText("summaryTimeout"),
       code: "TIMEOUT",
       canceled: false,
     };
   }
   return {
-    message: getSafeApiErrorMessage(e, "تعذر تحميل مؤشرات المتابعة."),
+    message: getSafeApiErrorMessage(e, loadErrorText("summaryFailed")),
     code: e?.response?.data?.code || "",
     canceled: false,
   };

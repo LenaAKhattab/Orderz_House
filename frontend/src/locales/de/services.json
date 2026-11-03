@@ -1,0 +1,37 @@
+{
+  "title": "Leistungen",
+  "hero": {
+    "title": "Leistungen",
+    "subtitle": "Entdecken Sie die auf der Plattform verfügbaren Leistungen – ganzheitliche Lösungen für Unternehmen und Projekte, vom Schreiben und Lektorat bis zu Entwicklung und Design."
+  },
+  "lede": "Entdecken Sie die auf der Plattform verfügbaren Leistungen – ganzheitliche Lösungen für Unternehmen und Projekte, vom Schreiben und Lektorat bis zu Entwicklung und Design.",
+  "benefitsAria": "Vorteile der Plattform",
+  "specialtiesWithin": "Fachgebiete in",
+  "specialtiesAria": "Fachgebiete",
+  "emptySubcategories": "Für diesen Bereich gibt es keine Unterkategorien.",
+  "emptyDetails": "Keine Detailelemente vorhanden.",
+  "card": {
+    "explore": "Leistung entdecken"
+  },
+  "categories": {
+    "programming": {
+      "description": "Professionelle Programmierleistungen für Unternehmen, wissenschaftliche Forschung und private Projekte."
+    },
+    "design": {
+      "description": "Professionelle Designleistungen für Unternehmen, wissenschaftliche Arbeiten und private Anliegen."
+    },
+    "content-writing": {
+      "description": "Professionelle Schreibleistungen für Unternehmen, wissenschaftliche Forschung und private Anliegen."
+    }
+  },
+  "benefits": {
+    "qualityTitle": "Garantierte Qualität",
+    "qualityDesc": "Hohe Standards bei jeder Leistung",
+    "executionTitle": "Professionelle Umsetzung",
+    "executionDesc": "Spezialisten für jedes Fachgebiet",
+    "communicationTitle": "Direkte Kommunikation",
+    "communicationDesc": "Einfacher Kontakt und laufende Betreuung",
+    "paymentTitle": "Vertrauenswürdige Zahlungen",
+    "paymentDesc": "Sichere, flexible Zahlungsmöglichkeiten"
+  }
+}

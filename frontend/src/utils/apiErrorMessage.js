@@ -1,4 +1,7 @@
 import { readStoredLocale } from "../i18n/localePreference.js";
+import { pt } from "../i18n/activeLocale.js";
+import { resources } from "../i18n/resources.js";
+import { isNewLocale } from "../i18n/systemContent.js";
 
 /** Matches backend `GENERIC_5XX` style responses. */
 const DEFAULT_GENERIC_AR = "حدث خطأ غير متوقع، حاول لاحقاً";
@@ -19,7 +22,54 @@ function isEnglishLocale() {
   return readStoredLocale() === "en";
 }
 
+/** German / Dutch / Romanian UI: never show raw backend text (Arabic or English) — codes / statuses are localized. */
+function newUiLocale() {
+  const loc = readStoredLocale();
+  return isNewLocale(loc) ? loc : null;
+}
+
+const STATUS_KEYS = {
+  400: "badRequest",
+  401: "unauthorized",
+  403: "forbidden",
+  404: "notFound",
+  409: "conflict",
+  410: "gone",
+  413: "payloadTooLarge",
+  415: "unsupportedMedia",
+  422: "validation",
+  429: "rateLimited",
+  503: "unavailable",
+};
+
+function hasApiErrorCode(code) {
+  const codes = resources.en && resources.en.apiErrors && resources.en.apiErrors.codes;
+  return Boolean(code && codes && Object.prototype.hasOwnProperty.call(codes, code));
+}
+
+/**
+ * Localized message for a failed request in a new UI locale: code → status class → caller fallback → generic.
+ * @param {unknown} err
+ * @param {string} [locale]
+ * @param {string} [fallbackText] already-localized caller fallback (ignored when it is Arabic)
+ */
+export function localizedApiErrorMessage(err, locale = newUiLocale() || readStoredLocale(), fallbackText = "") {
+  const tt = (key, values) => pt(key, values, locale);
+  if (isAxiosTimeoutError(err)) return tt("apiErrors.timeout");
+  if (isAxiosNetworkError(err)) return tt("apiErrors.network");
+  const code = err?.response?.data?.code;
+  if (hasApiErrorCode(code)) return tt(`apiErrors.codes.${code}`);
+  const fb = String(fallbackText || "").trim();
+  if (fb && !ARABIC.test(fb)) return fb;
+  const status = Number(err?.response?.status);
+  const statusKey = STATUS_KEYS[status] || (status >= 500 ? "server" : null);
+  if (statusKey) return tt(`apiErrors.status.${statusKey}`);
+  return tt("apiErrors.generic");
+}
+
 function englishOr(ar, key) {
+  const loc = newUiLocale();
+  if (loc) return pt(`apiErrors.${key}`, undefined, loc);
   return isEnglishLocale() ? EN_ERRORS[key] : ar;
 }
 
@@ -72,7 +122,11 @@ export function getOrderCreateErrorMessage(err) {
     ) {
       const retry = getRetryAfterSeconds(err);
       if (retry != null && retry <= 120) {
-        const wait = isEnglishLocale() ? `(wait about ${retry} seconds)` : `(انتظر حوالي ${retry} ثانية)`;
+        const wait = newUiLocale()
+          ? pt("apiErrors.waitSeconds", { seconds: retry }, newUiLocale())
+          : isEnglishLocale()
+            ? `(wait about ${retry} seconds)`
+            : `(انتظر حوالي ${retry} ثانية)`;
         return `${fromApi.trim()} ${wait}`;
       }
       return fromApi.trim();
@@ -206,6 +260,12 @@ export function getAuthApiErrorMessage(err, tOrFallback, fallbackKey) {
  * Falls back when the backend might have leaked internal/English vendor text.
  */
 export function getSafeApiErrorMessage(err, fallback = DEFAULT_GENERIC_AR) {
+  const loc = newUiLocale();
+  if (loc) {
+    const data = err?.response?.data;
+    if (data && data.localized === true && typeof data.message === "string" && data.message.trim()) return data.message.trim();
+    return localizedApiErrorMessage(err, loc, fallback);
+  }
   const en = isEnglishLocale();
   const safeFallback = en && ARABIC.test(String(fallback || "")) ? EN_ERRORS.generic : fallback;
   if (isAxiosTimeoutError(err)) {
@@ -255,7 +315,21 @@ function looksTechnicalOrUnsafe(t) {
  * Mutates the axios error so callers that read `response.data.message` directly stay in English.
  */
 export function scrubArabicApiError(err) {
-  if (!isEnglishLocale() || !err) return err;
+  if (!err) return err;
+  const loc = newUiLocale();
+  if (loc) {
+    // German / Dutch / Romanian: raw backend text (Arabic OR English) never reaches the UI. The code stays for logic.
+    const data = err.response?.data;
+    const localized = localizedApiErrorMessage(err, loc);
+    if (data && typeof data === "object" && data.localized !== true) {
+      if (typeof data.message === "string" || data.message == null) data.message = localized;
+      if (typeof data.error === "string") data.error = localized;
+      data.localized = true;
+    }
+    if (typeof err.message === "string") err.message = localized;
+    return err;
+  }
+  if (!isEnglishLocale()) return err;
   const data = err.response?.data;
   if (data && typeof data === "object" && typeof data.message === "string" && ARABIC.test(data.message)) {
     data.message = EN_ERRORS.generic;

@@ -50,7 +50,8 @@ export default function BidAmountModal({
 
   if (!open) return null;
 
-  const currencyLabel = locale === "en" ? currency || "JOD" : t("orders.bid.currencyShort");
+  // Arabic shows the Arabic dinar abbreviation; Latin-script locales show the currency code.
+  const currencyLabel = locale === "ar" ? t("orders.bid.currencyShort") : currency || "JOD";
   const summaryTitle = (projectTitle || title || "").trim();
   const rangeText = min != null && max != null;
   const showCategory = Boolean(categoryName && categoryName !== "—");

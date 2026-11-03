@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { freelancerGetCourseSideTextAdRequest } from "../../../services/api";
 import { useTranslation } from "../../../i18n/LanguageProvider";
+import { isNewLocale, localizeSystemText } from "../../../i18n/systemContent";
 import "./courseSideTextAd.css";
 
 const cache = new Map();
@@ -47,6 +48,12 @@ function pickLocalizedWithDirection({ locale, textAr, textEn }) {
   const ar = String(textAr || "").trim();
   const en = String(textEn || "").trim();
   const isEn = locale === "en";
+
+  // German / Dutch / Romanian: translated system copy; direction follows the script actually shown.
+  if (isNewLocale(locale)) {
+    const text = localizeSystemText(locale, { ar, en });
+    return { text, textDir: !text || isArabicText(text) ? "rtl" : "ltr" };
+  }
 
   if (isEn && en) {
     return { text: en, textDir: "ltr" };

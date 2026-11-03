@@ -1,106 +1,126 @@
-/** Phase A7.2 — Super Admin Activation KPI labels and display helpers (Arabic). */
+/**
+ * Phase A7.2 — Super Admin Activation KPI labels and display helpers.
+ * `*_AR` exports are the Arabic catalog copy (platformConstants.freelancerActivationKpi); the formatters take an
+ * optional `locale` (default: Arabic, or the active de / nl / ro UI locale — unchanged for Arabic / English).
+ */
+import { ct, ctAr } from "./constantsI18n.js";
 
-export const KPI_UNAVAILABLE_AR = "غير متاح حاليًا";
-export const KPI_UNAVAILABLE_SHORT_AR = "غير متاح";
-export const KPI_SCHEMA_NOT_READY_AR =
-  "قاعدة بيانات محرك التفعيل غير جاهزة بعد. طبّق migrations الخاصة بالمحرك في البيئة المناسبة قبل استخدام هذه اللوحة.";
-export const KPI_LOAD_ERROR_AR = "تعذر تحميل مؤشرات محرك التفعيل حاليًا.";
-export const KPI_NOTES_TITLE_AR = "ملاحظات حول دقة المؤشرات";
-export const KPI_NOTES_INTRO_AR =
-  "بعض المؤشرات غير متاحة لأن مصدرها غير مربوط بعد بشكل موثوق.";
+const KPI = "freelancerActivationKpi";
 
-export const FUNNEL_CARD_LABELS_AR = Object.freeze({
-  trialActivatedUsers: "تم تفعيل التجربة",
-  firstBidUsers: "أول تقديم",
-  firstAssignmentUsers: "أول إسناد",
-  firstAcceptedWorkUsers: "أول عمل مقبول",
-  firstPublishedWorkUsers: "أول مقال منشور",
-  silverCtaShownUsers: "ظهور دعوة Silver",
-  silverPaymentStartedUsers: "بدء طلب الترقية",
-  silverPaidUsers: "مشترك Silver",
-});
+export const KPI_UNAVAILABLE_AR = ctAr(`${KPI}.unavailable`);
+export const KPI_UNAVAILABLE_SHORT_AR = ctAr(`${KPI}.unavailableShort`);
+export const KPI_SCHEMA_NOT_READY_AR = ctAr(`${KPI}.schemaNotReady`);
+export const KPI_LOAD_ERROR_AR = ctAr(`${KPI}.loadError`);
+export const KPI_NOTES_TITLE_AR = ctAr(`${KPI}.notesTitle`);
+export const KPI_NOTES_INTRO_AR = ctAr(`${KPI}.notesIntro`);
 
-export const FUNNEL_TABLE_STEPS_AR = Object.freeze([
-  { key: "registeredUsers", label: "التسجيل" },
-  { key: "verifiedUsers", label: "التوثيق" },
-  { key: "trainingCompletedUsers", label: "إكمال التدريب" },
-  { key: "trialActivatedUsers", label: "تفعيل التجربة" },
-  { key: "firstBidUsers", label: "أول تقديم" },
-  { key: "firstAssignmentUsers", label: "أول إسناد" },
-  { key: "firstAcceptedWorkUsers", label: "أول عمل مقبول" },
-  { key: "firstPublishedWorkUsers", label: "أول مقال منشور" },
-  { key: "silverCtaShownUsers", label: "ظهور دعوة Silver" },
-  { key: "silverPaymentStartedUsers", label: "بدء طلب الترقية" },
-  { key: "silverPaidUsers", label: "مشترك Silver" },
+function arabicLabels(group, keys) {
+  return Object.freeze(Object.fromEntries(keys.map((key) => [key, ctAr(`${KPI}.${group}.${key}`)])));
+}
+
+export const FUNNEL_CARD_LABELS_AR = arabicLabels("funnel", [
+  "trialActivatedUsers",
+  "firstBidUsers",
+  "firstAssignmentUsers",
+  "firstAcceptedWorkUsers",
+  "firstPublishedWorkUsers",
+  "silverCtaShownUsers",
+  "silverPaymentStartedUsers",
+  "silverPaidUsers",
 ]);
 
-export const RATE_CARD_LABELS_AR = Object.freeze({
-  trialActivatedToPaidRate: "التجربة → Silver",
-  firstAcceptedToPaidRate: "أول قبول → Silver",
-  firstPublishedToPaidRate: "أول نشر → Silver",
-  ctaShownToPaymentStartedRate: "ظهور الدعوة → بدء الطلب",
-  paymentStartedToPaidRate: "بدء الطلب → الدفع/التفعيل",
-});
+export const FUNNEL_TABLE_STEPS_AR = Object.freeze(
+  [
+    "registeredUsers",
+    "verifiedUsers",
+    "trainingCompletedUsers",
+    "trialActivatedUsers",
+    "firstBidUsers",
+    "firstAssignmentUsers",
+    "firstAcceptedWorkUsers",
+    "firstPublishedWorkUsers",
+    "silverCtaShownUsers",
+    "silverPaymentStartedUsers",
+    "silverPaidUsers",
+  ].map((key) => ({ key, label: ctAr(`${KPI}.funnelSteps.${key}`) })),
+);
 
-export const TIMING_CARD_LABELS_AR = Object.freeze({
-  averageTimeToFirstBid: "متوسط الوقت لأول تقديم",
-  averageTimeToFirstWin: "متوسط الوقت لأول إسناد",
-  averageTimeToFirstAccepted: "متوسط الوقت لأول قبول",
-  averageTimeToFirstPublished: "متوسط الوقت لأول نشر",
-});
+export const RATE_CARD_LABELS_AR = arabicLabels("rates", [
+  "trialActivatedToPaidRate",
+  "firstAcceptedToPaidRate",
+  "firstPublishedToPaidRate",
+  "ctaShownToPaymentStartedRate",
+  "paymentStartedToPaidRate",
+]);
 
-export const QUALITY_CARD_LABELS_AR = Object.freeze({
-  acceptedArticleCount: "مقالات مقبولة",
-  rejectedArticleCount: "مقالات مرفوضة",
-  revisionRequestedCount: "طلبات تعديل",
-  publishedArticleCount: "مقالات منشورة",
-  articleAcceptanceRate: "نسبة القبول",
-  articleRejectionRate: "نسبة الرفض",
-  revisionRate: "نسبة طلب التعديل",
-});
+export const TIMING_CARD_LABELS_AR = arabicLabels("timing", [
+  "averageTimeToFirstBid",
+  "averageTimeToFirstWin",
+  "averageTimeToFirstAccepted",
+  "averageTimeToFirstPublished",
+]);
 
-export const FINANCIAL_CARD_LABELS_AR = Object.freeze({
-  campaignBudgetTotalJod: "ميزانية الحملة",
-  campaignBudgetReservedJod: "المحجوز",
-  campaignBudgetUsedJod: "المستخدم",
-  campaignBudgetRemainingJod: "المتبقي",
-  pendingFreelancerEarnedJod: "الرصيد المكتسب قيد المعالجة",
-  costPerPaidFreelancer: "التكلفة لكل مشترك مدفوع",
-  subscriptionRevenueJod: "إيراد الاشتراكات",
-  workInventoryReserveAllocatedJod: "احتياطي مخزون العمل (مخصص)",
-  workInventoryReserveActiveJod: "احتياطي مخزون العمل (نشط)",
-});
+export const QUALITY_CARD_LABELS_AR = arabicLabels("quality", [
+  "acceptedArticleCount",
+  "rejectedArticleCount",
+  "revisionRequestedCount",
+  "publishedArticleCount",
+  "articleAcceptanceRate",
+  "articleRejectionRate",
+  "revisionRate",
+]);
 
-export function formatKpiCount(value) {
-  if (value == null) return KPI_UNAVAILABLE_AR;
+export const FINANCIAL_CARD_LABELS_AR = arabicLabels("financial", [
+  "campaignBudgetTotalJod",
+  "campaignBudgetReservedJod",
+  "campaignBudgetUsedJod",
+  "campaignBudgetRemainingJod",
+  "pendingFreelancerEarnedJod",
+  "costPerPaidFreelancer",
+  "subscriptionRevenueJod",
+  "workInventoryReserveAllocatedJod",
+  "workInventoryReserveActiveJod",
+]);
+
+/** KPI label for a UI locale: group = funnel | funnelSteps | rates | timing | quality | financial. */
+export function kpiLabel(group, key, locale) {
+  return ct(`${KPI}.${group}.${key}`, undefined, locale);
+}
+
+function unavailable(locale, short = false) {
+  return ct(`${KPI}.${short ? "unavailableShort" : "unavailable"}`, undefined, locale);
+}
+
+export function formatKpiCount(value, locale) {
+  if (value == null) return unavailable(locale);
   const n = Number(value);
-  if (!Number.isFinite(n)) return KPI_UNAVAILABLE_AR;
+  if (!Number.isFinite(n)) return unavailable(locale);
   return String(Math.trunc(n));
 }
 
-export function formatKpiRate(value, { shortUnavailable = false } = {}) {
+export function formatKpiRate(value, { shortUnavailable = false, locale } = {}) {
   if (value == null) {
-    return shortUnavailable ? KPI_UNAVAILABLE_SHORT_AR : KPI_UNAVAILABLE_AR;
+    return unavailable(locale, shortUnavailable);
   }
   const n = Number(value);
   if (!Number.isFinite(n)) {
-    return shortUnavailable ? KPI_UNAVAILABLE_SHORT_AR : KPI_UNAVAILABLE_AR;
+    return unavailable(locale, shortUnavailable);
   }
   return `${(n * 100).toFixed(1)}%`;
 }
 
-export function formatKpiDays(value) {
-  if (value == null) return KPI_UNAVAILABLE_AR;
+export function formatKpiDays(value, locale) {
+  if (value == null) return unavailable(locale);
   const n = Number(value);
-  if (!Number.isFinite(n)) return KPI_UNAVAILABLE_AR;
+  if (!Number.isFinite(n)) return unavailable(locale);
   const rounded = Math.round(n * 10) / 10;
-  return `${rounded} يوم`;
+  return ct(`${KPI}.daysUnit`, { value: rounded }, locale);
 }
 
-export function formatKpiJod(value) {
-  if (value == null) return KPI_UNAVAILABLE_AR;
+export function formatKpiJod(value, locale) {
+  if (value == null) return unavailable(locale);
   const raw = String(value).trim();
-  if (!raw) return KPI_UNAVAILABLE_AR;
+  if (!raw) return unavailable(locale);
   return `${raw} JOD`;
 }
 

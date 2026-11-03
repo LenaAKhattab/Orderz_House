@@ -371,7 +371,17 @@ function isOtpEmailSendFailureAfterPersist(error) {
   return code === "FAILED_TO_SEND_OTP" || code === "EMAIL_SERVICE_UNAVAILABLE";
 }
 
-async function resumeUnverifiedRegistration(userId, data, role, passwordHash, freelancerCategories, phone, whatsApp, email) {
+async function resumeUnverifiedRegistration(
+  userId,
+  data,
+  role,
+  passwordHash,
+  freelancerCategories,
+  phone,
+  whatsApp,
+  email,
+  locale,
+) {
   await pool.query(
     `UPDATE users SET
       first_name = $1::text, father_name = $2::text, family_name = $3::text,
@@ -395,7 +405,7 @@ async function resumeUnverifiedRegistration(userId, data, role, passwordHash, fr
     ],
   );
   await ensureUserRole({ userId, roleName: role });
-  await authOtpService.insertRegistrationOtp({ userId, email });
+  await authOtpService.insertRegistrationOtp({ userId, email, locale });
   return { requiresEmailVerification: true, email };
 }
 
@@ -425,6 +435,7 @@ async function registerUser(payload) {
 
   const data = await buildRegistrationRowData(payload);
   const { email, role, passwordHash, freelancerCategories, phone, whatsApp } = data;
+  const otpEmailLocale = payload.locale || null;
 
   const existing = await findUserByEmail(email);
   if (existing && existing.email_verified) {
@@ -442,6 +453,7 @@ async function registerUser(payload) {
         phone,
         whatsApp,
         email,
+        otpEmailLocale,
       );
       await tryAttachReferral(existing.id, role, phone, payload);
       return resumed;
@@ -474,7 +486,7 @@ async function registerUser(payload) {
     const row = rows[0];
     try {
       await ensureUserRole({ userId: row.id, roleName: row.role });
-      await authOtpService.insertRegistrationOtp({ userId: row.id, email: row.email });
+      await authOtpService.insertRegistrationOtp({ userId: row.id, email: row.email, locale: otpEmailLocale });
     } catch (e) {
       if (!isOtpEmailSendFailureAfterPersist(e)) {
         await pool.query(`DELETE FROM users WHERE id = $1::bigint`, [row.id]);
@@ -496,6 +508,7 @@ async function registerUser(payload) {
           phone,
           whatsApp,
           email,
+          otpEmailLocale,
         );
         await tryAttachReferral(raced.id, role, phone, payload);
         return resumed;

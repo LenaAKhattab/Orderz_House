@@ -1,0 +1,578 @@
+{
+  "common": {
+    "preview": "Previzualizare",
+    "cancel": "Anulați",
+    "close": "Închideți",
+    "save": "Salvați",
+    "delete": "Ștergeți",
+    "edit": "Editați",
+    "enable": "Activați",
+    "disable": "Dezactivați",
+    "next": "Înainte",
+    "previous": "Înapoi",
+    "retry": "Reîncercați",
+    "refresh": "Actualizați",
+    "reset": "Resetați",
+    "fullPreview": "Previzualizare completă",
+    "noTitle": "Fără titlu",
+    "emDash": "—",
+    "uploading": "Se încarcă…",
+    "saving": "Se salvează…",
+    "savingEllipsis": "Se salvează...",
+    "deleting": "Se șterge…",
+    "working": "Se procesează…",
+    "loading": "Se încarcă…",
+    "guidelines": "Recomandări",
+    "selected": "Selectat",
+    "summary": "Rezumat",
+    "enabledSuffix": " · Activat",
+    "disabledSuffix": " · Dezactivat"
+  },
+  "page": {
+    "eyebrow": "Panou de control",
+    "title": "Gestionarea anunțurilor",
+    "description": "Creare rapidă, previzualizare în timp real și pași clari de publicare.",
+    "breadcrumbHome": "Acasă",
+    "breadcrumbAds": "Anunțuri",
+    "newAd": "Anunț nou",
+    "popupAds": "Anunțuri pop-up",
+    "editAd": "Editați anunțul",
+    "buildNew": "Creați un anunț nou",
+    "draftUnsaved": "Ciornă nesalvată · {{relative}}",
+    "synced": "Sincronizat",
+    "previewAria": "Previzualizarea anunțului",
+    "actionsTitle": "Acțiuni pentru anunț",
+    "saveDraft": "Salvați ca ciornă",
+    "publish": "Publicați anunțul",
+    "allAdsTitle": "Toate anunțurile",
+    "allAdsDescription": "Editări rapide, statistici și gestionarea stării.",
+    "emptyAds": "Încă nu există anunțuri.",
+    "loadErrorFallback": "Încercați din nou.",
+    "dragReorderHint": "Trageți cardurile pentru a le reordona",
+    "discardConfirm": "Modificările nesalvate se vor pierde. Continuați?",
+    "deleteConfirm": "Ștergeți definitiv acest anunț?",
+    "relativeNow": "Acum",
+    "relativeSeconds": "acum {{sec}} s",
+    "relativeMinutes": "acum {{min}} min",
+    "adminNotePrompt": "{{action}}\nMotivul acestei acțiuni (minimum 3 caractere):"
+  },
+  "toast": {
+    "fixFieldsTitle": "Verificați câmpurile",
+    "fixFieldsMessage": "Corectați erorile evidențiate și încercați din nou.",
+    "savedTitle": "Salvat",
+    "createdTitle": "Creat",
+    "publishedMessage": "Anunțul a fost publicat.",
+    "draftSavedMessage": "Ciorna a fost salvată.",
+    "saveFailedTitle": "Salvarea a eșuat",
+    "checkFields": "Verificați câmpurile.",
+    "reasonRequiredTitle": "Motiv obligatoriu",
+    "reasonRequiredMessage": "Introduceți un motiv de minimum 3 caractere.",
+    "updatedTitle": "Actualizat",
+    "enabledMessage": "Anunțul a fost activat.",
+    "disabledMessage": "Anunțul a fost dezactivat.",
+    "errorTitle": "Eroare",
+    "deletedTitle": "Șters",
+    "deleteFailedTitle": "Nu s-a putut șterge",
+    "reorderSuccessTitle": "Ordinea a fost actualizată",
+    "reorderFailedTitle": "Nu s-a putut reordona",
+    "loadFailedTitle": "Nu s-a putut încărca",
+    "uploadSuccessTitle": "Imaginea a fost încărcată",
+    "uploadFailedTitle": "Încărcarea a eșuat"
+  },
+  "actions": {
+    "enableAd": "Activați anunțul",
+    "disableAd": "Dezactivați anunțul",
+    "deleteAd": "Ștergeți anunțul",
+    "reorderAds": "Reordonați anunțurile"
+  },
+  "validation": {
+    "companyNameRequired": "Numele companiei este obligatoriu.",
+    "titleRequired": "Titlul este obligatoriu.",
+    "ctaTextRequired": "Textul butonului de îndemn la acțiune este obligatoriu.",
+    "openModeInvalid": "Mod de deschidere a linkului invalid.",
+    "whatsappInvalid": "Introduceți un număr WhatsApp valid (minimum 6 cifre).",
+    "ctaUrlRequired": "Linkul acțiunii este obligatoriu.",
+    "ctaUrlInvalid": "Linkul acțiunii este invalid.",
+    "ctaUrlInternal": "Căile interne trebuie să înceapă cu /",
+    "imageUrlInvalid": "URL-ul imaginii este invalid.",
+    "logoUrlInvalid": "URL-ul logoului este invalid.",
+    "backgroundImageUrlInvalid": "URL-ul imaginii de fundal este invalid.",
+    "selectedAssetRequired": "Alegeți o imagine predefinită din listă.",
+    "backgroundImageRequired": "Încărcați o imagine de fundal sau lipiți un URL valid.",
+    "imageRequired": "Încărcați o imagine sau lipiți un URL valid.",
+    "salePercentInteger": "Introduceți un număr întreg între 0 și 100.",
+    "salePercentRange": "Introduceți un procent de reducere între 0 și 100.",
+    "phoneInvalid": "Numărul de telefon conține caractere invalide.",
+    "whatsappCharsInvalid": "Numărul WhatsApp conține caractere invalide.",
+    "endBeforeStart": "Data de sfârșit trebuie să fie după data de început.",
+    "adminNoteRequired": "Motivul acțiunii este obligatoriu (minimum 3 caractere)."
+  },
+  "status": {
+    "draft": {
+      "label": "Ciornă",
+      "description": "Anunțul nu este publicat și nu va apărea vizitatorilor."
+    },
+    "expired": {
+      "label": "Expirat",
+      "description": "Perioada de afișare s-a încheiat."
+    },
+    "scheduled": {
+      "label": "Programat",
+      "description": "Va apărea la ora de început."
+    },
+    "live": {
+      "label": "Activ acum",
+      "description": "Anunțul este vizibil pentru vizitatori conform programării."
+    }
+  },
+  "builderSteps": {
+    "content": {
+      "label": "Conținut",
+      "short": "1"
+    },
+    "design": {
+      "label": "Aspect",
+      "short": "2"
+    },
+    "offer": {
+      "label": "Ofertă și reducere",
+      "short": "3"
+    },
+    "images": {
+      "label": "Imagini",
+      "short": "4"
+    },
+    "publish": {
+      "label": "Publicare",
+      "short": "5"
+    },
+    "orderStats": {
+      "label": "Ordine și statistici",
+      "short": "6"
+    },
+    "navAria": "Pașii de creare a anunțului"
+  },
+  "layouts": {
+    "image_top": {
+      "label": "Imagine sus",
+      "description": "Ideal când o imagine principală clară stă deasupra textului."
+    },
+    "image_background": {
+      "label": "Imagine de fundal",
+      "description": "Pentru anunțuri vizuale, cu text peste imagine."
+    },
+    "text_only": {
+      "label": "Doar text",
+      "description": "Pentru alerte și oferte doar cu text."
+    },
+    "split": {
+      "label": "Imagine și text alăturate",
+      "description": "Afișează o imagine lângă text."
+    },
+    "minimal_banner": {
+      "label": "Banner minimalist",
+      "description": "Anunț compact pentru spații mici."
+    },
+    "carousel": {
+      "label": "Imagini multiple",
+      "description": "Pentru mai multe imagini într-un singur anunț."
+    }
+  },
+  "layoutHints": {
+    "image_top": "Adăugați cel puțin o imagine pentru ca acest anunț să iasă în evidență.",
+    "image_background": "Acest aspect necesită cel puțin o imagine.",
+    "text_only": "Concentrați-vă pe titlu și descriere; imaginile sunt opționale.",
+    "split": "Se recomandă cel puțin o imagine pentru echilibru.",
+    "minimal_banner": "Păstrați textul scurt; bannerul este conceput pentru spații mici.",
+    "carousel": "Adăugați două sau mai multe imagini pentru un carusel reușit."
+  },
+  "placements": {
+    "home_right_panel": {
+      "label": "Coloana din dreapta a paginii principale"
+    },
+    "home_after_hero": {
+      "label": "Sub bannerul principal",
+      "note": "Notă: este posibil ca această poziție să nu fie încă activată pe site-ul public."
+    },
+    "services_page": {
+      "label": "Pagina de servicii",
+      "note": "Notă: este posibil ca această poziție să nu fie încă activată pe site-ul public."
+    },
+    "global_sidebar": {
+      "label": "Bara laterală globală",
+      "note": "Notă: este posibil ca această poziție să nu fie încă activată pe site-ul public."
+    }
+  },
+  "positions": {
+    "imageTop": "Partea de sus a anunțului",
+    "imageBottom": "Partea de jos a anunțului",
+    "left": "Stânga",
+    "right": "Dreapta",
+    "background": "Fundal",
+    "textTop": "Sus",
+    "textMiddle": "Mijloc",
+    "textBottom": "Jos"
+  },
+  "fontSize": {
+    "small": "Mică",
+    "normal": "Obișnuită",
+    "medium": "Medie",
+    "large": "Mare"
+  },
+  "fontWeight": {
+    "normal": "Obișnuită",
+    "medium": "Medie",
+    "bold": "Îngroșată"
+  },
+  "stylePresets": {
+    "classic_navy": "Albastru clasic",
+    "soft_sky": "Cer delicat",
+    "clean_white": "Alb curat",
+    "premium_dark": "Întunecat premium",
+    "warm_offer": "Ofertă caldă",
+    "success_green": "Verde succes"
+  },
+  "bannerColorPresets": {
+    "blue_white": "Albastru profesional",
+    "cream_navy": "Întunecat modern",
+    "red_sale": "Roșu promoțional",
+    "navy_gold": "Auriu de lux",
+    "green_nature": "Luminos curat"
+  },
+  "bannerTemplates": {
+    "classic_split": {
+      "label": "Împărțire clasică",
+      "hint": "Text în dreapta + imagine în stânga — oferte generale"
+    },
+    "product_focus": {
+      "label": "Accent pe produs",
+      "hint": "Imagine mare + reducere pe imagine"
+    },
+    "luxury_center": {
+      "label": "Centrat de lux",
+      "hint": "Titlu centrat — impresie premium"
+    },
+    "ribbon_strip": {
+      "label": "Panglică",
+      "hint": "Bandă orizontală — alertă rapidă"
+    },
+    "business_partner": {
+      "label": "Promovare de afaceri",
+      "hint": "Parteneriat / B2B — imagine cu strângere de mână"
+    },
+    "minimal_clean": {
+      "label": "Minimalist curat",
+      "hint": "Titlu mare — fără decorațiuni încărcate"
+    }
+  },
+  "visualAssets": {
+    "handshake": { "label": "Strângere de mână / parteneriat" },
+    "gold_confetti": { "label": "Sărbătoare aurie" },
+    "smiley_face": { "label": "Față zâmbitoare" },
+    "red_gift": { "label": "Cutie de cadou roșie" },
+    "gold_gifts": { "label": "Cadouri aurii" }
+  },
+  "priorityOptions": {
+    "0": "Normală",
+    "50": "Evidențiată",
+    "100": "Ridicată"
+  },
+  "openModes": {
+    "NEW_TAB": "Deschidere într-o filă nouă",
+    "SAME_TAB": "Deschidere în aceeași pagină",
+    "INTERNAL_ROUTE": "Rută internă",
+    "WHATSAPP": "WhatsApp"
+  },
+  "form": {
+    "advancedOptions": "Opțiuni avansate",
+    "companyName": "Numele companiei *",
+    "companyPlaceholder": "ex.: Magazin de cadouri",
+    "adTitle": "Titlul anunțului *",
+    "titlePlaceholder": "ex.: Reducere specială",
+    "subtitle": "Subtitlu",
+    "subtitlePlaceholder": "ex.: Ofertă limitată",
+    "description": "Descrierea anunțului",
+    "descriptionPlaceholder": "Descriere scurtă pentru afișare",
+    "themeHint": "Alegeți o temă de culori — se aplică fundalului, textului, butoanelor și etichetelor.",
+    "salePercent": "Reducere %",
+    "badgeText": "Textul etichetei",
+    "badgePlaceholder": "Exclusiv",
+    "ctaText": "Textul butonului *",
+    "ctaPlaceholder": "Profitați de ofertă",
+    "openLink": "Deschiderea linkului",
+    "ctaUrl": "Linkul butonului *",
+    "whatsapp": "WhatsApp *",
+    "phoneDisplay": "Telefon afișat",
+    "logoUrl": "URL-ul logoului",
+    "publishState": "Stare",
+    "draftPill": "Ciornă",
+    "publishedPill": "Publicat",
+    "priority": "Prioritate",
+    "start": "Început",
+    "end": "Sfârșit",
+    "adminNote": "Motivul acțiunii *",
+    "adminNotePlaceholder": "Obligatoriu la salvare",
+    "internalNotesTitle": "Note interne",
+    "teamNotes": "Notele echipei",
+    "statsHint": "Salvați mai întâi anunțul pentru a vedea statisticile detaliate în tabel.",
+    "impressions": "Afișări",
+    "clicks": "Clicuri",
+    "quickTheme": "Temă rapidă",
+    "quickThemeAria": "Teme rapide",
+    "designTemplateTitle": "Aspect și șablon",
+    "designTemplateHint": "Alegeți forma bannerului (aspectul), apoi o temă de culori mai jos",
+    "colorTheme": "Temă de culori",
+    "pickBannerShape": "Alegeți forma bannerului",
+    "pickBannerSub": "Previzualizare orizontală pentru fiecare aspect — culorile pot fi schimbate ulterior.",
+    "savedFontSize": "Dimensiunea salvată anterior",
+    "savedFontWeight": "Grosimea salvată anterior"
+  },
+  "colors": {
+    "sectionTitle": "Culori",
+    "sectionHint": "Ajustați culorile bannerului orizontal — aspectul este fix; se schimbă doar culorile.",
+    "quickPick": "Alegere rapidă a culorii (opțional)",
+    "quickPickAria": "Alegere rapidă a culorii",
+    "bgPrimary": "Fundal principal",
+    "bgSecondary": "Fundal secundar",
+    "mainText": "Culoarea textului principal",
+    "subText": "Culoarea textului secundar",
+    "ctaButton": "Culoarea butonului CTA",
+    "ctaButtonText": "Culoarea textului butonului",
+    "badge": "Culoarea etichetei",
+    "badgeText": "Culoarea textului etichetei",
+    "saleCircle": "Culoarea cercului de reducere",
+    "saleCircleText": "Culoarea textului din cercul de reducere",
+    "controlsHint": "Culorile textului și ale etichetei se află la pasul 1. Aici: stilul cardului, fundalul, butonul și gradientul opțional.",
+    "pickPreset": "Alegeți un stil predefinit",
+    "resetColors": "Resetați culorile",
+    "customizeCard": "Personalizați cardul",
+    "adBackground": "Fundalul anunțului",
+    "buttonColor": "Culoarea butonului",
+    "advancedSummary": "Opțiuni avansate",
+    "advancedBorderHint": "Chenarul cardului, textul manual al butonului sau gradientul de fundal — opțional.",
+    "cardBorder": "Culoarea chenarului cardului",
+    "buttonTextOverride": "Textul butonului (înlocuiește automatul)",
+    "autoFromButton": "Automat, după culoarea butonului",
+    "gradientTitle": "Gradient de fundal",
+    "gradientHint": "Opțional — lăsați gol sau alegeți fără gradient.",
+    "gradientQuickAria": "Gradiente predefinite",
+    "gradientStart": "Începutul gradientului",
+    "gradientEnd": "Sfârșitul gradientului",
+    "colorPicker": "Selector de culoare",
+    "customColorHint": "Ajustați fin culoarea, apoi alegeți o nuanță potrivită de mai sus, dacă este necesar.",
+    "savedNotInList": "Culoarea salvată nu se află în listă — este afișată totuși în previzualizare și pe site-ul public.",
+    "savedNotInListCompact": "Culoarea salvată nu apare mai sus — este afișată în previzualizare; ajustați-o din opțiunile avansate.",
+    "pickColorAria": "Alegeți culoarea"
+  },
+  "gradients": {
+    "none": "Fără gradient",
+    "sky": "Gradient cer",
+    "dark": "Gradient întunecat",
+    "warm": "Gradient cald",
+    "green": "Gradient verde",
+    "purple": "Gradient mov"
+  },
+  "palette": {
+    "default": "Implicit",
+    "navy": "Bleumarin",
+    "blue": "Albastru",
+    "sky": "Albastru cer",
+    "green": "Verde",
+    "gold": "Auriu",
+    "red": "Roșu",
+    "purple": "Mov",
+    "gray": "Gri",
+    "black": "Negru",
+    "white": "Alb",
+    "orange": "Portocaliu",
+    "pink": "Roz",
+    "darkGray": "Gri închis",
+    "light": "Deschis",
+    "blueGray": "Gri-albastru",
+    "dark": "Închis",
+    "nearTransparent": "Aproape transparent",
+    "offWhite": "Alb ivoriu",
+    "cream": "Crem",
+    "auto": "Automat",
+    "lightSky": "Albastru cer deschis",
+    "lightBlue": "Albastru deschis",
+    "lightGreen": "Verde deschis",
+    "lightGold": "Auriu deschis",
+    "lightPurple": "Mov deschis",
+    "lightPink": "Roz deschis",
+    "lightGray": "Gri deschis",
+    "none": "Fără",
+    "unset": "Nesetat",
+    "customColor": "Culoare personalizată",
+    "savedColor": "Culoare salvată"
+  },
+  "images": {
+    "sectionTitle": "Imagini",
+    "sectionHint": "Imagine laterală predefinită sau fundal personalizat",
+    "pickReadyImage": "Alegeți o imagine predefinită",
+    "optionalBackground": "Imagine de fundal (opțional)",
+    "backgroundHint": "Folosită ca fundal al bannerului, cu un strat semitransparent deschis, pentru ca textul să rămână lizibil.",
+    "backgroundLabel": "Fundal",
+    "removeBackground": "Eliminați fundalul",
+    "uploadFromDevice": "Încărcați de pe dispozitiv",
+    "orPasteUrl": "Sau lipiți URL-ul unei imagini (https)",
+    "noServerUrl": "Serverul nu a returnat un URL.",
+    "uploadFailed": "Încărcarea imaginii a eșuat.",
+    "managerHint": "Adăugați un URL de imagine pentru anunț. Se stochează doar ca URL (fără încărcare de fișiere aici).",
+    "adImage": "Imaginea anunțului",
+    "addUrlForPreview": "Adăugați un URL pentru a previzualiza imaginea",
+    "imageUrl": "URL-ul imaginii",
+    "urlHint": "URL-ul trebuie să înceapă cu https:// sau să fie o cale care începe cu /",
+    "altText": "Text alternativ",
+    "altHint": "Folosit pentru accesibilitate și previzualizare atunci când imaginea nu se încarcă",
+    "addImage": "+ Adăugați o imagine"
+  },
+  "textBlocks": {
+    "hint": "Folosiți blocuri de text suplimentare pentru caracteristici sau note; setați culoarea fiecărui bloc alături.",
+    "blockIndex": "Blocul {{index}}",
+    "duplicate": "Duplicați blocul",
+    "extraText": "Text suplimentar",
+    "textPosition": "Poziția textului",
+    "fontSize": "Dimensiunea fontului",
+    "fontWeight": "Grosimea fontului",
+    "addBlock": "+ Adăugați un bloc de text"
+  },
+  "table": {
+    "image": "Imagine",
+    "title": "Titlu",
+    "company": "Companie",
+    "status": "Stare",
+    "start": "Început",
+    "end": "Sfârșit",
+    "impressions": "Afișări",
+    "clicks": "Clicuri",
+    "ctr": "CTR",
+    "lastClick": "Ultimul clic",
+    "actions": "Acțiuni",
+    "impressionsAbbr": "afiș.",
+    "clicksAbbr": "clic.",
+    "impressionsTitle": "Afișări",
+    "clicksTitle": "Clicuri"
+  },
+  "reorder": {
+    "empty": "Încă nu există anunțuri.",
+    "dragTitle": "Trageți pentru a reordona"
+  },
+  "preview": {
+    "liveTitle": "Previzualizare în timp real",
+    "syncing": "Se actualizează…",
+    "emptyHint": "Text de exemplu pentru câmpurile goale.",
+    "fallbacks": {
+      "companyName": "Magazin de cadouri",
+      "title": "Anunț exclusiv",
+      "subtitle": "Atrageți atenția",
+      "description": "Adăugați o scurtă descriere pentru a atrage atenția…",
+      "ctaText": "Profitați acum de ofertă",
+      "badgeText": "Ofertă limitată"
+    },
+    "templateDemo": {
+      "title": "40% reducere azi",
+      "subtitle": "Ofertă limitată",
+      "companyName": "Magazin de cadouri",
+      "badgeText": "Ofertă exclusivă",
+      "ctaText": "Profitați de ofertă"
+    }
+  },
+  "reschedule": {
+    "title": "Gestionați vizibilitatea anunțului",
+    "subtitle": "Alegeți cum apare anunțul pentru utilizatori; puteți modifica programarea oricând.",
+    "adLabel": "Anunț:",
+    "currentStatus": "Starea actuală:",
+    "howToShow": "Cum ar trebui să apară acest anunț?",
+    "optionsAria": "Opțiuni de vizibilitate",
+    "modes": {
+      "immediate": {
+        "label": "Publicare imediată (fără programare)",
+        "description": "Vizibil pentru vizitatori cât timp este activat aici, fără oră de început sau de sfârșit."
+      },
+      "scheduled": {
+        "label": "Programați anumite intervale",
+        "description": "Setați o oră de început și/sau de sfârșit pentru vizibilitate."
+      },
+      "paused": {
+        "label": "Puneți anunțul pe pauză",
+        "description": "Ascuns pentru utilizatori până când îl activați din nou."
+      }
+    },
+    "outcomeImmediate": "Rezultat: anunțul va apărea imediat și va rămâne vizibil cât timp este activat, fără programare de început sau de sfârșit.",
+    "outcomeHidden": "Rezultat: anunțul va fi ascuns pentru utilizatori.",
+    "outcomeRange": "Rezultat: anunțul va fi afișat de la {{start}} până la {{end}}.",
+    "outcomeFrom": "Rezultat: anunțul va începe la {{start}}, fără dată de sfârșit.",
+    "outcomeUntil": "Rezultat: anunțul va apărea imediat și se va încheia la {{end}}.",
+    "outcomeDefault": "Rezultat: anunțul va apărea imediat, fără dată de sfârșit.",
+    "shortcuts": "Comenzi rapide:",
+    "shortcutsAria": "Comenzi rapide pentru date",
+    "today": "Astăzi",
+    "tomorrow": "Mâine",
+    "nextWeek": "Peste o săptămână",
+    "noEnd": "Fără dată de sfârșit",
+    "startLabel": "Începutul vizibilității",
+    "startHint": "Lăsați începutul gol pentru a porni imediat.",
+    "endLabel": "Sfârșitul vizibilității",
+    "endHint": "Lăsați sfârșitul gol pentru a nu avea o dată de sfârșit.",
+    "endBeforeStart": "Data de sfârșit nu poate fi înainte de data de început.",
+    "endInPast": "Atenție: data de sfârșit este în trecut, așa că anunțul va fi afișat ca expirat și nu va apărea utilizatorilor.",
+    "saveChanges": "Salvați modificările"
+  },
+  "popup": {
+    "modalTitle": "Gestionarea anunțurilor pop-up",
+    "loading": "Se încarcă anunțurile pop-up…",
+    "currentList": "Anunțuri actuale",
+    "newAd": "Anunț nou",
+    "empty": "Încă nu există anunțuri pop-up. Creați unul nou.",
+    "selectHint": "Selectați un anunț din listă sau faceți clic pe „Anunț nou” pentru a crea unul.",
+    "enable": "Activați anunțul pop-up",
+    "titleAr": "Titlu (arabă)",
+    "titleEn": "Titlu (engleză, opțional)",
+    "bodyAr": "Conținut (arabă)",
+    "bodyEn": "Conținut (engleză, opțional)",
+    "imageField": "Imagine (URL sau încărcare)",
+    "uploadImage": "Încărcați o imagine",
+    "buttonText": "Textul butonului",
+    "buttonUrl": "URL-ul butonului",
+    "openNewTab": "Deschideți linkul într-o filă nouă",
+    "audience": "Public",
+    "pageScope": "Pagini vizate",
+    "frequency": "Frecvența afișării",
+    "audienceOptions": {
+      "all": "Toată lumea",
+      "guests": "Doar vizitatori",
+      "freelancer": "Freelanceri",
+      "client": "Clienți",
+      "staff": "Personal"
+    },
+    "pageScopeOptions": {
+      "all": "Toate paginile",
+      "home": "Pagina principală",
+      "public": "Site-ul public (fără panoul de control)",
+      "dashboard": "Panouri de control"
+    },
+    "frequencyOptions": {
+      "session": "O dată pe sesiune",
+      "day": "O dată pe zi",
+      "every_visit": "La fiecare vizită a paginii",
+      "first_login_only": "Doar la prima conectare",
+      "every_login": "La fiecare conectare"
+    },
+    "firstLoginHint": "Doar pentru utilizatorii conectați. Se afișează o singură dată după conectare; nu mai apare după ce este închis sau vizualizat. Nu se afișează vizitatorilor.",
+    "firstLoginGuests": " Cu publicul „Doar vizitatori”, acest anunț nu va apărea.",
+    "everyLoginHint": "Doar pentru utilizatorii conectați. Se afișează după fiecare conectare, dar nu din nou în aceeași sesiune după ce este închis. Nu se afișează vizitatorilor.",
+    "scheduleStart": "Începutul afișării (opțional)",
+    "scheduleEnd": "Sfârșitul afișării (opțional)",
+    "deleteConfirm": "Ștergeți acest anunț pop-up?",
+    "updatedMessage": "Anunțul pop-up a fost actualizat.",
+    "createdMessage": "Anunțul pop-up a fost creat.",
+    "hintTitle": "Cum funcționează anunțurile pop-up",
+    "hint1": "Se afișează un singur anunț odată, în ordinea stabilită.",
+    "hint2": "După închidere, se respectă setarea frecvenței afișării (sesiune / zi / vizită / prima conectare / fiecare conectare).",
+    "hint3": "Cu „Doar la prima conectare”, anunțul apare o singură dată după prima conectare a utilizatorului și nu mai apare după ce este închis sau vizualizat.",
+    "hint4": "Cu „La fiecare conectare”, anunțul apare după fiecare conectare, dar nu din nou în aceeași sesiune după ce este închis.",
+    "hint5": "Publicul se stabilește în funcție de rolul utilizatorului sau de statutul de vizitator.",
+    "hint6": "Afișarea poate fi programată cu date de început și de sfârșit."
+  }
+}

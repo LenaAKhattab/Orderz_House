@@ -52,7 +52,8 @@ describe("Phase 1C.5 finance routes", () => {
 
   it("admin financial claims amounts are official JOD without FX checkout", () => {
     const src = read("pages/dashboard/SuperAdminFinancialClaimsPage.jsx");
-    assert.match(src, /د\.أ/);
+    assert.match(src, /platformPages\.common\.jodSuffix/);
+    assert.equal(JSON.parse(read("locales/ar/platformPages.json")).common.jodSuffix, "د.أ");
     assert.doesNotMatch(src, /startCheckout|JodMoneyDisplay/);
     assert.match(src, /if \(actionBusy \|\| !statusModal\.claim/);
     assert.match(src, /statusModal\.status === "rejected"/);
@@ -60,7 +61,8 @@ describe("Phase 1C.5 finance routes", () => {
 
   it("financial center ledger formatter is JOD د.أ not approximate FX", () => {
     const src = read("pages/dashboard/financialCenter/financialCenterDisplayUtils.jsx");
-    assert.match(src, /currency = "د\.أ"/);
+    assert.match(src, /platformPages\.common\.jodSuffix/);
+    assert.equal(JSON.parse(read("locales/ar/platformPages.json")).common.jodSuffix, "د.أ");
     assert.doesNotMatch(src, /formatApproximateCurrency|startCheckout/);
   });
 

@@ -1,0 +1,295 @@
+{
+  "fallback": {
+    "order": "Comandăsaktualisierung",
+    "wallet": "Platăsaktualisierung",
+    "course": "Instruiresaktualisierung",
+    "message": "Neue Nachricht",
+    "bell": "Neue Notificare"
+  },
+  "details": {
+    "category": "Kategorie",
+    "topic": "Fertiges Thema"
+  },
+  "types": {
+    "ad_created": {
+      "title": "Anzeige erstellt",
+      "message": "Eine neue Anzeige is erstellt."
+    },
+    "ad_expired": {
+      "title": "Anzeige abgelaufen",
+      "message": "Eine Anzeige hat ihr Enddatum erreicht und wird nu mehr angezeigt."
+    },
+    "ad_published": {
+      "title": "Anzeige veröffentlicht",
+      "message": "Eine Anzeige ist jetzt live auf der Plattform."
+    },
+    "ad_scheduled": {
+      "title": "Anzeige geplant",
+      "message": "Eine Anzeige is zur Veröffentlichung geplant."
+    },
+    "ad_unpublished": {
+      "title": "Anzeige offline",
+      "message": "Eine Anzeige is offline genommen."
+    },
+    "ad_updated": {
+      "title": "Anzeige aktualisiert",
+      "message": "Eine Anzeige is aktualisiert."
+    },
+    "bid_pool_allocated": {
+      "title": "Dvs. heeft Bids erhalten",
+      "message": "{{allocatedBids}} Bids zijn Dvs. Guthaben gutgeschrieben."
+    },
+    "bid_pool_returned_unused": {
+      "title": "Unbenutzte Bids an den Pool zurückgegeben",
+      "message": "Unbenutzte Bids zijn an den Verteilungspool zurückgegeben."
+    },
+    "course_assigned": {
+      "title": "Ihnen is ein Instruireskurs zugewiesen",
+      "message": "Ein neuer Cursus is Dvs. Konto zugewiesen."
+    },
+    "course_completed": {
+      "title": "Cursus abgesloten",
+      "message": "Gut gemacht! Dvs. heeft alle Lektionen dieses Cursuses abgesloten."
+    },
+    "course_lesson_added": {
+      "title": "Neue Lektionen hinzugefügt",
+      "message": "Neue Lektionen zijn zdvs. einem Dvs. Cursuse hinzugefügt."
+    },
+    "course_lesson_completed": {
+      "title": "Lektionsabschluss erfasst",
+      "message": "Dvs. Lektion is als abgesloten markiert."
+    },
+    "elite_direct_offer_accepted": {
+      "title": "Elite Direct-Ofertă angenommen",
+      "message": "Der Freelancer hat Dvs. Elite Direct-Ofertă angenommen."
+    },
+    "elite_direct_offer_created": {
+      "title": "Neues Elite Direct-Ofertă",
+      "message": "Dvs. heeft ein privates Elite Direct-Ofertă erhalten — prüfen Sie es und nehmen Sie an oder lehnen Sie ab, bevor es abläuft."
+    },
+    "elite_direct_offer_declined": {
+      "title": "Elite Direct-Ofertă abgelehnt",
+      "message": "Der Freelancer hat das Elite Direct-Ofertă abgelehnt. Dvs. kunt ein neues Ofertă an einen anderen Elite-Freelancer senden."
+    },
+    "elite_direct_offer_expired": {
+      "title": "Elite Direct-Ofertă abgelaufen",
+      "message": "Das Ofertă ist ohne Annahme abgelaufen. Dvs. kunt ein neues Ofertă an einen anderen Elite-Freelancer senden."
+    },
+    "feedback_created": {
+      "title": "Neues Feedback erhalten",
+      "message": "Ein Nutzer hat einen neuen Problembericht oder Vorschlag eingereicht."
+    },
+    "feedback_status_resolved": {
+      "title": "Dvs. Feedback is aktualisiert",
+      "message": "Dvs. Feedback is als gelöst markiert."
+    },
+    "financial_claim_created": {
+      "title": "Dvs. Platăsanspruch is eingereicht",
+      "message": "Dvs. Platăsanspruch is erstellt und wird nun geprüft."
+    },
+    "financial_claim_paid": {
+      "title": "Platăsanspruch ausgezahlt",
+      "message": "Die Plată is erfasst und der Anspruch als bezahlt abgesloten."
+    },
+    "financial_claim_pricing_updated": {
+      "title": "Anspruchspreise aktualisiert",
+      "message": "Die Preisdetails und der fällige Betrag für Dvs. Anspruch zijn aktualisiert."
+    },
+    "financial_claim_status_changed": {
+      "title": "Status des Platăsanspruchs aktualisiert",
+      "message": "Der Status Ihres Platăsanspruchs is aktualisiert."
+    },
+    "freelancer_review_received": {
+      "title": "Neue Bewertung von einem Clientn",
+      "message": "Ein Client hat eine Bewertung zdvs. einem Dvs. Comandăen hinterlassen."
+    },
+    "general_test": {
+      "title": "Testbenachrichtigung",
+      "message": "Dvs. Browser-Notificareseinstellungen zijn aktualisiert."
+    },
+    "order_applications_admin_review_required": {
+      "title": "Aplicaresfrist erreicht",
+      "message": "Aplicareen zijn zum Fristende gesloten. Dvs. kunt mit den aktuellen Sollicitantn fortfahren."
+    },
+    "order_applications_deadline_cancelled": {
+      "title": "Comandă benötigt Admin-Prüfung",
+      "message": "Die Aplicaresfrist endete, bevor die Zielanzahl an Sollicitantn erreicht wurde. Eine Admin-Prüfung ist erforderlich."
+    },
+    "order_applications_deadline_reached": {
+      "title": "Aplicaresfrist erreicht",
+      "message": "Aplicareen zijn zum Fristende gesloten. Dvs. kunt mit den aktuellen Sollicitantn fortfahren."
+    },
+    "order_applications_target_reached": {
+      "title": "Sollicitantziel erreicht",
+      "message": "Aplicareen zijn automatisch gesloten, nachdem die erforderliche Anzahl an Sollicitantn erreicht wurde."
+    },
+    "order_assigned": {
+      "title": "Projekt angenommen",
+      "message": "Ein Freelancer hat das Projekt angenommen und mit der Arbeit begonnen."
+    },
+    "order_bid_refunded": {
+      "title": "Bids zurückgegeben",
+      "message": "Dvs. beschikbaren Bids zijn zurückgegeben, nachdem der Comandă ohne Auswahl gesloten oder storniert wurde."
+    },
+    "order_bid_rejected": {
+      "title": "Dvs. Ofertă is nu ausgewählt",
+      "message": "Das Ofertă eines anderen Freelancers is für dieses Projekt angenommen."
+    },
+    "order_bid_selected": {
+      "title": "Dvs. Ofertă is ausgewählt — Plată ausstehend",
+      "message": "Der Client hat Dvs. Ofertă ausgewählt. Die Zuweisung wird nach Abschluss der Plată bestätigt."
+    },
+    "order_bid_submitted": {
+      "title": "Neues Ofertă erhalten",
+      "message": "Ein Freelancer hat ein Ofertă für Dvs. Projekt eingereicht."
+    },
+    "order_bid_updated": {
+      "title": "Ofertă aktualisiert",
+      "message": "Ein Freelancer hat sein Ofertă für Dvs. Projekt aktualisiert."
+    },
+    "order_claim_withdrawn": {
+      "title": "Aplicare zurückgezogen",
+      "message": "Der Freelancer hat seine Aplicare für das Projekt zurückgezogen."
+    },
+    "order_created": {
+      "title": "Neues Ausschreibungsprojekt",
+      "message": "Ein neues Projekt is zur Ausschreibung veröffentlicht."
+    },
+    "order_delivery_approved": {
+      "title": "Lieferung freigegeben",
+      "message": "Die Lieferung is freigegeben und das Projekt erfolgreich abgesloten."
+    },
+    "order_delivery_submitted": {
+      "title": "Neue Lieferung eingereicht",
+      "message": "Eine neue Lieferung is für diesen Comandă eingereicht — bitte prüfen Sie sie."
+    },
+    "order_freelancer_assigned": {
+      "title": "Ihnen is ein Projekt zugewiesen",
+      "message": "Sie zijn für die Arbeit am Projekt freigegeben."
+    },
+    "order_freelancer_rejected": {
+      "title": "Dvs. Aplicare is nu ausgewählt",
+      "message": "Für dieses Projekt is ein anderer Freelancer ausgewählt."
+    },
+    "order_message_received": {
+      "title": "Neue Nachricht zdvs. einem Comandă",
+      "message": "Dvs. heeft eine neue Nachricht zdvs. einem Dvs. Comandăen."
+    },
+    "order_payment_started": {
+      "title": "Plată gestartet",
+      "message": "Eine Platăssitzung für den Comandă is erstellt. Schließen Sie die Plată ab, um fortzufahren."
+    },
+    "order_pool_summary": {
+      "title": "Neue Comandăscharge hinzugefügt",
+      "message": "Neue für Sie passende Comandăen sind jetzt beschikbar: {{visibleCount}}."
+    },
+    "order_pool_summary_training": {
+      "title": "Neue Charge Instruiresaufträge hinzugefügt",
+      "message": "Neue für Sie passende Instruiresaufträge sind jetzt beschikbar: {{visibleCount}}."
+    },
+    "order_review_reminder": {
+      "title": "Bewerten Sie Dvs. Erfahrung mit dem Freelancer",
+      "message": "Erzählen Sie uns von Dvs. abgeslotenen Projekt — es dauert weniger als eine Minute."
+    },
+    "order_revision_requested": {
+      "title": "Überarbeitungen angefordert",
+      "message": "Der Client hat Überarbeitungen der Lieferung angefordert."
+    },
+    "pantry_bid_refunded": {
+      "title": "Bids zurückgegeben",
+      "message": "Dvs. beschikbaren Bids zijn zurückgegeben, nachdem der Bayt-Al-Mooneh-Comandă ohne Zuweisung gesloten wurde."
+    },
+    "payment_client_order_failed": {
+      "title": "Plată fehlgeschlagen",
+      "message": "Die Plată für den Comandă kon nu abgesloten werden. Încercați din nou."
+    },
+    "payment_client_order_succeeded": {
+      "title": "Plată erfolgreich",
+      "message": "Die Plată is erhalten und der Comandă ist jetzt für Freelancer offen."
+    },
+    "plan_created": {
+      "title": "Neues Pachet erstellt",
+      "message": "Ein neues Pachet is erstellt."
+    },
+    "plan_deleted": {
+      "title": "Pachet deaktiviert",
+      "message": "Ein Pachet is deaktiviert oder für neue Nutzung ausgeblendet."
+    },
+    "plan_updated": {
+      "title": "Pachet aktualisiert",
+      "message": "Die Einstellungen eines Pachets zijn aktualisiert."
+    },
+    "referral_bonus": {
+      "title": "Recomandaresbonus",
+      "message": "Ein Recomandaresbonus is Dvs. beschikbaren Guthaben gutgeschrieben."
+    },
+    "referral_commission_available": {
+      "title": "Recomandaresprovision beschikbar",
+      "message": "Eine Recomandaresprovision steht jetzt zur Auszahlung bereit."
+    },
+    "referral_commission_pending": {
+      "title": "Recomandaresprovision ausstehend",
+      "message": "Eine Recomandaresprovision is erfasst und befindet sich in der Haltefrist."
+    },
+    "referral_registration": {
+      "title": "Neue Recomandaresregistrierung",
+      "message": "Ein neuer Nutzer ist über Dvs. Recomandareslink beigetreten."
+    },
+    "subscription_assigned": {
+      "title": "Ihnen is ein Abonament zugewiesen",
+      "message": "Die Administration hat Dvs. Konto ein Abonamentpaket zugewiesen."
+    },
+    "subscription_company_activated": {
+      "title": "Dvs. Abonament is aktiviert",
+      "message": "Dvs. Abonament is freigegeben und Dvs. kunt Projekte erhalten."
+    },
+    "subscription_company_activation_pending": {
+      "title": "Abonament wartet auf Aktivierung",
+      "message": "Ein Abonament is bezahlt und wartet auf Aktivierung durch das Unternehmen."
+    },
+    "subscription_payment_started": {
+      "title": "Abonamentzahlung gestartet",
+      "message": "Eine Platăssitzung für das Abonament is erstellt. Schließen Sie die Plată ab, um fortzufahren."
+    },
+    "subscription_started": {
+      "title": "Dvs. Abonament hat begonnen",
+      "message": "Dvs. Abonament begann mit Dvs. ersten angenommenen Projekt."
+    },
+    "subscription_renewal_failed": {
+      "title": "Abonamentverlängerung fehlgeschlagen",
+      "message": "Die Plată für Dvs. Abonamentverlängerung ist fehlgeschlagen. Aktualisieren Sie Dvs. Platăsmethode, um Dvs. Abonament zdvs. behalten."
+    },
+    "payment_success": {
+      "title": "Abonament aktiviert",
+      "message": "Dvs. Freelancer-Abonament is erfolgreich aktiviert."
+    },
+    "payment_failed": {
+      "title": "Plată fehlgeschlagen",
+      "message": "Die Abonamentzahlung kon nu abgesloten werden. Încercați din nou."
+    },
+    "payment_cancelled": {
+      "title": "Plată storniert",
+      "message": "Die Abonamentzahlung is storniert."
+    },
+    "user_account_activated": {
+      "title": "Dvs. account is aktiviert",
+      "message": "Dvs. account ist aktiv und Dvs. kunt die Plattform jetzt nutzen."
+    },
+    "user_account_deactivated": {
+      "title": "Dvs. account is deaktiviert",
+      "message": "Dvs. account is deaktiviert. Wenden Sie sich bei Fragen an den asistență."
+    },
+    "user_account_reactivated": {
+      "title": "Dvs. account is reaktiviert",
+      "message": "Dvs. account ist wieder aktiv und Dvs. kunt die Plattform nutzen."
+    },
+    "user_account_suspended": {
+      "title": "Dvs. account is gesperrt",
+      "message": "Dvs. account is gesperrt. Wenden Sie sich bei Fragen an den asistență."
+    },
+    "user_registered": {
+      "title": "Dvs. account is erstellt",
+      "message": "Willkommen bei Orderz House."
+    }
+  }
+}

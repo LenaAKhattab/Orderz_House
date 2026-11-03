@@ -1,0 +1,59 @@
+{
+  "title": "Despre",
+  "lead": "este platforma dumneavoastră pentru succes în freelancing. Le facilităm freelancerilor talentați găsirea unor proiecte excelente și ajutăm companiile să angajeze oamenii potriviți. Suntem puntea dintre competențe și oportunități — construim o experiență de lucru mai fluidă și mai reușită pentru toți.",
+  "hero": {
+    "title": "Despre Orderz House",
+    "subtitle": "Platforma dumneavoastră pentru succes în freelancing — conectăm talentul cu oportunitățile și facilităm colaborarea pentru toți."
+  },
+  "vision": {
+    "title": "Viziunea noastră",
+    "text": "Să conducem inovația globală în freelancing, să modelăm viitorul muncii la distanță și să construim o lume fără granițe pentru talente.",
+    "tag": "Motivați de inovație"
+  },
+  "mission": {
+    "title": "Misiunea noastră",
+    "text": "Să sprijinim freelancerii și companiile printr-o colaborare inteligentă, sigură și fluidă, care generează succes și inovație la nivel mondial.",
+    "tag": "Concentrați pe excelență"
+  },
+  "values": {
+    "title": "Valorile noastre fundamentale",
+    "subtitle": "Principiile care ne ghidează în tot ceea ce facem și care reflectă angajamentul nostru față de excelență.",
+    "excellence": {
+      "title": "Excelență în servicii",
+      "body": "Urmărim cele mai înalte standarde de calitate în fiecare proiect și livrăm rezultate care depășesc așteptările."
+    },
+    "trust": {
+      "title": "Transparență și încredere",
+      "body": "Construim relații durabile prin comunicare onestă și parteneriate de încredere."
+    },
+    "innovation": {
+      "title": "Sprijinirea inovației",
+      "body": "Încurajăm creativitatea și oferim soluții avansate care susțin creșterea afacerilor."
+    },
+    "human": {
+      "title": "Tehnologie centrată pe om",
+      "body": "Folosim tehnologia pentru a servi în primul rând oamenii — nu invers."
+    }
+  },
+  "howWeWork": {
+    "title": "Cum lucrăm",
+    "subtitle": "Un proces simplu în 4 pași, care conectează fără efort talentul cu oportunitățile.",
+    "stepsAria": "Pașii de lucru",
+    "step1": {
+      "title": "Înregistrarea freelancerului",
+      "text": "Creați-vă contul și profilul pentru a vă prezenta competențele."
+    },
+    "step2": {
+      "title": "Găsiți de lucru",
+      "text": "Răsfoiți proiectele potrivite pentru dumneavoastră și trimiteți propunerile."
+    },
+    "step3": {
+      "title": "Livrați proiectul",
+      "text": "Finalizați lucrarea la calitate înaltă și la timp."
+    },
+    "step4": {
+      "title": "Încasați plata",
+      "text": "Primiți câștigurile în siguranță după aprobarea clientului."
+    }
+  }
+}

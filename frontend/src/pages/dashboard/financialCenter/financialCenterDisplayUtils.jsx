@@ -1,13 +1,21 @@
-export function formatMoney(value, currency = "د.أ") {
+import { getActiveLocale, pt } from "../../../i18n/activeLocale.js";
+import { pickIntlTag } from "../../../i18n/intlLocale.js";
+
+/** Historical tag for both Arabic and English (Latin digits); German / Dutch / Romanian use their own. */
+const FC_INTL_LEGACY = { ar: "ar-JO-u-nu-latn", en: "ar-JO-u-nu-latn" };
+
+/** Official JOD amount (never FX). `currency` defaults to the catalog JOD suffix (platformPages.common.jodSuffix). */
+export function formatMoney(value, currency, locale = getActiveLocale()) {
   if (value == null || Number.isNaN(Number(value))) return "—";
-  return `${new Intl.NumberFormat("ar-JO-u-nu-latn", { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(Number(value))} ${currency}`;
+  const suffix = currency === undefined ? pt("platformPages.common.jodSuffix", undefined, locale) : currency;
+  return `${new Intl.NumberFormat(pickIntlTag(locale, FC_INTL_LEGACY), { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(Number(value))} ${suffix}`;
 }
 
-export function formatDate(value) {
+export function formatDate(value, locale = getActiveLocale()) {
   if (!value) return "—";
   const d = new Date(value);
   if (!Number.isFinite(d.getTime())) return "—";
-  return new Intl.DateTimeFormat("ar-JO-u-nu-latn", { dateStyle: "medium", timeStyle: "short" }).format(d);
+  return new Intl.DateTimeFormat(pickIntlTag(locale, FC_INTL_LEGACY), { dateStyle: "medium", timeStyle: "short" }).format(d);
 }
 
 export function sourceLabel(type, t) {

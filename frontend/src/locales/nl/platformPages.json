@@ -1,0 +1,62 @@
+{
+  "trainingOrders": {
+    "roundStatus": {
+      "scheduled": "Gepland",
+      "active": "Actief",
+      "expired": "Verlopen",
+      "stopped": "Gestopt"
+    },
+    "fakeOrderStatus": {
+      "active": "Actief",
+      "expired": "Verlopen",
+      "stopped": "Gestopt"
+    },
+    "automationStatus": {
+      "success": "Geslaagd",
+      "skipped_no_templates": "Overgeslagen — geen sjablonen",
+      "skipped_lock": "Overgeslagen — vergrendeling",
+      "failed": "Mislukt"
+    },
+    "roundSource": {
+      "automation": "Automatisch",
+      "manual": "Handmatig"
+    },
+    "widgetError": "Er is iets misgegaan. Probeer het opnieuw."
+  },
+  "common": {
+    "listJoiner": ", ",
+    "jodSuffix": "JOD"
+  },
+  "freelancerArticles": {
+    "trialError": "Proef-Bids konden niet worden toegekend. Probeer het opnieuw."
+  },
+  "superAdminPlans": {
+    "deactivateBlocked": "Dit pakket kan niet worden verwijderd omdat het aan gebruikers of actuele gegevens is gekoppeld. U kunt het in plaats daarvan deactiveren.",
+    "showingPage": "Pakketten voor: {{title}}",
+    "confirmDeactivateBody": "Weet u het zeker? Dit pakket wordt verborgen voor nieuw gebruik. Bestaande abonnementen en historische gegevens worden niet verwijderd."
+  },
+  "articleDetail": {
+    "manuscriptTermsCopy": "Ik ga akkoord met de eigendoms- en publicatievoorwaarden voor dit artikel en begrijp dat het bij acceptatie volgens het platformbeleid onder mijn naam op Bildazo kan worden gepubliceerd."
+  },
+  "eliteDirectOffer": {
+    "title": "Elite Direct-aanbod",
+    "description": "Stuur een privé, tijdgebonden aanbod naar één Elite-freelancer.",
+    "targetLabel": "Gebruikers-ID Elite-freelancer",
+    "send": "Aanbod versturen",
+    "cancel": "Annuleren",
+    "offerLine": "#{{id}} → Freelancer-ID {{freelancerId}} — {{status}}",
+    "status": {
+      "pending": "in behandeling",
+      "accepted": "geaccepteerd",
+      "declined": "afgewezen",
+      "expired": "verlopen",
+      "cancelled": "geannuleerd"
+    }
+  },
+  "publicSite": {
+    "translationUnavailable": "Deze pagina is nog niet beschikbaar in uw taal en wordt daarom in de oorspronkelijke taal getoond."
+  },
+  "accountDeletion": {
+    "mailSubject": "Orderz House – verzoek tot verwijdering van account"
+  }
+}

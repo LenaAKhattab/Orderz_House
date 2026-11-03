@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import "../../i18n/planAdminResources";
+import { pickIntlTag } from "../../i18n/intlLocale";
 import PlanCollapsibleSection from "./PlanCollapsibleSection";
 import PlanFormSection from "./PlanFormSection";
 import PlanToggle from "./PlanToggle";
@@ -369,7 +370,7 @@ export default function PlanFormModalBody({
                 }
                 const final = Math.round(base * (1000 - pct * 10)) / 1000;
                 const fmt = (n) =>
-                  n.toLocaleString(isEn ? "en-US" : "ar-JO-u-nu-latn", {
+                  n.toLocaleString(pickIntlTag(locale, { ar: "ar-JO-u-nu-latn", en: "en-US" }), {
                     minimumFractionDigits: 0,
                     maximumFractionDigits: 3,
                   });

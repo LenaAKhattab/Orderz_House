@@ -1,0 +1,99 @@
+{
+  "brand": "OrderzHouse",
+  "brandWordmark": "OrderzHouse",
+  "titles": {
+    "users": "Utilizatori",
+    "institutions": "Instituții",
+    "legacy": "Centrul de gestionare a freelancerilor existenți",
+    "analysis": "Analize",
+    "financialCenter": "Centrul financiar",
+    "claims": "Cereri de plată",
+    "settlements": "Decontări",
+    "courses": "Cursuri",
+    "articles": "Articole",
+    "orders": "Comenzi",
+    "subscriptions": "Abonamente",
+    "plans": "Pachete"
+  },
+  "language": {
+    "ar": "العربية",
+    "en": "English",
+    "de": "Deutsch",
+    "nl": "Nederlands",
+    "ro": "Română",
+    "switchTo": "العربية",
+    "switchAria": "Schimbați limba în engleză",
+    "switchToArAria": "Schimbați limba în arabă",
+    "switching": "Se schimbă limba…",
+    "menuLabel": "Limbă",
+    "changeAria": "Schimbați limba (curentă: {{language}})"
+  },
+  "actions": {
+    "cancel": "Anulați",
+    "retry": "Încercați din nou",
+    "showMore": "Afișați mai mult",
+    "backHome": "Înapoi la pagina principală",
+    "startNow": "Începeți acum",
+    "explore": "Explorați"
+  },
+  "loading": {
+    "default": "Se încarcă…",
+    "redirecting": "Se redirecționează…",
+    "sending": "Se trimite…",
+    "saving": "Se salvează…",
+    "verifying": "Se verifică…"
+  },
+  "empty": {
+    "faq": "Momentan nu există întrebări frecvente.",
+    "plans": "Momentan nu există pachete disponibile.",
+    "categories": "Momentan nu există categorii disponibile.",
+    "orders": "Momentan nu există comenzi",
+    "ordersHint": "Comenzile noi vor apărea aici atunci când sunt publicate."
+  },
+  "errors": {
+    "loadCategories": "Categoriile nu au putut fi încărcate. Încercați din nou mai târziu.",
+    "loadSubcategories": "Subcategoriile nu au putut fi încărcate.",
+    "loadSubSubcategories": "Categoriile detaliate nu au putut fi încărcate.",
+    "loadOrders": "Comenzile nu au putut fi încărcate. Încercați din nou.",
+    "loadPage": "Această pagină nu a putut fi încărcată",
+    "generic": "A apărut o eroare. Încercați din nou.",
+    "timeout": "Solicitarea a durat prea mult. Verificați conexiunea și încercați din nou.",
+    "network": "Serverul nu a putut fi contactat. Verificați conexiunea și încercați din nou.",
+    "unavailable": "Această acțiune nu este disponibilă.",
+    "pricingChanged": "Prețul aprobat s-a modificat. Reîmprospătați pagina și verificați suma în JOD înainte de a trimite din nou.",
+    "rateLimited": "Au fost trimise prea multe solicitări. Așteptați puțin și încercați din nou.",
+    "orderCreateFailed": "Comanda nu a putut fi creată. Încercați din nou."
+  },
+  "pagination": {
+    "navAria": "Paginare",
+    "next": "Următoarea",
+    "previous": "Anterioara",
+    "pageOf": "Pagina {{current}} din {{total}}"
+  },
+  "notFound": {
+    "title": "Pagină indisponibilă",
+    "text": "Este posibil ca această pagină să fie ascunsă sau ca linkul să fie incorect."
+  },
+  "copyright": "© {{year}} Orderz House. Toate drepturile rezervate.",
+  "toast": {
+    "success": "Succes",
+    "error": "Eroare",
+    "warning": "Avertisment",
+    "info": "Informație",
+    "closeAria": "Închideți notificarea"
+  },
+  "skeleton": {
+    "loading": "Se încarcă…",
+    "loadingPage": "Se încarcă pagina…",
+    "loadingOrders": "Se încarcă comenzile…"
+  },
+  "a11y": {
+    "explain": "Explicație: {{label}}",
+    "dataScope": "Domeniul datelor: {{scope}}"
+  },
+  "secureCheckout": {
+    "lead": "Veți continua către pagina de plată securizată Stripe pentru a plăti cu cardul în dinari iordanieni (JOD) — pe dispozitivele compatibile pot apărea Apple Pay sau Google Pay.",
+    "returnOrder": "Dacă reveniți fără să plătiți, nu se încasează nimic, iar comanda dumneavoastră rămâne salvată — folosiți „Continuați plata” oricând.",
+    "returnPackage": "Dacă reveniți fără să plătiți, nu se încasează nimic și puteți continua mai târziu."
+  }
+}

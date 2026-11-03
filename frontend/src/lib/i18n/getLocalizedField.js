@@ -1,11 +1,30 @@
+import { isNewLocale, localizeSystemText } from "../../i18n/systemContent.js";
+
+function nonEmpty(value) {
+  return value != null && String(value).trim() !== "" ? String(value) : "";
+}
+
+/** English source of a bilingual system-content field (`field_en` / `fieldEn`). */
+function englishSource(item, field) {
+  return nonEmpty(item[`${field}_en`]) || nonEmpty(item[`${field}En`]);
+}
+
+/** Arabic source of a bilingual system-content field (`field_ar` / `fieldAr` / base `field`). */
+function arabicSource(item, field) {
+  return nonEmpty(item[`${field}_ar`]) || nonEmpty(item[`${field}Ar`]) || nonEmpty(item[field]);
+}
+
 /**
- * Resolve a localized field from an API/DB item.
+ * Resolve a localized SYSTEM-content field from an API/DB item (plans, categories, FAQ, CMS pages …).
+ * Never use it for user-generated content (orders, messages, profiles) — that keeps its original language.
  *
- * Fallback order:
- * 1. `${field}_${locale}` (e.g. name_en, title_en, description_en)
- * 2. `${field}_ar` (e.g. name_ar)
+ * Arabic / English fallback order (unchanged):
+ * 1. `${field}_${locale}` (e.g. name_en, title_en, description_en; English also `${field}En`)
+ * 2. `${field}_ar`
  * 3. `${field}` (default Arabic/base column)
  * 4. ""
+ * German / Dutch / Romanian: the translation of the source (English, else Arabic) from the system-content
+ * translation memory (see i18n/systemContent.js).
  *
  * @param {Record<string, unknown> | null | undefined} item
  * @param {string} field
@@ -14,6 +33,10 @@
  */
 export function getLocalizedField(item, field, locale = "ar") {
   if (!item || !field) return "";
+
+  if (isNewLocale(locale)) {
+    return localizeSystemText(locale, { ar: arabicSource(item, field), en: englishSource(item, field) });
+  }
 
   const localizedKey = `${field}_${locale}`;
   const arabicKey = `${field}_ar`;
@@ -47,9 +70,14 @@ export function getLocalizedField(item, field, locale = "ar") {
 /**
  * Locale-only field lookup — does not fall back to Arabic when locale is "en".
  * Use for freelancer dashboard API items that ship titleAr/descriptionAr only.
+ * German / Dutch / Romanian translate the English (else Arabic) source through the system-content memory.
  */
 export function getLocaleField(item, field, locale = "ar") {
   if (!item || !field) return "";
+
+  if (isNewLocale(locale)) {
+    return localizeSystemText(locale, { ar: arabicSource(item, field), en: englishSource(item, field) });
+  }
 
   const localizedKey = `${field}_${locale}`;
   const localized = item[localizedKey];

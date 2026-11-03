@@ -173,7 +173,7 @@ const Plans = () => {
 
   if (notFound) {
     return (
-      <main className="container page-content plans-page plans-page--ref" lang={dir === "rtl" ? "ar" : "en"} dir={dir}>
+      <main className="container page-content plans-page plans-page--ref" lang={locale} dir={dir}>
         <section className="card" style={{ marginTop: 24, textAlign: "center", padding: "48px 24px" }}>
           <h1 style={{ marginBottom: 12 }}>{t("plans.pageUnavailable.title")}</h1>
           <p style={{ margin: 0, opacity: 0.85 }}>{t("plans.pageUnavailable.message")}</p>
@@ -192,7 +192,7 @@ const Plans = () => {
       className={`container page-content plans-page plans-page--ref ${layoutConfig.pageModifierClass} ${
         isMainCatalog ? "plans-page--catalog-toggle" : ""
       }`.trim()}
-      lang={dir === "rtl" ? "ar" : "en"}
+      lang={locale}
       dir={dir}
     >
       {isMainCatalog ? <h1 className="sr-only">{pageTitle || t("plans.hero.title")}</h1> : null}

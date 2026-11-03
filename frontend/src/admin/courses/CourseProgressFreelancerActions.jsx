@@ -10,6 +10,7 @@ import {
 import { useToast } from "../../components/ui/toastContext";
 import "../../i18n/coursesResources";
 import { useTranslation } from "../../i18n/LanguageProvider";
+import { pickIntlTag } from "../../i18n/intlLocale";
 import {
   activationStatusLabel,
   adminSubscriptionActivationMenuLabel,
@@ -26,10 +27,10 @@ function errorMessage(err, t) {
   return err?.response?.data?.message || t("courses.errors.actionFailed");
 }
 
-function formatJoDate(iso) {
+function formatJoDate(iso, locale) {
   if (!iso) return "—";
   try {
-    return new Intl.DateTimeFormat("ar-JO-u-nu-latn", {
+    return new Intl.DateTimeFormat(pickIntlTag(locale, { ar: "ar-JO-u-nu-latn", en: "ar-JO-u-nu-latn" }), {
       timeZone: "Asia/Amman",
       dateStyle: "medium",
     }).format(new Date(iso));
@@ -101,7 +102,7 @@ export default function CourseProgressFreelancerActions({
   assignablePlansLoading = false,
   onSubscriptionUpdate,
 }) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const toast = useToast();
   const triggerRef = useRef(null);
   const portalMenuRef = useRef(null);
@@ -383,7 +384,7 @@ export default function CourseProgressFreelancerActions({
               </div>
               <div>
                 <dt>{t("courses.progressActions.expiryDate")}</dt>
-                <dd>{formatJoDate(displaySub?.expiryDate || sub?.expiryDate)}</dd>
+                <dd>{formatJoDate(displaySub?.expiryDate || sub?.expiryDate, locale)}</dd>
               </div>
               <div>
                 <dt>{t("courses.progressActions.orderEligibility")}</dt>

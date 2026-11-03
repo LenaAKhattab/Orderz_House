@@ -1,0 +1,50 @@
+{
+  "page": {
+    "title": "Bildazo-auteurskoppelingen",
+    "description": "Beoordeel koppelingsverzoeken van auteurs en markeer verzoeken na handmatige verificatie. Bildazo-accounts worden hier niet aangemaakt.",
+    "schemaMissing": "De koppelingstabel is nog niet gereed (migratie 164). U kunt deze pagina openen, maar pas koppelen nadat de migratie is uitgevoerd.",
+    "searchLabel": "Zoeken",
+    "searchPlaceholder": "Naam / e-mail / openbare ID",
+    "searchSubmit": "Zoeken",
+    "emptyTitle": "Geen verzoeken",
+    "emptyDesc": "Er zijn geen koppelingsverzoeken die aan het huidige filter voldoen.",
+    "loadSchemaError": "De Bildazo-koppelingstabel is niet gereed.",
+    "loadFailed": "Koppelingsverzoeken konden niet worden geladen.",
+    "freelancerFallback": "Freelancer #{{id}}",
+    "linkedBadge": "Auteursaccount gekoppeld",
+    "emailMatches": " — e-mailadres komt overeen met OrderzHouse",
+    "flowLabel": "Traject:",
+    "flowNew": "Nieuw account",
+    "flowExisting": "Bestaand account",
+    "termsLabel": "Voorwaarden:",
+    "existingAccount": "Bestaand account:",
+    "linkAccount": "Account koppelen",
+    "manualLinkSaved": "Handmatige auteurskoppeling opgeslagen.",
+    "manualLinkFailed": "Handmatige koppeling kon niet worden opgeslagen.",
+    "statusUpdated": "Status van het verzoek bijgewerkt.",
+    "statusUpdateFailed": "Status kon niet worden bijgewerkt.",
+    "reviewReasonPrompt": "Reden van beoordeling (verplicht):",
+    "reviewReasonRequired": "Een reden van beoordeling is verplicht bij de status mislukt of geblokkeerd."
+  },
+  "filters": {
+    "all": "Alle",
+    "pending_new_account": "Verzoek nieuw account",
+    "pending_existing_account": "Verzoek bestaand account",
+    "pending_external_verification": "Externe verificatie",
+    "needs_manual_review": "Handmatige beoordeling",
+    "linked": "Gekoppeld",
+    "failed": "Mislukt",
+    "blocked": "Geblokkeerd"
+  },
+  "dialog": {
+    "title": "Account koppelen",
+    "lede": "Handmatige koppeling binnen OrderzHouse na externe verificatie. Bildazo-accounts worden niet via deze pagina aangemaakt.",
+    "bildazoUserId": "Bildazo-gebruikers-ID (optioneel)",
+    "bildazoPublicId": "Openbare Bildazo-ID",
+    "bildazoProfileUrl": "Bildazo-profiel-URL",
+    "reviewNote": "Beoordelingsnotitie (optioneel)",
+    "confirmVerified": "Ik bevestig dat ik het eigendom van het Bildazo-account heb geverifieerd voordat ik koppel.",
+    "cancel": "Annuleren",
+    "submit": "Account koppelen"
+  }
+}

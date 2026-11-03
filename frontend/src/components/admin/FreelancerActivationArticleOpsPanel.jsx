@@ -47,7 +47,7 @@ function fundEntryTypeLabel(type, t) {
 function fundEntryReasonLabel(entry, t) {
   const reason = String(entry?.reason || "").trim();
   const metaReason = String(entry?.metadata?.reason || "").trim();
-  if (metaReason === "minimum_not_met_refund" || reason.includes("عدم اكتمال") || reason.includes("minimum")) {
+  if (metaReason === "minimum_not_met_refund") {
     return t("fundEntry.refundMinNotMet");
   }
   if (reason) return reason;

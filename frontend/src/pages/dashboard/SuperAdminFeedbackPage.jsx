@@ -235,7 +235,7 @@ export default function SuperAdminFeedbackPage() {
                   ))
                 : FEEDBACK_TYPES.map((opt) => (
                     <option key={opt.value} value={opt.value}>
-                      {locale === "en" ? opt.en : opt.ar}
+                      {t(opt.labelKey)}
                     </option>
                   ))}
             </select>
@@ -246,7 +246,7 @@ export default function SuperAdminFeedbackPage() {
               <option value="">{t("dashboard.feedback.filterAll")}</option>
               {FEEDBACK_STATUSES.map((opt) => (
                 <option key={opt.value} value={opt.value}>
-                  {locale === "en" ? opt.en : opt.ar}
+                  {t(opt.labelKey)}
                 </option>
               ))}
             </select>
@@ -265,7 +265,7 @@ export default function SuperAdminFeedbackPage() {
               <option value="">{t("dashboard.feedback.filterAll")}</option>
               {FEEDBACK_PRIORITIES.map((opt) => (
                 <option key={opt.value} value={opt.value}>
-                  {locale === "en" ? opt.en : opt.ar}
+                  {t(opt.labelKey)}
                 </option>
               ))}
             </select>

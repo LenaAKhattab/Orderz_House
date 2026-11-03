@@ -1,5 +1,6 @@
 import { useTranslation } from "../../i18n/LanguageProvider";
 import "../../i18n/activationResources";
+import { isNewLocale, localizeSystemText } from "../../i18n/systemContent";
 
 export default function FreelancerActivationTrialStatusBlock({
   state,
@@ -92,7 +93,11 @@ export default function FreelancerActivationTrialStatusBlock({
         </p>
       ) : null}
       <p className="mb-0 text-[0.82rem] font-semibold text-[color:var(--dash-text-secondary,#4b5563)]">
-        {locale === "en" ? state.messageEn || state.message : state.message}
+        {isNewLocale(locale)
+          ? localizeSystemText(locale, { ar: state.message, en: state.messageEn })
+          : locale === "en"
+            ? state.messageEn || state.message
+            : state.message}
       </p>
       {next && next !== "none" ? (
         <p className="mb-0 mt-1 text-[0.78rem] font-bold text-[color:var(--dash-primary,#2f3b65)]" data-next-action={next}>

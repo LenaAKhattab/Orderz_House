@@ -24,6 +24,7 @@ import ConfirmDialog from "../../../components/dashboard/ConfirmDialog";
 import InstitutionalCreateOrderModal from "./InstitutionalCreateOrderModal";
 import { superAdminBreadcrumbs } from "../../../components/dashboard/dashboardBreadcrumbs";
 import { useTranslation } from "../../../i18n/LanguageProvider";
+import { intlTagOrDefault, pickIntlTag } from "../../../i18n/intlLocale.js";
 import { useToast } from "../../../components/ui/toastContext";
 import {
   adminArchiveInstitutionalOrderRequest,
@@ -155,16 +156,16 @@ function institutionStatusLabel(status, t) {
   return String(status || "—");
 }
 
-function formatMoney(value, t) {
+function formatMoney(value, t, locale) {
   const n = Number(value);
   if (!Number.isFinite(n)) return "—";
-  return `${n.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${t("dashboard.institutionalOrderStorage.currencyJod")}`;
+  return `${n.toLocaleString(intlTagOrDefault(locale), { maximumFractionDigits: 2 })} ${t("dashboard.institutionalOrderStorage.currencyJod")}`;
 }
 
 function formatDate(value, locale) {
   if (!value) return "—";
   try {
-    return new Date(value).toLocaleDateString(locale === "en" ? "en-GB" : "ar-JO-u-nu-latn");
+    return new Date(value).toLocaleDateString(pickIntlTag(locale, { ar: "ar-JO-u-nu-latn", en: "en-GB" }));
   } catch {
     return String(value);
   }
@@ -173,7 +174,7 @@ function formatDate(value, locale) {
 function formatDateTime(value, locale) {
   if (!value) return "—";
   try {
-    return new Date(value).toLocaleString(locale === "en" ? "en-GB" : "ar-JO-u-nu-latn");
+    return new Date(value).toLocaleString(pickIntlTag(locale, { ar: "ar-JO-u-nu-latn", en: "en-GB" }));
   } catch {
     return String(value);
   }
@@ -563,23 +564,23 @@ export default function InstitutionalOrderStorageDetailPage() {
               <div className="oh-ios-detail__kpi-grid oh-ios-detail__kpi-grid--finance">
                 <KpiCard
                   label={t("dashboard.institutionalOrderStorage.financialLimit")}
-                  value={formatMoney(storage.financialLimitJod, t)}
+                  value={formatMoney(storage.financialLimitJod, t, locale)}
                   Icon={Wallet}
                 />
                 <KpiCard
                   label={t("dashboard.institutionalOrderStorage.remaining")}
-                  value={formatMoney(storage.remainingJod, t)}
+                  value={formatMoney(storage.remainingJod, t, locale)}
                   Icon={Coins}
                 />
                 <KpiCard
                   label={t("dashboard.institutionalOrderStorage.pendingValue")}
-                  value={formatMoney(storage.pendingValueJod, t)}
+                  value={formatMoney(storage.pendingValueJod, t, locale)}
                   Icon={Hourglass}
                   hint={t("dashboard.institutionalOrderStorage.pendingValueHint")}
                 />
                 <KpiCard
                   label={t("dashboard.institutionalOrderStorage.usedAmount")}
-                  value={usedAmountJod == null ? "—" : formatMoney(usedAmountJod, t)}
+                  value={usedAmountJod == null ? "—" : formatMoney(usedAmountJod, t, locale)}
                   Icon={Coins}
                 />
                 <KpiCard
@@ -660,19 +661,19 @@ export default function InstitutionalOrderStorageDetailPage() {
                 <dl className="oh-ios-detail__dl">
                   <InfoRow
                     label={t("dashboard.institutionalOrderStorage.financialLimit")}
-                    value={formatMoney(storage.financialLimitJod, t)}
+                    value={formatMoney(storage.financialLimitJod, t, locale)}
                   />
                   <InfoRow
                     label={t("dashboard.institutionalOrderStorage.remaining")}
-                    value={formatMoney(storage.remainingJod, t)}
+                    value={formatMoney(storage.remainingJod, t, locale)}
                   />
                   <InfoRow
                     label={t("dashboard.institutionalOrderStorage.pendingValue")}
-                    value={formatMoney(storage.pendingValueJod, t)}
+                    value={formatMoney(storage.pendingValueJod, t, locale)}
                   />
                   <InfoRow
                     label={t("dashboard.institutionalOrderStorage.usedAmount")}
-                    value={usedAmountJod == null ? "—" : formatMoney(usedAmountJod, t)}
+                    value={usedAmountJod == null ? "—" : formatMoney(usedAmountJod, t, locale)}
                   />
                 </dl>
               </section>
@@ -755,7 +756,7 @@ export default function InstitutionalOrderStorageDetailPage() {
                               <span className="oh-ios-detail__lifecycle">{lifecycleLabel(o.lifecycleStatus, t)}</span>
                             </td>
                             <td>{liveOrderStatusLabel(o.liveOrder?.orderStatus, t)}</td>
-                            <td className="tabular-nums whitespace-nowrap">{formatMoney(o.orderPriceJod, t)}</td>
+                            <td className="tabular-nums whitespace-nowrap">{formatMoney(o.orderPriceJod, t, locale)}</td>
                             <td className="whitespace-nowrap">{formatDate(o.createdAt || o.approvedAt, locale)}</td>
                             <td>{orderActionButtons(o)}</td>
                           </tr>
@@ -770,7 +771,7 @@ export default function InstitutionalOrderStorageDetailPage() {
                         <h4 className="oh-ios-detail__order-card-title">{o.title}</h4>
                         <div className="oh-ios-detail__order-card-meta">
                           <span className="oh-ios-detail__lifecycle">{lifecycleLabel(o.lifecycleStatus, t)}</span>
-                          <span>{formatMoney(o.orderPriceJod, t)}</span>
+                          <span>{formatMoney(o.orderPriceJod, t, locale)}</span>
                           <span>{formatDate(o.createdAt || o.approvedAt, locale)}</span>
                           {o.liveOrder?.orderStatus ? (
                             <span>
@@ -837,7 +838,7 @@ export default function InstitutionalOrderStorageDetailPage() {
                         {(schedule?.unscheduledOrders || []).map((o) => (
                           <tr key={o.id}>
                             <td className="break-words font-semibold">{o.title}</td>
-                            <td>{formatMoney(o.orderPriceJod, t)}</td>
+                            <td>{formatMoney(o.orderPriceJod, t, locale)}</td>
                             <td>
                               <div className="oh-ios-detail__batch-tools">
                                 <select

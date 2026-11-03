@@ -1,4 +1,6 @@
 import { formatPriceJod } from "./planDisplayUtils";
+import { getActiveLocale } from "../../i18n/activeLocale.js";
+import { pickIntlTag } from "../../i18n/intlLocale.js";
 import {
   concentrationPlatformPhrase,
   planMetricT,
@@ -95,7 +97,8 @@ export const HEALTH_THRESHOLDS = {
 };
 
 export function formatInt(value) {
-  return new Intl.NumberFormat("ar-JO-u-nu-latn").format(Math.trunc(Number(value)));
+  const tag = pickIntlTag(getActiveLocale(), { ar: "ar-JO-u-nu-latn", en: "ar-JO-u-nu-latn" });
+  return new Intl.NumberFormat(tag).format(Math.trunc(Number(value)));
 }
 
 function formatPctAr(pct) {

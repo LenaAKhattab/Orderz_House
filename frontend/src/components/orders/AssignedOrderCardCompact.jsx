@@ -37,7 +37,7 @@ export default function AssignedOrderCardCompact({ order, onOpenDetails }) {
       <div className="oh-order-card__content">
         <h3 className="oh-assigned-card__title oh-order-card__title" dir="auto">{order?.title || "—"}</h3>
         <p className="oh-order-card__summary" dir="auto">{description}</p>
-        <div className="oh-order-card__meta-row" aria-label="order type and price">
+        <div className="oh-order-card__meta-row" aria-label={t("platformComponents.orders.typeAndPriceAria")}>
           <span className="oh-order-card__price">
             {order?.projectType === "bidding" && order?.bidBudgetMin != null && order?.bidBudgetMax != null ? (
               <JodMoneyDisplay amount={order.bidBudgetMin} amountMax={order.bidBudgetMax} compact />

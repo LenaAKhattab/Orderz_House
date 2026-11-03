@@ -26,10 +26,6 @@ import {
 } from "../../admin/marketplaceArticles/marketplaceArticleFormUtils";
 import { shouldBlockArticleApply } from "../../constants/bildazoAuthorTerms";
 import { freelancerBildazoPublishCopy } from "../../constants/bildazoArticlePublish";
-import {
-  MINI_ARTICLE_SUBMISSION_TERMS_COPY_AR,
-  MINI_ARTICLE_SUBMISSION_TERMS_COPY_EN,
-} from "../../constants/freelancerActivationEarnedBalance";
 import PlanUpgradeRequiredCta from "../../components/freelancer/PlanUpgradeRequiredCta";
 import {
   requiredTierCodeForArticleLevel,
@@ -556,7 +552,7 @@ export default function FreelancerMarketplaceArticleDetailPage() {
                         onChange={(e) => setTermsAccepted(e.target.checked)}
                       />
                       <span>
-                        {isEn ? MINI_ARTICLE_SUBMISSION_TERMS_COPY_EN : MINI_ARTICLE_SUBMISSION_TERMS_COPY_AR}
+                        {tDash("platformPages.articleDetail.manuscriptTermsCopy")}
                       </span>
                     </label>
                     {manuscriptErrors.termsAccepted ? (

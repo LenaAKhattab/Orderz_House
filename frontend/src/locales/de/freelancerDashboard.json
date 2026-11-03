@@ -1,0 +1,1246 @@
+{
+  "header": {
+    "loadErrorTitle": "Dashboard konnte nicht geladen werden",
+    "loadErrorDefault": "Das Dashboard konnte nicht geladen werden.",
+    "retry": "Erneut versuchen"
+  },
+  "hero": {
+    "ariaLabel": "Willkommen in Ihrem Dashboard",
+    "title": "Willkommen in Ihrem Dashboard",
+    "subtitle": "Ihre zentrale Anlaufstelle, um Freelance-Arbeit zu verwalten, Aufträge zu verfolgen, Ihre Fähigkeiten auszubauen und Ihr Einkommen zu steigern.",
+    "browseOrders": "Verfügbare Aufträge durchsuchen",
+    "myOrders": "Meine Aufträge ansehen",
+    "metricsAria": "Kurzübersicht",
+    "coursesStart": {
+      "ariaLabel": "Mit Kursen beginnen",
+      "title": "Mit Kursen beginnen",
+      "body": "Kurse sind Ihr erster Schritt, um den Arbeitsablauf zu verstehen und Aufträge zu erhalten.",
+      "cta": "Kurse ansehen"
+    },
+    "welcomeName": "Hallo, {{name}}",
+    "controlCenterTitle": "Kontrollzentrum",
+    "controlCenterSubtitle": "Ein vollständiger Überblick über Ihre Arbeit, Ihr Abonnement und Ihre Aufträge."
+  },
+  "stats": {
+    "trustLevel": "Vertrauensstufe",
+    "trustLevelNumber": "Stufe {{level}}",
+    "totalEarnings": "Gesamteinnahmen",
+    "fromClaims": "Aus Abrechnungsanträgen",
+    "paidTotal": "Gesamt ausgezahlt",
+    "activeOrders": "Aktive Aufträge",
+    "activeOrdersSub": "In Bearbeitung",
+    "overallRating": "Gesamtbewertung",
+    "noRatingYet": "Noch keine",
+    "outOfFive": "von 5",
+    "reviewCount": "{{count}} Bewertung",
+    "reviewCount_plural": "{{count}} Bewertungen",
+    "beginner": "Einsteiger",
+    "trustLevels": {
+      "beginner": "Einsteiger",
+      "active": "Aktiv",
+      "professional": "Profi",
+      "trusted": "Vertrauenswürdig",
+      "expert": "Experte"
+    },
+    "performance": {
+      "title": "Leistung",
+      "completed": "Abgeschlossen",
+      "completionRate": "Abschlussquote",
+      "onTime": "Pünktlich",
+      "revisions": "Überarbeitungen",
+      "avgDelivery": "Ø Lieferzeit",
+      "days": "{{count}} Tag",
+      "days_plural": "{{count}} Tage",
+      "paidClaims": "Ausgezahlt (Anträge)",
+      "completedLast30": "{{count}} Auftrag in den letzten 30 Tagen abgeschlossen.",
+      "completedLast30_plural": "{{count}} Aufträge in den letzten 30 Tagen abgeschlossen."
+    },
+    "courses": {
+      "assigned": "Zugewiesen",
+      "inProgress": "In Bearbeitung",
+      "completed": "Abgeschlossen",
+      "finalTest": "Abschlusstest",
+      "totalCourses": "Kurse gesamt",
+      "inProgressLabel": "Laufend",
+      "avgProgress": "Durchschnittlicher Fortschritt"
+    },
+    "earnings": {
+      "paid": "Ausgezahlt",
+      "pending": "Fällig / ausstehend",
+      "openClaims": "Offene Anträge"
+    },
+    "myOrders": {
+      "summaryAria": "Auftragsübersicht",
+      "total": "Aufträge gesamt",
+      "active": "Aktiv",
+      "pendingReview": "In Prüfung",
+      "completed": "Abgeschlossen",
+      "cancelled": "Storniert",
+      "showing": "{{shown}} von {{total}} Auftrag angezeigt",
+      "showing_plural": "{{shown}} von {{total}} Aufträgen angezeigt",
+      "perPage": "{{limit}} / Seite"
+    },
+    "financialClaims": {
+      "summaryAria": "Übersicht der Anträge",
+      "total": "Anträge gesamt",
+      "underReview": "In Prüfung",
+      "paid": "Ausgezahlt"
+    },
+    "workload": {
+      "activeCount": "{{count}} aktiver Auftrag",
+      "activeCount_plural": "{{count}} aktive Aufträge"
+    }
+  },
+  "tip": {
+    "title": "Tipp des Tages",
+    "profileCompletion": "Profilvollständigkeit",
+    "percentComplete": "{{pct}} % vollständig",
+    "defaultHeadline": "Weiter so!",
+    "defaultDescription": "Konzentrieren Sie sich auf die Lieferqualität und starke Kundenbewertungen.",
+    "browseOrders": "Aufträge durchsuchen"
+  },
+  "actions": {
+    "noUrgentTitle": "Derzeit keine dringenden Aktionen",
+    "noUrgentSubtitle": "Sie sind bei Ihren Aufträgen und Benachrichtigungen auf dem neuesten Stand.",
+    "moreCount": "(+{{count}} weitere)",
+    "moreCount_plural": "(+{{count}} weitere)",
+    "continue": "Weiter",
+    "viewCourse": "Kurs ansehen"
+  },
+  "training": {
+    "coursesTitle": "Kurse & Training",
+    "allCourses": "Alle Kurse",
+    "eligibilityNote": "Abgeschlossene Kurse ändern die Marktplatz-Berechtigung nicht automatisch – sie dienen nur der beruflichen Weiterentwicklung.",
+    "pendingFinalTest": "Sie haben {{count}} Kurs, der auf den Abschlusstest wartet.",
+    "pendingFinalTest_plural": "Sie haben {{count}} Kurse, die auf den Abschlusstest warten.",
+    "continueCourse": "Fortsetzen: {{title}}",
+    "defaultCourseTitle": "Kurs",
+    "noAssignedCourses": "Noch keine Kurse zugewiesen.",
+    "pageTitle": "Fähigkeiten ausbauen, Zukunft gestalten",
+    "pageSubtitle": "Entdecken Sie Ihre zugewiesenen Kurse, verfolgen Sie Ihren Fortschritt und schließen Sie Lektionen und Abschlusstests in einer mit Ihrem Dashboard verbundenen Lernumgebung ab.",
+    "searchPlaceholder": "Nach einem Kurs oder einer Fähigkeit suchen...",
+    "searchAria": "Kurse durchsuchen",
+    "coursesSummaryAria": "Kursübersicht",
+    "filterAria": "Kurse filtern",
+    "sortPrefix": "Sortieren:",
+    "sortAria": "Kurse sortieren",
+    "yourCourses": "Ihre Kurse",
+    "courseCount": "{{count}} Kurs",
+    "courseCount_plural": "{{count}} Kurse",
+    "tabs": {
+      "all": "Alle",
+      "inProgress": "Laufend",
+      "completed": "Abgeschlossen",
+      "notStarted": "Nicht begonnen",
+      "favorites": "Favoriten"
+    },
+    "sort": {
+      "newest": "Neueste",
+      "oldest": "Älteste",
+      "progressHigh": "Größter Fortschritt",
+      "progressLow": "Geringster Fortschritt",
+      "title": "Name (A–Z)"
+    },
+    "card": {
+      "untitled": "Kurs ohne Titel",
+      "defaultDescription": "Folgen Sie den Videolektionen und erfüllen Sie die Kursanforderungen Schritt für Schritt.",
+      "lessonCount": "{{count}} Lektion",
+      "lessonCount_plural": "{{count}} Lektionen",
+      "noLessons": "Keine Lektionen",
+      "levelIntermediate": "Mittelstufe",
+      "lastUpdated": "Zuletzt aktualisiert am {{date}}",
+      "progressAria": "Fortschritt {{pct}} %",
+      "lessonsCompleted": "{{completed}}/{{total}} Lektion abgeschlossen",
+      "lessonsCompleted_plural": "{{completed}}/{{total}} Lektionen abgeschlossen",
+      "lessonsShort": "{{completed}}/{{total}} Lektionen",
+      "reviewCourse": "Kurs wiederholen",
+      "startCourse": "Kurs starten",
+      "continueLearning": "Weiterlernen",
+      "review": "Wiederholen",
+      "start": "Starten",
+      "continue": "Fortsetzen",
+      "addFavorite": "Zu Favoriten hinzufügen",
+      "removeFavorite": "Aus Favoriten entfernen",
+      "statusCompleted": "Abgeschlossen",
+      "statusInProgress": "Laufend",
+      "statusNotStarted": "Noch nicht begonnen",
+      "testCompleted": "Abschlusstest bestanden",
+      "testPending": "Abschlusstest ausstehend",
+      "testIncluded": "Mit Abschlusstest",
+      "lockedByPlan": "Dieser Kurs ist in höheren Paketen verfügbar",
+      "upgradePlan": "Paket upgraden",
+      "tierFromSilver": "Verfügbar ab Silver",
+      "tierFromPro": "Verfügbar ab Pro",
+      "tierFromElite": "Verfügbar mit Elite",
+      "activateOrUpgrade": "Aktivieren oder upgraden Sie Ihr Paket, um auf diesen Kurs zuzugreifen"
+    },
+    "loadError": "Kurse konnten nicht geladen werden."
+  },
+  "orders": {
+    "backToList": "Zurück zur Liste",
+    "orderNotFound": "Auftrag nicht gefunden",
+    "noFiles": "Keine Dateien angehängt",
+    "alreadyParticipated": "Sie haben Ihre Teilnahme an diesem Auftrag bereits registriert.",
+    "alreadyBid": "Sie haben für diesen Auftrag bereits ein Angebot abgegeben.",
+    "submitting": "Wird gesendet…",
+    "bidSubmitted": "Angebot abgegeben",
+    "submitBid": "Angebot abgeben",
+    "taking": "Wird angenommen…",
+    "registered": "Registriert",
+    "takeOrder": "Auftrag übernehmen",
+    "bidUnderReview": "Ihr Angebot wird geprüft, bevor es dem Kunden angezeigt wird."
+  },
+  "myOrders": {
+    "title": "Meine aktuellen Aufträge",
+    "subtitle": "Behalten Sie zugewiesene Arbeiten, Fristen und den Bearbeitungsstatus mühelos im Blick.",
+    "searchPlaceholder": "Aufträge durchsuchen (Titel oder Auftragsnummer)",
+    "searchAria": "Aufträge durchsuchen",
+    "sortPrefix": "Sortieren:",
+    "sortAria": "Aufträge sortieren",
+    "refreshAria": "Liste aktualisieren",
+    "refreshTitle": "Liste aktualisieren",
+    "listAria": "Auftragsliste",
+    "loadError": "Aufträge konnten gerade nicht geladen werden. Bitte versuchen Sie es erneut.",
+    "loadErrorTitle": "Aufträge konnten nicht geladen werden",
+    "filterAria": "Aufträge nach Status filtern",
+    "filters": {
+      "all": "Alle",
+      "revisionRequired": "Überarbeitung nötig",
+      "assigned": "Zugewiesen",
+      "inProgress": "In Bearbeitung",
+      "pendingReview": "In Prüfung",
+      "completed": "Abgeschlossen",
+      "cancelled": "Storniert"
+    },
+    "sort": {
+      "newest": "Neueste",
+      "oldest": "Älteste",
+      "priceHigh": "Höchster Preis",
+      "priceLow": "Niedrigster Preis"
+    },
+    "details": {
+      "loadErrorTitle": "Auftragsdetails konnten nicht geladen werden",
+      "revisionSectionTitle": "Details zur Überarbeitungs- / Prüfungsanfrage",
+      "requestedBy": "Angefordert von",
+      "requestMessage": "Nachricht zur Anfrage",
+      "requestDate": "Anfragedatum",
+      "deadline": "Frist",
+      "status": "Status",
+      "linkedAttachments": "Verknüpfte Anhänge",
+      "noExtraAttachments": "Keine weiteren Anhänge.",
+      "submissionHistory": "Liefer- und Überarbeitungsverlauf",
+      "yourDelivery": "Ihre Lieferung",
+      "deliverOrder": "Auftrag liefern",
+      "deliveryHint": "Laden Sie die finalen Dateien oder Bilder hoch (bis zu fünf Dateien).",
+      "selectFiles": "Dateien auswählen",
+      "submitDelivery": "Lieferung absenden",
+      "submitting": "Wird gesendet…",
+      "deliveryStatus": "Lieferstatus",
+      "pendingReviewMessage": "Ihre Lieferung wurde zur Prüfung gesendet und wartet auf die endgültige Genehmigung (Kunde/Administrator). Während der Prüfung kann sie nicht bearbeitet werden; wird eine Überarbeitung angefordert, können Sie eine neue Lieferung senden.",
+      "alertTitle": "Hinweis",
+      "selectFileRequired": "Wählen Sie mindestens eine Datei aus.",
+      "fileSizeTitle": "Dateigröße",
+      "uploadSizeHelper": "Maximale Gesamtgröße beim Hochladen: 5 MB.",
+      "uploadSizeError": "Die Gesamtgröße der Dateien darf 5 MB nicht überschreiten.",
+      "deliverySuccessTitle": "Geliefert",
+      "deliverySuccessMessage": "Die Anhänge wurden dem Kunden zur Prüfung gesendet.",
+      "deliveryErrorTitle": "Lieferung fehlgeschlagen",
+      "revisionRequesterAdmin": "Administrator",
+      "revisionRequesterClient": "Kunde",
+      "revisionDelivered": "Überarbeitung geliefert",
+      "revisionInProgress": "Überarbeitung in Bearbeitung",
+      "revisionPending": "Überarbeitung ausstehend",
+      "phaseRevisionInProgress": "Überarbeitung in Bearbeitung",
+      "phasePendingClientApproval": "Wartet auf Genehmigung der Lieferung durch den Kunden",
+      "phaseCompleted": "Abgeschlossen",
+      "phaseInProgressDeliver": "In Bearbeitung – Sie können Dateien einreichen",
+      "deliveryNoteLabel": "Hinweis zur Lieferung (optional)",
+      "deliveryNotePlaceholder": "Beschreiben Sie, was Sie geliefert haben, oder worauf Sie hinweisen möchten…",
+      "resubmitHint": "Hängen Sie die Dateien der überarbeiteten Lieferung an. Die vorherige Lieferung bleibt im Verlauf erhalten.",
+      "resubmitDelivery": "Lieferung erneut einreichen",
+      "deliveryErrorMessage": "Die Lieferung konnte nicht gesendet werden. Bitte versuchen Sie es erneut."
+    }
+  },
+  "plans": {
+    "eyebrow": "Ihr aktuelles Paket",
+    "loadingEyebrow": "Pakete",
+    "loadingSubtitle": "Ihre Pakete werden geladen…",
+    "freePlanTitle": "Kostenloses Abonnement",
+    "freePlanSubtitle": "Upgraden Sie auf ein höheres Paket für Aufträge mit höherem Wert und zusätzliche Vorteile.",
+    "paidPlanSubtitle": "Verfolgen Sie Ihr Abonnement und wechseln Sie zum nächsten Paket, wenn Sie bereit sind.",
+    "nextPlanHint": "Nächstes Paket: {{title}} – wählen Sie es zum Upgraden in der Liste unten aus.",
+    "summaryAria": "Abonnementübersicht",
+    "upgradeSectionAria": "Upgrade-Pakete",
+    "marketplaceCatalogAria": "Freelancer-Mitgliedschaftspakete",
+    "pageCatalogAria": "Seitenpakete",
+    "subscriptionStatus": "Abonnementstatus",
+    "payment": "Zahlung",
+    "companyActivation": "Aktivierung durch das Unternehmen",
+    "marketplaceEligibility": "Marktplatz-Berechtigung",
+    "orderValueRange": "Auftragswertspanne",
+    "expiresOn": "Läuft ab am",
+    "canApply": "Sie können sich bewerben",
+    "notEligible": "Nicht berechtigt",
+    "planAndEligibility": "Paket & Berechtigung",
+    "choosePlan": "Paket wählen",
+    "noActiveSubscription": "Kein aktives Abonnement – wählen Sie ein Paket, um zu starten.",
+    "subscriptionLabel": "Abonnement",
+    "realOrders": "Echte Aufträge",
+    "realOrdersFreeRange": "Verfügbar im Bereich 3–7 JOD",
+    "realOrdersPerPlan": "Verfügbar gemäß Ihrem Paket",
+    "trainingOrders": "Trainingsaufträge",
+    "trainingOrdersNote": "Verfügbar gemäß Plattformeinstellungen",
+    "currentWorkload": "Aktuelle Auslastung",
+    "remainingTime": "Verbleibende Zeit",
+    "rangeFreePlan": "3 bis 7 JOD (echte und Trainingsaufträge)",
+    "rangeMinMax": "{{min}} bis {{max}} JOD",
+    "rangeMinOnly": "Ab {{min}} JOD"
+  },
+  "marketplaceMembership": {
+    "title": "Freelancer-Mitgliedschaft",
+    "currentEyebrow": "Ihre aktuelle Mitgliedschaft",
+    "purchasedEyebrow": "Gekauft",
+    "purchasedTitle": "Mitgliedschaft gekauft",
+    "pendingStartBody": "Ihr Abonnementzeitraum beginnt erst, wenn Sie Ihren ersten Auftrag erhalten. Bitte schließen Sie vor der Bewerbung auf Aufträge die Identitätsverifizierung und das Training ab.",
+    "applyGatesReminder": "Schließen Sie die Identitätsverifizierung und das erforderliche Training ab, bevor Sie sich auf Aufträge bewerben.",
+    "purchasedAt": "Kaufdatum",
+    "termStatus": "Laufzeitstatus",
+    "termNotStarted": "Noch nicht begonnen",
+    "termStartsWhen": "Abonnementbeginn",
+    "termStartsOnFirstOrder": "Mit Ihrem ersten Auftrag",
+    "statusPurchasedPendingStart": "Gekauft – wartet auf den ersten Auftrag",
+    "statusAssignedNotStarted": "Wartet auf den ersten Auftrag",
+    "assignedNotStartedBody": "Ihr Mitgliedschaftszeitraum beginnt, sobald Sie Ihren ersten echten Auftrag erhalten.",
+    "checkoutSuccessTitle": "Mitgliedschaft erfolgreich gekauft",
+    "checkoutSuccessMessage": "Mitgliedschaft erfolgreich gekauft. Ihr Abonnementzeitraum beginnt erst, wenn Sie Ihren ersten Auftrag erhalten. Bitte schließen Sie vor der Bewerbung auf Aufträge die Identitätsverifizierung und das Training ab.",
+    "checkoutWebhookHint": "Die Zahlungsbestätigung kann einen Moment dauern, wenn das System den Webhook noch verarbeitet. Aktualisieren Sie die Seite in Kürze, falls die Mitgliedschaft noch nicht angezeigt wird.",
+    "checkoutCancelledTitle": "Zahlung abgebrochen",
+    "checkoutCancelledMessage": "Die Zahlung wurde nicht abgeschlossen. Wenn Ihre Karte abgelehnt wurde, versuchen Sie es mit einer anderen Karte oder wenden Sie sich an Ihre Bank. Sie können jederzeit erneut ein Paket wählen.",
+    "dismissBanner": "Ausblenden",
+    "checkoutFailedTitle": "Zahlung konnte nicht gestartet werden",
+    "checkoutFailed": "Die Zahlungsseite konnte nicht geöffnet werden. Bitte versuchen Sie es erneut.",
+    "checkoutMissingUrl": "Der Server hat keine Zahlungs-URL zurückgegeben.",
+    "checkoutUnsupportedPlan": "Dieses Paket kann nicht über Stripe gekauft werden.",
+    "starterActivatedTitle": "Starter aktiviert",
+    "starterActivatedMessage": "Ihre kostenlose Starter-Mitgliedschaft ist jetzt aktiv.",
+    "starterActivateFailedTitle": "Starter konnte nicht aktiviert werden",
+    "starterActivateFailed": "Starter konnte nicht aktiviert werden. Schließen Sie die Verifizierung ab und versuchen Sie es erneut.",
+    "starterReadyEyebrow": "Kostenloses Paket",
+    "starterReadyTitle": "Kostenloses Paket ist bereit",
+    "starterReadyBody": "Ihre Testphase beginnt erst, wenn Sie die Identitätsverifizierung und das Training abgeschlossen und auf „Testphase starten“ geklickt haben.",
+    "starterGatesReminder": "Schließen Sie die Identitätsverifizierung und das Training ab, um Ihre Testphase zu starten.",
+    "startTrialCta": "Testphase starten",
+    "statusStarterPendingStart": "Bereit – Testphase nicht gestartet",
+    "starterTrialStartedTitle": "Testphase gestartet",
+    "starterTrialStartedMessage": "Ihre kostenlose Starter-Testphase ist jetzt für 10 Tage aktiv.",
+    "starterTrialFailedTitle": "Testphase konnte nicht gestartet werden",
+    "starterTrialFailed": "Die Testphase konnte nicht gestartet werden. Schließen Sie die Identitätsverifizierung und das Training ab und versuchen Sie es dann erneut.",
+    "remainingDays": "Verbleibende Tage",
+    "summaryAria": "Übersicht der Freelancer-Mitgliedschaft",
+    "loading": "Mitgliedschaftsstatus wird geladen…",
+    "none": "Keine aktive Freelancer-Mitgliedschaft",
+    "noneHint": "Wählen Sie unten ein Paket, um Ihre Mitgliedschaft zu starten.",
+    "status": "Status",
+    "statusActive": "Aktiv",
+    "statusPending": "Antrag auf Aktivierung der Mitgliedschaft in Prüfung",
+    "statusSuspended": "Gesperrt",
+    "statusExpired": "Mitgliedschaft abgelaufen",
+    "statusEnded": "Beendet",
+    "endsOn": "Endet am",
+    "bidsAvailable": "Verfügbare Angebote",
+    "dailyLimit": "Tageslimit",
+    "currentPlan": "Aktuelles Paket",
+    "cycleStart": "Zyklusbeginn",
+    "cycleEnd": "Zyklusende",
+    "priorityBidUsage": "Nutzung von Prioritätsangeboten",
+    "bidsPerMonth": "Angebote / Monat",
+    "articleAccessLevel": "Zugriffsstufe für Artikel",
+    "articleAccessLevelHint": "Berechtigt zum Zugriff auf bzw. zur Bewerbung für Artikelstufen bis zu dieser Stufe – keine kostenlosen oder unbegrenzten Bewerbungen.",
+    "engineComingSoon": "Die Prioritätsangebots-Engine folgt in Kürze – diese Ansicht dient nur der Abrechnung.",
+    "loadErrorTitle": "Ihr Mitgliedschaftsstatus konnte nicht geladen werden",
+    "loadErrorHint": "Dies ändert nichts an Ihrer Mitgliedschaft. Aktualisieren Sie die Seite, bevor Sie ein Paket kaufen."
+  },
+  "bidCredits": {
+    "title": "Verfügbare Angebots-Credits",
+    "subtitle": "1 Credit = 1 reguläres Angebot auf dem Marktplatz. Bearbeitungen verbrauchen keinen weiteren Credit.",
+    "loading": "Angebots-Credits werden geladen…",
+    "available": "Verfügbar",
+    "fromMembership": "Aus der Mitgliedschaft",
+    "fromAdmin": "Vom Administrator gewährt",
+    "monthlyAllowance": "Monatliches Kontingent",
+    "unlockedThisMonth": "Diesen Monat freigeschaltet",
+    "nextExpiry": "Nächster Ablauf",
+    "engineComingSoon": "Demnächst – die Angebots-Credits-Engine ist noch nicht aktiv.",
+    "engineOn": "Die Angebots-Credits-Engine ist verfügbar.",
+    "ledgerEvents": {
+      "NORMAL_APPLICATION_BID_REFUND": "Credit-Rückerstattung",
+      "APPLICATION_BID_CONSUME": "Credit verwendet",
+      "MEMBERSHIP_BID_GRANT": "Freischaltung durch Mitgliedschaft",
+      "ADMIN_BID_GRANT": "Gewährung durch Administrator",
+      "ADMIN_BID_ADJUSTMENT": "Korrektur durch Administrator",
+      "BID_EXPIRED": "Credit abgelaufen"
+    }
+  },
+  "financialClaims": {
+    "title": "Abrechnungsanträge",
+    "subtitle": "Erstellen Sie einen neuen Antrag und verfolgen Sie für jeden Auftrag Prüfung, Auszahlungszeitraum sowie ausgezahlte und offene Beträge.",
+    "newClaim": "Neuer Antrag",
+    "loading": "Anträge werden geladen…",
+    "loadErrorTitle": "Anträge konnten nicht geladen werden",
+    "emptyTitle": "Noch keine Anträge",
+    "emptySub": "Erstellen Sie Ihren ersten Abrechnungsantrag, um ihn hier nach Status gruppiert zu sehen.",
+    "groupEmpty": "Keine Einträge in dieser Gruppe.",
+    "wallet": "Einnahmen & Wallet",
+    "walletLink": "Wallet",
+    "earningsNote": "Die Zahlen stammen aus Ihren genehmigten Abrechnungsanträgen – nicht aus den Auftragswerten der Plattform.",
+    "earningsHero": {
+      "aria": "Übersicht der Freelancer-Einnahmen",
+      "title": "Ihre Einnahmen",
+      "paid": "Netto ausgezahlt",
+      "pending": "Ausstehende Auszahlung",
+      "openClaims": "Offene Anträge"
+    },
+    "latestClaim": "Letzter Antrag",
+    "noClaimsYet": "Noch keine Abrechnungsanträge.",
+    "createSuccessTitle": "Antrag erstellt",
+    "createSuccessMessage": "Ihr Abrechnungsantrag wurde erfolgreich eingereicht.",
+    "createErrorTitle": "Antrag konnte nicht erstellt werden",
+    "errors": {
+      "kycRequired": "Vor der Kontoaktivierung können Sie keinen Abrechnungsantrag erstellen.",
+      "kycPending": "Ihr Aktivierungsantrag wird geprüft.",
+      "kycRejected": "Ihr Aktivierungsantrag wurde abgelehnt. Prüfen Sie den Grund und reichen Sie ihn erneut ein.",
+      "pricingNotAllowed": "Preisfelder sind beim Erstellen eines Antrags nicht zulässig."
+    },
+    "modal": {
+      "title": "Neuer Antrag",
+      "subtitle": "Geben Sie die Auftragsdetails ein, um den Antrag zur Prüfung einzureichen",
+      "close": "Schließen",
+      "modeAria": "Antragsart",
+      "fromDoneProject": "Antrag aus einem abgeschlossenen Auftrag",
+      "manual": "Manueller Antrag für neuen Auftrag",
+      "searchDoneProjects": "Abgeschlossene Projekte durchsuchen",
+      "searchPlaceholder": "Nach Auftragsnummer oder Titel suchen...",
+      "selectProject": "Abgeschlossenen Auftrag auswählen",
+      "selectProjectPlaceholder": "Auftrag auswählen...",
+      "noTitle": "Ohne Titel",
+      "missingCompletionDate": "Für diesen Auftrag ist kein tatsächliches Abschlussdatum hinterlegt. Fügen Sie das Datum hinzu, bevor Sie den Antrag erstellen.",
+      "projectHint": "Abschlussdatum: {{date}} | Status: {{status}}",
+      "projectMeta": "Quelle: {{source}} | Zahlung: {{payment}} | Betrag: {{amount}}{{currency}}",
+      "orderNumber": "Auftragsnummer",
+      "orderNumberPlaceholder": "Beispiel: ORD-2024-001",
+      "requestTitle": "Auftragstitel",
+      "requestTitlePlaceholder": "Aussagekräftiger Auftragstitel",
+      "requestTitleFromProject": "Auftragstitel (aus dem abgeschlossenen Auftrag)",
+      "categories": "Kategorien",
+      "noCategories": "Derzeit sind keine Kategorien verfügbar.",
+      "durationMinutes": "Gearbeitete Minuten",
+      "completionDate": "Tatsächliches Abschlussdatum",
+      "cancel": "Abbrechen",
+      "submit": "Antrag einreichen",
+      "submitting": "Wird eingereicht..."
+    },
+    "fields": {
+      "orderNumber": "Auftragsnummer",
+      "completionDate": "Tatsächliches Abschlussdatum",
+      "submittedAt": "Eingereicht am",
+      "payoutWindow": "Auszahlungszeitraum",
+      "payoutStatus": "Auszahlungsstatus",
+      "totalPrice": "Gesamtpreis",
+      "freelancerAmount": "Betrag für Freelancer",
+      "paid": "Ausgezahlt",
+      "remaining": "Offen",
+      "adminNote": "Hinweis des Administrators:"
+    },
+    "groups": {
+      "underReview": "In Prüfung",
+      "notDue": "Noch nicht fällig",
+      "due": "Zur Auszahlung fällig",
+      "paid": "Ausgezahlt",
+      "blocked": "Abgelehnt / eingefroren / persönliche Prüfung erforderlich"
+    }
+  },
+  "settings": {
+    "eyebrow": "Freelancer-Einstellungen",
+    "title": "Kontoeinstellungen",
+    "description": "Aktualisieren Sie Ihr öffentliches Profil, die Kontosicherheit und Benachrichtigungen. Alle Felder werden über die API gespeichert.",
+    "breadcrumb": "Kontoeinstellungen",
+    "loadError": "Laden fehlgeschlagen.",
+    "avatar": {
+      "title": "Profilfoto",
+      "upload": "Foto hochladen",
+      "uploading": "Wird hochgeladen…",
+      "remove": "Foto entfernen",
+      "hint": "JPEG, PNG oder WebP, bis zu 2 MB.",
+      "sizeError": "Die Bildgröße darf 2 MB nicht überschreiten.",
+      "success": "Foto aktualisiert.",
+      "uploadError": "Hochladen des Fotos fehlgeschlagen.",
+      "removeSuccess": "Foto entfernt.",
+      "removeError": "Foto konnte nicht entfernt werden."
+    },
+    "basic": {
+      "title": "Grundinformationen",
+      "firstName": "Vorname",
+      "fatherName": "Name des Vaters",
+      "familyName": "Familienname",
+      "professionalTitle": "Berufsbezeichnung",
+      "freelancerMemberId": "Freelancer-ID",
+      "phone": "Mobilnummer (E.164)",
+      "whatsapp": "WhatsApp (E.164)",
+      "bio": "Kurzbiografie (max. 2000 Zeichen)",
+      "skills": "Fähigkeiten (durch Kommas getrennt)",
+      "website": "Website",
+      "portfolio": "Portfolio",
+      "save": "Informationen speichern",
+      "saving": "Wird gespeichert…",
+      "saveSuccess": "Einstellungen gespeichert.",
+      "saveError": "Speichern fehlgeschlagen.",
+      "nameTooShort": "Der vollständige Name muss mindestens 2 Zeichen lang sein.",
+      "phoneInvalid": "Die Mobilnummer muss im internationalen Format +966… angegeben werden.",
+      "whatsappInvalid": "Die WhatsApp-Nummer muss im internationalen Format angegeben werden.",
+      "urlInvalid": "{{label}}: ungültige URL (verwenden Sie http oder https).",
+      "bioTooLong": "Die Kurzbiografie überschreitet die zulässige Länge."
+    },
+    "payout": {
+      "title": "Auszahlungen & Anträge",
+      "hint": "In diesem Bereich werden nur unbedenkliche Präferenzen gespeichert – keine vollständigen Kontonummern oder sensiblen Daten.",
+      "method": "Bevorzugte Auszahlungsmethode",
+      "methodPlaceholder": "— Auswählen —",
+      "bankTransfer": "Banküberweisung",
+      "wallet": "E-Wallet",
+      "cash": "Barabholung",
+      "other": "Sonstiges",
+      "notes": "Kurze, unbedenkliche Hinweise",
+      "notesPlaceholder": "Beispiel: nur der Name der Bank, nicht die vollständige Kontonummer",
+      "save": "Auszahlungsbereich speichern"
+    },
+    "security": {
+      "title": "Sicherheit",
+      "mustChangeTitle": "Passwortänderung erforderlich",
+      "mustChangeBody": "Ihr Konto wurde mit einem temporären Passwort erstellt. Legen Sie unten ein neues Passwort fest, bevor Sie fortfahren. Verwenden Sie Ihre nationale ID-Nummer als aktuelles Passwort, falls Sie es noch nicht geändert haben.",
+      "currentPassword": "Aktuelles Passwort",
+      "newPassword": "Neues Passwort",
+      "confirmPassword": "Passwort bestätigen",
+      "hint": "Das neue Passwort muss einen Buchstaben und eine Ziffer enthalten (mindestens 8 Zeichen).",
+      "update": "Passwort aktualisieren",
+      "updating": "Wird aktualisiert…",
+      "mismatch": "Die Passwörter stimmen nicht überein.",
+      "tooShort": "Das neue Passwort ist zu kurz.",
+      "success": "Passwort aktualisiert.",
+      "error": "Passwort konnte nicht geändert werden."
+    },
+    "preferredCurrencyTitle": "Bevorzugte Anzeigewährung",
+    "notifications": {
+      "title": "Benachrichtigungseinstellungen",
+      "orders": "Auftragsbenachrichtigungen",
+      "claims": "Benachrichtigungen zu Abrechnungsanträgen",
+      "courses": "Kursbenachrichtigungen",
+      "save": "Benachrichtigungseinstellungen speichern"
+    }
+  },
+  "courseDetails": {
+    "finalTestTitle": "Abschlusstest nach dem Kurs",
+    "examMarkMaxError": "Die Punktzahl darf das Maximum für diese Frage nicht überschreiten",
+    "examMarkNegativeError": "Die Punktzahl darf nicht negativ sein.",
+    "stepStatus": {
+      "done": "Abgeschlossen",
+      "available": "Jetzt verfügbar",
+      "locked": "Gesperrt",
+      "waitingUpload": "Wartet auf Datei-Upload",
+      "waitingChatgpt": "Wartet auf ChatGPT-Ergebnis",
+      "waitingMarks": "Wartet auf Eingabe der Punktzahlen"
+    },
+    "fileLegacy": "Diese Datei muss vom Administrator erneut hochgeladen werden.",
+    "fileOpenFailed": "Die Datei konnte nicht geöffnet werden. Bitten Sie den Administrator, sie erneut hochzuladen.",
+    "progress": {
+      "fullyCompleted": "Kurs vollständig abgeschlossen",
+      "readyForTest": "Bereit für den Abschlusstest",
+      "lessonsCompleted": "Alle Lektionen abgeschlossen",
+      "lessonsProgress": "{{done}} von {{total}} Lektion abgeschlossen",
+      "lessonsProgress_plural": "{{done}} von {{total}} Lektionen abgeschlossen",
+      "notStarted": "Noch kein Fortschritt",
+      "ringCaption": "Gesamtfortschritt",
+      "completed": "Abgeschlossen",
+      "ready": "Bereit",
+      "lessons": "Lektionen"
+    },
+    "loadError": "Kurs konnte nicht geladen werden.",
+    "completeLessonsFirst": "Schließen Sie zuerst alle Videolektionen ab, um den Abschlusstest freizuschalten.",
+    "saveProgressInfo": "Ihr Fortschritt wird gespeichert und Sie gelangen zur nächsten Lektion...",
+    "lessonCompleteSuccess": "Abschluss der Lektion erfasst.",
+    "testUnlocked": "Abschlusstest freigeschaltet – schließen Sie jetzt die Einreichung ab.",
+    "saveProgressError": "Fortschritt konnte nicht gespeichert werden, bitte versuchen Sie es erneut.",
+    "mustCompleteLessons": "Sie müssen alle Videolektionen abschließen, bevor Sie einreichen.",
+    "chatgptRequired": "Bitte fügen Sie das Bewertungsergebnis von ChatGPT ein oder laden Sie die Datei mit dem Bewertungsbericht hoch.",
+    "completeAllMarks": "Geben Sie vor dem Einreichen die Punktzahlen aller Fragen ein.",
+    "uploadCompletedFirst": "Sie müssen die bearbeitete Datei hochladen, bevor Sie einreichen.",
+    "courseFinishedSuccess": "Kurs erfolgreich abgeschlossen.",
+    "courseFinishError": "Kurs konnte nicht abgeschlossen werden.",
+    "uploadError": "Datei konnte nicht hochgeladen werden. Stellen Sie sicher, dass es eine PDF-Datei ist, und versuchen Sie es erneut.",
+    "uploadSuccess": "Bearbeitete Datei erfolgreich hochgeladen",
+    "uploadCompletedError": "Bearbeitete Datei konnte nicht hochgeladen werden.",
+    "duration": {
+      "minute": "{{count}} Minute",
+      "minute_plural": "{{count}} Minuten",
+      "hour": "{{count}} Stunde",
+      "hour_plural": "{{count}} Stunden",
+      "hoursAndMinutes": "{{hours}} Std. {{minutes}} Min.",
+      "hoursOnly": "{{count}} Stunde",
+      "hoursOnly_plural": "{{count}} Stunden"
+    },
+    "activity": {
+      "now": "Gerade eben",
+      "minutesAgo": "vor {{count}} Min.",
+      "minutesAgo_plural": "vor {{count}} Min.",
+      "hoursAgo": "vor {{count}} Std.",
+      "hoursAgo_plural": "vor {{count}} Std.",
+      "daysAgo": "vor {{count}} Tag",
+      "daysAgo_plural": "vor {{count}} Tagen"
+    },
+    "fileSize": {
+      "bytes": "{{count}} B",
+      "kb": "{{size}} kB",
+      "mb": "{{size}} MB"
+    },
+    "file": {
+      "viewFile": "Datei ansehen",
+      "downloadFile": "Datei herunterladen",
+      "copyInstructions": "Anleitung kopieren",
+      "needsReuploadShort": "Erneuter Upload nötig",
+      "available": "Verfügbar",
+      "unavailable": "Nicht verfügbar",
+      "needsReuploadBadge": "Datei muss erneut hochgeladen werden",
+      "notAttachedByAdmin": "Diese Datei wurde vom Administrator noch nicht angehängt.",
+      "openFailedTryDownload": "Die Datei konnte nicht geöffnet werden. Versuchen Sie stattdessen, sie herunterzuladen.",
+      "completedWorkFile": "Bearbeitete Datei",
+      "completedWorkFileDefault": "Bearbeitete Prüfungsdatei hochgeladen",
+      "uploadedSuccessfully": "Erfolgreich hochgeladen",
+      "replaceFile": "Datei ersetzen",
+      "removeFile": "Datei entfernen",
+      "removeFileAria": "Datei entfernen",
+      "chooseFile": "Datei auswählen",
+      "replace": "Ersetzen",
+      "remove": "Entfernen",
+      "defaultCompletedPdf": "bearbeitete-datei.pdf"
+    },
+    "flow": {
+      "phaseTag": "Phase {{num}}",
+      "trackAria": "Ablauf der Schritte 1 bis 5"
+    },
+    "completed": {
+      "congratsTitle": "Gut gemacht! Kurs erfolgreich abgeschlossen",
+      "congratsSub": "Ihre Antwort zum Abschlusstest wurde erfasst und der Kurs ist abgeschlossen. Sie können die Test- und Einreichungsdateien jederzeit ansehen.",
+      "finalGrade": "Endnote: {{grade}} %",
+      "submittedAt": " — Eingereicht: {{date}}",
+      "questionGrades": "Punktzahlen der Fragen",
+      "questionCount": " (Fragen: {{count}})",
+      "questionLabel": "Frage {{num}}",
+      "filesAndSubmission": "Testdateien & Einreichung",
+      "downloadTestFile": "Testdatei herunterladen",
+      "downloadInstructionsFile": "Anleitungsdatei herunterladen",
+      "downloadModelAnswer": "Musterlösung herunterladen",
+      "viewAnswerFile": "Hochgeladene Antwortdatei ansehen",
+      "downloadAnswerFile": "Hochgeladene Antwortdatei herunterladen",
+      "submissionSummary": "Zusammenfassung der Einreichung",
+      "viewAnswerText": "Antworttext ansehen",
+      "answerText": "Antworttext",
+      "hideText": "Text ausblenden",
+      "answerFileOnlyNote": "Die Antwortdatei wurde eingereicht. Verwenden Sie die Schaltflächen oben, um sie anzusehen oder herunterzuladen."
+    },
+    "sidebar": {
+      "finalStepBadge": "Letzter Schritt",
+      "statusCompleted": "Abgeschlossen",
+      "statusLocked": "Schließen Sie alle Lektionen ab, um den Abschlusstest freizuschalten",
+      "statusReady": "Bereit zum Einreichen",
+      "contentAria": "Kursinhalt",
+      "contentTitle": "Kursinhalt",
+      "completedWithDuration": "{{duration}} • Abgeschlossen",
+      "completed": "Abgeschlossen",
+      "watchingWithDuration": "{{duration}} • Wird angesehen",
+      "watching": "Wird angesehen",
+      "noDuration": "Keine Dauer",
+      "showAllLessons": "Alle Lektionen anzeigen ({{count}})"
+    },
+    "header": {
+      "trainingChip": "Trainingskurs",
+      "backToCourses": "Zurück zu den Kursen",
+      "summaryAria": "Kursübersicht",
+      "lessonsCompleted": "Abgeschlossene Lektionen: {{completed}} von {{total}}",
+      "totalDuration": "Gesamtdauer: {{duration}}",
+      "lastActivity": "Letzte Aktivität: {{activity}}",
+      "durationUnknown": "Nicht angegeben",
+      "noActivity": "Keine",
+      "courseFinishedBanner": "Dieser Kurs wurde erfolgreich abgeschlossen.",
+      "completionRecorded": "Das Abschlussdatum ist im System erfasst."
+    },
+    "lesson": {
+      "noVideo": "Für diese Lektion ist kein Video verfügbar.",
+      "untitled": "Lektion ohne Titel",
+      "videoChip": "Video",
+      "lessonOf": "Lektion {{current}} von {{total}}",
+      "finalTestReadyHint": "Sie haben alle Videos abgeschlossen – der Abschlusstest steht in der Seitenleiste bereit.",
+      "prevLesson": "Vorherige Lektion",
+      "nextLesson": "Nächste Lektion",
+      "finalTestNav": "Abschlusstest",
+      "markComplete": "Lektion als abgeschlossen markieren",
+      "savingProgress": "Fortschritt wird gespeichert…",
+      "summaryTitle": "Zusammenfassung der Lektion / Ihre Notizen",
+      "summaryPlaceholder": "Schreiben Sie hier Ihre Zusammenfassung…",
+      "summaryAria": "Zusammenfassung der Lektion"
+    },
+    "finish": {
+      "allLessonsDone": "Sie haben alle Lektionen abgeschlossen. Falls der Abschluss nicht automatisch erfasst wurde, klicken Sie unten.",
+      "submitting": "Wird erfasst…",
+      "finishCourse": "Kurs abschließen"
+    },
+    "empty": {
+      "loadFailed": "Der Kurs konnte nicht angezeigt werden. Kehren Sie zur Kursliste zurück und versuchen Sie es erneut.",
+      "backToCourses": "Trainingskurse"
+    },
+    "planLocked": {
+      "title": "Kurs gesperrt",
+      "message": "Dieser Kurs ist in höheren Paketen verfügbar.",
+      "upgrade": "Paket upgraden",
+      "activateOrUpgrade": "Aktivieren oder upgraden Sie Ihr Paket, um auf diesen Kurs zuzugreifen"
+    },
+    "exam": {
+      "lockedTitle": "Abschlusstest gesperrt",
+      "lockedSub": "Schließen Sie alle Videolektionen ab ({{completed}}/{{total}}), um diesen letzten Schritt freizuschalten und den Kurs abzuschließen.",
+      "lessonsDoneBanner": "🎉 Glückwunsch! Sie haben alle Lektionen abgeschlossen.",
+      "lessonsDoneBannerSub": "Führen Sie die drei Schritte der Reihe nach aus, um den Abschlusstest abzuschließen.",
+      "lessonsCompletedCount": "({{completed}}/{{total}} Lektionen abgeschlossen)",
+      "introSub": "Laden Sie die Testdatei herunter und bearbeiten Sie die Aufgabe, laden Sie die bearbeitete Datei hoch, nutzen Sie ChatGPT mit den Bewertungsdateien und geben Sie vor dem endgültigen Einreichen die Punktzahlen der Fragen ein.",
+      "step1Title": "Schritt 1: Testdatei herunterladen und bearbeitete Datei hochladen",
+      "testFileTitle": "Testdatei",
+      "testFileDesc": "Laden Sie die Testdatei herunter und erstellen Sie Ihre Antwort außerhalb der Plattform.",
+      "downloadTestFile": "Testdatei herunterladen",
+      "uploadCompletedTitle": "Laden Sie nach dem Test Ihre bearbeitete Datei hoch",
+      "uploadCompletedHint": "Nur PDF – bis zu 5 MB",
+      "uploadCompletedBtn": "Bearbeitete Datei hochladen",
+      "uploading": "Wird hochgeladen…",
+      "uploadCompletedSuccess": "Bearbeitete Datei erfolgreich hochgeladen",
+      "step1Required": "Sie müssen die bearbeitete Datei hochladen, bevor Sie zum nächsten Schritt gehen.",
+      "step2Title": "Schritt 2: Prompt-Datei und Musterlösung herunterladen",
+      "step2Note": "Geben Sie ChatGPT diese Dateien: die bearbeitete Datei, die Prompt-Datei und die Musterlösung – fügen Sie dann das ChatGPT-Ergebnis hier ein oder laden Sie es als Datei hoch.",
+      "promptFileTitle": "Bewertungsanleitung / Prompt-Datei",
+      "promptFileDesc": "Laden Sie die Prompt-Datei zur Verwendung mit ChatGPT herunter.",
+      "downloadPromptFile": "Prompt-Datei herunterladen",
+      "modelAnswerTitle": "Musterlösung",
+      "modelAnswerDesc": "Laden Sie die Musterlösung zur Verwendung mit ChatGPT herunter.",
+      "downloadModelAnswer": "Musterlösung herunterladen",
+      "chatgptFileSelected": "ChatGPT-Ergebnisdatei ausgewählt",
+      "uploadChatgptTitle": "ChatGPT-Ergebnis als Datei hochladen",
+      "pasteChatgptLabel": "Oder ChatGPT-Ergebnis einfügen",
+      "pasteChatgptPlaceholder": "Fügen Sie hier das Bewertungsergebnis von ChatGPT ein…",
+      "step3Title": "Schritt 3: Punktzahlen der Fragen eingeben",
+      "step3Note": "Geben Sie die Punktzahl jeder Frage anhand des ChatGPT-Ergebnisses ein. Die Endnote ergibt sich aus der Summe der Punktzahlen ÷ Summe der Höchstpunktzahlen.",
+      "questionWithText": "Frage {{num}}: {{text}}",
+      "questionNumber": "Frage {{num}}",
+      "markLabel": "Punktzahl",
+      "noGradedQuestions": "Dieser Kurs hat keine bewerteten Fragen. Schließen Sie die beiden vorherigen Schritte ab und reichen Sie dann ein.",
+      "submitting": "Wird eingereicht…",
+      "submitFinale": "Ergebnisse einreichen und Kurs abschließen",
+      "hintUploadFirst": "Laden Sie zuerst die bearbeitete Datei hoch.",
+      "hintChatgptRequired": "Fügen Sie den ChatGPT-Ergebnistext hinzu oder laden Sie die Ergebnisdatei hoch.",
+      "hintCompleteMarks": "Geben Sie alle Punktzahlen der Fragen ein.",
+      "hintCompleteAllSteps": "Schließen Sie vor dem Einreichen alle Schritte ab."
+    }
+  },
+  "apiInsights": {
+    "profileIncomplete": {
+      "title": "Vervollständigen Sie Ihr Profil",
+      "description": "Ihr Profil ist zu {{percent}} % vollständig – ein stärkeres Profil verbessert Ihre Chancen auf Annahme.",
+      "actionLabel": "Profil aktualisieren"
+    },
+    "revisionsPending": {
+      "title": "Aufträge erfordern eine Überarbeitung",
+      "description": "Sie haben {{count}} Auftrag, der eine Überarbeitung oder eine aktualisierte Lieferung erfordert.",
+      "description_plural": "Sie haben {{count}} Aufträge, die eine Überarbeitung oder eine aktualisierte Lieferung erfordern.",
+      "actionLabel": "Überarbeitungen ansehen"
+    },
+    "courseProgress": {
+      "title": "Sie haben den Kurs fast abgeschlossen",
+      "description": "Sie haben {{percent}} % von {{course}} abgeschlossen.",
+      "actionLabel": "Kurs fortsetzen"
+    },
+    "finalTest": {
+      "title": "Ein Abschlusstest wartet auf Sie",
+      "description": "{{count}} Kurs wartet auf den Abschlusstest.",
+      "description_plural": "{{count}} Kurse warten auf den Abschlusstest.",
+      "actionLabel": "Test abschließen"
+    },
+    "deliveryExcellent": {
+      "title": "Ihre Pünktlichkeitsquote ist hervorragend",
+      "description": "{{percent}} % Ihrer abgeschlossenen Aufträge wurden pünktlich geliefert."
+    },
+    "subExpiring": {
+      "title": "Ihr Abonnement läuft bald ab",
+      "description": "Prüfen Sie Ihr Paket, bevor sich Ihr Zugriff ändert.",
+      "actionLabel": "Pakete ansehen"
+    },
+    "addPortfolio": {
+      "title": "Fügen Sie Ihrem Portfolio Arbeiten hinzu",
+      "description": "Verlinken Sie Ihr Behance-Profil oder Ihre Website, um das Vertrauen der Kunden zu gewinnen.",
+      "actionLabel": "Links aktualisieren"
+    },
+    "startFirstOrder": {
+      "title": "Starten Sie Ihr erstes Projekt",
+      "description": "Durchsuchen Sie verfügbare Aufträge und bauen Sie Ihre Erfolgsbilanz auf der Plattform auf.",
+      "actionLabel": "Verfügbare Aufträge"
+    },
+    "reviewsStrong": {
+      "title": "Ihre Bewertungen sind hervorragend",
+      "description": "Durchschnitt {{rating}} aus {{count}} Bewertung.",
+      "description_plural": "Durchschnitt {{rating}} aus {{count}} Bewertungen.",
+      "actionLabel": "Details ansehen"
+    },
+    "claimsHint": {
+      "title": "Erinnerung: Einnahmen über die Wallet",
+      "description": "Reichen Sie nach Abschluss von Projekten Ihre Abrechnungsanträge im Wallet-Bereich ein.",
+      "actionLabel": "Zur Wallet"
+    },
+    "reviewAnalytics": {
+      "title": "Einblick in das Kundenfeedback",
+      "description": "Basierend auf Ihren verifizierten Kundenbewertungen.",
+      "actionLabel": "Bewertungen ansehen"
+    }
+  },
+  "recommendations": {
+    "title": "Einblicke & Empfehlungen",
+    "finalTestPending": "Ein Abschlusstest wartet auf Sie",
+    "completeTest": "Test abschließen"
+  },
+  "status": {
+    "subscription": {
+      "active": "Aktiv",
+      "assignedNotStarted": "Wartet auf den ersten Auftrag",
+      "expired": "Abgelaufen",
+      "inactive": "Inaktiv"
+    },
+    "payment": {
+      "paid": "Bezahlt",
+      "pending": "In Verarbeitung",
+      "failed": "Fehlgeschlagen",
+      "notRequired": "Nicht erforderlich",
+      "unpaid": "Unbezahlt",
+      "refunded": "Rückerstattet",
+      "skippedByAdmin": "Zahlung übersprungen (Administrator)"
+    },
+    "activation": {
+      "approved": "Aktiviert",
+      "pending": "Wartet auf das Unternehmen"
+    },
+    "claim": {
+      "paid": "Ausgezahlt",
+      "pending": "In Prüfung",
+      "accepted": "Angenommen",
+      "rejected": "Abgelehnt",
+      "frozen": "Eingefroren",
+      "inPersonReview": "Persönliche Prüfung",
+      "requiresInPersonReview": "Persönliche Prüfung erforderlich"
+    },
+    "payout": {
+      "missingCompletionDate": "Kein Abschlussdatum",
+      "notDueYet": "Noch nicht fällig",
+      "withinWindow": "Im Auszahlungszeitraum",
+      "lateAfterWindow": "Nach Ablauf des Auszahlungszeitraums",
+      "paid": "Ausgezahlt"
+    },
+    "chips": {
+      "trainingAndLimitedMarketplace": "Training + eingeschränkter Marktplatz",
+      "marketplaceEligible": "Für den Marktplatz berechtigt",
+      "notEligibleNow": "Derzeit nicht berechtigt",
+      "activeSubscription": "Aktives Abonnement",
+      "waitingFirstOrder": "Wartet auf den ersten Auftrag",
+      "expired": "Abgelaufen"
+    },
+    "marketplace": {
+      "canApply": "Sie können sich bewerben",
+      "notEligible": "Nicht berechtigt"
+    },
+    "timeRemaining": {
+      "expired": "Abonnement abgelaufen",
+      "remaining": "Noch {{parts}}",
+      "day": "{{count}} Tag",
+      "day_plural": "{{count}} Tage",
+      "hour": "{{count}} Stunde",
+      "hour_plural": "{{count}} Stunden",
+      "minute": "{{count}} Minute",
+      "minute_plural": "{{count}} Minuten",
+      "joiner": " und "
+    },
+    "eligibility": {
+      "adminApprovalPending": "Wartet auf die Genehmigung durch den Administrator, bevor Sie Aufträge erhalten können",
+      "noSubscription": "Sie können keine Aufträge erhalten, da Sie kein Abonnement haben. Bitte schließen Sie zuerst ein Abonnement ab.",
+      "inactive": "Ihr Abonnement ist nicht aktiv. Bitte schließen Sie zuerst ein Abonnement ab.",
+      "paymentIncomplete": "Die Auftragsannahme konnte nicht aktiviert werden, da die Zahlung für das Abonnement nicht abgeschlossen ist.",
+      "expired": "Ihr Abonnement ist abgelaufen. Bitte verlängern Sie es, um Aufträge zu erhalten.",
+      "activationFeeUnpaid": "Zahlen Sie die jährliche Aktivierungsgebühr, bevor Sie Aufträge erhalten.",
+      "subscriptionRenewalFailedTitle": "Verlängerung des Abonnements fehlgeschlagen",
+      "subscriptionRenewalFailed": "Die monatliche Abonnementgebühr von 1 JOD konnte nicht von Ihrer gespeicherten Karte abgebucht werden. Ihr Konto wurde vorübergehend eingefroren. Bitte kontaktieren Sie uns, um es wieder zu aktivieren.",
+      "planConfigurationError": "Ihre Paketberechtigung konnte gerade nicht überprüft werden. Bitte wenden Sie sich an den Support.",
+      "planTooLow": "Dieser Auftrag ist in höheren Paketen verfügbar. Upgraden Sie Ihr Paket, um ihn zu erhalten.",
+      "noActivePlan": "Aktivieren Sie zuerst Ihr Paket, um Aufträge zu erhalten.",
+      "generic": "Ihr Konto ist derzeit nicht für Aufträge vom Marktplatz berechtigt (prüfen Sie Ihr Abonnement)."
+    }
+  },
+  "emptyStates": {
+    "myOrders": {
+      "noneTitle": "Noch keine Aufträge",
+      "noneSub": "Ihnen wurden noch keine Aufträge zugewiesen. Durchsuchen Sie verfügbare Aufträge und bewerben Sie sich auf solche, die zu Ihren Fähigkeiten passen.",
+      "browseOrders": "Verfügbare Aufträge durchsuchen",
+      "searchTitle": "Keine Suchergebnisse",
+      "searchSub": "Versuchen Sie andere Suchbegriffe oder löschen Sie die Suche, um die vollständige Liste zu sehen.",
+      "clearSearch": "Suche löschen",
+      "filterTitle": "Keine Aufträge mit diesem Status",
+      "filterSub": "Wählen Sie einen anderen Filter oder „Alle“, um die vollständige Liste zu sehen.",
+      "showAll": "Alle anzeigen"
+    },
+    "courses": {
+      "noneTitle": "Keine zugewiesenen Kurse",
+      "noneSub": "Sobald Ihrem Konto ein Kurs zugewiesen wird, erscheint er hier mit Fortschritt und einem eventuellen Abschlusstest.",
+      "searchTitle": "Keine Suchergebnisse",
+      "searchSub": "Versuchen Sie andere Suchbegriffe oder löschen Sie die Suche, um die vollständige Liste zu sehen.",
+      "clearSearch": "Suche löschen",
+      "favoritesTitle": "Keine Lieblingskurse",
+      "favoritesSub": "Tippen Sie bei einem Kurs auf den Stern, um ihn zu Ihren Favoriten hinzuzufügen.",
+      "completedTitle": "Noch keine abgeschlossenen Kurse",
+      "completedSub": "Schließen Sie die Kurslektionen und, falls erforderlich, den Abschlusstest ab, damit sie hier erscheinen.",
+      "inProgressTitle": "Keine laufenden Kurse",
+      "inProgressSub": "Starten Sie eine Lektion in einem Ihrer Kurse, damit er in diesem Tab erscheint.",
+      "notStartedTitle": "Keine nicht begonnenen Kurse",
+      "notStartedSub": "Alle zugewiesenen Kurse wurden begonnen oder abgeschlossen.",
+      "genericTitle": "Keine Ergebnisse",
+      "genericSub": "Versuchen Sie einen anderen Tab oder Filter."
+    },
+    "performance": {
+      "noHistory": "Noch kein Auftragsverlauf – starten Sie Ihr erstes Projekt, um Kennzahlen zu sehen."
+    },
+    "reviews": {
+      "empty": "Noch keine Bewertungen – sie erscheinen, sobald Kunden Sie für abgeschlossene Projekte bewerten.",
+      "clientLabel": "Kunde"
+    },
+    "reputation": {
+      "empty": "Schließen Sie Aufträge ab und vervollständigen Sie Ihr Profil, um Ihre Vertrauensstufe zu erhöhen."
+    },
+    "achievements": {
+      "empty": "Schließen Sie Aufträge und Kurse ab, um berufliche Erfolge zu sammeln."
+    },
+    "profile": {
+      "complete": "Ihr Profil ist vollständig – gut gemacht!",
+      "completeProfile": "Profil vervollständigen"
+    }
+  },
+  "notifications": {
+    "title": "Meine Nachrichten",
+    "viewAll": "Alle ansehen",
+    "empty": "Keine aktuellen Nachrichten.",
+    "defaultTitle": "Benachrichtigung",
+    "loadError": "Nachrichten konnten nicht geladen werden."
+  },
+  "sidebar": {
+    "badges": {
+      "required": "Erforderlich",
+      "startHere": "Hier starten"
+    }
+  },
+  "controlCenter": {
+    "reputation": {
+      "title": "Vertrauenswert",
+      "note": "Berechnet aus Ihren tatsächlichen Erfolgen auf der Plattform – keine gefälschten Bewertungen.",
+      "improveProfile": "Profil & Präsenz verbessern"
+    },
+    "reviews": {
+      "title": "Bewertungen",
+      "viewAll": "Alle ansehen",
+      "recommendationRate": "Empfehlungsquote: {{rate}} %",
+      "loadError": "Bewertungen konnten nicht geladen werden."
+    },
+    "profile": {
+      "title": "Profilvollständigkeit",
+      "update": "Aktualisieren"
+    },
+    "achievements": {
+      "title": "Erfolge"
+    },
+    "earnings": {
+      "loadError": "Einnahmen konnten nicht geladen werden. Wir zeigen keine möglicherweise irreführenden Zahlen an."
+    },
+    "courses": {
+      "loadError": "Kurse konnten nicht geladen werden."
+    },
+    "performance": {
+      "loadError": "Leistungskennzahlen konnten nicht geladen werden."
+    },
+    "widgetLoadError": "Dieser Bereich konnte nicht geladen werden."
+  },
+  "pendingActions": {
+    "title": "Erforderliche Aktionen",
+    "clear": "Keine dringenden Aktionen – Sie sind auf dem neuesten Stand.",
+    "choosePlan": {
+      "title": "Abonnementpaket wählen",
+      "description": "Kein aktives Abonnement – wählen Sie zunächst das passende Paket.",
+      "cta": "Pakete ansehen"
+    },
+    "completePayment": {
+      "title": "Zahlung abschließen",
+      "description": "Die Zahlung wird verarbeitet oder ist noch nicht abgeschlossen.",
+      "cta": "Zahlung abschließen"
+    },
+    "companyApproval": {
+      "title": "Genehmigung durch den Administrator",
+      "description": "Wartet auf die Genehmigung durch den Administrator, bevor Sie Aufträge erhalten können.",
+      "cta": "Konto prüfen"
+    },
+    "renewSubscription": {
+      "title": "Abonnement verlängern",
+      "description": "Ihr Abonnement ist abgelaufen – verlängern Sie es, um zum Marktplatz zurückzukehren.",
+      "cta": "Verlängern"
+    },
+    "reviewPlans": {
+      "cta": "Pakete ansehen"
+    },
+    "revisionRequired": {
+      "title": "Überarbeitung erforderlich ({{count}})",
+      "title_plural": "Überarbeitungen erforderlich ({{count}})",
+      "descriptionWithOrder": "Auftrag #{{code}} muss geprüft und als aktualisierte Lieferung eingereicht werden.",
+      "descriptionGeneric": "Sie haben Aufträge, die überarbeitet werden müssen – prüfen Sie sie unter „Meine Aufträge“.",
+      "cta": "Überarbeitung fortsetzen"
+    },
+    "finalTest": {
+      "title": "Abschlusstest ausstehend ({{count}})",
+      "title_plural": "Abschlusstests ausstehend ({{count}})",
+      "descriptionWithCourse": "Schließen Sie den Abschlusstest für den Kurs „{{course}}“ ab.",
+      "descriptionGeneric": "Schließen Sie den Abschlusstest ab, um den Kurs zu beenden.",
+      "descriptionActivation": "Schließen Sie den Abschlusstest für {{course}} ab, um die Aktivierungsvoraussetzungen zu erfüllen.",
+      "descriptionActivationGeneric": "Schließen Sie den Abschlusstest für Ihren aktuellen Kurs ab, um die Aktivierungsvoraussetzungen zu erfüllen.",
+      "cta": "Test abschließen",
+      "viewCourse": "Kurs ansehen"
+    },
+    "coursesPending": {
+      "title": "Pflichtkurs ausstehend ({{count}})",
+      "title_plural": "Pflichtkurse ausstehend ({{count}})",
+      "description": "Schließen Sie die Pflichtkurse ab, um zum Abschlusstest zu gelangen.",
+      "cta": "Kurse fortsetzen"
+    },
+    "claimsReview": {
+      "title": "Antrag in Prüfung ({{count}})",
+      "title_plural": "Anträge in Prüfung ({{count}})",
+      "description": "Ihre Abrechnungsanträge warten auf die Genehmigung durch den Administrator.",
+      "cta": "Wallet ansehen"
+    },
+    "claimsAcceptedPayout": {
+      "title": "Angenommener Antrag wartet auf Auszahlung ({{count}})",
+      "title_plural": "Angenommene Anträge warten auf Auszahlung ({{count}})",
+      "description": "Angenommene Beträge sind noch nicht vollständig ausgezahlt – prüfen Sie Ihre Wallet.",
+      "cta": "Wallet ansehen"
+    }
+  },
+  "statusHeadline": {
+    "noSubscription": {
+      "headline": "Ihr Abonnement ist noch nicht aktiviert",
+      "sub": "Wählen Sie ein Paket, um auf der Plattform zu starten."
+    },
+    "expired": {
+      "headline": "Ihr Abonnement ist abgelaufen",
+      "sub": "Verlängern Sie es, um neue Aufträge zu erhalten."
+    },
+    "paymentPending": {
+      "headline": "Schließen Sie die Zahlung ab, um Ihr Konto zu aktivieren",
+      "sub": "Sie können keine Aufträge vom Marktplatz erhalten, bis die Zahlung abgeschlossen ist."
+    },
+    "companyPending": {
+      "headline": "Wartet auf Genehmigung durch den Administrator",
+      "sub": "Wartet auf die Genehmigung durch den Administrator, bevor Sie Aufträge erhalten können."
+    },
+    "expiringDays": {
+      "headline": "Ihr Abonnement läuft in {{count}} Tag ab",
+      "headline_plural": "Ihr Abonnement läuft in {{count}} Tagen ab"
+    },
+    "expiringTomorrow": {
+      "headline": "Ihr Abonnement läuft morgen ab"
+    },
+    "expiringHours": {
+      "headline": "Ihr Abonnement läuft in {{count}} Stunde ab",
+      "headline_plural": "Ihr Abonnement läuft in {{count}} Stunden ab"
+    },
+    "expiringToday": {
+      "headline": "Ihr Abonnement läuft heute ab"
+    },
+    "freePlanExplore": {
+      "headline": "Sie können die verfügbaren Aufträge auf dem Marktplatz erkunden",
+      "sub": "Für echte Aufträge auf dem Marktplatz ist ein Abonnement-Upgrade erforderlich."
+    },
+    "firstOrder": {
+      "headline": "Sie können Ihren ersten Auftrag erhalten",
+      "sub": "Ihr Abonnementzeitraum beginnt, sobald Sie Ihren ersten Auftrag annehmen."
+    },
+    "eligible": {
+      "headline": "Sie können Aufträge erhalten",
+      "sub": "Ihr Konto ist berechtigt, sich gemäß Ihrem Paket auf verfügbare Aufträge zu bewerben."
+    },
+    "notEligible": {
+      "headline": "Sie können derzeit keine Aufträge erhalten",
+      "sub": "Prüfen Sie die Abonnementdetails unten."
+    }
+  },
+  "notificationsPage": {
+    "titleFreelancer": "Ihre Benachrichtigungen",
+    "titleAdmin": "Administrator-Benachrichtigungen",
+    "titleSuperAdmin": "Super-Admin-Benachrichtigungen",
+    "subtitleHub": "Verfolgen Sie Auftragsupdates, Nachrichten und Zahlungen an einem Ort.",
+    "subtitleStaff": "Verfolgen Sie Auftragsupdates, Zahlungen und Anträge an einem Ort.",
+    "summaryAria": "Benachrichtigungsübersicht",
+    "total": "Benachrichtigungen gesamt",
+    "unread": "Ungelesen",
+    "searchPlaceholder": "Benachrichtigungen durchsuchen…",
+    "searchAria": "Benachrichtigungen durchsuchen",
+    "filterAria": "Benachrichtigungen filtern",
+    "filterAll": "Alle",
+    "filterUnread": "Ungelesen",
+    "markAllRead": "Alle als gelesen markieren",
+    "listAria": "Benachrichtigungsliste",
+    "emptySearch": "Keine Suchergebnisse",
+    "emptyUnread": "Keine ungelesenen Benachrichtigungen",
+    "emptyAll": "Noch keine Benachrichtigungen",
+    "emptySearchSub": "Versuchen Sie andere Suchbegriffe oder leeren Sie das Suchfeld.",
+    "emptyDefaultSub": "Neue Updates erscheinen hier, sobald sie verfügbar sind.",
+    "newNotification": "Neue Benachrichtigung",
+    "unreadSuffix": " — ungelesen",
+    "unreadTitle": "Ungelesen",
+    "categoryMessages": "Nachrichten",
+    "categoryClaims": "Anträge",
+    "categoryCourses": "Kurse",
+    "categoryOrders": "Aufträge",
+    "categoryAlert": "Warnung",
+    "feedbackCategoryPrefix": "Kategorie",
+    "feedbackTopicPrefix": "Vorgefertigtes Thema",
+    "relativeNow": "Jetzt",
+    "relativeMinutes": "vor {{count}} Min.",
+    "relativeMinutes_plural": "vor {{count}} Min.",
+    "relativeHours": "vor {{count}} Stunde",
+    "relativeHours_plural": "vor {{count}} Stunden",
+    "relativeDays": "vor {{count}} Tag",
+    "relativeDays_plural": "vor {{count}} Tagen"
+  },
+  "common": {
+    "retry": "Erneut versuchen",
+    "loading": "Wird geladen",
+    "unavailable": "Nicht verfügbar",
+    "loadFailed": "Laden fehlgeschlagen",
+    "emDash": "—",
+    "currencyJod": "JOD",
+    "currencyJodLabel": "JOD",
+    "defaultCourse": "Kurs",
+    "client": "Kunde",
+    "cancel": "Abbrechen",
+    "submit": "Senden",
+    "submitting": "Wird gesendet…",
+    "save": "Speichern",
+    "saving": "Wird gespeichert…",
+    "close": "Schließen",
+    "viewAll": "Alle ansehen",
+    "update": "Aktualisieren",
+    "alert": "Hinweis"
+  },
+  "activateAccount": {
+    "title": "Konto aktivieren",
+    "subtitle": "Reichen Sie nach dem Hochladen Ihres Ausweises einen Antrag auf Kontoaktivierung zur Prüfung durch den Administrator ein.",
+    "cardTitle": "Aktivierungsstatus",
+    "hint": "Ihr Konto wird nicht sofort aktiviert. Der Administrator prüft Ihren Antrag.",
+    "cta": "Aktivierungsantrag senden",
+    "activating": "Wird gesendet…",
+    "activated": "Konto aktiviert",
+    "successMessage": "Ihr Konto ist aktiviert und der Abonnementzeitraum hat begonnen.",
+    "successWithStarter": "Ihr Konto ist aktiviert und die kostenlose STARTER-Mitgliedschaft wurde gewährt.",
+    "successKeptMembership": "Ihr Konto ist aktiviert und Ihre aktuelle Mitgliedschaft wurde beibehalten.",
+    "alreadyActiveMessage": "Ihr Konto ist genehmigt. Der Abonnementzeitraum beginnt, sobald Sie Ihren ersten echten Auftrag erhalten.",
+    "errorTitle": "Aktivierungsantrag konnte nicht gesendet werden",
+    "loadError": "Aktivierungsstatus konnte nicht geladen werden.",
+    "status": {
+      "approved": "Aktiviert",
+      "pending": "In Prüfung"
+    },
+    "fields": {
+      "activation": "Aktivierungsstatus",
+      "subscription": "Abonnementstatus",
+      "startedAt": "Beginn des Zeitraums",
+      "expiresAt": "Ende des Zeitraums"
+    },
+    "termsModalTitle": "Bedingungen für die Annahme und Ausführung von Aufträgen und Ausschreibungen",
+    "agreeCheckbox": "Ich stimme den Bedingungen für die Kontoaktivierung und die Nutzung der Plattform zu.",
+    "termsFallback": "Indem Sie fortfahren, stimmen Sie den Nutzungsbedingungen und Plattformrichtlinien von Orderz House zu.",
+    "termsLoadError": "Die Nutzungsbedingungen konnten nicht geladen werden. Sie können nach der Prüfung trotzdem zustimmen oder es erneut versuchen.",
+    "kyc": {
+      "pageTitle": "Identitätsverifizierung",
+      "pageSubtitle": "Laden Sie Ihre Ausweisdokumente hoch, um die Kontoaktivierung fortzusetzen.",
+      "uploadHint": "Laden Sie Ihre Ausweisdokumente hoch, um die Kontoaktivierung fortzusetzen.",
+      "notVerifiedYet": "Die Identität wurde noch nicht verifiziert",
+      "notImmediate": "Ihr Konto wird nicht sofort aktiviert. Der Administrator prüft Ihren Antrag auf Identitätsverifizierung.",
+      "termsCheckbox": "Ich stimme den Bedingungen für die Kontoaktivierung und die Nutzung der Plattform zu.",
+      "submitCta": "Identitätsverifizierung senden",
+      "resubmitCta": "Identitätsverifizierung erneut senden",
+      "submitSuccess": "Ihr Antrag auf Identitätsverifizierung ist eingegangen und wird vom Administrator geprüft.",
+      "pendingTitle": "Identitätsverifizierung in Prüfung",
+      "pendingBody": "Ihre Ausweisdokumente sind eingegangen und werden vor der Kontoaktivierung vom Administrator geprüft.",
+      "approvedTitle": "Ihre Identität ist verifiziert",
+      "approvedIdentityTitle": "Ihre Identität ist verifiziert",
+      "approvedManualTitle": "Identität administrativ verifiziert",
+      "identityVerifiedLabel": "Identität",
+      "identityVerifiedValue": "Verifiziert",
+      "accountApprovalLabel": "Kontogenehmigung",
+      "accountApprovedValue": "Genehmigt",
+      "accountPendingValue": "Genehmigung ausstehend",
+      "membershipLabel": "Mitgliedschaft",
+      "membershipActiveValue": "Ihre Mitgliedschaft ist aktiv und der Abonnementzeitraum läuft.",
+      "membershipWaitingFirstOrderValue": "Ihr Konto ist genehmigt. Der Abonnementzeitraum beginnt, sobald Sie Ihren ersten echten Auftrag erhalten.",
+      "membershipInactiveValue": "Wartet auf den ersten Auftrag",
+      "rejectedTitle": "Identitätsverifizierung abgelehnt",
+      "rejectionReasonLabel": "Ablehnungsgrund",
+      "idFront": "Vorderseite des Ausweises",
+      "idBack": "Rückseite des Ausweises",
+      "idFrontSide": "Vorderseite",
+      "idBackSide": "Rückseite",
+      "chooseImage": "Tippen, um ein Bild auszuwählen",
+      "changeImage": "Bild ändern",
+      "removeImage": "Entfernen",
+      "imageSelected": "Bild ausgewählt",
+      "uploadFormats": "JPG, PNG oder WEBP · gut lesbares Foto des Ausweises",
+      "filesRequired": "Bitte laden Sie Bilder der Vorder- und Rückseite Ihres Ausweises hoch.",
+      "termsRequired": "Sie müssen den Bedingungen für die Kontoaktivierung zustimmen.",
+      "goDashboard": "Zum Dashboard",
+      "goArticles": "Marktplatz-Artikel",
+      "policyTitle": "Bedingungen für die Annahme und Lieferung von Aufträgen und Ausschreibungen",
+      "policyReadTerms": "Vollständige Nutzungsbedingungen lesen"
+    }
+  },
+  "onboardingPanel": {
+    "completeNow": "Jetzt abschließen",
+    "gettingStarted": "Erste Schritte",
+    "remindLater": "Später erinnern"
+  },
+  "silverConversion": {
+    "defaultTitle": "Mit Silver weiterhin Arbeitsmöglichkeiten erhalten",
+    "starting": "Wird gestartet…",
+    "earnedBalanceLink": "Details zum verdienten Guthaben ansehen",
+    "openPlans": "Pakete ansehen"
+  },
+  "eliteOffer": {
+    "title": "Privates Direktangebot",
+    "loading": "Angebot wird geladen…",
+    "unavailableTitle": "Dieses Angebot ist nicht verfügbar",
+    "unavailableText": "Das Angebot ist möglicherweise abgelaufen oder nicht an Ihr Konto gerichtet, oder Direktangebote sind derzeit nicht aktiviert.",
+    "back": "Zurück zum Dashboard",
+    "expires": "Angebot läuft ab",
+    "accept": "Angebot annehmen",
+    "decline": "Angebot ablehnen",
+    "actionFailed": "Diese Aktion für das Angebot konnte nicht ausgeführt werden. Bitte versuchen Sie es erneut.",
+    "status": {
+      "pending": "Wartet auf Ihre Antwort",
+      "accepted": "Angenommen",
+      "declined": "Abgelehnt",
+      "expired": "Abgelaufen",
+      "cancelled": "Storniert",
+      "unknown": "Nicht verfügbar"
+    }
+  }
+}

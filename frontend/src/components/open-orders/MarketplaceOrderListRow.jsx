@@ -159,7 +159,7 @@ function MarketplaceOrderRow({
   const isGuest = !isAuthenticated;
   const collectionClosed =
     Boolean(order?.collectionClosed) || isBidCollectionClosedForApply(order?.bidCollection);
-  const collectionLabel = formatArticleBidCollectionLabel(order?.bidCollection, { isEn: locale === "en" });
+  const collectionLabel = formatArticleBidCollectionLabel(order?.bidCollection, { locale });
   const planLockedForUser = isAuthenticated && planLocked;
   const rowDisabled = actionsDisabled || planLockedForUser || collectionClosed;
   const guestLoginLabel = t("orders.marketplace.loginFirst");
@@ -291,6 +291,7 @@ function MarketplaceOrderRow({
               <PlanUpgradeRequiredCta
                 {...(planUpgradePropsFromPoolOrder(order) || { reason: "PLAN_TOO_LOW", mode: "upgrade" })}
                 isEn={locale === "en"}
+                locale={locale}
                 compact
               />
             </div>

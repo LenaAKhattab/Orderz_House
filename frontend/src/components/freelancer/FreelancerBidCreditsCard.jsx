@@ -8,6 +8,7 @@ import {
 } from "../../services/api";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import "../../i18n/economyResources";
+import { isNewLocale, localizeSystemText } from "../../i18n/systemContent";
 import Button from "../ui/Button";
 
 /**
@@ -232,7 +233,13 @@ export default function FreelancerBidCreditsCard() {
                 }}
               >
                 <span>
-                  <strong>{locale === "en" ? pkg.nameEn || pkg.nameAr : pkg.nameAr}</strong>
+                  <strong>
+                    {isNewLocale(locale)
+                      ? localizeSystemText(locale, { ar: pkg.nameAr, en: pkg.nameEn })
+                      : locale === "en"
+                        ? pkg.nameEn || pkg.nameAr
+                        : pkg.nameAr}
+                  </strong>
                   {" — "}
                   {pkg.bidQuantity} {t("economy.bidCreditsCard.bidUnit")} / {pkg.priceJod} JOD
                   {pkg.validityDays

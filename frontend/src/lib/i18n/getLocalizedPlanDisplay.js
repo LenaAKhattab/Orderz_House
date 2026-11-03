@@ -5,7 +5,11 @@ import {
   planListItems,
 } from "../../components/plans/planDisplayUtils.js";
 import { resources } from "../../i18n/resources.js";
+import { pt } from "../../i18n/activeLocale.js";
+import { pickIntlTag } from "../../i18n/intlLocale.js";
+import { isNewLocale } from "../../i18n/systemContent.js";
 import { getLocalizedField } from "./getLocalizedField.js";
+import { localizeSystemCopyForNewLocale, resolveUiLocale } from "./newLocaleSystemCopy.js";
 
 const PLAN_LOCALE_KEYS = {
   1: "free",
@@ -78,8 +82,26 @@ function containsArabicScript(value) {
   return /[\u0600-\u06FF]/.test(String(value || ""));
 }
 
+function cardBundleKey(localeKey, field, cardBundle) {
+  const value = cardBundle?.[field];
+  if (!localeKey || value == null || String(value).trim() === "") return null;
+  return `plans.cards.${localeKey}.${field}`;
+}
+
 function resolveCardString(plan, field, locale, localeKey, cardBundle) {
   const base = plan?.[field] != null ? String(plan[field]).trim() : "";
+
+  if (isNewLocale(locale)) {
+    // German / Dutch / Romanian: system-content translation → plans.cards bundle → never Arabic script.
+    const enExplicit = plan?.[`${field}En`] ?? plan?.[`${field}_en`];
+    const arabic = getLocalizedField(plan, field, "ar") || base;
+    const localized = localizeSystemCopyForNewLocale(locale, {
+      ar: arabic,
+      en: enExplicit,
+      key: cardBundleKey(localeKey, field, cardBundle),
+    });
+    return localized && !containsArabicScript(localized) ? localized : "";
+  }
 
   if (locale === "en") {
     const enExplicit = plan?.[`${field}En`] ?? plan?.[`${field}_en`];
@@ -108,12 +130,26 @@ export function formatPlanPriceJod(priceJod, locale = "ar") {
   if (priceJod === null || priceJod === undefined) return null;
   const n = Number(priceJod);
   if (!Number.isFinite(n)) return null;
-  const formatted = n.toLocaleString("en-US", { maximumFractionDigits: 2 });
-  if (n === 0) return locale === "en" ? "Free" : "مجانية";
-  return locale === "en" ? `${formatted} JOD` : `${formatted} د.أ`;
+  const uiLocale = resolveUiLocale(locale);
+  const formatted = n.toLocaleString(pickIntlTag(uiLocale, { ar: "en-US", en: "en-US" }), { maximumFractionDigits: 2 });
+  if (n === 0) return pt("platformCore.planPrice.free", undefined, uiLocale);
+  return pt("platformCore.money.jodAmount", { amount: formatted }, uiLocale);
+}
+
+/** German / Dutch / Romanian feature row: static catalog key (mapped plans) → system-content translation. */
+function newLocaleFeatureText(item, locale) {
+  const featureKey = item && typeof item === "object" ? item.featureKey : null;
+  if (featureKey) {
+    const fromCatalog = pt(featureKey, undefined, locale);
+    if (fromCatalog && fromCatalog !== featureKey) return fromCatalog;
+  }
+  const arabic = item && typeof item === "object" ? item.featureText : item;
+  const localized = localizeSystemCopyForNewLocale(locale, { ar: arabic, en: item?.featureTextEn });
+  return localized && !containsArabicScript(localized) ? localized : "";
 }
 
 function getLocalizedFeatures(plan, locale, localeKey, cardBundle) {
+  const latinUi = locale === "en" || isNewLocale(locale);
   if (Array.isArray(plan?.planFeatures) && plan.planFeatures.length > 0) {
     const fromDb = plan.planFeatures
       .filter((item) => item?.isIncluded !== false)
@@ -126,21 +162,27 @@ function getLocalizedFeatures(plan, locale, localeKey, cardBundle) {
           if (base && !containsArabicScript(base)) return base;
           return "";
         }
+        if (isNewLocale(locale)) return newLocaleFeatureText(item, locale);
         return String(item.featureText || item);
       })
       .filter(Boolean);
     if (fromDb.length > 0) return fromDb.slice(0, 14);
-    if (locale === "en" && Array.isArray(cardBundle?.features) && cardBundle.features.length > 0) {
+    if (latinUi && Array.isArray(cardBundle?.features) && cardBundle.features.length > 0) {
       return cardBundle.features.map((item) => String(item)).slice(0, 14);
     }
   }
 
-  const apiFeatures = planListItems(plan, locale);
+  const listed = planListItems(plan, locale);
+  const apiFeatures = isNewLocale(locale)
+    ? listed
+        .map((item) => (containsArabicScript(item) ? localizeSystemCopyForNewLocale(locale, { ar: item }) : item))
+        .filter((item) => item && !containsArabicScript(item))
+    : listed;
   if (apiFeatures.length > 0) {
     return apiFeatures.slice(0, 14);
   }
 
-  if (locale === "en" && Array.isArray(cardBundle?.features) && cardBundle.features.length > 0) {
+  if (latinUi && Array.isArray(cardBundle?.features) && cardBundle.features.length > 0) {
     return cardBundle.features.map((item) => String(item));
   }
 
@@ -148,9 +190,10 @@ function getLocalizedFeatures(plan, locale, localeKey, cardBundle) {
 }
 
 function getLocalizedOrderValueRange(plan, locale, cardBundle) {
-  const fromApi = formatOrderValueRange(plan);
+  // The Arabic and English cards always showed the Arabic range copy; German / Dutch / Romanian get their own.
+  const fromApi = formatOrderValueRange(plan, isNewLocale(locale) ? locale : "ar");
   if (fromApi) return fromApi;
-  if (locale === "en" && cardBundle?.orderValue) {
+  if ((locale === "en" || isNewLocale(locale)) && cardBundle?.orderValue) {
     return String(cardBundle.orderValue);
   }
   return fromApi;
@@ -158,7 +201,7 @@ function getLocalizedOrderValueRange(plan, locale, cardBundle) {
 
 function getLocalizedInstallmentSummary(plan, locale, t, cardBundle) {
   const fromApi =
-    locale === "en"
+    locale === "en" || isNewLocale(locale)
       ? (() => {
           const inst = plan?.installmentPlan;
           if (!inst || typeof inst !== "object") return null;
@@ -176,12 +219,26 @@ function getLocalizedInstallmentSummary(plan, locale, t, cardBundle) {
           }
           return parts.length > 0 ? parts.join(" · ") : null;
         })()
-      : formatInstallmentSummary(plan);
+      : formatInstallmentSummary(plan, "ar");
   if (fromApi) return fromApi;
-  if (locale === "en" && cardBundle?.installment) {
+  if ((locale === "en" || isNewLocale(locale)) && cardBundle?.installment) {
     return String(cardBundle.installment);
   }
   return fromApi;
+}
+
+function localizedSaleReason(plan, locale) {
+  if (locale === "en") {
+    return (
+      String(plan.saleReasonEn || "").trim() ||
+      (containsArabicScript(plan.saleReason) ? "" : String(plan.saleReason || "").trim())
+    );
+  }
+  if (isNewLocale(locale)) {
+    const localized = localizeSystemCopyForNewLocale(locale, { ar: plan.saleReason, en: plan.saleReasonEn });
+    return localized && !containsArabicScript(localized) ? localized : "";
+  }
+  return String(plan.saleReason || "").trim();
 }
 
 function getLocalizedPriceHeadline(plan, locale, t) {
@@ -189,11 +246,7 @@ function getLocalizedPriceHeadline(plan, locale, t) {
     const original = formatPlanPriceJod(plan.originalPriceJod, locale);
     const effective = formatPlanPriceJod(plan.effectivePriceJod, locale);
     const pct = Number(plan.salePercentage);
-    const reason =
-      locale === "en"
-        ? String(plan.saleReasonEn || "").trim() ||
-          (containsArabicScript(plan.saleReason) ? "" : String(plan.saleReason || "").trim())
-        : String(plan.saleReason || "").trim();
+    const reason = localizedSaleReason(plan, locale);
     return {
       main: effective || "—",
       sub: null,
@@ -202,12 +255,7 @@ function getLocalizedPriceHeadline(plan, locale, t) {
         original,
         percentage: Number.isFinite(pct) ? pct : null,
         reason: reason || null,
-        badge:
-          Number.isFinite(pct) && pct > 0
-            ? locale === "en"
-              ? t("plans.sale.percentOff", { percent: pct })
-              : t("plans.sale.percentOff", { percent: pct })
-            : null,
+        badge: Number.isFinite(pct) && pct > 0 ? t("plans.sale.percentOff", { percent: pct }) : null,
       },
     };
   }
@@ -221,11 +269,11 @@ function getLocalizedPriceHeadline(plan, locale, t) {
   if (checkout && total && checkout !== total) {
     const totalAmount = Number(plan.priceJod);
     const totalLabel =
-      locale === "en" && Number.isFinite(totalAmount)
+      (locale === "en" || isNewLocale(locale)) && Number.isFinite(totalAmount)
         ? t("plans.priceTotal", {
-            amount: totalAmount.toLocaleString("en-US", { maximumFractionDigits: 2 }),
+            amount: totalAmount.toLocaleString(pickIntlTag(locale, { en: "en-US" }), { maximumFractionDigits: 2 }),
           })
-        : `الإجمالي ${total}`;
+        : pt("platformCore.planPrice.total", { total }, resolveUiLocale(locale));
     return { main: checkout, sub: totalLabel, sale: null };
   }
 
@@ -262,6 +310,7 @@ export function getLocalizedPlanBadge(plan, featured, locale, t) {
  *
  * Priority for English: API `*En` columns → `en/plans.json` cards when the base text is Arabic → non-Arabic base text.
  * Arabic copy comes from API/DB fields directly.
+ * German / Dutch / Romanian: system-content translation → `<locale>/plans.json` cards → never Arabic script.
  *
  * @param {Record<string, unknown>} plan
  * @param {string} locale
@@ -269,7 +318,12 @@ export function getLocalizedPlanBadge(plan, featured, locale, t) {
  */
 export function getLocalizedPlanCardDisplay(plan, locale, t) {
   const localeKey = getPlanLocaleKey(plan);
-  const cardBundle = locale === "en" ? getCardLocaleBundle("en", localeKey) : null;
+  const cardBundle =
+    locale === "en"
+      ? getCardLocaleBundle("en", localeKey)
+      : isNewLocale(locale)
+        ? getCardLocaleBundle(locale, localeKey) || getCardLocaleBundle("en", localeKey)
+        : null;
 
   const offerActive = isOfferActive(plan);
   const offerLabel = resolveCardString(

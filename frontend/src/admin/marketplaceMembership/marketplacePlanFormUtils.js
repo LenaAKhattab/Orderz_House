@@ -2,9 +2,14 @@
 
 import { getTranslation } from "../../lib/translation/getTranslation";
 import "../../i18n/planAdminResources";
+import { localeFromEnFlag } from "../../i18n/activeLocale.js";
+import { legacyArabicUiLocale } from "../adminLocale.js";
 
+// Without `t` these labels were Arabic in both AR and EN UIs (kept); German / Dutch / Romanian get their own.
 const mp = (t, key, values) =>
-  typeof t === "function" ? t(`planAdmin.marketplace.${key}`, values) : getTranslation(`planAdmin.marketplace.${key}`, "ar", values);
+  typeof t === "function"
+    ? t(`planAdmin.marketplace.${key}`, values)
+    : getTranslation(`planAdmin.marketplace.${key}`, legacyArabicUiLocale(), values);
 
 export function formatMarketplaceAccessLabel(plan, isEn = false, t) {
   if (!plan) return "—";
@@ -20,7 +25,7 @@ export function formatMarketplacePriceLabel(plan, isEn = false, t) {
   if (!plan) return "—";
   const sale = plan.sale;
   const currency =
-    typeof t === "function" ? t("planAdmin.common.currencyJod") : getTranslation("planAdmin.common.currencyJod", isEn ? "en" : "ar");
+    typeof t === "function" ? t("planAdmin.common.currencyJod") : getTranslation("planAdmin.common.currencyJod", localeFromEnFlag(isEn));
   if (sale?.enabled && sale.effectivePriceJod != null) {
     return `${sale.effectivePriceJod} ${currency}`;
   }

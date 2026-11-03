@@ -17,12 +17,19 @@ import {
 import { useTranslation } from "../../i18n/LanguageProvider";
 import { getFooterImportantLinkLabel } from "../../lib/i18n/footerImportantLinkLabel";
 import { useAuth } from "../../context/useAuth";
+import { isNewLocale, localizeSystemText } from "../../i18n/systemContent";
 import "../../styles/publicChrome.css";
 
-function englishIfCanonical(isEn, stored, canonicalAr, english) {
-  if (!isEn) return stored;
+/**
+ * Footer settings are Arabic platform copy stored by admins. The Arabic UI shows them as stored; every other
+ * locale shows the catalog translation while the stored value is still the canonical default, otherwise the
+ * stored value (German / Dutch / Romanian through the system-content translation memory).
+ */
+function catalogIfCanonical(locale, stored, canonicalAr, translated) {
+  if (locale === "ar") return stored;
   const norm = (value) => String(value || "").replace(/\s+/g, " ").trim();
-  return norm(stored) === norm(canonicalAr) ? english : stored;
+  if (norm(stored) === norm(canonicalAr)) return translated;
+  return isNewLocale(locale) ? localizeSystemText(locale, { ar: stored }) || stored : stored;
 }
 
 const linkClass =
@@ -139,8 +146,9 @@ const Footer = ({ homeBlend = false }) => {
   const { contact, workingHours, contactCenter, appDownload } = usePublicFooterSettings();
   const showImportantLinks = !sitePagesError && footerPages.length > 0;
   const { t, dir, locale } = useTranslation();
-  const isEn = String(locale || "").toLowerCase().startsWith("en");
-  const footerAppTitle = isEn
+  // Arabic shows the admin-stored (Arabic) footer copy; every other locale uses the translated catalog copy.
+  const usesCatalogCopy = locale !== "ar";
+  const footerAppTitle = usesCatalogCopy
     ? t("footer.downloadApp")
     : pickFooterAppDownloadTitle(appDownload, "ar");
   const footerAppStoreHref = appDownload.appStoreUrl;
@@ -148,26 +156,26 @@ const Footer = ({ homeBlend = false }) => {
   const contactPhone = contact.phone;
   const contactEmail = contact.email;
   const contactWhatsapp = contact.whatsapp;
-  const contactLocation = englishIfCanonical(
-    isEn,
+  const contactLocation = catalogIfCanonical(
+    locale,
     contact.location,
     FOOTER_CONTACT_FALLBACKS.location,
     t("footer.locationValue"),
   );
-  const contactCenterHelper = englishIfCanonical(
-    isEn,
+  const contactCenterHelper = catalogIfCanonical(
+    locale,
     contactCenter.helperText,
     FOOTER_CONTACT_CENTER_FALLBACKS.helperText,
     t("footer.contactCenterHelper"),
   );
-  const contactCenterButton = englishIfCanonical(
-    isEn,
+  const contactCenterButton = catalogIfCanonical(
+    locale,
     contactCenter.buttonText,
     FOOTER_CONTACT_CENTER_FALLBACKS.buttonText,
     t("footer.contactCenterButton"),
   );
-  const hoursTitle = isEn ? t("footer.workingHours") : workingHours.title;
-  const hoursText = isEn ? t("footer.workingHoursValue") : workingHours.text;
+  const hoursTitle = usesCatalogCopy ? t("footer.workingHours") : workingHours.title;
+  const hoursText = usesCatalogCopy ? t("footer.workingHoursValue") : workingHours.text;
   const phoneHref = buildFooterTelHref(contactPhone);
   const whatsappHref = buildFooterWhatsAppHref(contactWhatsapp);
 

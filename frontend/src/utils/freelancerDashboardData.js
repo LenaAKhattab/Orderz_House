@@ -3,18 +3,24 @@ import {
   ORDERZHOUSE_PLANS_BY_ID,
 } from "../constants/orderzhousePlansCatalog";
 import { getLocaleField } from "../lib/i18n/getLocalizedField";
+import { getActiveLocale } from "../i18n/activeLocale.js";
+import { pickIntlTag } from "../i18n/intlLocale.js";
+import { numberFormatFor } from "./localeFormat.js";
 
-export function formatMoneyJod(value) {
+const MONEY_OPTIONS = Object.freeze({ minimumFractionDigits: 0, maximumFractionDigits: 2 });
+
+/** JOD amount without suffix. Arabic / English: en-US digits (unchanged); de / nl / ro: locale separators. */
+export function formatMoneyJod(value, locale = getActiveLocale()) {
   const n = Number(value);
   if (!Number.isFinite(n)) return "—";
-  return new Intl.NumberFormat("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(n);
+  return numberFormatFor(locale, MONEY_OPTIONS).format(n);
 }
 
 export function formatJoDateMedium(value, locale = "ar") {
   if (!value) return "—";
   const d = new Date(value);
   if (!Number.isFinite(d.getTime())) return "—";
-  const dateLocale = locale === "en" ? "en-JO-u-nu-latn" : "ar-JO-u-nu-latn";
+  const dateLocale = pickIntlTag(locale, { ar: "ar-JO-u-nu-latn", en: "en-JO-u-nu-latn" });
   return new Intl.DateTimeFormat(dateLocale, { dateStyle: "medium" }).format(d);
 }
 

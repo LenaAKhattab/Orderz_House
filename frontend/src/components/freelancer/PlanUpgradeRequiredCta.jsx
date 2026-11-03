@@ -15,6 +15,8 @@ export default function PlanUpgradeRequiredCta({
   reason = null,
   targetRoute = PLAN_UPGRADE_DEFAULT_ROUTE,
   isEn = false,
+  /** Optional UI locale (wins over the legacy `isEn` flag when given). */
+  locale = undefined,
   suggestedUpgradePlanTitle: _suggestedUpgradePlanTitle = null,
   className = "",
   compact = false,
@@ -24,6 +26,7 @@ export default function PlanUpgradeRequiredCta({
     requiredTierCode: normalizeRequiredTierCode(requiredTierCode),
     reason,
     isEn,
+    locale,
   });
   const mode = modeProp || copy.mode || "upgrade";
   const isSupport = mode === "support" || !copy.button;

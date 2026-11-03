@@ -1,4 +1,7 @@
 /** Arabic display names for ISO 3166-1 alpha-2 codes (analysis/dashboard UI). */
+import { pt } from "../i18n/activeLocale.js";
+import { isNewLocale } from "../i18n/systemContent.js";
+import { regionDisplayName } from "./localeFormat.js";
 
 const ENGLISH_COUNTRY_NAMES = Object.freeze({
   JO: "Jordan",
@@ -90,18 +93,25 @@ function isIsoCountryCode(value) {
   return /^[A-Za-z]{2}$/.test(String(value || "").trim());
 }
 
+/** Country name for an ISO code: Arabic / English tables (unchanged), Intl.DisplayNames for de / nl / ro. */
+function countryNameForCode(code, locale) {
+  if (isNewLocale(locale)) return regionDisplayName(code, locale);
+  const names = locale === "en" ? ENGLISH_COUNTRY_NAMES : ARABIC_COUNTRY_NAMES;
+  return names[code];
+}
+
 /**
- * Resolve a user-facing Arabic country label from API row fields.
+ * Resolve a user-facing country label (Arabic by default) from API row fields.
  * @param {{ countryCode?: string | null, countryName?: string | null }} row
  */
 export function resolveCountryDisplayName(row, locale = "ar") {
   const codeRaw = row?.countryCode || (isIsoCountryCode(row?.countryName) ? row.countryName : null);
   const code = codeRaw ? String(codeRaw).trim().toUpperCase() : null;
-  const names = locale === "en" ? ENGLISH_COUNTRY_NAMES : ARABIC_COUNTRY_NAMES;
-  const unspecified = locale === "en" ? "Unspecified" : "غير معروف";
+  const unspecified = pt("platformUtils.country.unspecified", undefined, locale);
 
-  if (code && names[code]) {
-    return names[code];
+  const codeName = code ? countryNameForCode(code, locale) : null;
+  if (codeName) {
+    return codeName;
   }
 
   const name = String(row?.countryName || row?.name || "").trim();
@@ -112,7 +122,7 @@ export function resolveCountryDisplayName(row, locale = "ar") {
     return name;
   }
   if (code) {
-    return names[code] || code;
+    return code;
   }
   return unspecified;
 }

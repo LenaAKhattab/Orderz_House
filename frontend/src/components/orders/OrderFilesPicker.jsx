@@ -1,6 +1,7 @@
 import { useId, useRef, useState } from "react";
 import { FileText, FileImage, File as FileIcon, Paperclip, X } from "lucide-react";
 import { useTranslation } from "../../i18n/LanguageProvider";
+import { pickIntlTag } from "../../i18n/intlLocale";
 import {
   MAX_ORDER_UPLOAD_TOTAL_BYTES,
   ORDER_UPLOAD_ACCEPT,
@@ -10,11 +11,15 @@ import {
 } from "../../utils/orderUploadLimits";
 import "./order-files-picker.css";
 
-/** Western digits in both locales (matches dates/prices across the platform). */
-function formatSize(bytes) {
+/**
+ * Western digits in every locale (matches dates/prices across the platform); Arabic / English keep en-US
+ * separators, German / Dutch / Romanian use their own.
+ */
+function formatSize(bytes, locale) {
   const n = Number(bytes) || 0;
   const kb = n / 1024;
-  const fmt = (v) => v.toLocaleString("en-US", { maximumFractionDigits: 1 });
+  const tag = pickIntlTag(locale, { ar: "en-US", en: "en-US" });
+  const fmt = (v) => v.toLocaleString(tag, { maximumFractionDigits: 1 });
   return kb < 1024 ? `${fmt(kb)} KB` : `${fmt(kb / 1024)} MB`;
 }
 
@@ -34,7 +39,7 @@ function iconFor(file) {
  * @param {{ files: File[], onChange: (files: File[]) => void, maxFiles?: number, disabled?: boolean, label?: string, hint?: string }} props
  */
 export default function OrderFilesPicker({ files, onChange, maxFiles = 5, disabled = false, label, hint }) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const inputRef = useRef(null);
   const [dragging, setDragging] = useState(false);
   const [rejected, setRejected] = useState([]);
@@ -145,7 +150,7 @@ export default function OrderFilesPicker({ files, onChange, maxFiles = 5, disabl
                   {f.name}
                 </span>
                 <span className="oh-files-picker__size" dir="ltr">
-                  {formatSize(f.size)}
+                  {formatSize(f.size, locale)}
                 </span>
                 <button
                   type="button"

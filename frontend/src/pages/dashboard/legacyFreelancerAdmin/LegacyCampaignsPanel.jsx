@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "../../../i18n/LanguageProvider";
+import { pickIntlTag } from "../../../i18n/intlLocale.js";
 import { useNavigate } from "react-router-dom";
 import {
   createLegacyFreelancerInviteRequest,
@@ -61,7 +62,7 @@ export default function LegacyCampaignsPanel({
   showFieldConfig = true,
   embedMode = false,
 }) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
 const navigate = useNavigate();
   const { pushToast } = useToast();
   const [loading, setLoading] = useState(true);
@@ -447,7 +448,7 @@ const navigate = useNavigate();
                 />
               </label>
               <label>
-                Slug
+                {t("legacy.common.slug")}
                 <input
                   className="oh-legacy-admin__input"
                   dir="ltr"
@@ -578,11 +579,11 @@ const navigate = useNavigate();
                     </div>
                     <div>
                       <dt>{t("legacy.campaigns.cardLinkViews")}</dt>
-                      <dd>{Number(row.linkViewCount || 0).toLocaleString("en-US")}</dd>
+                      <dd>{Number(row.linkViewCount || 0).toLocaleString(pickIntlTag(locale, { ar: "en-US", en: "en-US" }))}</dd>
                     </div>
                     <div>
                       <dt>{t("legacy.campaigns.cardRegistrations")}</dt>
-                      <dd>{Number(row.usedCount || 0).toLocaleString("en-US")}</dd>
+                      <dd>{Number(row.usedCount || 0).toLocaleString(pickIntlTag(locale, { ar: "en-US", en: "en-US" }))}</dd>
                     </div>
                   </dl>
 

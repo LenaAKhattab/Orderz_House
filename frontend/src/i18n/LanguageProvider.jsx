@@ -5,17 +5,29 @@ import {
   LEGACY_LOCALE_STORAGE_KEY,
   LOCALE_STORAGE_KEY,
   getLocaleDirection,
-  isSupportedLocale,
   resources,
 } from "./resources";
-import { readStoredLocale } from "./localePreference";
+import { getSelectableLocales, isI18nPreviewEnabled, isSelectableLocale, readStoredLocale } from "./localePreference";
+import { getMissingTranslationLog } from "./resolveTranslation";
+import { getMissingSystemContentLog } from "./systemContent";
+
+// Internal QA preview only: expose runtime fallback logs to the untranslated-string detector (read-only).
+if (typeof window !== "undefined" && isI18nPreviewEnabled()) {
+  window.__OH_I18N__ = {
+    missingKeys: () => getMissingTranslationLog(),
+    missingSystemContent: () => getMissingSystemContentLog(),
+  };
+}
+import { ensureLocaleLoaded, isLocaleBundleLoaded } from "./loadLocaleBundle";
 import { createTranslator } from "./resolveTranslation";
 import { waitForPaint } from "./waitForPaint";
+import { setActiveLocale } from "./activeLocale";
 
 const LOCALE_SWITCH_SAFETY_MS = 3000;
 
 /** @type {import('react').Context<null | {
  *   locale: string;
+ *   selectableLocales: string[];
  *   dir: 'rtl' | 'ltr';
  *   isRtl: boolean;
  *   isLanguageSwitching: boolean;
@@ -45,7 +57,9 @@ function persistLocale(locale) {
 export function LanguageProvider({ children }) {
   const [locale, setLocaleState] = useState(() => {
     if (typeof window === "undefined") return DEFAULT_LOCALE;
-    return readStoredLocale();
+    const stored = readStoredLocale();
+    // main.jsx loads a lazily-bundled locale before the first render; never render a locale that is not loaded.
+    return isLocaleBundleLoaded(stored) ? stored : DEFAULT_LOCALE;
   });
   const [localeSwitchingTo, setLocaleSwitchingTo] = useState(null);
   const localeRef = useRef(locale);
@@ -55,14 +69,8 @@ export function LanguageProvider({ children }) {
     localeRef.current = locale;
   }, [locale]);
 
-  const setLocale = useCallback((next) => {
-    const resolved = isSupportedLocale(next) ? next : DEFAULT_LOCALE;
-    setLocaleState(resolved);
-    persistLocale(resolved);
-  }, []);
-
   const switchLocale = useCallback(async (next) => {
-    const resolved = isSupportedLocale(next) ? next : DEFAULT_LOCALE;
+    const resolved = isSelectableLocale(next) ? next : DEFAULT_LOCALE;
     const previous = localeRef.current;
     if (resolved === previous) return;
 
@@ -76,6 +84,10 @@ export function LanguageProvider({ children }) {
           setLocaleSwitchingTo(null);
         }
       }, LOCALE_SWITCH_SAFETY_MS);
+
+      // Load the target bundle first: the UI switches in one step, never through a half-translated state.
+      await ensureLocaleLoaded(resolved);
+      if (switchGenRef.current !== gen) return;
 
       applyDocumentLocale(resolved);
       persistLocale(resolved);
@@ -100,6 +112,10 @@ export function LanguageProvider({ children }) {
     }
   }, []);
 
+  const setLocale = useCallback((next) => {
+    void switchLocale(next);
+  }, [switchLocale]);
+
   useEffect(() => {
     applyDocumentLocale(locale);
   }, [locale]);
@@ -108,11 +124,18 @@ export function LanguageProvider({ children }) {
   const isRtl = dir === "rtl";
   const isLanguageSwitching = localeSwitchingTo !== null;
 
-  const t = useMemo(() => createTranslator(locale, resources, DEFAULT_LOCALE), [locale]);
+  const t = useMemo(() => {
+    // Plain helpers (constants / utils) read the UI locale through activeLocale.js.
+    setActiveLocale(locale);
+    return createTranslator(locale, resources, DEFAULT_LOCALE);
+  }, [locale]);
+
+  const selectableLocales = useMemo(() => getSelectableLocales(), []);
 
   const value = useMemo(
     () => ({
       locale,
+      selectableLocales,
       dir,
       isRtl,
       isLanguageSwitching,
@@ -121,7 +144,7 @@ export function LanguageProvider({ children }) {
       switchLocale,
       t,
     }),
-    [locale, dir, isRtl, isLanguageSwitching, localeSwitchingTo, setLocale, switchLocale, t],
+    [locale, selectableLocales, dir, isRtl, isLanguageSwitching, localeSwitchingTo, setLocale, switchLocale, t],
   );
 
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;

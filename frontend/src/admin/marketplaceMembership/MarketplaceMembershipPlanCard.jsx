@@ -2,6 +2,7 @@ import StatusBadge from "../../components/dashboard/StatusBadge";
 import Button from "../../components/ui/Button";
 import { Trash2 } from "lucide-react";
 import { useTranslation } from "../../i18n/LanguageProvider";
+import { isNewLocale, localizeSystemText } from "../../i18n/systemContent";
 import "../../i18n/planAdminResources";
 import { formatMarketplaceAccessLabel, formatMarketplacePriceLabel } from "./marketplacePlanFormUtils";
 // The card owns its styles: Marketplace Plans rendered unstyled on direct load because only
@@ -27,7 +28,11 @@ export default function MarketplaceMembershipPlanCard({
   const isEn = isEnProp || locale === "en";
   if (!plan) return null;
 
-  const title = isEn ? plan.nameEn || plan.nameAr : plan.nameAr || plan.nameEn;
+  const title = isNewLocale(locale)
+    ? localizeSystemText(locale, { ar: plan.nameAr, en: plan.nameEn })
+    : isEn
+      ? plan.nameEn || plan.nameAr
+      : plan.nameAr || plan.nameEn;
   const priceLabel = formatMarketplacePriceLabel(plan, isEn, t);
   const accessLabel = formatMarketplaceAccessLabel(plan, isEn, t);
   const saleOn = Boolean(plan.sale?.enabled);

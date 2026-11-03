@@ -1,0 +1,249 @@
+{
+  "errors": {
+    "operationFailed": "De actie kon niet worden voltooid. Probeer het opnieuw.",
+    "loadPagesFailed": "Pagina's konden niet worden geladen. Probeer het opnieuw.",
+    "noServerUrl": "De server heeft geen URL teruggegeven.",
+    "imageUploadFailed": "Uploaden van de afbeelding mislukt.",
+    "enterQuestionAndAnswer": "Voer de vraag en het antwoord in.",
+    "enterBlockTitle": "Voer een titel in voor het blok.",
+    "enterTitleOrText": "Voer een titel of tekst in.",
+    "addImageOrUrl": "Voeg een afbeelding of URL toe.",
+    "addTitleTextOrImage": "Voeg een titel, tekst of afbeelding toe.",
+    "enterPageTitle": "Voer de paginatitel in."
+  },
+  "common": {
+    "close": "Sluiten",
+    "cancel": "Annuleren",
+    "add": "Toevoegen",
+    "edit": "Bewerken",
+    "delete": "Verwijderen",
+    "retry": "Opnieuw proberen",
+    "saving": "Opslaan…",
+    "saveChanges": "Wijzigingen opslaan",
+    "saveEdit": "Bewerking opslaan",
+    "saveTitle": "Titel opslaan",
+    "visible": "Zichtbaar",
+    "hidden": "Verborgen",
+    "visiblePage": "Zichtbaar",
+    "hiddenPage": "Verborgen",
+    "show": "Tonen",
+    "hide": "Verbergen",
+    "busy": "Bezig…",
+    "back": "Terug",
+    "backToFooterSections": "← Terug naar onderdelen van de voettekst",
+    "yes": "Ja",
+    "no": "Nee",
+    "published": "Gepubliceerd",
+    "draft": "Concept",
+    "enabled": "Ingeschakeld",
+    "disabled": "Uitgeschakeld",
+    "moveUp": "Omhoog verplaatsen",
+    "moveDown": "Omlaag verplaatsen",
+    "showFieldOnSite": "{{label}} tonen op de site",
+    "loadingSettings": "Instellingen laden…",
+    "loadingPages": "Pagina's laden…",
+    "loadingQuestions": "Vragen laden…",
+    "loadingContent": "Inhoud laden…",
+    "loadingPage": "Pagina laden…",
+    "loadingSectionStatus": "Status van onderdeel laden…",
+    "editSection": "Onderdeel bewerken",
+    "editSectionShort": "Bewerken"
+  },
+  "imagePicker": {
+    "uploading": "Uploaden…",
+    "changeImage": "Afbeelding wijzigen",
+    "uploadImage": "Afbeelding uploaden",
+    "remove": "Verwijderen",
+    "pasteUrlLabel": "Of plak een afbeeldings-URL"
+  },
+  "blockTypes": {
+    "title": "Titel",
+    "text": "Tekst",
+    "image": "Afbeelding",
+    "text_image": "Tekst + afbeelding",
+    "content": "Inhoud"
+  },
+  "howItWorksPages": {
+    "freelancer": "Hoe het werkt voor freelancers",
+    "client": "Hoe klanten een opdracht plaatsen"
+  },
+  "sections": {
+    "faq": {
+      "title": "Veelgestelde vragen",
+      "description": "Bewerk de vragen en antwoorden op de startpagina",
+      "editLabel": "Onderdeel bewerken"
+    },
+    "howItWorks": {
+      "title": "Hoe het werkt",
+      "description": "Bewerk de pagina's 'Hoe het werkt' voor freelancers en klanten",
+      "editLabel": "Onderdeel bewerken"
+    },
+    "sitePages": {
+      "title": "Openbare pagina's",
+      "description": "Bewerk openbare pagina's van de site (privacy, voorwaarden, helpcentrum en meer)",
+      "editLabel": "Onderdeel bewerken"
+    },
+    "footerHub": {
+      "title": "Voettekst van de site bewerken",
+      "description": "Bewerk contactgegevens, openingstijden en het onderdeel voor het downloaden van de app in de voettekst van de site.",
+      "editLabel": "Onderdeel bewerken"
+    }
+  },
+  "footerSections": {
+    "contact": {
+      "title": "Contact",
+      "description": "Bewerk telefoon, e-mail, WhatsApp en locatie.",
+      "editLabel": "Bewerken"
+    },
+    "workingHours": {
+      "title": "Openingstijden",
+      "description": "Bewerk de tekst in het onderdeel openingstijden.",
+      "editLabel": "Bewerken"
+    },
+    "appDownloads": {
+      "title": "App downloaden",
+      "description": "Bewerk de titel van het onderdeel voor het downloaden van de app en de links naar App Store / Google Play.",
+      "editLabel": "Bewerken"
+    },
+    "contactCenter": {
+      "title": "Contactcentrum",
+      "description": "Bewerk de tekst en link van het contactcentrum en de zichtbaarheidsopties in de voettekst.",
+      "editLabel": "Bewerken"
+    }
+  },
+  "editWebsiteHub": {
+    "pageTitle": "Website bewerken",
+    "pageDescription": "Kies een onderdeel van de inhoud van de openbare website om te bewerken.",
+    "sectionTitle": "Bewerkbare onderdelen van de website"
+  },
+  "faq": {
+    "pageTitle": "Veelgestelde vragen",
+    "pageDescription": "Beheer de vragen en antwoorden in het onderdeel Veelgestelde vragen op de startpagina.",
+    "sectionTitle": "Lijst met vragen",
+    "toolbarHint": "Wijzigingen verschijnen direct in het onderdeel Veelgestelde vragen op de startpagina.",
+    "addQuestion": "Vraag toevoegen",
+    "emptyTitle": "Nog geen vragen",
+    "emptyDescription": "Voeg de eerste veelgestelde vraag toe om op de startpagina te tonen.",
+    "modalEditTitle": "Vraag bewerken",
+    "modalAddTitle": "Vraag toevoegen",
+    "fieldQuestion": "Vraag (Arabisch)",
+    "fieldQuestionEn": "Vraag (Engels)",
+    "fieldAnswer": "Antwoord (Arabisch)",
+    "fieldAnswerEn": "Antwoord (Engels)",
+    "deleteConfirm": "Vraag verwijderen: «{{preview}}…»?"
+  },
+  "howItWorksHub": {
+    "pageTitle": "Hoe het werkt",
+    "pageDescription": "Beheer de pagina's 'Hoe het werkt' voor freelancers en klanten.",
+    "sectionTitle": "Pagina's 'Hoe het werkt'"
+  },
+  "howItWorksEditor": {
+    "pageDescription": "Voeg pagina-inhoud toe, bewerk deze en wijzig de volgorde. De lay-out ligt vast en kan hier niet worden gewijzigd.",
+    "unknownPage": "Onbekende pagina.",
+    "pageSettingsTitle": "Pagina-instellingen",
+    "pageTitleLabel": "Paginatitel",
+    "contentSectionTitle": "Pagina-inhoud",
+    "contentHint": "Voeg inhoudsblokken toe (titel, tekst, afbeelding, tekst + afbeelding) en zet ze in de volgorde waarin bezoekers ze zien.",
+    "addContent": "Inhoud toevoegen",
+    "emptyTitle": "Nog geen inhoud",
+    "emptyDescription": "Voeg het eerste inhoudsblok voor deze pagina toe.",
+    "modalEditTitle": "Inhoud bewerken",
+    "modalAddTitle": "Inhoud toevoegen",
+    "contentType": "Type inhoud",
+    "fieldTitle": "Titel (Arabisch)",
+    "fieldTitleEn": "Titel (Engels)",
+    "fieldText": "Tekst (Arabisch)",
+    "fieldTextEn": "Tekst (Engels)",
+    "fieldImage": "Afbeelding",
+    "deleteConfirm": "Verwijderen: «{{preview}}»?"
+  },
+  "footerHub": {
+    "pageTitle": "Voettekst van de site bewerken",
+    "pageDescription": "Kies een onderdeel van de voettekst om te bewerken.",
+    "sectionTitle": "Onderdelen van de voettekst"
+  },
+  "footerContact": {
+    "pageTitle": "Contact",
+    "pageDescription": "Bewerk de contactgegevens in de voettekst van de site.",
+    "sectionTitle": "Contactgegevens",
+    "toastSaved": "Contactgegevens opgeslagen.",
+    "showSectionInFooter": "Onderdeel tonen in de voettekst van de site",
+    "showContactSectionInFooter": "Onderdeel \"Contact\" tonen in de voettekst van de site",
+    "phone": "Telefoonnummer",
+    "email": "E-mail",
+    "whatsapp": "WhatsApp-nummer",
+    "location": "Locatie"
+  },
+  "footerHours": {
+    "pageTitle": "Openingstijden",
+    "pageDescription": "Bewerk de titel en tekst van de openingstijden in de voettekst van de site.",
+    "sectionTitle": "Openingstijden",
+    "toastSaved": "Openingstijden opgeslagen.",
+    "showSectionInFooter": "Onderdeel tonen in de voettekst van de site",
+    "showWorkingHoursSectionInFooter": "Onderdeel \"Openingstijden\" tonen in de voettekst van de site",
+    "sectionTitleField": "Titel van het onderdeel",
+    "textField": "Tekst",
+    "showHoursTextOnSite": "Tekst met openingstijden tonen op de site"
+  },
+  "footerApps": {
+    "pageTitle": "App downloaden",
+    "pageDescription": "Bewerk de titel van het onderdeel voor het downloaden van de app en de links naar de stores in de voettekst van de site.",
+    "sectionTitle": "Instellingen voor app downloaden",
+    "toastSaved": "Instellingen voor app downloaden opgeslagen.",
+    "showSectionInFooter": "Onderdeel tonen in de voettekst van de site",
+    "showAppDownloadsSectionInFooter": "Onderdeel \"App downloaden\" tonen in de voettekst van de site",
+    "sectionTitleField": "Titel van het onderdeel",
+    "sectionTitleHint": "Wordt getoond in de voettekst van de site.",
+    "showSectionTitleOnSite": "Titel van het onderdeel tonen op de site",
+    "googlePlayUrl": "Link naar Google Play",
+    "showGooglePlayOnSite": "Google Play-knop tonen op de site",
+    "appStoreUrl": "Link naar App Store",
+    "showAppStoreOnSite": "App Store-knop tonen op de site"
+  },
+  "footerContactCenter": {
+    "pageTitle": "Contactcentrum",
+    "pageDescription": "Bewerk de inhoud van het contactcentrum in de voettekst van de site.",
+    "sectionTitle": "Contactcentrum",
+    "toastSaved": "Contactcentrum opgeslagen.",
+    "showContactCenterInFooter": "Contactcentrum tonen in de voettekst van de site",
+    "helperTextLabel": "Hulptekst",
+    "showHelperText": "Hulptekst tonen",
+    "buttonTextLabel": "Knoptekst",
+    "showContactCenterButton": "Knop van het contactcentrum tonen",
+    "buttonBehaviorHint": "De knop van het contactcentrum leidt ingelogde gebruikers altijd naar de pagina voor problemen en suggesties die bij hun rol hoort, en bezoekers naar de inlogpagina."
+  },
+  "sitePages": {
+    "pageTitle": "Openbare pagina's",
+    "pageDescription": "Beheer openbare pagina's van de site (voettekst en mobiel menu).",
+    "sectionTitle": "Lijst met pagina's",
+    "toolbarHint": "Gepubliceerde pagina's verschijnen onder \"Belangrijke links\" in de voettekst (desktop) en in het mobiele menu, afhankelijk van de instellingen.",
+    "tableTitle": "Titel",
+    "tableLink": "Link",
+    "tablePublish": "Publiceren",
+    "tableMobile": "Mobiel",
+    "tableFooter": "Voettekst",
+    "tableAction": "Actie"
+  },
+  "sitePageEdit": {
+    "editPageFallback": "Pagina bewerken",
+    "pageDescription": "Bewerk de inhoud van de pagina en de zichtbaarheid in de voettekst en het mobiele menu.",
+    "sectionTitle": "Pagina-inhoud",
+    "toastSaved": "Pagina opgeslagen.",
+    "pagePathLabel": "Pagina-URL:",
+    "pageTitle": "Paginatitel (Arabisch)",
+    "pageTitleEn": "Paginatitel (Engels)",
+    "menuLabel": "Label van menulink (Arabisch)",
+    "menuLabelEn": "Label van menulink (Engels)",
+    "sortOrder": "Weergavevolgorde",
+    "publishedToggle": "Gepubliceerd",
+    "showMobile": "Tonen in mobiel menu",
+    "showFooter": "Tonen in voettekst",
+    "contentLabel": "Inhoud (Arabisch)",
+    "contentLabelEn": "Inhoud (Engels)",
+    "contentHint": "Schrijf platte tekst. Scheid alinea's met een lege regel. Gebruik ## vóór een tussenkop.",
+    "seoOptional": "Optionele SEO-instellingen",
+    "metaTitle": "SEO-titel (optioneel)",
+    "metaDescription": "SEO-beschrijving (optioneel)",
+    "backToList": "Terug naar lijst"
+  }
+}

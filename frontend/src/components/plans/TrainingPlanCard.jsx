@@ -1,6 +1,8 @@
 import { Award, BookOpen, Briefcase, Check, GraduationCap, MessageCircle } from "lucide-react";
 import { buildTrainingWhatsAppUrl } from "../../constants/trainingPlansCatalog";
 import { ApproximateCurrencyLine } from "../money/JodMoneyDisplay";
+import { pickIntlTag } from "../../i18n/intlLocale";
+import { isNewLocale, localizeSystemText } from "../../i18n/systemContent";
 
 function featureIcon(text) {
   const value = String(text || "");
@@ -23,12 +25,29 @@ export default function TrainingPlanCard({
   buyBusy = false,
 }) {
   const isEn = locale === "en";
-  const name = isEn ? pkg.nameEn : pkg.nameAr;
-  const shortDesc = isEn ? pkg.shortDescEn : pkg.shortDescAr;
-  const features = isEn ? pkg.featuresEn : pkg.featuresAr;
+  // German / Dutch / Romanian: system content through the translation memory (Arabic / English unchanged).
+  const newLocale = isNewLocale(locale);
+  const systemText = (ar, en) => localizeSystemText(locale, { ar, en });
+  const name = newLocale ? systemText(pkg.nameAr, pkg.nameEn) : isEn ? pkg.nameEn : pkg.nameAr;
+  const shortDesc = newLocale ? systemText(pkg.shortDescAr, pkg.shortDescEn) : isEn ? pkg.shortDescEn : pkg.shortDescAr;
+  // New locales translate from the English list when present; icons keep matching the source text.
+  const featureSources = newLocale
+    ? Array.isArray(pkg.featuresEn) && pkg.featuresEn.length > 0
+      ? pkg.featuresEn
+      : pkg.featuresAr
+    : isEn
+      ? pkg.featuresEn
+      : pkg.featuresAr;
+  const features = newLocale ? (featureSources || []).map((text) => systemText(undefined, text)) : featureSources;
   const href = buildTrainingWhatsAppUrl(pkg);
-  const priceLabel = Number(pkg.priceJod).toLocaleString("en-US", { maximumFractionDigits: 0 });
-  const badge = isEn ? pkg.badgeEn || pkg.badgeAr : pkg.badgeAr || pkg.badgeEn;
+  const priceLabel = Number(pkg.priceJod).toLocaleString(pickIntlTag(locale, { ar: "en-US", en: "en-US" }), {
+    maximumFractionDigits: 0,
+  });
+  const badge = newLocale
+    ? systemText(pkg.badgeAr, pkg.badgeEn)
+    : isEn
+      ? pkg.badgeEn || pkg.badgeAr
+      : pkg.badgeAr || pkg.badgeEn;
   const showBadge = Boolean(pkg.featured || badge);
 
   return (
@@ -62,7 +81,7 @@ export default function TrainingPlanCard({
         <p className="training-card__includes-label">{t("plans.training.includes")}</p>
         <ul className="training-card__features" aria-label={t("plans.training.featuresAria")}>
           {(features || []).map((text, idx) => {
-            const Icon = featureIcon(text);
+            const Icon = featureIcon(featureSources?.[idx] ?? text);
             const highlight = idx === pkg.highlightFeatureIndex;
             return (
               <li

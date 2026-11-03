@@ -6,8 +6,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { getSafeApiErrorMessage } from "../utils/apiErrorMessage.js";
 import {
   ADMIN_LIST_RATE_LIMIT_COOLDOWN_MS,
-  ADMIN_LIST_RATE_LIMIT_NOTE,
-  ADMIN_LIST_REFRESH_SOFT_NOTE,
+  adminListLoadFailedMessage,
+  adminListRateLimitNote,
+  adminListRefreshSoftNote,
   createAdminListRequestGate,
   isAdminListAbortError,
   resolveAdminListFailure,
@@ -20,11 +21,11 @@ import {
 export function useAdminListLoad(options = {}) {
   const mapErrorRef = useRef(
     options.mapError ||
-      ((err) => getSafeApiErrorMessage(err) || "تعذر تحميل القائمة. حاول مجدداً."),
+      ((err) => getSafeApiErrorMessage(err) || adminListLoadFailedMessage()),
   );
   mapErrorRef.current =
     options.mapError ||
-    ((err) => getSafeApiErrorMessage(err) || "تعذر تحميل القائمة. حاول مجدداً.");
+    ((err) => getSafeApiErrorMessage(err) || adminListLoadFailedMessage());
 
   const gateRef = useRef(null);
   if (!gateRef.current) gateRef.current = createAdminListRequestGate();
@@ -99,7 +100,7 @@ export function useAdminListLoad(options = {}) {
         mapError: (e) => mapErrorRef.current(e),
       });
       if (resolved.hardError) setInitialLoadError(resolved.hardError);
-      if (resolved.softNote) setRefreshError(resolved.softNote || ADMIN_LIST_REFRESH_SOFT_NOTE);
+      if (resolved.softNote) setRefreshError(resolved.softNote || adminListRefreshSoftNote());
       if (resolved.rateLimited) {
         setRateLimitUntil(Date.now() + ADMIN_LIST_RATE_LIMIT_COOLDOWN_MS);
       }
@@ -132,8 +133,8 @@ export function useAdminListLoad(options = {}) {
     hasLoadedOnce: hasLoadedOnceRef,
     run,
     clearRefreshError,
-    softNote: ADMIN_LIST_REFRESH_SOFT_NOTE,
-    rateLimitNote: ADMIN_LIST_RATE_LIMIT_NOTE,
+    softNote: adminListRefreshSoftNote(),
+    rateLimitNote: adminListRateLimitNote(),
     listBusy: initialLoading || refreshing || rateLimited,
   };
 }

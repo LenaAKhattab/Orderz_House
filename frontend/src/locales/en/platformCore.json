@@ -1,0 +1,77 @@
+{
+  "money": {
+    "jodAmount": "{{amount}} JOD"
+  },
+  "planPrice": {
+    "free": "Free",
+    "total": "Total {{total}}"
+  },
+  "taxonomy": {
+    "contentWriting": "Content writing",
+    "design": "Design",
+    "programming": "Programming"
+  },
+  "courseTitles": {
+    "freeContentWritingLevel1": "Free content writing training – Level 1",
+    "contentWritingLevel1": "Content writing training – Level 1",
+    "contentWritingLevel2": "Content writing training – Level 2",
+    "freeContentWritingLevel2": "Free content writing training – Level 2",
+    "freeDesign": "Free design training",
+    "freelanceOperationsDiploma": "Digital freelance operations diploma"
+  },
+  "faq": {
+    "translationUnavailable": "This item is not available in your language yet."
+  },
+  "membership": {
+    "tiers": {
+      "starter": {
+        "tagline": "To get started"
+      },
+      "silver": {
+        "tagline": "To grow"
+      },
+      "pro": {
+        "tagline": "For professionals"
+      },
+      "elite": {
+        "tagline": "Maximum access"
+      }
+    },
+    "withdrawalOff": "No direct payout of financial amounts",
+    "withdrawalOn": "Withdrawal available",
+    "viewMembership": "View membership"
+  },
+  "chunkReload": {
+    "message": "The site files were updated. Please refresh the page.",
+    "refresh": "Refresh page"
+  },
+  "browserNotification": {
+    "newNotification": "New notification"
+  },
+  "adminList": {
+    "refreshSoftNote": "The list could not be refreshed right now. You can try again.",
+    "rateLimitNote": "Too many requests were sent in a short time. Wait a moment, then try again.",
+    "loadFailed": "Could not load the list. Please try again."
+  },
+  "plansLoad": {
+    "defaultCatalogFailed": "Could not load the default plans.",
+    "planPageFailed": "Could not load the plans page."
+  },
+  "superAdminLoad": {
+    "analyticsTimeout": "Loading analytics took longer than expected. Try refreshing in a moment.",
+    "analyticsFailed": "Could not load the analytics dashboard.",
+    "businessKpisTimeout": "Business indicators could not be loaded right now.",
+    "businessKpisFailed": "Could not load business indicators.",
+    "sectionTimeout": "This section took longer than expected to load.",
+    "sectionFailed": "Could not load this section.",
+    "summaryTimeout": "Loading the indicators took longer than expected.",
+    "summaryFailed": "Could not load the follow-up indicators."
+  },
+  "api": {
+    "invalidMembershipPlanCode": "Invalid Marketplace plan code.",
+    "identityImageUnavailable": "Could not load the identity image right now. Please try again.",
+    "invalidPlanId": "Invalid plan ID.",
+    "invalidCheckoutSessionId": "Invalid payment session ID.",
+    "openingFile": "Opening file…"
+  }
+}

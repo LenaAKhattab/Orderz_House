@@ -141,7 +141,9 @@ describe("Freelancer Articles Bildazo gate UI", () => {
     assert.match(card, /articles\.bildazoGate\.pendingNew/);
     assert.match(card, /articles\.bildazoGate\.pendingReview/);
     const terms = read("constants/bildazoAuthorTerms.js");
-    assert.match(terms, /تعذر إكمال الربط مع Bildazo/);
+    const termsCopyAr = JSON.parse(read("locales/ar/platformConstants.json")).bildazoAuthorTerms;
+    assert.match(terms, /bildazoAuthorTerms\.failures\.\$\{key\}/);
+    assert.match(termsCopyAr.failures.failed, /تعذر إكمال الربط مع Bildazo/);
     assert.match(card, /bildazo-pending-state/);
     assert.match(card, /bildazo-review-state/);
     assert.match(card, /bildazo-failed-state/);

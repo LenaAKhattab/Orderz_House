@@ -2,6 +2,7 @@ import { SkelBar, PlanCardsRowSkeleton } from "../ui/Skeleton";
 import { MarketplaceMembershipPlansGridSkeleton } from "./MembershipPlanCardSkeleton";
 import { PLAN_CATALOG, isMarketplacePlanCatalog } from "../../constants/planCatalogs";
 import { readLastDefaultCatalog } from "../../lib/planCatalog/fetchPlansForCatalog";
+import { useTranslation } from "../../i18n/LanguageProvider";
 
 /**
  * Shape-matched loading shell for /dashboard/freelancer/plans.
@@ -12,6 +13,7 @@ export default function FreelancerPlansScreenSkeleton({
   catalog = null,
   catalogResolved = false,
 }) {
+  const { t } = useTranslation();
   const hinted =
     catalogResolved && catalog
       ? catalog
@@ -20,7 +22,7 @@ export default function FreelancerPlansScreenSkeleton({
 
   return (
     <div className="fp-screen-skeleton" aria-busy="true">
-      <span className="visually-hidden">Loading plans</span>
+      <span className="visually-hidden">{t("platformComponents.plans.loadingPlansSr")}</span>
 
       <header className="fp-surface fp-hero fp-hero--membership fp-hero--membership-skel">
         <div className="fp-hero__copy">

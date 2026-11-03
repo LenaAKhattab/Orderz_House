@@ -1,4 +1,5 @@
 import { countryCodeToFlag } from "../utils/countryDisplay";
+import { newLocaleRegionName } from "./constantsI18n.js";
 
 /** ISO-2 Arab countries allowed at registration (matches backend authValidators). */
 const ARAB_COUNTRY_ENTRIES = [
@@ -28,9 +29,22 @@ const ARAB_COUNTRY_ENTRIES = [
 
 export const DEFAULT_DIAL_CODE = "+962";
 
+/**
+ * Sorted by the Arabic name (stable order for every UI locale). `nameAr` keeps the Arabic name for Arabic / English
+ * UIs and resolves to the Intl.DisplayNames country name when the UI is German / Dutch / Romanian.
+ */
 export const ARAB_COUNTRIES = Object.freeze(
-  ARAB_COUNTRY_ENTRIES.map((entry) => ({
-    ...entry,
-    flag: countryCodeToFlag(entry.code),
-  })).sort((a, b) => a.nameAr.localeCompare(b.nameAr, "ar")),
+  [...ARAB_COUNTRY_ENTRIES]
+    .sort((a, b) => a.nameAr.localeCompare(b.nameAr, "ar"))
+    .map(({ code, nameAr, dialCode }) =>
+      Object.freeze({
+        code,
+        get nameAr() {
+          return newLocaleRegionName(code) || nameAr;
+        },
+        dialCode,
+        flag: countryCodeToFlag(code),
+      }),
+    ),
 );
+

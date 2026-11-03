@@ -1,0 +1,62 @@
+{
+  "trainingOrders": {
+    "roundStatus": {
+      "scheduled": "مجدولة",
+      "active": "نشطة",
+      "expired": "منتهية",
+      "stopped": "متوقفة"
+    },
+    "fakeOrderStatus": {
+      "active": "نشط",
+      "expired": "منتهٍ",
+      "stopped": "متوقف"
+    },
+    "automationStatus": {
+      "success": "نجاح",
+      "skipped_no_templates": "تخطي — لا قوالب",
+      "skipped_lock": "تخطي — قفل",
+      "failed": "فشل"
+    },
+    "roundSource": {
+      "automation": "تلقائي",
+      "manual": "يدوي"
+    },
+    "widgetError": "حدث خطأ غير متوقع."
+  },
+  "common": {
+    "listJoiner": "، ",
+    "jodSuffix": "د.أ"
+  },
+  "freelancerArticles": {
+    "trialError": "تعذر منح عروض التجربة. حاول مرة أخرى."
+  },
+  "superAdminPlans": {
+    "deactivateBlocked": "لا يمكن حذف هذه الباقة لأنها مرتبطة بمستخدمين أو سجلات حالية. يمكنك تعطيلها بدلاً من حذفها.",
+    "showingPage": "تعرض باقات صفحة: {{title}}",
+    "confirmDeactivateBody": "هل أنت متأكد؟ سيتم إيقاف ظهور هذه الباقة للاستخدام الجديد، ولن يتم حذف الاشتراكات أو السجلات القديمة المرتبطة بها."
+  },
+  "articleDetail": {
+    "manuscriptTermsCopy": "أوافق على شروط ملكية ونشر هذا المقال، وأفهم أنه عند قبول المقال يمكن نشره باسمي على Bildazo وفق سياسة المنصة."
+  },
+  "eliteDirectOffer": {
+    "title": "عرض Elite Direct",
+    "description": "أرسل عرضًا خاصًا محدد المدة إلى مستقل Elite واحد.",
+    "targetLabel": "رقم مستخدم مستقل Elite",
+    "send": "إرسال العرض",
+    "cancel": "إلغاء",
+    "offerLine": "#{{id}} ← المستقل {{freelancerId}} — {{status}}",
+    "status": {
+      "pending": "بانتظار الرد",
+      "accepted": "مقبول",
+      "declined": "مرفوض",
+      "expired": "منتهي",
+      "cancelled": "ملغى"
+    }
+  },
+  "publicSite": {
+    "translationUnavailable": "هذه الصفحة غير متوفرة بلغتك بعد، لذا تُعرض بلغتها الأصلية."
+  },
+  "accountDeletion": {
+    "mailSubject": "طلب حذف حساب أوردرز هاوس"
+  }
+}

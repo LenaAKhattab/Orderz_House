@@ -1,0 +1,248 @@
+{
+  "title": "Orderz House Marktplatz-Mitgliedschaft",
+  "hero": {
+    "title": "Orderz House Marktplatz-Mitgliedschaft",
+    "eyebrow": "Wählen Sie die Stufe, die zu Ihrem Weg passt",
+    "subtitle": "Vergleichen Sie Angebote, Tageslimits und Projektobergrenzen in Sekunden."
+  },
+  "categories": {
+    "aria": "Paketkategorien",
+    "training": "Trainingspakete",
+    "membership": "OrderzHouse Marktplatz-Mitgliedschaft",
+    "annual": "Jahrespakete"
+  },
+  "annual": {
+    "sectionAria": "Jahrespakete",
+    "empty": "Derzeit sind keine Jahrespakete verfügbar.",
+    "footnote": "Die Jahreslaufzeit beginnt, wenn Sie Ihren ersten echten Auftrag erhalten. Die enthaltenen Vorteile werden direkt vom Unternehmen erbracht."
+  },
+  "training": {
+    "sectionAria": "Professionelle Trainingspakete",
+    "includes": "Das Paket enthält",
+    "featuresAria": "Inhalte des Trainingspakets",
+    "cta": "Kontakt aufnehmen",
+    "buyCta": "Paket kaufen",
+    "buyBusy": "Weiterleitung zum Bezahlvorgang…",
+    "resumeCta": "Zahlung fortsetzen",
+    "processing": "Zahlung wird bestätigt",
+    "processingNotice": "Die Zahlung für dieses Paket wird gerade bestätigt. Aktualisieren Sie die Seite in Kürze.",
+    "statusUnavailable": "Der Zahlungsstatus konnte derzeit nicht überprüft werden. Bitte versuchen Sie es in Kürze erneut.",
+    "purchased": "Gekauft",
+    "currentTitle": "Ihr aktuelles Trainingspaket",
+    "waiting": "Warten auf Zahlungsbestätigung",
+    "companyFollowUp": "Ihr Trainingspaket wurde erfolgreich gekauft. Das Unternehmen meldet sich bei Ihnen außerhalb der Plattform bezüglich des Trainingsablaufs.",
+    "checkoutFailed": "Der Kauf des Trainingspakets konnte nicht gestartet werden.",
+    "checkoutMissingUrl": "Der Bezahlvorgang konnte nicht gestartet werden.",
+    "mostRequested": "Am meisten gefragt",
+    "footnote": "Kontaktieren Sie uns über WhatsApp für Details zu Anmeldung und Zahlung.",
+    "whatsappAria": "Kontakt über WhatsApp zu {{package}}",
+    "hero": {
+      "eyebrow": "Bauen Sie Ihre Fähigkeiten aus und starten Sie Ihre Karriere",
+      "title": "Professionelle Trainingspakete",
+      "subtitle": "Wählen Sie das passende Paket und beginnen Sie Ihren Weg zu neuen Fähigkeiten und zur Freiberuflichkeit."
+    }
+  },
+  "specialOffer": {
+    "cta": "Angebot jetzt sichern",
+    "ctaWhatsapp": "Kontakt zu diesem Angebot",
+    "checkoutBusy": "Weiterleitung zum Bezahlvorgang…",
+    "checkoutFailed": "Der Kauf des Angebots konnte nicht gestartet werden.",
+    "checkoutMissingUrl": "Die Zahlung konnte nicht gestartet werden.",
+    "freelancersOnly": "Dieses Angebot ist nur für Freelancer verfügbar.",
+    "totalOffers": "Bewerbungen insgesamt",
+    "dailyLimit": "Tageslimit",
+    "maxProject": "Max. Projektwert",
+    "duration": "Paketlaufzeit",
+    "durationShort": "Laufzeit",
+    "days": "Tage",
+    "available": "verfügbar",
+    "offersPerDay": "Bewerbungen / Tag",
+    "upTo": "Bis zu",
+    "perProject": "pro Projekt",
+    "unlimitedProjects": "Keine Projektobergrenze",
+    "savePercent": "{{percent}}% sparen",
+    "refundDetailsLink": "Details zur Rückerstattung des Pakets",
+    "refundDetailsLinkShort": "Wie funktioniert die Rückerstattung?",
+    "refundModalTitle": "Rückerstattungsdetails zum Sonderangebotspaket",
+    "refundModalGotIt": "Verstanden",
+    "refundSummaryAria": "Übersicht der Angebotswerte",
+    "refundSectionFallback": "Details",
+    "defaultBadge": "Sonderangebot",
+    "defaultRibbon": "Nur für kurze Zeit",
+    "refundSections": {
+      "monthly": "Monatliche Rückerstattung",
+      "inactiveMonths": "Inaktive Monate",
+      "orderIncome": "Einnahmen aus Aufträgen",
+      "importantNotice": "Wichtiger Hinweis"
+    }
+  },
+  "sectionAria": "Pakete der Marktplatz-Mitgliedschaft",
+  "membership": {
+    "free": "Testphase",
+    "metricsAria": "Wichtigste Kennzahlen der Mitgliedschaft",
+    "bidsAvailable": "Bewerbungen",
+    "bidsForTerm": "Bewerbungen für die Paketlaufzeit",
+    "bidsPerDay": "Bewerbungen pro Tag",
+    "includedBenefitsAria": "Enthaltene Paketvorteile",
+    "applicationNote": "Eine Bewerbung bedeutet, ein Angebot für einen Auftrag abzugeben; sie garantiert nicht, dass Sie einen Auftrag erhalten.",
+    "projectCapMax": "pro Projekt",
+    "projectCapValue": "Bis zu {{value}} {{currency}}",
+    "projectCapUnlimited": "Projektobergrenze",
+    "unlimitedShort": "Keine Obergrenze",
+    "withdrawalOn": "Auszahlungen verfügbar",
+    "withdrawalOff": "Keine direkte Auszahlung finanzieller Beträge"
+  },
+  "mobile": {
+    "compareTitle": "Pakete vergleichen",
+    "packageCount": "Pakete: {{count}}",
+    "footnote": "Die Pakete richten sich an auf der Plattform registrierte Freelancer."
+  },
+  "errors": {
+    "loadFailed": "Die Pakete konnten derzeit nicht geladen werden. Bitte versuchen Sie es später erneut."
+  },
+  "pageUnavailable": {
+    "title": "Paketseite nicht verfügbar",
+    "message": "Diese Seite ist möglicherweise inaktiv oder abgelaufen, oder der Link ist falsch."
+  },
+  "mobileLabel": "Abonnementpakete",
+  "lede": "Wählen Sie das passende Paket für Ihre Arbeit, vergleichen Sie die Merkmale und starten oder erweitern Sie Ihr Abonnement an einem Ort.",
+  "featuresAria": "Paketmerkmale",
+  "showFeatures": "Merkmale anzeigen ({{count}})",
+  "hideFeatures": "Merkmale ausblenden",
+  "showMoreFeatures": "Weitere Merkmale anzeigen ({{count}})",
+  "extraFeaturesAria": "Zusätzliche Merkmale",
+  "extraDetails": "Weitere Details",
+  "fullYear": "Ganzes Jahr",
+  "days": "Tage: {{count}}",
+  "months": "Monate: {{count}}",
+  "priceTotal": "Gesamt: {{amount}} JOD",
+  "installmentAtSignup": "{{amount}} JOD bei Anmeldung",
+  "installmentMonthly": "{{amount}} JOD monatlich × {{months}} Mon.",
+  "badges": {
+    "mostPopular": "Am beliebtesten",
+    "premium": "Premium-Paket"
+  },
+  "sale": {
+    "percentOff": "{{percent}}% RABATT",
+    "sectionTitle": "Paketrabatt",
+    "enable": "Rabatt aktivieren",
+    "percentage": "Rabattprozentsatz (%)",
+    "reason": "Rabattgrund (Arabisch)",
+    "reasonEn": "Rabattgrund",
+    "previewOriginal": "Ursprünglicher Preis: {{amount}} JOD",
+    "previewPercent": "Rabatt: {{percent}}%",
+    "previewFinal": "Preis nach Rabatt: {{amount}} JOD"
+  },
+  "tierLabels": {
+    "basic": "Basis",
+    "advance": "Fortgeschritten",
+    "premium": "Premium",
+    "popular": "Beliebt",
+    "proPlus": "Pro+",
+    "platinum": "Platin"
+  },
+  "activationFeeNote": {
+    "prefix": "Aktivierungsgebühr für das Abonnement:",
+    "suffix": "einmal jährlich zu zahlen"
+  },
+  "currency": {
+    "jod": "JOD",
+    "equivalentJod": "Entspricht {{amount}}",
+    "checkoutChargedInJod": "Die Zahlung erfolgt in Jordanischen Dinar (JOD)"
+  },
+  "freePlanActivationFeeNote": "Das Paket ist kostenlos, die jährliche Aktivierungsgebühr von {{amount}} ist jedoch erforderlich.",
+  "activationFee": {
+    "paidSuccessTitle": "Aktivierungsgebühr bezahlt",
+    "paidSuccessMessage": "Die Aktivierungsgebühr wurde erfolgreich bezahlt.",
+    "cancelledTitle": "Zahlung abgebrochen",
+    "cancelledMessage": "Die Zahlung der Aktivierungsgebühr wurde nicht abgeschlossen."
+  },
+  "checkout": {
+    "paidSuccessTitle": "Zahlung eingegangen",
+    "paidSuccessMessage": "Die Zahlung wurde auf dem Server bestätigt. Ihr Konto wartet auf die Aktivierung durch das Unternehmen.",
+    "cancelledTitle": "Zahlung abgebrochen",
+    "cancelledMessage": "Die Zahlung wurde nicht abgeschlossen.",
+    "verifyFailedTitle": "Zahlung konnte nicht überprüft werden",
+    "verifyFailedMessage": "Es wurde keine Stripe-Sitzungs-ID empfangen. Warten Sie einen Moment und aktualisieren Sie die Seite, oder prüfen Sie die Paketseite, nachdem der Zahlungs-Webhook eingegangen ist.",
+    "confirmPendingTitle": "Zahlung noch nicht bestätigt",
+    "confirmPendingMessage": "Warten Sie einen Moment und aktualisieren Sie die Seite, oder stellen Sie sicher, dass der Stripe-Webhook den Server erreicht. Eine Zahlung wird nicht allein über den Browser bestätigt."
+  },
+  "cta": {
+    "freelancersOnly": "Nur für Freelancer",
+    "currentPlan": "Ihr aktuelles Paket",
+    "lowerPlan": "Niedrigeres Paket",
+    "alreadySubscribed": "Bereits abonniert",
+    "upgrade": "Paket upgraden",
+    "payActivationFee": "Aktivierungsgebühr zahlen",
+    "autoActivated": "Automatisch aktiviert",
+    "companyActivation": "Aktivierung durch das Unternehmen",
+    "viewMembership": "Mitgliedschaft ansehen",
+    "buyMembership": "Paket kaufen",
+    "continuePayment": "Zahlung fortsetzen",
+    "confirmingPayment": "Zahlung wird bestätigt",
+    "activateStarter": "Kostenloses Paket aktivieren",
+    "startNow": "Jetzt starten"
+  },
+  "checkoutErrors": {
+    "processing": "Die Zahlung für dieses Paket wird gerade bestätigt. Aktualisieren Sie die Seite in Kürze.",
+    "statusUnavailable": "Der Zahlungsstatus konnte derzeit nicht überprüft werden. Bitte versuchen Sie es in Kürze erneut.",
+    "providerError": "Der Zahlungsanbieter ist derzeit nicht erreichbar. Bitte versuchen Sie es in Kürze erneut."
+  },
+  "membershipWait": {
+    "status": "Wartet auf den ersten Auftrag",
+    "startsOnFirstOrder": "Ihre Mitgliedschaftslaufzeit beginnt, wenn Sie Ihren ersten echten Auftrag erhalten."
+  },
+  "pages": {
+    "freelancers": {
+      "trustSimple": "Einfache Preise",
+      "trustNoFees": "Keine versteckten Gebühren",
+      "footnote": "Nach dem Abschluss des Abonnements wird ein Vertrag unterzeichnet. Die Kontoverifizierung ist für alle Pakete eine einmalige Gebühr von {{amount}}."
+    }
+  },
+  "cards": {
+    "free": {
+      "title": "Kostenloses Paket",
+      "description": "Abonnementlaufzeit: ein ganzes Jahr auf der Freelance-Plattform",
+      "orderValue": "Auftragswert: 3 bis 7 JOD",
+      "activationRequirements": "Nach Abschluss von Training und Prüfungen werden die Ergebnisse über STUDYZHOUSE übermittelt. Lautet das Ergebnis „Bestanden“, wird Ihr Konto auf der Plattform aktiviert.",
+      "features": [
+        "Kostenloses Training im Content-Writing – Stufe 1",
+        "Keine Vertragsunterzeichnung erforderlich",
+        "Kein Besuch im Firmenbüro erforderlich",
+        "Keine direkte Betreuung"
+      ]
+    },
+    "standard": {
+      "title": "50-JOD-Paket",
+      "description": "Abonnementlaufzeit: ein ganzes Jahr auf der Freelance-Plattform",
+      "orderValue": "Auftragswert: 7 bis 20 JOD",
+      "paymentNotes": "Eine Zahlung von 50 JOD bei Abschluss des Abonnements.",
+      "offerLabel": "Abonnementgebühr wird erstattet, sobald Sie Ihren ersten Auftrag erhalten (Angebot gültig bis 30. Sep. 2026)",
+      "activationRequirements": "Aktivierung nach abgeschlossener Zahlung und Freigabe durch das Unternehmen; die Laufzeit beginnt mit Ihrem ersten angenommenen Auftrag.",
+      "refundPolicy": "Abonnementgebühr wird erstattet, sobald Sie Ihren ersten Auftrag erhalten (innerhalb des Angebotszeitraums).",
+      "features": [
+        "Kostenloses Training im Content-Writing – Stufe 1",
+        "Kostenloses Training im Content-Writing – Stufe 2",
+        "Kostenloses Designtraining",
+        "Vertragsunterzeichnung im Firmenbüro",
+        "Betreuung nach Abschluss von Stufe 1 und Beginn von Stufe 2"
+      ]
+    },
+    "platinum": {
+      "title": "Platin-Paket",
+      "description": "Diplom für digitale Freelance-Tätigkeit – ein ganzes Jahr auf der Plattform",
+      "orderValue": "Auftragswert: ab 10 JOD",
+      "paymentNotes": "300 JOD bei Anmeldung + 50 JOD monatlich für 12 Monate (600 JOD zusätzlich). Gesamtkosten des Programms: 900 JOD.",
+      "installment": "300 JOD bei Anmeldung · 50 JOD monatlich × 12 Monate",
+      "activationRequirements": "Aktivierung nach der Anmeldezahlung (300 JOD) und Freigabe durch das Unternehmen; die monatlichen Raten werden vorerst außerhalb der Plattform erfasst.",
+      "refundPolicy": "Gezahlte Gebühren sind erst erstattungsfähig, nachdem die Arbeit im zweiten Abonnement (50-JOD-Paket) begonnen hat.",
+      "features": [
+        "Diplom für digitale Freelance-Tätigkeit",
+        "Training im Content-Writing – Stufen 1 & 2",
+        "Training in Grafikdesign",
+        "Training in Programmierung mit KI",
+        "Vertragsunterzeichnung im Firmenbüro"
+      ]
+    }
+  }
+}

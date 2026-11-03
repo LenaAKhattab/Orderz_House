@@ -13,7 +13,7 @@ import "./specialOfferAdmin.css";
  * Active/open tab highlighting stays independent of that default.
  */
 export default function PlanCatalogNavigation({ activeCatalog, hint }) {
-  const { t, locale } = useTranslation();
+  const { t, locale, dir } = useTranslation();
   const isEn = locale === "en";
   const adminDefault = useAdminDefaultPlanCatalog();
   const resolvedDefault = adminDefault?.ready ? adminDefault.catalog : null;
@@ -30,7 +30,7 @@ export default function PlanCatalogNavigation({ activeCatalog, hint }) {
         <div
           className="oh-sapl-section-toggle__tabs"
           role="tablist"
-          dir={isEn ? "ltr" : "rtl"}
+          dir={dir}
           aria-label={t("planAdmin.catalog.navAria")}
           data-default-plan-catalog={resolvedDefault || ""}
         >

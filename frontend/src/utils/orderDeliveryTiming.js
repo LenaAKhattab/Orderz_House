@@ -1,5 +1,10 @@
 import { getTranslation } from "../lib/translation/getTranslation";
 import { DEFAULT_LOCALE } from "../i18n/resources";
+import { pt } from "../i18n/activeLocale.js";
+import { isLatinUiLocale } from "../i18n/intlLocale.js";
+import { pluralCategoryFor } from "../i18n/plural.js";
+import { isNewLocale } from "../i18n/systemContent.js";
+import { numberFormatFor } from "./localeFormat.js";
 
 const MS_MIN = 60 * 1000;
 const MS_HOUR = 60 * MS_MIN;
@@ -7,17 +12,42 @@ const MS_DAY = 24 * MS_HOUR;
 
 const DU = "ordersAdmin.wizard.durationUnits";
 
-function resolveTranslator(t) {
-  return typeof t === "function" ? t : (key, values) => getTranslation(key, DEFAULT_LOCALE, values);
+/** Singular / plural unit keys (Latin-script locales). */
+const UNIT_KEYS = Object.freeze({
+  days: ["day", "days"],
+  hours: ["hour", "hours"],
+  minutes: ["minute", "minutes"],
+});
+
+function resolveTranslator(t, locale) {
+  if (typeof t === "function") return t;
+  if (isNewLocale(locale)) return (key, values) => pt(key, values, locale);
+  return (key, values) => getTranslation(key, DEFAULT_LOCALE, values);
+}
+
+/**
+ * English / German / Dutch / Romanian: singular for the "one" plural category, plural otherwise
+ * (Intl.PluralRules — English output unchanged). Romanian "other" (20+, "20 de zile") uses an optional
+ * `<unit>_plural_other` catalog form when the catalog provides one.
+ */
+function latinDurationUnitLabel(n, unit, locale, tr) {
+  const [singular, plural] = UNIT_KEYS[unit] || UNIT_KEYS.minutes;
+  const category = pluralCategoryFor(locale, n);
+  if (category === "one") return tr(`${DU}.${singular}`);
+  if (locale === "ro" && category === "other") {
+    const otherKey = `${DU}.${plural}_plural_other`;
+    const other = tr(otherKey);
+    if (other && other !== otherKey) return other;
+  }
+  return tr(`${DU}.${plural}`);
 }
 
 function durationUnitLabel(n, unit, locale, t) {
-  const tr = resolveTranslator(t);
-  if (locale === "en") {
-    if (unit === "days") return n === 1 ? tr(`${DU}.day`) : tr(`${DU}.days`);
-    if (unit === "hours") return n === 1 ? tr(`${DU}.hour`) : tr(`${DU}.hours`);
-    return n === 1 ? tr(`${DU}.minute`) : tr(`${DU}.minutes`);
+  const tr = resolveTranslator(t, locale);
+  if (isLatinUiLocale(locale)) {
+    return latinDurationUnitLabel(n, unit, locale, tr);
   }
+  // Arabic grammar (dual / 3–10 plural) — unchanged.
   if (unit === "days") {
     return n >= 3 && n <= 10 ? tr(`${DU}.days`) : n === 2 ? tr(`${DU}.dayTwo`) : tr(`${DU}.day`);
   }
@@ -28,8 +58,19 @@ function durationUnitLabel(n, unit, locale, t) {
 }
 
 function formatCountUnit(n, unit, locale, t) {
-  const nf = new Intl.NumberFormat(locale === "en" ? "en-US" : "ar");
+  const nf = numberFormatFor(locale, {}, { ar: "ar", en: "en-US" });
   return `${nf.format(n)} ${durationUnitLabel(n, unit, locale, t)}`;
+}
+
+/**
+ * Joiner between span parts. Arabic pads the catalog value (" و " → "  و  ", unchanged); Latin-script locales use
+ * it as-is (", "), padding only a bare word joiner (e.g. "și") so parts never run together.
+ */
+function partJoiner(locale, tr) {
+  const joiner = tr("ordersAdmin.deliveryTiming.partJoiner");
+  if (!isLatinUiLocale(locale)) return ` ${joiner} `;
+  if (locale === "en" || /^[\s,;·–—]/u.test(joiner)) return joiner;
+  return ` ${String(joiner).trim()} `;
 }
 
 function parseInstant(value) {
@@ -74,7 +115,7 @@ function workStartedAt(order) {
  * @param {string} [locale]
  */
 export function formatDeliveryMargin(msPositive, t, locale = DEFAULT_LOCALE) {
-  const tr = resolveTranslator(t);
+  const tr = resolveTranslator(t, locale);
   const ms = Number(msPositive);
   if (!Number.isFinite(ms) || ms <= 0) return "";
 
@@ -89,8 +130,7 @@ export function formatDeliveryMargin(msPositive, t, locale = DEFAULT_LOCALE) {
     return tr("ordersAdmin.deliveryTiming.lessThanMinute");
   }
 
-  const joiner =
-    locale === "en" ? tr("ordersAdmin.deliveryTiming.partJoiner") : ` ${tr("ordersAdmin.deliveryTiming.partJoiner")} `;
+  const joiner = partJoiner(locale, tr);
 
   const parts = [];
   if (days > 0) {
@@ -123,7 +163,7 @@ export function formatDeliveryMarginArabic(msPositive) {
  * @returns {string | null}
  */
 function formatWorkDurationFromReceiptToSubmit(order, t, locale) {
-  const tr = resolveTranslator(t);
+  const tr = resolveTranslator(t, locale);
   const start = workStartedAt(order);
   const end = effectiveSubmittedAt(order);
   if (!start || !end) return null;
@@ -139,7 +179,7 @@ function formatWorkDurationFromReceiptToSubmit(order, t, locale) {
  * @returns {null | { status: 'late' | 'on_time', message: string, completionMessage: string | null }}
  */
 export function getOrderDeliveryTiming(order, t, locale = DEFAULT_LOCALE) {
-  const tr = resolveTranslator(t);
+  const tr = resolveTranslator(t, locale);
   const submittedAt = effectiveSubmittedAt(order);
   const deadline = parseInstant(order?.dueAt ?? order?.deadline);
   const completionMessage = formatWorkDurationFromReceiptToSubmit(order, tr, locale);

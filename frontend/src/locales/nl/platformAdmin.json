@@ -1,0 +1,111 @@
+{
+  "economyForm": {
+    "fields": {
+      "commissionPct": "Commissie %",
+      "cashFee": "Contante verwerkingskosten",
+      "eliteOrdersPerCycle": "Elite-opdrachten / cyclus",
+      "offerDuration": "Aanbodduur",
+      "carryForwardDays": "Overdrachtsdagen",
+      "maxCarryForward": "Max. overdracht",
+      "assignmentStrategy": "Toewijzingsstrategie",
+      "fairLookback": "Fair Distribution terugkijk (dagen)",
+      "fairnessWeight": "Eerlijkheidsgewicht",
+      "tokenWeight": "Tokengewicht",
+      "performanceWeight": "Prestatiegewicht",
+      "recencyWeight": "Recency-gewicht",
+      "workloadWeight": "Werkdrukgewicht",
+      "minApplicants": "Min. sollicitanten",
+      "maxApplicants": "Max. sollicitanten",
+      "defaultApplicants": "Standaard sollicitanten",
+      "minBidCost": "Min. Bid-kosten",
+      "maxBidCost": "Max. Bid-kosten",
+      "defaultBidCost": "Standaard Bid-kosten",
+      "minApplicationHours": "Min. sollicitatie-uren",
+      "maxApplicationHours": "Max. sollicitatie-uren",
+      "defaultApplicationHours": "Standaard sollicitatie-uren",
+      "minExecutionHours": "Min. uitvoeringsuren",
+      "maxExecutionHours": "Max. uitvoeringsuren",
+      "defaultExecutionHours": "Standaard uitvoeringsuren",
+      "articleMinBids": "Artikel min. vereiste Bids",
+      "articleDefaultBids": "Artikel standaard vereiste Bids",
+      "pantryMinBids": "Pantry min. vereiste Bids",
+      "pantryDefaultBids": "Pantry standaard vereiste Bids"
+    },
+    "validation": {
+      "moneyPositive": "{{label}}: moet > 0 zijn.",
+      "moneyNonNeg": "{{label}}: moet ≥ 0 zijn.",
+      "percentRange": "{{label}}: moet 0–100 zijn.",
+      "intRange": "{{label}}: geheel getal tussen {{min}} en {{max}}.",
+      "invalidValue": "{{label}}: ongeldige waarde.",
+      "hybridUnavailable": "{{label}}: HYBRID niet beschikbaar tot het gewichtsbeleid is gedefinieerd (FAIR_DISTRIBUTION_HYBRID_WEIGHT_POLICY_REQUIRED).",
+      "minOrderInvalid": "Minimale opdrachtwaarde ongeldig.",
+      "maxOrderInvalid": "Maximale opdrachtwaarde ongeldig."
+    },
+    "strategies": {
+      "HIGHEST_TOKEN_ONLY": "Hoogste geschiktheid eerst",
+      "FAIR_DISTRIBUTION_FIRST": "Eerlijke verdeling eerst",
+      "HYBRID": "HYBRID (niet beschikbaar — gewichtsbeleid vereist)"
+    }
+  },
+  "articleApplications": {
+    "autoAssignCandidate": "#{{rank}} sol. {{applicationId}} · gewicht {{weight}}"
+  },
+  "common": {
+    "close": "Sluiten"
+  },
+  "planCard": {
+    "priceJod": "{{amount}} JOD (dinar)",
+    "orderRange": {
+      "between": "{{min}} JOD tot {{max}} JOD",
+      "from": "Vanaf {{min}} JOD",
+      "upTo": "Tot {{max}} JOD"
+    },
+    "features": {
+      "selfSubscribeAllowed": "Direct zelf kopen",
+      "requiresCompanyVisit": "Activatie via locatiebezoek",
+      "isVisible": "Zichtbaar in de shop",
+      "isFeatured": "Uitgelicht pakket in de storefront",
+      "isPopular": "Gemarkeerd als populairst"
+    }
+  },
+  "analytics": {
+    "leaderboards": {
+      "sub": {
+        "freelancers": "voltooide opdrachten",
+        "clients": "besteding",
+        "courses": "ingeschreven",
+        "categories": "opdrachten"
+      },
+      "titles": {
+        "freelancers": "Top-freelancers",
+        "clients": "Top-klanten",
+        "courses": "Top-cursussen",
+        "categories": "Top-categorieën"
+      }
+    },
+    "snapshot": {
+      "newSubscriptions": "+{{count}} nieuw abonnement",
+      "newSubscriptions_plural": "+{{count}} nieuwe abonnementen",
+      "newOrders": "+{{count}} nieuwe opdracht",
+      "newOrders_plural": "+{{count}} nieuwe opdrachten",
+      "newClaims": "+{{count}} betalingsclaim",
+      "newClaims_plural": "+{{count}} betalingsclaims",
+      "periodRevenue": "Omzet in periode: {{amount}}",
+      "topCategory": "Topcategorie: {{name}}"
+    },
+    "attention": {
+      "severity": {
+        "urgent": "Spoedeisend",
+        "medium": "Gemiddeld",
+        "info": "Informatie"
+      },
+      "awaitingFollowUp": "{{count}} wachten op follow-up"
+    },
+    "forecasts": {
+      "orders": "opdrachten",
+      "subscriptions": "nieuwe abonnementen",
+      "revenue": "omzet"
+    },
+    "periodBanner": "Gegevens op basis van: {{label}}"
+  }
+}

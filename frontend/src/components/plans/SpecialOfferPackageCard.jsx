@@ -17,12 +17,14 @@ import {
 } from "../../constants/specialOfferPackage";
 import SpecialOfferRefundDetailsModal from "./SpecialOfferRefundDetailsModal";
 import { useTranslation } from "../../i18n/LanguageProvider";
+import { pickIntlTag } from "../../i18n/intlLocale";
 import "./specialOfferPackageCard.css";
 
-function formatAmount(value) {
+/** Latin digits; Arabic / English keep en-US grouping, German / Dutch / Romanian use their own separators. */
+function formatAmount(value, locale) {
   const n = Number(value);
   if (!Number.isFinite(n)) return "—";
-  return n.toLocaleString("en-US", { maximumFractionDigits: 2 });
+  return n.toLocaleString(pickIntlTag(locale, { ar: "en-US", en: "en-US" }), { maximumFractionDigits: 2 });
 }
 
 function savePercent(priceJod, originalPriceJod) {
@@ -72,7 +74,9 @@ export default function SpecialOfferPackageCard({
     : checkoutResume
       ? tr("plans.cta.continuePayment")
       : localizedSpecialOfferText(offer, "ctaLabel", locale) || defaultCta;
-  const offerTitle = localizedSpecialOfferText(offer, "title", locale) || (locale === "en" ? defaultCta : offer.title);
+  // Only the Arabic UI falls back to the raw (Arabic) offer copy; other locales fall back to catalog copy.
+  const isArabicUi = locale === "ar";
+  const offerTitle = localizedSpecialOfferText(offer, "title", locale) || (isArabicUi ? offer.title : defaultCta);
   const offerSubtitle = localizedSpecialOfferText(offer, "subtitle", locale);
   const offerBadge = localizedSpecialOfferText(offer, "badgeText", locale);
   const offerRibbon = localizedSpecialOfferText(offer, "ribbonText", locale);
@@ -88,20 +92,20 @@ export default function SpecialOfferPackageCard({
     {
       key: "offers",
       label: tr("plans.specialOffer.totalOffers"),
-      value: `${formatAmount(offer.totalOffers)} ${tr("plans.specialOffer.available")}`,
+      value: `${formatAmount(offer.totalOffers, locale)} ${tr("plans.specialOffer.available")}`,
       Icon: Target,
     },
     {
       key: "daily",
       label: tr("plans.specialOffer.dailyLimit"),
-      value: `${formatAmount(offer.dailyLimit)} ${tr("plans.specialOffer.offersPerDay")}`,
+      value: `${formatAmount(offer.dailyLimit, locale)} ${tr("plans.specialOffer.offersPerDay")}`,
       Icon: CalendarDays,
     },
     offer.maxProjectValueJod != null
       ? {
           key: "max",
           label: tr("plans.specialOffer.maxProject"),
-          value: `${tr("plans.specialOffer.upTo")} ${formatAmount(offer.maxProjectValueJod)} ${jod} ${tr("plans.specialOffer.perProject")}`,
+          value: `${tr("plans.specialOffer.upTo")} ${formatAmount(offer.maxProjectValueJod, locale)} ${jod} ${tr("plans.specialOffer.perProject")}`,
           Icon: Briefcase,
         }
       : {
@@ -167,13 +171,13 @@ export default function SpecialOfferPackageCard({
 
         <div className="oh-special-offer-card__price">
           <div className="oh-special-offer-card__price-main">
-            <span className="oh-special-offer-card__price-amount">{formatAmount(offer.priceJod)}</span>
+            <span className="oh-special-offer-card__price-amount">{formatAmount(offer.priceJod, locale)}</span>
             <span className="oh-special-offer-card__price-unit">{jod}</span>
           </div>
           {hasOriginal ? (
             <div className="oh-special-offer-card__price-meta">
               <span className="oh-special-offer-card__price-original">
-                {formatAmount(offer.originalPriceJod)} {jod}
+                {formatAmount(offer.originalPriceJod, locale)} {jod}
               </span>
               {discount != null ? (
                 <span className="oh-special-offer-card__save">
@@ -228,10 +232,10 @@ export default function SpecialOfferPackageCard({
               {ctaContent}
             </a>
           )}
-          {(locale === "en" ? offerMicrocopy : offer.microcopy) ? (
+          {(isArabicUi ? offer.microcopy : offerMicrocopy) ? (
             <p className="oh-special-offer-card__microcopy">
               <Check className="oh-special-offer-card__microcopy-icon" aria-hidden size={14} strokeWidth={2.5} />
-              <span>{offerMicrocopy || (locale === "en" ? "" : offer.microcopy)}</span>
+              <span>{offerMicrocopy || (isArabicUi ? offer.microcopy : "")}</span>
             </p>
           ) : null}
           {showRefundDetails ? (

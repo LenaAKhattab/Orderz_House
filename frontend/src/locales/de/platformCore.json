@@ -1,0 +1,77 @@
+{
+  "money": {
+    "jodAmount": "{{amount}} JOD (Dinar)"
+  },
+  "planPrice": {
+    "free": "Kostenlos",
+    "total": "Gesamt {{total}}"
+  },
+  "taxonomy": {
+    "contentWriting": "Content-Erstellung",
+    "design": "Gestaltung",
+    "programming": "Programmierung"
+  },
+  "courseTitles": {
+    "freeContentWritingLevel1": "Kostenlose Content-Erstellung – Stufe 1",
+    "contentWritingLevel1": "Content-Erstellung – Stufe 1",
+    "contentWritingLevel2": "Content-Erstellung – Stufe 2",
+    "freeContentWritingLevel2": "Kostenlose Content-Erstellung – Stufe 2",
+    "freeDesign": "Kostenlose Design-Schulung",
+    "freelanceOperationsDiploma": "Diplom Digitale Freelance-Operations"
+  },
+  "faq": {
+    "translationUnavailable": "Dieser Eintrag ist in Ihrer Sprache noch nicht verfügbar."
+  },
+  "membership": {
+    "tiers": {
+      "starter": {
+        "tagline": "Zum Einstieg"
+      },
+      "silver": {
+        "tagline": "Zum Wachsen"
+      },
+      "pro": {
+        "tagline": "Für Profis"
+      },
+      "elite": {
+        "tagline": "Maximaler Zugang"
+      }
+    },
+    "withdrawalOff": "Keine direkte Auszahlung von Beträgen",
+    "withdrawalOn": "Auszahlung verfügbar",
+    "viewMembership": "Mitgliedschaft anzeigen"
+  },
+  "chunkReload": {
+    "message": "Die Website-Dateien wurden aktualisiert. Bitte laden Sie die Seite neu.",
+    "refresh": "Seite neu laden"
+  },
+  "browserNotification": {
+    "newNotification": "Neue Benachrichtigung"
+  },
+  "adminList": {
+    "refreshSoftNote": "Die Liste konnte gerade nicht aktualisiert werden. Sie können es erneut versuchen.",
+    "rateLimitNote": "In kurzer Zeit wurden zu viele Anfragen gesendet. Warten Sie einen Moment und versuchen Sie es erneut.",
+    "loadFailed": "Die Liste konnte nicht geladen werden. Bitte versuchen Sie es erneut."
+  },
+  "plansLoad": {
+    "defaultCatalogFailed": "Die Standard-Pakete konnten nicht geladen werden.",
+    "planPageFailed": "Die Paketseite konnte nicht geladen werden."
+  },
+  "superAdminLoad": {
+    "analyticsTimeout": "Das Laden der Analysen dauerte länger als erwartet. Versuchen Sie es in Kürze erneut.",
+    "analyticsFailed": "Das Analyse-Dashboard konnte nicht geladen werden.",
+    "businessKpisTimeout": "Geschäftskennzahlen konnten gerade nicht geladen werden.",
+    "businessKpisFailed": "Geschäftskennzahlen konnten nicht geladen werden.",
+    "sectionTimeout": "Dieser Bereich brauchte zum Laden länger als erwartet.",
+    "sectionFailed": "Dieser Bereich konnte nicht geladen werden.",
+    "summaryTimeout": "Das Laden der Kennzahlen dauerte länger als erwartet.",
+    "summaryFailed": "Die Follow-up-Kennzahlen konnten nicht geladen werden."
+  },
+  "api": {
+    "invalidMembershipPlanCode": "Ungültiger Marketplace-Paketcode.",
+    "identityImageUnavailable": "Das Identitätsbild konnte gerade nicht geladen werden. Bitte versuchen Sie es erneut.",
+    "invalidPlanId": "Ungültige Paket-ID.",
+    "invalidCheckoutSessionId": "Ungültige Zahlungssitzungs-ID.",
+    "openingFile": "Datei wird geöffnet…"
+  }
+}

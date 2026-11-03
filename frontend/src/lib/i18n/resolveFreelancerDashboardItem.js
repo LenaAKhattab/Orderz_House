@@ -1,4 +1,5 @@
-import { getLocaleField } from "./getLocalizedField";
+import { tPlural } from "../../i18n/plural.js";
+import { getLocaleField } from "./getLocalizedField.js";
 
 /** Known pending-action ids → i18n key roots. */
 const ACTION_I18N = {
@@ -162,13 +163,13 @@ function pickDescriptionKey(item, map) {
   return map?.description;
 }
 
-function translateKey(t, key, params) {
+function translateKey(t, key, params, locale = "ar") {
   if (!key) return "";
   const count = params?.count;
-  if (count != null && Number(count) !== 1) {
+  if (count != null) {
+    // Plural rules per locale (Romanian has three forms); keys without a `_plural` form stay singular.
     const pluralKey = `${key}_plural`;
-    const plural = t(pluralKey, params);
-    if (plural !== pluralKey) return plural;
+    if (t(pluralKey, params) !== pluralKey) return tPlural(t, locale, key, count, params);
   }
   return t(key, params);
 }
@@ -245,7 +246,7 @@ export function resolveFreelancerDashboardItem(item, field, t, locale = "ar") {
 
   const params = item.i18nParams && typeof item.i18nParams === "object" ? item.i18nParams : undefined;
   const fieldKey = `${field}Key`;
-  if (item[fieldKey]) return translateKey(t, String(item[fieldKey]), params);
+  if (item[fieldKey]) return translateKey(t, String(item[fieldKey]), params, locale);
 
   if (field === "description" && item.descriptionText != null && String(item.descriptionText).trim() !== "") {
     return String(item.descriptionText);
@@ -255,7 +256,7 @@ export function resolveFreelancerDashboardItem(item, field, t, locale = "ar") {
   if (map) {
     let key = field === "description" ? pickDescriptionKey(item, map) : map[field];
     if (!key && field === "cta" && map.actionLabel) key = map.actionLabel;
-    if (key) return translateKey(t, key, params);
+    if (key) return translateKey(t, key, params, locale);
   }
 
   return legacyLocaleField(item, field, locale);

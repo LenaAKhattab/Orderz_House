@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "../../../i18n/LanguageProvider";
 import { formatLocaleDate } from "../../../i18n/formatLocale";
 import { readStoredLocale } from "../../../i18n/localePreference";
+import { getActiveLocale, pt } from "../../../i18n/activeLocale";
+import { pickIntlTag } from "../../../i18n/intlLocale";
 import { fetchLegacyFreelancerIdentityBlob } from "../../../services/api";
 import { getSafeApiErrorMessage } from "../../../utils/apiErrorMessage";
 
@@ -9,10 +11,11 @@ export function formatDate(value, locale = readStoredLocale()) {
   return formatLocaleDate(value, locale);
 }
 
-export function formatMoney(amount, currency = "JOD") {
+export function formatMoney(amount, currency = "JOD", locale = getActiveLocale()) {
   const n = Number(amount);
   if (!Number.isFinite(n)) return "—";
-  return `${n.toLocaleString("en-JO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`;
+  const tag = pickIntlTag(locale, { ar: "en-JO", en: "en-JO" });
+  return `${n.toLocaleString(tag, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`;
 }
 
 export function entryMethodLabel(method, t) {
@@ -29,7 +32,7 @@ export function identityStatusLabel(identity, t) {
 }
 
 export function categoriesLabel(categories, locale = readStoredLocale()) {
-  const joiner = locale === "en" ? ", " : "، ";
+  const joiner = pt("platformPages.common.listJoiner", undefined, locale);
   if (Array.isArray(categories) && categories.length) return categories.join(joiner);
   if (typeof categories === "string" && categories.trim()) return categories;
   return "—";

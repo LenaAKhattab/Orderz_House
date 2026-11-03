@@ -29,14 +29,15 @@ export default function BrandLogo({
   fetchPriority,
 }) {
   const { t, locale } = useTranslation();
-  const src = getBrandLogoSrc(locale, variant);
+  // Arabic wordmark for Arabic only; every Latin-script locale (en / de / nl / ro) uses the Latin wordmark.
+  const latinWordmark = locale !== "ar";
+  const src = getBrandLogoSrc(latinWordmark ? "en" : "ar", variant);
   const alt = decorative ? "" : t("home.hero.logoAlt");
-  const isEnglishFull = locale === "en" && variant !== "navbar";
+  const isEnglishFull = latinWordmark && variant !== "navbar";
 
   if (variant === "hero") {
-    const isEn = locale === "en";
-    const heroLocaleClass = isEn ? "brand-logo--hero-en" : "brand-logo--hero-ar";
-    const heroImgLocaleClass = isEn ? "brand-logo__img--hero-en" : "brand-logo__img--hero-ar";
+    const heroLocaleClass = latinWordmark ? "brand-logo--hero-en" : "brand-logo--hero-ar";
+    const heroImgLocaleClass = latinWordmark ? "brand-logo__img--hero-en" : "brand-logo__img--hero-ar";
 
     return (
       <div

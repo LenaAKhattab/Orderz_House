@@ -2,7 +2,7 @@ import { useTranslation } from "../../i18n/LanguageProvider";
 
 const AuthVisualPanel = ({ title, description, quote, personName, personRole, children }) => {
   const { t, locale } = useTranslation();
-  const fallbackInitial = locale === "en" ? "?" : "؟";
+  const fallbackInitial = t("platformComponents.auth.unknownInitial");
   const initial = personName?.trim()?.charAt(0) || fallbackInitial;
   const hasCustomContent = children != null;
 

@@ -20,19 +20,20 @@ import DashboardLoadingState from "../../components/dashboard/DashboardLoadingSt
 import StatusBadge from "../../components/dashboard/StatusBadge";
 import DashboardModal from "../../components/dashboard/DashboardModal";
 import { useTranslation } from "../../i18n/LanguageProvider";
+import { pickIntlTag } from "../../i18n/intlLocale.js";
 
 function formatDate(value, locale) {
   if (!value) return "—";
   const d = new Date(value);
   if (!Number.isFinite(d.getTime())) return "—";
-  const tag = locale === "en" ? "en-GB" : "ar-JO-u-nu-latn";
+  const tag = pickIntlTag(locale, { ar: "ar-JO-u-nu-latn", en: "en-GB" });
   return new Intl.DateTimeFormat(tag, { dateStyle: "medium", timeStyle: "short" }).format(d);
 }
 
 function formatMinor(amountMinor, currency = "JOD", locale) {
   if (amountMinor == null || Number.isNaN(Number(amountMinor))) return "—";
   const major = Number(amountMinor) / 100;
-  const tag = locale === "en" ? "en-US" : "ar-JO-u-nu-latn";
+  const tag = pickIntlTag(locale, { ar: "ar-JO-u-nu-latn", en: "en-US" });
   return `${new Intl.NumberFormat(tag, { maximumFractionDigits: 2 }).format(major)} ${currency}`;
 }
 

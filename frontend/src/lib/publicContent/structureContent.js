@@ -6,14 +6,16 @@
  *   "1.\tItem"              → ordered list item (tab after the number)
  *   "1. Section title"      → heading (short numbered line without tab)
  *   short line, no ending punctuation, followed by more text → heading
- *   "تاريخ آخر تحديث…" / "Last updated…" → meta line
+ *   "تاريخ آخر تحديث…" / "Last updated…" / "Zuletzt aktualisiert…" / "Laatst bijgewerkt…" /
+ *   "Ultima actualizare…" → meta line
  *   any other line          → paragraph (single newlines are real breaks in the source)
  */
 
 const BULLET_RE = /^[•▪●◦·\-*]\s*\t?\s*/;
 const ORDERED_ITEM_RE = /^(\d{1,3})[.)]\t\s*/;
 const NUMBERED_HEADING_RE = /^(\d{1,3})[.)]\s+\S/;
-const META_RE = /^(تاريخ آخر تحديث|آخر تحديث|last updated|updated on)/i;
+const META_RE =
+  /^(تاريخ آخر تحديث|آخر تحديث|last updated|updated on|zuletzt aktualisiert|letzte aktualisierung|stand:|laatst bijgewerkt|bijgewerkt op|ultima actualizare|actualizat la)/i;
 const END_PUNCT_RE = /[.:؛;،,!?؟»"')\]]$/;
 const HEADING_MAX = 70;
 

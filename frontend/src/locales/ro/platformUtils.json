@@ -1,0 +1,121 @@
+{
+  "money": {
+    "free": "Gratuit",
+    "total": "Totaal: {{amount}}",
+    "currency": {
+      "JOD": "JOD",
+      "EGP": "EGP",
+      "SAR": "SAR",
+      "AED": "AED",
+      "QAR": "QAR",
+      "KWD": "KWD",
+      "BHD": "BHD",
+      "OMR": "OMR",
+      "USD": "USD",
+      "EUR": "EUR",
+      "GBP": "GBP"
+    }
+  },
+  "country": {
+    "unknown": "Onbekend",
+    "unspecified": "Nu opgegeven",
+    "awaitingPayment": "În așteptarea plată"
+  },
+  "bidPaymentReturn": {
+    "pendingVerify": {
+      "title": "Plată wordt geverifieerd",
+      "message": "De plată is nog nu bevestigd (de webhook kan even duren). Wacht kort en verniedvs. daarna. Als de comandă na enkele minuten nog steeds „În așteptarea plată“ toont, neem contact op met asistență."
+    },
+    "serviceUnavailable": {
+      "title": "Betaaldienst nu disponibil",
+      "message": "De platăsprovider is nu disponibil. Probeer het later opniedvs. of neem contact op met asistență."
+    },
+    "stateChanged": {
+      "title": "Comandă- of bodstatus gewijzigd",
+      "message": "Deze bodplată kan in de huidige status nu worden bevestigd. Verniedvs. de pagină of start checkout opniedvs. via de comandăkaart. Als dvs. denkt dat dvs. bent belast, wacht kort en vernieuw; anders neem contact op met asistență."
+    },
+    "generic": {
+      "title": "Ofertăplată kon nu worden bevestigd",
+      "message": "We konden de plată voor het geselecteerde bod nu bevestigen. Als Stripe een geslaagde afschrijving toont, wacht kort en vernieuw. Als dit aanhoudt, neem contact op met asistență met dvs. comandă-ID."
+    }
+  },
+  "duration": {
+    "lessThanMinute": "Minder dan een minuut",
+    "partJoiner": ", ",
+    "day": "{{count}} zi",
+    "day_plural": "{{count}} zile",
+    "hour": "{{count}} uur",
+    "hour_plural": "{{count}} uren",
+    "minute": "{{count}} minuut",
+    "minute_plural": "{{count}} minuten"
+  },
+  "membershipSchedule": {
+    "monthOne": "1 lună",
+    "monthTwo": "2 luni",
+    "monthsFew": "{{count}} luni",
+    "monthsMany": "{{count}} luni",
+    "awaitingFirstOrder": "În așteptarea eerste comandă",
+    "startsOnFirstOrder": "Start met de eerste comandă",
+    "expiryAfterStart": "Berekend zodra het abonament start"
+  },
+  "eligibility": {
+    "adminApprovalPending": "În așteptarea admin-goedkeuring voordat dvs. comandăen kunt ontvangen",
+    "noSubscription": "Activeer eerst dvs. pachet om comandăen te ontvangen.",
+    "inactive": "Dvs. abonament is nu actief. Sluit eerst een abonament af.",
+    "paymentIncomplete": "Comandăintake kon nu worden ingeschakeld omdat de abonamentsplată onvolledig is.",
+    "expired": "Dvs. abonament is verlopen. Verleng om comandăen te ontvangen.",
+    "activationFeeUnpaid": "Betaal de jaarlijkse activatiekosten voordat dvs. comandăen ontvangt.",
+    "accountHoldPaymentFailed": "De lunăelijkse abonamentskosten van 15 JOD konden nu van dvs. opgeslagen kaart worden afgeschreven; dvs. account is tijdelijk bevroren. Neem contact met ons op om te reactiveren.",
+    "planConfigurationError": "We konden dvs. pachetgeschiktheid ndvs. nu verifiëren. Contactați asistența.",
+    "generic": "Dvs. account komt momenteel nu in aanmerking voor marketplace-comandăen (controleer dvs. abonament)."
+  },
+  "upload": {
+    "totalSizeExceeded": "De totale bestandsgrootte mag {{mb}} MB nu overschrijden",
+    "totalSizeHelper": "Maximale totale bestandsgrootte: {{mb}} MB",
+    "fileSize": {
+      "bytes": "{{size}} B",
+      "kilobytes": "{{size}} kB",
+      "megabytes": "{{size}} MB (megaoctet)"
+    }
+  },
+  "applicants": {
+    "guestMessage": "Zichtbaar na inloggen",
+    "guestMessageLong": "Het aantal candidaten is alleen zichtbaar voor ingelogde utilizatori",
+    "empty": "Geen",
+    "count": "{{count}} candidat",
+    "count_plural": "{{count}} candidaten",
+    "singular": "candidat",
+    "plural": "candidaten"
+  },
+  "poolPlan": {
+    "lockBadge": "Nu disponibil in dvs. pachet",
+    "messages": {
+      "PLAN_TOO_LOW": "De waarde van deze comandă ligt boven de limiet van dvs. huidige pachet",
+      "NO_ACTIVE_PLAN": "Activeer dvs. pachet om comandăen te ontvangen",
+      "INTERNAL_PLAN_CONFIGURATION": "We konden dvs. pachetgeschiktheid ndvs. nu verifiëren. Contactați asistența."
+    }
+  },
+  "homeCategories": {
+    "imageAlt": "Categorie",
+    "exploreServices": "Diensten verkennen",
+    "fallback": {
+      "programming": {
+        "title": "Programmeerdiensten",
+        "text": "Professionele programmeerdiensten voor bedrijven, academisch onderzoek en maatwerkprojecten."
+      },
+      "design": {
+        "title": "Ontwerpdiensten",
+        "text": "Professionele ontwerpdiensten voor bedrijven, wetenschap en persoonlijke behoeften."
+      },
+      "contentWriting": {
+        "title": "Redactare conținut",
+        "text": "Professionele schrijfdiensten voor bedrijven, academisch onderzoek en persoonlijke behoeften."
+      },
+      "specialRequests": {
+        "title": "Speciale cerereen",
+        "text": "Laat dvs. comandă direct behandelen door het asistențăteam van de site",
+        "button": "Contactați prin WhatsApp"
+      }
+    }
+  }
+}

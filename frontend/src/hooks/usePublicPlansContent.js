@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "../i18n/LanguageProvider";
+import { isNewLocale } from "../i18n/systemContent.js";
+import { localizeSystemCopyForNewLocale } from "../lib/i18n/newLocaleSystemCopy.js";
 import {
   PUBLIC_PLANS_CONTENT_DEFAULTS,
   PUBLIC_PLANS_DEFAULT_SECTION_FALLBACK,
@@ -32,6 +34,13 @@ function englishPlatformLabel(value, localeFallback) {
   return text;
 }
 
+/** German / Dutch / Romanian: system-content translation of the admin copy, else the locale catalog default. */
+function newLocalePlatformLabel(locale, value, localeFallback) {
+  const localized = localizeSystemCopyForNewLocale(locale, { ar: value });
+  if (!localized || containsArabicScript(localized)) return localeFallback;
+  return localized;
+}
+
 function resolveDisplayContent(data, t, locale) {
   const defaultSection = resolvePublicPlansDefaultSection(data?.defaultSection);
   const localeTabs = {
@@ -50,6 +59,16 @@ function resolveDisplayContent(data, t, locale) {
       badgeText: englishPlatformLabel(data.badgeText, t("plans.training.hero.eyebrow")),
       title: englishPlatformLabel(data.title, t("plans.training.hero.title")),
       description: englishPlatformLabel(data.description, t("plans.training.hero.subtitle")),
+      defaultSection,
+      ...localeTabs,
+      textsAreCustom: true,
+    };
+  }
+  if (isNewLocale(locale)) {
+    return {
+      badgeText: newLocalePlatformLabel(locale, data.badgeText, t("plans.training.hero.eyebrow")),
+      title: newLocalePlatformLabel(locale, data.title, t("plans.training.hero.title")),
+      description: newLocalePlatformLabel(locale, data.description, t("plans.training.hero.subtitle")),
       defaultSection,
       ...localeTabs,
       textsAreCustom: true,

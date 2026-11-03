@@ -52,7 +52,7 @@ describe("direction: English renders native LTR, Arabic RTL (html[dir])", () => 
   it("home promo carousel scrolls with the page direction; OS notifications follow the UI language", () => {
     assert.ok(read("components/ads/HomePromoOffersCarousel.jsx").includes('direction: dir === "ltr" ? "ltr" : "rtl"'));
     const n = read("services/browserNotifications.js");
-    assert.ok(n.includes('dir: lang === "en" ? "ltr" : "rtl"') && !n.includes('lang: "ar"'));
+    assert.ok(n.includes("dir: getLocaleDirection(lang)") && !n.includes('lang: "ar"'));
   });
 });
 
@@ -105,7 +105,7 @@ describe("dates follow the UI locale", () => {
 
   it("subscription admin dates take the UI locale and Latin digits", () => {
     const src = read("admin/subscriptions/subscriptionAdminDisplay.js");
-    assert.ok(src.includes('if (locale === "en") return formatLocaleDateTime(value, "en");'));
+    assert.ok(src.includes('if (locale === "en" || isNewLocale(locale)) return formatLocaleDateTime(value, locale);'));
     assert.ok(src.includes('Intl.DateTimeFormat("ar-JO-u-nu-latn"'));
   });
 });

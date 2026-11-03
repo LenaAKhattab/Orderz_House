@@ -21,6 +21,7 @@ import { isOrderzhouseFreePlan } from "../../constants/orderzhousePlansCatalog";
 import { getNextUpgradePlan } from "../../utils/planSubscriptionUtils";
 import { PLAN_CATALOG } from "../../constants/planCatalogs";
 import { useTranslation } from "../../i18n/LanguageProvider";
+import { isNewLocale, localizeSystemText } from "../../i18n/systemContent.js";
 import { getLocalizedField } from "../../lib/i18n/getLocalizedField";
 import { statusLabel } from "../../i18n/statusRegistry.js";
 import SecureCheckoutNote from "../../components/payments/SecureCheckoutNote";
@@ -207,9 +208,12 @@ export default function FreelancerPlansPage() {
                     <div className="fp-hero__copy">
                       <span className="fp-hero__eyebrow">{t("plans.training.currentTitle")}</span>
                       <h2 className="fp-hero__title">
-                        {locale?.startsWith("en")
-                          ? currentTraining.nameEn || currentTraining.packageCode
-                          : currentTraining.nameAr || currentTraining.packageCode}
+                        {isNewLocale(locale)
+                          ? localizeSystemText(locale, { ar: currentTraining.nameAr, en: currentTraining.nameEn }) ||
+                            currentTraining.packageCode
+                          : locale?.startsWith("en")
+                            ? currentTraining.nameEn || currentTraining.packageCode
+                            : currentTraining.nameAr || currentTraining.packageCode}
                       </h2>
                       <p>{t("plans.training.companyFollowUp")}</p>
                     </div>

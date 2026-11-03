@@ -25,6 +25,8 @@ import {
 } from "../../services/api";
 import { membershipScheduleView } from "../../utils/membershipFirstOrderSchedule";
 import { useTranslation } from "../../i18n/LanguageProvider";
+import { pickIntlTag } from "../../i18n/intlLocale.js";
+import { isNewLocale, localizeSystemText } from "../../i18n/systemContent.js";
 import { durationMonthsText, formatLocaleDate, formatLocaleDateTime } from "../../i18n/formatLocale";
 import { presentServerMessage } from "../../i18n/presentServerMessage";
 import "../../i18n/accountRestrictionsResources";
@@ -289,8 +291,8 @@ function ReasonModal({
   );
 }
 
-function formatCount(value) {
-  return Number(value || 0).toLocaleString("en-US");
+function formatCount(value, locale) {
+  return Number(value || 0).toLocaleString(pickIntlTag(locale, { ar: "en-US", en: "en-US" }));
 }
 
 function UserRowActionsMenu({ user, open, onOpenChange, onEdit, onToggleStatus, onDelete }) {
@@ -923,9 +925,14 @@ function UserDetailDrawer({
                       <div data-testid="sa-user-marketplace-plan">
                         <span>{t("users.fields.marketplacePlan")}</span>
                         <strong>
-                          {(locale === "en"
-                            ? detail.marketplacePlan.nameEn || detail.marketplacePlan.nameAr
-                            : detail.marketplacePlan.nameAr || detail.marketplacePlan.nameEn) ||
+                          {(isNewLocale(locale)
+                            ? localizeSystemText(locale, {
+                                ar: detail.marketplacePlan.nameAr,
+                                en: detail.marketplacePlan.nameEn,
+                              })
+                            : locale === "en"
+                              ? detail.marketplacePlan.nameEn || detail.marketplacePlan.nameAr
+                              : detail.marketplacePlan.nameAr || detail.marketplacePlan.nameEn) ||
                             detail.marketplacePlan.tierCode}
                         </strong>
                       </div>
@@ -1575,7 +1582,7 @@ export default function SuperAdminUsersPage() {
             <div className="oh-sa-users-list-head__titles">
               <h2 className="oh-sa-users-list-head__title">{t("users.listTitle")}</h2>
               {total ? (
-                <p className="oh-sa-users-list-head__desc">{t("users.userCount", { count: total.toLocaleString("en-US") })}</p>
+                <p className="oh-sa-users-list-head__desc">{t("users.userCount", { count: formatCount(total, locale) })}</p>
               ) : null}
             </div>
             <div className={`oh-sa-users-toolbar__search${searchOpen ? " is-open" : ""}`}>
@@ -1631,7 +1638,7 @@ export default function SuperAdminUsersPage() {
                 >
                   <span className="oh-sa-users-tab__label">{t(tab.labelKey)}</span>
                   {showBadge ? (
-                    <span className="oh-sa-users-tab__badge">{formatCount(count)}</span>
+                    <span className="oh-sa-users-tab__badge">{formatCount(count, locale)}</span>
                   ) : null}
                 </button>
               );

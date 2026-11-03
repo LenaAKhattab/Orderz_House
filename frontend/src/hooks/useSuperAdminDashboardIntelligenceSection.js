@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getSafeApiErrorMessage } from "../utils/apiErrorMessage.js";
+import { localeFromEnFlag, pt } from "../i18n/activeLocale.js";
 
 const REFRESH_MS = 90_000;
+
+/** Arabic-only legacy copy: unchanged on the Arabic / English UI, translated for German / Dutch / Romanian. */
+const loadErrorText = (key) => pt(`platformCore.superAdminLoad.${key}`, undefined, localeFromEnFlag(false));
 
 function mapError(e) {
   const code = e?.code || "";
@@ -10,11 +14,11 @@ function mapError(e) {
     return { canceled: true, message: "" };
   }
   if (code === "ECONNABORTED" || /timeout/i.test(message)) {
-    return { canceled: false, message: "استغرق تحميل هذا القسم وقتًا أطول من المتوقع." };
+    return { canceled: false, message: loadErrorText("sectionTimeout") };
   }
   return {
     canceled: false,
-    message: getSafeApiErrorMessage(e, "تعذر تحميل هذا القسم."),
+    message: getSafeApiErrorMessage(e, loadErrorText("sectionFailed")),
   };
 }
 

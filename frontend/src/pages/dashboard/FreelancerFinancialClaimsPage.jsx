@@ -22,6 +22,7 @@ import {
 } from "../../services/api";
 import { useToast } from "../../components/ui/toastContext";
 import { useTranslation } from "../../i18n/LanguageProvider";
+import { pickIntlTag } from "../../i18n/intlLocale.js";
 import DashboardHubPage from "../../components/dashboard/hub/DashboardHubPage";
 import HubMetricSkeleton from "../../components/dashboard/hub/HubMetricSkeleton";
 import "../../styles/dashboardHub.css";
@@ -34,13 +35,14 @@ function formatDate(value, locale, emDash) {
   if (!value) return emDash;
   const d = new Date(value);
   if (!Number.isFinite(d.getTime())) return emDash;
-  const tag = locale === "ar" ? "ar-JO-u-nu-latn" : "en-GB";
+  const tag = pickIntlTag(locale, { ar: "ar-JO-u-nu-latn", en: "en-GB" });
   return new Intl.DateTimeFormat(tag, { dateStyle: "medium" }).format(d);
 }
 
-function formatMoney(value, emDash) {
+function formatMoney(value, emDash, locale) {
   if (value === null || value === undefined || Number.isNaN(Number(value))) return emDash;
-  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(Number(value));
+  const tag = pickIntlTag(locale, { ar: "en-US", en: "en-US" });
+  return new Intl.NumberFormat(tag, { maximumFractionDigits: 2 }).format(Number(value));
 }
 
 function payoutWindowText(claim, locale, emDash) {
@@ -294,7 +296,7 @@ export default function FreelancerFinancialClaimsPage() {
       orderNumber: project.orderNumber || "",
       requestTitle: project.requestTitle || "",
       categoriesText: Array.isArray(project.categories)
-        ? project.categories.join(locale === "en" ? ", " : "، ")
+        ? project.categories.join(t("platformPages.common.listJoiner"))
         : "",
       durationMinutes:
         Number(project.durationMinutes) > 0 ? String(project.durationMinutes) : prev.durationMinutes || "",
@@ -389,14 +391,14 @@ export default function FreelancerFinancialClaimsPage() {
           <p style={{ margin: "0 0 0.75rem", opacity: 0.85 }}>
             {t("finance.freelancer.available")}:{" "}
             <strong>
-              {formatMoney(Number(cashWallet.availableMinor) / 100, emDash)} {cashWallet.currency}
+              {formatMoney(Number(cashWallet.availableMinor) / 100, emDash, locale)} {cashWallet.currency}
             </strong>
           </p>
           <ul style={{ margin: 0, paddingInlineStart: "1.1rem" }}>
             {cashWallet.entries.slice(0, 8).map((entry) => (
               <li key={entry.id} style={{ marginBottom: "0.35rem" }}>
                 {entry.description || t("finance.freelancer.defaultEntryDescription")} —{" "}
-                {formatMoney(Number(entry.amountMinor) / 100, emDash)} {entry.currency || "JOD"}
+                {formatMoney(Number(entry.amountMinor) / 100, emDash, locale)} {entry.currency || "JOD"}
                 <span style={{ opacity: 0.65, marginInlineStart: "0.5rem" }}>
                   {formatDate(entry.createdAt, locale, emDash)}
                 </span>
@@ -676,7 +678,7 @@ export default function FreelancerFinancialClaimsPage() {
                                 source: p.sourceType || emDash,
                                 payment: mapPaymentStatusLabel(p.paymentStatus, t, emDash),
                                 amount:
-                                  p.totalPriceSnapshot != null ? formatMoney(p.totalPriceSnapshot, emDash) : emDash,
+                                  p.totalPriceSnapshot != null ? formatMoney(p.totalPriceSnapshot, emDash, locale) : emDash,
                                 currency: p.currencyCode ? ` ${p.currencyCode}` : "",
                               })}
                             </p>

@@ -156,7 +156,7 @@ export default function PremiumPromoBanner({ ad, previewMode = false, onTrackCli
         style={{ backgroundColor: surface.saleStickerBg || "#fdba74", color: surface.saleStickerFg || "#431407" }}
       >
         <span className="ppm__sale-sticker-pct">{saleN}%</span>
-        <span className="ppm__sale-sticker-off">OFF</span>
+        <span className="ppm__sale-sticker-off">{t("platformComponents.ads.saleStickerOff")}</span>
       </span>
     ) : showDiscountBadge && discountText ? (
       <span

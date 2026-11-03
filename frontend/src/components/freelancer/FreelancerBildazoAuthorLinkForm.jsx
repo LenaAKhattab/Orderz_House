@@ -4,6 +4,7 @@ import {
 } from "../../constants/bildazoAuthorTerms";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import "../../i18n/articlesResources";
+import { pickIntlTag } from "../../i18n/intlLocale";
 
 function Field({ label, children }) {
   return (
@@ -46,7 +47,7 @@ export default function FreelancerBildazoAuthorLinkForm({
   const { t, locale } = useTranslation();
   const submitNew = newSubmitLabel || t("articles.bildazoGate.submitNew");
   const submitExisting = existingSubmitLabel || t("articles.bildazoGate.submitExisting");
-  const regionNames = new Intl.DisplayNames([locale === "en" ? "en" : "ar"], { type: "region" });
+  const regionNames = new Intl.DisplayNames([pickIntlTag(locale, { ar: "ar", en: "en" })], { type: "region" });
   return (
     <>
       <div className="bz-gate__tabs" role="tablist">

@@ -1,0 +1,77 @@
+{
+  "listSeparator": ", ",
+  "durationUnits": {
+    "day": "Tag",
+    "day_plural": "Tage",
+    "hour": "Stunde",
+    "hour_plural": "Stunden",
+    "minute": "Minute",
+    "minute_plural": "Minuten"
+  },
+  "plans": {
+    "trainingPrefix": "Schulung: ",
+    "subscriptionDurationDays": "Abonnementdauer: {{days}} Tage",
+    "orderValue": {
+      "range": "Auftragswert: von {{min}} bis {{max}} JOD",
+      "fromMin": "Auftragswert: ab {{min}} JOD",
+      "upToMax": "Auftragswert: bis {{max}} JOD"
+    },
+    "installment": {
+      "upfront": "{{amount}} JOD bei Anmeldung",
+      "monthly": "{{amount}} JOD monatlich × {{months}} Monate"
+    },
+    "loadingPlansSr": "Pakete werden geladen"
+  },
+  "orderDetailsStatus": {
+    "status": {
+      "published": "Veröffentlicht",
+      "open_for_freelancers": "Offen für Freelancer",
+      "open_for_bids": "Offen für Angebote",
+      "assigned": "Zugewiesen",
+      "in_progress": "In Bearbeitung",
+      "ready_for_work": "Bereit zur Arbeit",
+      "pending_payment": "Zahlung ausstehend",
+      "pending_client_review": "Kundenprüfung ausstehend",
+      "completed": "Abgeschlossen",
+      "cancelled": "Storniert",
+      "closed": "Geschlossen",
+      "draft": "Entwurf",
+      "archived": "Archiviert"
+    },
+    "awaitingApproval": "Freigabe ausstehend"
+  },
+  "openOrders": {
+    "projectType": {
+      "fixed": "Festpreis",
+      "bidding": "Ausschreibung"
+    },
+    "noDescription": "Keine Beschreibung"
+  },
+  "heroStats": {
+    "hints": {
+      "zeroTrafficViews": "Noch keine Aufrufe erfasst",
+      "zeroTrafficActive": "In den letzten 7 Tagen keine Aktivität erfasst",
+      "dbUnavailable": "Plattformstatistiken sind vorübergehend nicht verfügbar",
+      "devTrackingDisabled": "Tracking ist in der Entwicklungsumgebung deaktiviert"
+    }
+  },
+  "silverConversion": {
+    "description": {
+      "trialExpired": "Ihre Arbeitsphase im Test ist beendet. Upgraden Sie auf Silver, um weiter Chancen anzunehmen.",
+      "workCapReached": "Sie haben das Testlimit für angenommene Arbeit erreicht. Wechseln Sie zu Silver, um fortzufahren.",
+      "default": "Sie haben den echten Arbeitszyklus auf der Plattform ausprobiert. Um nach dem Test fortzufahren und mehr Chancen zu erreichen, wechseln Sie zum Silver-Paket."
+    }
+  },
+  "auth": {
+    "unknownInitial": "?"
+  },
+  "toast": {
+    "regionAria": "Benachrichtigungen"
+  },
+  "orders": {
+    "typeAndPriceAria": "Auftragstyp und Preis"
+  },
+  "ads": {
+    "saleStickerOff": "OFF"
+  }
+}

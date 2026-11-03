@@ -3,9 +3,11 @@ import SafeAdImage from "./SafeAdImage";
 import { isExternalUrl, linkTargetRel } from "./adUtils";
 import { postPublicPopupAdClickRequest } from "../../services/api";
 import { useTranslation } from "../../i18n/LanguageProvider";
+import { isNewLocale, localizeSystemText } from "../../i18n/systemContent";
 import "./popupAdModal.css";
 
 function pickLocalized({ locale, ar, en }) {
+  if (isNewLocale(locale)) return localizeSystemText(locale, { ar, en });
   const isEn = locale === "en";
   return (isEn ? en : ar) || ar || en || "";
 }

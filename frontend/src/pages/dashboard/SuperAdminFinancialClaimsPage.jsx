@@ -1,6 +1,8 @@
 import "../../i18n/financeResources";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "../../i18n/LanguageProvider";
+import { pt } from "../../i18n/activeLocale.js";
+import { pickIntlTag } from "../../i18n/intlLocale.js";
 import {
   createSuperAdminFreelancerPaymentRequest,
   getSuperAdminFinancialClaimByIdRequest,
@@ -25,14 +27,15 @@ function formatDate(value, locale) {
   if (!value) return "—";
   const d = new Date(value);
   if (!Number.isFinite(d.getTime())) return "—";
-  const tag = locale === "en" ? "en-GB" : "ar-JO-u-nu-latn";
+  const tag = pickIntlTag(locale, { ar: "ar-JO-u-nu-latn", en: "en-GB" });
   return new Intl.DateTimeFormat(tag, { dateStyle: "medium", timeStyle: "short" }).format(d);
 }
 
 function formatMoney(value, locale = "ar") {
   if (value === null || value === undefined || Number.isNaN(Number(value))) return "—";
-  const suffix = locale === "en" ? "JOD" : "د.أ";
-  return `${new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(Number(value))} ${suffix}`;
+  const suffix = pt("platformPages.common.jodSuffix", undefined, locale);
+  const tag = pickIntlTag(locale, { ar: "en-US", en: "en-US" });
+  return `${new Intl.NumberFormat(tag, { maximumFractionDigits: 2 }).format(Number(value))} ${suffix}`;
 }
 
 function claimStatusLabel(s, t) {
@@ -85,10 +88,10 @@ function freelancerDisplay(freelancer) {
   return "—";
 }
 
-function formatPct(value) {
+function formatPct(value, locale) {
   const n = Number(value);
   if (!Number.isFinite(n)) return "—";
-  return `${new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(n)}%`;
+  return `${new Intl.NumberFormat(pickIntlTag(locale, { ar: "en-US", en: "en-US" }), { maximumFractionDigits: 2 }).format(n)}%`;
 }
 
 const CLAIM_STATUS_VALUES = ["", "pending", "accepted", "rejected", "frozen", "requires_in_person_review", "paid"];
@@ -366,10 +369,10 @@ export default function SuperAdminFinancialClaimsPage() {
                   </StatusBadge>
                 </p>
                 <p>
-                  {t(`${sc}.freelancerSharePct`)}: {formatPct(claim.userPercentageSnapshot)}
+                  {t(`${sc}.freelancerSharePct`)}: {formatPct(claim.userPercentageSnapshot, locale)}
                 </p>
                 <p>
-                  {t(`${sc}.companySharePct`)}: {formatPct(claim.companyPercentageSnapshot)}
+                  {t(`${sc}.companySharePct`)}: {formatPct(claim.companyPercentageSnapshot, locale)}
                 </p>
                 <p>
                   {t(`${sc}.freelancerDue`)}: {money(claim.userAmountSnapshot)}
@@ -461,10 +464,10 @@ export default function SuperAdminFinancialClaimsPage() {
               </StatusBadge>
             </p>
             <p>
-              {t(`${sc}.freelancerSharePct`)}: {formatPct(detail.userPercentageSnapshot)}
+              {t(`${sc}.freelancerSharePct`)}: {formatPct(detail.userPercentageSnapshot, locale)}
             </p>
             <p>
-              {t(`${sc}.companySharePct`)}: {formatPct(detail.companyPercentageSnapshot)}
+              {t(`${sc}.companySharePct`)}: {formatPct(detail.companyPercentageSnapshot, locale)}
             </p>
             <p>
               {t(`${sc}.totalPrice`)}: {money(detail.totalPriceSnapshot)}

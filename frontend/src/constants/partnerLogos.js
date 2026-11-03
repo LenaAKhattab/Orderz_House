@@ -1,15 +1,25 @@
 /** Partner logos — files in `public/partners/`. */
+import { ct, ctAr, withCatalogLabels } from "./constantsI18n.js";
+
+/** `alt` of the localized partner names follows the non-English UI branch (Arabic, or the active de / nl / ro locale). */
+const partner = (row) =>
+  withCatalogLabels(row, `partnerLogos.alts.${row.id}`, { alt: "local" }, { keyProp: "altKey" });
+
 export const PARTNER_LOGOS = [
   { id: "gigz", src: "/partners/GIGZ.png", alt: "GIGZHOUSE", href: "https://gigzhouse.com/" },
-  {
+  partner({
     id: "bildazo",
     src: "/partners/Bildazo.png",
-    alt: "بيلدازو",
     href: "https://bildazo.com/desktop",
     logoBadge: "circle",
-  },
-  { id: "studyzhouse", src: "/partners/studyzhouse.png", alt: "ستادي هاوس", href: "https://studyzhouse.com/" },
-  { id: "battech", src: "/partners/Battech.png", alt: "بات تكنو", href: "https://battechno.com/" },
+  }),
+  partner({ id: "studyzhouse", src: "/partners/studyzhouse.png", href: "https://studyzhouse.com/" }),
+  partner({ id: "battech", src: "/partners/Battech.png", href: "https://battechno.com/" }),
 ];
-export const PARTNERS_SECTION_SUBTITLE =
-  "نفخر بشراكاتنا مع جهات رائدة ساهمت في بناء قصص نجاح مميزة.";
+
+/** Arabic subtitle (catalog: platformConstants.partnerLogos.subtitle); `partnersSectionSubtitle(locale)` per locale. */
+export const PARTNERS_SECTION_SUBTITLE = ctAr("partnerLogos.subtitle");
+
+export function partnersSectionSubtitle(locale) {
+  return ct("partnerLogos.subtitle", undefined, locale);
+}

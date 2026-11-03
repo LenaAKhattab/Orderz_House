@@ -21,8 +21,7 @@ export default function TrainingPackageFormModal({
   onClose,
   onSubmit,
 }) {
-  const { t, locale } = useTranslation();
-  const isEn = locale === "en";
+  const { t, dir } = useTranslation();
   const [form, setForm] = useState(() => getInitialTrainingPackageForm(initialPackage));
 
   useEffect(() => {
@@ -49,7 +48,7 @@ export default function TrainingPackageFormModal({
         className="oh-sapl-modal"
         role="dialog"
         aria-modal="true"
-        dir={isEn ? "ltr" : "rtl"}
+        dir={dir}
       >
         <header className="oh-sapl-modal__head">
           <h2 className="oh-sapl-modal__title">

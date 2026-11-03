@@ -342,7 +342,9 @@
         "admin": "الإدارة",
         "super_admin": "المشرف العام"
       },
-      "requestedByPrefix": "بواسطة {{who}}"
+      "requestedByPrefix": "بواسطة {{who}}",
+      "unknownStatus": "حالة غير معروفة",
+      "unknownRole": "دور غير معروف"
     }
   },
   "deliveryTiming": {

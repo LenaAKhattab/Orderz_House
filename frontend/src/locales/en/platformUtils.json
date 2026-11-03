@@ -1,0 +1,121 @@
+{
+  "money": {
+    "free": "Free",
+    "total": "Total: {{amount}}",
+    "currency": {
+      "JOD": "JOD",
+      "EGP": "EGP",
+      "SAR": "SAR",
+      "AED": "AED",
+      "QAR": "QAR",
+      "KWD": "KWD",
+      "BHD": "BHD",
+      "OMR": "OMR",
+      "USD": "USD",
+      "EUR": "EUR",
+      "GBP": "GBP"
+    }
+  },
+  "country": {
+    "unknown": "Unknown",
+    "unspecified": "Unspecified",
+    "awaitingPayment": "Awaiting payment"
+  },
+  "bidPaymentReturn": {
+    "pendingVerify": {
+      "title": "Verifying payment",
+      "message": "Payment is not confirmed yet (the webhook can take a moment). Wait briefly, then refresh. If the order still shows awaiting payment after a few minutes, contact support."
+    },
+    "serviceUnavailable": {
+      "title": "Payment service unavailable",
+      "message": "The payment provider is unavailable. Try again later or contact support."
+    },
+    "stateChanged": {
+      "title": "Order or bid state changed",
+      "message": "This bid payment cannot be confirmed in the current state. Refresh the page or start checkout again from the order card. If you believe you were charged, wait briefly and refresh; otherwise contact support."
+    },
+    "generic": {
+      "title": "Could not confirm bid payment",
+      "message": "We could not confirm payment for the selected bid. If Stripe shows a successful charge, wait briefly and refresh. If this persists, contact support with your order ID."
+    }
+  },
+  "duration": {
+    "lessThanMinute": "Less than a minute",
+    "partJoiner": ", ",
+    "day": "{{count}} day",
+    "day_plural": "{{count}} days",
+    "hour": "{{count}} hour",
+    "hour_plural": "{{count}} hours",
+    "minute": "{{count}} minute",
+    "minute_plural": "{{count}} minutes"
+  },
+  "membershipSchedule": {
+    "monthOne": "1 month",
+    "monthTwo": "2 months",
+    "monthsFew": "{{count}} months",
+    "monthsMany": "{{count}} months",
+    "awaitingFirstOrder": "Awaiting first order",
+    "startsOnFirstOrder": "Starts with the first order",
+    "expiryAfterStart": "Calculated once the subscription starts"
+  },
+  "eligibility": {
+    "adminApprovalPending": "Awaiting admin approval before you can receive orders",
+    "noSubscription": "Activate your plan first to receive orders.",
+    "inactive": "Your subscription is not active. Please subscribe first.",
+    "paymentIncomplete": "Order intake could not be enabled because subscription payment is incomplete.",
+    "expired": "Your subscription has expired. Please renew to receive orders.",
+    "activationFeeUnpaid": "Pay the yearly activation fee before receiving orders.",
+    "accountHoldPaymentFailed": "We could not charge the 15 JOD monthly subscription fee to your saved card, so your account has been temporarily frozen. Please contact us to reactivate it.",
+    "planConfigurationError": "We could not verify your plan eligibility right now. Please contact support.",
+    "generic": "Your account is not currently eligible for marketplace orders (check your subscription)."
+  },
+  "upload": {
+    "totalSizeExceeded": "Total file size must not exceed {{mb}} MB",
+    "totalSizeHelper": "Maximum total file size: {{mb}} MB",
+    "fileSize": {
+      "bytes": "{{size}} bytes",
+      "kilobytes": "{{size}} KB",
+      "megabytes": "{{size}} MB"
+    }
+  },
+  "applicants": {
+    "guestMessage": "Visible after login",
+    "guestMessageLong": "The number of applicants is visible to signed-in users only",
+    "empty": "None",
+    "count": "{{count}} applicant",
+    "count_plural": "{{count}} applicants",
+    "singular": "applicant",
+    "plural": "applicants"
+  },
+  "poolPlan": {
+    "lockBadge": "Not available on your plan",
+    "messages": {
+      "PLAN_TOO_LOW": "This order's value is above your current plan's limit",
+      "NO_ACTIVE_PLAN": "Activate your plan to receive orders",
+      "INTERNAL_PLAN_CONFIGURATION": "We could not verify your plan eligibility right now. Please contact support."
+    }
+  },
+  "homeCategories": {
+    "imageAlt": "Category",
+    "exploreServices": "Explore services",
+    "fallback": {
+      "programming": {
+        "title": "Programming services",
+        "text": "Professional programming services for businesses, academic research, and custom projects."
+      },
+      "design": {
+        "title": "Design services",
+        "text": "Professional design services for businesses, academia, and personal needs."
+      },
+      "contentWriting": {
+        "title": "Content writing services",
+        "text": "Professional writing services for businesses, academic research, and personal needs."
+      },
+      "specialRequests": {
+        "title": "Special requests",
+        "text": "Have your order handled directly by the site's support team",
+        "button": "Contact via WhatsApp"
+      }
+    }
+  }
+}

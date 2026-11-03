@@ -1,0 +1,77 @@
+{
+  "money": {
+    "jodAmount": "{{amount}} د.أ"
+  },
+  "planPrice": {
+    "free": "مجانية",
+    "total": "الإجمالي {{total}}"
+  },
+  "taxonomy": {
+    "contentWriting": "كتابة المحتوى",
+    "design": "تصميم",
+    "programming": "برمجة"
+  },
+  "courseTitles": {
+    "freeContentWritingLevel1": "تدريب مجاني على كتابة المحتوى – المستوى الأول",
+    "contentWritingLevel1": "تدريب كتابة المحتوى – المستوى الأول",
+    "contentWritingLevel2": "تدريب كتابة المحتوى – المستوى الثاني",
+    "freeContentWritingLevel2": "تدريب مجاني كتابة المحتوى – المستوى الثاني",
+    "freeDesign": "تدريبات مجانية في التصميم",
+    "freelanceOperationsDiploma": "دبلوم تشغيل العمل الحر الرقمي"
+  },
+  "faq": {
+    "translationUnavailable": "هذا البند غير متوفر بلغتك بعد."
+  },
+  "membership": {
+    "tiers": {
+      "starter": {
+        "tagline": "للبداية"
+      },
+      "silver": {
+        "tagline": "للانطلاق"
+      },
+      "pro": {
+        "tagline": "للمحترفين"
+      },
+      "elite": {
+        "tagline": "لأعلى مستوى"
+      }
+    },
+    "withdrawalOff": "لا يوجد استلام مباشر للقيم المالية",
+    "withdrawalOn": "السحب متاح",
+    "viewMembership": "عرض العضوية"
+  },
+  "chunkReload": {
+    "message": "حدث تحديث في ملفات الموقع. يرجى تحديث الصفحة.",
+    "refresh": "تحديث الصفحة"
+  },
+  "browserNotification": {
+    "newNotification": "إشعار جديد"
+  },
+  "adminList": {
+    "refreshSoftNote": "تعذر تحديث القائمة الآن. يمكنك إعادة المحاولة.",
+    "rateLimitNote": "تم إرسال طلبات كثيرة خلال وقت قصير. انتظر قليلاً ثم حاول مجددًا.",
+    "loadFailed": "تعذر تحميل القائمة. حاول مجدداً."
+  },
+  "plansLoad": {
+    "defaultCatalogFailed": "تعذر تحميل الباقات الافتراضية.",
+    "planPageFailed": "تعذر تحميل صفحة الباقات."
+  },
+  "superAdminLoad": {
+    "analyticsTimeout": "استغرق تحميل التحليلات وقتًا أطول من المتوقع. حاول التحديث بعد قليل.",
+    "analyticsFailed": "تعذر تحميل لوحة التحليلات.",
+    "businessKpisTimeout": "تعذر تحميل مؤشرات الأعمال حالياً.",
+    "businessKpisFailed": "تعذر تحميل مؤشرات الأعمال.",
+    "sectionTimeout": "استغرق تحميل هذا القسم وقتًا أطول من المتوقع.",
+    "sectionFailed": "تعذر تحميل هذا القسم.",
+    "summaryTimeout": "استغرق تحميل المؤشرات وقتًا أطول من المتوقع.",
+    "summaryFailed": "تعذر تحميل مؤشرات المتابعة."
+  },
+  "api": {
+    "invalidMembershipPlanCode": "رمز باقة Marketplace غير صالح.",
+    "identityImageUnavailable": "تعذر تحميل صورة الهوية الآن. حاول مرة أخرى.",
+    "invalidPlanId": "معرّف الباقة غير صالح.",
+    "invalidCheckoutSessionId": "معرّف جلسة الدفع غير صالح.",
+    "openingFile": "جاري فتح الملف…"
+  }
+}

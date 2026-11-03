@@ -1051,7 +1051,7 @@ const SuperAdminSubscriptionsPage = () => {
           <div
             className="oh-sa-subs-toolbar dash-ui-toolbar"
             role="search"
-            aria-label="Browse subscription records, search, and filter results."
+            aria-label={t("subscriptions.page.sectionDescription")}
           >
             <div className="oh-sa-subs-toolbar__grid">
               <div className="oh-sa-subs-toolbar__field oh-sa-subs-toolbar__field--search">

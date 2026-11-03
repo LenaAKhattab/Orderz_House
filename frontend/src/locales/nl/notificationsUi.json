@@ -1,0 +1,49 @@
+{
+  "bell": {
+    "ariaLabel": "Meldingen",
+    "title": "Meldingen",
+    "markAllRead": "Alles als gelezen markeren",
+    "loading": "Laden…",
+    "empty": "Er zijn momenteel geen meldingen.",
+    "viewAll": "Alle meldingen bekijken",
+    "newNotification": "Nieuwe melding"
+  },
+  "permission": {
+    "title": "Sitemeldingen inschakelen",
+    "body": "Ontvang direct meldingen over opdrachten, betalingen en opleveringen, ook als u op een ander tabblad bent. U kunt dit later wijzigen in de instellingen.",
+    "enable": "Meldingen inschakelen",
+    "enableBusy": "Bezig…",
+    "notNow": "Niet nu"
+  },
+  "browser": {
+    "title": "Browsermeldingen",
+    "intro": "Bureaubladmeldingen verschijnen wanneer er een nieuwe melding binnenkomt terwijl u bent ingelogd. Meldingen in de app (de bel) blijven altijd ingeschakeld.",
+    "unsupported": "Uw browser ondersteunt geen bureaubladmeldingen.",
+    "statusLabel": "Status:",
+    "enabled": "Ingeschakeld",
+    "disabled": "Uitgeschakeld",
+    "notRequested": "Nog niet aangevraagd",
+    "enableBtn": "Browsermeldingen inschakelen",
+    "disableBtn": "Uitschakelen in de app",
+    "testBtn": "Testmelding",
+    "toastUnsupported": "Deze browser ondersteunt geen bureaubladmeldingen.",
+    "toastEnabled": "Browsermeldingen ingeschakeld.",
+    "toastDenied": "Er is geen toestemming verleend. U kunt dit inschakelen in de browserinstellingen.",
+    "toastEnableFailed": "Meldingen konden niet worden ingeschakeld.",
+    "toastDisabled": "Browsermeldingen zijn in de app uitgeschakeld. Mogelijk moet u ze ook uitschakelen in de browserinstellingen.",
+    "toastSaveFailed": "Opslaan mislukt.",
+    "toastNeedPermission": "Sta eerst meldingen toe in de browser.",
+    "testTitle": "Testmelding",
+    "testBody": "Als u deze melding ziet, werken browsermeldingen correct.",
+    "toastTestSent": "Testmelding verzonden.",
+    "toastTestFailed": "Testmelding kon niet worden verzonden."
+  },
+  "page": {
+    "deleteSelected": "Selectie verwijderen ({{count}})",
+    "selectAria": "Selecteren: {{title}}",
+    "confirmDeleteTitle": "Geselecteerde meldingen verwijderen?",
+    "confirmDeleteBody": "De geselecteerde meldingen ({{count}}) worden definitief verwijderd. Dit kan niet ongedaan worden gemaakt.",
+    "delete": "Verwijderen",
+    "cancel": "Annuleren"
+  }
+}

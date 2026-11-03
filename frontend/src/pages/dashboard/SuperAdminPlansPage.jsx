@@ -262,11 +262,7 @@ const SuperAdminPlansPage = () => {
     } catch (err) {
       const code = err?.response?.data?.code || err?.response?.data?.publicCode;
       if (code === "PLAN_HAS_DEPENDENCIES" || code === "PLAN_IN_USE") {
-        setError(
-          isEn
-            ? "This package cannot be removed because it is linked to users or current records. You can deactivate it instead of deleting it."
-            : t("planAdmin.page.deactivateBlocked"),
-        );
+        setError(t("platformPages.superAdminPlans.deactivateBlocked"));
       } else {
         setError(errorMessage(err, t));
       }
@@ -343,9 +339,7 @@ const SuperAdminPlansPage = () => {
           </label>
           {selectedPlanPage ? (
             <p className="oh-sapl-section-toggle__hint" style={{ margin: 0 }}>
-              {isEn
-                ? `Showing plans for: ${selectedPlanPage.title}`
-                : t("planAdmin.sections.pages.showingPage", { title: selectedPlanPage.title })}
+              {t("platformPages.superAdminPlans.showingPage", { title: selectedPlanPage.title })}
             </p>
           ) : null}
         </div>
@@ -456,11 +450,7 @@ const SuperAdminPlansPage = () => {
       <ConfirmDialog
         open={Boolean(deleteTarget)}
         title={t("planAdmin.page.confirmDeactivateTitle")}
-        body={
-          isEn
-            ? "Are you sure? This package will be hidden from new use. Existing subscriptions and historical records will not be deleted."
-            : t("planAdmin.page.confirmDeactivateBody")
-        }
+        body={t("platformPages.superAdminPlans.confirmDeactivateBody")}
         confirmLabel={t("planAdmin.page.deactivateConfirm")}
         cancelLabel={t("planAdmin.common.cancel")}
         confirmVariant="danger"

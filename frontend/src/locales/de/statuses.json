@@ -1,0 +1,76 @@
+{
+  "orders": {
+    "published": "Veröffentlicht",
+    "open_for_freelancers": "Offen für Freelancer",
+    "open_for_bids": "Offen für Angebote",
+    "assigned": "Zugewiesen",
+    "in_progress": "In Bearbeitung",
+    "ready_for_work": "Bereit zur Bearbeitung",
+    "pending_payment": "Zahlung ausstehend",
+    "pending_client_review": "Prüfung durch Kunden ausstehend",
+    "completed": "Abgeschlossen",
+    "cancelled": "Storniert",
+    "closed": "Geschlossen",
+    "draft": "Entwurf",
+    "archived": "Archiviert",
+    "awaiting_payment_after_bid_selection": "Zahlung für das ausgewählte Angebot ausstehend",
+    "pending_freelancer_acceptance": "Annahme durch Freelancer ausstehend"
+  },
+  "subscriptions": {
+    "assigned_not_started": "Wartet auf den ersten Auftrag",
+    "active": "Aktiv",
+    "expired": "Abgelaufen",
+    "cancelled": "Storniert",
+    "pending": "Ausstehend",
+    "company_approved": "Vom Unternehmen freigegeben",
+    "suspended": "Ausgesetzt",
+    "purchased_pending_start": "Bezahlt – Start ausstehend",
+    "inactive": "Inaktiv",
+    "superseded": "Durch neueres Paket ersetzt"
+  },
+  "kyc": {
+    "pending": "In Prüfung",
+    "approved": "Genehmigt",
+    "rejected": "Abgelehnt",
+    "resubmission_required": "Erneute Einreichung erforderlich",
+    "not_submitted": "Nicht eingereicht"
+  },
+  "bids": {
+    "pending": "Ausstehend",
+    "accepted": "Angenommen",
+    "rejected": "Abgelehnt",
+    "withdrawn": "Zurückgezogen",
+    "submitted": "Eingereicht"
+  },
+  "payments": {
+    "paid": "Bezahlt",
+    "unpaid": "Unbezahlt",
+    "pending": "Ausstehend",
+    "failed": "Fehlgeschlagen",
+    "refunded": "Erstattet",
+    "not_required": "Nicht erforderlich",
+    "skipped_by_admin": "Vom Administrator erlassen",
+    "expired": "Zahlungssitzung abgelaufen"
+  },
+  "claims": {
+    "pending": "In Prüfung",
+    "approved": "Genehmigt",
+    "rejected": "Abgelehnt",
+    "paid": "Ausgezahlt",
+    "open": "Offen",
+    "closed": "Geschlossen",
+    "accepted": "Angenommen",
+    "frozen": "Eingefroren",
+    "requires_in_person_review": "Persönliche Prüfung erforderlich"
+  },
+  "articles": {
+    "draft": "Entwurf",
+    "submitted": "Zur Prüfung eingereicht",
+    "under_review": "In Prüfung",
+    "revision_requested": "Überarbeitung angefordert",
+    "approved": "Genehmigt",
+    "rejected": "Abgelehnt",
+    "published": "Veröffentlicht",
+    "closed": "Geschlossen"
+  }
+}

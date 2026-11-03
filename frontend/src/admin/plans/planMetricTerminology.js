@@ -5,13 +5,15 @@
 
 import { getTranslation } from "../../lib/translation/getTranslation";
 import "../../i18n/planAdminResources";
+import { legacyArabicUiLocale } from "../adminLocale.js";
 
 const METRICS = "planAdmin.metrics";
 
 export function planMetricT(t, suffix, values) {
   const key = `${METRICS}.${suffix}`;
   if (typeof t === "function") return t(key, values);
-  return getTranslation(key, "ar", values);
+  // Without `t`: Arabic for the Arabic / English UIs (historical), the UI locale for German / Dutch / Romanian.
+  return getTranslation(key, legacyArabicUiLocale(), values);
 }
 
 export function revenueSharePhrase(pctFormatted, t) {

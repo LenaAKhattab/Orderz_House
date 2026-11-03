@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import "../../i18n/adsResources";
+import { pickIntlTag } from "../../i18n/intlLocale";
 
 /** @typedef {'simple' | 'schedule' | 'off'} RescheduleMode */
 
@@ -93,7 +94,7 @@ export default function AdRescheduleModal({ ad, statusLabel, onClose, onSubmit }
     const fmt = (v) => {
       if (!v?.trim()) return "";
       const d = new Date(v);
-      return Number.isNaN(d.getTime()) ? v : d.toLocaleString(locale === "en" ? "en" : "ar");
+      return Number.isNaN(d.getTime()) ? v : d.toLocaleString(pickIntlTag(locale, { ar: "ar", en: "en" }));
     };
     if (hasS && hasE) return t("ads.reschedule.outcomeRange", { start: fmt(startDate), end: fmt(endDate) });
     if (hasS && !hasE) return t("ads.reschedule.outcomeFrom", { start: fmt(startDate) });

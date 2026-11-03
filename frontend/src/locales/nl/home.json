@@ -1,0 +1,309 @@
+{
+  "heroIpad": {
+    "free": "Gratis",
+    "dayUnit": "dagen",
+    "brand": "OrderzHouse",
+    "sidebarNavAria": "Sectienavigatie",
+    "menuOpen": "Menu openen",
+    "menuClose": "Menu sluiten",
+    "loading": "Laden",
+    "nav": {
+      "overview": {
+        "label": "Dashboard",
+        "title": "Dashboard",
+        "description": "Snelle cijfers en een overzicht dat zich aanpast aan uw rol op het platform."
+      },
+      "services": {
+        "label": "Diensten",
+        "title": "Diensten",
+        "description": "Dienstcategorieën zoals op de openbare dienstenpagina."
+      },
+      "plans": {
+        "label": "Pakketten",
+        "title": "Pakketten",
+        "description": "Abonnementspakketten voor freelancers zoals op de openbare pakkettenpagina."
+      },
+      "orders": {
+        "label": "Opdrachten",
+        "title": "Opdrachten en marktplaats",
+        "description": "Lijst met open opdrachten en uitvoeringsstatus voor freelancers."
+      },
+      "auth": {
+        "label": "Inloggen",
+        "title": "Inloggen",
+        "description": "Inloggen en account aanmaken op het platform."
+      }
+    },
+    "overview": {
+      "kicker": "Welkom op uw dashboard",
+      "hint": "De inhoud verschilt per rol: klant, freelancer of beheerder."
+    },
+    "services": {
+      "kicker": "Dienstcategorieën",
+      "loadError": "Kan categorieën niet laden. Controleer uw verbinding met de server.",
+      "empty": "Er zijn momenteel geen actieve categorieën.",
+      "footHint": "Gegevens uit de tabel met actieve categorieën van het platform."
+    },
+    "plans": {
+      "loadError": "Kan pakketten niet laden. Controleer uw verbinding met de server.",
+      "empty": "Er zijn momenteel geen zichtbare pakketten.",
+      "popularBadge": "Populairst",
+      "footHint": "Gegevens van de actieve pakketten die op het platform worden getoond."
+    },
+    "orders": {
+      "table": {
+        "order": "Opdracht",
+        "status": "Status",
+        "budget": "Budget"
+      },
+      "loadError": "Kan de opdrachtengalerij niet laden. Controleer uw verbinding met de server.",
+      "empty": "Er staan momenteel geen opdrachten in de galerij.",
+      "footHint": "Dezelfde gegevens als de openbare opdrachtengalerij (/orders).",
+      "projectType": {
+        "fixed": "Vaste prijs",
+        "bidding": "Biedingen"
+      }
+    },
+    "auth": {
+      "title": "Begin uw reis op het platform",
+      "lede": "Kies het accounttype dat bij u past om verder te gaan.",
+      "roles": {
+        "client": {
+          "title": "Klant",
+          "description": "Plaats opdrachten en vind de beste freelancers."
+        },
+        "freelancer": {
+          "title": "Freelancer",
+          "description": "Ontvang opdrachten en ga eenvoudig aan de slag."
+        }
+      },
+      "continue": "Doorgaan",
+      "signIn": "Inloggen",
+      "signUp": "Account aanmaken"
+    },
+    "analytics": {
+      "kpiVisits": "Bezoeken",
+      "kpiVisitsValue": "12,4k",
+      "kpiVisitsDelta": "↑ 9%",
+      "kpiActiveOrders": "Actieve opdrachten",
+      "kpiActiveOrdersValue": "124",
+      "kpiActiveOrdersDelta": "↑ 3%",
+      "kpiRevenue": "Omzet",
+      "kpiRevenueValue": "4.280 JOD",
+      "kpiRevenueDelta": "↑ 6%",
+      "weeklyOrdersTitle": "Opdrachten per week",
+      "weeklyOrdersCaption": "Afgelopen 10 dagen",
+      "topServicesTitle": "Meest gevraagde diensten",
+      "topServicesBarsAria": "Relatief staafdiagram per categorie",
+      "completionRateTitle": "Voltooiingspercentage",
+      "completionRateValue": "82%",
+      "completionRateSub": "Tijdige oplevering",
+      "userActivityLabel": "Gebruikersactiviteit",
+      "serviceBars": {
+        "dev": "Ontwikkeling",
+        "design": "Ontwerp",
+        "content": "Tekst",
+        "biz": "Zakelijk",
+        "acad": "Academisch"
+      }
+    },
+    "lite": {
+      "dashboard": "Dashboard",
+      "statActivity": "Activiteit",
+      "statActivityValue": "128",
+      "statOrders": "Opdrachten",
+      "statOrdersValue": "24",
+      "statComplete": "Voltooid",
+      "statCompleteValue": "96%",
+      "quickGlance": "In één oogopslag",
+      "recentActivity": "Recente activiteit",
+      "rowDesign": "Ontwerpopdracht",
+      "rowDev": "Ontwikkeldienst",
+      "pillInProgress": "In uitvoering",
+      "pillNew": "Nieuw"
+    }
+  },
+  "hero": {
+    "title": "Eén platform dat u verbindt met de juiste diensten en freelancers",
+    "lead": "Start eenvoudig uw opdracht, vergelijk beschikbare diensten en volg elke stap op één plek tot u de resultaten krijgt die u nodig hebt.",
+    "leadShort": "Start eenvoudig uw opdracht, vergelijk beschikbare diensten en volg elke stap op één plek.",
+    "startNow": "Nu starten",
+    "browseServicesNow": "Bekijk nu onze diensten",
+    "ctaPrimary": "Start nu uw opdracht",
+    "ctaSecondary": "Diensten ontdekken",
+    "greeting": "Welkom bij",
+    "searchPlaceholder": "Zoek een dienst of categorie...",
+    "searchAria": "Zoeken naar een dienst",
+    "featuredAria": "Aan de slag",
+    "statsAria": "Platformstatistieken",
+    "adsAria": "Promoties",
+    "logoAlt": "Logo van Orderz House",
+    "featured": {
+      "startOrder": "Bestel nu onze diensten",
+      "startOrderTag": "Klant",
+      "exploreServices": "Word nu lid",
+      "exploreTag": "Freelancer"
+    }
+  },
+  "categories": {
+    "title": "Ontdek categorieën",
+    "titleAccent": "in enkele seconden",
+    "subtitle": "Kies het juiste vakgebied en start uw opdracht binnen enkele minuten",
+    "featuredTitle": "Uitgelichte diensten",
+    "viewAll": "Alles bekijken",
+    "latestOrders": "Nieuwste opdrachten",
+    "ordersListAria": "Lijst met nieuwste opdrachten",
+    "loadError": "Kan opdrachten niet laden.",
+    "emptyOrders": "Er zijn momenteel geen beschikbare opdrachten."
+  },
+  "orders": {
+    "fallbackTitle": "Opdracht zonder titel",
+    "fallbackCategory": "Opdracht"
+  },
+  "featuredServices": {
+    "frontendDevelopment": "Frontendontwikkeling",
+    "backendDevelopment": "Backendontwikkeling",
+    "mobileApps": "Mobiele apps",
+    "artificialIntelligence": "Kunstmatige intelligentie",
+    "graphicDesign": "Grafisch ontwerp",
+    "uiUxDesign": "UI/UX-ontwerp",
+    "digitalMarketing": "Digitale marketing",
+    "contentWriting": "Tekstschrijven",
+    "specialRequests": "Speciale opdrachten",
+    "specialRequestsWhatsappMessage": "Hallo, ik wil graag een speciale opdracht indienen via Orderz House."
+  },
+  "faq": {
+    "title": "Veelgestelde vragen",
+    "subtitle": "Snelle, duidelijke antwoorden op de meest gestelde vragen.",
+    "whyBrand": "Waarom Orderz House?",
+    "quote": "Eén platform om diensten aan te vragen, biedingen te vergelijken en uw project tot de oplevering helder te volgen.",
+    "mobilePromoText": "Vraag diensten aan, vergelijk biedingen en volg uw project overzichtelijk.",
+    "cta": "Aan de slag",
+    "englishUnavailable": "Engelstalige inhoud is voor dit item nog niet beschikbaar.",
+    "items": {
+      "trust": {
+        "question": "Is Orderz House een betrouwbaar platform en worden de geleverde diensten erkend?",
+        "answer": "Wij werken met duidelijk beleid voor opdrachten en beoordelingen, en u kunt de status van uw opdracht volgen vanuit uw dashboard. Officiële erkenning hangt af van het beleid van werkgevers; wij raden aan bewijs van oplevering en communicatie binnen het platform te bewaren."
+      },
+      "worth": {
+        "question": "Zijn de betaalde diensten van het platform de investering waard?",
+        "answer": "Dat hangt af van uw behoeften: u kunt biedingen van freelancers vergelijken, beoordelingen lezen en de omvang bepalen voordat u zich vastlegt. Begin met een kleine opdracht om de kwaliteit te beoordelen en breid uit wanneer u tevreden bent."
+      },
+      "plus": {
+        "question": "Wat houden premiumpakketten of geavanceerde opties in, en zijn ze geschikt voor mij?",
+        "answer": "Als er pakketten of extra opties beschikbaar zijn, worden die uitgelegd op de prijs- of instellingenpagina. Bekijk wat elk niveau omvat en kies wat past bij de grootte van uw team of het aantal opdrachten."
+      },
+      "free": {
+        "question": "Zijn er gratis hulpmiddelen of handleidingen voor gebruikers?",
+        "answer": "Wij bieden nuttige content, veelgestelde vragen en toelichtende pagina's op de site. Raadpleeg het helpgedeelte of de blog, indien beschikbaar, voor updates."
+      },
+      "popular": {
+        "question": "Welke soorten opdrachten zijn het populairst op het platform?",
+        "answer": "Dit verandert in de loop van de tijd; opdrachten voor programmeren, ontwerp en tekstschrijven zijn vaak het actiefst. Bekijk de categorieën om te zien wat er nu beschikbaar is."
+      },
+      "career": {
+        "question": "Hoe helpt het platform mij de juiste freelancer te vinden of mijn project af te ronden?",
+        "answer": "U kiest de categorie, de details en de deadline; daarna kunnen relevante freelancers uw opdracht bekijken. Vergelijk biedingen en communiceer veilig binnen de opdracht voordat u een beslissing neemt."
+      },
+      "business": {
+        "question": "Welke diensten biedt het platform voor teams of bedrijven, en hoe is de prijsstelling opgebouwd?",
+        "answer": "Hebt u terugkerende behoeften of een groter volume, bekijk dan de contactpagina of de zakelijke diensten als die vermeld staan, of neem contact op met support voor een offerte op maat van uw team."
+      }
+    }
+  },
+  "partners": {
+    "title": "Partners in succes",
+    "subtitle": "Wij zijn trots op onze samenwerking met toonaangevende organisaties die hebben bijgedragen aan bijzondere succesverhalen.",
+    "logosAria": "Logo's van partners",
+    "visitSite": "Website van {{name}} bezoeken"
+  },
+  "metrics": {
+    "activeUsers": "Actieve gebruikers",
+    "activeSub": "Platformactiviteit · afgelopen 7 dagen",
+    "views": "Websiteweergaven",
+    "viewsSub": "Totaal geregistreerde bezoeken",
+    "availableOrders": "Beschikbare opdrachten",
+    "availableSub": "Nu open voor aanmeldingen",
+    "completedOrders": "Voltooide opdrachten",
+    "completedSub": "Echte voltooide opdrachten plus trainingsrondes die zijn voltooid na de start van de huidige registratie",
+    "zeroViews": "Nog geen weergaven geregistreerd",
+    "zeroActive": "Geen activiteit in de afgelopen 7 dagen",
+    "statsAria": "Platformstatistieken",
+    "degraded": "Statistieken zijn momenteel niet beschikbaar",
+    "dbUnavailable": "Platformstatistieken zijn tijdelijk niet beschikbaar",
+    "devTrackingDisabled": "Registratie is uitgeschakeld in de ontwikkelomgeving"
+  },
+  "partnersTrustedTagline": "Vertrouwd door meer dan 150+ bedrijven",
+  "promoAds": {
+    "sponsored": "Advertentie",
+    "noImages": "Geen afbeeldingen",
+    "previous": "Vorige",
+    "next": "Volgende",
+    "slideN": "Dia {{n}}",
+    "defaultImageAlt": "Advertentieafbeelding",
+    "brandFallback": "Orderz House",
+    "offersSectionTitle": "Uitgelichte aanbiedingen en advertenties",
+    "offersSectionAria": "Aanbiedingen en advertenties",
+    "showMore": "Meer tonen",
+    "discountUpTo": "Tot {{n}}% korting",
+    "discountPercent": "{{n}}% korting",
+    "discountShort": "{{n}}% korting",
+    "closeAd": "Advertentie sluiten",
+    "stickyDockAria": "Uitgelichte aanbiedingen — zwevend",
+    "stickyEyebrow": "Aanbiedingen en advertenties",
+    "carouselRole": "Carrousel",
+    "carouselHeroAria": "Uitgelichte advertenties — carrousel",
+    "carouselOffersAria": "Uitgelichte aanbiedingen en advertenties — carrousel",
+    "previousAd": "Vorige advertentie",
+    "nextAd": "Volgende advertentie",
+    "dotsAria": "Dia-indicatoren",
+    "slideOf": "Dia {{current}} van {{total}}",
+    "offerDetailAria": "Details van advertentie bekijken: {{title}}",
+    "closeDetailModal": "Detailvenster sluiten",
+    "noExtraDescription": "Geen aanvullende beschrijving.",
+    "discountLabel": "Korting:",
+    "phoneLabel": "Telefoon:",
+    "whatsapp": "WhatsApp",
+    "loadingAds": "Advertenties laden…"
+  },
+  "heroStrip": {
+    "open": "Open",
+    "openHint": "Opdrachten die wachten op start",
+    "inProgress": "In uitvoering",
+    "inProgressHint": "Actieve opdrachten",
+    "completed": "Voltooid",
+    "completedHint": "Afgeronde opdrachten",
+    "views": "Weergaven",
+    "viewsHint": "Totaal van de site",
+    "activeUsers": "Actieve gebruikers",
+    "activeUsersHint": "Deze week",
+    "loadingStat": "Statistiek laden…"
+  },
+  "heroMockup": {
+    "analyticsCaption": "Bezoekers- en activiteitsindicatoren op het platform",
+    "projectsCaption": "Opdrachten en projecten in één oogopslag",
+    "previewAria": "Voorbeeld van het dashboard",
+    "sectionsAria": "Dashboardsecties",
+    "overviewTitle": "Overzicht en analyses",
+    "projectsTitle": "Projecten en opdrachten",
+    "welcome": "Welkom"
+  },
+  "hiw": {
+    "defaultTitle": "Hoe het werkt",
+    "illustrationAlt": "Illustratie",
+    "empty": "Er is momenteel geen inhoud om weer te geven.",
+    "loading": "Laden…",
+    "unavailableTitle": "Pagina niet beschikbaar",
+    "unavailableText": "Deze pagina is mogelijk verborgen of de link is onjuist.",
+    "loadFailed": "De pagina kon niet worden geladen. Probeer het opnieuw."
+  },
+  "publicSite": {
+    "loading": "Pagina laden…",
+    "unavailableTitle": "Pagina niet beschikbaar",
+    "unavailableText": "Deze pagina is mogelijk niet gepubliceerd of de link is onjuist.",
+    "loadFailedTitle": "Kan pagina niet laden",
+    "loadFailedText": "De pagina kon niet worden geladen. Probeer het opnieuw.",
+    "fallbackTitle": "Openbare pagina",
+    "englishUnavailable": "Engelstalige inhoud is voor deze pagina nog niet beschikbaar."
+  }
+}

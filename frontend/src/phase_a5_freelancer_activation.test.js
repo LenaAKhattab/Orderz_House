@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import {
   EARNED_BALANCE_HELPER_AR,
   MINI_ARTICLE_SUBMISSION_TERMS_COPY_AR,
+  MINI_ARTICLE_SUBMISSION_TERMS_COPY_EN,
   formatManuscriptTermsAdmin,
 } from "./constants/freelancerActivationEarnedBalance.js";
 
@@ -46,7 +47,11 @@ describe("Phase A5 manuscript terms UI", () => {
   it("final manuscript form requires Arabic checkbox", () => {
     const detail = read("pages/dashboard/FreelancerMarketplaceArticleDetailPage.jsx");
     assert.match(detail, /manuscript-terms-checkbox/);
-    assert.match(detail, /MINI_ARTICLE_SUBMISSION_TERMS_COPY_AR/);
+    assert.match(detail, /platformPages\.articleDetail\.manuscriptTermsCopy/);
+    const arPages = JSON.parse(read("locales/ar/platformPages.json"));
+    const enPages = JSON.parse(read("locales/en/platformPages.json"));
+    assert.equal(arPages.articleDetail.manuscriptTermsCopy, MINI_ARTICLE_SUBMISSION_TERMS_COPY_AR);
+    assert.equal(enPages.articleDetail.manuscriptTermsCopy, MINI_ARTICLE_SUBMISSION_TERMS_COPY_EN);
     assert.match(detail, /termsAccepted: true/);
     assert.match(detail, /disabled=\{busy \|\| !termsAccepted\}/);
     assert.equal(

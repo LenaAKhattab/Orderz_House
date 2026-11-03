@@ -22,13 +22,14 @@ import {
   canSubmitManualLink,
 } from "../../constants/bildazoAuthorAdmin";
 import { useTranslation } from "../../i18n/LanguageProvider";
+import { pickIntlTag } from "../../i18n/intlLocale.js";
 import "../../i18n/bildazoAdminResources";
 
 function formatJoDateTime(value, locale) {
   if (!value) return "—";
   const d = new Date(value);
   if (!Number.isFinite(d.getTime())) return "—";
-  const intlLocale = locale === "en" ? "en-JO-u-nu-latn" : "ar-JO-u-nu-latn";
+  const intlLocale = pickIntlTag(locale, { ar: "ar-JO-u-nu-latn", en: "en-JO-u-nu-latn" });
   return new Intl.DateTimeFormat(intlLocale, {
     timeZone: "Asia/Amman",
     dateStyle: "medium",

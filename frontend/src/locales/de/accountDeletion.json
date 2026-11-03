@@ -1,0 +1,23 @@
+{
+  "title": "Ihr Orderz House-Konto löschen",
+  "intro": "Sie können die Löschung Ihres Orderz House-Kontos und der zugehörigen personenbezogenen Daten direkt in der mobilen App beantragen unter:",
+  "inAppPath": "Mein Konto → Kontoeinstellungen → Konto löschen",
+  "fallbackIntro": "Wenn Sie keinen Zugriff mehr auf die App haben, können Sie die Kontolöschung per E-Mail an die unten stehende Adresse beantragen.",
+  "whatHappensTitle": "Was passiert, wenn ein Konto gelöscht wird?",
+  "bullets": {
+    "deactivate": "Das Konto wird deaktiviert und die Anmeldung gesperrt.",
+    "personalData": "Nicht erforderliche personenbezogene Daten wie Telefonnummer und Profilfoto werden nach Möglichkeit gelöscht oder ausgeblendet.",
+    "retention": "Wir können bestimmte Aufzeichnungen zu Aufträgen, Zahlungen, Streitfällen, Rechnungen oder rechtlichen bzw. betrieblichen Anforderungen aus Gründen der Sicherheit, Betrugsprävention, Einhaltung gesetzlicher Vorschriften und Buchhaltung aufbewahren.",
+    "ordersPayments": "Aufträge und Zahlungen werden nicht auf eine Weise gelöscht, die Kunden, Freelancern oder Finanzunterlagen schadet."
+  },
+  "howToTitle": "So beantragen Sie die Kontolöschung",
+  "howToBody": "Bitte senden Sie eine E-Mail an die unten stehende Adresse, geben Sie die mit Ihrem Konto verknüpfte E-Mail-Adresse an und schreiben Sie den Satz:",
+  "requestPhrase": "Antrag auf Löschung des Orderz House-Kontos",
+  "supportEmail": "support@orderzhouse.com",
+  "ctaMailto": "Kontolöschung per E-Mail beantragen",
+  "privacyLink": "Siehe auch unsere Datenschutzerklärung",
+  "homeLink": "Zurück zur Startseite",
+  "privacyAppendixTitle": "Kontolöschung und Datenaufbewahrung",
+  "privacyAppendixBody": "Sie können die Löschung Ihres Orderz House-Kontos in der mobilen App oder über unsere öffentliche Seite zur Kontolöschung beantragen. Bei der Löschung wird das Konto deaktiviert und nicht erforderliche personenbezogene Daten werden nach Möglichkeit entfernt oder ausgeblendet; Auftrags-, Zahlungs- und gesetzlich vorgeschriebene Aufzeichnungen können jedoch aufbewahrt werden.",
+  "privacyAppendixLink": "Seite zur Kontolöschung / zum Löschantrag"
+}

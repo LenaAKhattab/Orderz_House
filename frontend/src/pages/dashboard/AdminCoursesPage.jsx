@@ -43,13 +43,14 @@ import "../../admin/courses/courseAssetFields.css";
 import { formatCompletionDuration, formatLearningTimestamp } from "../../utils/courseLearningDuration";
 import "../../i18n/coursesResources";
 import { useTranslation } from "../../i18n/LanguageProvider";
+import { pickIntlTag } from "../../i18n/intlLocale.js";
 import "./adminCoursesPage.css";
 
 function fmtCourseDate(iso, locale) {
   if (!iso) return "—";
   try {
     const d = new Date(iso);
-    const loc = locale === "en" ? "en-JO-u-nu-latn" : "ar-JO-u-nu-latn";
+    const loc = pickIntlTag(locale, { ar: "ar-JO-u-nu-latn", en: "en-JO-u-nu-latn" });
     return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString(loc);
   } catch {
     return "—";
@@ -795,7 +796,7 @@ export default function AdminCoursesPage() {
     } catch (err) {
       const labels = err?.response?.data?.missingLabels;
       const base = err?.response?.data?.message || t("courses.toast.publishBlocked");
-      toast.error(labels?.length ? `${base} (${labels.join(locale === "en" ? ", " : "، ")})` : base);
+      toast.error(labels?.length ? `${base} (${labels.join(t("platformPages.common.listJoiner"))})` : base);
     } finally {
       setLoading(false);
     }
@@ -987,7 +988,7 @@ export default function AdminCoursesPage() {
         if (updatedCourse?.isActive) {
           toast.success(t("courses.toast.publishedGlobal"));
         } else {
-          const missing = publishReadiness?.missingLabels?.filter(Boolean).join(locale === "en" ? ", " : "، ");
+          const missing = publishReadiness?.missingLabels?.filter(Boolean).join(t("platformPages.common.listJoiner"));
           toast.error(
             missing
               ? t("courses.toast.visibilityGlobalDraftMissing", { missing })
@@ -1989,7 +1990,7 @@ export default function AdminCoursesPage() {
                                       {a.examSubmittedAt ? (
                                         <span className="oh-admin-courses__exam-grade-date">
 {t("courses.admin.submittedAt")}{" "}
-                                          {new Intl.DateTimeFormat("ar-JO-u-nu-latn", {
+                                          {new Intl.DateTimeFormat(pickIntlTag(locale, { ar: "ar-JO-u-nu-latn", en: "ar-JO-u-nu-latn" }), {
                                             dateStyle: "medium",
                                           }).format(new Date(a.examSubmittedAt))}
                                         </span>

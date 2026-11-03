@@ -1,0 +1,76 @@
+{
+  "orders": {
+    "published": "Gepubliceerd",
+    "open_for_freelancers": "Open voor freelancers",
+    "open_for_bids": "Open voor biedingen",
+    "assigned": "Toegewezen",
+    "in_progress": "In uitvoering",
+    "ready_for_work": "Klaar voor uitvoering",
+    "pending_payment": "In afwachting van betaling",
+    "pending_client_review": "In afwachting van beoordeling door klant",
+    "completed": "Voltooid",
+    "cancelled": "Geannuleerd",
+    "closed": "Gesloten",
+    "draft": "Concept",
+    "archived": "Gearchiveerd",
+    "awaiting_payment_after_bid_selection": "In afwachting van betaling voor het gekozen bod",
+    "pending_freelancer_acceptance": "In afwachting van acceptatie door freelancer"
+  },
+  "subscriptions": {
+    "assigned_not_started": "Wacht op de eerste opdracht",
+    "active": "Actief",
+    "expired": "Verlopen",
+    "cancelled": "Geannuleerd",
+    "pending": "In afwachting",
+    "company_approved": "Goedgekeurd door het bedrijf",
+    "suspended": "Opgeschort",
+    "purchased_pending_start": "Betaald — wacht op start",
+    "inactive": "Inactief",
+    "superseded": "Vervangen door een nieuwer pakket"
+  },
+  "kyc": {
+    "pending": "In afwachting",
+    "approved": "Goedgekeurd",
+    "rejected": "Afgewezen",
+    "resubmission_required": "Opnieuw indienen vereist",
+    "not_submitted": "Niet ingediend"
+  },
+  "bids": {
+    "pending": "In afwachting",
+    "accepted": "Geaccepteerd",
+    "rejected": "Afgewezen",
+    "withdrawn": "Ingetrokken",
+    "submitted": "Ingediend"
+  },
+  "payments": {
+    "paid": "Betaald",
+    "unpaid": "Onbetaald",
+    "pending": "In afwachting",
+    "failed": "Mislukt",
+    "refunded": "Terugbetaald",
+    "not_required": "Niet vereist",
+    "skipped_by_admin": "Vrijgesteld door beheerder",
+    "expired": "Betaalsessie verlopen"
+  },
+  "claims": {
+    "pending": "In afwachting",
+    "approved": "Goedgekeurd",
+    "rejected": "Afgewezen",
+    "paid": "Betaald",
+    "open": "Open",
+    "closed": "Gesloten",
+    "accepted": "Geaccepteerd",
+    "frozen": "Bevroren",
+    "requires_in_person_review": "Persoonlijke beoordeling vereist"
+  },
+  "articles": {
+    "draft": "Concept",
+    "submitted": "Ingediend ter beoordeling",
+    "under_review": "In beoordeling",
+    "revision_requested": "Revisie aangevraagd",
+    "approved": "Goedgekeurd",
+    "rejected": "Afgewezen",
+    "published": "Gepubliceerd",
+    "closed": "Gesloten"
+  }
+}

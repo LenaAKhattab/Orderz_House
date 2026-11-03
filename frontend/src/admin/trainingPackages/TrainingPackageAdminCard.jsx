@@ -2,6 +2,7 @@ import StatusBadge from "../../components/dashboard/StatusBadge";
 import Button from "../../components/ui/Button";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import "../../i18n/planAdminResources";
+import { isNewLocale, localizeSystemText } from "../../i18n/systemContent";
 
 export default function TrainingPackageAdminCard({
   pkg,
@@ -17,7 +18,15 @@ export default function TrainingPackageAdminCard({
   const isEn = locale === "en";
 
   if (!pkg) return null;
-  const title = isEn ? pkg.nameEn || pkg.nameAr : pkg.nameAr;
+  const newLocale = isNewLocale(locale);
+  const title = newLocale
+    ? localizeSystemText(locale, { ar: pkg.nameAr, en: pkg.nameEn })
+    : isEn
+      ? pkg.nameEn || pkg.nameAr
+      : pkg.nameAr;
+  const featuredBadge = newLocale
+    ? localizeSystemText(locale, { ar: pkg.badgeAr, en: pkg.badgeEn })
+    : pkg.badgeAr;
   const visible = pkg.isVisible !== false;
   const p = (key) => t(`planAdmin.trainingPackage.${key}`);
 
@@ -33,7 +42,7 @@ export default function TrainingPackageAdminCard({
             {visible ? p("cardVisible") : p("cardHidden")}
           </StatusBadge>
           {pkg.featured ? (
-            <StatusBadge tone="info">{pkg.badgeAr || p("cardFeatured")}</StatusBadge>
+            <StatusBadge tone="info">{featuredBadge || p("cardFeatured")}</StatusBadge>
           ) : null}
         </div>
       </header>

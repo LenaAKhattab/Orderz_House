@@ -1,0 +1,436 @@
+{
+  "feedback": {
+    "types": {
+      "problem": "Problem",
+      "suggestion": "Suggestion",
+      "other": "Other feedback"
+    },
+    "statuses": {
+      "new": "New",
+      "in_review": "In review",
+      "resolved": "Resolved",
+      "closed": "Closed"
+    },
+    "priorities": {
+      "low": "Low",
+      "normal": "Normal",
+      "high": "High",
+      "urgent": "Urgent"
+    },
+    "roles": {
+      "client": "Client",
+      "freelancer": "Freelancer"
+    }
+  },
+  "planUpgradeCta": {
+    "courseTierHelper": "Available after upgrading your plan",
+    "internalConfigurationHeadline": "We couldn't verify your plan eligibility right now. Please contact support.",
+    "noActivePlanHeadline": "Activate your plan to receive orders",
+    "viewPlans": "View plans",
+    "courseHeadline": "This course is available on higher plans",
+    "upgradePlan": "Upgrade plan",
+    "orderValueExceedsHeadline": "This order's value exceeds your current plan limit"
+  },
+  "bildazoArticlePublish": {
+    "freelancer": {
+      "published": "Your article was published on Bildazo.",
+      "needsManualReview": "Your article was accepted in OrderzHouse. Bildazo publishing needs admin review.",
+      "pending": "Your article was accepted in OrderzHouse. Bildazo publishing is being linked."
+    },
+    "admin": {
+      "notStarted": "Bildazo publish: not started",
+      "published": "Published on Bildazo",
+      "already_imported": "Already imported to Bildazo",
+      "needs_manual_review": "Needs Bildazo review",
+      "failed": "Bildazo publish failed",
+      "pending": "Bildazo publish pending",
+      "skipped": "Bildazo publish skipped (disabled)"
+    }
+  },
+  "bildazoAuthorTerms": {
+    "termsCopy": "I agree to the article publishing terms and to linking them to my Bildazo author account. I understand an accepted article may be sent for review and published on Bildazo under my name.",
+    "writerRole": "Writer",
+    "errors": {
+      "passwordWeak": "Password must be at least 8 characters and include a letter and a number.",
+      "passwordMismatch": "Password confirmation does not match.",
+      "terms": "You must accept the author-account linking terms.",
+      "fullName": "Full name is required to create the author account.",
+      "existingCredentials": "Enter the Bildazo account email and password."
+    },
+    "failures": {
+      "INVALID_CREDENTIALS": "Could not verify the Bildazo account. Check the email and password.",
+      "ACCOUNT_UNAVAILABLE": "This Bildazo account cannot be linked right now.",
+      "ENDPOINT_UNAVAILABLE": "Bildazo linking is temporarily unavailable. Try again later.",
+      "TIMEOUT": "Could not reach Bildazo. Check your connection and try again.",
+      "failed": "Could not complete the Bildazo link. Try again."
+    }
+  },
+  "jordanCities": {
+    "other": "Other",
+    "cities": {
+      "amman": "Amman",
+      "zarqa": "Zarqa",
+      "irbid": "Irbid",
+      "russeifa": "Russeifa",
+      "salt": "Salt",
+      "aqaba": "Aqaba",
+      "madaba": "Madaba",
+      "jerash": "Jerash",
+      "ajloun": "Ajloun",
+      "mafraq": "Mafraq",
+      "karak": "Karak",
+      "tafilah": "Tafilah",
+      "maan": "Ma'an",
+      "ramtha": "Ramtha",
+      "sahab": "Sahab",
+      "naour": "Naour",
+      "wadiAlSeer": "Wadi Al-Seer",
+      "marka": "Marka",
+      "sweileh": "Sweileh",
+      "jubeiha": "Jubeiha",
+      "khalda": "Khalda",
+      "tlaaAlAli": "Tla'a Al-Ali",
+      "shmeisani": "Shmeisani",
+      "abdali": "Abdali",
+      "jabalAlHussein": "Jabal Al-Hussein",
+      "jabalAlNasr": "Jabal Al-Nasr",
+      "markaNorth": "North Marka",
+      "quweismeh": "Quweismeh",
+      "abuNseir": "Abu Nseir",
+      "tabarbour": "Tabarbour",
+      "yasmeen": "Al-Yasmeen",
+      "yadoudeh": "Al-Yadoudeh",
+      "muqabalain": "Al-Muqabalain",
+      "marjAlHamam": "Marj Al-Hamam",
+      "jizah": "Al-Jizah",
+      "muwaqqar": "Al-Muwaqqar",
+      "hisban": "Hisban",
+      "fuheis": "Fuheis",
+      "mahis": "Mahis",
+      "ainAlBasha": "Ain Al-Basha",
+      "deirAlla": "Deir Alla",
+      "southShuna": "South Shuna",
+      "northShuna": "North Shuna",
+      "azraq": "Azraq",
+      "safawi": "Safawi",
+      "husn": "Al-Husn",
+      "beitRas": "Beit Ras",
+      "kafrYuba": "Kafr Yuba",
+      "kafrJayez": "Kafr Jayez",
+      "nuaimeh": "Al-Nuaimeh",
+      "soum": "Soum",
+      "northMazar": "Al-Mazar Al-Shamali",
+      "kafrAwan": "Kafr Awan",
+      "kufranjah": "Kufranjah",
+      "anjara": "Anjara",
+      "sukhur": "Sukhur",
+      "deirAbiSaid": "Deir Abi Said",
+      "southMazar": "Al-Mazar Al-Janoubi",
+      "mutah": "Mu'tah",
+      "thaniyah": "Al-Thaniyah",
+      "faqqu": "Faqqu",
+      "qasr": "Al-Qasr",
+      "ghorAlSafi": "Ghor Al-Safi",
+      "ghorAlMazraa": "Ghor Al-Mazra'a",
+      "middleJordanValley": "Middle Jordan Valley",
+      "wadiMusa": "Wadi Musa",
+      "petra": "Petra",
+      "shoubak": "Shoubak",
+      "hasa": "Al-Hasa",
+      "jafr": "Al-Jafr",
+      "quwaira": "Al-Quwaira",
+      "disi": "Disi",
+      "haql": "Haql",
+      "ruwaished": "Ruwaished",
+      "salhiyah": "Al-Salhiyah",
+      "khalidiyah": "Al-Khalidiyah",
+      "samaAlSarhan": "Sama Al-Sarhan",
+      "rehab": "Rehab",
+      "manara": "Al-Manara",
+      "housha": "Housha",
+      "khirbetAlSamra": "Khirbet Al-Samra"
+    }
+  },
+  "freelancerActivationKpi": {
+    "unavailable": "Not available",
+    "unavailableShort": "N/A",
+    "schemaNotReady": "Activation engine database is not ready. Apply engine migrations in this environment before using this dashboard.",
+    "loadError": "Could not load activation KPIs right now.",
+    "notesTitle": "KPI accuracy notes",
+    "notesIntro": "Some metrics are unavailable because their source is not reliably connected yet.",
+    "daysUnit": "{{value}} days",
+    "funnel": {
+      "trialActivatedUsers": "Trial activated",
+      "firstBidUsers": "First application",
+      "firstAssignmentUsers": "First assignment",
+      "firstAcceptedWorkUsers": "First accepted work",
+      "firstPublishedWorkUsers": "First published article",
+      "silverCtaShownUsers": "Silver CTA shown",
+      "silverPaymentStartedUsers": "Upgrade started",
+      "silverPaidUsers": "Silver subscriber"
+    },
+    "funnelSteps": {
+      "registeredUsers": "Registration",
+      "verifiedUsers": "Verified",
+      "trainingCompletedUsers": "Training completed",
+      "trialActivatedUsers": "Trial activated",
+      "firstBidUsers": "First application",
+      "firstAssignmentUsers": "First assignment",
+      "firstAcceptedWorkUsers": "First accepted work",
+      "firstPublishedWorkUsers": "First published article",
+      "silverCtaShownUsers": "Silver CTA shown",
+      "silverPaymentStartedUsers": "Upgrade started",
+      "silverPaidUsers": "Silver subscriber"
+    },
+    "rates": {
+      "trialActivatedToPaidRate": "Trial → Silver",
+      "firstAcceptedToPaidRate": "First acceptance → Silver",
+      "firstPublishedToPaidRate": "First publish → Silver",
+      "ctaShownToPaymentStartedRate": "CTA shown → upgrade started",
+      "paymentStartedToPaidRate": "Upgrade started → paid/active"
+    },
+    "timing": {
+      "averageTimeToFirstBid": "Avg. time to first application",
+      "averageTimeToFirstWin": "Avg. time to first assignment",
+      "averageTimeToFirstAccepted": "Avg. time to first acceptance",
+      "averageTimeToFirstPublished": "Avg. time to first publish"
+    },
+    "quality": {
+      "acceptedArticleCount": "Accepted articles",
+      "rejectedArticleCount": "Rejected articles",
+      "revisionRequestedCount": "Revision requests",
+      "publishedArticleCount": "Published articles",
+      "articleAcceptanceRate": "Acceptance rate",
+      "articleRejectionRate": "Rejection rate",
+      "revisionRate": "Revision rate"
+    },
+    "financial": {
+      "campaignBudgetTotalJod": "Campaign budget",
+      "campaignBudgetReservedJod": "Reserved",
+      "campaignBudgetUsedJod": "Used",
+      "campaignBudgetRemainingJod": "Remaining",
+      "pendingFreelancerEarnedJod": "Pending earned balance",
+      "costPerPaidFreelancer": "Cost per paid Freelancer",
+      "subscriptionRevenueJod": "Subscription revenue",
+      "workInventoryReserveAllocatedJod": "Work inventory reserve (allocated)",
+      "workInventoryReserveActiveJod": "Work inventory reserve (active)"
+    }
+  },
+  "freelancerActivationFairDistribution": {
+    "reasons": {
+      "preferred_activation_candidate": "Preferred activation candidate",
+      "first_work_opportunity": "First work opportunity",
+      "no_previous_accepted_work": "No previously accepted work",
+      "no_previous_win": "No previous win",
+      "low_workload": "Low workload",
+      "waiting": "Waiting {{days}} days",
+      "paid_membership": "Paid membership"
+    }
+  },
+  "freelancerActivationEarnedBalance": {
+    "miniArticleTerms": "I agree to the ownership and publishing terms for this article, and I understand that if it is accepted it may be published under my name on Bildazo according to platform policy.",
+    "earnedBalanceHelper": "This balance shows the value of accepted work on the platform. Withdrawal or financial claims follow company policy and are not affected by the subscription.",
+    "statuses": {
+      "pending": "Pending",
+      "settled_externally": "Recorded",
+      "voided": "Voided"
+    },
+    "terms": {
+      "notRecorded": "Terms: not recorded",
+      "notAccepted": "Terms: not accepted",
+      "accepted": "Terms accepted · {{version}} · {{at}}"
+    }
+  },
+  "freelancerActivationCampaign": {
+    "budgetErrors": {
+      "ACTIVATION_CAMPAIGN_BUDGET_INSUFFICIENT": "Campaign budget is not enough to assign this article.",
+      "ACTIVATION_WAVE_BUDGET_INSUFFICIENT": "Wave budget is not enough to assign this article."
+    },
+    "budgetStates": {
+      "reserved": "Reserved",
+      "used": "Used",
+      "released": "Released",
+      "not_reserved": "Not reserved"
+    }
+  },
+  "freelancerActivationTrial": {
+    "applyErrors": {
+      "FREELANCER_TRIAL_REQUIRED": "Activate the work trial before applying to Mini Articles.",
+      "FREELANCER_TRIAL_EXPIRED": "Your work trial has ended. Continue with Silver.",
+      "FREELANCER_TRIAL_DAILY_BID_LIMIT_REACHED": "You reached today's trial bid limit.",
+      "FREELANCER_TRIAL_BID_LIMIT_REACHED": "You reached the trial bid limit.",
+      "FREELANCER_TRIAL_WORK_CAP_REACHED": "You reached the trial accepted-work cap.",
+      "FREELANCER_TRIAL_MINI_ARTICLES_ONLY": "The trial allows Mini Article applications only.",
+      "FREELANCER_TRIAL_BID_GRANT_FAILED": "Could not grant trial Bids. The trial was not completed. Try again.",
+      "ACTIVATION_CAMPAIGN_EMERGENCY_STOPPED": "This campaign is temporarily stopped by admin.",
+      "ACTIVATION_CAMPAIGN_PAUSED": "This campaign is temporarily paused by admin.",
+      "ACTIVATION_WAVE_PAUSED": "Applications for this opportunity are temporarily paused.",
+      "ACTIVATION_CAMPAIGN_NOT_ACTIVE": "Applications for this opportunity are temporarily paused.",
+      "ACTIVATION_WAVE_NOT_ACTIVE": "Applications for this opportunity are temporarily paused."
+    }
+  },
+  "freelancerActivationArticleOps": {
+    "planTiers": {
+      "starter": "Trial / Free",
+      "trial": "Trial",
+      "silver": "Silver",
+      "pro": "Pro",
+      "elite": "Elite"
+    }
+  },
+  "freelancerActivationConversion": {
+    "defaultError": "Could not start the Silver upgrade right now. Try again or open the plans page.",
+    "success": "Your Silver activation request was sent. The subscription starts after company approval.",
+    "upgradeButton": "Upgrade to Silver – {{price}} JOD",
+    "errors": {
+      "FREELANCER_ACTIVATION_ENGINE_DISABLED": "The activation trial is not enabled right now.",
+      "FREELANCER_SILVER_CONVERSION_BLOCKED": "The Silver upgrade cannot be started in your current state.",
+      "FREELANCER_SILVER_PLAN_NOT_FOUND": "The Silver plan is not available right now. Check the plans page.",
+      "ACTIVATION_REQUEST_ALREADY_PENDING": "You already have an activation request under review for this plan.",
+      "MARKETPLACE_PLAN_NOT_FOUND": "The Marketplace plan is not available right now."
+    }
+  },
+  "specialOfferPackage": {
+    "accessLevels": {
+      "starter": "STARTER level",
+      "silver": "SILVER level",
+      "pro": "PRO level",
+      "elite": "ELITE level"
+    },
+    "lockedWarning": "This special offer has been purchased by users, so price and benefits are frozen. You can hide it or create a new offer; current buyers keep the benefits they paid for.",
+    "refundSectionTitles": {
+      "monthlyRefund": "Monthly refund",
+      "inactiveMonths": "Inactive months",
+      "ordersIncome": "Order income",
+      "importantNotice": "Important notice"
+    }
+  },
+  "displayCurrencies": {
+    "symbols": {
+      "JOD": "JOD",
+      "SAR": "SAR",
+      "AED": "AED",
+      "QAR": "QAR",
+      "KWD": "KWD",
+      "BHD": "BHD",
+      "OMR": "OMR",
+      "EGP": "EGP"
+    },
+    "disclaimer": "Approximate value based on the current exchange rate.",
+    "officialCurrency": "The official currency within Orderz House is the Jordanian dinar (JOD).",
+    "indicative": "The converted value is indicative only and is not a final price or a financial commitment.",
+    "preferenceLabel": "Preferred display currency",
+    "preferenceHint": "This currency is used for display only; all calculations remain in Jordanian dinars (JOD).",
+    "autoByCountry": "Automatic by country"
+  },
+  "homeAnalyticsMetrics": {
+    "metrics": {
+      "active": {
+        "label": "Active users",
+        "sub": "Platform activity · last 7 days",
+        "tooltip": "Number of unique visitors (browser sessions or signed-in accounts) who visited the site in the last 7 days. Repeated refreshes from the same browser count as one visitor.",
+        "stripLabel": "Active users"
+      },
+      "views": {
+        "label": "Site views",
+        "sub": "Total recorded visits",
+        "tooltip": "The counter increases once per active session (30 minutes). Refreshing or returning within the same session does not increase it.",
+        "stripLabel": "Site views"
+      },
+      "availableOrders": {
+        "label": "Available requests",
+        "sub": "Open for applications now",
+        "tooltip": "Real open requests in the marketplace plus the training requests currently visible to freelancers.",
+        "stripLabel": "Available now"
+      },
+      "completedOrders": {
+        "label": "Completed requests",
+        "sub": "Completed client requests",
+        "tooltip": "Real completed client requests, plus training requests from rounds that ended after the current count started — older historical rounds are not included.",
+        "stripLabel": "Completed requests"
+      }
+    },
+    "adminHelp": {
+      "title": "What is the difference between the two metrics?",
+      "visitors": "Homepage counter: one visit per session (30 minutes). Refreshing or navigating within the same session does not count again.",
+      "active": "Active users: unique visitors (a session or an account) who opened the site in the last 7 days, from the local database.",
+      "activeBody": "Unique visitors (a session or an account) who opened the site in the last 7 days, from the local database."
+    }
+  },
+  "legacyEducationOptions": {
+    "levels": {
+      "belowSecondary": "Below secondary school",
+      "secondary": "Secondary school",
+      "diploma": "Diploma",
+      "bachelor": "Bachelor's degree",
+      "higherDiploma": "Higher diploma",
+      "master": "Master's degree",
+      "doctorate": "Doctorate",
+      "other": "Other"
+    },
+    "graduationNotYet": "Not graduated yet"
+  },
+  "legacyFreelancerWorkFields": {
+    "fields": {
+      "content_writing": "Content writing",
+      "design": "Design",
+      "programming": "Programming"
+    },
+    "required": "Please select at least one work area."
+  },
+  "bildazoAuthorAdmin": {
+    "statusFilters": {
+      "all": "All",
+      "pending_new_account": "New account request",
+      "pending_existing_account": "Existing account request",
+      "pending_external_verification": "External verification",
+      "needs_manual_review": "Manual review",
+      "linked": "Linked",
+      "failed": "Failed",
+      "blocked": "Blocked"
+    }
+  },
+  "howItWorksPages": {
+    "navLabels": {
+      "freelancer": "How it works for freelancers",
+      "client": "How to order for clients"
+    },
+    "blockTypes": {
+      "title": "Title",
+      "text": "Text",
+      "image": "Image",
+      "text_image": "Text + image"
+    }
+  },
+  "rateLimitExemptions": {
+    "scopes": {
+      "order_create": "Order creation (order_create)",
+      "fake_order_create": "Fake training orders (fake_order_create)",
+      "training_bulk": "Bulk training generation (training_bulk)",
+      "admin_write": "Admin writes (admin_write)"
+    },
+    "modes": {
+      "bypass": "Bypass limit (bypass)",
+      "increased_limit": "Higher limit (increased_limit)"
+    }
+  },
+  "partnerLogos": {
+    "alts": {
+      "bildazo": "Bildazo",
+      "studyzhouse": "StudyzHouse",
+      "battech": "Battechno"
+    },
+    "subtitle": "We are proud to partner with leading organizations that have helped build remarkable success stories."
+  },
+  "freelancerOrderTenderPolicy": {
+    "title": "Terms for receiving and executing orders and tenders"
+  },
+  "homeFeaturedServices": {
+    "specialRequestsWhatsappMessage": "Hello, I'd like to submit a special request through Orderz House."
+  },
+  "planCatalogs": {
+    "main_plans": "Main plans",
+    "page_plans": "Page plans",
+    "marketplace_plans": "Work memberships"
+  }
+}

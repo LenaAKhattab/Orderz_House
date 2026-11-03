@@ -11,6 +11,7 @@ import DashboardTabs, { DashboardTab } from "../../components/dashboard/Dashboar
 import { superAdminBreadcrumbs } from "../../components/dashboard/dashboardBreadcrumbs";
 import "../../i18n/institutionsResources";
 import { useTranslation } from "../../i18n/LanguageProvider";
+import { pickIntlTag } from "../../i18n/intlLocale.js";
 import { useToast } from "../../components/ui/toastContext";
 import {
   adminAcceptInstitutionWorkApplicantRequest,
@@ -81,7 +82,7 @@ export default function SuperAdminInstitutionWorkDetailPage() {
   const formatDate = (value) => {
     if (!value) return "—";
     try {
-      return new Date(value).toLocaleString(locale === "en" ? "en-GB" : "ar-JO-u-nu-latn");
+      return new Date(value).toLocaleString(pickIntlTag(locale, { ar: "ar-JO-u-nu-latn", en: "en-GB" }));
     } catch {
       return String(value);
     }

@@ -1,0 +1,1279 @@
+{
+  "header": {
+    "loadErrorTitle": "Panoul de control nu a putut fi încărcat",
+    "loadErrorDefault": "Panoul de control nu a putut fi încărcat.",
+    "retry": "Încercați din nou"
+  },
+  "hero": {
+    "ariaLabel": "Bun venit în panoul de control",
+    "title": "Bun venit în panoul de control",
+    "subtitle": "Un centru complet pentru a vă gestiona activitatea de freelancer, a urmări comenzile, a vă dezvolta competențele și a vă crește veniturile.",
+    "browseOrders": "Răsfoiți comenzile disponibile",
+    "myOrders": "Vedeți comenzile mele",
+    "metricsAria": "Rezumat rapid",
+    "coursesStart": {
+      "ariaLabel": "Începeți cu cursurile",
+      "title": "Începeți cu cursurile",
+      "body": "Cursurile sunt primul pas pentru a înțelege modul de lucru și a primi comenzi.",
+      "cta": "Vedeți cursurile"
+    },
+    "welcomeName": "Bună ziua, {{name}}",
+    "controlCenterTitle": "Centru de control",
+    "controlCenterSubtitle": "O imagine completă asupra activității, abonamentului și comenzilor dumneavoastră."
+  },
+  "stats": {
+    "trustLevel": "Nivel de încredere",
+    "trustLevelNumber": "Nivelul {{level}}",
+    "totalEarnings": "Câștiguri totale",
+    "fromClaims": "Din cererile de plată",
+    "paidTotal": "Total plătit",
+    "activeOrders": "Comenzi active",
+    "activeOrdersSub": "În desfășurare",
+    "overallRating": "Evaluare generală",
+    "noRatingYet": "Încă niciuna",
+    "outOfFive": "din 5",
+    "reviewCount": "{{count}} recenzie",
+    "reviewCount_plural": "{{count}} recenzii",
+    "reviewCount_plural_other": "{{count}} de recenzii",
+    "beginner": "Începător",
+    "trustLevels": {
+      "beginner": "Începător",
+      "active": "Activ",
+      "professional": "Profesionist",
+      "trusted": "De încredere",
+      "expert": "Expert"
+    },
+    "performance": {
+      "title": "Performanță",
+      "completed": "Finalizate",
+      "completionRate": "Rata de finalizare",
+      "onTime": "La timp",
+      "revisions": "Revizii",
+      "avgDelivery": "Livrare medie",
+      "days": "{{count}} zi",
+      "days_plural": "{{count}} zile",
+      "days_plural_other": "{{count}} de zile",
+      "paidClaims": "Plătit (cereri)",
+      "completedLast30": "{{count}} comandă finalizată în ultimele 30 de zile.",
+      "completedLast30_plural": "{{count}} comenzi finalizate în ultimele 30 de zile.",
+      "completedLast30_plural_other": "{{count}} de comenzi finalizate în ultimele 30 de zile."
+    },
+    "courses": {
+      "assigned": "Atribuite",
+      "inProgress": "În desfășurare",
+      "completed": "Finalizate",
+      "finalTest": "Test final",
+      "totalCourses": "Total cursuri",
+      "inProgressLabel": "În desfășurare",
+      "avgProgress": "Progres mediu"
+    },
+    "earnings": {
+      "paid": "Plătit",
+      "pending": "Scadent / în așteptare",
+      "openClaims": "Cereri deschise"
+    },
+    "myOrders": {
+      "summaryAria": "Rezumatul comenzilor",
+      "total": "Total comenzi",
+      "active": "Active",
+      "pendingReview": "În curs de verificare",
+      "completed": "Finalizate",
+      "cancelled": "Anulate",
+      "showing": "Comenzi afișate: {{shown}} din {{total}}",
+      "showing_plural": "Comenzi afișate: {{shown}} din {{total}}",
+      "showing_plural_other": "Comenzi afișate: {{shown}} din {{total}}",
+      "perPage": "{{limit}} / pagină"
+    },
+    "financialClaims": {
+      "summaryAria": "Rezumatul cererilor de plată",
+      "total": "Total cereri",
+      "underReview": "În curs de verificare",
+      "paid": "Plătite"
+    },
+    "workload": {
+      "activeCount": "{{count}} comandă activă",
+      "activeCount_plural": "{{count}} comenzi active",
+      "activeCount_plural_other": "{{count}} de comenzi active"
+    }
+  },
+  "tip": {
+    "title": "Sfatul zilei",
+    "profileCompletion": "Completarea profilului",
+    "percentComplete": "{{pct}}% completat",
+    "defaultHeadline": "Continuați în același ritm",
+    "defaultDescription": "Concentrați-vă pe calitatea livrărilor și pe obținerea unor recenzii bune de la clienți.",
+    "browseOrders": "Răsfoiți comenzile"
+  },
+  "actions": {
+    "noUrgentTitle": "Momentan nu există acțiuni urgente",
+    "noUrgentSubtitle": "Sunteți la zi cu comenzile și notificările.",
+    "moreCount": "(încă {{count}})",
+    "moreCount_plural": "(încă {{count}})",
+    "moreCount_plural_other": "(încă {{count}})",
+    "continue": "Continuați",
+    "viewCourse": "Vedeți cursul"
+  },
+  "training": {
+    "coursesTitle": "Cursuri și formare",
+    "allCourses": "Toate cursurile",
+    "eligibilityNote": "Finalizarea cursurilor nu modifică automat eligibilitatea pentru piață — servește doar dezvoltării profesionale.",
+    "pendingFinalTest": "Aveți {{count}} curs care așteaptă testul final.",
+    "pendingFinalTest_plural": "Aveți {{count}} cursuri care așteaptă testul final.",
+    "pendingFinalTest_plural_other": "Aveți {{count}} de cursuri care așteaptă testul final.",
+    "continueCourse": "Continuați: {{title}}",
+    "defaultCourseTitle": "Curs",
+    "noAssignedCourses": "Niciun curs atribuit încă.",
+    "pageTitle": "Dezvoltați-vă competențele, construiți-vă viitorul",
+    "pageSubtitle": "Explorați cursurile atribuite, urmăriți-vă progresul și finalizați lecțiile și testele finale într-o experiență de învățare conectată la panoul de control.",
+    "searchPlaceholder": "Căutați un curs sau o competență...",
+    "searchAria": "Căutați cursuri",
+    "coursesSummaryAria": "Rezumatul cursurilor",
+    "filterAria": "Filtrați cursurile",
+    "sortPrefix": "Sortare:",
+    "sortAria": "Sortați cursurile",
+    "yourCourses": "Cursurile dumneavoastră",
+    "courseCount": "{{count}} curs",
+    "courseCount_plural": "{{count}} cursuri",
+    "courseCount_plural_other": "{{count}} de cursuri",
+    "tabs": {
+      "all": "Toate",
+      "inProgress": "În desfășurare",
+      "completed": "Finalizate",
+      "notStarted": "Neîncepute",
+      "favorites": "Favorite"
+    },
+    "sort": {
+      "newest": "Cele mai noi",
+      "oldest": "Cele mai vechi",
+      "progressHigh": "Cel mai mare progres",
+      "progressLow": "Cel mai mic progres",
+      "title": "Nume (A–Z)"
+    },
+    "card": {
+      "untitled": "Curs fără titlu",
+      "defaultDescription": "Urmăriți lecțiile video și îndepliniți pas cu pas cerințele cursului.",
+      "lessonCount": "{{count}} lecție",
+      "lessonCount_plural": "{{count}} lecții",
+      "lessonCount_plural_other": "{{count}} de lecții",
+      "noLessons": "Fără lecții",
+      "levelIntermediate": "Intermediar",
+      "lastUpdated": "Ultima actualizare: {{date}}",
+      "progressAria": "Progres {{pct}}%",
+      "lessonsCompleted": "Lecții finalizate: {{completed}}/{{total}}",
+      "lessonsCompleted_plural": "Lecții finalizate: {{completed}}/{{total}}",
+      "lessonsCompleted_plural_other": "Lecții finalizate: {{completed}}/{{total}}",
+      "lessonsShort": "Lecții: {{completed}}/{{total}}",
+      "reviewCourse": "Revedeți cursul",
+      "startCourse": "Începeți cursul",
+      "continueLearning": "Continuați învățarea",
+      "review": "Revedeți",
+      "start": "Începeți",
+      "continue": "Continuați",
+      "addFavorite": "Adăugați la favorite",
+      "removeFavorite": "Eliminați din favorite",
+      "statusCompleted": "Finalizat",
+      "statusInProgress": "În desfășurare",
+      "statusNotStarted": "Neînceput încă",
+      "testCompleted": "Test final finalizat",
+      "testPending": "Test final în așteptare",
+      "testIncluded": "Include test final",
+      "lockedByPlan": "Acest curs este disponibil în pachetele superioare",
+      "upgradePlan": "Treceți la un pachet superior",
+      "tierFromSilver": "Disponibil de la pachetul Silver în sus",
+      "tierFromPro": "Disponibil de la pachetul Pro în sus",
+      "tierFromElite": "Disponibil cu pachetul Elite",
+      "activateOrUpgrade": "Activați pachetul sau treceți la unul superior pentru a accesa acest curs"
+    },
+    "loadError": "Cursurile nu au putut fi încărcate."
+  },
+  "orders": {
+    "backToList": "Înapoi la listă",
+    "orderNotFound": "Comanda nu a fost găsită",
+    "noFiles": "Niciun fișier atașat",
+    "alreadyParticipated": "V-ați înregistrat deja participarea la această comandă.",
+    "alreadyBid": "Ați trimis deja o ofertă pentru această comandă.",
+    "submitting": "Se trimite…",
+    "bidSubmitted": "Ofertă trimisă",
+    "submitBid": "Trimiteți oferta",
+    "taking": "Se acceptă…",
+    "registered": "Înregistrat",
+    "takeOrder": "Preluați comanda",
+    "bidUnderReview": "Oferta dumneavoastră este verificată înainte de a fi afișată clientului."
+  },
+  "myOrders": {
+    "title": "Comenzile mele curente",
+    "subtitle": "Urmăriți cu ușurință lucrările atribuite, termenele limită și stadiul execuției.",
+    "searchPlaceholder": "Căutați comenzi (titlu sau număr de comandă)",
+    "searchAria": "Căutați comenzi",
+    "sortPrefix": "Sortare:",
+    "sortAria": "Sortați comenzile",
+    "refreshAria": "Reîmprospătați lista",
+    "refreshTitle": "Reîmprospătați lista",
+    "listAria": "Lista comenzilor",
+    "loadError": "Momentan comenzile nu au putut fi încărcate. Încercați din nou.",
+    "loadErrorTitle": "Comenzile nu au putut fi încărcate",
+    "filterAria": "Filtrați comenzile după stare",
+    "filters": {
+      "all": "Toate",
+      "revisionRequired": "Revizii necesare",
+      "assigned": "Atribuite",
+      "inProgress": "În desfășurare",
+      "pendingReview": "În curs de verificare",
+      "completed": "Finalizate",
+      "cancelled": "Anulate"
+    },
+    "sort": {
+      "newest": "Cele mai noi",
+      "oldest": "Cele mai vechi",
+      "priceHigh": "Cel mai mare preț",
+      "priceLow": "Cel mai mic preț"
+    },
+    "details": {
+      "loadErrorTitle": "Detaliile comenzii nu au putut fi încărcate",
+      "revisionSectionTitle": "Detaliile solicitării de revizie / verificare",
+      "requestedBy": "Solicitat de",
+      "requestMessage": "Mesajul solicitării",
+      "requestDate": "Data solicitării",
+      "deadline": "Termen limită",
+      "status": "Stare",
+      "linkedAttachments": "Atașamente asociate",
+      "noExtraAttachments": "Nu există atașamente suplimentare.",
+      "submissionHistory": "Istoricul livrărilor și reviziilor",
+      "yourDelivery": "Ce ați livrat",
+      "deliverOrder": "Livrați comanda",
+      "deliveryHint": "Încărcați fișierele sau imaginile finale (cel mult cinci fișiere).",
+      "selectFiles": "Alegeți fișierele",
+      "submitDelivery": "Trimiteți livrarea",
+      "submitting": "Se trimite…",
+      "deliveryStatus": "Starea livrării",
+      "pendingReviewMessage": "Livrarea dumneavoastră a fost trimisă spre verificare și așteaptă aprobarea finală (client/administrator). Nu poate fi modificată în timpul verificării; dacă se solicită o revizie, veți putea trimite o livrare nouă.",
+      "alertTitle": "Atenție",
+      "selectFileRequired": "Selectați cel puțin un fișier.",
+      "fileSizeTitle": "Dimensiunea fișierelor",
+      "uploadSizeHelper": "Dimensiune totală maximă de încărcare: 5 MB.",
+      "uploadSizeError": "Dimensiunea totală a fișierelor nu trebuie să depășească 5 MB.",
+      "deliverySuccessTitle": "Livrat",
+      "deliverySuccessMessage": "Atașamentele au fost trimise clientului spre verificare.",
+      "deliveryErrorTitle": "Livrarea nu a reușit",
+      "revisionRequesterAdmin": "Administrator",
+      "revisionRequesterClient": "Client",
+      "revisionDelivered": "Revizie livrată",
+      "revisionInProgress": "Revizie în desfășurare",
+      "revisionPending": "Se așteaptă efectuarea reviziei",
+      "phaseRevisionInProgress": "Revizie în desfășurare",
+      "phasePendingClientApproval": "Se așteaptă aprobarea livrării de către client",
+      "phaseCompleted": "Finalizat",
+      "phaseInProgressDeliver": "În desfășurare — puteți trimite fișiere",
+      "deliveryNoteLabel": "Notă la livrare (opțional)",
+      "deliveryNotePlaceholder": "Descrieți ce ați livrat sau orice aspect de semnalat…",
+      "resubmitHint": "Atașați fișierele livrării revizuite. Livrarea anterioară rămâne în istoric.",
+      "resubmitDelivery": "Retrimiteți livrarea",
+      "deliveryErrorMessage": "Livrarea nu a putut fi trimisă. Încercați din nou."
+    }
+  },
+  "plans": {
+    "eyebrow": "Pachetul dumneavoastră actual",
+    "loadingEyebrow": "Pachete",
+    "loadingSubtitle": "Se încarcă pachetele…",
+    "freePlanTitle": "Abonament gratuit",
+    "freePlanSubtitle": "Treceți la un pachet superior pentru comenzi de valoare mai mare și beneficii suplimentare.",
+    "paidPlanSubtitle": "Urmăriți-vă abonamentul și treceți la pachetul următor atunci când sunteți pregătit.",
+    "nextPlanHint": "Pachetul următor: {{title}} — alegeți-l din lista de mai jos pentru a trece la el.",
+    "summaryAria": "Rezumatul abonamentului",
+    "upgradeSectionAria": "Pachete superioare",
+    "marketplaceCatalogAria": "Pachete de abonament de membru pentru freelanceri",
+    "pageCatalogAria": "Pachete pentru pagini",
+    "subscriptionStatus": "Starea abonamentului",
+    "payment": "Plată",
+    "companyActivation": "Activare de către companie",
+    "marketplaceEligibility": "Eligibilitate pentru piață",
+    "orderValueRange": "Intervalul valorii comenzilor",
+    "expiresOn": "Expiră la",
+    "canApply": "Puteți candida",
+    "notEligible": "Neeligibil",
+    "planAndEligibility": "Pachet și eligibilitate",
+    "choosePlan": "Alegeți un pachet",
+    "noActiveSubscription": "Niciun abonament activ — alegeți un pachet pentru a începe.",
+    "subscriptionLabel": "Abonament",
+    "realOrders": "Comenzi reale",
+    "realOrdersFreeRange": "Disponibile în intervalul 3–7 JOD",
+    "realOrdersPerPlan": "Disponibile conform pachetului",
+    "trainingOrders": "Comenzi de formare",
+    "trainingOrdersNote": "Disponibile conform setărilor platformei",
+    "currentWorkload": "Volumul de lucru actual",
+    "remainingTime": "Timp rămas",
+    "rangeFreePlan": "Între 3 și 7 JOD (comenzi reale și de formare)",
+    "rangeMinMax": "Între {{min}} și {{max}} JOD",
+    "rangeMinOnly": "De la {{min}} JOD în sus"
+  },
+  "marketplaceMembership": {
+    "title": "Abonament de membru pentru freelanceri",
+    "currentEyebrow": "Abonamentul de membru actual",
+    "purchasedEyebrow": "Achiziționat",
+    "purchasedTitle": "Abonament de membru achiziționat",
+    "pendingStartBody": "Perioada abonamentului nu va începe până nu primiți prima comandă. Înainte de a candida la comenzi, finalizați verificarea identității și formarea.",
+    "applyGatesReminder": "Finalizați verificarea identității și formarea obligatorie înainte de a candida la comenzi.",
+    "purchasedAt": "Data achiziției",
+    "termStatus": "Starea perioadei",
+    "termNotStarted": "Încă nu a început",
+    "termStartsWhen": "Abonamentul începe",
+    "termStartsOnFirstOrder": "Când primiți prima comandă",
+    "statusPurchasedPendingStart": "Achiziționat — în așteptarea primei comenzi",
+    "statusAssignedNotStarted": "În așteptarea primei comenzi",
+    "assignedNotStartedBody": "Perioada abonamentului de membru începe când primiți prima comandă reală.",
+    "checkoutSuccessTitle": "Abonament de membru achiziționat cu succes",
+    "checkoutSuccessMessage": "Abonamentul de membru a fost achiziționat cu succes. Perioada abonamentului nu va începe până nu primiți prima comandă. Înainte de a candida la comenzi, finalizați verificarea identității și formarea.",
+    "checkoutWebhookHint": "Confirmarea plății poate dura câteva momente dacă sistemul încă procesează notificarea de plată. Reîmprospătați pagina în scurt timp dacă abonamentul de membru nu apare încă.",
+    "checkoutCancelledTitle": "Plată anulată",
+    "checkoutCancelledMessage": "Plata nu a fost finalizată. Dacă cardul a fost refuzat, încercați alt card sau contactați banca. Puteți alege din nou un pachet oricând.",
+    "dismissBanner": "Închideți",
+    "checkoutFailedTitle": "Plata nu a putut fi inițiată",
+    "checkoutFailed": "Pagina de plată nu a putut fi deschisă. Încercați din nou.",
+    "checkoutMissingUrl": "Serverul nu a returnat un URL de plată.",
+    "checkoutUnsupportedPlan": "Acest pachet nu poate fi achiziționat prin Stripe.",
+    "starterActivatedTitle": "Starter activat",
+    "starterActivatedMessage": "Abonamentul de membru gratuit Starter este acum activ.",
+    "starterActivateFailedTitle": "Starter nu a putut fi activat",
+    "starterActivateFailed": "Starter nu a putut fi activat. Finalizați verificarea și încercați din nou.",
+    "starterReadyEyebrow": "Pachet gratuit",
+    "starterReadyTitle": "Pachetul gratuit este pregătit",
+    "starterReadyBody": "Perioada de probă nu va începe până nu finalizați verificarea identității și formarea și nu apăsați „Începeți perioada de probă”.",
+    "starterGatesReminder": "Finalizați verificarea identității și formarea pentru a începe perioada de probă.",
+    "startTrialCta": "Începeți perioada de probă",
+    "statusStarterPendingStart": "Pregătit — perioada de probă nu a început",
+    "starterTrialStartedTitle": "Perioada de probă a început",
+    "starterTrialStartedMessage": "Perioada de probă gratuită Starter este acum activă pentru 10 zile.",
+    "starterTrialFailedTitle": "Perioada de probă nu a putut începe",
+    "starterTrialFailed": "Perioada de probă nu a putut începe. Finalizați verificarea identității și formarea, apoi încercați din nou.",
+    "remainingDays": "Zile rămase",
+    "summaryAria": "Rezumatul abonamentului de membru pentru freelanceri",
+    "loading": "Se încarcă starea abonamentului de membru…",
+    "none": "Niciun abonament de membru activ pentru freelanceri",
+    "noneHint": "Alegeți un pachet de mai jos pentru a vă începe abonamentul de membru.",
+    "status": "Stare",
+    "statusActive": "Activ",
+    "statusPending": "Solicitarea de activare a abonamentului de membru este în curs de verificare",
+    "statusSuspended": "Suspendat",
+    "statusExpired": "Abonament de membru expirat",
+    "statusEnded": "Încheiat",
+    "endsOn": "Se încheie la",
+    "bidsAvailable": "Oferte disponibile",
+    "dailyLimit": "Limită zilnică",
+    "currentPlan": "Pachetul actual",
+    "cycleStart": "Începutul ciclului",
+    "cycleEnd": "Sfârșitul ciclului",
+    "priorityBidUsage": "Utilizări ale ofertelor prioritare",
+    "bidsPerMonth": "Oferte / lună",
+    "articleAccessLevel": "Nivel de acces la articole",
+    "articleAccessLevelHint": "Eligibil pentru accesarea/candidarea la articole până la acest nivel — nu înseamnă candidaturi gratuite sau nelimitate.",
+    "engineComingSoon": "Motorul de oferte prioritare va fi disponibil în curând — această vizualizare are doar rol contabil.",
+    "loadErrorTitle": "Starea abonamentului de membru nu a putut fi încărcată",
+    "loadErrorHint": "Acest lucru nu vă afectează abonamentul de membru. Reîmprospătați pagina înainte de a cumpăra un pachet."
+  },
+  "bidCredits": {
+    "title": "Credite de ofertare disponibile",
+    "subtitle": "1 credit = 1 ofertă obișnuită în piață. Modificarea ofertei nu consumă un alt credit.",
+    "loading": "Se încarcă creditele de ofertare…",
+    "available": "Disponibile",
+    "fromMembership": "Din abonamentul de membru",
+    "fromAdmin": "Acordate de administrator",
+    "monthlyAllowance": "Alocare lunară",
+    "unlockedThisMonth": "Deblocate luna aceasta",
+    "nextExpiry": "Următoarea expirare",
+    "engineComingSoon": "În curând — motorul de credite de ofertare nu este încă activ.",
+    "engineOn": "Motorul de credite de ofertare este disponibil.",
+    "ledgerEvents": {
+      "NORMAL_APPLICATION_BID_REFUND": "Credit de ofertare rambursat",
+      "APPLICATION_BID_CONSUME": "Credit de ofertare utilizat",
+      "MEMBERSHIP_BID_GRANT": "Deblocare din abonament",
+      "ADMIN_BID_GRANT": "Acordare de către administrator",
+      "ADMIN_BID_ADJUSTMENT": "Ajustare de către administrator",
+      "BID_EXPIRED": "Credit de ofertare expirat"
+    }
+  },
+  "financialClaims": {
+    "title": "Cereri de plată",
+    "subtitle": "Creați o cerere nouă și urmăriți verificarea, perioada de plată și sumele plătite/rămase pentru fiecare comandă.",
+    "newClaim": "Cerere nouă",
+    "loading": "Se încarcă cererile…",
+    "loadErrorTitle": "Cererile nu au putut fi încărcate",
+    "emptyTitle": "Nicio cerere încă",
+    "emptySub": "Creați prima cerere de plată pentru a o vedea aici, grupată după stare.",
+    "groupEmpty": "Niciun element în acest grup.",
+    "wallet": "Câștiguri și portofel",
+    "walletLink": "Portofel",
+    "earningsNote": "Cifrele provin din cererile de plată aprobate — nu din valorile comenzilor de pe platformă.",
+    "earningsHero": {
+      "aria": "Rezumatul câștigurilor freelancerului",
+      "title": "Câștigurile dumneavoastră",
+      "paid": "Net plătit",
+      "pending": "În așteptarea plății",
+      "openClaims": "Cereri deschise"
+    },
+    "latestClaim": "Cea mai recentă cerere",
+    "noClaimsYet": "Nicio cerere de plată încă.",
+    "createSuccessTitle": "Cerere creată",
+    "createSuccessMessage": "Cererea de plată a fost trimisă cu succes.",
+    "createErrorTitle": "Cererea nu a putut fi creată",
+    "errors": {
+      "kycRequired": "Nu puteți crea o cerere de plată înainte de activarea contului.",
+      "kycPending": "Solicitarea de activare este în curs de verificare.",
+      "kycRejected": "Solicitarea de activare a fost respinsă. Verificați motivul și retrimiteți-o.",
+      "pricingNotAllowed": "Câmpurile de preț nu sunt permise la crearea unei cereri."
+    },
+    "modal": {
+      "title": "Cerere nouă",
+      "subtitle": "Introduceți detaliile comenzii pentru a trimite cererea spre verificare",
+      "close": "Închideți",
+      "modeAria": "Tipul cererii",
+      "fromDoneProject": "Cerere pentru o comandă finalizată",
+      "manual": "Cerere manuală pentru o comandă nouă",
+      "searchDoneProjects": "Căutați proiecte finalizate",
+      "searchPlaceholder": "Căutați după numărul sau titlul comenzii...",
+      "selectProject": "Selectați o comandă finalizată",
+      "selectProjectPlaceholder": "Selectați o comandă...",
+      "noTitle": "Fără titlu",
+      "missingCompletionDate": "Această comandă nu are o dată reală de finalizare. Adăugați data înainte de a crea cererea.",
+      "projectHint": "Data finalizării: {{date}} | Stare: {{status}}",
+      "projectMeta": "Sursă: {{source}} | Plată: {{payment}} | Sumă: {{amount}}{{currency}}",
+      "orderNumber": "Număr comandă",
+      "orderNumberPlaceholder": "Exemplu: ORD-2024-001",
+      "requestTitle": "Titlul comenzii",
+      "requestTitlePlaceholder": "Un titlu clar pentru comandă",
+      "requestTitleFromProject": "Titlul comenzii (din comanda finalizată)",
+      "categories": "Categorii",
+      "noCategories": "Momentan nu există categorii disponibile.",
+      "durationMinutes": "Minute lucrate",
+      "completionDate": "Data reală a finalizării",
+      "cancel": "Anulați",
+      "submit": "Trimiteți cererea",
+      "submitting": "Se trimite..."
+    },
+    "fields": {
+      "orderNumber": "Număr comandă",
+      "completionDate": "Data reală a finalizării",
+      "submittedAt": "Trimisă la",
+      "payoutWindow": "Perioada de plată",
+      "payoutStatus": "Starea plății",
+      "totalPrice": "Preț total",
+      "freelancerAmount": "Suma freelancerului",
+      "paid": "Plătit",
+      "remaining": "Rămas",
+      "adminNote": "Nota administratorului:"
+    },
+    "groups": {
+      "underReview": "În curs de verificare",
+      "notDue": "Încă nu sunt scadente",
+      "due": "Scadente la plată",
+      "paid": "Plătite",
+      "blocked": "Respinse / înghețate / necesită verificare în persoană"
+    }
+  },
+  "settings": {
+    "eyebrow": "Setări freelancer",
+    "title": "Setările contului",
+    "description": "Actualizați profilul public, securitatea contului și notificările. Toate câmpurile sunt salvate prin API.",
+    "breadcrumb": "Setările contului",
+    "loadError": "Încărcarea nu a reușit.",
+    "avatar": {
+      "title": "Fotografie de profil",
+      "upload": "Încărcați o fotografie",
+      "uploading": "Se încarcă…",
+      "remove": "Eliminați fotografia",
+      "hint": "JPEG, PNG sau WebP, maximum 2 MB.",
+      "sizeError": "Dimensiunea imaginii nu trebuie să depășească 2 MB.",
+      "success": "Fotografia a fost actualizată.",
+      "uploadError": "Încărcarea fotografiei nu a reușit.",
+      "removeSuccess": "Fotografia a fost eliminată.",
+      "removeError": "Fotografia nu a putut fi eliminată."
+    },
+    "basic": {
+      "title": "Informații de bază",
+      "firstName": "Prenume",
+      "fatherName": "Prenumele tatălui",
+      "familyName": "Nume de familie",
+      "professionalTitle": "Titlu profesional",
+      "freelancerMemberId": "ID freelancer",
+      "phone": "Mobil (E.164)",
+      "whatsapp": "WhatsApp (E.164)",
+      "bio": "Biografie (maximum 2000 de caractere)",
+      "skills": "Competențe (separate prin virgulă)",
+      "website": "Site web",
+      "portfolio": "Portofoliu",
+      "save": "Salvați informațiile",
+      "saving": "Se salvează…",
+      "saveSuccess": "Setările au fost salvate.",
+      "saveError": "Salvarea nu a reușit.",
+      "nameTooShort": "Numele complet trebuie să aibă cel puțin 2 caractere.",
+      "phoneInvalid": "Numărul de mobil trebuie să fie în format internațional +966…",
+      "whatsappInvalid": "Numărul de WhatsApp trebuie să fie în format internațional.",
+      "urlInvalid": "{{label}}: URL invalid (folosiți http sau https).",
+      "bioTooLong": "Biografia depășește lungimea permisă."
+    },
+    "payout": {
+      "title": "Retrageri și cereri de plată",
+      "hint": "Această secțiune stochează doar preferințe sigure — fără numere complete de cont sau date sensibile.",
+      "method": "Metoda de retragere preferată",
+      "methodPlaceholder": "— Selectați —",
+      "bankTransfer": "Transfer bancar",
+      "wallet": "Portofel electronic",
+      "cash": "Ridicare în numerar",
+      "other": "Altele",
+      "notes": "Note scurte, fără date sensibile",
+      "notesPlaceholder": "Exemplu: doar numele băncii, nu numărul complet de cont",
+      "save": "Salvați secțiunea de retrageri"
+    },
+    "security": {
+      "title": "Securitate",
+      "mustChangeTitle": "Este necesară schimbarea parolei",
+      "mustChangeBody": "Contul dumneavoastră a fost creat cu o parolă temporară. Setați o parolă nouă mai jos înainte de a continua. Dacă nu ați schimbat-o până acum, folosiți numărul național de identificare ca parolă actuală.",
+      "currentPassword": "Parola actuală",
+      "newPassword": "Parola nouă",
+      "confirmPassword": "Confirmați parola",
+      "hint": "Parola nouă trebuie să conțină o literă și o cifră (minimum 8 caractere).",
+      "update": "Actualizați parola",
+      "updating": "Se actualizează…",
+      "mismatch": "Parolele nu se potrivesc.",
+      "tooShort": "Parola nouă este prea scurtă.",
+      "success": "Parola a fost actualizată.",
+      "error": "Parola nu a putut fi schimbată."
+    },
+    "preferredCurrencyTitle": "Moneda de afișare preferată",
+    "notifications": {
+      "title": "Setări de notificare",
+      "orders": "Notificări despre comenzi",
+      "claims": "Notificări despre cererile de plată",
+      "courses": "Notificări despre cursuri",
+      "save": "Salvați preferințele de notificare"
+    }
+  },
+  "courseDetails": {
+    "finalTestTitle": "Test final după curs",
+    "examMarkMaxError": "Punctajul nu poate depăși maximul pentru această întrebare",
+    "examMarkNegativeError": "Punctajul nu poate fi negativ.",
+    "stepStatus": {
+      "done": "Finalizat",
+      "available": "Disponibil acum",
+      "locked": "Blocat",
+      "waitingUpload": "Se așteaptă încărcarea fișierului",
+      "waitingChatgpt": "Se așteaptă rezultatul ChatGPT",
+      "waitingMarks": "Se așteaptă introducerea punctajelor"
+    },
+    "fileLegacy": "Acest fișier trebuie reîncărcat de administrator.",
+    "fileOpenFailed": "Fișierul nu a putut fi deschis. Anunțați administratorul pentru a-l reîncărca.",
+    "progress": {
+      "fullyCompleted": "Curs finalizat integral",
+      "readyForTest": "Pregătit pentru testul final",
+      "lessonsCompleted": "Toate lecțiile au fost finalizate",
+      "lessonsProgress": "Lecții finalizate: {{done}} din {{total}}",
+      "lessonsProgress_plural": "Lecții finalizate: {{done}} din {{total}}",
+      "lessonsProgress_plural_other": "Lecții finalizate: {{done}} din {{total}}",
+      "notStarted": "Progresul nu a început încă",
+      "ringCaption": "Progres general",
+      "completed": "Finalizat",
+      "ready": "Pregătit",
+      "lessons": "Lecții"
+    },
+    "loadError": "Cursul nu a putut fi încărcat.",
+    "completeLessonsFirst": "Finalizați mai întâi toate lecțiile video pentru a debloca testul final.",
+    "saveProgressInfo": "Se salvează progresul și se trece la lecția următoare...",
+    "lessonCompleteSuccess": "Vizionarea a fost înregistrată ca finalizată.",
+    "testUnlocked": "Testul final a fost deblocat — finalizați trimiterea acum.",
+    "saveProgressError": "Progresul nu a putut fi salvat, încercați din nou.",
+    "mustCompleteLessons": "Trebuie să finalizați toate lecțiile video înainte de trimitere.",
+    "chatgptRequired": "Lipiți rezultatul evaluării ChatGPT sau încărcați fișierul cu raportul de evaluare.",
+    "completeAllMarks": "Completați punctajele tuturor întrebărilor înainte de trimitere.",
+    "uploadCompletedFirst": "Trebuie să încărcați fișierul completat înainte de trimitere.",
+    "courseFinishedSuccess": "Cursul a fost finalizat cu succes.",
+    "courseFinishError": "Cursul nu a putut fi finalizat.",
+    "uploadError": "Fișierul nu a putut fi încărcat. Asigurați-vă că este în format PDF și încercați din nou.",
+    "uploadSuccess": "Fișierul completat a fost încărcat cu succes",
+    "uploadCompletedError": "Fișierul completat nu a putut fi încărcat.",
+    "duration": {
+      "minute": "{{count}} minut",
+      "minute_plural": "{{count}} minute",
+      "minute_plural_other": "{{count}} de minute",
+      "hour": "{{count}} oră",
+      "hour_plural": "{{count}} ore",
+      "hour_plural_other": "{{count}} de ore",
+      "hoursAndMinutes": "{{hours}} h {{minutes}} min",
+      "hoursOnly": "{{count}} oră",
+      "hoursOnly_plural": "{{count}} ore",
+      "hoursOnly_plural_other": "{{count}} de ore"
+    },
+    "activity": {
+      "now": "Chiar acum",
+      "minutesAgo": "acum {{count}} min",
+      "minutesAgo_plural": "acum {{count}} min",
+      "minutesAgo_plural_other": "acum {{count}} min",
+      "hoursAgo": "acum {{count}} h",
+      "hoursAgo_plural": "acum {{count}} h",
+      "hoursAgo_plural_other": "acum {{count}} h",
+      "daysAgo": "acum {{count}} zi",
+      "daysAgo_plural": "acum {{count}} zile",
+      "daysAgo_plural_other": "acum {{count}} de zile"
+    },
+    "fileSize": {
+      "bytes": "{{count}} B",
+      "kb": "{{size}} KB",
+      "mb": "{{size}} MB"
+    },
+    "file": {
+      "viewFile": "Vizualizați fișierul",
+      "downloadFile": "Descărcați fișierul",
+      "copyInstructions": "Copiați instrucțiunile",
+      "needsReuploadShort": "Necesită reîncărcare",
+      "available": "Disponibil",
+      "unavailable": "Indisponibil",
+      "needsReuploadBadge": "Fișierul trebuie reîncărcat",
+      "notAttachedByAdmin": "Acest fișier nu a fost încă atașat de administrator.",
+      "openFailedTryDownload": "Fișierul nu a putut fi deschis. Încercați să-l descărcați.",
+      "completedWorkFile": "Fișier completat",
+      "completedWorkFileDefault": "Fișierul de examen completat a fost încărcat",
+      "uploadedSuccessfully": "Încărcat cu succes",
+      "replaceFile": "Înlocuiți fișierul",
+      "removeFile": "Eliminați fișierul",
+      "removeFileAria": "Eliminați fișierul",
+      "chooseFile": "Alegeți fișierul",
+      "replace": "Înlocuiți",
+      "remove": "Eliminați",
+      "defaultCompletedPdf": "fisier-completat.pdf"
+    },
+    "flow": {
+      "phaseTag": "Etapa {{num}}",
+      "trackAria": "Parcursul pașilor 1–5"
+    },
+    "completed": {
+      "congratsTitle": "Felicitări! Cursul a fost finalizat cu succes",
+      "congratsSub": "Răspunsul dumneavoastră la testul final a fost înregistrat, iar cursul este finalizat. Puteți revedea oricând fișierele testului și ale trimiterii.",
+      "finalGrade": "Nota finală: {{grade}}%",
+      "submittedAt": " — Trimis: {{date}}",
+      "questionGrades": "Punctajele întrebărilor",
+      "questionCount": " (întrebări: {{count}})",
+      "questionLabel": "Întrebarea {{num}}",
+      "filesAndSubmission": "Fișierele testului și trimiterea",
+      "downloadTestFile": "Descărcați fișierul testului",
+      "downloadInstructionsFile": "Descărcați fișierul cu instrucțiuni",
+      "downloadModelAnswer": "Descărcați fișierul cu răspunsul model",
+      "viewAnswerFile": "Vizualizați fișierul de răspuns încărcat",
+      "downloadAnswerFile": "Descărcați fișierul de răspuns încărcat",
+      "submissionSummary": "Rezumatul trimiterii",
+      "viewAnswerText": "Vizualizați textul răspunsului",
+      "answerText": "Textul răspunsului",
+      "hideText": "Ascundeți textul",
+      "answerFileOnlyNote": "Fișierul de răspuns a fost trimis. Folosiți butoanele de mai sus pentru a-l vizualiza sau descărca."
+    },
+    "sidebar": {
+      "finalStepBadge": "Ultimul pas",
+      "statusCompleted": "Finalizat",
+      "statusLocked": "Finalizați toate lecțiile pentru a debloca testul final",
+      "statusReady": "Gata de trimitere",
+      "contentAria": "Conținutul cursului",
+      "contentTitle": "Conținutul cursului",
+      "completedWithDuration": "{{duration}} • Finalizată",
+      "completed": "Finalizată",
+      "watchingWithDuration": "{{duration}} • În curs de vizionare",
+      "watching": "În curs de vizionare",
+      "noDuration": "Fără durată",
+      "showAllLessons": "Afișați toate lecțiile ({{count}})"
+    },
+    "header": {
+      "trainingChip": "Curs de formare",
+      "backToCourses": "Înapoi la cursuri",
+      "summaryAria": "Rezumatul cursului",
+      "lessonsCompleted": "Lecții finalizate: {{completed}} din {{total}}",
+      "totalDuration": "Durată totală: {{duration}}",
+      "lastActivity": "Ultima activitate: {{activity}}",
+      "durationUnknown": "Nespecificată",
+      "noActivity": "Niciuna",
+      "courseFinishedBanner": "Acest curs a fost finalizat cu succes.",
+      "completionRecorded": "Data finalizării este înregistrată în sistem."
+    },
+    "lesson": {
+      "noVideo": "Nu există niciun videoclip disponibil pentru această lecție.",
+      "untitled": "Lecție fără titlu",
+      "videoChip": "Videoclip",
+      "lessonOf": "Lecția {{current}} din {{total}}",
+      "finalTestReadyHint": "Ați terminat toate videoclipurile — testul final vă așteaptă în bara laterală.",
+      "prevLesson": "Lecția anterioară",
+      "nextLesson": "Lecția următoare",
+      "finalTestNav": "Test final",
+      "markComplete": "Marcați lecția ca finalizată",
+      "savingProgress": "Se salvează progresul…",
+      "summaryTitle": "Rezumatul lecției / notițele dumneavoastră",
+      "summaryPlaceholder": "Scrieți rezumatul aici…",
+      "summaryAria": "Rezumatul lecției"
+    },
+    "finish": {
+      "allLessonsDone": "Ați finalizat toate lecțiile. Dacă finalizarea nu a fost înregistrată automat, faceți clic mai jos.",
+      "submitting": "Se înregistrează…",
+      "finishCourse": "Finalizați cursul"
+    },
+    "empty": {
+      "loadFailed": "Cursul nu a putut fi afișat. Reveniți la lista de cursuri și încercați din nou.",
+      "backToCourses": "Cursuri de formare"
+    },
+    "planLocked": {
+      "title": "Curs blocat",
+      "message": "Acest curs este disponibil în pachetele superioare.",
+      "upgrade": "Treceți la un pachet superior",
+      "activateOrUpgrade": "Activați pachetul sau treceți la unul superior pentru a accesa acest curs"
+    },
+    "exam": {
+      "lockedTitle": "Test final blocat",
+      "lockedSub": "Finalizați toate lecțiile video ({{completed}}/{{total}}) pentru a debloca acest pas final și a încheia cursul.",
+      "lessonsDoneBanner": "🎉 Felicitări! Ați terminat toate lecțiile.",
+      "lessonsDoneBannerSub": "Parcurgeți în ordine cei trei pași pentru a finaliza testul final.",
+      "lessonsCompletedCount": "(lecții finalizate: {{completed}}/{{total}})",
+      "introSub": "Descărcați fișierul testului și realizați lucrarea, încărcați fișierul completat, folosiți ChatGPT cu fișierele de evaluare și introduceți punctajele întrebărilor înainte de trimiterea finală.",
+      "step1Title": "Pasul 1: Descărcați fișierul testului și încărcați fișierul completat",
+      "testFileTitle": "Fișierul testului",
+      "testFileDesc": "Descărcați fișierul testului și redactați răspunsul în afara platformei.",
+      "downloadTestFile": "Descărcați fișierul testului",
+      "uploadCompletedTitle": "Încărcați fișierul completat după terminarea testului",
+      "uploadCompletedHint": "Doar PDF — până la 5 MB",
+      "uploadCompletedBtn": "Încărcați fișierul completat",
+      "uploading": "Se încarcă…",
+      "uploadCompletedSuccess": "Fișierul completat a fost încărcat cu succes",
+      "step1Required": "Trebuie să încărcați fișierul completat înainte de a trece la pasul următor.",
+      "step2Title": "Pasul 2: Descărcați fișierele cu promptul și cu răspunsul model",
+      "step2Note": "Furnizați-i lui ChatGPT aceste fișiere: fișierul completat, fișierul cu promptul și răspunsul model — apoi lipiți aici rezultatul ChatGPT sau încărcați-l ca fișier.",
+      "promptFileTitle": "Instrucțiuni de evaluare / fișierul cu promptul",
+      "promptFileDesc": "Descărcați fișierul cu promptul pentru a-l folosi cu ChatGPT.",
+      "downloadPromptFile": "Descărcați fișierul cu promptul",
+      "modelAnswerTitle": "Fișierul cu răspunsul model",
+      "modelAnswerDesc": "Descărcați răspunsul model pentru a-l folosi cu ChatGPT.",
+      "downloadModelAnswer": "Descărcați răspunsul model",
+      "chatgptFileSelected": "Fișierul cu rezultatul ChatGPT a fost selectat",
+      "uploadChatgptTitle": "Încărcați rezultatul ChatGPT ca fișier",
+      "pasteChatgptLabel": "Sau lipiți rezultatul ChatGPT",
+      "pasteChatgptPlaceholder": "Lipiți aici rezultatul evaluării ChatGPT…",
+      "step3Title": "Pasul 3: Introduceți punctajele întrebărilor",
+      "step3Note": "Introduceți punctajul fiecărei întrebări pe baza rezultatului ChatGPT. Nota finală este suma punctajelor ÷ suma punctajelor maxime.",
+      "questionWithText": "Întrebarea {{num}}: {{text}}",
+      "questionNumber": "Întrebarea {{num}}",
+      "markLabel": "Punctaj",
+      "noGradedQuestions": "Acest curs nu are întrebări punctate. Finalizați cei doi pași anteriori, apoi trimiteți.",
+      "submitting": "Se trimite…",
+      "submitFinale": "Trimiteți rezultatele și finalizați cursul",
+      "hintUploadFirst": "Încărcați mai întâi fișierul completat.",
+      "hintChatgptRequired": "Adăugați textul rezultatului ChatGPT sau încărcați fișierul cu rezultatul.",
+      "hintCompleteMarks": "Completați punctajele tuturor întrebărilor.",
+      "hintCompleteAllSteps": "Finalizați toți pașii înainte de trimitere."
+    }
+  },
+  "apiInsights": {
+    "profileIncomplete": {
+      "title": "Completați-vă profilul",
+      "description": "Profilul este completat în proporție de {{percent}}% — un profil mai complet vă crește șansele de acceptare.",
+      "actionLabel": "Actualizați profilul"
+    },
+    "revisionsPending": {
+      "title": "Comenzi care necesită revizie",
+      "description": "Aveți {{count}} comandă care necesită o revizie sau o livrare actualizată.",
+      "description_plural": "Aveți {{count}} comenzi care necesită o revizie sau o livrare actualizată.",
+      "description_plural_other": "Aveți {{count}} de comenzi care necesită o revizie sau o livrare actualizată.",
+      "actionLabel": "Vedeți reviziile"
+    },
+    "courseProgress": {
+      "title": "Sunteți aproape de finalizarea cursului",
+      "description": "Ați finalizat {{percent}}% din {{course}}.",
+      "actionLabel": "Continuați cursul"
+    },
+    "finalTest": {
+      "title": "Testul final vă așteaptă",
+      "description": "{{count}} curs așteaptă testul final.",
+      "description_plural": "{{count}} cursuri așteaptă testul final.",
+      "description_plural_other": "{{count}} de cursuri așteaptă testul final.",
+      "actionLabel": "Finalizați testul"
+    },
+    "deliveryExcellent": {
+      "title": "Rata dumneavoastră de livrare la timp este excelentă",
+      "description": "{{percent}}% dintre comenzile finalizate au fost livrate la timp."
+    },
+    "subExpiring": {
+      "title": "Abonamentul dumneavoastră expiră în curând",
+      "description": "Verificați-vă pachetul înainte ca accesul să se modifice.",
+      "actionLabel": "Vedeți pachetele"
+    },
+    "addPortfolio": {
+      "title": "Adăugați lucrări în portofoliu",
+      "description": "Adăugați linkul către Behance sau site-ul dumneavoastră pentru a câștiga încrederea clienților.",
+      "actionLabel": "Actualizați linkurile"
+    },
+    "startFirstOrder": {
+      "title": "Începeți primul proiect",
+      "description": "Răsfoiți comenzile disponibile și construiți-vă istoricul pe platformă.",
+      "actionLabel": "Comenzi disponibile"
+    },
+    "reviewsStrong": {
+      "title": "Recenziile dumneavoastră sunt excelente",
+      "description": "Nota medie: {{rating}}, din {{count}} recenzie.",
+      "description_plural": "Nota medie: {{rating}}, din {{count}} recenzii.",
+      "description_plural_other": "Nota medie: {{rating}}, din {{count}} de recenzii.",
+      "actionLabel": "Vedeți detaliile"
+    },
+    "claimsHint": {
+      "title": "Memento: câștigurile se încasează prin portofel",
+      "description": "După finalizarea proiectelor, trimiteți cererile de plată din secțiunea Portofel.",
+      "actionLabel": "Portofel"
+    },
+    "reviewAnalytics": {
+      "title": "Analiza feedbackului clienților",
+      "description": "Pe baza recenziilor verificate ale clienților dumneavoastră.",
+      "actionLabel": "Vedeți recenziile"
+    }
+  },
+  "recommendations": {
+    "title": "Informații și recomandări",
+    "finalTestPending": "Testul final vă așteaptă",
+    "completeTest": "Finalizați testul"
+  },
+  "status": {
+    "subscription": {
+      "active": "Activ",
+      "assignedNotStarted": "În așteptarea primei comenzi",
+      "expired": "Expirat",
+      "inactive": "Inactiv"
+    },
+    "payment": {
+      "paid": "Plătit",
+      "pending": "În procesare",
+      "failed": "Eșuat",
+      "notRequired": "Nu este necesară",
+      "unpaid": "Neplătit",
+      "refunded": "Rambursat",
+      "skippedByAdmin": "Plată omisă (administrator)"
+    },
+    "activation": {
+      "approved": "Activat",
+      "pending": "În așteptarea companiei"
+    },
+    "claim": {
+      "paid": "Plătită",
+      "pending": "În curs de verificare",
+      "accepted": "Acceptată",
+      "rejected": "Respinsă",
+      "frozen": "Înghețată",
+      "inPersonReview": "Verificare în persoană",
+      "requiresInPersonReview": "Necesită verificare în persoană"
+    },
+    "payout": {
+      "missingCompletionDate": "Fără dată de finalizare",
+      "notDueYet": "Încă nu este scadentă",
+      "withinWindow": "În perioada de plată",
+      "lateAfterWindow": "Întârziată după perioada de plată",
+      "paid": "Plătită"
+    },
+    "chips": {
+      "trainingAndLimitedMarketplace": "Formare + acces limitat la piață",
+      "marketplaceEligible": "Eligibil pentru piață",
+      "notEligibleNow": "Momentan neeligibil",
+      "activeSubscription": "Abonament activ",
+      "waitingFirstOrder": "În așteptarea primei comenzi",
+      "expired": "Expirat"
+    },
+    "marketplace": {
+      "canApply": "Puteți candida",
+      "notEligible": "Neeligibil"
+    },
+    "timeRemaining": {
+      "expired": "Abonament expirat",
+      "remaining": "Timp rămas: {{parts}}",
+      "day": "{{count}} zi",
+      "day_plural": "{{count}} zile",
+      "day_plural_other": "{{count}} de zile",
+      "hour": "{{count}} oră",
+      "hour_plural": "{{count}} ore",
+      "hour_plural_other": "{{count}} de ore",
+      "minute": "{{count}} minut",
+      "minute_plural": "{{count}} minute",
+      "minute_plural_other": "{{count}} de minute",
+      "joiner": " și "
+    },
+    "eligibility": {
+      "adminApprovalPending": "Se așteaptă aprobarea administratorului înainte de a putea primi comenzi",
+      "noSubscription": "Nu puteți primi comenzi deoarece nu aveți un abonament. Abonați-vă mai întâi.",
+      "inactive": "Abonamentul dumneavoastră nu este activ. Abonați-vă mai întâi.",
+      "paymentIncomplete": "Primirea comenzilor nu a putut fi activată deoarece plata abonamentului nu este finalizată.",
+      "expired": "Abonamentul dumneavoastră a expirat. Reînnoiți-l pentru a primi comenzi.",
+      "activationFeeUnpaid": "Plătiți taxa anuală de activare înainte de a primi comenzi.",
+      "subscriptionRenewalFailedTitle": "Reînnoirea abonamentului a eșuat",
+      "subscriptionRenewalFailed": "Nu am putut încasa de pe cardul salvat taxa lunară de abonament de 1 JOD. Contul dumneavoastră a fost înghețat temporar. Contactați-ne pentru a-l reactiva.",
+      "planConfigurationError": "Momentan nu am putut verifica eligibilitatea pachetului dumneavoastră. Contactați asistența.",
+      "planTooLow": "Această comandă este disponibilă în pachetele superioare. Treceți la un pachet superior pentru a o primi.",
+      "noActivePlan": "Activați mai întâi pachetul pentru a primi comenzi.",
+      "generic": "Contul dumneavoastră nu este eligibil momentan pentru comenzile din piață (verificați abonamentul)."
+    }
+  },
+  "emptyStates": {
+    "myOrders": {
+      "noneTitle": "Nicio comandă încă",
+      "noneSub": "Nu vi s-a atribuit încă nicio comandă. Răsfoiți comenzile disponibile și candidați la cele potrivite competențelor dumneavoastră.",
+      "browseOrders": "Răsfoiți comenzile disponibile",
+      "searchTitle": "Niciun rezultat al căutării",
+      "searchSub": "Încercați alte cuvinte cheie sau ștergeți căutarea pentru a vedea lista completă.",
+      "clearSearch": "Ștergeți căutarea",
+      "filterTitle": "Nicio comandă cu această stare",
+      "filterSub": "Alegeți alt filtru sau selectați Toate pentru a vedea lista completă.",
+      "showAll": "Afișați tot"
+    },
+    "courses": {
+      "noneTitle": "Niciun curs atribuit",
+      "noneSub": "Când un curs este atribuit contului dumneavoastră, va apărea aici împreună cu progresul și eventualul test final.",
+      "searchTitle": "Niciun rezultat al căutării",
+      "searchSub": "Încercați alte cuvinte cheie sau ștergeți căutarea pentru a vedea lista completă.",
+      "clearSearch": "Ștergeți căutarea",
+      "favoritesTitle": "Niciun curs favorit",
+      "favoritesSub": "Atingeți steaua oricărui curs pentru a-l adăuga la favorite.",
+      "completedTitle": "Niciun curs finalizat încă",
+      "completedSub": "Finalizați lecțiile cursului și, dacă este necesar, testul final pentru a-l vedea aici.",
+      "inProgressTitle": "Niciun curs în desfășurare",
+      "inProgressSub": "Începeți o lecție dintr-unul dintre cursuri pentru a-l vedea în această filă.",
+      "notStartedTitle": "Niciun curs neînceput",
+      "notStartedSub": "Toate cursurile atribuite au fost începute sau finalizate.",
+      "genericTitle": "Niciun rezultat",
+      "genericSub": "Încercați altă filă sau alt filtru."
+    },
+    "performance": {
+      "noHistory": "Încă nu există istoric de comenzi — începeți primul proiect pentru a vedea indicatorii."
+    },
+    "reviews": {
+      "empty": "Încă nu există recenzii — vor apărea după ce clienții vă evaluează pentru proiectele finalizate.",
+      "clientLabel": "Client"
+    },
+    "reputation": {
+      "empty": "Finalizați comenzi și completați-vă profilul pentru a vă crește nivelul de încredere."
+    },
+    "achievements": {
+      "empty": "Finalizați comenzi și cursuri pentru a obține realizări profesionale."
+    },
+    "profile": {
+      "complete": "Profilul dumneavoastră este complet — felicitări!",
+      "completeProfile": "Completați profilul"
+    }
+  },
+  "notifications": {
+    "title": "Mesajele mele",
+    "viewAll": "Vedeți tot",
+    "empty": "Nu există mesaje recente.",
+    "defaultTitle": "Notificare",
+    "loadError": "Mesajele nu au putut fi încărcate."
+  },
+  "sidebar": {
+    "badges": {
+      "required": "Obligatoriu",
+      "startHere": "Începeți aici"
+    }
+  },
+  "controlCenter": {
+    "reputation": {
+      "title": "Scor de încredere",
+      "note": "Calculat pe baza realizărilor reale de pe platformă — nu din evaluări false.",
+      "improveProfile": "Îmbunătățiți profilul și prezența"
+    },
+    "reviews": {
+      "title": "Recenzii",
+      "viewAll": "Vedeți tot",
+      "recommendationRate": "Rată de recomandare: {{rate}}%",
+      "loadError": "Recenziile nu au putut fi încărcate."
+    },
+    "profile": {
+      "title": "Completarea profilului",
+      "update": "Actualizați"
+    },
+    "achievements": {
+      "title": "Realizări"
+    },
+    "earnings": {
+      "loadError": "Câștigurile nu au putut fi încărcate. Nu afișăm cifre care ar putea induce în eroare."
+    },
+    "courses": {
+      "loadError": "Cursurile nu au putut fi încărcate."
+    },
+    "performance": {
+      "loadError": "Indicatorii de performanță nu au putut fi încărcați."
+    },
+    "widgetLoadError": "Această secțiune nu a putut fi încărcată."
+  },
+  "pendingActions": {
+    "title": "Acțiuni necesare",
+    "clear": "Nicio acțiune urgentă — sunteți la zi.",
+    "choosePlan": {
+      "title": "Alegeți un pachet de abonament",
+      "description": "Niciun abonament activ — începeți prin a alege pachetul potrivit.",
+      "cta": "Vedeți pachetele"
+    },
+    "completePayment": {
+      "title": "Finalizați plata",
+      "description": "Plata este în procesare sau nu a fost încă finalizată.",
+      "cta": "Finalizați plata"
+    },
+    "companyApproval": {
+      "title": "Aprobarea administratorului",
+      "description": "Se așteaptă aprobarea administratorului înainte de a putea primi comenzi.",
+      "cta": "Verificați contul"
+    },
+    "renewSubscription": {
+      "title": "Reînnoiți abonamentul",
+      "description": "Abonamentul dumneavoastră a expirat — reînnoiți-l pentru a reveni în piață.",
+      "cta": "Reînnoiți"
+    },
+    "reviewPlans": {
+      "cta": "Vedeți pachetele"
+    },
+    "revisionRequired": {
+      "title": "Revizii necesare ({{count}})",
+      "title_plural": "Revizii necesare ({{count}})",
+      "title_plural_other": "Revizii necesare ({{count}})",
+      "descriptionWithOrder": "Comanda #{{code}} necesită verificare și o livrare actualizată.",
+      "descriptionGeneric": "Aveți comenzi care necesită revizie — verificați-le în Comenzile mele.",
+      "cta": "Continuați revizia"
+    },
+    "finalTest": {
+      "title": "Test final în așteptare ({{count}})",
+      "title_plural": "Teste finale în așteptare ({{count}})",
+      "title_plural_other": "Teste finale în așteptare ({{count}})",
+      "descriptionWithCourse": "Finalizați testul final al cursului „{{course}}”.",
+      "descriptionGeneric": "Finalizați testul final pentru a încheia cursul.",
+      "descriptionActivation": "Finalizați testul final al cursului {{course}} pentru a îndeplini cerințele de activare.",
+      "descriptionActivationGeneric": "Finalizați testul final al cursului actual pentru a îndeplini cerințele de activare.",
+      "cta": "Finalizați testul",
+      "viewCourse": "Vedeți cursul"
+    },
+    "coursesPending": {
+      "title": "Cursuri obligatorii în așteptare ({{count}})",
+      "title_plural": "Cursuri obligatorii în așteptare ({{count}})",
+      "title_plural_other": "Cursuri obligatorii în așteptare ({{count}})",
+      "description": "Finalizați cursurile obligatorii pentru a trece la testul final.",
+      "cta": "Continuați cursurile"
+    },
+    "claimsReview": {
+      "title": "Cereri de plată în curs de verificare ({{count}})",
+      "title_plural": "Cereri de plată în curs de verificare ({{count}})",
+      "title_plural_other": "Cereri de plată în curs de verificare ({{count}})",
+      "description": "Cererile dumneavoastră de plată așteaptă aprobarea administratorului.",
+      "cta": "Vedeți portofelul"
+    },
+    "claimsAcceptedPayout": {
+      "title": "Cereri acceptate în așteptarea plății ({{count}})",
+      "title_plural": "Cereri acceptate în așteptarea plății ({{count}})",
+      "title_plural_other": "Cereri acceptate în așteptarea plății ({{count}})",
+      "description": "Sumele acceptate nu au fost încă plătite integral — verificați portofelul.",
+      "cta": "Vedeți portofelul"
+    }
+  },
+  "statusHeadline": {
+    "noSubscription": {
+      "headline": "Abonamentul dumneavoastră nu este încă activat",
+      "sub": "Alegeți un pachet pentru a începe pe platformă."
+    },
+    "expired": {
+      "headline": "Abonamentul dumneavoastră a expirat",
+      "sub": "Reînnoiți-l pentru a primi comenzi noi."
+    },
+    "paymentPending": {
+      "headline": "Finalizați plata pentru a vă activa contul",
+      "sub": "Nu puteți primi comenzi din piață până la finalizarea plății."
+    },
+    "companyPending": {
+      "headline": "Se așteaptă aprobarea administratorului",
+      "sub": "Se așteaptă aprobarea administratorului înainte de a putea primi comenzi."
+    },
+    "expiringDays": {
+      "headline": "Abonamentul dumneavoastră expiră în {{count}} zi",
+      "headline_plural": "Abonamentul dumneavoastră expiră în {{count}} zile",
+      "headline_plural_other": "Abonamentul dumneavoastră expiră în {{count}} de zile"
+    },
+    "expiringTomorrow": {
+      "headline": "Abonamentul dumneavoastră expiră mâine"
+    },
+    "expiringHours": {
+      "headline": "Abonamentul dumneavoastră expiră în {{count}} oră",
+      "headline_plural": "Abonamentul dumneavoastră expiră în {{count}} ore",
+      "headline_plural_other": "Abonamentul dumneavoastră expiră în {{count}} de ore"
+    },
+    "expiringToday": {
+      "headline": "Abonamentul dumneavoastră expiră astăzi"
+    },
+    "freePlanExplore": {
+      "headline": "Puteți explora comenzile disponibile în piață",
+      "sub": "Comenzile reale din piață necesită trecerea la un abonament superior."
+    },
+    "firstOrder": {
+      "headline": "Puteți primi prima comandă",
+      "sub": "Perioada abonamentului începe când acceptați prima comandă."
+    },
+    "eligible": {
+      "headline": "Puteți primi comenzi",
+      "sub": "Contul dumneavoastră este eligibil să candideze la comenzile disponibile conform pachetului."
+    },
+    "notEligible": {
+      "headline": "Momentan nu puteți primi comenzi",
+      "sub": "Verificați detaliile abonamentului mai jos."
+    }
+  },
+  "notificationsPage": {
+    "titleFreelancer": "Notificările dumneavoastră",
+    "titleAdmin": "Notificări pentru administratori",
+    "titleSuperAdmin": "Notificări pentru super administratori",
+    "subtitleHub": "Urmăriți actualizările comenzilor, mesajele și plățile dintr-un singur loc.",
+    "subtitleStaff": "Urmăriți actualizările comenzilor, plățile și cererile de plată dintr-un singur loc.",
+    "summaryAria": "Rezumatul notificărilor",
+    "total": "Total notificări",
+    "unread": "Necitite",
+    "searchPlaceholder": "Căutați în notificări…",
+    "searchAria": "Căutați în notificări",
+    "filterAria": "Filtrați notificările",
+    "filterAll": "Toate",
+    "filterUnread": "Necitite",
+    "markAllRead": "Marcați toate ca citite",
+    "listAria": "Lista notificărilor",
+    "emptySearch": "Niciun rezultat al căutării",
+    "emptyUnread": "Nicio notificare necitită",
+    "emptyAll": "Nicio notificare încă",
+    "emptySearchSub": "Încercați alți termeni de căutare sau goliți câmpul de căutare.",
+    "emptyDefaultSub": "Actualizările noi vor apărea aici când vor fi disponibile.",
+    "newNotification": "Notificare nouă",
+    "unreadSuffix": " — necitită",
+    "unreadTitle": "Necitită",
+    "categoryMessages": "Mesaje",
+    "categoryClaims": "Cereri de plată",
+    "categoryCourses": "Cursuri",
+    "categoryOrders": "Comenzi",
+    "categoryAlert": "Alertă",
+    "feedbackCategoryPrefix": "Categorie",
+    "feedbackTopicPrefix": "Subiect predefinit",
+    "relativeNow": "Acum",
+    "relativeMinutes": "acum {{count}} min",
+    "relativeMinutes_plural": "acum {{count}} min",
+    "relativeMinutes_plural_other": "acum {{count}} min",
+    "relativeHours": "acum {{count}} oră",
+    "relativeHours_plural": "acum {{count}} ore",
+    "relativeHours_plural_other": "acum {{count}} de ore",
+    "relativeDays": "acum {{count}} zi",
+    "relativeDays_plural": "acum {{count}} zile",
+    "relativeDays_plural_other": "acum {{count}} de zile"
+  },
+  "common": {
+    "retry": "Încercați din nou",
+    "loading": "Se încarcă",
+    "unavailable": "Indisponibil",
+    "loadFailed": "Încărcarea nu a reușit",
+    "emDash": "—",
+    "currencyJod": "JOD",
+    "currencyJodLabel": "JOD",
+    "defaultCourse": "Curs",
+    "client": "Client",
+    "cancel": "Anulați",
+    "submit": "Trimiteți",
+    "submitting": "Se trimite…",
+    "save": "Salvați",
+    "saving": "Se salvează…",
+    "close": "Închideți",
+    "viewAll": "Vedeți tot",
+    "update": "Actualizați",
+    "alert": "Atenție"
+  },
+  "activateAccount": {
+    "title": "Activați contul",
+    "subtitle": "Trimiteți o solicitare de activare a contului spre verificare de către administrator, după ce încărcați actul de identitate.",
+    "cardTitle": "Starea activării",
+    "hint": "Contul nu este activat imediat. Un administrator vă va verifica solicitarea.",
+    "cta": "Trimiteți solicitarea de activare",
+    "activating": "Se trimite…",
+    "activated": "Cont activat",
+    "successMessage": "Contul dumneavoastră este activat, iar perioada abonamentului a început.",
+    "successWithStarter": "Contul dumneavoastră este activat și ați primit abonamentul de membru gratuit STARTER.",
+    "successKeptMembership": "Contul dumneavoastră este activat, iar abonamentul de membru actual a fost păstrat.",
+    "alreadyActiveMessage": "Contul dumneavoastră este aprobat. Perioada abonamentului începe când primiți prima comandă reală.",
+    "errorTitle": "Solicitarea de activare nu a putut fi trimisă",
+    "loadError": "Starea activării nu a putut fi încărcată.",
+    "status": {
+      "approved": "Activat",
+      "pending": "În curs de verificare"
+    },
+    "fields": {
+      "activation": "Starea activării",
+      "subscription": "Starea abonamentului",
+      "startedAt": "Începutul perioadei",
+      "expiresAt": "Sfârșitul perioadei"
+    },
+    "termsModalTitle": "Condiții pentru primirea și executarea comenzilor și licitațiilor",
+    "agreeCheckbox": "Sunt de acord cu condițiile de activare a contului și de utilizare a platformei.",
+    "termsFallback": "Continuând, sunteți de acord cu termenii de utilizare și politicile platformei Orderz House.",
+    "termsLoadError": "Termenii de utilizare nu au putut fi încărcați. Vă puteți exprima totuși acordul după ce i-ați citit sau puteți încerca din nou.",
+    "kyc": {
+      "pageTitle": "Verificarea identității",
+      "pageSubtitle": "Încărcați documentele de identitate pentru a continua activarea contului.",
+      "uploadHint": "Încărcați documentele de identitate pentru a continua activarea contului.",
+      "notVerifiedYet": "Identitatea nu a fost încă verificată",
+      "notImmediate": "Contul nu va fi activat imediat. Un administrator vă va verifica solicitarea de verificare a identității.",
+      "termsCheckbox": "Sunt de acord cu condițiile de activare a contului și de utilizare a platformei.",
+      "submitCta": "Trimiteți verificarea identității",
+      "resubmitCta": "Retrimiteți verificarea identității",
+      "submitSuccess": "Solicitarea de verificare a identității a fost primită și va fi verificată de un administrator.",
+      "pendingTitle": "Verificarea identității este în curs",
+      "pendingBody": "Documentele de identitate au fost primite și vor fi verificate de un administrator înainte de activarea contului.",
+      "approvedTitle": "Identitatea dumneavoastră este verificată",
+      "approvedIdentityTitle": "Identitatea dumneavoastră este verificată",
+      "approvedManualTitle": "Identitate verificată administrativ",
+      "identityVerifiedLabel": "Identitate",
+      "identityVerifiedValue": "Verificată",
+      "accountApprovalLabel": "Aprobarea contului",
+      "accountApprovedValue": "Aprobat",
+      "accountPendingValue": "În așteptarea aprobării",
+      "membershipLabel": "Abonament de membru",
+      "membershipActiveValue": "Abonamentul de membru este activ, iar perioada abonamentului este în curs.",
+      "membershipWaitingFirstOrderValue": "Contul dumneavoastră este aprobat. Perioada abonamentului începe când primiți prima comandă reală.",
+      "membershipInactiveValue": "În așteptarea primei comenzi",
+      "rejectedTitle": "Verificarea identității a fost respinsă",
+      "rejectionReasonLabel": "Motivul respingerii",
+      "idFront": "Fața actului de identitate",
+      "idBack": "Versoul actului de identitate",
+      "idFrontSide": "Față",
+      "idBackSide": "Verso",
+      "chooseImage": "Atingeți pentru a alege o imagine",
+      "changeImage": "Schimbați imaginea",
+      "removeImage": "Eliminați",
+      "imageSelected": "Imagine selectată",
+      "uploadFormats": "JPG, PNG sau WEBP · fotografie clară a actului de identitate",
+      "filesRequired": "Încărcați ambele imagini ale actului de identitate (față și verso).",
+      "termsRequired": "Trebuie să acceptați condițiile de activare a contului.",
+      "goDashboard": "Mergeți la panoul de control",
+      "goArticles": "Articole din piață",
+      "policyTitle": "Condiții pentru primirea și livrarea comenzilor și licitațiilor",
+      "policyReadTerms": "Citiți termenii de utilizare compleți"
+    }
+  },
+  "onboardingPanel": {
+    "completeNow": "Finalizați acum",
+    "gettingStarted": "Primii pași",
+    "remindLater": "Amintiți-mi mai târziu"
+  },
+  "silverConversion": {
+    "defaultTitle": "Continuați să primiți oportunități de lucru cu Silver",
+    "starting": "Se pornește…",
+    "earnedBalanceLink": "Vedeți detaliile soldului câștigat",
+    "openPlans": "Vedeți pachetele"
+  },
+  "eliteOffer": {
+    "title": "Ofertă directă privată",
+    "loading": "Se încarcă oferta…",
+    "unavailableTitle": "Această ofertă nu este disponibilă",
+    "unavailableText": "Este posibil ca oferta să fi expirat, să nu fie adresată contului dumneavoastră sau ca ofertele directe să nu fie activate momentan.",
+    "back": "Înapoi la panoul de control",
+    "expires": "Oferta expiră",
+    "accept": "Acceptați oferta",
+    "decline": "Refuzați oferta",
+    "actionFailed": "Această acțiune asupra ofertei nu a putut fi finalizată. Încercați din nou.",
+    "status": {
+      "pending": "Se așteaptă răspunsul dumneavoastră",
+      "accepted": "Acceptată",
+      "declined": "Refuzată",
+      "expired": "Expirată",
+      "cancelled": "Anulată",
+      "unknown": "Indisponibilă"
+    }
+  }
+}

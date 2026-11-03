@@ -1,3 +1,5 @@
+import { ctFromEnFlag } from "./constantsI18n.js";
+
 export function sharesSumToTotal(article, freelancer, company, reviewer) {
   const n = (v) => Math.round(Number(v) * 1000);
   if (![article, freelancer, company, reviewer].every((v) => Number.isFinite(Number(v)))) return false;
@@ -9,30 +11,21 @@ export const ACTIVATION_BUDGET_ERROR_CODES = Object.freeze({
   WAVE_INSUFFICIENT: "ACTIVATION_WAVE_BUDGET_INSUFFICIENT",
 });
 
-const BUDGET_ERROR_COPY = Object.freeze({
-  ACTIVATION_CAMPAIGN_BUDGET_INSUFFICIENT: {
-    ar: "ميزانية الحملة لا تكفي لإسناد هذه المقالة.",
-    en: "Campaign budget is not enough to assign this article.",
-  },
-  ACTIVATION_WAVE_BUDGET_INSUFFICIENT: {
-    ar: "ميزانية الموجة لا تكفي لإسناد هذه المقالة.",
-    en: "Wave budget is not enough to assign this article.",
-  },
-});
+/** Catalog: platformConstants.freelancerActivationCampaign.budgetErrors.<code>. */
+const BUDGET_ERROR_CODES = new Set(Object.values(ACTIVATION_BUDGET_ERROR_CODES));
 
-export function activationAssignmentErrorMessage(err, { isEn = false } = {}) {
+/** `locale` (optional) wins over the legacy `isEn` flag. */
+export function activationAssignmentErrorMessage(err, { isEn = false, locale } = {}) {
   const code = err?.response?.data?.code || err?.publicCode || err?.code || "";
-  const copy = BUDGET_ERROR_COPY[code];
-  if (!copy) return null;
-  return isEn ? copy.en : copy.ar;
+  if (!BUDGET_ERROR_CODES.has(code)) return null;
+  return ctFromEnFlag(`freelancerActivationCampaign.budgetErrors.${code}`, isEn, undefined, locale);
 }
 
-export function formatActivationBudgetState(state, { isEn = false } = {}) {
+const BUDGET_STATES = new Set(["reserved", "used", "released", "not_reserved"]);
+
+/** `locale` (optional) wins over the legacy `isEn` flag. */
+export function formatActivationBudgetState(state, { isEn = false, locale } = {}) {
   const key = String(state || "");
-  if (key === "reserved") return isEn ? "Reserved" : "محجوز";
-  if (key === "used") return isEn ? "Used" : "مستخدم";
-  if (key === "released") return isEn ? "Released" : "محرّر";
-  if (key === "not_reserved") return isEn ? "Not reserved" : "غير محجوز";
-  return "";
+  if (!BUDGET_STATES.has(key)) return "";
+  return ctFromEnFlag(`freelancerActivationCampaign.budgetStates.${key}`, isEn, undefined, locale);
 }
-

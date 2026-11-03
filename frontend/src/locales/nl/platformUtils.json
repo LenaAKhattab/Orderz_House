@@ -1,0 +1,121 @@
+{
+  "money": {
+    "free": "Gratis",
+    "total": "Totaal: {{amount}}",
+    "currency": {
+      "JOD": "JOD",
+      "EGP": "EGP",
+      "SAR": "SAR",
+      "AED": "AED",
+      "QAR": "QAR",
+      "KWD": "KWD",
+      "BHD": "BHD",
+      "OMR": "OMR",
+      "USD": "USD",
+      "EUR": "EUR",
+      "GBP": "GBP"
+    }
+  },
+  "country": {
+    "unknown": "Onbekend",
+    "unspecified": "Niet opgegeven",
+    "awaitingPayment": "In afwachting van betaling"
+  },
+  "bidPaymentReturn": {
+    "pendingVerify": {
+      "title": "Betaling wordt geverifieerd",
+      "message": "De betaling is nog niet bevestigd (de webhook kan even duren). Wacht kort en vernieuw daarna. Als de opdracht na enkele minuten nog steeds „In afwachting van betaling“ toont, neem contact op met support."
+    },
+    "serviceUnavailable": {
+      "title": "Betaaldienst niet beschikbaar",
+      "message": "De betalingsprovider is niet beschikbaar. Probeer het later opnieuw of neem contact op met support."
+    },
+    "stateChanged": {
+      "title": "Opdracht- of bodstatus gewijzigd",
+      "message": "Deze bodbetaling kan in de huidige status niet worden bevestigd. Vernieuw de pagina of start checkout opnieuw via de opdrachtkaart. Als u denkt dat u bent belast, wacht kort en vernieuw; anders neem contact op met support."
+    },
+    "generic": {
+      "title": "Bodbetaling kon niet worden bevestigd",
+      "message": "We konden de betaling voor het geselecteerde bod niet bevestigen. Als Stripe een geslaagde afschrijving toont, wacht kort en vernieuw. Als dit aanhoudt, neem contact op met support met uw opdracht-ID."
+    }
+  },
+  "duration": {
+    "lessThanMinute": "Minder dan een minuut",
+    "partJoiner": ", ",
+    "day": "{{count}} dag",
+    "day_plural": "{{count}} dagen",
+    "hour": "{{count}} uur",
+    "hour_plural": "{{count}} uren",
+    "minute": "{{count}} minuut",
+    "minute_plural": "{{count}} minuten"
+  },
+  "membershipSchedule": {
+    "monthOne": "1 maand",
+    "monthTwo": "2 maanden",
+    "monthsFew": "{{count}} maanden",
+    "monthsMany": "{{count}} maanden",
+    "awaitingFirstOrder": "In afwachting van eerste opdracht",
+    "startsOnFirstOrder": "Start met de eerste opdracht",
+    "expiryAfterStart": "Berekend zodra het abonnement start"
+  },
+  "eligibility": {
+    "adminApprovalPending": "In afwachting van admin-goedkeuring voordat u opdrachten kunt ontvangen",
+    "noSubscription": "Activeer eerst uw pakket om opdrachten te ontvangen.",
+    "inactive": "Uw abonnement is niet actief. Sluit eerst een abonnement af.",
+    "paymentIncomplete": "Opdrachtintake kon niet worden ingeschakeld omdat de abonnementsbetaling onvolledig is.",
+    "expired": "Uw abonnement is verlopen. Verleng om opdrachten te ontvangen.",
+    "activationFeeUnpaid": "Betaal de jaarlijkse activatiekosten voordat u opdrachten ontvangt.",
+    "accountHoldPaymentFailed": "De maandelijkse abonnementskosten van 15 JOD konden niet van uw opgeslagen kaart worden afgeschreven; uw account is tijdelijk bevroren. Neem contact met ons op om te reactiveren.",
+    "planConfigurationError": "We konden uw pakketgeschiktheid nu niet verifiëren. Neem contact op met support.",
+    "generic": "Uw account komt momenteel niet in aanmerking voor marketplace-opdrachten (controleer uw abonnement)."
+  },
+  "upload": {
+    "totalSizeExceeded": "De totale bestandsgrootte mag {{mb}} MB niet overschrijden",
+    "totalSizeHelper": "Maximale totale bestandsgrootte: {{mb}} MB",
+    "fileSize": {
+      "bytes": "{{size}} B",
+      "kilobytes": "{{size}} kB",
+      "megabytes": "{{size}} MB (megabyte)"
+    }
+  },
+  "applicants": {
+    "guestMessage": "Zichtbaar na inloggen",
+    "guestMessageLong": "Het aantal sollicitanten is alleen zichtbaar voor ingelogde gebruikers",
+    "empty": "Geen",
+    "count": "{{count}} sollicitant",
+    "count_plural": "{{count}} sollicitanten",
+    "singular": "sollicitant",
+    "plural": "sollicitanten"
+  },
+  "poolPlan": {
+    "lockBadge": "Niet beschikbaar in uw pakket",
+    "messages": {
+      "PLAN_TOO_LOW": "De waarde van deze opdracht ligt boven de limiet van uw huidige pakket",
+      "NO_ACTIVE_PLAN": "Activeer uw pakket om opdrachten te ontvangen",
+      "INTERNAL_PLAN_CONFIGURATION": "We konden uw pakketgeschiktheid nu niet verifiëren. Neem contact op met support."
+    }
+  },
+  "homeCategories": {
+    "imageAlt": "Categorie",
+    "exploreServices": "Diensten verkennen",
+    "fallback": {
+      "programming": {
+        "title": "Programmeerdiensten",
+        "text": "Professionele programmeerdiensten voor bedrijven, academisch onderzoek en maatwerkprojecten."
+      },
+      "design": {
+        "title": "Ontwerpdiensten",
+        "text": "Professionele ontwerpdiensten voor bedrijven, wetenschap en persoonlijke behoeften."
+      },
+      "contentWriting": {
+        "title": "Contentschrijven",
+        "text": "Professionele schrijfdiensten voor bedrijven, academisch onderzoek en persoonlijke behoeften."
+      },
+      "specialRequests": {
+        "title": "Speciale verzoeken",
+        "text": "Laat uw opdracht direct behandelen door het supportteam van de site",
+        "button": "Contact opnemen via WhatsApp"
+      }
+    }
+  }
+}

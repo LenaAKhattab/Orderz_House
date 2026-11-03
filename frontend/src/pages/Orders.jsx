@@ -6,10 +6,10 @@ import { useTranslation } from "../i18n/LanguageProvider";
  * API uses `GET /orders/pool` with guest/public sanitization; actions require auth + role (see OpenOrdersMarketplace).
  */
 const Orders = () => {
-  const { dir } = useTranslation();
+  const { dir, locale } = useTranslation();
 
   return (
-    <main className="oh-orders-public-page" lang={dir === "rtl" ? "ar" : "en"} dir={dir}>
+    <main className="oh-orders-public-page" lang={locale} dir={dir}>
       <OpenOrdersMarketplace layout="public" />
     </main>
   );

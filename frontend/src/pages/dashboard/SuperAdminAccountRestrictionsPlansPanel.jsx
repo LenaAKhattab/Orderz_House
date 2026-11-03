@@ -9,6 +9,9 @@ import StatusBadge from "../../components/dashboard/StatusBadge";
 import ConfirmDialog from "../../components/dashboard/ConfirmDialog";
 import { useToast } from "../../components/ui/toastContext";
 import { useTranslation } from "../../i18n/LanguageProvider";
+import { getActiveLocale } from "../../i18n/activeLocale.js";
+import { isNewLocale, localizeSystemText } from "../../i18n/systemContent.js";
+import { pickIntlTag } from "../../i18n/intlLocale.js";
 import { formatLocaleDate, formatLocaleDateTime } from "../../i18n/formatLocale";
 import { presentServerMessage } from "../../i18n/presentServerMessage";
 import {
@@ -42,8 +45,8 @@ function errorMessage(err, t, locale) {
   return presentServerMessage(err, t, locale);
 }
 
-function formatCount(value) {
-  return Number(value || 0).toLocaleString("en-US");
+function formatCount(value, locale = getActiveLocale()) {
+  return Number(value || 0).toLocaleString(pickIntlTag(locale, { ar: "en-US", en: "en-US" }));
 }
 
 function planStatusTone(status) {
@@ -84,6 +87,7 @@ function expiresAtFromDuration(durationId, customValue) {
 }
 
 function planDisplayName(row, locale) {
+  if (isNewLocale(locale)) return localizeSystemText(locale, { ar: row.planNameAr, en: row.planNameEn }) || row.tierCode;
   return locale?.startsWith("en") ? row.planNameEn || row.tierCode : row.planNameAr || row.tierCode;
 }
 

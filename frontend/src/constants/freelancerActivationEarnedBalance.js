@@ -1,33 +1,46 @@
+import { intlTagOrDefault } from "../i18n/intlLocale.js";
+import { localeFromEnFlag } from "../i18n/activeLocale.js";
+import { ct, ctAr, ctEnglish, ctFromEnFlag } from "./constantsI18n.js";
+
+const NS = "freelancerActivationEarnedBalance";
+
 export const MINI_ARTICLE_SUBMISSION_TERMS_VERSION = "mini_article_submission_terms_2026-08-v1";
 
-export const MINI_ARTICLE_SUBMISSION_TERMS_COPY_AR =
-  "أوافق على شروط ملكية ونشر هذا المقال، وأفهم أنه عند قبول المقال يمكن نشره باسمي على Bildazo وفق سياسة المنصة.";
+/** Arabic / English copies (catalog: platformConstants.freelancerActivationEarnedBalance.miniArticleTerms). */
+export const MINI_ARTICLE_SUBMISSION_TERMS_COPY_AR = ctAr(`${NS}.miniArticleTerms`);
+export const MINI_ARTICLE_SUBMISSION_TERMS_COPY_EN = ctEnglish(`${NS}.miniArticleTerms`);
 
-export const MINI_ARTICLE_SUBMISSION_TERMS_COPY_EN =
-  "I agree to the ownership and publishing terms for this article, and I understand that if it is accepted it may be published under my name on Bildazo according to platform policy.";
+/** Arabic / English copies (catalog: platformConstants.freelancerActivationEarnedBalance.earnedBalanceHelper). */
+export const EARNED_BALANCE_HELPER_AR = ctAr(`${NS}.earnedBalanceHelper`);
+export const EARNED_BALANCE_HELPER_EN = ctEnglish(`${NS}.earnedBalanceHelper`);
 
-export const EARNED_BALANCE_HELPER_AR =
-  "يعرض هذا الرصيد قيمة الأعمال المقبولة داخل المنصة. السحب أو المطالبة المالية يتم حسب سياسة الشركة ولا يتأثر بالاشتراك.";
+/** Mini Article submission terms for any UI locale (`isEn ? …_EN : …_AR` replacement). */
+export function miniArticleSubmissionTermsCopy(locale) {
+  return ct(`${NS}.miniArticleTerms`, undefined, locale);
+}
 
-export const EARNED_BALANCE_HELPER_EN =
-  "This balance shows the value of accepted work on the platform. Withdrawal or financial claims follow company policy and are not affected by the subscription.";
+/** Earned-balance helper text for any UI locale (`isEn ? …_EN : …_AR` replacement). */
+export function earnedBalanceHelperText(locale) {
+  return ct(`${NS}.earnedBalanceHelper`, undefined, locale);
+}
 
-export function earnedBalanceStatusLabel(status, { isEn = false } = {}) {
+const EARNED_BALANCE_STATUSES = new Set(["pending", "settled_externally", "voided"]);
+
+/** `locale` (optional) wins over the legacy `isEn` flag. */
+export function earnedBalanceStatusLabel(status, { isEn = false, locale } = {}) {
   const key = String(status || "");
-  if (key === "pending") return isEn ? "Pending" : "قيد المعالجة";
-  if (key === "settled_externally") return isEn ? "Recorded" : "مسجّل";
-  if (key === "voided") return isEn ? "Voided" : "ملغى";
+  if (EARNED_BALANCE_STATUSES.has(key)) return ctFromEnFlag(`${NS}.statuses.${key}`, isEn, undefined, locale);
   return key;
 }
 
-export function formatManuscriptTermsAdmin(submission, { isEn = false } = {}) {
-  if (!submission) return isEn ? "Terms: not recorded" : "الشروط: غير مسجّلة";
-  if (!submission.termsAccepted) return isEn ? "Terms: not accepted" : "الشروط: غير مقبولة";
+/** `locale` (optional) wins over the legacy `isEn` flag. */
+export function formatManuscriptTermsAdmin(submission, { isEn = false, locale } = {}) {
+  const loc = locale || localeFromEnFlag(isEn);
+  if (!submission) return ct(`${NS}.terms.notRecorded`, undefined, loc);
+  if (!submission.termsAccepted) return ct(`${NS}.terms.notAccepted`, undefined, loc);
   const version = submission.termsVersion || "—";
   const at = submission.termsAcceptedAt
-    ? new Date(submission.termsAcceptedAt).toLocaleString()
+    ? new Date(submission.termsAcceptedAt).toLocaleString(intlTagOrDefault(loc))
     : "—";
-  return isEn
-    ? `Terms accepted · ${version} · ${at}`
-    : `تم قبول الشروط · ${version} · ${at}`;
+  return ct(`${NS}.terms.accepted`, { version, at }, loc);
 }

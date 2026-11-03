@@ -1,0 +1,436 @@
+{
+  "feedback": {
+    "types": {
+      "problem": "مشكلة",
+      "suggestion": "اقتراح",
+      "other": "ملاحظة أخرى"
+    },
+    "statuses": {
+      "new": "جديد",
+      "in_review": "قيد المراجعة",
+      "resolved": "تم الحل",
+      "closed": "مغلق"
+    },
+    "priorities": {
+      "low": "منخفضة",
+      "normal": "عادية",
+      "high": "مرتفعة",
+      "urgent": "عاجلة"
+    },
+    "roles": {
+      "client": "عميل",
+      "freelancer": "مستقل"
+    }
+  },
+  "planUpgradeCta": {
+    "courseTierHelper": "متاحة بعد ترقية الباقة",
+    "internalConfigurationHeadline": "تعذر التحقق من أهلية خطتك حالياً. يرجى التواصل مع الدعم.",
+    "noActivePlanHeadline": "فعّل باقتك لاستلام الطلبات",
+    "viewPlans": "عرض الباقات",
+    "courseHeadline": "هذه الدورة متاحة لباقات أعلى",
+    "upgradePlan": "ترقية الباقة",
+    "orderValueExceedsHeadline": "قيمة هذا الطلب أعلى من حد باقتك الحالية"
+  },
+  "bildazoArticlePublish": {
+    "freelancer": {
+      "published": "تم نشر مقالك على Bildazo",
+      "needsManualReview": "يحتاج النشر على Bildazo إلى مراجعة من الإدارة.",
+      "pending": "تم قبول المقال داخل OrderzHouse، وجارٍ ربط النشر على Bildazo."
+    },
+    "admin": {
+      "notStarted": "نشر Bildazo: لم يبدأ",
+      "published": "منشور على Bildazo",
+      "already_imported": "مستورد مسبقاً إلى Bildazo",
+      "needs_manual_review": "يحتاج مراجعة Bildazo",
+      "failed": "فشل نشر Bildazo",
+      "pending": "نشر Bildazo قيد الانتظار",
+      "skipped": "تم تخطي نشر Bildazo (غير مفعّل)"
+    }
+  },
+  "bildazoAuthorTerms": {
+    "termsCopy": "أوافق على شروط نشر المقالات وربطها بحساب الكاتب في Bildazo، وأقر بأن المقال المقبول قد يتم إرساله للمراجعة والنشر على Bildazo باسمي.",
+    "writerRole": "كاتب",
+    "errors": {
+      "passwordWeak": "كلمة المرور يجب أن تكون 8 أحرف على الأقل وتتضمن حرفًا ورقمًا.",
+      "passwordMismatch": "تأكيد كلمة المرور غير مطابق.",
+      "terms": "يجب الموافقة على شروط ربط حساب الكاتب.",
+      "fullName": "الاسم الكامل مطلوب لإنشاء حساب الكاتب.",
+      "existingCredentials": "أدخل بريد حساب Bildazo وكلمة المرور."
+    },
+    "failures": {
+      "INVALID_CREDENTIALS": "تعذر التحقق من حساب Bildazo. تأكد من البريد وكلمة المرور.",
+      "ACCOUNT_UNAVAILABLE": "لا يمكن ربط حساب Bildazo هذا حالياً.",
+      "ENDPOINT_UNAVAILABLE": "خدمة ربط Bildazo غير متاحة مؤقتاً. أعد المحاولة لاحقاً.",
+      "TIMEOUT": "تعذر الوصول إلى Bildazo. تحقق من الاتصال ثم أعد المحاولة.",
+      "failed": "تعذر إكمال الربط مع Bildazo. أعد المحاولة."
+    }
+  },
+  "jordanCities": {
+    "other": "أخرى",
+    "cities": {
+      "amman": "عمّان",
+      "zarqa": "الزرقاء",
+      "irbid": "إربد",
+      "russeifa": "الرصيفة",
+      "salt": "السلط",
+      "aqaba": "العقبة",
+      "madaba": "مادبا",
+      "jerash": "جرش",
+      "ajloun": "عجلون",
+      "mafraq": "المفرق",
+      "karak": "الكرك",
+      "tafilah": "الطفيلة",
+      "maan": "معان",
+      "ramtha": "الرمثا",
+      "sahab": "سحاب",
+      "naour": "ناعور",
+      "wadiAlSeer": "وادي السير",
+      "marka": "ماركا",
+      "sweileh": "صويلح",
+      "jubeiha": "الجبيهة",
+      "khalda": "خلدا",
+      "tlaaAlAli": "تلاع العلي",
+      "shmeisani": "الشميساني",
+      "abdali": "العبدلي",
+      "jabalAlHussein": "جبل الحسين",
+      "jabalAlNasr": "جبل النصر",
+      "markaNorth": "ماركا الشمالية",
+      "quweismeh": "القويسمة",
+      "abuNseir": "أبو نصير",
+      "tabarbour": "طبربور",
+      "yasmeen": "الياسمين",
+      "yadoudeh": "اليادودة",
+      "muqabalain": "المقابلين",
+      "marjAlHamam": "مرج الحمام",
+      "jizah": "الجيزة",
+      "muwaqqar": "الموقر",
+      "hisban": "حسبان",
+      "fuheis": "الفحيص",
+      "mahis": "ماحص",
+      "ainAlBasha": "عين الباشا",
+      "deirAlla": "دير علا",
+      "southShuna": "الشونة الجنوبية",
+      "northShuna": "الشونة الشمالية",
+      "azraq": "الأزرق",
+      "safawi": "الصفاوي",
+      "husn": "الحصن",
+      "beitRas": "بيت راس",
+      "kafrYuba": "كفر يوبا",
+      "kafrJayez": "كفر جايز",
+      "nuaimeh": "النعيمة",
+      "soum": "سوم",
+      "northMazar": "المزار الشمالي",
+      "kafrAwan": "كفر عوان",
+      "kufranjah": "كفرنجة",
+      "anjara": "عنجرة",
+      "sukhur": "صخور",
+      "deirAbiSaid": "دير أبي سعيد",
+      "southMazar": "المزار الجنوبي",
+      "mutah": "مؤتة",
+      "thaniyah": "الثنية",
+      "faqqu": "فقوع",
+      "qasr": "القصر",
+      "ghorAlSafi": "غور الصافي",
+      "ghorAlMazraa": "غور المزرعة",
+      "middleJordanValley": "الأغوار الوسطى",
+      "wadiMusa": "وادي موسى",
+      "petra": "البتراء",
+      "shoubak": "الشوبك",
+      "hasa": "الحسا",
+      "jafr": "الجفر",
+      "quwaira": "القويرة",
+      "disi": "الديسة",
+      "haql": "حقل",
+      "ruwaished": "الرويشد",
+      "salhiyah": "الصالحية",
+      "khalidiyah": "الخالدية",
+      "samaAlSarhan": "سما السرحان",
+      "rehab": "رحاب",
+      "manara": "المنارة",
+      "housha": "حوشا",
+      "khirbetAlSamra": "الخربة السمراء"
+    }
+  },
+  "freelancerActivationKpi": {
+    "unavailable": "غير متاح حاليًا",
+    "unavailableShort": "غير متاح",
+    "schemaNotReady": "قاعدة بيانات محرك التفعيل غير جاهزة بعد. طبّق migrations الخاصة بالمحرك في البيئة المناسبة قبل استخدام هذه اللوحة.",
+    "loadError": "تعذر تحميل مؤشرات محرك التفعيل حاليًا.",
+    "notesTitle": "ملاحظات حول دقة المؤشرات",
+    "notesIntro": "بعض المؤشرات غير متاحة لأن مصدرها غير مربوط بعد بشكل موثوق.",
+    "daysUnit": "{{value}} يوم",
+    "funnel": {
+      "trialActivatedUsers": "تم تفعيل التجربة",
+      "firstBidUsers": "أول تقديم",
+      "firstAssignmentUsers": "أول إسناد",
+      "firstAcceptedWorkUsers": "أول عمل مقبول",
+      "firstPublishedWorkUsers": "أول مقال منشور",
+      "silverCtaShownUsers": "ظهور دعوة Silver",
+      "silverPaymentStartedUsers": "بدء طلب الترقية",
+      "silverPaidUsers": "مشترك Silver"
+    },
+    "funnelSteps": {
+      "registeredUsers": "التسجيل",
+      "verifiedUsers": "التوثيق",
+      "trainingCompletedUsers": "إكمال التدريب",
+      "trialActivatedUsers": "تفعيل التجربة",
+      "firstBidUsers": "أول تقديم",
+      "firstAssignmentUsers": "أول إسناد",
+      "firstAcceptedWorkUsers": "أول عمل مقبول",
+      "firstPublishedWorkUsers": "أول مقال منشور",
+      "silverCtaShownUsers": "ظهور دعوة Silver",
+      "silverPaymentStartedUsers": "بدء طلب الترقية",
+      "silverPaidUsers": "مشترك Silver"
+    },
+    "rates": {
+      "trialActivatedToPaidRate": "التجربة → Silver",
+      "firstAcceptedToPaidRate": "أول قبول → Silver",
+      "firstPublishedToPaidRate": "أول نشر → Silver",
+      "ctaShownToPaymentStartedRate": "ظهور الدعوة → بدء الطلب",
+      "paymentStartedToPaidRate": "بدء الطلب → الدفع/التفعيل"
+    },
+    "timing": {
+      "averageTimeToFirstBid": "متوسط الوقت لأول تقديم",
+      "averageTimeToFirstWin": "متوسط الوقت لأول إسناد",
+      "averageTimeToFirstAccepted": "متوسط الوقت لأول قبول",
+      "averageTimeToFirstPublished": "متوسط الوقت لأول نشر"
+    },
+    "quality": {
+      "acceptedArticleCount": "مقالات مقبولة",
+      "rejectedArticleCount": "مقالات مرفوضة",
+      "revisionRequestedCount": "طلبات تعديل",
+      "publishedArticleCount": "مقالات منشورة",
+      "articleAcceptanceRate": "نسبة القبول",
+      "articleRejectionRate": "نسبة الرفض",
+      "revisionRate": "نسبة طلب التعديل"
+    },
+    "financial": {
+      "campaignBudgetTotalJod": "ميزانية الحملة",
+      "campaignBudgetReservedJod": "المحجوز",
+      "campaignBudgetUsedJod": "المستخدم",
+      "campaignBudgetRemainingJod": "المتبقي",
+      "pendingFreelancerEarnedJod": "الرصيد المكتسب قيد المعالجة",
+      "costPerPaidFreelancer": "التكلفة لكل مشترك مدفوع",
+      "subscriptionRevenueJod": "إيراد الاشتراكات",
+      "workInventoryReserveAllocatedJod": "احتياطي مخزون العمل (مخصص)",
+      "workInventoryReserveActiveJod": "احتياطي مخزون العمل (نشط)"
+    }
+  },
+  "freelancerActivationFairDistribution": {
+    "reasons": {
+      "preferred_activation_candidate": "مرشح مفضل للتفعيل",
+      "first_work_opportunity": "أول فرصة عمل",
+      "no_previous_accepted_work": "لم يحصل على عمل مقبول سابقًا",
+      "no_previous_win": "لم يحصل على فوز سابق",
+      "low_workload": "عبء عمل منخفض",
+      "waiting": "ينتظر منذ {{days}} أيام",
+      "paid_membership": "عضوية مدفوعة"
+    }
+  },
+  "freelancerActivationEarnedBalance": {
+    "miniArticleTerms": "أوافق على شروط ملكية ونشر هذا المقال، وأفهم أنه عند قبول المقال يمكن نشره باسمي على Bildazo وفق سياسة المنصة.",
+    "earnedBalanceHelper": "يعرض هذا الرصيد قيمة الأعمال المقبولة داخل المنصة. السحب أو المطالبة المالية يتم حسب سياسة الشركة ولا يتأثر بالاشتراك.",
+    "statuses": {
+      "pending": "قيد المعالجة",
+      "settled_externally": "مسجّل",
+      "voided": "ملغى"
+    },
+    "terms": {
+      "notRecorded": "الشروط: غير مسجّلة",
+      "notAccepted": "الشروط: غير مقبولة",
+      "accepted": "تم قبول الشروط · {{version}} · {{at}}"
+    }
+  },
+  "freelancerActivationCampaign": {
+    "budgetErrors": {
+      "ACTIVATION_CAMPAIGN_BUDGET_INSUFFICIENT": "ميزانية الحملة لا تكفي لإسناد هذه المقالة.",
+      "ACTIVATION_WAVE_BUDGET_INSUFFICIENT": "ميزانية الموجة لا تكفي لإسناد هذه المقالة."
+    },
+    "budgetStates": {
+      "reserved": "محجوز",
+      "used": "مستخدم",
+      "released": "محرّر",
+      "not_reserved": "غير محجوز"
+    }
+  },
+  "freelancerActivationTrial": {
+    "applyErrors": {
+      "FREELANCER_TRIAL_REQUIRED": "يلزم تفعيل تجربة العمل قبل التقديم على مقالات Mini Article.",
+      "FREELANCER_TRIAL_EXPIRED": "انتهت تجربة العمل. للمتابعة، انتقل إلى Silver.",
+      "FREELANCER_TRIAL_DAILY_BID_LIMIT_REACHED": "وصلت للحد اليومي من عروض التجربة.",
+      "FREELANCER_TRIAL_BID_LIMIT_REACHED": "وصلت للحد الأقصى من عروض التجربة.",
+      "FREELANCER_TRIAL_WORK_CAP_REACHED": "وصلت للحد الأقصى من المقالات المقبولة في التجربة.",
+      "FREELANCER_TRIAL_MINI_ARTICLES_ONLY": "التجربة تسمح بالتقديم على مقالات Mini Article فقط.",
+      "FREELANCER_TRIAL_BID_GRANT_FAILED": "تعذر منح عروض التجربة. لم تكتمل التجربة، حاول مرة أخرى.",
+      "ACTIVATION_CAMPAIGN_EMERGENCY_STOPPED": "تم إيقاف الحملة مؤقتًا من الإدارة.",
+      "ACTIVATION_CAMPAIGN_PAUSED": "تم إيقاف الحملة مؤقتًا من الإدارة.",
+      "ACTIVATION_WAVE_PAUSED": "تم إيقاف استقبال التقديمات لهذه الفرصة مؤقتًا.",
+      "ACTIVATION_CAMPAIGN_NOT_ACTIVE": "تم إيقاف استقبال التقديمات لهذه الفرصة مؤقتًا.",
+      "ACTIVATION_WAVE_NOT_ACTIVE": "تم إيقاف استقبال التقديمات لهذه الفرصة مؤقتًا."
+    }
+  },
+  "freelancerActivationArticleOps": {
+    "planTiers": {
+      "starter": "تجربة / مجاني",
+      "trial": "تجربة",
+      "silver": "فضية (Silver)",
+      "pro": "احترافية (Pro)",
+      "elite": "نخبة (Elite)"
+    }
+  },
+  "freelancerActivationConversion": {
+    "defaultError": "تعذر بدء ترقية Silver حالياً. حاول مرة أخرى أو افتح صفحة الباقات.",
+    "success": "تم إرسال طلب تفعيل Silver. يبدأ الاشتراك بعد موافقة الشركة.",
+    "upgradeButton": "الترقية إلى Silver – {{price}} JOD",
+    "errors": {
+      "FREELANCER_ACTIVATION_ENGINE_DISABLED": "تجربة التفعيل غير مفعّلة حالياً.",
+      "FREELANCER_SILVER_CONVERSION_BLOCKED": "لا يمكن بدء ترقية Silver في حالتك الحالية.",
+      "FREELANCER_SILVER_PLAN_NOT_FOUND": "باقة Silver غير متاحة حالياً. راجع صفحة الباقات.",
+      "ACTIVATION_REQUEST_ALREADY_PENDING": "لديك طلب تفعيل قيد المراجعة لهذه الباقة.",
+      "MARKETPLACE_PLAN_NOT_FOUND": "باقة Marketplace غير متاحة حالياً."
+    }
+  },
+  "specialOfferPackage": {
+    "accessLevels": {
+      "starter": "مستوى STARTER",
+      "silver": "مستوى SILVER",
+      "pro": "مستوى PRO",
+      "elite": "مستوى ELITE"
+    },
+    "lockedWarning": "هذه باقة عرض تم شراؤها من مستخدمين، لذلك تم تجميد السعر والمزايا. يمكنك إخفاؤها أو إنشاء عرض جديد، وسيحتفظ المشتركون الحاليون بالمزايا التي دفعوا عليها.",
+    "refundSectionTitles": {
+      "monthlyRefund": "الاسترداد الشهري",
+      "inactiveMonths": "الأشهر غير النشطة",
+      "ordersIncome": "الدخل من الطلبات",
+      "importantNotice": "تنبيه مهم"
+    }
+  },
+  "displayCurrencies": {
+    "symbols": {
+      "JOD": "د.أ",
+      "SAR": "ر.س",
+      "AED": "د.إ",
+      "QAR": "ر.ق",
+      "KWD": "د.ك",
+      "BHD": "د.ب",
+      "OMR": "ر.ع",
+      "EGP": "ج.م"
+    },
+    "disclaimer": "القيمة تقريبية حسب سعر الصرف الحالي.",
+    "officialCurrency": "العملة الرسمية المعتمدة داخل Orderz House هي الدينار الأردني.",
+    "indicative": "القيمة المحوّلة إرشادية فقط ولا تعتبر سعرًا نهائيًا أو التزامًا ماليًا.",
+    "preferenceLabel": "العملة التقريبية المفضلة",
+    "preferenceHint": "تُستخدم هذه العملة للعرض فقط، بينما تبقى جميع الحسابات بالدينار الأردني.",
+    "autoByCountry": "تلقائي حسب الدولة"
+  },
+  "homeAnalyticsMetrics": {
+    "metrics": {
+      "active": {
+        "label": "المستخدمون النشطون",
+        "sub": "نشاط داخل المنصة · آخر 7 أيام",
+        "tooltip": "عدد الزوار الفريدين (جلسات المتصفح أو حسابات مسجّلة) الذين زاروا الموقع خلال آخر 7 أيام. التحديث المتكرر من نفس المتصفح يُعد زائراً واحداً.",
+        "stripLabel": "مستخدمون نشطون"
+      },
+      "views": {
+        "label": "مشاهدات الموقع",
+        "sub": "إجمالي الزيارات المسجّلة",
+        "tooltip": "يُزاد العداد مرة واحدة لكل جلسة نشطة (30 دقيقة). التحديث أو العودة خلال نفس الجلسة لا يزيد العدد.",
+        "stripLabel": "مشاهدات الموقع"
+      },
+      "availableOrders": {
+        "label": "الطلبات المتاحة الآن",
+        "sub": "طلبات متاحة للتقديم الآن",
+        "tooltip": "طلبات حقيقية مفتوحة في السوق والطلبات التجريبية الظاهرة للمستقلين حالياً.",
+        "stripLabel": "طلبات متاحة الآن"
+      },
+      "completedOrders": {
+        "label": "الطلبات المنجزة",
+        "sub": "طلبات العملاء المكتملة",
+        "tooltip": "طلبات العملاء الحقيقية المكتملة، بالإضافة إلى الطلبات التجريبية من الجولات التي انتهت بعد بدء العد الحالي — لا تشمل الجولات التاريخية القديمة.",
+        "stripLabel": "طلبات منجزة"
+      }
+    },
+    "adminHelp": {
+      "title": "ما الفرق بين المؤشرين؟",
+      "visitors": "عداد الصفحة الرئيسية: زيارة واحدة لكل جلسة (30 دقيقة) — التحديث أو التنقل داخل الجلسة لا يُكرّر العد.",
+      "active": "المستخدمون النشطون: زوار فريدون (جلسة أو حساب) زاروا الموقع خلال آخر 7 أيام — من قاعدة البيانات المحلية.",
+      "activeBody": "زوار فريدون (جلسة أو حساب) زاروا الموقع خلال آخر 7 أيام — من قاعدة البيانات المحلية."
+    }
+  },
+  "legacyEducationOptions": {
+    "levels": {
+      "belowSecondary": "أقل من الثانوية",
+      "secondary": "الثانوية العامة",
+      "diploma": "دبلوم",
+      "bachelor": "بكالوريوس",
+      "higherDiploma": "دبلوم عالٍ",
+      "master": "ماجستير",
+      "doctorate": "دكتوراه",
+      "other": "أخرى"
+    },
+    "graduationNotYet": "لم أتخرج بعد"
+  },
+  "legacyFreelancerWorkFields": {
+    "fields": {
+      "content_writing": "كتابة محتوى",
+      "design": "تصميم",
+      "programming": "برمجة"
+    },
+    "required": "يرجى اختيار مجال عمل واحد على الأقل."
+  },
+  "bildazoAuthorAdmin": {
+    "statusFilters": {
+      "all": "الكل",
+      "pending_new_account": "طلب حساب جديد",
+      "pending_existing_account": "طلب حساب موجود",
+      "pending_external_verification": "تحقق خارجي",
+      "needs_manual_review": "مراجعة يدوية",
+      "linked": "مرتبط",
+      "failed": "فشل",
+      "blocked": "موقوف"
+    }
+  },
+  "howItWorksPages": {
+    "navLabels": {
+      "freelancer": "طريقة العمل كمستقل",
+      "client": "طريقة الطلب للعميل"
+    },
+    "blockTypes": {
+      "title": "عنوان",
+      "text": "نص",
+      "image": "صورة",
+      "text_image": "نص + صورة"
+    }
+  },
+  "rateLimitExemptions": {
+    "scopes": {
+      "order_create": "إنشاء الطلبات (order_create)",
+      "fake_order_create": "طلبات التدريب الوهمية (fake_order_create)",
+      "training_bulk": "توليد تدريبي جماعي (training_bulk)",
+      "admin_write": "كتابات الإدارة (admin_write)"
+    },
+    "modes": {
+      "bypass": "تجاوز الحد (bypass)",
+      "increased_limit": "حد أعلى (increased_limit)"
+    }
+  },
+  "partnerLogos": {
+    "alts": {
+      "bildazo": "بيلدازو",
+      "studyzhouse": "ستادي هاوس",
+      "battech": "بات تكنو"
+    },
+    "subtitle": "نفخر بشراكاتنا مع جهات رائدة ساهمت في بناء قصص نجاح مميزة."
+  },
+  "freelancerOrderTenderPolicy": {
+    "title": "شروط وأحكام استلام وتنفيذ الطلبات والمناقصات"
+  },
+  "homeFeaturedServices": {
+    "specialRequestsWhatsappMessage": "مرحباً، أريد تقديم طلب خاص عبر أوردرز هاوس."
+  },
+  "planCatalogs": {
+    "main_plans": "الباقات الرئيسية",
+    "page_plans": "باقات الصفحات",
+    "marketplace_plans": "باقات العمل"
+  }
+}

@@ -4,10 +4,13 @@ import { getTranslation } from "../../lib/translation/getTranslation.js";
 import "../../i18n/subscriptionsResources.js";
 import "../../i18n/statusesResources.js";
 import { statusLabel } from "../../i18n/statusRegistry.js";
+import { isNewLocale } from "../../i18n/systemContent.js";
+import { legacyArabicUiLocale } from "../adminLocale.js";
 
 const SUBSCRIPTION_ADMIN_TZ = "Asia/Amman";
 
-const fallbackT = (key, values) => getTranslation(key, "ar", values);
+// Without `t` these labels were Arabic in both AR and EN UIs (kept); German / Dutch / Romanian get their own.
+const fallbackT = (key, values) => getTranslation(key, legacyArabicUiLocale(), values);
 
 /**
  * Stable Super Admin date-only: DD/MM/YYYY (Latin digits, Amman TZ).
@@ -35,7 +38,7 @@ export function formatSubscriptionAdminDate(value) {
  */
 export function formatSubscriptionAdminDateTime(value, locale = "ar") {
   if (!value) return "—";
-  if (locale === "en") return formatLocaleDateTime(value, "en");
+  if (locale === "en" || isNewLocale(locale)) return formatLocaleDateTime(value, locale);
 
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "—";
