@@ -2,9 +2,8 @@
 -- First-party checkout journey signals (analytics / telemetry only).
 -- NEVER grants membership, marks orders paid, or overrides Stripe webhook truth.
 --
--- Additive and reversible:
---   DROP TABLE IF EXISTS payment_checkout_funnel_events;
---   DELETE FROM schema_migrations WHERE version = '214_payment_checkout_funnel_events';
+-- Additive only. Rollback (ops manual): remove table payment_checkout_funnel_events
+-- and clear schema_migrations row version 214_payment_checkout_funnel_events.
 
 BEGIN;
 
