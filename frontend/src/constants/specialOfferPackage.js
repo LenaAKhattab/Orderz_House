@@ -2,9 +2,20 @@
  * Special Offer Package — independent promotional package (tier special_offer).
  * purchaseMode=checkout uses dedicated marketplace plan, not SILVER/PRO/ELITE.
  */
-import { isNewLocale, localizeSystemText } from "../i18n/systemContent.js";
+import { isNewLocale } from "../i18n/systemContent.js";
+import { localizeSystemCopyForNewLocale } from "../lib/i18n/newLocaleSystemCopy.js";
 import { TRAINING_WHATSAPP_E164 } from "./trainingPlansCatalog.js";
 import { ct, ctAr, ctEnglish, withCatalogLabels } from "./constantsI18n.js";
+
+/** Catalog fallbacks when system-content TM has no hit for DE/NL/RO. */
+const SPECIAL_OFFER_FIELD_CATALOG_KEYS = Object.freeze({
+  title: "plans.specialOffer.defaultTitle",
+  subtitle: "plans.specialOffer.defaultSubtitle",
+  badgeText: "plans.specialOffer.defaultBadge",
+  ribbonText: "plans.specialOffer.defaultRibbon",
+  ctaLabel: "plans.specialOffer.cta",
+  microcopy: "plans.specialOffer.defaultMicrocopy",
+});
 
 export const SPECIAL_OFFER_PURCHASE_MODE = Object.freeze({
   CHECKOUT: "checkout",
@@ -79,13 +90,17 @@ function englishSpecialOfferText(offer, field, arabic) {
 
 /**
  * Special-offer system content for a UI locale. Arabic: the stored Arabic field; English: the English field or the
- * canonical English copy ("" when none); German / Dutch / Romanian: the system-content translation of the English
- * (else Arabic) source.
+ * canonical English copy ("" when none); German / Dutch / Romanian: system-content TM, then plans catalog keys,
+ * then English/Arabic source as last resort.
  */
 export function localizedSpecialOfferText(offer, field, locale) {
   const arabic = String(offer?.[field] ?? "");
   if (isNewLocale(locale)) {
-    return localizeSystemText(locale, { ar: arabic, en: englishSpecialOfferText(offer, field, arabic) });
+    return localizeSystemCopyForNewLocale(locale, {
+      ar: arabic,
+      en: englishSpecialOfferText(offer, field, arabic),
+      key: SPECIAL_OFFER_FIELD_CATALOG_KEYS[field] || null,
+    });
   }
   if (locale !== "en") return arabic;
   return englishSpecialOfferText(offer, field, arabic);

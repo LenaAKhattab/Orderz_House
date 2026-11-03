@@ -11,12 +11,18 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import arAnalysis from "../../locales/ar/analysis.json" with { type: "json" };
 import enAnalysis from "../../locales/en/analysis.json" with { type: "json" };
+import dePlans from "../../locales/de/plans.json" with { type: "json" };
+import nlPlans from "../../locales/nl/plans.json" with { type: "json" };
+import roPlans from "../../locales/ro/plans.json" with { type: "json" };
 import { createTranslator } from "../../i18n/resolveTranslation.js";
 import { mergeLocaleNamespaces, resources } from "../../i18n/resources.js";
 
 mergeLocaleNamespaces({
   ar: { analysis: arAnalysis },
   en: { analysis: enAnalysis },
+  de: { plans: dePlans },
+  nl: { plans: nlPlans },
+  ro: { plans: roPlans },
 });
 import { getFaqLocalizedText } from "./getFaqLocalizedText.js";
 import { getLocalizedPlanCardDisplay } from "./getLocalizedPlanDisplay.js";
@@ -145,6 +151,21 @@ describe("special offer and legal fallback policy", () => {
     assert.equal(localizedSpecialOfferText(offer, "title", "en"), "Special offer");
     assert.equal(containsArabicScript(localizedSpecialOfferText(offer, "subtitle", "en")), false);
     assert.equal(localizedSpecialOfferText(offer, "title", "ar"), "باقة العرض");
+  });
+
+  it("uses catalog fallbacks for DE/NL/RO when system-content TM misses", () => {
+    const offer = {
+      title: "باقة العرض",
+      subtitle: "عرض ترويجي لفترة محدودة — عروض أكثر بسعر خاص.",
+      badgeText: "عرض خاص",
+      ribbonText: "لفترة محدودة",
+      ctaLabel: "احصل على العرض الآن",
+      microcopy: "بدون التزام، يمكنك الترقية في أي وقت",
+    };
+    assert.equal(localizedSpecialOfferText(offer, "title", "de"), "Sonderangebot");
+    assert.equal(localizedSpecialOfferText(offer, "ribbonText", "nl"), "Beperkte tijd");
+    assert.equal(localizedSpecialOfferText(offer, "ctaLabel", "ro"), "Obțineți oferta acum");
+    assert.match(localizedSpecialOfferText(offer, "subtitle", "de"), /Zeitlich begrenzt|Bewerbungen/i);
   });
 });
 

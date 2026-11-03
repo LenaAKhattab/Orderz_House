@@ -67,8 +67,11 @@
     "refundModalGotIt": "Am înțeles",
     "refundSummaryAria": "Rezumatul valorii ofertei",
     "refundSectionFallback": "Detalii",
+    "defaultTitle": "Ofertă specială",
+    "defaultSubtitle": "Promoție pe durată limitată — mai multe candidaturi la un preț special.",
     "defaultBadge": "Ofertă specială",
     "defaultRibbon": "Timp limitat",
+    "defaultMicrocopy": "Fără angajament. Puteți face upgrade oricând.",
     "refundSections": {
       "monthly": "Rambursare lunară",
       "inactiveMonths": "Luni inactive",
