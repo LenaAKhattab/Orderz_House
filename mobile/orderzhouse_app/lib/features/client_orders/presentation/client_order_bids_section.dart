@@ -70,7 +70,12 @@ class _ClientOrderBidsSectionState extends ConsumerState<ClientOrderBidsSection>
 
       final checkoutUrl = result.checkoutUrl?.trim() ?? '';
       if (checkoutUrl.isNotEmpty) {
-        final launch = await launchStripeCheckoutUrl(checkoutUrl);
+        final locale = Localizations.maybeLocaleOf(context)?.languageCode ?? 'ar';
+        final launch = await launchStripeCheckoutUrl(
+          checkoutUrl,
+          paymentFlow: 'client_selected_bid',
+          locale: locale,
+        );
         if (!mounted) return;
         setState(() => _actionBusy = false);
 

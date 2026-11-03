@@ -35,7 +35,12 @@ class _CreateOrderSuccessViewState extends ConsumerState<CreateOrderSuccessView>
       _payLoading = true;
       _payError = null;
     });
-    final launch = await launchStripeCheckoutUrl(url);
+    final locale = Localizations.maybeLocaleOf(context)?.languageCode ?? 'ar';
+    final launch = await launchStripeCheckoutUrl(
+      url,
+      paymentFlow: 'client_fixed',
+      locale: locale,
+    );
     if (!mounted) return;
     setState(() {
       _payLoading = false;
@@ -277,6 +282,7 @@ class _ClientOrderPaymentSectionState extends ConsumerState<ClientOrderPaymentSe
   }
 
   Future<void> _payNow() async {
+    final locale = Localizations.maybeLocaleOf(context)?.languageCode ?? 'ar';
     setState(() {
       _payLoading = true;
       _payError = null;
@@ -300,7 +306,11 @@ class _ClientOrderPaymentSectionState extends ConsumerState<ClientOrderPaymentSe
         return;
       }
 
-      final launch = await launchStripeCheckoutUrl(url);
+      final launch = await launchStripeCheckoutUrl(
+        url,
+        paymentFlow: 'client_fixed',
+        locale: locale,
+      );
       if (!mounted) return;
       setState(() {
         _payLoading = false;

@@ -56,13 +56,15 @@ class _PaymentReturnScreenState extends ConsumerState<PaymentReturnScreen> {
 
     final sid = widget.params.sessionId?.trim() ?? '';
     if (sid.isNotEmpty && isAuth) {
+      final locale = Localizations.maybeLocaleOf(context)?.languageCode ?? 'ar';
       // ignore: unawaited_futures
       CheckoutFunnelTelemetry.record(
         eventType: widget.params.isCancel
             ? 'checkout_cancel_returned'
             : 'checkout_success_returned',
         stripeCheckoutSessionId: sid,
-        paymentFlow: 'client_fixed',
+        // Server derives canonical paymentFlow from session ownership.
+        locale: locale,
       );
     }
 
