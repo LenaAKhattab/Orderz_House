@@ -61,7 +61,12 @@ export default function ClientFixedOrderPayNowButton({ order, className = "btn b
         return;
       }
       redirecting = true;
-      window.location.href = data.checkoutUrl;
+      const { redirectToStripeCheckout } = await import("../../lib/paymentCheckoutFunnelTelemetry.js");
+      redirectToStripeCheckout({
+        checkoutUrl: data.checkoutUrl,
+        sessionId: data.sessionId,
+        paymentFlow: fixed ? "client_fixed" : "client_selected_bid",
+      });
     } catch (e) {
       const key = PAY_ERROR_KEYS[e?.response?.data?.code];
       push({

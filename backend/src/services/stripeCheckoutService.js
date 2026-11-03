@@ -235,6 +235,18 @@ async function openClientFixedOrderCheckoutAttempt({ clientUserId, orderId, isMo
       logClientCheckout({ orderId: oid, previousState: "pending_payment", providerStatus: current.state });
       if (current.state === "open") {
         await db.query("COMMIT");
+        try {
+          const { emitCheckoutSessionLifecycle } = require("./paymentCheckoutFunnelTelemetry");
+          emitCheckoutSessionLifecycle({
+            actorUserId: uid,
+            paymentFlow: "client_fixed",
+            channel: isMobile ? "mobile" : "web",
+            localRef: `sess:${currentSid}`,
+            sessionId: currentSid,
+          });
+        } catch {
+          /* telemetry */
+        }
         return { checkoutUrl: current.session.url, sessionId: currentSid, resumed: true };
       }
       if (current.state === "processing") {
@@ -385,6 +397,18 @@ async function openClientFixedOrderCheckoutAttempt({ clientUserId, orderId, isMo
       throw err;
     }
 
+    try {
+      const { emitCheckoutSessionLifecycle } = require("./paymentCheckoutFunnelTelemetry");
+      emitCheckoutSessionLifecycle({
+        actorUserId: uid,
+        paymentFlow: "client_fixed",
+        channel: isMobile ? "mobile" : "web",
+        localRef: `sess:${session.id}`,
+        sessionId: session.id,
+      });
+    } catch {
+      /* telemetry */
+    }
     return { checkoutUrl: session.url, sessionId: session.id, resumed: false };
   } catch (e) {
     await db.query("ROLLBACK");
@@ -604,6 +628,18 @@ async function openClientSelectedBidCheckoutAttempt({ clientUserId, orderId, bid
     }
     if (resumable) {
       await db.query("COMMIT");
+      try {
+        const { emitCheckoutSessionLifecycle } = require("./paymentCheckoutFunnelTelemetry");
+        emitCheckoutSessionLifecycle({
+          actorUserId: Number(clientUserId),
+          paymentFlow: "client_selected_bid",
+          channel: "web",
+          localRef: `sess:${resumable.sid}`,
+          sessionId: resumable.sid,
+        });
+      } catch {
+        /* telemetry */
+      }
       return { checkoutUrl: resumable.url, sessionId: resumable.sid, resumed: true };
     }
 
@@ -647,10 +683,10 @@ async function openClientSelectedBidCheckoutAttempt({ clientUserId, orderId, bid
 
     const successUrl = `${clientUrl}/dashboard/client/my-orders?paid=1&orderId=${encodeURIComponent(String(oid))}&bidId=${encodeURIComponent(
       String(bid),
-    )}`;
+    )}&session_id={CHECKOUT_SESSION_ID}`;
     const cancelUrl = `${clientUrl}/dashboard/client/my-orders?cancelled=1&orderId=${encodeURIComponent(String(oid))}&bidId=${encodeURIComponent(
       String(bid),
-    )}`;
+    )}&session_id={CHECKOUT_SESSION_ID}`;
 
     const userEmail = await getUserEmailById(uid, db);
     const currencyUpper = stripeCurrency.toUpperCase();
@@ -770,6 +806,18 @@ async function openClientSelectedBidCheckoutAttempt({ clientUserId, orderId, bid
 
     await db.query("COMMIT");
     createdSessionId = null;
+    try {
+      const { emitCheckoutSessionLifecycle } = require("./paymentCheckoutFunnelTelemetry");
+      emitCheckoutSessionLifecycle({
+        actorUserId: Number(clientUserId),
+        paymentFlow: "client_selected_bid",
+        channel: "web",
+        localRef: `sess:${session.id}`,
+        sessionId: session.id,
+      });
+    } catch {
+      /* telemetry */
+    }
     return { checkoutUrl: session.url, sessionId: session.id, resumed: false };
   } catch (e) {
     await db.query("ROLLBACK");

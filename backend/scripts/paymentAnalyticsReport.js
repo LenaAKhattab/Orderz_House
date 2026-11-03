@@ -77,6 +77,20 @@ function renderText(r) {
   } else {
     out.push(`webhook: ${wh.skipped ? "skipped" : "not available"}`);
   }
+  const fp = r.firstPartyFunnel;
+  out.push("");
+  if (!fp || !fp.available) {
+    out.push(`first-party funnel: not available (${fp?.note || fp?.error || "no instrumentation yet"})`);
+  } else {
+    out.push(`first-party funnel (post-instrumentation since ${fp.instrumentationStartedAt || "?"}):`);
+    out.push(`  events: ${kv(fp.counts)}`);
+    out.push(`  rates: session→redirect=${pctText(fp.rates.sessionToRedirect)} redirect→cancel_return=${pctText(fp.rates.redirectToCancelReturn)} redirect→success_return=${pctText(fp.rates.redirectToSuccessReturn)} abandon_before_redirect=${pctText(fp.rates.abandonmentBeforeObservedRedirect)}`);
+    out.push(`  timing: session→redirect ${statText(fp.timing.sessionCreatedToRedirectStarted)} | redirect→cancel ${statText(fp.timing.redirectStartedToCancelReturned)} | redirect→success_return ${statText(fp.timing.redirectStartedToSuccessReturned)}`);
+    out.push(`  by channel: ${Object.entries(fp.byChannel || {}).map(([ch, ev]) => `${ch}{${kv(ev)}}`).join(" | ") || "-"}`);
+    out.push(`  by locale: ${Object.entries(fp.byLocale || {}).map(([loc, ev]) => `${loc}{${kv(ev)}}`).join(" | ") || "-"}`);
+    out.push(`  by flow (top): ${Object.entries(fp.byFlow || {}).slice(0, 12).map(([f, ev]) => `${f}{${kv(ev)}}`).join(" | ") || "-"}`);
+    out.push(`  note: ${fp.note}`);
+  }
   return out.join("\n");
 }
 

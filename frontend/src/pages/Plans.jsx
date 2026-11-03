@@ -150,7 +150,12 @@ const Plans = () => {
       const res = await createSpecialOfferCheckoutRequest();
       const url = res?.data?.checkoutUrl;
       if (!url) throw new Error(t("plans.specialOffer.checkoutMissingUrl"));
-      window.location.href = url;
+      const { redirectToStripeCheckout } = await import("../lib/paymentCheckoutFunnelTelemetry.js");
+      redirectToStripeCheckout({
+        checkoutUrl: url,
+        sessionId: res?.data?.sessionId,
+        paymentFlow: "special_offer",
+      });
     } catch (err) {
       const msg =
         getSafeApiErrorMessage(err, t("plans.specialOffer.checkoutFailed"));

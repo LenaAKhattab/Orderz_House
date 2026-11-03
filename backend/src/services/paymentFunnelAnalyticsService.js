@@ -562,6 +562,30 @@ async function buildPaymentAnalyticsReport(opts) {
   }
   const reconciliation = reconcile({ sessions, local, retrievedById, journeys });
 
+  let firstPartyFunnel = { available: false };
+  try {
+    const telemetrySvc = require("./paymentCheckoutFunnelTelemetry");
+    const { summarizeFirstPartyFunnel } = require("./paymentCheckoutFunnelReport");
+    const telemetry = await telemetrySvc.loadFunnelTelemetryAggregates(db, {
+      fromSec: Math.max(fromSec, 0),
+      toSec: nowSec + 1,
+    });
+    // Enrich redirected_then_expired_without_attempt using Stripe session states when ids align.
+    const stripeByCs = new Map(sessions.map((s) => [s.sessionId, s]));
+    let redirectedThenExpiredWithoutAttempt = 0;
+    for (const row of telemetry.sessions || []) {
+      // sessions aggregate has no stripe id exported (PII-safe); compute from byType only in summarize.
+      void row;
+    }
+    firstPartyFunnel = summarizeFirstPartyFunnel(telemetry, { stripeSessionsById: stripeByCs });
+    // Cross-check: sessions with redirect in telemetry window matching Stripe expired_without_attempt
+    // is left for a future join when we store anonymized session hashes; keep placeholder count 0 unless
+    // we can safely join. Prefer explicit Stripe financial truth in windows.*.
+    void redirectedThenExpiredWithoutAttempt;
+  } catch {
+    firstPartyFunnel = { available: false, error: "telemetry_load_failed" };
+  }
+
   const report = {
     generatedAt: new Date(nowSec * 1000).toISOString(),
     definitions: {
@@ -569,9 +593,10 @@ async function buildPaymentAnalyticsReport(opts) {
       session: "one Stripe Checkout Session (reloads / double clicks / Continue payment of an open session reuse it)",
       attempt: "one Stripe Charge (or one PaymentIntent stopped at 3-D Secure without a Charge)",
       abandoned: "session expired with no PaymentIntent (no payment method was ever submitted) — never counted as a failure",
-      checkoutOpened: "not observable (Stripe emits no opened event; no client-side tracking)",
-      cancelled: "not distinguishable from expiry at Stripe",
+      checkoutOpened: "partially closed by first-party checkout_redirect_started (proves OrderzHouse handoff, NOT that Stripe rendered)",
+      cancelled: "checkout_cancel_returned distinguishes explicit Stripe cancel_url return; expiry without return remains Stripe-side",
       ratesShownFrom: model.MIN_RATE_DENOMINATOR,
+      firstPartyEvents: "checkout_requested | checkout_session_created | checkout_redirect_started | checkout_cancel_returned | checkout_success_returned — telemetry only, never entitlement",
     },
     population: {
       siteHosts: [...siteHosts],
@@ -584,6 +609,7 @@ async function buildPaymentAnalyticsReport(opts) {
     windows,
     recoveryEra,
     reconciliation,
+    firstPartyFunnel,
     webhook: opts.includeWebhook === false ? { skipped: true } : await webhookHealth(stripe, local, { siteHosts, nowSec }),
   };
   return assertNoIdentifiers(report);

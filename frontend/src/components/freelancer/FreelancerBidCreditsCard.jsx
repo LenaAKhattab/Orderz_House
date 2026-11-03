@@ -111,7 +111,12 @@ export default function FreelancerBidCreditsCard() {
       });
       const url = res?.data?.checkoutUrl;
       if (!url) throw new Error(t("economy.bidCreditsCard.checkoutUnavailable"));
-      window.location.href = url;
+      const { redirectToStripeCheckout } = await import("../../lib/paymentCheckoutFunnelTelemetry.js");
+      redirectToStripeCheckout({
+        checkoutUrl: url,
+        sessionId: res?.data?.sessionId,
+        paymentFlow: "bid_credit_package",
+      });
     } catch (err) {
       setPurchaseMsg(err?.response?.data?.message || err?.message || "error");
       setBusyId(null);

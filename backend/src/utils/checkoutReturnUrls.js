@@ -13,8 +13,8 @@ function buildClientOrderCheckoutReturnUrls({ isMobile, orderId, clientUrl }) {
   if (!isMobile) {
     const base = String(clientUrl || "").replace(/\/$/, "");
     return {
-      successUrl: `${base}/dashboard/client/my-orders?paid=1&orderId=${oid}`,
-      cancelUrl: `${base}/dashboard/client/my-orders?cancelled=1&orderId=${oid}`,
+      successUrl: `${base}/dashboard/client/my-orders?paid=1&orderId=${oid}&session_id={CHECKOUT_SESSION_ID}`,
+      cancelUrl: `${base}/dashboard/client/my-orders?cancelled=1&orderId=${oid}&session_id={CHECKOUT_SESSION_ID}`,
     };
   }
 

@@ -491,6 +491,21 @@ async function createTrainingPackageCheckoutSession(input = {}, deps = {}) {
     };
   });
   if (outcome.error) throw outcome.error;
+  try {
+    const { emitCheckoutSessionLifecycle, normalizeChannel, normalizeLocale } = require("./paymentCheckoutFunnelTelemetry");
+    if (outcome.sessionId && outcome.purchaseId) {
+      emitCheckoutSessionLifecycle({
+        actorUserId: freelancerUserId,
+        paymentFlow: "training",
+        channel: normalizeChannel(input.channel) || "web",
+        locale: normalizeLocale(input.locale),
+        localRef: `tpp:${outcome.purchaseId}`,
+        sessionId: outcome.sessionId,
+      });
+    }
+  } catch {
+    /* telemetry must not affect checkout */
+  }
   return outcome;
 }
 

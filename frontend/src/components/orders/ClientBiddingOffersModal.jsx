@@ -88,7 +88,12 @@ export default function ClientBiddingOffersModal({ open, orderId, order, onClose
       }
       if (data.checkoutUrl) {
         redirecting = true;
-        window.location.href = data.checkoutUrl;
+        const { redirectToStripeCheckout } = await import("../../lib/paymentCheckoutFunnelTelemetry.js");
+        redirectToStripeCheckout({
+          checkoutUrl: data.checkoutUrl,
+          sessionId: data.sessionId,
+          paymentFlow: "client_selected_bid",
+        });
         return;
       }
       setError(t(`${b}.checkoutSessionError`));

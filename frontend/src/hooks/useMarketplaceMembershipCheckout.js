@@ -152,6 +152,15 @@ export function useMarketplaceMembershipCheckout({
     };
 
     if (membershipCheckout === "cancelled") {
+      if (sessionId) {
+        void import("../lib/paymentCheckoutFunnelTelemetry.js").then(({ recordCheckoutFunnelEvent }) => {
+          recordCheckoutFunnelEvent({
+            eventType: "checkout_cancel_returned",
+            stripeCheckoutSessionId: sessionId,
+            paymentFlow: "membership",
+          });
+        });
+      }
       setReturnBanner({
         kind: "cancelled",
         title: t("freelancerDashboard.marketplaceMembership.checkoutCancelledTitle"),
@@ -163,6 +172,15 @@ export function useMarketplaceMembershipCheckout({
     }
 
     // success — informational only; do not grant membership locally
+    if (sessionId) {
+      void import("../lib/paymentCheckoutFunnelTelemetry.js").then(({ recordCheckoutFunnelEvent }) => {
+        recordCheckoutFunnelEvent({
+          eventType: "checkout_success_returned",
+          stripeCheckoutSessionId: sessionId,
+          paymentFlow: "membership",
+        });
+      });
+    }
     setReturnBanner({
       kind: "success",
       title: t("freelancerDashboard.marketplaceMembership.checkoutSuccessTitle"),
@@ -206,7 +224,12 @@ export function useMarketplaceMembershipCheckout({
         if (!url) {
           throw new Error(t("freelancerDashboard.marketplaceMembership.checkoutMissingUrl"));
         }
-        window.location.href = url;
+        const { redirectToStripeCheckout } = await import("../lib/paymentCheckoutFunnelTelemetry.js");
+        redirectToStripeCheckout({
+          checkoutUrl: url,
+          sessionId: res?.data?.sessionId,
+          paymentFlow: tier === "annual_basic" ? "annual_silver" : `membership_${String(tier).toLowerCase()}`,
+        });
       } catch (err) {
         if (import.meta.env?.DEV) {
           console.error("[marketplace membership checkout]", err?.response?.data ?? err);
@@ -235,7 +258,12 @@ export function useMarketplaceMembershipCheckout({
       if (!url) {
         throw new Error(t("freelancerDashboard.marketplaceMembership.checkoutMissingUrl"));
       }
-      window.location.href = url;
+      const { redirectToStripeCheckout } = await import("../lib/paymentCheckoutFunnelTelemetry.js");
+      redirectToStripeCheckout({
+        checkoutUrl: url,
+        sessionId: res?.data?.sessionId,
+        paymentFlow: "special_offer",
+      });
     } catch (err) {
       if (import.meta.env?.DEV) {
         console.error("[special offer checkout]", err?.response?.data ?? err);

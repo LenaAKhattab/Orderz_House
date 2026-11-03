@@ -105,7 +105,17 @@ export default function ClientMyOrdersPage() {
     const cancelled = params.get("cancelled");
     const orderId = params.get("orderId");
     const bidId = params.get("bidId");
+    const sessionId = String(params.get("session_id") || "").trim();
     if (paid === "1") {
+      if (sessionId) {
+        void import("../../lib/paymentCheckoutFunnelTelemetry.js").then(({ recordCheckoutFunnelEvent }) => {
+          recordCheckoutFunnelEvent({
+            eventType: "checkout_success_returned",
+            stripeCheckoutSessionId: sessionId,
+            paymentFlow: bidId ? "client_selected_bid" : "client_fixed",
+          });
+        });
+      }
       (async () => {
         try {
           if (orderId && bidId) {
@@ -143,6 +153,15 @@ export default function ClientMyOrdersPage() {
         }
       })();
     } else if (cancelled === "1") {
+      if (sessionId) {
+        void import("../../lib/paymentCheckoutFunnelTelemetry.js").then(({ recordCheckoutFunnelEvent }) => {
+          recordCheckoutFunnelEvent({
+            eventType: "checkout_cancel_returned",
+            stripeCheckoutSessionId: sessionId,
+            paymentFlow: bidId ? "client_selected_bid" : "client_fixed",
+          });
+        });
+      }
       // Stripe "back" link: the unpaid order is kept (with its attachments) — «Continue payment» resumes
       // it, «Cancel order» discards it explicitly. Nothing is deleted automatically.
       if (orderId && bidId) {
