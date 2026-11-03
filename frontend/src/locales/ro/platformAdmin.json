@@ -2,96 +2,96 @@
   "economyForm": {
     "fields": {
       "commissionPct": "Comision %",
-      "cashFee": "Contante verwerkingskosten",
-      "eliteOrdersPerCycle": "Elite-comandăen / cyclus",
-      "offerDuration": "Aanbodduur",
-      "carryForwardDays": "Overdrachtszile",
-      "maxCarryForward": "Max. overdracht",
-      "assignmentStrategy": "Toewijzingsstrategie",
-      "fairLookback": "Fair Distribution terugkijk (zile)",
-      "fairnessWeight": "Eerlijkheidsgewicht",
-      "tokenWeight": "Tokengewicht",
-      "performanceWeight": "Prestatiegewicht",
-      "recencyWeight": "Recency-gewicht",
-      "workloadWeight": "Werkdrukgewicht",
-      "minApplicants": "Min. candidaten",
-      "maxApplicants": "Max. candidaten",
-      "defaultApplicants": "Standaard candidaten",
-      "minBidCost": "Min. Bid-kosten",
-      "maxBidCost": "Max. Bid-kosten",
-      "defaultBidCost": "Standaard Bid-kosten",
-      "minApplicationHours": "Min. sollicitatie-uren",
-      "maxApplicationHours": "Max. sollicitatie-uren",
-      "defaultApplicationHours": "Standaard sollicitatie-uren",
-      "minExecutionHours": "Min. uitvoeringsuren",
-      "maxExecutionHours": "Max. uitvoeringsuren",
-      "defaultExecutionHours": "Standaard uitvoeringsuren",
-      "articleMinBids": "Artikel min. vereiste Bids",
-      "articleDefaultBids": "Artikel standaard vereiste Bids",
-      "pantryMinBids": "Pantry min. vereiste Bids",
-      "pantryDefaultBids": "Pantry standaard vereiste Bids"
+      "cashFee": "Taxă procesare numerar",
+      "eliteOrdersPerCycle": "Comenzi Elite / ciclu",
+      "offerDuration": "Durată ofertă",
+      "carryForwardDays": "Zile de report",
+      "maxCarryForward": "Report maxim",
+      "assignmentStrategy": "Strategie de atribuire",
+      "fairLookback": "Retrospectivă distribuție echitabilă (zile)",
+      "fairnessWeight": "Pondere echitate",
+      "tokenWeight": "Pondere token",
+      "performanceWeight": "Pondere performanță",
+      "recencyWeight": "Pondere recență",
+      "workloadWeight": "Pondere volum de lucru",
+      "minApplicants": "Min. candidați",
+      "maxApplicants": "Max. candidați",
+      "defaultApplicants": "Candidați implicit",
+      "minBidCost": "Cost Bid min.",
+      "maxBidCost": "Cost Bid max.",
+      "defaultBidCost": "Cost Bid implicit",
+      "minApplicationHours": "Ore min. aplicare",
+      "maxApplicationHours": "Ore max. aplicare",
+      "defaultApplicationHours": "Ore aplicare implicite",
+      "minExecutionHours": "Ore min. execuție",
+      "maxExecutionHours": "Ore max. execuție",
+      "defaultExecutionHours": "Ore execuție implicite",
+      "articleMinBids": "Bids min. necesare articol",
+      "articleDefaultBids": "Bids implicite necesare articol",
+      "pantryMinBids": "Bids min. necesare Pantry",
+      "pantryDefaultBids": "Bids implicite necesare Pantry"
     },
     "validation": {
-      "moneyPositive": "{{label}}: moet > 0 zijn.",
-      "moneyNonNeg": "{{label}}: moet ≥ 0 zijn.",
-      "percentRange": "{{label}}: moet 0–100 zijn.",
-      "intRange": "{{label}}: geheel getal tussen {{min}} en {{max}}.",
-      "invalidValue": "{{label}}: ongeldige waarde.",
-      "hybridUnavailable": "{{label}}: HYBRID nu disponibil tot het gewichtsbeleid is gedefinieerd (FAIR_DISTRIBUTION_HYBRID_WEIGHT_POLICY_REQUIRED).",
-      "minOrderInvalid": "Minimale comandăwaarde ongeldig.",
-      "maxOrderInvalid": "Maximale comandăwaarde ongeldig."
+      "moneyPositive": "{{label}}: trebuie să fie > 0.",
+      "moneyNonNeg": "{{label}}: trebuie să fie ≥ 0.",
+      "percentRange": "{{label}}: trebuie să fie 0–100.",
+      "intRange": "{{label}}: număr întreg între {{min}} și {{max}}.",
+      "invalidValue": "{{label}}: valoare invalidă.",
+      "hybridUnavailable": "{{label}}: HYBRID indisponibil până când politica de ponderi este definită (FAIR_DISTRIBUTION_HYBRID_WEIGHT_POLICY_REQUIRED).",
+      "minOrderInvalid": "Valoare minimă comandă invalidă.",
+      "maxOrderInvalid": "Valoare maximă comandă invalidă."
     },
     "strategies": {
-      "HIGHEST_TOKEN_ONLY": "Hoogste geschiktheid eerst",
-      "FAIR_DISTRIBUTION_FIRST": "Eerlijke verdeling eerst",
-      "HYBRID": "HYBRID (nu disponibil — gewichtsbeleid vereist)"
+      "HIGHEST_TOKEN_ONLY": "Cea mai mare eligibilitate mai întâi",
+      "FAIR_DISTRIBUTION_FIRST": "Distribuție echitabilă mai întâi",
+      "HYBRID": "HYBRID (indisponibil — politică de ponderi necesară)"
     }
   },
   "articleApplications": {
-    "autoAssignCandidate": "#{{rank}} sol. {{applicationId}} · gewicht {{weight}}"
+    "autoAssignCandidate": "#{{rank}} apl. {{applicationId}} · pondere {{weight}}"
   },
   "common": {
-    "close": "Sluiten"
+    "close": "Închideți"
   },
   "planCard": {
     "priceJod": "{{amount}} JOD (dinar)",
     "orderRange": {
-      "between": "{{min}} JOD tot {{max}} JOD",
-      "from": "Vanaf {{min}} JOD",
-      "upTo": "Tot {{max}} JOD"
+      "between": "{{min}} JOD până la {{max}} JOD",
+      "from": "De la {{min}} JOD",
+      "upTo": "Până la {{max}} JOD"
     },
     "features": {
-      "selfSubscribeAllowed": "Direct zelf kopen",
-      "requiresCompanyVisit": "Activatie via locatiebezoek",
-      "isVisible": "Zichtbaar in de shop",
-      "isFeatured": "Uitgelicht pachet in de storefront",
-      "isPopular": "Gemarkeerd als populairst"
+      "selfSubscribeAllowed": "Achiziție directă de către utilizator",
+      "requiresCompanyVisit": "Activare prin vizită la sediu",
+      "isVisible": "Vizibil în magazin",
+      "isFeatured": "Pachet evidențiat în vitrină",
+      "isPopular": "Marcat ca cel mai popular"
     }
   },
   "analytics": {
     "leaderboards": {
       "sub": {
-        "freelancers": "voltooide comandăen",
-        "clients": "besteding",
-        "courses": "ingeschreven",
-        "categories": "comandăen"
+        "freelancers": "comenzi finalizate",
+        "clients": "cheltuieli",
+        "courses": "înscrieri",
+        "categories": "comenzi"
       },
       "titles": {
-        "freelancers": "Top-freelancers",
-        "clients": "Top-clienten",
-        "courses": "Top-cursussen",
-        "categories": "Top-categorieën"
+        "freelancers": "Top freelanceri",
+        "clients": "Top clienți",
+        "courses": "Top cursuri",
+        "categories": "Top categorii"
       }
     },
     "snapshot": {
-      "newSubscriptions": "+{{count}} niedvs. abonament",
-      "newSubscriptions_plural": "+{{count}} nieuwe abonamenten",
-      "newOrders": "+{{count}} nieuwe comandă",
-      "newOrders_plural": "+{{count}} nieuwe comandăen",
-      "newClaims": "+{{count}} platăsclaim",
-      "newClaims_plural": "+{{count}} platăsclaims",
-      "periodRevenue": "Omzet in periode: {{amount}}",
-      "topCategory": "Topcategorie: {{name}}"
+      "newSubscriptions": "+{{count}} abonament nou",
+      "newSubscriptions_plural": "+{{count}} abonamente noi",
+      "newOrders": "+{{count}} comandă nouă",
+      "newOrders_plural": "+{{count}} comenzi noi",
+      "newClaims": "+{{count}} cerere de plată",
+      "newClaims_plural": "+{{count}} cereri de plată",
+      "periodRevenue": "Venituri în perioadă: {{amount}}",
+      "topCategory": "Categorie principală: {{name}}"
     },
     "attention": {
       "severity": {
@@ -99,13 +99,13 @@
         "medium": "Mediu",
         "info": "Informații"
       },
-      "awaitingFollowUp": "{{count}} wachten op follow-up"
+      "awaitingFollowUp": "{{count}} în așteptarea urmăririi"
     },
     "forecasts": {
-      "orders": "comandăen",
-      "subscriptions": "nieuwe abonamenten",
-      "revenue": "omzet"
+      "orders": "comenzi",
+      "subscriptions": "abonamente noi",
+      "revenue": "venituri"
     },
-    "periodBanner": "Date op basis van: {{label}}"
+    "periodBanner": "Date afișate pe baza: {{label}}"
   }
 }

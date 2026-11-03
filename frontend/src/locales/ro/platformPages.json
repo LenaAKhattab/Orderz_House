@@ -1,25 +1,25 @@
 {
   "trainingOrders": {
     "roundStatus": {
-      "scheduled": "Gepland",
-      "active": "Actief",
-      "expired": "Verlopen",
-      "stopped": "Gestopt"
+      "scheduled": "Programat",
+      "active": "Activ",
+      "expired": "Expirat",
+      "stopped": "Oprit"
     },
     "fakeOrderStatus": {
-      "active": "Actief",
-      "expired": "Verlopen",
-      "stopped": "Gestopt"
+      "active": "Activ",
+      "expired": "Expirat",
+      "stopped": "Oprit"
     },
     "automationStatus": {
-      "success": "Geslaagd",
-      "skipped_no_templates": "Overgeslagen — geen sjablonen",
-      "skipped_lock": "Overgeslagen — vergrendeling",
-      "failed": "Mislukt"
+      "success": "Reușit",
+      "skipped_no_templates": "Omis — fără șabloane",
+      "skipped_lock": "Omis — blocare",
+      "failed": "Eșuat"
     },
     "roundSource": {
-      "automation": "Automatisch",
-      "manual": "Handmatig"
+      "automation": "Automat",
+      "manual": "Manual (administrator)"
     },
     "widgetError": "Ceva nu a funcționat. Încercați din nou."
   },
@@ -28,35 +28,35 @@
     "jodSuffix": "JOD"
   },
   "freelancerArticles": {
-    "trialError": "Proef-Bids konden nu worden toegekend. Încercați din nou."
+    "trialError": "Bids de probă nu au putut fi acordate. Încercați din nou."
   },
   "superAdminPlans": {
-    "deactivateBlocked": "Dit pachet kan nu worden verwijderd omdat het aan utilizatori of actuele gegevens is gekoppeld. Dvs. kunt het in plaats daarvan deactiveren.",
-    "showingPage": "Pachetten voor: {{title}}",
-    "confirmDeactivateBody": "Weet dvs. het zeker? Dit pachet wordt verborgen voor niedvs. gebruik. Bestaande abonamenten en historische gegevens worden nu verwijderd."
+    "deactivateBlocked": "Acest pachet nu poate fi eliminat deoarece este legat de utilizatori sau înregistrări curente. Îl puteți dezactiva în loc să îl ștergeți.",
+    "showingPage": "Pachete pentru: {{title}}",
+    "confirmDeactivateBody": "Sigur doriți să continuați? Acest pachet va fi ascuns pentru utilizare nouă. Abonamentele existente și datele istorice nu vor fi șterse."
   },
   "articleDetail": {
-    "manuscriptTermsCopy": "Ik ga akkoord met de eigendoms- en publicatievoorwaarden voor dit artikel en begrijp dat het bij acceptatie volgens het platformbeleid onder mijn naam op Bildazo kan worden gepubliceerd."
+    "manuscriptTermsCopy": "Sunt de acord cu termenii de proprietate și publicare pentru acest articol și înțeleg că, dacă este acceptat, poate fi publicat sub numele meu pe Bildazo conform politicii platformei."
   },
   "eliteDirectOffer": {
-    "title": "Elite Direct-aanbod",
-    "description": "Stuur een privé, tijdgebonden aanbod naar één Elite-freelancer.",
-    "targetLabel": "Utilizators-ID Elite-freelancer",
-    "send": "Aanbod versturen",
-    "cancel": "Annuleren",
-    "offerLine": "#{{id}} → Freelancer-ID {{freelancerId}} — {{status}}",
+    "title": "Ofertă Elite Direct",
+    "description": "Trimiteți o ofertă privată, limitată în timp, unui freelancer Elite.",
+    "targetLabel": "ID utilizator freelancer Elite",
+    "send": "Trimiteți oferta",
+    "cancel": "Anulați",
+    "offerLine": "#{{id}} → ID freelancer {{freelancerId}} — {{status}}",
     "status": {
-      "pending": "in behandeling",
-      "accepted": "geaccepteerd",
-      "declined": "afgewezen",
-      "expired": "verlopen",
-      "cancelled": "geannuleerd"
+      "pending": "în așteptare",
+      "accepted": "acceptată",
+      "declined": "refuzată",
+      "expired": "expirată",
+      "cancelled": "anulată"
     }
   },
   "publicSite": {
-    "translationUnavailable": "Deze pagină is nog nu disponibil in dvs. taal en wordt daarom in de oorspronkelijke taal getoond."
+    "translationUnavailable": "Această pagină nu este disponibilă încă în limba dumneavoastră, așa că este afișată în limba originală."
   },
   "accountDeletion": {
-    "mailSubject": "Orderz House – cerere tot verwijdering van account"
+    "mailSubject": "Orderz House – cerere de ștergere cont"
   }
 }
