@@ -23,13 +23,15 @@ class CheckoutFunnelTelemetry {
     String? paymentFlow,
     String locale = 'ar',
     SecureTokenStorage? tokenStorage,
+    Future<String?> Function()? accessTokenReader,
   }) async {
     try {
       if (!_allowed.contains(eventType)) return;
       final sid = stripeCheckoutSessionId.trim();
       if (!_sessionRe.hasMatch(sid)) return;
-      final storage = tokenStorage ?? SecureTokenStorage();
-      final token = await storage.readAccessToken();
+      final token = accessTokenReader != null
+          ? await accessTokenReader()
+          : await (tokenStorage ?? SecureTokenStorage()).readAccessToken();
       if (token == null || token.isEmpty) return;
 
       final base = ApiConstants.baseUrl.replaceAll(RegExp(r'/$'), '');

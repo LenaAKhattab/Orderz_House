@@ -31,7 +31,11 @@ bool isStripeTestCheckoutUrl(String url) => url.contains('cs_test_');
 /// In debug/profile, live Checkout URLs (`cs_live_`) are blocked so local QA
 /// cannot accidentally open production Stripe. Release builds are unchanged
 /// aside from existing HTTPS/local-host URL safety.
-Future<StripeCheckoutLaunchResult> launchStripeCheckoutUrl(String checkoutUrl) async {
+Future<StripeCheckoutLaunchResult> launchStripeCheckoutUrl(
+  String checkoutUrl, {
+  String paymentFlow = 'client_fixed',
+  String locale = 'ar',
+}) async {
   final trimmed = checkoutUrl.trim();
   if (trimmed.isEmpty) {
     return const StripeCheckoutLaunchResult(launched: false);
@@ -56,7 +60,8 @@ Future<StripeCheckoutLaunchResult> launchStripeCheckoutUrl(String checkoutUrl) a
     CheckoutFunnelTelemetry.record(
       eventType: 'checkout_redirect_started',
       stripeCheckoutSessionId: sid,
-      paymentFlow: 'client_fixed',
+      paymentFlow: paymentFlow,
+      locale: locale,
     );
   }
 
