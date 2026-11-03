@@ -1,7 +1,5 @@
-import 'dart:convert';
-
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
 
 import '../constants/api_constants.dart';
 import '../storage/secure_token_storage.dart';
@@ -35,25 +33,29 @@ class CheckoutFunnelTelemetry {
       if (token == null || token.isEmpty) return;
 
       final base = ApiConstants.baseUrl.replaceAll(RegExp(r'/$'), '');
-      final uri = Uri.parse('$base/payments/checkout-funnel-events');
-      await http
-          .post(
-            uri,
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer $token',
-              'Accept-Language': locale,
-              ApiConstants.mobileClientTypeHeader: ApiConstants.mobileClientTypeValue,
-            },
-            body: jsonEncode({
-              'eventType': eventType,
-              'stripeCheckoutSessionId': sid,
-              if (paymentFlow != null && paymentFlow.isNotEmpty) 'paymentFlow': paymentFlow,
-              'channel': 'mobile',
-              'locale': locale,
-            }),
-          )
-          .timeout(const Duration(seconds: 3));
+      final dio = Dio(
+        BaseOptions(
+          baseUrl: base,
+          connectTimeout: const Duration(seconds: 3),
+          receiveTimeout: const Duration(seconds: 3),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+            'Accept-Language': locale,
+            ApiConstants.mobileClientTypeHeader: ApiConstants.mobileClientTypeValue,
+          },
+        ),
+      );
+      await dio.post(
+        '/payments/checkout-funnel-events',
+        data: {
+          'eventType': eventType,
+          'stripeCheckoutSessionId': sid,
+          if (paymentFlow != null && paymentFlow.isNotEmpty) 'paymentFlow': paymentFlow,
+          'channel': 'mobile',
+          'locale': locale,
+        },
+      );
     } catch (e, st) {
       if (kDebugMode) {
         debugPrint('checkout funnel telemetry ignored: $e\n$st');
