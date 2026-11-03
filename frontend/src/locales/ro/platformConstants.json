@@ -1,68 +1,68 @@
 {
   "feedback": {
     "types": {
-      "problem": "Probleem",
-      "suggestion": "Suggestie",
-      "other": "Altele feedback"
+      "problem": "Problemă",
+      "suggestion": "Sugestie",
+      "other": "Alt feedback"
     },
     "statuses": {
       "new": "Nou",
-      "in_review": "In beoordeling",
+      "in_review": "În evaluare",
       "resolved": "Rezolvat",
       "closed": "Închis"
     },
     "priorities": {
-      "low": "Laag",
-      "normal": "Normaal",
-      "high": "Hoog",
+      "low": "Scăzută",
+      "normal": "Normală",
+      "high": "Ridicată",
       "urgent": "Urgență"
     },
     "roles": {
       "client": "Client (beneficiar)",
-      "freelancer": "Freelancer (aanbieder)"
+      "freelancer": "Freelancer (prestator)"
     }
   },
   "planUpgradeCta": {
-    "courseTierHelper": "Disponibil na upgrade van dvs. pachet",
-    "internalConfigurationHeadline": "We konden dvs. pachetgeschiktheid ndvs. nu verifiëren. Contactați asistența.",
-    "noActivePlanHeadline": "Activeer dvs. pachet om comandăen te ontvangen",
-    "viewPlans": "Pachetten bekijken",
-    "courseHeadline": "Deze cursus is disponibil in hogere pachetten",
-    "upgradePlan": "Pachet upgraden",
-    "orderValueExceedsHeadline": "De waarde van deze comandă overschrijdt de limiet van dvs. huidige pachet"
+    "courseTierHelper": "Disponibil după upgrade-ul pachetului",
+    "internalConfigurationHeadline": "Nu am putut verifica eligibilitatea pachetului acum. Contactați asistența.",
+    "noActivePlanHeadline": "Activați pachetul pentru a primi comenzi",
+    "viewPlans": "Vizualizați pachetele",
+    "courseHeadline": "Acest curs este disponibil la pachete superioare",
+    "upgradePlan": "Upgrade pachet",
+    "orderValueExceedsHeadline": "Valoarea acestei comenzi depășește limita pachetului curent"
   },
   "bildazoArticlePublish": {
     "freelancer": {
-      "published": "Dvs. artikel is gepubliceerd op Bildazo.",
-      "needsManualReview": "Dvs. artikel is geaccepteerd in OrderzHouse. Bildazo-publicatie vereist adminbeoordeling.",
-      "pending": "Dvs. artikel is geaccepteerd in OrderzHouse. Bildazo-publicatie wordt gekoppeld."
+      "published": "Articolul dumneavoastră a fost publicat pe Bildazo.",
+      "needsManualReview": "Articolul a fost acceptat în OrderzHouse. Publicarea pe Bildazo necesită verificare de administrator.",
+      "pending": "Articolul a fost acceptat în OrderzHouse. Publicarea pe Bildazo este în curs de legare."
     },
     "admin": {
-      "notStarted": "Bildazo-publicatie: nu gestart",
-      "published": "Gepubliceerd op Bildazo",
-      "already_imported": "Al geïmporteerd naar Bildazo",
-      "needs_manual_review": "Bildazo-beoordeling vereist",
-      "failed": "Bildazo-publicatie mislukt",
-      "pending": "Bildazo-publicatie in behandeling",
-      "skipped": "Bildazo-publicatie overgeslagen (uitgeschakeld)"
+      "notStarted": "Publicare Bildazo: neîncepută",
+      "published": "Publicat pe Bildazo",
+      "already_imported": "Deja importat în Bildazo",
+      "needs_manual_review": "Necesită verificare Bildazo",
+      "failed": "Publicarea pe Bildazo a eșuat",
+      "pending": "Publicare Bildazo în așteptare",
+      "skipped": "Publicare Bildazo omisă (dezactivată)"
     }
   },
   "bildazoAuthorTerms": {
-    "termsCopy": "Ik ga akkoord met de publicatievoorwaarden voor artikelen en met koppeling aan mijn Bildazo-auteursaccount. Ik begrijp dat een geaccepteerd artikel ter beoordeling kan worden gestuurd en onder mijn naam op Bildazo kan worden gepubliceerd.",
-    "writerRole": "Auteur",
+    "termsCopy": "Sunt de acord cu termenii de publicare a articolelor și cu legarea lor de contul meu de autor Bildazo. Înțeleg că un articol acceptat poate fi trimis spre evaluare și publicat pe Bildazo sub numele meu.",
+    "writerRole": "Autor",
     "errors": {
-      "passwordWeak": "Het wachtwoord moet minstens 8 tekens bevatten, met een letter en een cijfer.",
-      "passwordMismatch": "De wachtwoordbevestiging komt nu overeen.",
-      "terms": "Dvs. moet akkoord gaan met de voorwaarden voor koppeling van het auteursaccount.",
-      "fullName": "Volledige naam is vereist om het auteursaccount aan te maken.",
-      "existingCredentials": "Voer het e-mailadres en wachtwoord van het Bildazo-account in."
+      "passwordWeak": "Parola trebuie să aibă cel puțin 8 caractere și să includă o literă și o cifră.",
+      "passwordMismatch": "Confirmarea parolei nu coincide.",
+      "terms": "Trebuie să acceptați termenii de legare a contului de autor.",
+      "fullName": "Numele complet este necesar pentru crearea contului de autor.",
+      "existingCredentials": "Introduceți e-mailul și parola contului Bildazo."
     },
     "failures": {
-      "INVALID_CREDENTIALS": "Het Bildazo-account kon nu worden geverifieerd. Controleer e-mail en wachtwoord.",
-      "ACCOUNT_UNAVAILABLE": "Dit Bildazo-account kan ndvs. nu worden gekoppeld.",
-      "ENDPOINT_UNAVAILABLE": "Bildazo-koppeling is tijdelijk nu disponibil. Probeer het later opnieuw.",
-      "TIMEOUT": "Bildazo kon nu worden bereikt. Controleer dvs. verbinding en probeer het opnieuw.",
-      "failed": "De Bildazo-koppeling kon nu worden voltooid. Încercați din nou."
+      "INVALID_CREDENTIALS": "Contul Bildazo nu a putut fi verificat. Verificați e-mailul și parola.",
+      "ACCOUNT_UNAVAILABLE": "Acest cont Bildazo nu poate fi legat acum.",
+      "ENDPOINT_UNAVAILABLE": "Legarea Bildazo este temporar indisponibilă. Încercați mai târziu.",
+      "TIMEOUT": "Bildazo nu a putut fi contactat. Verificați conexiunea și încercați din nou.",
+      "failed": "Legarea Bildazo nu a putut fi finalizată. Încercați din nou."
     }
   },
   "jordanCities": {
@@ -96,7 +96,7 @@
       "jabalAlNasr": "Jabal Al-Nasr",
       "markaNorth": "North Marka",
       "quweismeh": "Quweismeh",
-      "abuNseir": "Abdvs. Nseir",
+      "abuNseir": "Abu Nseir",
       "tabarbour": "Tabarbour",
       "yasmeen": "Al-Yasmeen",
       "yadoudeh": "Al-Yadoudeh",
@@ -132,7 +132,7 @@
       "qasr": "Al-Qasr",
       "ghorAlSafi": "Ghor Al-Safi",
       "ghorAlMazraa": "Ghor Al-Mazra'a",
-      "middleJordanValley": "Midden-Jordaanvallei",
+      "middleJordanValley": "Middle Jordan Valley",
       "wadiMusa": "Wadi Musa",
       "petra": "Petra",
       "shoubak": "Shoubak",
@@ -152,157 +152,157 @@
     }
   },
   "freelancerActivationKpi": {
-    "unavailable": "Nu disponibil",
-    "unavailableShort": "n.v.t.",
-    "schemaNotReady": "De activeringsengine-database is nu gereed. Voer engine-migraties in deze omgeving uit voordat dvs. dit dashboard gebruikt.",
-    "loadError": "Activerings-KPI's konden ndvs. nu worden geladen.",
-    "notesTitle": "Opmerkingen over KPI-nauwkeurigheid",
-    "notesIntro": "Sommige metrieken zijn nu disponibil omdat de bron nog nu betrouwbaar is aangesloten.",
+    "unavailable": "Indisponibil",
+    "unavailableShort": "N/A",
+    "schemaNotReady": "Baza de date a motorului de activare nu este pregătită. Aplicați migrările motorului în acest mediu înainte de a folosi acest panou.",
+    "loadError": "KPI-urile de activare nu au putut fi încărcate acum.",
+    "notesTitle": "Note privind acuratețea KPI",
+    "notesIntro": "Unele metrici sunt indisponibile deoarece sursa nu este încă conectată fiabil.",
     "daysUnit": "{{value}} zile",
     "funnel": {
-      "trialActivatedUsers": "Proef geactiveerd",
-      "firstBidUsers": "Eerste sollicitatie",
-      "firstAssignmentUsers": "Eerste toewijzing",
-      "firstAcceptedWorkUsers": "Eerste geaccepteerde comandă",
-      "firstPublishedWorkUsers": "Eerste gepubliceerde artikel",
-      "silverCtaShownUsers": "Silver-CTA getoond",
-      "silverPaymentStartedUsers": "Upgrade gestart",
-      "silverPaidUsers": "Silver-abonnee"
+      "trialActivatedUsers": "Probă activată",
+      "firstBidUsers": "Prima aplicare",
+      "firstAssignmentUsers": "Prima atribuire",
+      "firstAcceptedWorkUsers": "Primul lucru acceptat",
+      "firstPublishedWorkUsers": "Primul articol publicat",
+      "silverCtaShownUsers": "CTA Silver afișat",
+      "silverPaymentStartedUsers": "Upgrade început",
+      "silverPaidUsers": "Abonat Silver"
     },
     "funnelSteps": {
-      "registeredUsers": "Registratie",
-      "verifiedUsers": "Geverifieerd",
-      "trainingCompletedUsers": "Instruire voltooid",
-      "trialActivatedUsers": "Proef geactiveerd",
-      "firstBidUsers": "Eerste sollicitatie",
-      "firstAssignmentUsers": "Eerste toewijzing",
-      "firstAcceptedWorkUsers": "Eerste geaccepteerde comandă",
-      "firstPublishedWorkUsers": "Eerste gepubliceerde artikel",
-      "silverCtaShownUsers": "Silver-CTA getoond",
-      "silverPaymentStartedUsers": "Upgrade gestart",
-      "silverPaidUsers": "Silver-abonnee"
+      "registeredUsers": "Înregistrare",
+      "verifiedUsers": "Verificat",
+      "trainingCompletedUsers": "Instruire finalizată",
+      "trialActivatedUsers": "Probă activată",
+      "firstBidUsers": "Prima aplicare",
+      "firstAssignmentUsers": "Prima atribuire",
+      "firstAcceptedWorkUsers": "Primul lucru acceptat",
+      "firstPublishedWorkUsers": "Primul articol publicat",
+      "silverCtaShownUsers": "CTA Silver afișat",
+      "silverPaymentStartedUsers": "Upgrade început",
+      "silverPaidUsers": "Abonat Silver"
     },
     "rates": {
-      "trialActivatedToPaidRate": "Proef → Silver",
-      "firstAcceptedToPaidRate": "Eerste acceptatie → Silver",
-      "firstPublishedToPaidRate": "Eerste publicatie → Silver",
-      "ctaShownToPaymentStartedRate": "CTA getoond → upgrade gestart",
-      "paymentStartedToPaidRate": "Upgrade gestart → betaald/actief"
+      "trialActivatedToPaidRate": "Probă → Silver",
+      "firstAcceptedToPaidRate": "Prima acceptare → Silver",
+      "firstPublishedToPaidRate": "Prima publicare → Silver",
+      "ctaShownToPaymentStartedRate": "CTA afișat → upgrade început",
+      "paymentStartedToPaidRate": "Upgrade început → plătit/activ"
     },
     "timing": {
-      "averageTimeToFirstBid": "Gem. tijd tot eerste sollicitatie",
-      "averageTimeToFirstWin": "Gem. tijd tot eerste toewijzing",
-      "averageTimeToFirstAccepted": "Gem. tijd tot eerste acceptatie",
-      "averageTimeToFirstPublished": "Gem. tijd tot eerste publicatie"
+      "averageTimeToFirstBid": "Timp mediu până la prima aplicare",
+      "averageTimeToFirstWin": "Timp mediu până la prima atribuire",
+      "averageTimeToFirstAccepted": "Timp mediu până la prima acceptare",
+      "averageTimeToFirstPublished": "Timp mediu până la prima publicare"
     },
     "quality": {
-      "acceptedArticleCount": "Geaccepteerde artikelen",
-      "rejectedArticleCount": "Afgewezen artikelen",
-      "revisionRequestedCount": "Revisiecerereen",
-      "publishedArticleCount": "Gepubliceerde artikelen",
-      "articleAcceptanceRate": "Acceptatiepercentage",
-      "articleRejectionRate": "Afwijzingspercentage",
-      "revisionRate": "Revisiepercentage"
+      "acceptedArticleCount": "Articole acceptate",
+      "rejectedArticleCount": "Articole respinse",
+      "revisionRequestedCount": "Cereri de revizuire",
+      "publishedArticleCount": "Articole publicate",
+      "articleAcceptanceRate": "Rată de acceptare",
+      "articleRejectionRate": "Rată de respingere",
+      "revisionRate": "Rată de revizuire"
     },
     "financial": {
-      "campaignBudgetTotalJod": "Campagnebudget",
-      "campaignBudgetReservedJod": "Gereserveerd",
-      "campaignBudgetUsedJod": "Gebruikt",
-      "campaignBudgetRemainingJod": "Resterend",
-      "pendingFreelancerEarnedJod": "Openstaand verdiend saldo",
-      "costPerPaidFreelancer": "Kosten per betalende freelancer",
-      "subscriptionRevenueJod": "Abonamentsomzet",
-      "workInventoryReserveAllocatedJod": "Werkvoorraadreserve (toegewezen)",
-      "workInventoryReserveActiveJod": "Werkvoorraadreserve (actief)"
+      "campaignBudgetTotalJod": "Buget campanie",
+      "campaignBudgetReservedJod": "Rezervat",
+      "campaignBudgetUsedJod": "Utilizat",
+      "campaignBudgetRemainingJod": "Rămas",
+      "pendingFreelancerEarnedJod": "Sold câștigat în așteptare",
+      "costPerPaidFreelancer": "Cost per freelancer plătitor",
+      "subscriptionRevenueJod": "Venituri abonament",
+      "workInventoryReserveAllocatedJod": "Rezervă inventar lucru (alocată)",
+      "workInventoryReserveActiveJod": "Rezervă inventar lucru (activă)"
     }
   },
   "freelancerActivationFairDistribution": {
     "reasons": {
-      "preferred_activation_candidate": "Voorkeurskandidaat voor activering",
-      "first_work_opportunity": "Eerste werkmogelijkheid",
-      "no_previous_accepted_work": "Geen eerder geaccepteerd werk",
-      "no_previous_win": "Geen eerdere winst",
-      "low_workload": "Lage werkdruk",
-      "waiting": "Wachten {{days}} zile",
-      "paid_membership": "Betaald abonament"
+      "preferred_activation_candidate": "Candidat preferat pentru activare",
+      "first_work_opportunity": "Prima oportunitate de lucru",
+      "no_previous_accepted_work": "Fără lucru acceptat anterior",
+      "no_previous_win": "Fără câștig anterior",
+      "low_workload": "Volum de lucru redus",
+      "waiting": "Așteptare {{days}} zile",
+      "paid_membership": "Abonament plătit"
     }
   },
   "freelancerActivationEarnedBalance": {
-    "miniArticleTerms": "Ik ga akkoord met de eigendoms- en publicatievoorwaarden voor dit artikel en begrijp dat het bij acceptatie volgens het platformbeleid onder mijn naam op Bildazo kan worden gepubliceerd.",
-    "earnedBalanceHelper": "Dit saldo toont de waarde van geaccepteerd werk op het platform. Opnames of financiële claims volgen het bedrijfsbeleid en worden nu beïnvloed door het abonament.",
+    "miniArticleTerms": "Sunt de acord cu termenii de proprietate și publicare pentru acest articol și înțeleg că, dacă este acceptat, poate fi publicat sub numele meu pe Bildazo conform politicii platformei.",
+    "earnedBalanceHelper": "Acest sold arată valoarea lucrării acceptate pe platformă. Retragerile sau cererile financiare urmează politica companiei și nu sunt afectate de abonament.",
     "statuses": {
-      "pending": "In behandeling",
-      "settled_externally": "Geregistreerd",
-      "voided": "Ongeldig"
+      "pending": "În așteptare",
+      "settled_externally": "Înregistrat",
+      "voided": "Anulat"
     },
     "terms": {
-      "notRecorded": "Voorwaarden: nu geregistreerd",
-      "notAccepted": "Voorwaarden: nu geaccepteerd",
-      "accepted": "Voorwaarden geaccepteerd · {{version}} · {{at}}"
+      "notRecorded": "Termeni: neînregistrați",
+      "notAccepted": "Termeni: neacceptați",
+      "accepted": "Termeni acceptați · {{version}} · {{at}}"
     }
   },
   "freelancerActivationCampaign": {
     "budgetErrors": {
-      "ACTIVATION_CAMPAIGN_BUDGET_INSUFFICIENT": "Het campagnebudget is onvoldoende om dit artikel toe te wijzen.",
-      "ACTIVATION_WAVE_BUDGET_INSUFFICIENT": "Het golfbudget is onvoldoende om dit artikel toe te wijzen."
+      "ACTIVATION_CAMPAIGN_BUDGET_INSUFFICIENT": "Bugetul campaniei nu este suficient pentru a atribui acest articol.",
+      "ACTIVATION_WAVE_BUDGET_INSUFFICIENT": "Bugetul valului nu este suficient pentru a atribui acest articol."
     },
     "budgetStates": {
-      "reserved": "Gereserveerd",
-      "used": "Gebruikt",
-      "released": "Vrijgegeven",
-      "not_reserved": "Nu gereserveerd"
+      "reserved": "Rezervat",
+      "used": "Utilizat",
+      "released": "Eliberat",
+      "not_reserved": "Nerezervat"
     }
   },
   "freelancerActivationTrial": {
     "applyErrors": {
-      "FREELANCER_TRIAL_REQUIRED": "Activeer de werkproef voordat dvs. solliciteert op mini-artikelen.",
-      "FREELANCER_TRIAL_EXPIRED": "Dvs. werkproef is beëindigd. Ga verder met Silver.",
-      "FREELANCER_TRIAL_DAILY_BID_LIMIT_REACHED": "Dvs. heeft de zielijkse proef-Bid-limiet bereikt.",
-      "FREELANCER_TRIAL_BID_LIMIT_REACHED": "Dvs. heeft de proef-Bid-limiet bereikt.",
-      "FREELANCER_TRIAL_WORK_CAP_REACHED": "Dvs. heeft de proeflimiet voor geaccepteerd werk bereikt.",
-      "FREELANCER_TRIAL_MINI_ARTICLES_ONLY": "De proef staat alleen sollicitaties op mini-artikelen toe.",
-      "FREELANCER_TRIAL_BID_GRANT_FAILED": "Proef-Bids konden nu worden toegekend. De proef is nu voltooid. Încercați din nou.",
-      "ACTIVATION_CAMPAIGN_EMERGENCY_STOPPED": "Deze campagne is tijdelijk gestopt door de admin.",
-      "ACTIVATION_CAMPAIGN_PAUSED": "Deze campagne is tijdelijk gepauzeerd door de admin.",
-      "ACTIVATION_WAVE_PAUSED": "Aplicares voor deze kans zijn tijdelijk gepauzeerd.",
-      "ACTIVATION_CAMPAIGN_NOT_ACTIVE": "Aplicares voor deze kans zijn tijdelijk gepauzeerd.",
-      "ACTIVATION_WAVE_NOT_ACTIVE": "Aplicares voor deze kans zijn tijdelijk gepauzeerd."
+      "FREELANCER_TRIAL_REQUIRED": "Activați proba de lucru înainte de a aplica la mini-articole.",
+      "FREELANCER_TRIAL_EXPIRED": "Proba de lucru s-a încheiat. Continuați cu Silver.",
+      "FREELANCER_TRIAL_DAILY_BID_LIMIT_REACHED": "Ați atins limita zilnică de Bids în probă.",
+      "FREELANCER_TRIAL_BID_LIMIT_REACHED": "Ați atins limita de Bids în probă.",
+      "FREELANCER_TRIAL_WORK_CAP_REACHED": "Ați atins plafonul de lucru acceptat în probă.",
+      "FREELANCER_TRIAL_MINI_ARTICLES_ONLY": "Proba permite doar aplicări la mini-articole.",
+      "FREELANCER_TRIAL_BID_GRANT_FAILED": "Bids de probă nu au putut fi acordate. Proba nu a fost finalizată. Încercați din nou.",
+      "ACTIVATION_CAMPAIGN_EMERGENCY_STOPPED": "Această campanie este oprită temporar de administrator.",
+      "ACTIVATION_CAMPAIGN_PAUSED": "Această campanie este pusă pe pauză temporar de administrator.",
+      "ACTIVATION_WAVE_PAUSED": "Aplicările pentru această oportunitate sunt temporar suspendate.",
+      "ACTIVATION_CAMPAIGN_NOT_ACTIVE": "Aplicările pentru această oportunitate sunt temporar suspendate.",
+      "ACTIVATION_WAVE_NOT_ACTIVE": "Aplicările pentru această oportunitate sunt temporar suspendate."
     }
   },
   "freelancerActivationArticleOps": {
     "planTiers": {
-      "starter": "Proef / Gratuit",
-      "trial": "Proef",
-      "silver": "Silver-pachet",
-      "pro": "Pro-pachet",
-      "elite": "Elite-pachet"
+      "starter": "Probă / Gratuit",
+      "trial": "Probă",
+      "silver": "Pachet Silver",
+      "pro": "Pachet Pro",
+      "elite": "Pachet Elite"
     }
   },
   "freelancerActivationConversion": {
-    "defaultError": "De Silver-upgrade kon ndvs. nu worden gestart. Probeer het opniedvs. of open de pachettenpagină.",
-    "success": "Dvs. Silver-activeringscerere is verzonden. Het abonament start na goedkeuring door het bedrijf.",
-    "upgradeButton": "Upgrade naar Silver – {{price}} JOD",
+    "defaultError": "Upgrade-ul Silver nu a putut fi pornit acum. Încercați din nou sau deschideți pagina pachetelor.",
+    "success": "Cererea de activare Silver a fost trimisă. Abonamentul începe după aprobarea companiei.",
+    "upgradeButton": "Upgrade la Silver – {{price}} JOD",
     "errors": {
-      "FREELANCER_ACTIVATION_ENGINE_DISABLED": "De activeringsproef is momenteel nu ingeschakeld.",
-      "FREELANCER_SILVER_CONVERSION_BLOCKED": "De Silver-upgrade kan in dvs. huidige status nu worden gestart.",
-      "FREELANCER_SILVER_PLAN_NOT_FOUND": "Het Silver-pachet is momenteel nu disponibil. Bekijk de pachettenpagină.",
-      "ACTIVATION_REQUEST_ALREADY_PENDING": "Dvs. heeft al een activeringscerere in behandeling voor dit pachet.",
-      "MARKETPLACE_PLAN_NOT_FOUND": "Het Marketplace-pachet is momenteel nu disponibil."
+      "FREELANCER_ACTIVATION_ENGINE_DISABLED": "Proba de activare nu este activată acum.",
+      "FREELANCER_SILVER_CONVERSION_BLOCKED": "Upgrade-ul Silver nu poate fi pornit în starea curentă.",
+      "FREELANCER_SILVER_PLAN_NOT_FOUND": "Pachetul Silver nu este disponibil acum. Verificați pagina pachetelor.",
+      "ACTIVATION_REQUEST_ALREADY_PENDING": "Aveți deja o cerere de activare în evaluare pentru acest pachet.",
+      "MARKETPLACE_PLAN_NOT_FOUND": "Pachetul Marketplace nu este disponibil acum."
     }
   },
   "specialOfferPackage": {
     "accessLevels": {
-      "starter": "STARTER-niveau",
-      "silver": "SILVER-niveau",
-      "pro": "PRO-niveau",
-      "elite": "ELITE-niveau"
+      "starter": "Nivel STARTER",
+      "silver": "Nivel SILVER",
+      "pro": "Nivel PRO",
+      "elite": "Nivel ELITE"
     },
-    "lockedWarning": "Deze speciale aanbieding is door utilizatori gekocht; prijs en voordelen zijn bevroren. Dvs. kunt deze verbergen of een nieuwe aanbieding maken; huidige kopers behouden de voordelen waarvoor zij betaalden.",
+    "lockedWarning": "Această ofertă specială a fost cumpărată de utilizatori, deci prețul și beneficiile sunt înghețate. O puteți ascunde sau crea o ofertă nouă; cumpărătorii actuali păstrează beneficiile plătite.",
     "refundSectionTitles": {
-      "monthlyRefund": "Maandelijkse terugplată",
-      "inactiveMonths": "Inactieve luni",
-      "ordersIncome": "Comandăinkomsten",
-      "importantNotice": "Belangrijke mededeling"
+      "monthlyRefund": "Rambursare lunară",
+      "inactiveMonths": "Luni inactive",
+      "ordersIncome": "Venituri din comenzi",
+      "importantNotice": "Notificare importantă"
     }
   },
   "displayCurrencies": {
@@ -316,59 +316,59 @@
       "OMR": "OMR",
       "EGP": "EGP"
     },
-    "disclaimer": "Geschatte waarde op basis van de huidige wisselkoers.",
-    "officialCurrency": "De officiële valuta binnen Orderz House is de Jordaanse dinar (JOD).",
-    "indicative": "De omgerekende waarde is alleen indicatief en geen definitieve prijs of financiële verplichting.",
-    "preferenceLabel": "Voorkeursweergavevaluta",
-    "preferenceHint": "Deze valuta wordt alleen voor weergave gebruikt; alle berekeningen blijven in Jordaanse dinar (JOD).",
-    "autoByCountry": "Automatisch per land"
+    "disclaimer": "Valoare aproximativă pe baza cursului de schimb actual.",
+    "officialCurrency": "Moneda oficială în Orderz House este dinarul iordanian (JOD).",
+    "indicative": "Valoarea convertită este doar indicativă și nu reprezintă un preț final sau un angajament financiar.",
+    "preferenceLabel": "Monedă preferată pentru afișare",
+    "preferenceHint": "Această monedă este folosită doar pentru afișare; toate calculele rămân în dinari iordanieni (JOD).",
+    "autoByCountry": "Automat după țară"
   },
   "homeAnalyticsMetrics": {
     "metrics": {
       "active": {
-        "label": "Actieve utilizatori",
-        "sub": "Platformactiviteit · afgelopen 7 zile",
-        "tooltip": "Aantal unieke bezoekers (browsersessies of ingelogde accounts) die de site in de afgelopen 7 zile bezochten. Herhaald verversen in dezelfde browser telt als één bezoeker.",
-        "stripLabel": "Actieve utilizatori"
+        "label": "Utilizatori activi",
+        "sub": "Activitate platformă · ultimele 7 zile",
+        "tooltip": "Număr de vizitatori unici (sesiuni browser sau conturi autentificate) care au vizitat site-ul în ultimele 7 zile. Reîmprospătările repetate din același browser contează ca un singur vizitator.",
+        "stripLabel": "Utilizatori activi"
       },
       "views": {
-        "label": "Sitebezoeken",
-        "sub": "Totaal geregistreerde bezoeken",
-        "tooltip": "De teller stijgt één keer per actieve sessie (30 minuten). Verversen of terugkeren binnen dezelfde sessie verhoogt deze niet.",
-        "stripLabel": "Sitebezoeken"
+        "label": "Vizite site",
+        "sub": "Total vizite înregistrate",
+        "tooltip": "Contorul crește o dată per sesiune activă (30 de minute). Reîmprospătarea sau revenirea în aceeași sesiune nu îl mărește.",
+        "stripLabel": "Vizite site"
       },
       "availableOrders": {
-        "label": "Beschikbare aanvragen",
-        "sub": "Ndvs. open voor sollicitaties",
-        "tooltip": "Echte open aanvragen in de marketplace plus trainingaanvragen die ndvs. zichtbaar zijn voor freelancers.",
-        "stripLabel": "Ndvs. disponibil"
+        "label": "Cereri disponibile",
+        "sub": "Deschise pentru aplicări acum",
+        "tooltip": "Cereri reale deschise în marketplace plus cererile de formare vizibile momentan freelancerilor.",
+        "stripLabel": "Disponibile acum"
       },
       "completedOrders": {
-        "label": "Finalizate aanvragen",
-        "sub": "Finalizate clientaanvragen",
-        "tooltip": "Echte voltooide clientaanvragen plus trainingaanvragen uit rondes die eindigden na start van de huidige telling — oudere historische rondes zijn nu inbegrepen.",
-        "stripLabel": "Finalizate aanvragen"
+        "label": "Cereri finalizate",
+        "sub": "Cereri client finalizate",
+        "tooltip": "Cereri reale finalizate ale clienților, plus cereri de formare din runde încheiate după startul numărătorii curente — rundele istorice mai vechi nu sunt incluse.",
+        "stripLabel": "Cereri finalizate"
       }
     },
     "adminHelp": {
-      "title": "Wat is het verschil tussen de twee metrieken?",
-      "visitors": "Homepage-teller: één bezoek per sessie (30 minuten). Verversen of navigeren binnen dezelfde sessie telt nu opnieuw.",
-      "active": "Actieve utilizatori: unieke bezoekers (sessie of account) die de site in de afgelopen 7 zile openden, uit de lokale database.",
-      "activeBody": "Unieke bezoekers (sessie of account) die de site in de afgelopen 7 zile openden, uit de lokale database."
+      "title": "Care este diferența dintre cele două metrici?",
+      "visitors": "Contor homepage: o vizită per sesiune (30 de minute). Reîmprospătarea sau navigarea în aceeași sesiune nu se numără din nou.",
+      "active": "Utilizatori activi: vizitatori unici (sesiune sau cont) care au deschis site-ul în ultimele 7 zile, din baza de date locală.",
+      "activeBody": "Vizitatori unici (sesiune sau cont) care au deschis site-ul în ultimele 7 zile, din baza de date locală."
     }
   },
   "legacyEducationOptions": {
     "levels": {
-      "belowSecondary": "Onder secundair onderwijs",
-      "secondary": "Secundair onderwijs",
-      "diploma": "Diploma (mbo)",
-      "bachelor": "Bachelordiploma",
-      "higherDiploma": "Hoger diploma",
-      "master": "Masterdiploma",
-      "doctorate": "Doctoraat",
+      "belowSecondary": "Sub nivelul școlii secundare",
+      "secondary": "Școală secundară",
+      "diploma": "Diplomă",
+      "bachelor": "Licență",
+      "higherDiploma": "Diplomă superioară",
+      "master": "Master",
+      "doctorate": "Doctorat",
       "other": "Altele"
     },
-    "graduationNotYet": "Nog nu afgestudeerd"
+    "graduationNotYet": "Încă nu am absolvit"
   },
   "legacyFreelancerWorkFields": {
     "fields": {
@@ -376,42 +376,42 @@
       "design": "Design grafic",
       "programming": "Programare"
     },
-    "required": "Selecteer minstens één werkgebied."
+    "required": "Selectați cel puțin un domeniu de lucru."
   },
   "bildazoAuthorAdmin": {
     "statusFilters": {
-      "all": "Alle",
-      "pending_new_account": "Niedvs. account – cerere",
-      "pending_existing_account": "Bestaand account – cerere",
-      "pending_external_verification": "Externe verificatie",
-      "needs_manual_review": "Handmatige beoordeling",
-      "linked": "Gekoppeld",
-      "failed": "Mislukt",
-      "blocked": "Geblokkeerd"
+      "all": "Toate",
+      "pending_new_account": "Cerere cont nou",
+      "pending_existing_account": "Cerere cont existent",
+      "pending_external_verification": "Verificare externă",
+      "needs_manual_review": "Verificare manuală",
+      "linked": "Legat",
+      "failed": "Eșuat",
+      "blocked": "Blocat"
     }
   },
   "howItWorksPages": {
     "navLabels": {
-      "freelancer": "Hoe het werkt voor freelancers",
-      "client": "Hoe clienten bestellen"
+      "freelancer": "Cum funcționează pentru freelanceri",
+      "client": "Cum comandă clienții"
     },
     "blockTypes": {
-      "title": "Titel",
-      "text": "Lopende tekst",
-      "image": "Afbeelding",
-      "text_image": "Tekst + afbeelding"
+      "title": "Titlu",
+      "text": "Text simplu",
+      "image": "Imagine",
+      "text_image": "Text + imagine"
     }
   },
   "rateLimitExemptions": {
     "scopes": {
-      "order_create": "Comandă aanmaken (order_create)",
-      "fake_order_create": "Nep-trainingcomandăen (fake_order_create)",
-      "training_bulk": "Bulk training genereren (training_bulk)",
-      "admin_write": "Admin-schrijfacties (admin_write)"
+      "order_create": "Creare comandă (order_create)",
+      "fake_order_create": "Comenzi de formare simulate (fake_order_create)",
+      "training_bulk": "Generare instruire în bulk (training_bulk)",
+      "admin_write": "Scrieri admin (admin_write)"
     },
     "modes": {
-      "bypass": "Limiet omzeilen (bypass)",
-      "increased_limit": "Hogere limiet (increased_limit)"
+      "bypass": "Ocolire limită (bypass)",
+      "increased_limit": "Limită mai mare (increased_limit)"
     }
   },
   "partnerLogos": {
@@ -420,17 +420,17 @@
       "studyzhouse": "StudyzHouse",
       "battech": "Battechno"
     },
-    "subtitle": "We zijn trots op partnerschappen met toonaangevende organisaties die opmerkelijke succesverhalen hebben helpen bouwen."
+    "subtitle": "Suntem mândri de parteneriatele cu organizații de top care au contribuit la povești de succes remarcabile."
   },
   "freelancerOrderTenderPolicy": {
-    "title": "Voorwaarden voor het ontvangen en uitvoeren van comandăen en aanbestedingen"
+    "title": "Termeni pentru primirea și executarea comenzilor și licitațiilor"
   },
   "homeFeaturedServices": {
-    "specialRequestsWhatsappMessage": "Hallo, ik wil graag een speciale aanvraag indienen via Orderz House."
+    "specialRequestsWhatsappMessage": "Bună ziua, aș dori să trimit o cerere specială prin Orderz House."
   },
   "planCatalogs": {
-    "main_plans": "Hoofdpachetten",
-    "page_plans": "Paginăpachetten",
-    "marketplace_plans": "Werkabonamentpen"
+    "main_plans": "Pachete principale",
+    "page_plans": "Pachete pagină",
+    "marketplace_plans": "Abonamente de lucru"
   }
 }

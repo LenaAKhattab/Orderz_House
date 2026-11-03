@@ -1,7 +1,7 @@
 {
   "money": {
     "free": "Gratuit",
-    "total": "Totaal: {{amount}}",
+    "total": "Sumă totală: {{amount}}",
     "currency": {
       "JOD": "JOD",
       "EGP": "EGP",
@@ -17,103 +17,103 @@
     }
   },
   "country": {
-    "unknown": "Onbekend",
-    "unspecified": "Nu opgegeven",
-    "awaitingPayment": "În așteptarea plată"
+    "unknown": "Necunoscut",
+    "unspecified": "Nespecificat",
+    "awaitingPayment": "În așteptarea plății"
   },
   "bidPaymentReturn": {
     "pendingVerify": {
-      "title": "Plată wordt geverifieerd",
-      "message": "De plată is nog nu bevestigd (de webhook kan even duren). Wacht kort en verniedvs. daarna. Als de comandă na enkele minuten nog steeds „În așteptarea plată“ toont, neem contact op met asistență."
+      "title": "Plata se verifică",
+      "message": "Plata nu este încă confirmată (webhook-ul poate dura puțin). Așteptați scurt, apoi reîmprospătați. Dacă comanda afișează încă „În așteptarea plății” după câteva minute, contactați asistența."
     },
     "serviceUnavailable": {
-      "title": "Betaaldienst nu disponibil",
-      "message": "De platăsprovider is nu disponibil. Probeer het later opniedvs. of neem contact op met asistență."
+      "title": "Serviciu de plată indisponibil",
+      "message": "Furnizorul de plăți nu este disponibil. Încercați mai târziu sau contactați asistența."
     },
     "stateChanged": {
-      "title": "Comandă- of bodstatus gewijzigd",
-      "message": "Deze bodplată kan in de huidige status nu worden bevestigd. Verniedvs. de pagină of start checkout opniedvs. via de comandăkaart. Als dvs. denkt dat dvs. bent belast, wacht kort en vernieuw; anders neem contact op met asistență."
+      "title": "Status comandă sau ofertă modificat",
+      "message": "Această plată de ofertă nu poate fi confirmată în statusul actual. Reîmprospătați pagina sau reluați checkout-ul din cardul comenzii. Dacă credeți că ați fost taxat, așteptați puțin și reîmprospătați; altfel contactați asistența."
     },
     "generic": {
-      "title": "Ofertăplată kon nu worden bevestigd",
-      "message": "We konden de plată voor het geselecteerde bod nu bevestigen. Als Stripe een geslaagde afschrijving toont, wacht kort en vernieuw. Als dit aanhoudt, neem contact op met asistență met dvs. comandă-ID."
+      "title": "Plata ofertei nu a putut fi confirmată",
+      "message": "Nu am putut confirma plata pentru oferta selectată. Dacă Stripe arată o debitare reușită, așteptați puțin și reîmprospătați. Dacă persistă, contactați asistența cu ID-ul comenzii."
     }
   },
   "duration": {
-    "lessThanMinute": "Minder dan een minuut",
+    "lessThanMinute": "Mai puțin de un minut",
     "partJoiner": ", ",
     "day": "{{count}} zi",
     "day_plural": "{{count}} zile",
-    "hour": "{{count}} uur",
-    "hour_plural": "{{count}} uren",
-    "minute": "{{count}} minuut",
-    "minute_plural": "{{count}} minuten"
+    "hour": "{{count}} oră",
+    "hour_plural": "{{count}} ore",
+    "minute": "{{count}} minut",
+    "minute_plural": "{{count}} minute"
   },
   "membershipSchedule": {
     "monthOne": "1 lună",
     "monthTwo": "2 luni",
     "monthsFew": "{{count}} luni",
     "monthsMany": "{{count}} luni",
-    "awaitingFirstOrder": "În așteptarea eerste comandă",
-    "startsOnFirstOrder": "Start met de eerste comandă",
-    "expiryAfterStart": "Berekend zodra het abonament start"
+    "awaitingFirstOrder": "În așteptarea primei comenzi",
+    "startsOnFirstOrder": "Începe la prima comandă",
+    "expiryAfterStart": "Calculat după începerea abonamentului"
   },
   "eligibility": {
-    "adminApprovalPending": "În așteptarea admin-goedkeuring voordat dvs. comandăen kunt ontvangen",
-    "noSubscription": "Activeer eerst dvs. pachet om comandăen te ontvangen.",
-    "inactive": "Dvs. abonament is nu actief. Sluit eerst een abonament af.",
-    "paymentIncomplete": "Comandăintake kon nu worden ingeschakeld omdat de abonamentsplată onvolledig is.",
-    "expired": "Dvs. abonament is verlopen. Verleng om comandăen te ontvangen.",
-    "activationFeeUnpaid": "Betaal de jaarlijkse activatiekosten voordat dvs. comandăen ontvangt.",
-    "accountHoldPaymentFailed": "De lunăelijkse abonamentskosten van 15 JOD konden nu van dvs. opgeslagen kaart worden afgeschreven; dvs. account is tijdelijk bevroren. Neem contact met ons op om te reactiveren.",
-    "planConfigurationError": "We konden dvs. pachetgeschiktheid ndvs. nu verifiëren. Contactați asistența.",
-    "generic": "Dvs. account komt momenteel nu in aanmerking voor marketplace-comandăen (controleer dvs. abonament)."
+    "adminApprovalPending": "În așteptarea aprobării administratorului înainte de a primi comenzi",
+    "noSubscription": "Activați mai întâi pachetul pentru a primi comenzi.",
+    "inactive": "Abonamentul dumneavoastră nu este activ. Activați un abonament mai întâi.",
+    "paymentIncomplete": "Primirea comenzilor nu a putut fi activată deoarece plata abonamentului este incompletă.",
+    "expired": "Abonamentul a expirat. Reînnoiți pentru a primi comenzi.",
+    "activationFeeUnpaid": "Plătiți taxa anuală de activare înainte de a primi comenzi.",
+    "accountHoldPaymentFailed": "Taxa lunară de abonament de 15 JOD nu a putut fi debitată de pe cardul salvat; contul este temporar înghețat. Contactați-ne pentru reactivare.",
+    "planConfigurationError": "Nu am putut verifica eligibilitatea pachetului acum. Contactați asistența.",
+    "generic": "Contul nu este eligibil momentan pentru comenzi marketplace (verificați abonamentul)."
   },
   "upload": {
-    "totalSizeExceeded": "De totale bestandsgrootte mag {{mb}} MB nu overschrijden",
-    "totalSizeHelper": "Maximale totale bestandsgrootte: {{mb}} MB",
+    "totalSizeExceeded": "Dimensiunea totală a fișierelor nu poate depăși {{mb}} MB",
+    "totalSizeHelper": "Dimensiune totală maximă fișiere: {{mb}} MB",
     "fileSize": {
-      "bytes": "{{size}} B",
+      "bytes": "{{size}} octeți",
       "kilobytes": "{{size}} kB",
-      "megabytes": "{{size}} MB (megaoctet)"
+      "megabytes": "{{size}} MB (megaocteți)"
     }
   },
   "applicants": {
-    "guestMessage": "Zichtbaar na inloggen",
-    "guestMessageLong": "Het aantal candidaten is alleen zichtbaar voor ingelogde utilizatori",
-    "empty": "Geen",
+    "guestMessage": "Vizibil după autentificare",
+    "guestMessageLong": "Numărul de candidați este vizibil doar utilizatorilor autentificați",
+    "empty": "Niciunul",
     "count": "{{count}} candidat",
-    "count_plural": "{{count}} candidaten",
+    "count_plural": "{{count}} candidați",
     "singular": "candidat",
-    "plural": "candidaten"
+    "plural": "candidați"
   },
   "poolPlan": {
-    "lockBadge": "Nu disponibil in dvs. pachet",
+    "lockBadge": "Indisponibil în pachetul dumneavoastră",
     "messages": {
-      "PLAN_TOO_LOW": "De waarde van deze comandă ligt boven de limiet van dvs. huidige pachet",
-      "NO_ACTIVE_PLAN": "Activeer dvs. pachet om comandăen te ontvangen",
-      "INTERNAL_PLAN_CONFIGURATION": "We konden dvs. pachetgeschiktheid ndvs. nu verifiëren. Contactați asistența."
+      "PLAN_TOO_LOW": "Valoarea acestei comenzi depășește limita pachetului curent",
+      "NO_ACTIVE_PLAN": "Activați pachetul pentru a primi comenzi",
+      "INTERNAL_PLAN_CONFIGURATION": "Nu am putut verifica eligibilitatea pachetului acum. Contactați asistența."
     }
   },
   "homeCategories": {
     "imageAlt": "Categorie",
-    "exploreServices": "Diensten verkennen",
+    "exploreServices": "Explorați serviciile",
     "fallback": {
       "programming": {
-        "title": "Programmeerdiensten",
-        "text": "Professionele programmeerdiensten voor bedrijven, academisch onderzoek en maatwerkprojecten."
+        "title": "Servicii de programare",
+        "text": "Servicii profesionale de programare pentru companii, cercetare academică și proiecte personalizate."
       },
       "design": {
-        "title": "Ontwerpdiensten",
-        "text": "Professionele ontwerpdiensten voor bedrijven, wetenschap en persoonlijke behoeften."
+        "title": "Servicii de design",
+        "text": "Servicii profesionale de design pentru companii, mediul academic și nevoi personale."
       },
       "contentWriting": {
         "title": "Redactare conținut",
-        "text": "Professionele schrijfdiensten voor bedrijven, academisch onderzoek en persoonlijke behoeften."
+        "text": "Servicii profesionale de scriere pentru companii, cercetare academică și nevoi personale."
       },
       "specialRequests": {
-        "title": "Speciale cerereen",
-        "text": "Laat dvs. comandă direct behandelen door het asistențăteam van de site",
+        "title": "Cereri speciale",
+        "text": "Lăsați comanda să fie gestionată direct de echipa de asistență a site-ului",
         "button": "Contactați prin WhatsApp"
       }
     }

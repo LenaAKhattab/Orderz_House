@@ -4,7 +4,7 @@
   },
   "planPrice": {
     "free": "Gratuit",
-    "total": "Totaal {{total}}"
+    "total": "Sumă totală: {{total}}"
   },
   "taxonomy": {
     "contentWriting": "Redactare conținut",
@@ -12,66 +12,66 @@
     "programming": "Programare"
   },
   "courseTitles": {
-    "freeContentWritingLevel1": "Gratuit training contentschrijven – niveadvs. 1",
-    "contentWritingLevel1": "Instruire contentschrijven – niveadvs. 1",
-    "contentWritingLevel2": "Instruire contentschrijven – niveadvs. 2",
-    "freeContentWritingLevel2": "Gratuit training contentschrijven – niveadvs. 2",
-    "freeDesign": "Gratuit designtraining",
-    "freelanceOperationsDiploma": "Diploma digitale freelance-operations"
+    "freeContentWritingLevel1": "Instruire gratuită de redactare conținut – nivelul 1",
+    "contentWritingLevel1": "Instruire redactare conținut – nivelul 1",
+    "contentWritingLevel2": "Instruire redactare conținut – nivelul 2",
+    "freeContentWritingLevel2": "Instruire gratuită de redactare conținut – nivelul 2",
+    "freeDesign": "Instruire gratuită de design",
+    "freelanceOperationsDiploma": "Diplomă digitală în operațiuni freelance"
   },
   "faq": {
-    "translationUnavailable": "Dit item is nog nu disponibil in dvs. taal."
+    "translationUnavailable": "Acest element nu este disponibil încă în limba dumneavoastră."
   },
   "membership": {
     "tiers": {
       "starter": {
-        "tagline": "Om te beginnen"
+        "tagline": "Pentru început"
       },
       "silver": {
-        "tagline": "Om te groeien"
+        "tagline": "Pentru creștere"
       },
       "pro": {
-        "tagline": "Voor professionals"
+        "tagline": "Pentru profesioniști"
       },
       "elite": {
-        "tagline": "Maximale toegang"
+        "tagline": "Acces maxim"
       }
     },
-    "withdrawalOff": "Geen directe uitplată van bedragen",
-    "withdrawalOn": "Uitplată disponibil",
-    "viewMembership": "Abonament bekijken"
+    "withdrawalOff": "Fără retragere directă a sumelor",
+    "withdrawalOn": "Retragere disponibilă",
+    "viewMembership": "Vizualizați abonamentul"
   },
   "chunkReload": {
-    "message": "De sitebestanden zijn bijgewerkt. Verniedvs. de pagină.",
-    "refresh": "Pagină vernieuwen"
+    "message": "Fișierele site-ului au fost actualizate. Reîmprospătați pagina.",
+    "refresh": "Reîmprospătați pagina"
   },
   "browserNotification": {
-    "newNotification": "Noue notificare"
+    "newNotification": "Notificare nouă"
   },
   "adminList": {
-    "refreshSoftNote": "De lijst kon ndvs. nu worden vernieuwd. Dvs. kunt het opniedvs. proberen.",
-    "rateLimitNote": "Er zijn te veel cerereen in korte tijd verzonden. Wacht even en probeer het opnieuw.",
-    "loadFailed": "De lijst kon nu worden geladen. Încercați din nou."
+    "refreshSoftNote": "Lista nu a putut fi reîmprospătată acum. Puteți încerca din nou.",
+    "rateLimitNote": "Au fost trimise prea multe cereri într-un interval scurt. Așteptați puțin, apoi încercați din nou.",
+    "loadFailed": "Lista nu a putut fi încărcată. Încercați din nou."
   },
   "plansLoad": {
-    "defaultCatalogFailed": "De standaardpachetten konden nu worden geladen.",
-    "planPageFailed": "De pachettenpagină kon nu worden geladen."
+    "defaultCatalogFailed": "Pachetele implicite nu au putut fi încărcate.",
+    "planPageFailed": "Pagina pachetelor nu a putut fi încărcată."
   },
   "superAdminLoad": {
-    "analyticsTimeout": "Het laden van analyses duurde langer dan verwacht. Probeer het zo meteen opnieuw.",
-    "analyticsFailed": "Het analysedashboard kon nu worden geladen.",
-    "businessKpisTimeout": "Bedrijfsindicatoren konden ndvs. nu worden geladen.",
-    "businessKpisFailed": "Bedrijfsindicatoren konden nu worden geladen.",
-    "sectionTimeout": "Dit onderdeel duurde langer dan verwacht om te laden.",
-    "sectionFailed": "Dit onderdeel kon nu worden geladen.",
-    "summaryTimeout": "Het laden van de indicatoren duurde langer dan verwacht.",
-    "summaryFailed": "De follow-up-indicatoren konden nu worden geladen."
+    "analyticsTimeout": "Încărcarea analizelor a durat mai mult decât era de așteptat. Reîmprospătați peste câteva momente.",
+    "analyticsFailed": "Panoul de analize nu a putut fi încărcat.",
+    "businessKpisTimeout": "Indicatorii de business nu au putut fi încărcați acum.",
+    "businessKpisFailed": "Indicatorii de business nu au putut fi încărcați.",
+    "sectionTimeout": "Această secțiune a durat mai mult decât era de așteptat să se încarce.",
+    "sectionFailed": "Această secțiune nu a putut fi încărcată.",
+    "summaryTimeout": "Încărcarea indicatorilor a durat mai mult decât era de așteptat.",
+    "summaryFailed": "Indicatorii de urmărire nu au putut fi încărcați."
   },
   "api": {
-    "invalidMembershipPlanCode": "Ongeldige Marketplace-pachetcode.",
-    "identityImageUnavailable": "De identiteitsafbeelding kon ndvs. nu worden geladen. Încercați din nou.",
-    "invalidPlanId": "Ongeldige pachet-ID.",
-    "invalidCheckoutSessionId": "Ongeldige platăssessie-ID.",
-    "openingFile": "Bestand wordt geopend…"
+    "invalidMembershipPlanCode": "Cod de pachet Marketplace invalid.",
+    "identityImageUnavailable": "Imaginea de identitate nu a putut fi încărcată acum. Încercați din nou.",
+    "invalidPlanId": "ID pachet invalid.",
+    "invalidCheckoutSessionId": "ID sesiune plată invalid.",
+    "openingFile": "Se deschide fișierul…"
   }
 }

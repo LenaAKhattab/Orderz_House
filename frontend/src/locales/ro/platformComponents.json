@@ -3,73 +3,73 @@
   "durationUnits": {
     "day": "zi",
     "day_plural": "zile",
-    "hour": "uur",
-    "hour_plural": "uren",
-    "minute": "minuut",
-    "minute_plural": "minuten"
+    "hour": "oră",
+    "hour_plural": "ore",
+    "minute": "minut",
+    "minute_plural": "minute"
   },
   "plans": {
     "trainingPrefix": "Instruire: ",
-    "subscriptionDurationDays": "Abonamentsduur: {{days}} zile",
+    "subscriptionDurationDays": "Durată abonament: {{days}} zile",
     "orderValue": {
-      "range": "Comandăwaarde: van {{min}} tot {{max}} JOD",
-      "fromMin": "Comandăwaarde: vanaf {{min}} JOD",
-      "upToMax": "Comandăwaarde: tot {{max}} JOD"
+      "range": "Valoare comandă: de la {{min}} la {{max}} JOD",
+      "fromMin": "Valoare comandă: de la {{min}} JOD în sus",
+      "upToMax": "Valoare comandă: până la {{max}} JOD"
     },
     "installment": {
-      "upfront": "{{amount}} JOD bij aannotificare",
-      "monthly": "{{amount}} JOD per lună × {{months}} luni"
+      "upfront": "{{amount}} JOD la înscriere",
+      "monthly": "{{amount}} JOD lunar × {{months}} luni"
     },
-    "loadingPlansSr": "Pachetten laden"
+    "loadingPlansSr": "Se încarcă pachetele"
   },
   "orderDetailsStatus": {
     "status": {
-      "published": "Gepubliceerd",
-      "open_for_freelancers": "Open voor freelancers",
-      "open_for_bids": "Open voor oferte",
-      "assigned": "Toegewezen",
-      "in_progress": "In uitvoering",
-      "ready_for_work": "Klaar om te starten",
-      "pending_payment": "În așteptarea plată",
-      "pending_client_review": "În așteptarea clientbeoordeling",
+      "published": "Publicat",
+      "open_for_freelancers": "Deschis freelancerilor",
+      "open_for_bids": "Deschis pentru oferte",
+      "assigned": "Atribuit",
+      "in_progress": "În desfășurare",
+      "ready_for_work": "Gata de lucru",
+      "pending_payment": "În așteptarea plății",
+      "pending_client_review": "În așteptarea evaluării clientului",
       "completed": "Finalizat",
       "cancelled": "Anulat",
       "closed": "Închis",
-      "draft": "Concept",
-      "archived": "Gearchiveerd"
+      "draft": "Ciornă",
+      "archived": "Arhivat"
     },
-    "awaitingApproval": "În așteptarea goedkeuring"
+    "awaitingApproval": "În așteptarea aprobării"
   },
   "openOrders": {
     "projectType": {
-      "fixed": "Vaste prijs",
-      "bidding": "Bieding"
+      "fixed": "Preț fix",
+      "bidding": "Licitație"
     },
-    "noDescription": "Geen beschrijving"
+    "noDescription": "Fără descriere"
   },
   "heroStats": {
     "hints": {
-      "zeroTrafficViews": "Nog geen weergaven geregistreerd",
-      "zeroTrafficActive": "Geen activiteit geregistreerd in de afgelopen 7 zile",
-      "dbUnavailable": "Platformstatistieken zijn tijdelijk nu disponibil",
-      "devTrackingDisabled": "Tracking is uitgeschakeld in de ontwikkelomgeving"
+      "zeroTrafficViews": "Nicio vizualizare înregistrată încă",
+      "zeroTrafficActive": "Nicio activitate înregistrată în ultimele 7 zile",
+      "dbUnavailable": "Statisticile platformei sunt temporar indisponibile",
+      "devTrackingDisabled": "Urmărirea este dezactivată în mediul de dezvoltare"
     }
   },
   "silverConversion": {
     "description": {
-      "trialExpired": "Dvs. werkproef is beëindigd. Upgrade naar Silver om door te gaan met solliciteren.",
-      "workCapReached": "Dvs. heeft de proeflimiet voor geaccepteerd werk bereikt. Ga verder met Silver.",
-      "default": "Dvs. heeft de echte werkcyclus op het platform uitgeprobeerd. Om na de proef door te gaan en meer kansen te krijgen, kiest dvs. het Silver-pachet."
+      "trialExpired": "Perioada de probă de lucru s-a încheiat. Faceți upgrade la Silver pentru a continua să aplicați.",
+      "workCapReached": "Ați atins limita de probă pentru lucrări acceptate. Continuați cu Silver.",
+      "default": "Ați testat ciclul real de lucru pe platformă. Pentru a continua după probă și a accesa mai multe oportunități, alegeți pachetul Silver."
     }
   },
   "auth": {
     "unknownInitial": "?"
   },
   "toast": {
-    "regionAria": "Notificareen"
+    "regionAria": "Notificări"
   },
   "orders": {
-    "typeAndPriceAria": "comandătype en prijs"
+    "typeAndPriceAria": "tip comandă și preț"
   },
   "ads": {
     "saleStickerOff": "OFF"

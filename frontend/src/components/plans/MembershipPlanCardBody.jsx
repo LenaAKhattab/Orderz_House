@@ -2,6 +2,7 @@ import { Briefcase, CalendarDays, Check, Infinity as InfinityIcon, MinusCircle, 
 import { getLocalizedField } from "../../lib/i18n/getLocalizedField";
 import { ApproximateCurrencyLine } from "../money/JodMoneyDisplay";
 import { pickIntlTag } from "../../i18n/intlLocale";
+import { localizeMembershipCardText } from "../../lib/marketplaceMembership/mapMarketplaceMembershipPlanForPublicPlans";
 import { isNewLocale, localizeSystemText } from "../../i18n/systemContent";
 
 /**
@@ -16,11 +17,7 @@ export default function MembershipPlanCardBody({ plan, locale = "ar", t }) {
   const includedBenefits = Array.isArray(plan?.includedBenefits) ? plan.includedBenefits : [];
   const withdrawalEnabled = plan?.withdrawalEnabled;
   const newLocale = isNewLocale(locale);
-  const tagline = newLocale
-    ? localizeSystemText(locale, { ar: plan?.taglineAr, en: plan?.taglineEn })
-    : locale === "en"
-      ? plan?.taglineEn || plan?.taglineAr || ""
-      : plan?.taglineAr || plan?.taglineEn || "";
+  const tagline = localizeMembershipCardText(plan, "tagline", locale);
   // Latin digits; Arabic / English keep en-US grouping, German / Dutch / Romanian use their own separators.
   const amountTag = pickIntlTag(locale, { ar: "en-US", en: "en-US" });
   const unlimited = Boolean(metrics.unlimitedProjects || plan?.unlimitedRealOrderValue);

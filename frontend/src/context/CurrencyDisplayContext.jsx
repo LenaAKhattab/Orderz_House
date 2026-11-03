@@ -5,9 +5,11 @@ import {
   DISPLAY_DISCLAIMER,
   INDICATIVE_COPY,
   OFFICIAL_CURRENCY_COPY,
+  displayCurrencyCopy,
 } from "../constants/displayCurrencies";
 import { readPreferredDisplayCurrency } from "../utils/preferredDisplayCurrencyStorage";
 import { shouldShowApproximate } from "../utils/displayMoney";
+import { useTranslation } from "../i18n/LanguageProvider";
 
 const CurrencyDisplayContext = createContext({
   baseCurrency: BASE_CURRENCY,
@@ -25,6 +27,7 @@ const CurrencyDisplayContext = createContext({
 });
 
 export function CurrencyDisplayProvider({ children }) {
+  const { locale } = useTranslation();
   const [preferred, setPreferredState] = useState(() => readPreferredDisplayCurrency());
   const [payload, setPayload] = useState({
     baseCurrency: BASE_CURRENCY,
@@ -32,9 +35,6 @@ export function CurrencyDisplayProvider({ children }) {
     rate: 1,
     detectedCountry: null,
     source: "fallback",
-    disclaimer: DISPLAY_DISCLAIMER,
-    officialCurrencyCopy: OFFICIAL_CURRENCY_COPY,
-    indicativeCopy: INDICATIVE_COPY,
   });
   const [ready, setReady] = useState(false);
 
@@ -49,9 +49,6 @@ export function CurrencyDisplayProvider({ children }) {
         rate: row.rate != null ? Number(row.rate) : null,
         detectedCountry: row.detectedCountry || null,
         source: row.source || "fallback",
-        disclaimer: row.disclaimer || DISPLAY_DISCLAIMER,
-        officialCurrencyCopy: row.officialCurrencyCopy || OFFICIAL_CURRENCY_COPY,
-        indicativeCopy: row.indicativeCopy || INDICATIVE_COPY,
       });
     } catch {
       setPayload((prev) => ({
@@ -73,14 +70,19 @@ export function CurrencyDisplayProvider({ children }) {
 
   const value = useMemo(() => {
     const showApproximate = shouldShowApproximate(payload.displayCurrency, payload.rate);
+    // Always prefer the active UI locale catalog — never keep API Arabic/English copy stuck after a language switch.
+    const copy = displayCurrencyCopy(locale);
     return {
       ...payload,
+      disclaimer: copy.disclaimer,
+      officialCurrencyCopy: copy.officialCurrencyCopy,
+      indicativeCopy: copy.indicativeCopy,
       preferred,
       showApproximate,
       ready,
       refresh,
     };
-  }, [payload, preferred, ready, refresh]);
+  }, [payload, preferred, ready, refresh, locale]);
 
   return <CurrencyDisplayContext.Provider value={value}>{children}</CurrencyDisplayContext.Provider>;
 }
