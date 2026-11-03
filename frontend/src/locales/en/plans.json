@@ -67,8 +67,11 @@
     "refundModalGotIt": "Got it",
     "refundSummaryAria": "Offer value summary",
     "refundSectionFallback": "Details",
+    "defaultTitle": "Special offer",
+    "defaultSubtitle": "A limited-time promotion — more bids at a special price.",
     "defaultBadge": "Special offer",
     "defaultRibbon": "Limited time",
+    "defaultMicrocopy": "No commitment. You can upgrade at any time.",
     "refundSections": {
       "monthly": "Monthly refund",
       "inactiveMonths": "Inactive months",

@@ -67,8 +67,11 @@
     "refundModalGotIt": "فهمت",
     "refundSummaryAria": "ملخص قيم الباقة",
     "refundSectionFallback": "تفاصيل",
+    "defaultTitle": "باقة العرض",
+    "defaultSubtitle": "عرض ترويجي لفترة محدودة — عروض أكثر بسعر خاص.",
     "defaultBadge": "عرض خاص",
     "defaultRibbon": "لفترة محدودة",
+    "defaultMicrocopy": "بدون التزام، يمكنك الترقية في أي وقت",
     "refundSections": {
       "monthly": "الاسترداد الشهري",
       "inactiveMonths": "الأشهر غير النشطة",

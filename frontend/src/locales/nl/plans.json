@@ -67,8 +67,11 @@
     "refundModalGotIt": "Begrepen",
     "refundSummaryAria": "Overzicht van de waarde van de aanbieding",
     "refundSectionFallback": "Bijzonderheden",
+    "defaultTitle": "Speciale aanbieding",
+    "defaultSubtitle": "Tijdelijke actie — meer sollicitaties voor een speciale prijs.",
     "defaultBadge": "Speciale aanbieding",
     "defaultRibbon": "Beperkte tijd",
+    "defaultMicrocopy": "Geen verplichting. U kunt op elk moment upgraden.",
     "refundSections": {
       "monthly": "Maandelijkse terugbetaling",
       "inactiveMonths": "Inactieve maanden",

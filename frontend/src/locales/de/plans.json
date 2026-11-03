@@ -67,8 +67,11 @@
     "refundModalGotIt": "Verstanden",
     "refundSummaryAria": "Übersicht der Angebotswerte",
     "refundSectionFallback": "Details",
+    "defaultTitle": "Sonderangebot",
+    "defaultSubtitle": "Zeitlich begrenzte Aktion — mehr Bewerbungen zum Sonderpreis.",
     "defaultBadge": "Sonderangebot",
     "defaultRibbon": "Nur für kurze Zeit",
+    "defaultMicrocopy": "Keine Verpflichtung. Sie können jederzeit upgraden.",
     "refundSections": {
       "monthly": "Monatliche Rückerstattung",
       "inactiveMonths": "Inaktive Monate",
