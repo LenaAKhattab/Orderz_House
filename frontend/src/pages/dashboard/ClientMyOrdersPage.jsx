@@ -130,7 +130,7 @@ export default function ClientMyOrdersPage() {
           }
         } catch (e) {
           if (orderId && bidId) {
-            const toast = getBidPaymentConfirmFailureToast(isArabicUi, parseConfirmPaymentAxiosError(e));
+            const toast = getBidPaymentConfirmFailureToast(isArabicUi, parseConfirmPaymentAxiosError(e), locale);
             push({ type: "error", title: toast.title, message: toast.message });
           } else if (orderId) {
             // Never discard the order here: the payment may still be confirming (webhook), and the
@@ -153,7 +153,7 @@ export default function ClientMyOrdersPage() {
       navigate(location.pathname, { replace: true });
       void loadSilent();
     }
-  }, [isArabicUi, location.pathname, location.search, loadSilent, navigate, push, t]);
+  }, [isArabicUi, locale, location.pathname, location.search, loadSilent, navigate, push, t]);
 
   // Browser Back from Stripe can restore this page from BFCache: refetch the canonical order state.
   usePageRestore((reason) => {

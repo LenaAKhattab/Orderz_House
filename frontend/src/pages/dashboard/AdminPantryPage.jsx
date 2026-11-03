@@ -31,6 +31,8 @@ import {
 import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import { statusLabel } from "../../i18n/statusRegistry.js";
+import { intlTagOrDefault, pickIntlTag } from "../../i18n/intlLocale.js";
+import { isNewLocale, localizeSystemText } from "../../i18n/systemContent.js";
 import "../../i18n/pantryResources";
 import "./pantryPages.css";
 
@@ -92,7 +94,7 @@ export default function AdminPantryPage() {
     }),
     [t],
   );
-  const dateLocale = locale === "en" ? "en-JO-u-nu-latn" : "ar-JO-u-nu-latn";
+  const dateLocale = pickIntlTag(locale, { ar: "ar-JO-u-nu-latn", en: "en-JO-u-nu-latn" });
   const [tab, setTab] = useState("requests");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -972,7 +974,7 @@ export default function AdminPantryPage() {
                     : "",
                 skills: detail.request.skills?.length
                   ? t("pantry.detail.skillsPart", {
-                      skills: detail.request.skills.join(locale === "en" ? ", " : "، "),
+                      skills: detail.request.skills.join(t("platformPages.common.listJoiner")),
                     })
                   : "",
               })}
@@ -1020,7 +1022,7 @@ export default function AdminPantryPage() {
                 {t("pantry.detail.eligibleTiers", {
                   tiers: detail.request.eligibleTierCodes
                     .map((code) => String(code).toUpperCase())
-                    .join(locale === "en" ? ", " : "، "),
+                    .join(t("platformPages.common.listJoiner")),
                 })}
               </p>
             )}
@@ -1029,9 +1031,14 @@ export default function AdminPantryPage() {
                 <h3>{t("pantry.detail.fairRankingTitle")}</h3>
                 {!isFairRankingEligible(detail.fairRanking) ? (
                   <p className="muted">
-                    {(locale === "en"
-                      ? detail.fairRanking?.messageEn
-                      : detail.fairRanking?.messageAr) || t("pantry.detail.fairRankingPending")}
+                    {(isNewLocale(locale)
+                      ? localizeSystemText(locale, {
+                          ar: detail.fairRanking?.messageAr,
+                          en: detail.fairRanking?.messageEn,
+                        })
+                      : locale === "en"
+                        ? detail.fairRanking?.messageEn
+                        : detail.fairRanking?.messageAr) || t("pantry.detail.fairRankingPending")}
                   </p>
                 ) : (
                   <>
@@ -1048,7 +1055,7 @@ export default function AdminPantryPage() {
                             </strong>
                             {c.amount != null ? ` — ${c.amount}` : ""}
                             <div className="muted">
-                              {c.submittedAt ? new Date(c.submittedAt).toLocaleString() : ""}
+                              {c.submittedAt ? new Date(c.submittedAt).toLocaleString(intlTagOrDefault(locale)) : ""}
                               {c.rankingReason ? ` · ${c.rankingReason}` : ""}
                             </div>
                           </div>

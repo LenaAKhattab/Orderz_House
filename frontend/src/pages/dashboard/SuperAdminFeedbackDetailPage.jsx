@@ -210,7 +210,7 @@ export default function SuperAdminFeedbackDetailPage() {
                 >
                   {FEEDBACK_STATUSES.map((opt) => (
                     <option key={opt.value} value={opt.value}>
-                      {locale === "en" ? opt.en : opt.ar}
+                      {t(opt.labelKey)}
                     </option>
                   ))}
                 </select>
@@ -226,7 +226,7 @@ export default function SuperAdminFeedbackDetailPage() {
                 >
                   {FEEDBACK_PRIORITIES.map((opt) => (
                     <option key={opt.value} value={opt.value}>
-                      {locale === "en" ? opt.en : opt.ar}
+                      {t(opt.labelKey)}
                     </option>
                   ))}
                 </select>

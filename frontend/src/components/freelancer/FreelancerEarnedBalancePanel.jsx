@@ -3,13 +3,23 @@ import { JodMoneyDisplay } from "../money/JodMoneyDisplay";
 import {
   EARNED_BALANCE_HELPER_AR,
   EARNED_BALANCE_HELPER_EN,
+  earnedBalanceHelperText,
   earnedBalanceStatusLabel,
 } from "../../constants/freelancerActivationEarnedBalance";
 import { useTranslation } from "../../i18n/LanguageProvider";
+import { localeFromEnFlag } from "../../i18n/activeLocale";
+import { isNewLocale } from "../../i18n/systemContent";
 
 export default function FreelancerEarnedBalancePanel({ balance, isEn: isEnProp }) {
   const { t, locale } = useTranslation();
-  const isEn = isEnProp ?? locale === "en";
+  // Legacy `isEn` prop still wins when passed; otherwise the UI locale (German / Dutch / Romanian included).
+  const copyLocale = isEnProp == null ? locale : localeFromEnFlag(isEnProp);
+  const isEn = copyLocale === "en";
+  const helperText = isNewLocale(copyLocale)
+    ? earnedBalanceHelperText(copyLocale)
+    : isEn
+      ? EARNED_BALANCE_HELPER_EN
+      : EARNED_BALANCE_HELPER_AR;
   const eb = "finance.earnedBalance";
   const totalPending = balance?.totalPendingJod ?? "0.000";
   const accepted = Number(balance?.totalAcceptedArticles) || 0;
@@ -32,7 +42,7 @@ export default function FreelancerEarnedBalancePanel({ balance, isEn: isEnProp }
         {t(`${eb}.acceptedPublished`, { accepted, published })}
       </p>
       <p className="mb-2 text-[0.78rem] font-semibold text-[color:var(--dash-text-secondary,#4b5563)]">
-        {isEn ? EARNED_BALANCE_HELPER_EN : EARNED_BALANCE_HELPER_AR}
+        {helperText}
       </p>
       {entries.length === 0 ? (
         <p className="mb-0 text-[0.82rem] font-semibold text-[color:var(--dash-text-secondary,#4b5563)]" data-testid="earned-balance-empty">
@@ -46,7 +56,7 @@ export default function FreelancerEarnedBalancePanel({ balance, isEn: isEnProp }
               {" · "}
               <JodMoneyDisplay amount={entry.amountJod} compact showDisclaimer={false} />
               {" · "}
-              <span>{earnedBalanceStatusLabel(entry.status, { isEn })}</span>
+              <span>{earnedBalanceStatusLabel(entry.status, { isEn, locale: copyLocale })}</span>
               {entry.bildazoUrl ? (
                 <>
                   {" · "}

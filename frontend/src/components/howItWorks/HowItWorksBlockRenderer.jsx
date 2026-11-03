@@ -3,13 +3,20 @@ import { useTranslation } from "../../i18n/LanguageProvider";
 import { pickLocalizedPlatformCopy } from "../../lib/i18n/platformContentLocale";
 import { hasStructuredContent } from "../../lib/publicContent/structureContent";
 import RichContent from "../content/RichContent";
+import { isNewLocale, localizeSystemText } from "../../i18n/systemContent";
+
+/** System page copy: Arabic / English unchanged; German / Dutch / Romanian through the translation memory. */
+function platformCopy(arabic, english, locale) {
+  if (isNewLocale(locale)) return localizeSystemText(locale, { ar: arabic, en: english });
+  return pickLocalizedPlatformCopy(arabic, english, locale);
+}
 
 function localizedBlock(block, locale) {
-  if (!block || locale !== "en") return block;
+  if (!block || locale === "ar") return block;
   return {
     ...block,
-    title: pickLocalizedPlatformCopy(block.title, block.titleEn || block.title_en, locale),
-    body: pickLocalizedPlatformCopy(block.body, block.bodyEn || block.body_en, locale),
+    title: platformCopy(block.title, block.titleEn || block.title_en, locale),
+    body: platformCopy(block.body, block.bodyEn || block.body_en, locale),
   };
 }
 
@@ -121,10 +128,10 @@ export default function HowItWorksBlockRenderer({ blocks }) {
 }
 
 export function HowItWorksPageShell({ page, blocks, children }) {
-  const { t, locale, dir } = useTranslation();
-  const title = pickLocalizedPlatformCopy(page?.title, page?.titleEn || page?.title_en, locale);
+  const { t, locale, dir, isRtl } = useTranslation();
+  const title = platformCopy(page?.title, page?.titleEn || page?.title_en, locale);
   return (
-    <main className="hiw-page page-content" lang={locale === "en" ? "en" : "ar"} dir={dir || (locale === "en" ? "ltr" : "rtl")}>
+    <main className="hiw-page page-content" lang={locale} dir={dir || (isRtl ? "rtl" : "ltr")}>
       <div className="hiw-page__inner">
         <PublicPageHeader title={title || t("home.hiw.defaultTitle")} />
         {children || <HowItWorksBlockRenderer blocks={blocks} />}

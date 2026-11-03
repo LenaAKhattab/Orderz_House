@@ -1,5 +1,6 @@
 import axios from "axios";
 import { getApiBaseUrl } from "../config/apiBase";
+import { readStoredLocale } from "../i18n/localePreference.js";
 import { scrubArabicApiError } from "../utils/apiErrorMessage";
 
 export const TOKEN_KEY = "orderz_auth_token";
@@ -29,6 +30,11 @@ api.interceptors.request.use((config) => {
   const token = localStorage.getItem(TOKEN_KEY);
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+  }
+  try {
+    config.headers["Accept-Language"] = readStoredLocale();
+  } catch {
+    /* ignore */
   }
   return config;
 });

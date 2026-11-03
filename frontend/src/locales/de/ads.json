@@ -1,0 +1,578 @@
+{
+  "common": {
+    "preview": "Vorschau",
+    "cancel": "Abbrechen",
+    "close": "Schließen",
+    "save": "Speichern",
+    "delete": "Löschen",
+    "edit": "Bearbeiten",
+    "enable": "Aktivieren",
+    "disable": "Deaktivieren",
+    "next": "Weiter",
+    "previous": "Zurück",
+    "retry": "Erneut versuchen",
+    "refresh": "Aktualisieren",
+    "reset": "Zurücksetzen",
+    "fullPreview": "Vollständige Vorschau",
+    "noTitle": "Ohne Titel",
+    "emDash": "—",
+    "uploading": "Wird hochgeladen…",
+    "saving": "Wird gespeichert…",
+    "savingEllipsis": "Wird gespeichert...",
+    "deleting": "Wird gelöscht…",
+    "working": "Wird ausgeführt…",
+    "loading": "Wird geladen…",
+    "guidelines": "Richtlinien",
+    "selected": "Ausgewählt",
+    "summary": "Zusammenfassung",
+    "enabledSuffix": " · Aktiviert",
+    "disabledSuffix": " · Deaktiviert"
+  },
+  "page": {
+    "eyebrow": "Dashboard",
+    "title": "Anzeigenverwaltung",
+    "description": "Schnell erstellen, live in der Vorschau prüfen und in klaren Schritten veröffentlichen.",
+    "breadcrumbHome": "Startseite",
+    "breadcrumbAds": "Anzeigen",
+    "newAd": "Neue Anzeige",
+    "popupAds": "Pop-up-Anzeigen",
+    "editAd": "Anzeige bearbeiten",
+    "buildNew": "Neue Anzeige erstellen",
+    "draftUnsaved": "Ungespeicherter Entwurf · {{relative}}",
+    "synced": "Synchronisiert",
+    "previewAria": "Anzeigenvorschau",
+    "actionsTitle": "Anzeigenaktionen",
+    "saveDraft": "Als Entwurf speichern",
+    "publish": "Anzeige veröffentlichen",
+    "allAdsTitle": "Alle Anzeigen",
+    "allAdsDescription": "Schnelle Bearbeitung, Statistiken und Statusverwaltung.",
+    "emptyAds": "Noch keine Anzeigen.",
+    "loadErrorFallback": "Versuchen Sie es erneut.",
+    "dragReorderHint": "Karten zum Neuordnen ziehen",
+    "discardConfirm": "Ungespeicherte Änderungen gehen verloren. Fortfahren?",
+    "deleteConfirm": "Diese Anzeige endgültig löschen?",
+    "relativeNow": "Jetzt",
+    "relativeSeconds": "vor {{sec}} s",
+    "relativeMinutes": "vor {{min}} Min.",
+    "adminNotePrompt": "{{action}}\nGrund für diese Aktion (mindestens 3 Zeichen):"
+  },
+  "toast": {
+    "fixFieldsTitle": "Felder prüfen",
+    "fixFieldsMessage": "Beheben Sie die markierten Fehler und versuchen Sie es erneut.",
+    "savedTitle": "Gespeichert",
+    "createdTitle": "Erstellt",
+    "publishedMessage": "Die Anzeige wurde veröffentlicht.",
+    "draftSavedMessage": "Entwurf gespeichert.",
+    "saveFailedTitle": "Speichern fehlgeschlagen",
+    "checkFields": "Prüfen Sie die Felder.",
+    "reasonRequiredTitle": "Grund erforderlich",
+    "reasonRequiredMessage": "Geben Sie einen Grund mit mindestens 3 Zeichen ein.",
+    "updatedTitle": "Aktualisiert",
+    "enabledMessage": "Die Anzeige wurde aktiviert.",
+    "disabledMessage": "Die Anzeige wurde deaktiviert.",
+    "errorTitle": "Fehler",
+    "deletedTitle": "Gelöscht",
+    "deleteFailedTitle": "Löschen nicht möglich",
+    "reorderSuccessTitle": "Reihenfolge aktualisiert",
+    "reorderFailedTitle": "Neuordnung nicht möglich",
+    "loadFailedTitle": "Laden nicht möglich",
+    "uploadSuccessTitle": "Bild hochgeladen",
+    "uploadFailedTitle": "Hochladen fehlgeschlagen"
+  },
+  "actions": {
+    "enableAd": "Anzeige aktivieren",
+    "disableAd": "Anzeige deaktivieren",
+    "deleteAd": "Anzeige löschen",
+    "reorderAds": "Anzeigen neu ordnen"
+  },
+  "validation": {
+    "companyNameRequired": "Firmenname ist erforderlich.",
+    "titleRequired": "Titel ist erforderlich.",
+    "ctaTextRequired": "Text der Aktionsschaltfläche ist erforderlich.",
+    "openModeInvalid": "Ungültiger Öffnungsmodus für den Link.",
+    "whatsappInvalid": "Geben Sie eine gültige WhatsApp-Nummer ein (mindestens 6 Ziffern).",
+    "ctaUrlRequired": "Aktionslink ist erforderlich.",
+    "ctaUrlInvalid": "Aktionslink ist ungültig.",
+    "ctaUrlInternal": "Interne Pfade müssen mit / beginnen",
+    "imageUrlInvalid": "Bild-URL ist ungültig.",
+    "logoUrlInvalid": "Logo-URL ist ungültig.",
+    "backgroundImageUrlInvalid": "URL des Hintergrundbilds ist ungültig.",
+    "selectedAssetRequired": "Wählen Sie ein vorgefertigtes Bild aus der Liste.",
+    "backgroundImageRequired": "Laden Sie ein Hintergrundbild hoch oder fügen Sie eine gültige URL ein.",
+    "imageRequired": "Laden Sie ein Bild hoch oder fügen Sie eine gültige URL ein.",
+    "salePercentInteger": "Geben Sie eine ganze Zahl zwischen 0 und 100 ein.",
+    "salePercentRange": "Geben Sie einen Rabattprozentsatz zwischen 0 und 100 ein.",
+    "phoneInvalid": "Die Telefonnummer enthält ungültige Zeichen.",
+    "whatsappCharsInvalid": "Die WhatsApp-Nummer enthält ungültige Zeichen.",
+    "endBeforeStart": "Das Enddatum muss nach dem Startdatum liegen.",
+    "adminNoteRequired": "Ein Grund für die Aktion ist erforderlich (mindestens 3 Zeichen)."
+  },
+  "status": {
+    "draft": {
+      "label": "Entwurf",
+      "description": "Die Anzeige ist nicht veröffentlicht und wird Besuchern nicht angezeigt."
+    },
+    "expired": {
+      "label": "Abgelaufen",
+      "description": "Der Anzeigezeitraum ist beendet."
+    },
+    "scheduled": {
+      "label": "Geplant",
+      "description": "Wird zum Startzeitpunkt angezeigt."
+    },
+    "live": {
+      "label": "Jetzt live",
+      "description": "Die Anzeige ist gemäß ihrem Zeitplan für Besucher sichtbar."
+    }
+  },
+  "builderSteps": {
+    "content": {
+      "label": "Inhalt",
+      "short": "1"
+    },
+    "design": {
+      "label": "Gestaltung",
+      "short": "2"
+    },
+    "offer": {
+      "label": "Angebot & Rabatt",
+      "short": "3"
+    },
+    "images": {
+      "label": "Bilder",
+      "short": "4"
+    },
+    "publish": {
+      "label": "Veröffentlichen",
+      "short": "5"
+    },
+    "orderStats": {
+      "label": "Reihenfolge & Statistiken",
+      "short": "6"
+    },
+    "navAria": "Schritte des Anzeigen-Editors"
+  },
+  "layouts": {
+    "image_top": {
+      "label": "Bild oben",
+      "description": "Ideal, wenn ein aussagekräftiges Hauptbild über dem Text steht."
+    },
+    "image_background": {
+      "label": "Bild als Hintergrund",
+      "description": "Für visuelle Anzeigen mit Text über dem Bild."
+    },
+    "text_only": {
+      "label": "Nur Text",
+      "description": "Für Hinweise und reine Textangebote."
+    },
+    "split": {
+      "label": "Bild & Text geteilt",
+      "description": "Zeigt ein Bild neben dem Text."
+    },
+    "minimal_banner": {
+      "label": "Minimales Banner",
+      "description": "Kompakte Anzeige für kleine Flächen."
+    },
+    "carousel": {
+      "label": "Mehrere Bilder",
+      "description": "Für mehr als ein Bild in einer Anzeige."
+    }
+  },
+  "layoutHints": {
+    "image_top": "Fügen Sie mindestens ein Bild hinzu, damit diese Anzeige auffällt.",
+    "image_background": "Dieses Layout benötigt mindestens ein Bild.",
+    "text_only": "Konzentrieren Sie sich auf Titel und Beschreibung; Bilder sind optional.",
+    "split": "Für eine ausgewogene Optik wird mindestens ein Bild empfohlen.",
+    "minimal_banner": "Halten Sie den Text kurz; das Banner ist für kleine Flächen gedacht.",
+    "carousel": "Fügen Sie zwei oder mehr Bilder für ein gutes Karussell-Erlebnis hinzu."
+  },
+  "placements": {
+    "home_right_panel": {
+      "label": "Rechte Spalte der Startseite"
+    },
+    "home_after_hero": {
+      "label": "Unter dem Hero-Bereich",
+      "note": "Hinweis: Diese Platzierung ist auf der öffentlichen Website möglicherweise noch nicht aktiviert."
+    },
+    "services_page": {
+      "label": "Leistungsseite",
+      "note": "Hinweis: Diese Platzierung ist auf der öffentlichen Website möglicherweise noch nicht aktiviert."
+    },
+    "global_sidebar": {
+      "label": "Globale Seitenleiste",
+      "note": "Hinweis: Diese Platzierung ist auf der öffentlichen Website möglicherweise noch nicht aktiviert."
+    }
+  },
+  "positions": {
+    "imageTop": "Oben in der Anzeige",
+    "imageBottom": "Unten in der Anzeige",
+    "left": "Links",
+    "right": "Rechts",
+    "background": "Hintergrund",
+    "textTop": "Oben",
+    "textMiddle": "Mitte",
+    "textBottom": "Unten"
+  },
+  "fontSize": {
+    "small": "Klein",
+    "normal": "Normal",
+    "medium": "Mittel",
+    "large": "Groß"
+  },
+  "fontWeight": {
+    "normal": "Normal",
+    "medium": "Mittel",
+    "bold": "Fett"
+  },
+  "stylePresets": {
+    "classic_navy": "Klassisches Blau",
+    "soft_sky": "Sanftes Himmelblau",
+    "clean_white": "Klares Weiß",
+    "premium_dark": "Edles Dunkel",
+    "warm_offer": "Warmes Angebot",
+    "success_green": "Erfolgsgrün"
+  },
+  "bannerColorPresets": {
+    "blue_white": "Professionelles Blau",
+    "cream_navy": "Modernes Dunkel",
+    "red_sale": "Aktionsrot",
+    "navy_gold": "Luxuriöses Gold",
+    "green_nature": "Klar und hell"
+  },
+  "bannerTemplates": {
+    "classic_split": {
+      "label": "Klassisch geteilt",
+      "hint": "Text rechts + Bild links — allgemeine Angebote"
+    },
+    "product_focus": {
+      "label": "Produktfokus",
+      "hint": "Großes Bild + Rabatt auf dem Bild"
+    },
+    "luxury_center": {
+      "label": "Luxus zentriert",
+      "hint": "Zentrierte Überschrift — hochwertige Wirkung"
+    },
+    "ribbon_strip": {
+      "label": "Banderole",
+      "hint": "Horizontaler Streifen — schneller Hinweis"
+    },
+    "business_partner": {
+      "label": "Geschäftswerbung",
+      "hint": "Partnerschaft / B2B — Bild mit Handschlag"
+    },
+    "minimal_clean": {
+      "label": "Minimal und klar",
+      "hint": "Große Überschrift — ohne schwere Dekoration"
+    }
+  },
+  "visualAssets": {
+    "handshake": { "label": "Handschlag / Partnerschaft" },
+    "gold_confetti": { "label": "Goldene Feier" },
+    "smiley_face": { "label": "Lächelndes Gesicht" },
+    "red_gift": { "label": "Rote Geschenkbox" },
+    "gold_gifts": { "label": "Goldene Geschenke" }
+  },
+  "priorityOptions": {
+    "0": "Standard",
+    "50": "Hervorgehoben",
+    "100": "Hoch"
+  },
+  "openModes": {
+    "NEW_TAB": "In neuem Tab öffnen",
+    "SAME_TAB": "Auf derselben Seite öffnen",
+    "INTERNAL_ROUTE": "Interner Pfad",
+    "WHATSAPP": "WhatsApp"
+  },
+  "form": {
+    "advancedOptions": "Erweiterte Optionen",
+    "companyName": "Firmenname *",
+    "companyPlaceholder": "z. B. Geschenkeladen",
+    "adTitle": "Anzeigentitel *",
+    "titlePlaceholder": "z. B. Sonderrabatt",
+    "subtitle": "Untertitel",
+    "subtitlePlaceholder": "z. B. Limitiertes Angebot",
+    "description": "Anzeigenbeschreibung",
+    "descriptionPlaceholder": "Kurze Beschreibung für die Anzeige",
+    "themeHint": "Wählen Sie ein Farbschema — es wird auf Hintergrund, Text, Schaltflächen und Badges angewendet.",
+    "salePercent": "Rabatt %",
+    "badgeText": "Badge-Text",
+    "badgePlaceholder": "Exklusiv",
+    "ctaText": "Schaltflächentext *",
+    "ctaPlaceholder": "Angebot sichern",
+    "openLink": "Link öffnen",
+    "ctaUrl": "Schaltflächen-Link *",
+    "whatsapp": "WhatsApp-Nummer *",
+    "phoneDisplay": "Angezeigte Telefonnummer",
+    "logoUrl": "Logo-URL",
+    "publishState": "Status",
+    "draftPill": "Entwurf",
+    "publishedPill": "Veröffentlicht",
+    "priority": "Priorität",
+    "start": "Beginn",
+    "end": "Ende",
+    "adminNote": "Grund der Aktion *",
+    "adminNotePlaceholder": "Beim Speichern erforderlich",
+    "internalNotesTitle": "Interne Notizen",
+    "teamNotes": "Teamnotizen",
+    "statsHint": "Speichern Sie die Anzeige zuerst, um detaillierte Statistiken in der Tabelle zu sehen.",
+    "impressions": "Impressionen",
+    "clicks": "Klicks",
+    "quickTheme": "Schnellschema",
+    "quickThemeAria": "Schnellschemata",
+    "designTemplateTitle": "Design & Vorlage",
+    "designTemplateHint": "Wählen Sie die Bannerform (Layout) und darunter ein Farbschema",
+    "colorTheme": "Farbschema",
+    "pickBannerShape": "Bannerform wählen",
+    "pickBannerSub": "Horizontale Vorschau je Layout — Farben können später geändert werden.",
+    "savedFontSize": "Zuvor gespeicherte Größe",
+    "savedFontWeight": "Zuvor gespeicherte Stärke"
+  },
+  "colors": {
+    "sectionTitle": "Farben",
+    "sectionHint": "Passen Sie die Farben des horizontalen Banners an — das Layout bleibt fest, nur die Farben ändern sich.",
+    "quickPick": "Schnelle Farbauswahl (optional)",
+    "quickPickAria": "Schnelle Farbauswahl",
+    "bgPrimary": "Primärer Hintergrund",
+    "bgSecondary": "Sekundärer Hintergrund",
+    "mainText": "Haupttextfarbe",
+    "subText": "Sekundäre Textfarbe",
+    "ctaButton": "Farbe der CTA-Schaltfläche",
+    "ctaButtonText": "Textfarbe der Schaltfläche",
+    "badge": "Badge-Farbe",
+    "badgeText": "Textfarbe des Badges",
+    "saleCircle": "Farbe des Rabattkreises",
+    "saleCircleText": "Textfarbe des Rabattkreises",
+    "controlsHint": "Text- und Badge-Farben finden Sie in Schritt 1. Hier: Kartenstil, Hintergrund, Schaltfläche und optionaler Verlauf.",
+    "pickPreset": "Vorgefertigten Stil wählen",
+    "resetColors": "Farben zurücksetzen",
+    "customizeCard": "Karte anpassen",
+    "adBackground": "Anzeigenhintergrund",
+    "buttonColor": "Schaltflächenfarbe",
+    "advancedSummary": "Erweiterte Optionen",
+    "advancedBorderHint": "Kartenrahmen, manueller Schaltflächentext oder Hintergrundverlauf — optional.",
+    "cardBorder": "Farbe des Kartenrahmens",
+    "buttonTextOverride": "Schaltflächentext (überschreibt Automatik)",
+    "autoFromButton": "Automatisch aus Schaltflächenfarbe",
+    "gradientTitle": "Hintergrundverlauf",
+    "gradientHint": "Optional — leer lassen oder „Kein Verlauf“ wählen.",
+    "gradientQuickAria": "Vorgefertigte Verläufe",
+    "gradientStart": "Verlaufsbeginn",
+    "gradientEnd": "Verlaufsende",
+    "colorPicker": "Farbwähler",
+    "customColorHint": "Feinjustieren Sie die Farbe und wählen Sie bei Bedarf oben ein passendes Farbfeld.",
+    "savedNotInList": "Gespeicherte Farbe nicht in der Liste — wird dennoch in der Vorschau und auf der öffentlichen Website angezeigt.",
+    "savedNotInListCompact": "Gespeicherte Farbe nicht oben aufgeführt — wird in der Vorschau angezeigt; Anpassung über die erweiterten Optionen.",
+    "pickColorAria": "Farbe wählen"
+  },
+  "gradients": {
+    "none": "Kein Verlauf",
+    "sky": "Himmelblauer Verlauf",
+    "dark": "Dunkler Verlauf",
+    "warm": "Warmer Verlauf",
+    "green": "Grüner Verlauf",
+    "purple": "Violetter Verlauf"
+  },
+  "palette": {
+    "default": "Standard",
+    "navy": "Marineblau",
+    "blue": "Blau",
+    "sky": "Himmelblau",
+    "green": "Grün",
+    "gold": "Gold",
+    "red": "Rot",
+    "purple": "Violett",
+    "gray": "Grau",
+    "black": "Schwarz",
+    "white": "Weiß",
+    "orange": "Orange",
+    "pink": "Rosa",
+    "darkGray": "Dunkelgrau",
+    "light": "Hell",
+    "blueGray": "Blaugrau",
+    "dark": "Dunkel",
+    "nearTransparent": "Fast transparent",
+    "offWhite": "Gebrochenes Weiß",
+    "cream": "Creme",
+    "auto": "Automatisch",
+    "lightSky": "Helles Himmelblau",
+    "lightBlue": "Hellblau",
+    "lightGreen": "Hellgrün",
+    "lightGold": "Hellgold",
+    "lightPurple": "Hellviolett",
+    "lightPink": "Hellrosa",
+    "lightGray": "Hellgrau",
+    "none": "Keine",
+    "unset": "Nicht festgelegt",
+    "customColor": "Eigene Farbe",
+    "savedColor": "Gespeicherte Farbe"
+  },
+  "images": {
+    "sectionTitle": "Bilder",
+    "sectionHint": "Vorgefertigtes Seitenbild oder eigener Hintergrund",
+    "pickReadyImage": "Vorgefertigtes Bild wählen",
+    "optionalBackground": "Hintergrundbild (optional)",
+    "backgroundHint": "Wird als Bannerhintergrund mit einer hellen Überlagerung verwendet, damit der Text lesbar bleibt.",
+    "backgroundLabel": "Hintergrund",
+    "removeBackground": "Hintergrund entfernen",
+    "uploadFromDevice": "Vom Gerät hochladen",
+    "orPasteUrl": "Oder Bild-URL einfügen (https)",
+    "noServerUrl": "Der Server hat keine URL zurückgegeben.",
+    "uploadFailed": "Hochladen des Bildes fehlgeschlagen.",
+    "managerHint": "Fügen Sie eine Bild-URL für die Anzeige hinzu. Wird nur als URL gespeichert (hier kein Datei-Upload).",
+    "adImage": "Anzeigenbild",
+    "addUrlForPreview": "URL hinzufügen, um das Bild in der Vorschau zu sehen",
+    "imageUrl": "Bild-URL",
+    "urlHint": "Die URL muss mit https:// beginnen oder ein Pfad sein, der mit / beginnt",
+    "altText": "Alternativtext",
+    "altHint": "Wird für Barrierefreiheit und die Vorschau verwendet, wenn das Bild nicht geladen werden kann",
+    "addImage": "+ Bild hinzufügen"
+  },
+  "textBlocks": {
+    "hint": "Verwenden Sie zusätzliche Textblöcke für Merkmale oder Hinweise; die Farbe jedes Blocks legen Sie direkt daneben fest.",
+    "blockIndex": "Textblock {{index}}",
+    "duplicate": "Block duplizieren",
+    "extraText": "Zusätzlicher Text",
+    "textPosition": "Textposition",
+    "fontSize": "Schriftgröße",
+    "fontWeight": "Schriftstärke",
+    "addBlock": "+ Textblock hinzufügen"
+  },
+  "table": {
+    "image": "Bild",
+    "title": "Titel",
+    "company": "Firma",
+    "status": "Status",
+    "start": "Beginn",
+    "end": "Ende",
+    "impressions": "Impressionen",
+    "clicks": "Klicks",
+    "ctr": "CTR",
+    "lastClick": "Letzter Klick",
+    "actions": "Aktionen",
+    "impressionsAbbr": "Impr.",
+    "clicksAbbr": "Klick(s)",
+    "impressionsTitle": "Impressionen",
+    "clicksTitle": "Klicks"
+  },
+  "reorder": {
+    "empty": "Noch keine Anzeigen.",
+    "dragTitle": "Zum Neuordnen ziehen"
+  },
+  "preview": {
+    "liveTitle": "Live-Vorschau",
+    "syncing": "Wird aktualisiert…",
+    "emptyHint": "Beispieltext für leere Felder.",
+    "fallbacks": {
+      "companyName": "Geschenkeladen",
+      "title": "Exklusive Anzeige",
+      "subtitle": "Aufmerksamkeit gewinnen",
+      "description": "Fügen Sie eine kurze Beschreibung hinzu, um Aufmerksamkeit zu wecken…",
+      "ctaText": "Jetzt Angebot sichern",
+      "badgeText": "Limitiertes Angebot"
+    },
+    "templateDemo": {
+      "title": "Heute 40 % Rabatt",
+      "subtitle": "Limitiertes Angebot",
+      "companyName": "Geschenkeladen",
+      "badgeText": "Exklusives Angebot",
+      "ctaText": "Angebot sichern"
+    }
+  },
+  "reschedule": {
+    "title": "Sichtbarkeit der Anzeige verwalten",
+    "subtitle": "Wählen Sie, wie die Anzeige Nutzern angezeigt wird; die Planung können Sie jederzeit ändern.",
+    "adLabel": "Anzeige:",
+    "currentStatus": "Aktueller Status:",
+    "howToShow": "Wie soll diese Anzeige erscheinen?",
+    "optionsAria": "Sichtbarkeitsoptionen",
+    "modes": {
+      "immediate": {
+        "label": "Sofort live schalten (ohne Zeitplan)",
+        "description": "Für Besucher sichtbar, solange sie hier aktiviert ist, ohne Start- oder Endzeit."
+      },
+      "scheduled": {
+        "label": "Bestimmte Zeiten planen",
+        "description": "Legen Sie eine Start- und/oder Endzeit für die Sichtbarkeit fest."
+      },
+      "paused": {
+        "label": "Anzeige pausieren",
+        "description": "Für Nutzer ausgeblendet, bis Sie sie wieder einschalten."
+      }
+    },
+    "outcomeImmediate": "Ergebnis: Die Anzeige erscheint sofort und bleibt sichtbar, solange sie aktiviert ist, ohne Start- oder Endzeitplan.",
+    "outcomeHidden": "Ergebnis: Die Anzeige wird für Nutzer ausgeblendet.",
+    "outcomeRange": "Ergebnis: Die Anzeige wird von {{start}} bis {{end}} angezeigt.",
+    "outcomeFrom": "Ergebnis: Die Anzeige beginnt am {{start}}, ohne Enddatum.",
+    "outcomeUntil": "Ergebnis: Die Anzeige erscheint sofort und endet am {{end}}.",
+    "outcomeDefault": "Ergebnis: Die Anzeige erscheint sofort, ohne Enddatum.",
+    "shortcuts": "Schnellauswahl:",
+    "shortcutsAria": "Datums-Schnellauswahl",
+    "today": "Heute",
+    "tomorrow": "Morgen",
+    "nextWeek": "In einer Woche",
+    "noEnd": "Kein Enddatum",
+    "startLabel": "Sichtbarkeitsbeginn",
+    "startHint": "Lassen Sie den Beginn leer, um sofort zu starten.",
+    "endLabel": "Sichtbarkeitsende",
+    "endHint": "Lassen Sie das Ende leer, wenn kein Enddatum gelten soll.",
+    "endBeforeStart": "Das Enddatum darf nicht vor dem Startdatum liegen.",
+    "endInPast": "Warnung: Das Enddatum liegt in der Vergangenheit, daher wird die Anzeige als abgelaufen geführt und Nutzern nicht angezeigt.",
+    "saveChanges": "Änderungen speichern"
+  },
+  "popup": {
+    "modalTitle": "Verwaltung der Pop-up-Anzeigen",
+    "loading": "Pop-up-Anzeigen werden geladen…",
+    "currentList": "Aktuelle Anzeigen",
+    "newAd": "Neue Anzeige",
+    "empty": "Noch keine Pop-up-Anzeigen. Erstellen Sie eine neue.",
+    "selectHint": "Wählen Sie eine Anzeige aus der Liste oder klicken Sie auf „Neue Anzeige“, um eine zu erstellen.",
+    "enable": "Pop-up-Anzeige aktivieren",
+    "titleAr": "Titel (Arabisch)",
+    "titleEn": "Titel (Englisch, optional)",
+    "bodyAr": "Text (Arabisch)",
+    "bodyEn": "Text (Englisch, optional)",
+    "imageField": "Bild (URL oder Upload)",
+    "uploadImage": "Bild hochladen",
+    "buttonText": "Schaltflächentext",
+    "buttonUrl": "Schaltflächen-URL",
+    "openNewTab": "Link in neuem Tab öffnen",
+    "audience": "Zielgruppe",
+    "pageScope": "Seitenbereich",
+    "frequency": "Anzeigehäufigkeit",
+    "audienceOptions": {
+      "all": "Alle",
+      "guests": "Nur Gäste",
+      "freelancer": "Freelancer",
+      "client": "Kunden",
+      "staff": "Mitarbeiter"
+    },
+    "pageScopeOptions": {
+      "all": "Alle Seiten",
+      "home": "Startseite",
+      "public": "Öffentliche Website (ohne Dashboard)",
+      "dashboard": "Dashboard-Bereiche"
+    },
+    "frequencyOptions": {
+      "session": "Einmal pro Sitzung",
+      "day": "Einmal pro Tag",
+      "every_visit": "Bei jedem Seitenaufruf",
+      "first_login_only": "Nur bei der ersten Anmeldung",
+      "every_login": "Bei jeder Anmeldung"
+    },
+    "firstLoginHint": "Nur für angemeldete Nutzer. Wird einmal nach der Anmeldung angezeigt; nach dem Schließen oder Ansehen nicht erneut. Wird Gästen nicht angezeigt.",
+    "firstLoginGuests": " Bei der Zielgruppe „Nur Gäste“ wird diese Anzeige nicht angezeigt.",
+    "everyLoginHint": "Nur für angemeldete Nutzer. Wird nach jeder Anmeldung angezeigt, nach dem Schließen jedoch nicht erneut in derselben Sitzung. Wird Gästen nicht angezeigt.",
+    "scheduleStart": "Anzeigebeginn (optional)",
+    "scheduleEnd": "Anzeigeende (optional)",
+    "deleteConfirm": "Diese Pop-up-Anzeige löschen?",
+    "updatedMessage": "Pop-up-Anzeige aktualisiert.",
+    "createdMessage": "Pop-up-Anzeige erstellt.",
+    "hintTitle": "So funktionieren Pop-up-Anzeigen",
+    "hint1": "Es wird jeweils nur eine Anzeige gemäß der Reihenfolge angezeigt.",
+    "hint2": "Nach dem Schließen wird die Einstellung zur Anzeigehäufigkeit berücksichtigt (Sitzung / Tag / Besuch / erste Anmeldung / jede Anmeldung).",
+    "hint3": "Bei „Nur bei der ersten Anmeldung“ erscheint die Anzeige einmal nach der ersten Anmeldung des Nutzers und nach dem Schließen oder Ansehen nie wieder.",
+    "hint4": "Bei „Bei jeder Anmeldung“ erscheint die Anzeige nach jeder Anmeldung und nach dem Schließen nicht erneut in derselben Sitzung.",
+    "hint5": "Die Zielgruppe richtet sich nach der Nutzerrolle oder dem Gaststatus.",
+    "hint6": "Die Einblendung kann mit Start- und Enddatum geplant werden."
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "title": "Über uns",
+  "lead": "ist Ihre Plattform für Erfolg im Freelancing. Wir erleichtern talentierten Freelancern die Suche nach spannenden Projekten und helfen Unternehmen, die richtigen Leute einzustellen. Wir sind die Brücke zwischen Fähigkeiten und Chancen – für eine reibungslosere und erfolgreichere Zusammenarbeit für alle.",
+  "hero": {
+    "title": "Über Orderz House",
+    "subtitle": "Ihre Plattform für Erfolg im Freelancing – wir verbinden Talente mit Chancen und erleichtern die Zusammenarbeit für alle."
+  },
+  "vision": {
+    "title": "Unsere Vision",
+    "text": "Weltweit Vorreiter für Innovation im Freelancing zu sein, die Zukunft der Remote-Arbeit zu gestalten und eine grenzenlose Welt für Talente zu schaffen.",
+    "tag": "Angetrieben von Innovation"
+  },
+  "mission": {
+    "title": "Unsere Mission",
+    "text": "Freelancer und Unternehmen durch intelligente, sichere und nahtlose Zusammenarbeit zu stärken, die weltweit Erfolg und Innovation fördert.",
+    "tag": "Fokus auf Exzellenz"
+  },
+  "values": {
+    "title": "Unsere Grundwerte",
+    "subtitle": "Die Prinzipien, die unser gesamtes Handeln leiten und unseren Anspruch an Exzellenz widerspiegeln.",
+    "excellence": {
+      "title": "Exzellenter Service",
+      "body": "Wir streben in jedem Projekt höchste Qualitätsstandards an und liefern Ergebnisse, die die Erwartungen übertreffen."
+    },
+    "trust": {
+      "title": "Transparenz und Vertrauen",
+      "body": "Wir bauen dauerhafte Beziehungen durch ehrliche Kommunikation und verlässliche Partnerschaften auf."
+    },
+    "innovation": {
+      "title": "Innovation ermöglichen",
+      "body": "Wir fördern Kreativität und liefern fortschrittliche Lösungen, die das Unternehmenswachstum unterstützen."
+    },
+    "human": {
+      "title": "Technologie im Dienst des Menschen",
+      "body": "Wir setzen Technologie ein, um in erster Linie den Menschen zu dienen – nicht umgekehrt."
+    }
+  },
+  "howWeWork": {
+    "title": "So arbeiten wir",
+    "subtitle": "Ein einfacher Prozess in 4 Schritten, der Talente und Chancen nahtlos zusammenbringt.",
+    "stepsAria": "Arbeitsschritte",
+    "step1": {
+      "title": "Registrierung als Freelancer",
+      "text": "Erstellen Sie Ihr Konto und Ihr Profil, um Ihre Fähigkeiten zu präsentieren."
+    },
+    "step2": {
+      "title": "Aufträge finden",
+      "text": "Durchsuchen Sie passende Projekte und reichen Sie Ihre Angebote ein."
+    },
+    "step3": {
+      "title": "Projekt liefern",
+      "text": "Erledigen Sie die Arbeit in hoher Qualität und termingerecht."
+    },
+    "step4": {
+      "title": "Bezahlung erhalten",
+      "text": "Erhalten Sie Ihre Einnahmen sicher nach der Freigabe durch den Kunden."
+    }
+  }
+}

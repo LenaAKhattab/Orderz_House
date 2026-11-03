@@ -10,6 +10,7 @@ import DashboardTabs, { DashboardTab } from "../../components/dashboard/Dashboar
 import { LEGACY_FREELANCERS_MANAGE_PERMISSION } from "../../constants/dashboardPermissions";
 import { listLegacyFreelancersRequest } from "../../services/api";
 import { useTranslation } from "../../i18n/LanguageProvider";
+import { pickIntlTag } from "../../i18n/intlLocale.js";
 import LegacyCampaignsPanel from "./legacyFreelancerAdmin/LegacyCampaignsPanel";
 import LegacyFreelancersPanel from "./legacyFreelancerAdmin/LegacyFreelancersPanel";
 import LegacyDocumentsPanel from "./legacyFreelancerAdmin/LegacyDocumentsPanel";
@@ -25,6 +26,7 @@ const EMPTY_INSIGHTS = {
 };
 
 function InsightCard({ label, value, hint, icon: Icon, tone = "default" }) {
+  const { locale } = useTranslation();
   return (
     <article className="oh-legacy-admin__stat">
       <div className={`oh-legacy-admin__stat-icon${tone !== "default" ? ` oh-legacy-admin__stat-icon--${tone}` : ""}`} aria-hidden>
@@ -33,7 +35,7 @@ function InsightCard({ label, value, hint, icon: Icon, tone = "default" }) {
       <div className="oh-legacy-admin__stat-body">
         <p className="oh-legacy-admin__stat-label">{label}</p>
         <p className="oh-legacy-admin__stat-value">
-          {value == null ? "—" : Number(value).toLocaleString("en-US")}
+          {value == null ? "—" : Number(value).toLocaleString(pickIntlTag(locale, { ar: "en-US", en: "en-US" }))}
         </p>
         {hint ? <p className="oh-legacy-admin__stat-hint">{hint}</p> : null}
       </div>

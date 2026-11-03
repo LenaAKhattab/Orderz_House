@@ -127,7 +127,9 @@
     "grantBids": "Grant Bids",
     "resolvedReview": "Manual review resolved.",
     "packageCreated": "Package created.",
-    "bidsGranted": "Bids granted."
+    "bidsGranted": "Bids granted.",
+    "purchaseLine": "#{{id}} · user {{userId}} · {{bids}} {{bidUnit}} / {{price}} JOD · fulfill={{status}} · reversal={{reversal}}",
+    "purchaseReversalMeta": "consumed@reversal={{consumed}} · frozen={{frozen}} · revoked={{revoked}}"
   },
   "bidCreditsCard": {
     "paymentConfirming": "Payment received — confirming Bid credit…",

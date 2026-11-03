@@ -1,0 +1,49 @@
+{
+  "bell": {
+    "ariaLabel": "Notificări",
+    "title": "Notificări",
+    "markAllRead": "Marcați toate ca citite",
+    "loading": "Se încarcă…",
+    "empty": "Nicio notificare momentan.",
+    "viewAll": "Vedeți toate notificările",
+    "newNotification": "Notificare nouă"
+  },
+  "permission": {
+    "title": "Activați notificările site-ului",
+    "body": "Primiți alerte instantanee pentru comenzi, plăți și livrări chiar și atunci când sunteți în altă filă. Puteți modifica acest lucru ulterior din setări.",
+    "enable": "Activați notificările",
+    "enableBusy": "Se procesează…",
+    "notNow": "Nu acum"
+  },
+  "browser": {
+    "title": "Notificări în browser",
+    "intro": "Alertele pe desktop apar când sosește o notificare nouă cât timp sunteți conectat. Notificările din aplicație (clopoțelul) rămân mereu active.",
+    "unsupported": "Browserul dumneavoastră nu acceptă notificări pe desktop.",
+    "statusLabel": "Stare:",
+    "enabled": "Activate",
+    "disabled": "Dezactivate",
+    "notRequested": "Nesolicitate încă",
+    "enableBtn": "Activați notificările în browser",
+    "disableBtn": "Dezactivați din aplicație",
+    "testBtn": "Notificare de test",
+    "toastUnsupported": "Acest browser nu acceptă notificări pe desktop.",
+    "toastEnabled": "Notificările în browser au fost activate.",
+    "toastDenied": "Permisiunea nu a fost acordată. O puteți activa din setările browserului.",
+    "toastEnableFailed": "Notificările nu au putut fi activate.",
+    "toastDisabled": "Notificările în browser au fost dezactivate în aplicație. Poate fi necesar să le dezactivați și din setările browserului.",
+    "toastSaveFailed": "Nu s-a putut salva.",
+    "toastNeedPermission": "Permiteți mai întâi notificările în browser.",
+    "testTitle": "Notificare de test",
+    "testBody": "Dacă vedeți această alertă, notificările în browser funcționează.",
+    "toastTestSent": "Notificarea de test a fost trimisă.",
+    "toastTestFailed": "Notificarea de test nu a putut fi trimisă."
+  },
+  "page": {
+    "deleteSelected": "Ștergeți selectate ({{count}})",
+    "selectAria": "Selectați: {{title}}",
+    "confirmDeleteTitle": "Ștergeți notificările selectate?",
+    "confirmDeleteBody": "Notificările selectate ({{count}}) vor fi șterse definitiv. Această acțiune nu poate fi anulată.",
+    "delete": "Ștergeți",
+    "cancel": "Anulați"
+  }
+}

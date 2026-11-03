@@ -1,0 +1,436 @@
+{
+  "feedback": {
+    "types": {
+      "problem": "Probleem",
+      "suggestion": "Suggestie",
+      "other": "Overig feedback"
+    },
+    "statuses": {
+      "new": "Nieuw",
+      "in_review": "In beoordeling",
+      "resolved": "Opgelost",
+      "closed": "Gesloten"
+    },
+    "priorities": {
+      "low": "Laag",
+      "normal": "Normaal",
+      "high": "Hoog",
+      "urgent": "Spoedeisend"
+    },
+    "roles": {
+      "client": "Klant",
+      "freelancer": "Freelancer (aanbieder)"
+    }
+  },
+  "planUpgradeCta": {
+    "courseTierHelper": "Beschikbaar na upgrade van uw pakket",
+    "internalConfigurationHeadline": "We konden uw pakketgeschiktheid nu niet verifiëren. Neem contact op met support.",
+    "noActivePlanHeadline": "Activeer uw pakket om opdrachten te ontvangen",
+    "viewPlans": "Pakketten bekijken",
+    "courseHeadline": "Deze cursus is beschikbaar in hogere pakketten",
+    "upgradePlan": "Pakket upgraden",
+    "orderValueExceedsHeadline": "De waarde van deze opdracht overschrijdt de limiet van uw huidige pakket"
+  },
+  "bildazoArticlePublish": {
+    "freelancer": {
+      "published": "Uw artikel is gepubliceerd op Bildazo.",
+      "needsManualReview": "Uw artikel is geaccepteerd in OrderzHouse. Bildazo-publicatie vereist adminbeoordeling.",
+      "pending": "Uw artikel is geaccepteerd in OrderzHouse. Bildazo-publicatie wordt gekoppeld."
+    },
+    "admin": {
+      "notStarted": "Bildazo-publicatie: niet gestart",
+      "published": "Gepubliceerd op Bildazo",
+      "already_imported": "Al geïmporteerd naar Bildazo",
+      "needs_manual_review": "Bildazo-beoordeling vereist",
+      "failed": "Bildazo-publicatie mislukt",
+      "pending": "Bildazo-publicatie in behandeling",
+      "skipped": "Bildazo-publicatie overgeslagen (uitgeschakeld)"
+    }
+  },
+  "bildazoAuthorTerms": {
+    "termsCopy": "Ik ga akkoord met de publicatievoorwaarden voor artikelen en met koppeling aan mijn Bildazo-auteursaccount. Ik begrijp dat een geaccepteerd artikel ter beoordeling kan worden gestuurd en onder mijn naam op Bildazo kan worden gepubliceerd.",
+    "writerRole": "Auteur",
+    "errors": {
+      "passwordWeak": "Het wachtwoord moet minstens 8 tekens bevatten, met een letter en een cijfer.",
+      "passwordMismatch": "De wachtwoordbevestiging komt niet overeen.",
+      "terms": "U moet akkoord gaan met de voorwaarden voor koppeling van het auteursaccount.",
+      "fullName": "Volledige naam is vereist om het auteursaccount aan te maken.",
+      "existingCredentials": "Voer het e-mailadres en wachtwoord van het Bildazo-account in."
+    },
+    "failures": {
+      "INVALID_CREDENTIALS": "Het Bildazo-account kon niet worden geverifieerd. Controleer e-mail en wachtwoord.",
+      "ACCOUNT_UNAVAILABLE": "Dit Bildazo-account kan nu niet worden gekoppeld.",
+      "ENDPOINT_UNAVAILABLE": "Bildazo-koppeling is tijdelijk niet beschikbaar. Probeer het later opnieuw.",
+      "TIMEOUT": "Bildazo kon niet worden bereikt. Controleer uw verbinding en probeer het opnieuw.",
+      "failed": "De Bildazo-koppeling kon niet worden voltooid. Probeer het opnieuw."
+    }
+  },
+  "jordanCities": {
+    "other": "Overig",
+    "cities": {
+      "amman": "Amman",
+      "zarqa": "Zarqa",
+      "irbid": "Irbid",
+      "russeifa": "Russeifa",
+      "salt": "Salt",
+      "aqaba": "Aqaba",
+      "madaba": "Madaba",
+      "jerash": "Jerash",
+      "ajloun": "Ajloun",
+      "mafraq": "Mafraq",
+      "karak": "Karak",
+      "tafilah": "Tafilah",
+      "maan": "Ma'an",
+      "ramtha": "Ramtha",
+      "sahab": "Sahab",
+      "naour": "Naour",
+      "wadiAlSeer": "Wadi Al-Seer",
+      "marka": "Marka",
+      "sweileh": "Sweileh",
+      "jubeiha": "Jubeiha",
+      "khalda": "Khalda",
+      "tlaaAlAli": "Tla'a Al-Ali",
+      "shmeisani": "Shmeisani",
+      "abdali": "Abdali",
+      "jabalAlHussein": "Jabal Al-Hussein",
+      "jabalAlNasr": "Jabal Al-Nasr",
+      "markaNorth": "North Marka",
+      "quweismeh": "Quweismeh",
+      "abuNseir": "Abu Nseir",
+      "tabarbour": "Tabarbour",
+      "yasmeen": "Al-Yasmeen",
+      "yadoudeh": "Al-Yadoudeh",
+      "muqabalain": "Al-Muqabalain",
+      "marjAlHamam": "Marj Al-Hamam",
+      "jizah": "Al-Jizah",
+      "muwaqqar": "Al-Muwaqqar",
+      "hisban": "Hisban",
+      "fuheis": "Fuheis",
+      "mahis": "Mahis",
+      "ainAlBasha": "Ain Al-Basha",
+      "deirAlla": "Deir Alla",
+      "southShuna": "South Shuna",
+      "northShuna": "North Shuna",
+      "azraq": "Azraq",
+      "safawi": "Safawi",
+      "husn": "Al-Husn",
+      "beitRas": "Beit Ras",
+      "kafrYuba": "Kafr Yuba",
+      "kafrJayez": "Kafr Jayez",
+      "nuaimeh": "Al-Nuaimeh",
+      "soum": "Soum",
+      "northMazar": "Al-Mazar Al-Shamali",
+      "kafrAwan": "Kafr Awan",
+      "kufranjah": "Kufranjah",
+      "anjara": "Anjara",
+      "sukhur": "Sukhur",
+      "deirAbiSaid": "Deir Abi Said",
+      "southMazar": "Al-Mazar Al-Janoubi",
+      "mutah": "Mu'tah",
+      "thaniyah": "Al-Thaniyah",
+      "faqqu": "Faqqu",
+      "qasr": "Al-Qasr",
+      "ghorAlSafi": "Ghor Al-Safi",
+      "ghorAlMazraa": "Ghor Al-Mazra'a",
+      "middleJordanValley": "Midden-Jordaanvallei",
+      "wadiMusa": "Wadi Musa",
+      "petra": "Petra",
+      "shoubak": "Shoubak",
+      "hasa": "Al-Hasa",
+      "jafr": "Al-Jafr",
+      "quwaira": "Al-Quwaira",
+      "disi": "Disi",
+      "haql": "Haql",
+      "ruwaished": "Ruwaished",
+      "salhiyah": "Al-Salhiyah",
+      "khalidiyah": "Al-Khalidiyah",
+      "samaAlSarhan": "Sama Al-Sarhan",
+      "rehab": "Rehab",
+      "manara": "Al-Manara",
+      "housha": "Housha",
+      "khirbetAlSamra": "Khirbet Al-Samra"
+    }
+  },
+  "freelancerActivationKpi": {
+    "unavailable": "Niet beschikbaar",
+    "unavailableShort": "n.v.t.",
+    "schemaNotReady": "De activeringsengine-database is niet gereed. Voer engine-migraties in deze omgeving uit voordat u dit dashboard gebruikt.",
+    "loadError": "Activerings-KPI's konden nu niet worden geladen.",
+    "notesTitle": "Opmerkingen over KPI-nauwkeurigheid",
+    "notesIntro": "Sommige metrieken zijn niet beschikbaar omdat de bron nog niet betrouwbaar is aangesloten.",
+    "daysUnit": "{{value}} dagen",
+    "funnel": {
+      "trialActivatedUsers": "Proef geactiveerd",
+      "firstBidUsers": "Eerste sollicitatie",
+      "firstAssignmentUsers": "Eerste toewijzing",
+      "firstAcceptedWorkUsers": "Eerste geaccepteerde opdracht",
+      "firstPublishedWorkUsers": "Eerste gepubliceerde artikel",
+      "silverCtaShownUsers": "Silver-CTA getoond",
+      "silverPaymentStartedUsers": "Upgrade gestart",
+      "silverPaidUsers": "Silver-abonnee"
+    },
+    "funnelSteps": {
+      "registeredUsers": "Registratie",
+      "verifiedUsers": "Geverifieerd",
+      "trainingCompletedUsers": "Training voltooid",
+      "trialActivatedUsers": "Proef geactiveerd",
+      "firstBidUsers": "Eerste sollicitatie",
+      "firstAssignmentUsers": "Eerste toewijzing",
+      "firstAcceptedWorkUsers": "Eerste geaccepteerde opdracht",
+      "firstPublishedWorkUsers": "Eerste gepubliceerde artikel",
+      "silverCtaShownUsers": "Silver-CTA getoond",
+      "silverPaymentStartedUsers": "Upgrade gestart",
+      "silverPaidUsers": "Silver-abonnee"
+    },
+    "rates": {
+      "trialActivatedToPaidRate": "Proef → Silver",
+      "firstAcceptedToPaidRate": "Eerste acceptatie → Silver",
+      "firstPublishedToPaidRate": "Eerste publicatie → Silver",
+      "ctaShownToPaymentStartedRate": "CTA getoond → upgrade gestart",
+      "paymentStartedToPaidRate": "Upgrade gestart → betaald/actief"
+    },
+    "timing": {
+      "averageTimeToFirstBid": "Gem. tijd tot eerste sollicitatie",
+      "averageTimeToFirstWin": "Gem. tijd tot eerste toewijzing",
+      "averageTimeToFirstAccepted": "Gem. tijd tot eerste acceptatie",
+      "averageTimeToFirstPublished": "Gem. tijd tot eerste publicatie"
+    },
+    "quality": {
+      "acceptedArticleCount": "Geaccepteerde artikelen",
+      "rejectedArticleCount": "Afgewezen artikelen",
+      "revisionRequestedCount": "Revisieverzoeken",
+      "publishedArticleCount": "Gepubliceerde artikelen",
+      "articleAcceptanceRate": "Acceptatiepercentage",
+      "articleRejectionRate": "Afwijzingspercentage",
+      "revisionRate": "Revisiepercentage"
+    },
+    "financial": {
+      "campaignBudgetTotalJod": "Campagnebudget",
+      "campaignBudgetReservedJod": "Gereserveerd",
+      "campaignBudgetUsedJod": "Gebruikt",
+      "campaignBudgetRemainingJod": "Resterend",
+      "pendingFreelancerEarnedJod": "Openstaand verdiend saldo",
+      "costPerPaidFreelancer": "Kosten per betalende freelancer",
+      "subscriptionRevenueJod": "Abonnementsomzet",
+      "workInventoryReserveAllocatedJod": "Werkvoorraadreserve (toegewezen)",
+      "workInventoryReserveActiveJod": "Werkvoorraadreserve (actief)"
+    }
+  },
+  "freelancerActivationFairDistribution": {
+    "reasons": {
+      "preferred_activation_candidate": "Voorkeurskandidaat voor activering",
+      "first_work_opportunity": "Eerste werkmogelijkheid",
+      "no_previous_accepted_work": "Geen eerder geaccepteerd werk",
+      "no_previous_win": "Geen eerdere winst",
+      "low_workload": "Lage werkdruk",
+      "waiting": "Wachten {{days}} dagen",
+      "paid_membership": "Betaald lidmaatschap"
+    }
+  },
+  "freelancerActivationEarnedBalance": {
+    "miniArticleTerms": "Ik ga akkoord met de eigendoms- en publicatievoorwaarden voor dit artikel en begrijp dat het bij acceptatie volgens het platformbeleid onder mijn naam op Bildazo kan worden gepubliceerd.",
+    "earnedBalanceHelper": "Dit saldo toont de waarde van geaccepteerd werk op het platform. Opnames of financiële claims volgen het bedrijfsbeleid en worden niet beïnvloed door het abonnement.",
+    "statuses": {
+      "pending": "In behandeling",
+      "settled_externally": "Geregistreerd",
+      "voided": "Ongeldig"
+    },
+    "terms": {
+      "notRecorded": "Voorwaarden: niet geregistreerd",
+      "notAccepted": "Voorwaarden: niet geaccepteerd",
+      "accepted": "Voorwaarden geaccepteerd · {{version}} · {{at}}"
+    }
+  },
+  "freelancerActivationCampaign": {
+    "budgetErrors": {
+      "ACTIVATION_CAMPAIGN_BUDGET_INSUFFICIENT": "Het campagnebudget is onvoldoende om dit artikel toe te wijzen.",
+      "ACTIVATION_WAVE_BUDGET_INSUFFICIENT": "Het golfbudget is onvoldoende om dit artikel toe te wijzen."
+    },
+    "budgetStates": {
+      "reserved": "Gereserveerd",
+      "used": "Gebruikt",
+      "released": "Vrijgegeven",
+      "not_reserved": "Niet gereserveerd"
+    }
+  },
+  "freelancerActivationTrial": {
+    "applyErrors": {
+      "FREELANCER_TRIAL_REQUIRED": "Activeer de werkproef voordat u solliciteert op mini-artikelen.",
+      "FREELANCER_TRIAL_EXPIRED": "Uw werkproef is beëindigd. Ga verder met Silver.",
+      "FREELANCER_TRIAL_DAILY_BID_LIMIT_REACHED": "U heeft de dagelijkse proef-Bid-limiet bereikt.",
+      "FREELANCER_TRIAL_BID_LIMIT_REACHED": "U heeft de proef-Bid-limiet bereikt.",
+      "FREELANCER_TRIAL_WORK_CAP_REACHED": "U heeft de proeflimiet voor geaccepteerd werk bereikt.",
+      "FREELANCER_TRIAL_MINI_ARTICLES_ONLY": "De proef staat alleen sollicitaties op mini-artikelen toe.",
+      "FREELANCER_TRIAL_BID_GRANT_FAILED": "Proef-Bids konden niet worden toegekend. De proef is niet voltooid. Probeer het opnieuw.",
+      "ACTIVATION_CAMPAIGN_EMERGENCY_STOPPED": "Deze campagne is tijdelijk gestopt door de admin.",
+      "ACTIVATION_CAMPAIGN_PAUSED": "Deze campagne is tijdelijk gepauzeerd door de admin.",
+      "ACTIVATION_WAVE_PAUSED": "Sollicitaties voor deze kans zijn tijdelijk gepauzeerd.",
+      "ACTIVATION_CAMPAIGN_NOT_ACTIVE": "Sollicitaties voor deze kans zijn tijdelijk gepauzeerd.",
+      "ACTIVATION_WAVE_NOT_ACTIVE": "Sollicitaties voor deze kans zijn tijdelijk gepauzeerd."
+    }
+  },
+  "freelancerActivationArticleOps": {
+    "planTiers": {
+      "starter": "Proef / Gratis",
+      "trial": "Proef",
+      "silver": "Silver-pakket",
+      "pro": "Pro-pakket",
+      "elite": "Elite-pakket"
+    }
+  },
+  "freelancerActivationConversion": {
+    "defaultError": "De Silver-upgrade kon nu niet worden gestart. Probeer het opnieuw of open de pakkettenpagina.",
+    "success": "Uw Silver-activeringsverzoek is verzonden. Het abonnement start na goedkeuring door het bedrijf.",
+    "upgradeButton": "Upgrade naar Silver – {{price}} JOD",
+    "errors": {
+      "FREELANCER_ACTIVATION_ENGINE_DISABLED": "De activeringsproef is momenteel niet ingeschakeld.",
+      "FREELANCER_SILVER_CONVERSION_BLOCKED": "De Silver-upgrade kan in uw huidige status niet worden gestart.",
+      "FREELANCER_SILVER_PLAN_NOT_FOUND": "Het Silver-pakket is momenteel niet beschikbaar. Bekijk de pakkettenpagina.",
+      "ACTIVATION_REQUEST_ALREADY_PENDING": "U heeft al een activeringsverzoek in behandeling voor dit pakket.",
+      "MARKETPLACE_PLAN_NOT_FOUND": "Het Marketplace-pakket is momenteel niet beschikbaar."
+    }
+  },
+  "specialOfferPackage": {
+    "accessLevels": {
+      "starter": "STARTER-niveau",
+      "silver": "SILVER-niveau",
+      "pro": "PRO-niveau",
+      "elite": "ELITE-niveau"
+    },
+    "lockedWarning": "Deze speciale aanbieding is door gebruikers gekocht; prijs en voordelen zijn bevroren. U kunt deze verbergen of een nieuwe aanbieding maken; huidige kopers behouden de voordelen waarvoor zij betaalden.",
+    "refundSectionTitles": {
+      "monthlyRefund": "Maandelijkse terugbetaling",
+      "inactiveMonths": "Inactieve maanden",
+      "ordersIncome": "Opdrachtinkomsten",
+      "importantNotice": "Belangrijke mededeling"
+    }
+  },
+  "displayCurrencies": {
+    "symbols": {
+      "JOD": "JOD",
+      "SAR": "SAR",
+      "AED": "AED",
+      "QAR": "QAR",
+      "KWD": "KWD",
+      "BHD": "BHD",
+      "OMR": "OMR",
+      "EGP": "EGP"
+    },
+    "disclaimer": "Geschatte waarde op basis van de huidige wisselkoers.",
+    "officialCurrency": "De officiële valuta binnen Orderz House is de Jordaanse dinar (JOD).",
+    "indicative": "De omgerekende waarde is alleen indicatief en geen definitieve prijs of financiële verplichting.",
+    "preferenceLabel": "Voorkeursweergavevaluta",
+    "preferenceHint": "Deze valuta wordt alleen voor weergave gebruikt; alle berekeningen blijven in Jordaanse dinar (JOD).",
+    "autoByCountry": "Automatisch per land"
+  },
+  "homeAnalyticsMetrics": {
+    "metrics": {
+      "active": {
+        "label": "Actieve gebruikers",
+        "sub": "Platformactiviteit · afgelopen 7 dagen",
+        "tooltip": "Aantal unieke bezoekers (browsersessies of ingelogde accounts) die de site in de afgelopen 7 dagen bezochten. Herhaald verversen in dezelfde browser telt als één bezoeker.",
+        "stripLabel": "Actieve gebruikers"
+      },
+      "views": {
+        "label": "Sitebezoeken",
+        "sub": "Totaal geregistreerde bezoeken",
+        "tooltip": "De teller stijgt één keer per actieve sessie (30 minuten). Verversen of terugkeren binnen dezelfde sessie verhoogt deze niet.",
+        "stripLabel": "Sitebezoeken"
+      },
+      "availableOrders": {
+        "label": "Beschikbare aanvragen",
+        "sub": "Nu open voor sollicitaties",
+        "tooltip": "Echte open aanvragen in de marketplace plus trainingaanvragen die nu zichtbaar zijn voor freelancers.",
+        "stripLabel": "Nu beschikbaar"
+      },
+      "completedOrders": {
+        "label": "Voltooide aanvragen",
+        "sub": "Voltooide klantaanvragen",
+        "tooltip": "Echte voltooide klantaanvragen plus trainingaanvragen uit rondes die eindigden na start van de huidige telling — oudere historische rondes zijn niet inbegrepen.",
+        "stripLabel": "Voltooide aanvragen"
+      }
+    },
+    "adminHelp": {
+      "title": "Wat is het verschil tussen de twee metrieken?",
+      "visitors": "Homepage-teller: één bezoek per sessie (30 minuten). Verversen of navigeren binnen dezelfde sessie telt niet opnieuw.",
+      "active": "Actieve gebruikers: unieke bezoekers (sessie of account) die de site in de afgelopen 7 dagen openden, uit de lokale database.",
+      "activeBody": "Unieke bezoekers (sessie of account) die de site in de afgelopen 7 dagen openden, uit de lokale database."
+    }
+  },
+  "legacyEducationOptions": {
+    "levels": {
+      "belowSecondary": "Onder secundair onderwijs",
+      "secondary": "Secundair onderwijs",
+      "diploma": "Diploma (mbo)",
+      "bachelor": "Bachelordiploma",
+      "higherDiploma": "Hoger diploma",
+      "master": "Masterdiploma",
+      "doctorate": "Doctoraat",
+      "other": "Overig"
+    },
+    "graduationNotYet": "Nog niet afgestudeerd"
+  },
+  "legacyFreelancerWorkFields": {
+    "fields": {
+      "content_writing": "Contentschrijven",
+      "design": "Vormgeving",
+      "programming": "Programmeren"
+    },
+    "required": "Selecteer minstens één werkgebied."
+  },
+  "bildazoAuthorAdmin": {
+    "statusFilters": {
+      "all": "Alle",
+      "pending_new_account": "Nieuw account – verzoek",
+      "pending_existing_account": "Bestaand account – verzoek",
+      "pending_external_verification": "Externe verificatie",
+      "needs_manual_review": "Handmatige beoordeling",
+      "linked": "Gekoppeld",
+      "failed": "Mislukt",
+      "blocked": "Geblokkeerd"
+    }
+  },
+  "howItWorksPages": {
+    "navLabels": {
+      "freelancer": "Hoe het werkt voor freelancers",
+      "client": "Hoe klanten bestellen"
+    },
+    "blockTypes": {
+      "title": "Titel",
+      "text": "Lopende tekst",
+      "image": "Afbeelding",
+      "text_image": "Tekst + afbeelding"
+    }
+  },
+  "rateLimitExemptions": {
+    "scopes": {
+      "order_create": "Opdracht aanmaken (order_create)",
+      "fake_order_create": "Nep-trainingopdrachten (fake_order_create)",
+      "training_bulk": "Bulk training genereren (training_bulk)",
+      "admin_write": "Admin-schrijfacties (admin_write)"
+    },
+    "modes": {
+      "bypass": "Limiet omzeilen (bypass)",
+      "increased_limit": "Hogere limiet (increased_limit)"
+    }
+  },
+  "partnerLogos": {
+    "alts": {
+      "bildazo": "Bildazo",
+      "studyzhouse": "StudyzHouse",
+      "battech": "Battechno"
+    },
+    "subtitle": "We zijn trots op partnerschappen met toonaangevende organisaties die opmerkelijke succesverhalen hebben helpen bouwen."
+  },
+  "freelancerOrderTenderPolicy": {
+    "title": "Voorwaarden voor het ontvangen en uitvoeren van opdrachten en aanbestedingen"
+  },
+  "homeFeaturedServices": {
+    "specialRequestsWhatsappMessage": "Hallo, ik wil graag een speciale aanvraag indienen via Orderz House."
+  },
+  "planCatalogs": {
+    "main_plans": "Hoofdpakketten",
+    "page_plans": "Paginapakketten",
+    "marketplace_plans": "Werklidmaatschappen"
+  }
+}

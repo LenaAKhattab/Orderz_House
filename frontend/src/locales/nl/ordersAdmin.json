@@ -1,0 +1,360 @@
+{
+  "wizard": {
+    "steps": {
+      "core": "Opdrachtgegevens",
+      "assignment": "Toewijzing",
+      "files": "Bestanden",
+      "review": "Controleren en verzenden"
+    },
+    "skills": {
+      "remove": "Verwijderen",
+      "add": "Toevoegen",
+      "placeholder": "Typ een vaardigheid of kies uit de suggesties…",
+      "historyHelp": "Tijdens het typen verschijnen vaardigheden die eerder in dit veld zijn gebruikt, zodat u ze snel kunt selecteren."
+    },
+    "select": {
+      "searchPlaceholder": "Zoeken in de lijst…",
+      "empty": "Geen resultaten"
+    },
+    "errors": {
+      "orderCode": "Opdrachtnummer is verplicht.",
+      "title": "Projecttitel is verplicht.",
+      "description": "Projectbeschrijving is verplicht (minimaal 10 tekens).",
+      "categoryId": "Selecteer een categorie.",
+      "projectType": "Selecteer een projecttype.",
+      "budget": "Voer een geldig budget groter dan 0 in.",
+      "bidBudgetMin": "Voer een geldig minimumbedrag in.",
+      "bidBudgetMax": "Voer een geldig maximumbedrag in.",
+      "bidBudgetMaxOrder": "Het maximum moet groter dan of gelijk aan het minimum zijn.",
+      "durationValue": "Voer een geldige duur groter dan 0 in.",
+      "durationUnit": "Selecteer een tijdseenheid.",
+      "maxFiles": "Maximaal 5 bestanden.",
+      "stepMultiple": "Vul alle verplichte velden in deze stap in.",
+      "stepIncomplete": "Vul de verplichte velden in deze stap in om verder te gaan."
+    },
+    "toast": {
+      "categoriesLoadFailed": "Kan categorieën niet laden",
+      "fileSizeTitle": "Bestandsgrootte",
+      "fileLimitTitle": "Bestandslimiet",
+      "fileLimitMessage": "U kunt maximaal 5 bestanden uploaden.",
+      "validationTitle": "Controleer de velden",
+      "validationMessage": "Vul de vereiste gegevens correct in.",
+      "createdInstitutionalTitle": "Organisatieopdracht aangemaakt",
+      "createdTitle": "Opdracht aangemaakt",
+      "createdInstitutionalMessage": "«{{title}}» is aangemaakt in de voorraad.",
+      "createdClientMessage": "Opdracht «{{title}}» is aangemaakt.",
+      "createdAdminMessage": "Opdrachtnummer: {{orderCode}}",
+      "createFailedTitle": "Kan opdracht niet aanmaken"
+    },
+    "upload": {
+      "totalSizeMessage": "De totale bestandsgrootte mag niet meer dan 5 MB zijn",
+      "totalSizeHelper": "Maximale totale uploadgrootte: 5 MB"
+    },
+    "header": {
+      "createClientTitle": "Opdracht plaatsen",
+      "createAdminTitle": "Opdracht aanmaken (beheerder)",
+      "createClientDescription": "Hetzelfde proces voor het aanmaken van een opdracht, alleen met klantrechten en zonder toewijzing aan een freelancer.",
+      "createAdminDescription": "De opdracht wordt direct gepubliceerd, zonder betaling. U kunt tijdens het aanmaken een freelancer toewijzen.",
+      "breadcrumbHome": "Startpagina",
+      "breadcrumbOrders": "Opdrachten",
+      "back": "Terug",
+      "allOrders": "Alle opdrachten"
+    },
+    "projectType": {
+      "label": "Opdrachttype",
+      "fixed": "Vaste prijs",
+      "bidding": "Biedingen",
+      "helpFixedAdmin": "Vaste prijs: gepubliceerd op de marktplaats; freelancers ontvangen de opdracht volgens het goedkeuringsproces.",
+      "helpBiddingClient": "Biedingen: de opdracht wordt gepubliceerd om biedingen te ontvangen; u betaalt wanneer u een bod selecteert.",
+      "helpBiddingAdmin": "Biedingen: geen prijsbereik bij het aanmaken; freelancers dienen biedingen in en u beheert het proces vanuit het opdrachtendashboard."
+    },
+    "fields": {
+      "orderCode": "Opdrachtnummer",
+      "orderCodePlaceholder": "bijv. ORD-1001",
+      "title": "Projecttitel",
+      "titlePlaceholder": "Voer de projecttitel in",
+      "description": "Beschrijving van de vereisten",
+      "descriptionPlaceholder": "Beschrijf het project duidelijk en gedetailleerd",
+      "category": "Categorie",
+      "categoryPlaceholder": "— Selecteren —",
+      "extraCategories": "Extra categorieën (optioneel)",
+      "categoryRow": "Categorie",
+      "subSubcategory": "Gedetailleerde categorie",
+      "remove": "Verwijderen",
+      "subSubcategoryPlaceholder": "Selecteer een gedetailleerde categorie (optioneel)",
+      "subSubcategorySearch": "Gedetailleerde categorie zoeken…",
+      "noExtraCategories": "Geen extra categorieën.",
+      "pickPrimaryCategoryFirst": "Selecteer eerst de hoofdcategorie",
+      "noExtraCategoryAvailable": "Geen extra categorie beschikbaar",
+      "close": "Sluiten",
+      "addExtraCategory": "Extra categorie toevoegen",
+      "extraCategoryPlaceholder": "Selecteer een extra categorie",
+      "extraCategorySearch": "Categorie zoeken…",
+      "subSubcategoryShort": "Gedetailleerd",
+      "subSubcategoryNone": "— Geen —",
+      "budget": "Budget",
+      "budgetRange": "Budgetbereik",
+      "budgetMinPlaceholder": "Minimaal",
+      "budgetMaxPlaceholder": "Maximaal",
+      "duration": "Opleveringstermijn",
+      "unit": "Eenheid",
+      "unitDays": "Dagen",
+      "unitHours": "Uren",
+      "unitMinutes": "Minuten",
+      "skills": "Vereiste vaardigheden",
+      "skillsPlaceholder": "Voeg vereiste vaardigheden toe"
+    },
+    "assignment": {
+      "headingInstitutional": "2) Toewijzing",
+      "headingOptional": "5) Toewijzing (optioneel)",
+      "institutionalHelp1": "In de opdrachtvoorraad van organisaties wordt bij het aanmaken geen freelancer toegewezen.",
+      "institutionalHelp2": "Na goedkeuring door de superbeheerder en vrijgave aan de organisatie verlopen aanmeldingen en toewijzing via het standaard opdrachtproces.",
+      "pickFreelancer": "Freelancer selecteren",
+      "pickFreelancerHelp": "Actieve en inactieve freelancers worden getoond; alleen geschikte freelancers kunnen worden toegewezen (actief account, geverifieerd e-mailadres, abonnement dat het ontvangen van opdrachten toestaat)."
+    },
+    "files": {
+      "heading": "6) Bestanden (optioneel)",
+      "dropzoneTitle": "Sleep bestanden hierheen of klik om te kiezen (maximaal 5 bestanden)",
+      "dropzoneHelp": "U kunt projectbestanden toevoegen (optioneel).",
+      "selectedLabel": "Geselecteerde bestanden:",
+      "addMoreTitle": "Meer bestanden toevoegen",
+      "addMore": "Meer bestanden toevoegen",
+      "maxFilesTitle": "Maximum bereikt (5 bestanden)",
+      "clearFiles": "Bestanden wissen"
+    },
+    "review": {
+      "heading": "7) Controleren en verzenden",
+      "title": "Titel",
+      "description": "Beschrijving",
+      "category": "Categorie",
+      "subSubcategory": "Gedetailleerde categorie",
+      "skills": "Vereiste vaardigheden",
+      "skillsNone": "Geen specifieke vaardigheden vereist",
+      "projectType": "Projecttype",
+      "budget": "Budget",
+      "duration": "Opleveringstermijn",
+      "freelancer": "Freelancer",
+      "files": "Bestanden",
+      "filesCount": "Bestanden: {{count}}",
+      "noFiles": "Geen bestanden toegevoegd",
+      "noteClientFixed": "Nadat u doorgaat naar de betaling, wordt de opdracht geactiveerd en op de marktplaats gepubliceerd.",
+      "noteClientBidding": "De opdracht wordt gepubliceerd om biedingen te ontvangen; u betaalt wanneer u een bod selecteert.",
+      "noteAssigned": "De opdracht wordt rechtstreeks aan deze freelancer toegewezen",
+      "noteArchive": "De opdracht wordt in het archief opgeslagen (voorlopig inactief). U kunt de opdracht later activeren via het dashboard.",
+      "notePublish": "De opdracht wordt gepubliceerd in de lijst met beschikbare opdrachten",
+      "archiveCheckbox": "Opslaan in archief (voorlopig inactief)",
+      "archiveHelp": "Als deze optie is ingeschakeld, verschijnt de opdracht niet in de lijst met beschikbare opdrachten. U kunt de opdracht later activeren.",
+      "payNowLabel": "Nu te betalen bedrag",
+      "payNowHint": "U gaat verder naar de beveiligde Stripe-betaalpagina. De opdracht wordt pas op de marktplaats gepubliceerd nadat de betaling is bevestigd."
+    },
+    "freelancer": {
+      "unassigned": "Niet toegewezen",
+      "fallbackName": "Freelancer",
+      "fallbackId": "Freelancer #{{id}}"
+    },
+    "durationUnits": {
+      "day": "dag",
+      "dayTwo": "dagen",
+      "days": "dagen",
+      "hour": "uur",
+      "hourTwo": "uur",
+      "hours": "uur",
+      "minute": "minuut",
+      "minuteTwo": "minuten",
+      "minutes": "minuten"
+    },
+    "nav": {
+      "cancel": "Annuleren",
+      "close": "Sluiten",
+      "previous": "Vorige",
+      "next": "Volgende",
+      "creating": "Aanmaken…",
+      "continuePayment": "Doorgaan naar betaling",
+      "publishForBids": "Opdracht publiceren voor biedingen",
+      "createOrder": "Opdracht aanmaken"
+    }
+  },
+  "freelancerSelector": {
+    "noSubscription": "Geen abonnement",
+    "subscriptionActive": "Actief abonnement",
+    "subscriptionNotStarted": "Abonnement (nog niet gestart)",
+    "subscriptionStatus": "Abonnement: {{status}}",
+    "loadFailed": "Kan de freelancerlijst niet laden.",
+    "searchPlaceholder": "Zoeken op naam, e-mail of account-ID van de freelancer…",
+    "hint": "Alleen geschikte freelancers kunnen worden geselecteerd. Niet-geschikte freelancers worden met de reden getoond en kunnen niet worden gekozen.",
+    "unassign": "Niet toegewezen",
+    "empty": "Geen freelancers die aan uw zoekopdracht voldoen.",
+    "listAriaLabel": "Freelancerresultaten",
+    "accountLine": "Account: {{accountId}} · {{email}}",
+    "accountActive": "Actief account",
+    "accountInactive": "Inactief account"
+  },
+  "listPage": {
+    "toast": {
+      "reloadFailed": "Kan lijst niet vernieuwen",
+      "loadFailed": "Kan opdrachten niet laden",
+      "orderLoadFailed": "Kan opdrachtgegevens niet laden.",
+      "deliveryOpenFailed": "Kan opleveringsbeoordeling niet openen",
+      "bidApprovedTitle": "Bod goedgekeurd",
+      "bidApprovedMessage": "Het project is zonder betaling via het platform aan de freelancer toegewezen.",
+      "bidApproveFailed": "Kan bod niet goedkeuren",
+      "revisionSentTitle": "Revisieverzoek verzonden",
+      "revisionSentMessage": "De freelancer ziet het verzoek en kan na het aanbrengen van wijzigingen opnieuw opleveren."
+    },
+    "header": {
+      "eyebrow": "Dashboard",
+      "title": "Interne opdrachten",
+      "description": "Opdrachten aangemaakt door een beheerder of superbeheerder (zonder betaling).",
+      "breadcrumbHome": "Startpagina",
+      "breadcrumbOrders": "Opdrachten",
+      "viewCards": "Kaartweergave",
+      "viewTable": "Tabelweergave",
+      "createOrder": "Opdracht aanmaken"
+    },
+    "loading": "Opdrachten laden…",
+    "empty": {
+      "title": "Nog geen interne opdrachten",
+      "description": "Maak een beheerdersopdracht aan; deze verschijnt hier direct. U kunt een freelancer toewijzen of de opdracht op de marktplaats publiceren.",
+      "createFirst": "Eerste opdracht aanmaken"
+    },
+    "card": {
+      "institutionalOrder": "Organisatieopdracht",
+      "claimsNotForFixed": "Het declaratieproces is niet beschikbaar voor opdrachten met een vaste prijs.",
+      "priceBids": "Biedingen",
+      "loading": "Laden…",
+      "receiveOrder": "Oplevering ontvangen",
+      "freelancerDeliveryFiles": "Opleveringsbestanden van freelancer"
+    },
+    "table": {
+      "orderCode": "Opdrachtnummer",
+      "title": "Titel",
+      "scope": "Bereik",
+      "description": "Beschrijving",
+      "category": "Categorie",
+      "subSubcategory": "Gedetailleerde categorie",
+      "extraCategories": "Extra categorieën",
+      "type": "Type",
+      "budget": "Budget",
+      "currency": "Valuta",
+      "duration": "Duur",
+      "status": "Status",
+      "deliveryTiming": "Oplevering t.o.v. deadline",
+      "inPool": "Op marktplaats",
+      "archived": "Gearchiveerd",
+      "actions": "Acties",
+      "scopeGeneral": "Algemeen",
+      "noFiles": "Geen bestanden toegevoegd",
+      "applicants": "Kandidaten",
+      "bids": "Biedingen",
+      "created": "Aangemaakt",
+      "filesCount": "Bestanden: {{count}}"
+    },
+    "bidsModal": {
+      "title": "Biedingen (interne biedingsronde)",
+      "refresh": "Lijst vernieuwen",
+      "close": "Sluiten",
+      "hint": "Door één bod goed te keuren, wordt het project toegewezen zonder Stripe-betaling (beheerdersopdracht).",
+      "empty": "Nog geen biedingen.",
+      "amount": "Bedrag: {{amount}}",
+      "status": "Status: {{status}}",
+      "cannotApprove": "Dit bod kan niet worden goedgekeurd",
+      "approving": "Goedkeuren…",
+      "approve": "Goedkeuren"
+    },
+    "attachments": {
+      "button": "Bijlagen ({{count}})",
+      "title": "Opdrachtbijlagen",
+      "empty": "Deze opdracht heeft geen bijlagen.",
+      "loadFailed": "Kan de bijlagen van de opdracht niet laden"
+    }
+  },
+  "orderCard": {
+    "timeExpired": "De deadline van het project is verstreken.",
+    "timeRemaining": "Resterend: {{span}}.",
+    "timePartJoiner": ", ",
+    "summaryAria": "Opdrachtoverzicht",
+    "skillsAria": "Vaardigheden",
+    "hideDetails": "Details verbergen",
+    "showDetails": "Details bekijken",
+    "priceSummary": "Prijs (overzicht)",
+    "technicalStatus": "Technische status",
+    "published": "Gepubliceerd",
+    "archived": "Gearchiveerd",
+    "extraCategories": "Extra categorieën",
+    "paidCurrencySuffix": " JOD"
+  },
+  "orderDetails": {
+    "files": {
+      "titleDefault": "Bestanden",
+      "emptyDefault": "Geen bestanden",
+      "defaultFileName": "Bestand",
+      "view": "Bekijken",
+      "download": "Downloaden",
+      "opening": "Openen…",
+      "downloading": "Downloaden…",
+      "loginHint": "Log in met de juiste machtigingen om bestanden veilig te bekijken",
+      "openSuccessTitle": "Geopend",
+      "openSuccessMessage": "Het bestand is in een nieuw tabblad geopend.",
+      "openErrorTitle": "Kan bestand niet openen",
+      "downloadErrorTitle": "Downloaden mislukt",
+      "downloadSuccessTitle": "Download gestart",
+      "genericError": "De bewerking is mislukt.",
+      "unauthorized": "U hebt geen toestemming om dit bestand te bekijken.",
+      "notFound": "Bestand niet gevonden.",
+      "openError": "Kan de bijlage niet openen. Probeer het opnieuw.",
+      "downloadError": "Kan de bijlage niet downloaden. Probeer het opnieuw.",
+      "unavailable": "Origineel bestand niet beschikbaar",
+      "planLockedHint": "Bijlagen worden beschikbaar zodra uw pakket deze opdracht dekt.",
+      "freelancersOnlyHint": "Bijlagen zijn beschikbaar voor freelancers die in aanmerking komen voor deze opdracht.",
+      "errors": {
+        "session": "Uw sessie is verlopen. Log opnieuw in.",
+        "forbidden": "U hebt geen toegang tot deze bijlage.",
+        "missing": "Het originele bestand is niet beschikbaar.",
+        "notFound": "Bijlage niet gevonden.",
+        "rateLimited": "Te veel verzoeken. Probeer het zo meteen opnieuw.",
+        "storage": "De bestandsopslag is tijdelijk niet beschikbaar. Probeer het zo meteen opnieuw.",
+        "server": "Er is een serverfout opgetreden. Probeer het zo meteen opnieuw.",
+        "network": "Verbinding mislukt. Controleer uw internetverbinding en probeer het opnieuw.",
+        "generic": "De bewerking is mislukt. Probeer het opnieuw."
+      }
+    },
+    "submissionHistory": {
+      "title": "Geschiedenis van opleveringen en revisies",
+      "submissionMeta": "Oplevering #{{number}} · {{date}}",
+      "noSubmissionFiles": "Geen opleveringsbestanden vastgelegd voor deze vermelding.",
+      "fileDefault": "Bestand",
+      "attachmentDefault": "Bijlage",
+      "revisionTitle": "Revisieverzoek",
+      "loading": "…",
+      "badge": {
+        "final": "Definitieve oplevering",
+        "current": "Huidige oplevering",
+        "past": "Eerdere oplevering"
+      },
+      "status": {
+        "submitted": "Opgeleverd",
+        "revision_requested": "Revisie aangevraagd",
+        "accepted": "Geaccepteerd",
+        "superseded": "Vervangen"
+      },
+      "requestedBy": {
+        "client": "Klant",
+        "admin": "Beheerder",
+        "super_admin": "Superbeheerder"
+      },
+      "requestedByPrefix": "Door {{who}}",
+      "unknownStatus": "Onbekende status",
+      "unknownRole": "Onbekende rol"
+    }
+  },
+  "deliveryTiming": {
+    "lessThanMinute": "Minder dan een minuut",
+    "zeroHours": "0 uur",
+    "zeroMinutes": "0 minuten",
+    "partJoiner": ", ",
+    "workDuration": "Tijd van ontvangst tot oplevering: ({{span}}).",
+    "late": "Het werk is ({{span}}) te laat van de freelancer ontvangen.",
+    "onTime": "Het werk is op tijd opgeleverd.",
+    "early": "Het werk is op tijd opgeleverd, ({{span}}) vóór de deadline."
+  }
+}

@@ -1,0 +1,111 @@
+{
+  "economyForm": {
+    "fields": {
+      "commissionPct": "نسبة العمولة",
+      "cashFee": "رسوم الدفع النقدي",
+      "eliteOrdersPerCycle": "طلبات Elite لكل دورة",
+      "offerDuration": "مدة العرض",
+      "carryForwardDays": "أيام الترحيل",
+      "maxCarryForward": "الحد الأقصى للترحيل",
+      "assignmentStrategy": "استراتيجية التعيين",
+      "fairLookback": "نافذة التوزيع العادل (أيام)",
+      "fairnessWeight": "وزن العدالة",
+      "tokenWeight": "وزن العروض",
+      "performanceWeight": "وزن الأداء",
+      "recencyWeight": "وزن الحداثة",
+      "workloadWeight": "وزن عبء العمل",
+      "minApplicants": "حد أدنى للمتقدمين",
+      "maxApplicants": "حد أقصى للمتقدمين",
+      "defaultApplicants": "العدد الافتراضي للمتقدمين",
+      "minBidCost": "حد أدنى لتكلفة العرض",
+      "maxBidCost": "حد أقصى لتكلفة العرض",
+      "defaultBidCost": "تكلفة العرض الافتراضية",
+      "minApplicationHours": "حد أدنى لساعات التقديم",
+      "maxApplicationHours": "حد أقصى لساعات التقديم",
+      "defaultApplicationHours": "ساعات التقديم الافتراضية",
+      "minExecutionHours": "حد أدنى لساعات التنفيذ",
+      "maxExecutionHours": "حد أقصى لساعات التنفيذ",
+      "defaultExecutionHours": "ساعات التنفيذ الافتراضية",
+      "articleMinBids": "حد أدنى لمناقصات المقال",
+      "articleDefaultBids": "الافتراضي لمناقصات المقال",
+      "pantryMinBids": "حد أدنى لمناقصات بيت المونة",
+      "pantryDefaultBids": "الافتراضي لمناقصات بيت المونة"
+    },
+    "validation": {
+      "moneyPositive": "{{label}}: يجب أن تكون أكبر من 0.",
+      "moneyNonNeg": "{{label}}: يجب أن تكون ≥ 0.",
+      "percentRange": "{{label}}: بين 0 و 100.",
+      "intRange": "{{label}}: عدد صحيح بين {{min}} و {{max}}.",
+      "invalidValue": "{{label}}: قيمة غير صالحة.",
+      "hybridUnavailable": "{{label}}: HYBRID غير متاح حتى تُعرَّف أوزان الدمج.",
+      "minOrderInvalid": "الحد الأدنى لقيمة الطلب غير صالح.",
+      "maxOrderInvalid": "الحد الأقصى لقيمة الطلب غير صالح."
+    },
+    "strategies": {
+      "HIGHEST_TOKEN_ONLY": "Highest eligible first",
+      "FAIR_DISTRIBUTION_FIRST": "Fair distribution first",
+      "HYBRID": "HYBRID (unavailable — weight policy required)"
+    }
+  },
+  "articleApplications": {
+    "autoAssignCandidate": "#{{rank}} app {{applicationId}} · weight {{weight}}"
+  },
+  "common": {
+    "close": "Close"
+  },
+  "planCard": {
+    "priceJod": "{{amount}} د.أ",
+    "orderRange": {
+      "between": "{{min}} د.أ → {{max}} د.أ",
+      "from": "من {{min}} د.أ",
+      "upTo": "حتى {{max}} د.أ"
+    },
+    "features": {
+      "selfSubscribeAllowed": "شراء ذاتي مباشر",
+      "requiresCompanyVisit": "تفعيل بزيارة ميدانية",
+      "isVisible": "معروضة في المتجر",
+      "isFeatured": "باقة مميزة في الواجهة",
+      "isPopular": "موسومة كالأكثر شيوعاً"
+    }
+  },
+  "analytics": {
+    "leaderboards": {
+      "sub": {
+        "freelancers": "طلب مكتمل",
+        "clients": "إنفاق",
+        "courses": "مسجل",
+        "categories": "طلب"
+      },
+      "titles": {
+        "freelancers": "أفضل المستقلين",
+        "clients": "أفضل العملاء",
+        "courses": "أفضل الدورات",
+        "categories": "أفضل الفئات"
+      }
+    },
+    "snapshot": {
+      "newSubscriptions": "+{{count}} اشتراك جديد",
+      "newSubscriptions_plural": "+{{count}} اشتراك جديد",
+      "newOrders": "+{{count}} طلب جديد",
+      "newOrders_plural": "+{{count}} طلب جديد",
+      "newClaims": "+{{count}} مطالبة مالية",
+      "newClaims_plural": "+{{count}} مطالبة مالية",
+      "periodRevenue": "إيرادات الفترة: {{amount}}",
+      "topCategory": "أفضل فئة: {{name}}"
+    },
+    "attention": {
+      "severity": {
+        "urgent": "عاجل",
+        "medium": "متوسط",
+        "info": "معلومة"
+      },
+      "awaitingFollowUp": "{{count}} بانتظار المتابعة"
+    },
+    "forecasts": {
+      "orders": "طلبات",
+      "subscriptions": "اشتراكات جديدة",
+      "revenue": "إيرادات"
+    },
+    "periodBanner": "يتم عرض البيانات بناءً على: {{label}}"
+  }
+}

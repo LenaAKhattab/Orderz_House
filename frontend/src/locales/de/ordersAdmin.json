@@ -1,0 +1,360 @@
+{
+  "wizard": {
+    "steps": {
+      "core": "Auftragsdetails",
+      "assignment": "Zuweisung",
+      "files": "Dateien",
+      "review": "Prüfen & absenden"
+    },
+    "skills": {
+      "remove": "Entfernen",
+      "add": "Hinzufügen",
+      "placeholder": "Fähigkeit eingeben oder aus Vorschlägen wählen…",
+      "historyHelp": "Während der Eingabe erscheinen Fähigkeiten, die zuvor in diesem Feld verwendet wurden, zur schnellen Auswahl."
+    },
+    "select": {
+      "searchPlaceholder": "Liste durchsuchen…",
+      "empty": "Keine Ergebnisse"
+    },
+    "errors": {
+      "orderCode": "Die Auftragsnummer ist erforderlich.",
+      "title": "Der Projekttitel ist erforderlich.",
+      "description": "Die Projektbeschreibung ist erforderlich (mindestens 10 Zeichen).",
+      "categoryId": "Bitte wählen Sie eine Kategorie aus.",
+      "projectType": "Bitte wählen Sie einen Projekttyp aus.",
+      "budget": "Geben Sie ein gültiges Budget größer als 0 ein.",
+      "bidBudgetMin": "Geben Sie einen gültigen Mindestbetrag ein.",
+      "bidBudgetMax": "Geben Sie einen gültigen Höchstbetrag ein.",
+      "bidBudgetMaxOrder": "Der Höchstbetrag muss größer oder gleich dem Mindestbetrag sein.",
+      "durationValue": "Geben Sie eine gültige Dauer größer als 0 ein.",
+      "durationUnit": "Bitte wählen Sie eine Zeiteinheit aus.",
+      "maxFiles": "Maximal 5 Dateien.",
+      "stepMultiple": "Bitte füllen Sie alle Pflichtfelder in diesem Schritt aus.",
+      "stepIncomplete": "Füllen Sie die Pflichtfelder in diesem Schritt aus, um fortzufahren."
+    },
+    "toast": {
+      "categoriesLoadFailed": "Kategorien konnten nicht geladen werden",
+      "fileSizeTitle": "Dateigröße",
+      "fileLimitTitle": "Dateilimit",
+      "fileLimitMessage": "Sie können bis zu 5 Dateien hochladen.",
+      "validationTitle": "Felder prüfen",
+      "validationMessage": "Bitte füllen Sie die erforderlichen Angaben korrekt aus.",
+      "createdInstitutionalTitle": "Institutionsauftrag erstellt",
+      "createdTitle": "Auftrag erstellt",
+      "createdInstitutionalMessage": "„{{title}}“ wurde im Auftragsspeicher erstellt.",
+      "createdClientMessage": "Auftrag „{{title}}“ wurde erstellt.",
+      "createdAdminMessage": "Auftragsnummer: {{orderCode}}",
+      "createFailedTitle": "Auftrag konnte nicht erstellt werden"
+    },
+    "upload": {
+      "totalSizeMessage": "Die Gesamtgröße der Dateien darf 5 MB nicht überschreiten",
+      "totalSizeHelper": "Maximale Gesamtgröße: 5 MB"
+    },
+    "header": {
+      "createClientTitle": "Auftrag erstellen",
+      "createAdminTitle": "Auftrag erstellen (Administrator)",
+      "createClientDescription": "Derselbe Ablauf zur Auftragserstellung, nur mit Kundenberechtigungen und ohne Freelancer-Zuweisung.",
+      "createAdminDescription": "Der Auftrag wird sofort ohne Zahlung veröffentlicht. Sie können bei der Erstellung einen Freelancer zuweisen.",
+      "breadcrumbHome": "Startseite",
+      "breadcrumbOrders": "Aufträge",
+      "back": "Zurück",
+      "allOrders": "Alle Aufträge"
+    },
+    "projectType": {
+      "label": "Auftragsart",
+      "fixed": "Festpreis",
+      "bidding": "Angebotsverfahren",
+      "helpFixedAdmin": "Festpreis: wird im Marktplatz veröffentlicht; Freelancer erhalten den Auftrag gemäß dem Freigabeprozess.",
+      "helpBiddingClient": "Angebotsverfahren: Der Auftrag wird für Angebote veröffentlicht; die Zahlung erfolgt, wenn Sie ein Angebot auswählen.",
+      "helpBiddingAdmin": "Angebotsverfahren: kein Preisrahmen bei der Erstellung; Freelancer reichen Angebote ein, und Sie steuern den Ablauf über das Auftrags-Dashboard."
+    },
+    "fields": {
+      "orderCode": "Auftragsnummer",
+      "orderCodePlaceholder": "z. B. ORD-1001",
+      "title": "Projekttitel",
+      "titlePlaceholder": "Projekttitel eingeben",
+      "description": "Beschreibung der Anforderungen",
+      "descriptionPlaceholder": "Beschreiben Sie das Projekt klar und ausführlich",
+      "category": "Kategorie",
+      "categoryPlaceholder": "— Auswählen —",
+      "extraCategories": "Zusätzliche Kategorien (optional)",
+      "categoryRow": "Kategorie",
+      "subSubcategory": "Detailkategorie",
+      "remove": "Entfernen",
+      "subSubcategoryPlaceholder": "Detailkategorie auswählen (optional)",
+      "subSubcategorySearch": "Detailkategorie suchen…",
+      "noExtraCategories": "Keine zusätzlichen Kategorien.",
+      "pickPrimaryCategoryFirst": "Wählen Sie zuerst die Hauptkategorie aus",
+      "noExtraCategoryAvailable": "Keine zusätzliche Kategorie verfügbar",
+      "close": "Schließen",
+      "addExtraCategory": "Zusätzliche Kategorie hinzufügen",
+      "extraCategoryPlaceholder": "Zusätzliche Kategorie auswählen",
+      "extraCategorySearch": "Kategorie suchen…",
+      "subSubcategoryShort": "Detail",
+      "subSubcategoryNone": "— Keine —",
+      "budget": "Budget",
+      "budgetRange": "Budgetrahmen",
+      "budgetMinPlaceholder": "Mindestbetrag",
+      "budgetMaxPlaceholder": "Höchstbetrag",
+      "duration": "Lieferdauer",
+      "unit": "Einheit",
+      "unitDays": "Tage",
+      "unitHours": "Stunden",
+      "unitMinutes": "Minuten",
+      "skills": "Erforderliche Fähigkeiten",
+      "skillsPlaceholder": "Erforderliche Fähigkeiten hinzufügen"
+    },
+    "assignment": {
+      "headingInstitutional": "2) Zuweisung",
+      "headingOptional": "5) Zuweisung (optional)",
+      "institutionalHelp1": "Im Auftragsspeicher der Institution wird bei der Erstellung kein Freelancer zugewiesen.",
+      "institutionalHelp2": "Nach Genehmigung durch den Super-Admin und Freigabe an die Institution laufen Bewerbungen und Zuweisung über den regulären Auftragsablauf.",
+      "pickFreelancer": "Freelancer auswählen",
+      "pickFreelancerHelp": "Aktive und inaktive Freelancer werden angezeigt; zugewiesen werden können nur berechtigte Freelancer (aktives Konto, verifizierte E-Mail-Adresse, Abonnement, das den Empfang von Aufträgen erlaubt)."
+    },
+    "files": {
+      "heading": "6) Dateien (optional)",
+      "dropzoneTitle": "Dateien hierher ziehen oder zum Auswählen klicken (bis zu 5 Dateien)",
+      "dropzoneHelp": "Sie können Projektdateien hinzufügen (optional).",
+      "selectedLabel": "Ausgewählte Dateien:",
+      "addMoreTitle": "Weitere Dateien hinzufügen",
+      "addMore": "Weitere Dateien hinzufügen",
+      "maxFilesTitle": "Maximum erreicht (5 Dateien)",
+      "clearFiles": "Dateien entfernen"
+    },
+    "review": {
+      "heading": "7) Prüfen & absenden",
+      "title": "Titel",
+      "description": "Beschreibung",
+      "category": "Kategorie",
+      "subSubcategory": "Detailkategorie",
+      "skills": "Erforderliche Fähigkeiten",
+      "skillsNone": "Keine bestimmten Fähigkeiten erforderlich",
+      "projectType": "Projekttyp",
+      "budget": "Budget",
+      "duration": "Lieferdauer",
+      "freelancer": "Freelancer",
+      "files": "Dateien",
+      "filesCount": "Dateien: {{count}}",
+      "noFiles": "Keine Dateien hinzugefügt",
+      "noteClientFixed": "Sobald Sie zur Zahlung fortfahren, wird der Auftrag aktiviert und im Marktplatz veröffentlicht.",
+      "noteClientBidding": "Der Auftrag wird für Angebote veröffentlicht; die Zahlung ist fällig, wenn Sie ein Angebot auswählen.",
+      "noteAssigned": "Der Auftrag wird direkt diesem Freelancer zugewiesen",
+      "noteArchive": "Der Auftrag wird im Archiv gespeichert (vorerst inaktiv). Sie können ihn später im Dashboard aktivieren.",
+      "notePublish": "Der Auftrag wird in der Liste verfügbarer Aufträge veröffentlicht",
+      "archiveCheckbox": "Im Archiv speichern (vorerst inaktiv)",
+      "archiveHelp": "Wenn aktiviert, erscheint der Auftrag nicht in der Liste verfügbarer Aufträge. Sie können ihn später aktivieren.",
+      "payNowLabel": "Jetzt fälliger Betrag",
+      "payNowHint": "Sie werden zum sicheren Stripe-Checkout weitergeleitet. Der Auftrag wird erst nach bestätigter Zahlung im Marktplatz veröffentlicht."
+    },
+    "freelancer": {
+      "unassigned": "Nicht zugewiesen",
+      "fallbackName": "Freelancer",
+      "fallbackId": "Freelancer Nr. {{id}}"
+    },
+    "durationUnits": {
+      "day": "Tag",
+      "dayTwo": "Tage",
+      "days": "Tage",
+      "hour": "Stunde",
+      "hourTwo": "Stunden",
+      "hours": "Stunden",
+      "minute": "Minute",
+      "minuteTwo": "Minuten",
+      "minutes": "Minuten"
+    },
+    "nav": {
+      "cancel": "Abbrechen",
+      "close": "Schließen",
+      "previous": "Zurück",
+      "next": "Weiter",
+      "creating": "Wird erstellt…",
+      "continuePayment": "Weiter zur Zahlung",
+      "publishForBids": "Auftrag für Angebote veröffentlichen",
+      "createOrder": "Auftrag erstellen"
+    }
+  },
+  "freelancerSelector": {
+    "noSubscription": "Kein Abonnement",
+    "subscriptionActive": "Abonnement aktiv",
+    "subscriptionNotStarted": "Abonnement (nicht begonnen)",
+    "subscriptionStatus": "Abonnement: {{status}}",
+    "loadFailed": "Freelancer-Liste konnte nicht geladen werden.",
+    "searchPlaceholder": "Nach Freelancer-Name, E-Mail oder Konto-ID suchen…",
+    "hint": "Nur berechtigte Freelancer können ausgewählt werden. Nicht berechtigte Freelancer werden mit Begründung angezeigt und sind nicht auswählbar.",
+    "unassign": "Nicht zugewiesen",
+    "empty": "Keine Freelancer entsprechen Ihrer Suche.",
+    "listAriaLabel": "Freelancer-Ergebnisse",
+    "accountLine": "Konto: {{accountId}} · {{email}}",
+    "accountActive": "Konto aktiv",
+    "accountInactive": "Konto inaktiv"
+  },
+  "listPage": {
+    "toast": {
+      "reloadFailed": "Liste konnte nicht aktualisiert werden",
+      "loadFailed": "Aufträge konnten nicht geladen werden",
+      "orderLoadFailed": "Auftragsdetails konnten nicht geladen werden.",
+      "deliveryOpenFailed": "Lieferungsprüfung konnte nicht geöffnet werden",
+      "bidApprovedTitle": "Angebot genehmigt",
+      "bidApprovedMessage": "Das Projekt wurde dem Freelancer ohne Zahlung über die Plattform zugewiesen.",
+      "bidApproveFailed": "Angebot konnte nicht genehmigt werden",
+      "revisionSentTitle": "Überarbeitungsanfrage gesendet",
+      "revisionSentMessage": "Der Freelancer sieht die Anfrage und kann nach den Änderungen erneut liefern."
+    },
+    "header": {
+      "eyebrow": "Dashboard",
+      "title": "Interne Aufträge",
+      "description": "Von Administratoren oder Super-Admins erstellte Aufträge (ohne Zahlung).",
+      "breadcrumbHome": "Startseite",
+      "breadcrumbOrders": "Aufträge",
+      "viewCards": "Kartenansicht",
+      "viewTable": "Tabellenansicht",
+      "createOrder": "Auftrag erstellen"
+    },
+    "loading": "Aufträge werden geladen…",
+    "empty": {
+      "title": "Noch keine internen Aufträge",
+      "description": "Erstellen Sie einen Administrator-Auftrag – er erscheint sofort hier. Sie können einen Freelancer zuweisen oder den Auftrag im Marktplatz veröffentlichen.",
+      "createFirst": "Ersten Auftrag erstellen"
+    },
+    "card": {
+      "institutionalOrder": "Institutionsauftrag",
+      "claimsNotForFixed": "Abrechnungsanträge sind für Festpreisaufträge nicht verfügbar.",
+      "priceBids": "Preisangebote",
+      "loading": "Wird geladen…",
+      "receiveOrder": "Auftrag abnehmen",
+      "freelancerDeliveryFiles": "Lieferdateien des Freelancers"
+    },
+    "table": {
+      "orderCode": "Auftragsnummer",
+      "title": "Titel",
+      "scope": "Bereich",
+      "description": "Beschreibung",
+      "category": "Kategorie",
+      "subSubcategory": "Detailkategorie",
+      "extraCategories": "Zusätzliche Kategorien",
+      "type": "Typ",
+      "budget": "Budget",
+      "currency": "Währung",
+      "duration": "Dauer",
+      "status": "Status",
+      "deliveryTiming": "Lieferung vs. Frist",
+      "inPool": "Im Marktplatz",
+      "archived": "Archiviert",
+      "actions": "Aktionen",
+      "scopeGeneral": "Allgemein",
+      "noFiles": "Keine Dateien hinzugefügt",
+      "applicants": "Bewerber",
+      "bids": "Angebote",
+      "created": "Erstellt",
+      "filesCount": "Dateien: {{count}}"
+    },
+    "bidsModal": {
+      "title": "Preisangebote (internes Angebotsverfahren)",
+      "refresh": "Liste aktualisieren",
+      "close": "Schließen",
+      "hint": "Durch Genehmigung eines Angebots wird das Projekt ohne Stripe-Zahlung zugewiesen (Administrator-Auftrag).",
+      "empty": "Noch keine Angebote.",
+      "amount": "Betrag: {{amount}}",
+      "status": "Status: {{status}}",
+      "cannotApprove": "Dieses Angebot kann nicht genehmigt werden",
+      "approving": "Wird genehmigt…",
+      "approve": "Genehmigen"
+    },
+    "attachments": {
+      "button": "Anhänge ({{count}})",
+      "title": "Auftragsanhänge",
+      "empty": "Dieser Auftrag hat keine Anhänge.",
+      "loadFailed": "Die Auftragsanhänge konnten nicht geladen werden"
+    }
+  },
+  "orderCard": {
+    "timeExpired": "Die Projektfrist ist abgelaufen.",
+    "timeRemaining": "Verbleibend: {{span}}.",
+    "timePartJoiner": ", ",
+    "summaryAria": "Auftragsübersicht",
+    "skillsAria": "Fähigkeiten",
+    "hideDetails": "Details ausblenden",
+    "showDetails": "Details anzeigen",
+    "priceSummary": "Preis (Übersicht)",
+    "technicalStatus": "Technischer Status",
+    "published": "Veröffentlicht",
+    "archived": "Archiviert",
+    "extraCategories": "Zusätzliche Kategorien",
+    "paidCurrencySuffix": " JOD"
+  },
+  "orderDetails": {
+    "files": {
+      "titleDefault": "Dateien",
+      "emptyDefault": "Keine Dateien",
+      "defaultFileName": "Datei",
+      "view": "Anzeigen",
+      "download": "Herunterladen",
+      "opening": "Wird geöffnet…",
+      "downloading": "Wird heruntergeladen…",
+      "loginHint": "Melden Sie sich mit den entsprechenden Berechtigungen an, um Dateien sicher anzuzeigen",
+      "openSuccessTitle": "Geöffnet",
+      "openSuccessMessage": "Die Datei wurde in einem neuen Tab geöffnet.",
+      "openErrorTitle": "Datei konnte nicht geöffnet werden",
+      "downloadErrorTitle": "Download fehlgeschlagen",
+      "downloadSuccessTitle": "Download gestartet",
+      "genericError": "Der Vorgang ist fehlgeschlagen.",
+      "unauthorized": "Sie sind nicht berechtigt, diese Datei anzuzeigen.",
+      "notFound": "Datei nicht gefunden.",
+      "openError": "Der Anhang konnte nicht geöffnet werden. Bitte versuchen Sie es erneut.",
+      "downloadError": "Der Anhang konnte nicht heruntergeladen werden. Bitte versuchen Sie es erneut.",
+      "unavailable": "Originaldatei nicht verfügbar",
+      "planLockedHint": "Anhänge werden verfügbar, wenn Ihr Paket diesen Auftrag abdeckt.",
+      "freelancersOnlyHint": "Anhänge stehen Freelancern zur Verfügung, die für diesen Auftrag berechtigt sind.",
+      "errors": {
+        "session": "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.",
+        "forbidden": "Sie sind nicht berechtigt, auf diesen Anhang zuzugreifen.",
+        "missing": "Die Originaldatei ist nicht verfügbar.",
+        "notFound": "Anhang nicht gefunden.",
+        "rateLimited": "Zu viele Anfragen. Bitte versuchen Sie es in Kürze erneut.",
+        "storage": "Der Dateispeicher ist vorübergehend nicht verfügbar. Bitte versuchen Sie es in Kürze erneut.",
+        "server": "Es ist ein Serverfehler aufgetreten. Bitte versuchen Sie es in Kürze erneut.",
+        "network": "Verbindung fehlgeschlagen. Prüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.",
+        "generic": "Der Vorgang ist fehlgeschlagen. Bitte versuchen Sie es erneut."
+      }
+    },
+    "submissionHistory": {
+      "title": "Liefer- und Überarbeitungsverlauf",
+      "submissionMeta": "Lieferung Nr. {{number}} · {{date}}",
+      "noSubmissionFiles": "Für diesen Eintrag sind keine Lieferdateien erfasst.",
+      "fileDefault": "Datei",
+      "attachmentDefault": "Anhang",
+      "revisionTitle": "Überarbeitungsanfrage",
+      "loading": "…",
+      "badge": {
+        "final": "Endgültige Lieferung",
+        "current": "Aktuelle Lieferung",
+        "past": "Frühere Lieferung"
+      },
+      "status": {
+        "submitted": "Geliefert",
+        "revision_requested": "Überarbeitung angefordert",
+        "accepted": "Angenommen",
+        "superseded": "Ersetzt"
+      },
+      "requestedBy": {
+        "client": "Kunde",
+        "admin": "Administrator",
+        "super_admin": "Super-Admin"
+      },
+      "requestedByPrefix": "Von {{who}}",
+      "unknownStatus": "Unbekannter Status",
+      "unknownRole": "Unbekannte Rolle"
+    }
+  },
+  "deliveryTiming": {
+    "lessThanMinute": "Weniger als eine Minute",
+    "zeroHours": "0 Stunden",
+    "zeroMinutes": "0 Minuten",
+    "partJoiner": ", ",
+    "workDuration": "Zeit vom Erhalt bis zur Lieferung: ({{span}}).",
+    "late": "Die Arbeit des Freelancers ging mit ({{span}}) Verspätung ein.",
+    "onTime": "Die Arbeit wurde fristgerecht geliefert.",
+    "early": "Die Arbeit wurde fristgerecht geliefert, ({{span}}) vor Ablauf der Frist."
+  }
+}

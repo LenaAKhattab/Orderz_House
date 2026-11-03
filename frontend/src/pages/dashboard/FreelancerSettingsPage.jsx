@@ -78,7 +78,7 @@ export default function FreelancerSettingsPage() {
         setWhatsApp(u.whatsApp || "");
         setProfessionalTitle(u.professionalTitle || "");
         setBio(u.bio || "");
-        setSkillsText(Array.isArray(u.skills) ? u.skills.join(locale === "en" ? ", " : "، ") : "");
+        setSkillsText(Array.isArray(u.skills) ? u.skills.join(t("platformPages.common.listJoiner")) : "");
         setWebsiteUrl(u.websiteUrl || "");
         setLinkedinUrl(u.linkedinUrl || "");
         setGithubUrl(u.githubUrl || "");
@@ -95,7 +95,7 @@ export default function FreelancerSettingsPage() {
     } finally {
       setLoading(false);
     }
-  }, [t, locale]);
+  }, [t]);
 
   useEffect(() => {
     load();

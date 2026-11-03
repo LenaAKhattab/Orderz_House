@@ -1,0 +1,99 @@
+{
+  "brand": "OrderzHouse",
+  "brandWordmark": "OrderzHouse",
+  "titles": {
+    "users": "Benutzer",
+    "institutions": "Institutionen",
+    "legacy": "Verwaltungszentrum für Bestands-Freelancer",
+    "analysis": "Analysen",
+    "financialCenter": "Finanzzentrum",
+    "claims": "Abrechnungsanträge",
+    "settlements": "Abrechnungen",
+    "courses": "Kurse",
+    "articles": "Artikel",
+    "orders": "Aufträge",
+    "subscriptions": "Abonnements",
+    "plans": "Pakete"
+  },
+  "language": {
+    "ar": "العربية",
+    "en": "English",
+    "de": "Deutsch",
+    "nl": "Nederlands",
+    "ro": "Română",
+    "switchTo": "العربية",
+    "switchAria": "Sprache auf Englisch umstellen",
+    "switchToArAria": "Sprache auf Arabisch umstellen",
+    "switching": "Sprache wird umgestellt…",
+    "menuLabel": "Sprache",
+    "changeAria": "Sprache ändern (aktuell: {{language}})"
+  },
+  "actions": {
+    "cancel": "Abbrechen",
+    "retry": "Erneut versuchen",
+    "showMore": "Mehr anzeigen",
+    "backHome": "Zurück zur Startseite",
+    "startNow": "Jetzt starten",
+    "explore": "Entdecken"
+  },
+  "loading": {
+    "default": "Wird geladen…",
+    "redirecting": "Weiterleitung…",
+    "sending": "Wird gesendet…",
+    "saving": "Wird gespeichert…",
+    "verifying": "Wird überprüft…"
+  },
+  "empty": {
+    "faq": "Derzeit sind keine FAQs verfügbar.",
+    "plans": "Derzeit sind keine Pakete verfügbar.",
+    "categories": "Derzeit sind keine Kategorien verfügbar.",
+    "orders": "Derzeit keine Aufträge",
+    "ordersHint": "Neue Aufträge erscheinen hier, sobald sie veröffentlicht werden."
+  },
+  "errors": {
+    "loadCategories": "Kategorien konnten nicht geladen werden. Bitte versuchen Sie es später erneut.",
+    "loadSubcategories": "Unterkategorien konnten nicht geladen werden.",
+    "loadSubSubcategories": "Detailkategorien konnten nicht geladen werden.",
+    "loadOrders": "Aufträge konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
+    "loadPage": "Diese Seite konnte nicht geladen werden",
+    "generic": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.",
+    "timeout": "Die Anfrage hat zu lange gedauert. Prüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
+    "network": "Der Server ist nicht erreichbar. Prüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
+    "unavailable": "Diese Aktion ist nicht verfügbar.",
+    "pricingChanged": "Der genehmigte Preis hat sich geändert. Aktualisieren Sie die Seite und prüfen Sie den Betrag in JOD, bevor Sie erneut absenden.",
+    "rateLimited": "Es wurden zu viele Anfragen gesendet. Warten Sie einen Moment und versuchen Sie es erneut.",
+    "orderCreateFailed": "Der Auftrag konnte nicht erstellt werden. Bitte versuchen Sie es erneut."
+  },
+  "pagination": {
+    "navAria": "Seitennavigation",
+    "next": "Weiter",
+    "previous": "Zurück",
+    "pageOf": "Seite {{current}} von {{total}}"
+  },
+  "notFound": {
+    "title": "Seite nicht verfügbar",
+    "text": "Diese Seite ist möglicherweise ausgeblendet oder der Link ist fehlerhaft."
+  },
+  "copyright": "© {{year}} Orderz House. Alle Rechte vorbehalten.",
+  "toast": {
+    "success": "Erfolg",
+    "error": "Fehler",
+    "warning": "Warnung",
+    "info": "Hinweis",
+    "closeAria": "Benachrichtigung schließen"
+  },
+  "skeleton": {
+    "loading": "Wird geladen…",
+    "loadingPage": "Seite wird geladen…",
+    "loadingOrders": "Aufträge werden geladen…"
+  },
+  "a11y": {
+    "explain": "Erklärung: {{label}}",
+    "dataScope": "Datenbereich: {{scope}}"
+  },
+  "secureCheckout": {
+    "lead": "Sie werden zur sicheren Zahlungsseite von Stripe weitergeleitet, um in Jordanischen Dinar (JOD) per Karte zu bezahlen – auf unterstützten Geräten können auch Apple Pay oder Google Pay angezeigt werden.",
+    "returnOrder": "Wenn Sie ohne Zahlung zurückkehren, wird nichts belastet und Ihr Auftrag bleibt gespeichert – nutzen Sie jederzeit „Zahlung fortsetzen“.",
+    "returnPackage": "Wenn Sie ohne Zahlung zurückkehren, wird nichts belastet und Sie können später fortfahren."
+  }
+}

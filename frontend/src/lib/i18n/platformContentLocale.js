@@ -1,34 +1,41 @@
 import { resources } from "../../i18n/resources.js";
+import { pt } from "../../i18n/activeLocale.js";
+import { pickIntlTag } from "../../i18n/intlLocale.js";
+import { isNewLocale, localizeSystemText } from "../../i18n/systemContent.js";
 import { getPlanLocaleKey } from "./getLocalizedPlanDisplay.js";
+import { containsArabicScript, localizeSystemCopyForNewLocale } from "./newLocaleSystemCopy.js";
 
-const ARABIC_SCRIPT = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/;
-
-/** Canonical platform taxonomy. Machine identity is the slug, never the Arabic label. */
-const CATEGORY_EN_BY_SLUG = Object.freeze({
-  "content-writing": "Content writing",
-  design: "Design",
-  programming: "Programming",
+/** Canonical platform taxonomy (catalog keys). Machine identity is the slug, never the Arabic label. */
+const CATEGORY_KEY_BY_SLUG = Object.freeze({
+  "content-writing": "platformCore.taxonomy.contentWriting",
+  design: "platformCore.taxonomy.design",
+  programming: "platformCore.taxonomy.programming",
 });
 
-const CATEGORY_EN_BY_ARABIC = Object.freeze({
-  "كتابة محتوى": "Content writing",
-  "كتابة المحتوى": "Content writing",
-  "خدمات كتابة المحتوى": "Content writing",
-  تصميم: "Design",
-  "خدمات التصميم": "Design",
-  برمجة: "Programming",
-  "خدمات البرمجة": "Programming",
+const CATEGORY_KEY_BY_ARABIC = Object.freeze({
+  "كتابة محتوى": CATEGORY_KEY_BY_SLUG["content-writing"],
+  "كتابة المحتوى": CATEGORY_KEY_BY_SLUG["content-writing"],
+  "خدمات كتابة المحتوى": CATEGORY_KEY_BY_SLUG["content-writing"],
+  تصميم: CATEGORY_KEY_BY_SLUG.design,
+  "خدمات التصميم": CATEGORY_KEY_BY_SLUG.design,
+  برمجة: CATEGORY_KEY_BY_SLUG.programming,
+  "خدمات البرمجة": CATEGORY_KEY_BY_SLUG.programming,
 });
 
-/** Known platform training-course titles. Admin-authored titles are not listed here. */
-const COURSE_TITLE_EN = Object.freeze({
-  "تدريب مجاني على كتابة المحتوى – المستوى الأول": "Free content writing training – Level 1",
-  "تدريب مجاني كتابة المحتوى – المستوى الأول": "Free content writing training – Level 1",
-  "تدريب كتابة المحتوى – المستوى الأول": "Content writing training – Level 1",
-  "تدريب كتابة المحتوى – المستوى الثاني": "Content writing training – Level 2",
-  "تدريب مجاني كتابة المحتوى – المستوى الثاني": "Free content writing training – Level 2",
-  "تدريبات مجانية في التصميم": "Free design training",
-  "دبلوم تشغيل العمل الحر الرقمي": "Digital freelance operations diploma",
+/** English names of the canonical taxonomy slugs (kept for existing importers). */
+const CATEGORY_EN_BY_SLUG = Object.freeze(
+  Object.fromEntries(Object.entries(CATEGORY_KEY_BY_SLUG).map(([slug, key]) => [slug, pt(key, undefined, "en")])),
+);
+
+/** Known platform training-course titles (Arabic source → catalog key). Admin-authored titles are not listed here. */
+const COURSE_TITLE_KEY_BY_ARABIC = Object.freeze({
+  "تدريب مجاني على كتابة المحتوى – المستوى الأول": "platformCore.courseTitles.freeContentWritingLevel1",
+  "تدريب مجاني كتابة المحتوى – المستوى الأول": "platformCore.courseTitles.freeContentWritingLevel1",
+  "تدريب كتابة المحتوى – المستوى الأول": "platformCore.courseTitles.contentWritingLevel1",
+  "تدريب كتابة المحتوى – المستوى الثاني": "platformCore.courseTitles.contentWritingLevel2",
+  "تدريب مجاني كتابة المحتوى – المستوى الثاني": "platformCore.courseTitles.freeContentWritingLevel2",
+  "تدريبات مجانية في التصميم": "platformCore.courseTitles.freeDesign",
+  "دبلوم تشغيل العمل الحر الرقمي": "platformCore.courseTitles.freelanceOperationsDiploma",
 });
 
 const ANALYTICS_METRIC_KEYS = Object.freeze({
@@ -66,9 +73,7 @@ const PLAN_GROUP_KEYS = Object.freeze({
   unassigned: "analysis.planGroup.unassigned",
 });
 
-export function containsArabicScript(value) {
-  return ARABIC_SCRIPT.test(String(value || ""));
-}
+export { containsArabicScript };
 
 function translated(t, key) {
   if (!key || typeof t !== "function") return "";
@@ -80,23 +85,34 @@ function translated(t, key) {
 /**
  * English uses the English field only.
  * Arabic uses the Arabic field, then the existing base value.
+ * German / Dutch / Romanian use the system-content translation (source: English, else Arabic).
  */
 export function pickLocalizedPlatformCopy(arabic, english, locale) {
   const ar = String(arabic || "").trim();
   const en = String(english || "").trim();
   if (locale === "en") return en;
+  if (isNewLocale(locale)) return localizeSystemText(locale, { ar, en });
   return ar;
+}
+
+function categoryKeyFor(slug, arabic) {
+  if (slug && CATEGORY_KEY_BY_SLUG[slug]) return CATEGORY_KEY_BY_SLUG[slug];
+  if (arabic && CATEGORY_KEY_BY_ARABIC[arabic]) return CATEGORY_KEY_BY_ARABIC[arabic];
+  return null;
 }
 
 export function localizeCategoryName(category, locale) {
   if (!category) return "";
   const arabic = String(category.name || category.nameAr || "").trim();
-  if (locale !== "en") return arabic;
   const explicit = String(category.nameEn || category.name_en || "").trim();
-  if (explicit && !containsArabicScript(explicit)) return explicit;
   const slug = String(category.slug || "").trim();
-  if (slug && CATEGORY_EN_BY_SLUG[slug]) return CATEGORY_EN_BY_SLUG[slug];
-  if (arabic && CATEGORY_EN_BY_ARABIC[arabic]) return CATEGORY_EN_BY_ARABIC[arabic];
+  if (isNewLocale(locale)) {
+    return localizeSystemCopyForNewLocale(locale, { ar: arabic, en: explicit, key: categoryKeyFor(slug, arabic) });
+  }
+  if (locale !== "en") return arabic;
+  if (explicit && !containsArabicScript(explicit)) return explicit;
+  const canonicalKey = categoryKeyFor(slug, arabic);
+  if (canonicalKey) return pt(canonicalKey, undefined, "en");
   if (explicit) return explicit;
   return arabic;
 }
@@ -104,6 +120,19 @@ export function localizeCategoryName(category, locale) {
 export function localizeCanonicalPlanTitle(row, locale) {
   if (!row) return "";
   const arabicTitle = String(row.planTitle || row.title || "").trim();
+  if (isNewLocale(locale)) {
+    const explicitTitle = String(row.planTitleEn || row.titleEn || row.title_en || "").trim();
+    const cardKey = getPlanLocaleKey({ id: row.planId ?? row.id, name: row.planName || row.name });
+    const localized = localizeSystemCopyForNewLocale(locale, {
+      ar: arabicTitle,
+      en: explicitTitle,
+      key: cardKey ? `plans.cards.${cardKey}.title` : null,
+    });
+    if (localized && !containsArabicScript(localized)) return localized;
+    const machineName = String(row.planName || row.name || "").trim();
+    if (machineName && !containsArabicScript(machineName)) return machineName;
+    return "";
+  }
   if (locale !== "en") return arabicTitle || String(row.planName || row.name || "").trim();
   const explicit = String(row.planTitleEn || row.titleEn || row.title_en || "").trim();
   if (explicit && !containsArabicScript(explicit)) return explicit;
@@ -123,16 +152,42 @@ export function localizeCanonicalPlanTitle(row, locale) {
 export function localizeCourseTitle(row, locale) {
   if (!row) return "";
   const title = String(row.title || "").trim();
-  if (locale !== "en") return title;
   const explicit = String(row.titleEn || row.title_en || "").trim();
+  const courseKey = title ? COURSE_TITLE_KEY_BY_ARABIC[title] || null : null;
+  if (isNewLocale(locale)) {
+    return localizeSystemCopyForNewLocale(locale, { ar: title, en: explicit, key: courseKey });
+  }
+  if (locale !== "en") return title;
   if (explicit && !containsArabicScript(explicit)) return explicit;
-  if (title && COURSE_TITLE_EN[title]) return COURSE_TITLE_EN[title];
+  if (courseKey) return pt(courseKey, undefined, "en");
   if (title && !containsArabicScript(title)) return title;
   return title;
 }
 
+const regionNamesCache = new Map();
+
+function regionDisplayName(code, locale) {
+  if (!/^[A-Z]{2}$/.test(code) || typeof Intl === "undefined" || typeof Intl.DisplayNames !== "function") return "";
+  const tag = pickIntlTag(locale);
+  try {
+    if (!regionNamesCache.has(tag)) regionNamesCache.set(tag, new Intl.DisplayNames([tag], { type: "region" }));
+    const name = regionNamesCache.get(tag).of(code);
+    return name && name !== code ? String(name) : "";
+  } catch {
+    return "";
+  }
+}
+
 export function localizeCountryName(row, locale) {
   if (!row) return "";
+  if (isNewLocale(locale)) {
+    const code = String(row.countryCode || "").trim().toUpperCase();
+    const fromIntl = regionDisplayName(code, locale);
+    if (fromIntl) return fromIntl;
+    const localized = localizeSystemCopyForNewLocale(locale, { ar: row.name, en: row.nameEn });
+    if (localized && !containsArabicScript(localized)) return localized;
+    return code || localized;
+  }
   if (locale === "en") {
     return String(row.nameEn || row.countryCode || "").trim() || String(row.name || "").trim();
   }
@@ -166,6 +221,10 @@ export function localizePlanGroupLabel(group, t) {
 export function localizePlanPageTitle(page, locale) {
   if (!page) return "";
   const arabic = String(page.title || "").trim();
+  if (isNewLocale(locale)) {
+    const localized = localizeSystemCopyForNewLocale(locale, { ar: arabic, en: page.titleEn || page.title_en });
+    return localized && !containsArabicScript(localized) ? localized : "";
+  }
   if (locale !== "en") return arabic;
   const explicit = String(page.titleEn || page.title_en || "").trim();
   if (explicit && !containsArabicScript(explicit)) return explicit;

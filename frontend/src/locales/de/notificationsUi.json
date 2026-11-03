@@ -1,0 +1,49 @@
+{
+  "bell": {
+    "ariaLabel": "Benachrichtigungen",
+    "title": "Benachrichtigungen",
+    "markAllRead": "Alle als gelesen markieren",
+    "loading": "Wird geladen…",
+    "empty": "Derzeit keine Benachrichtigungen.",
+    "viewAll": "Alle Benachrichtigungen anzeigen",
+    "newNotification": "Neue Benachrichtigung"
+  },
+  "permission": {
+    "title": "Website-Benachrichtigungen aktivieren",
+    "body": "Erhalten Sie sofortige Hinweise zu Aufträgen, Zahlungen und Lieferungen, auch wenn Sie sich in einem anderen Tab befinden. Sie können dies später in den Einstellungen ändern.",
+    "enable": "Benachrichtigungen aktivieren",
+    "enableBusy": "Wird bearbeitet…",
+    "notNow": "Nicht jetzt"
+  },
+  "browser": {
+    "title": "Browser-Benachrichtigungen",
+    "intro": "Desktop-Hinweise erscheinen, wenn eine neue Benachrichtigung eingeht, während Sie angemeldet sind. In-App-Benachrichtigungen (die Glocke) bleiben immer aktiv.",
+    "unsupported": "Ihr Browser unterstützt keine Desktop-Benachrichtigungen.",
+    "statusLabel": "Status:",
+    "enabled": "Aktiviert",
+    "disabled": "Deaktiviert",
+    "notRequested": "Noch nicht angefragt",
+    "enableBtn": "Browser-Benachrichtigungen aktivieren",
+    "disableBtn": "In der App deaktivieren",
+    "testBtn": "Testbenachrichtigung",
+    "toastUnsupported": "Dieser Browser unterstützt keine Desktop-Benachrichtigungen.",
+    "toastEnabled": "Browser-Benachrichtigungen aktiviert.",
+    "toastDenied": "Die Berechtigung wurde nicht erteilt. Sie können sie in den Browsereinstellungen aktivieren.",
+    "toastEnableFailed": "Benachrichtigungen konnten nicht aktiviert werden.",
+    "toastDisabled": "Browser-Benachrichtigungen wurden in der App deaktiviert. Möglicherweise müssen Sie sie zusätzlich in den Browsereinstellungen deaktivieren.",
+    "toastSaveFailed": "Speichern fehlgeschlagen.",
+    "toastNeedPermission": "Erlauben Sie zuerst Benachrichtigungen im Browser.",
+    "testTitle": "Testbenachrichtigung",
+    "testBody": "Wenn Sie diesen Hinweis sehen, funktionieren Browser-Benachrichtigungen.",
+    "toastTestSent": "Testbenachrichtigung gesendet.",
+    "toastTestFailed": "Testbenachrichtigung konnte nicht gesendet werden."
+  },
+  "page": {
+    "deleteSelected": "Ausgewählte löschen ({{count}})",
+    "selectAria": "Auswählen: {{title}}",
+    "confirmDeleteTitle": "Ausgewählte Benachrichtigungen löschen?",
+    "confirmDeleteBody": "Ausgewählte Benachrichtigungen ({{count}}) werden endgültig gelöscht. Dies kann nicht rückgängig gemacht werden.",
+    "delete": "Löschen",
+    "cancel": "Abbrechen"
+  }
+}

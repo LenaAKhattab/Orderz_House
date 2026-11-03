@@ -13,6 +13,9 @@ import DashboardStatCard, { DashboardStatCardSkeleton } from "../../dashboard/Da
 import DashboardChartCard from "../../dashboard/DashboardChartCard";
 import DashboardEmptyState from "../../dashboard/DashboardEmptyState";
 import { useTranslation } from "../../../i18n/LanguageProvider";
+import { getActiveLocale } from "../../../i18n/activeLocale";
+import { pickIntlTag } from "../../../i18n/intlLocale";
+import { isNewLocale } from "../../../i18n/systemContent";
 import {
   localizeAnalyticsMetricHint,
   localizeAnalyticsMetricLabel,
@@ -37,9 +40,15 @@ const CHART_TOOLTIP_STYLE = {
   fontSize: 12,
 };
 
-export function formatInt(value) {
+/** Latin-script UI locale (English, German, Dutch, Romanian): Latin percent sign, short month names. */
+function isLatinLocale(locale) {
+  return locale === "en" || isNewLocale(locale);
+}
+
+export function formatInt(value, locale = getActiveLocale()) {
   if (value === null || value === undefined || Number.isNaN(Number(value))) return "—";
-  return new Intl.NumberFormat("ar-JO-u-nu-latn").format(Math.trunc(Number(value)));
+  const tag = pickIntlTag(locale, { ar: "ar-JO-u-nu-latn", en: "ar-JO-u-nu-latn" });
+  return new Intl.NumberFormat(tag).format(Math.trunc(Number(value)));
 }
 
 export function formatMoneyJod(value, locale = "ar") {
@@ -51,8 +60,9 @@ export function formatPctChange(value, locale = "ar") {
   if (value === null || value === undefined || Number.isNaN(Number(value))) return "—";
   const n = Number(value);
   const sign = n > 0 ? "+" : "";
-  const suffix = locale === "en" ? "%" : "٪";
-  return `${sign}${new Intl.NumberFormat("en-US", { maximumFractionDigits: 1 }).format(n)}${suffix}`;
+  const suffix = isLatinLocale(locale) ? "%" : "٪";
+  const tag = pickIntlTag(locale, { ar: "en-US", en: "en-US" });
+  return `${sign}${new Intl.NumberFormat(tag, { maximumFractionDigits: 1 }).format(n)}${suffix}`;
 }
 
 export function isMetricMissing(value) {
@@ -62,8 +72,8 @@ export function isMetricMissing(value) {
 function formatChartDay(isoDate, locale = "ar") {
   try {
     const d = new Date(isoDate);
-    const tag = locale === "en" ? "en-US" : "en-GB";
-    return d.toLocaleDateString(tag, locale === "en" ? { month: "short", day: "numeric" } : { day: "2-digit", month: "2-digit" });
+    const tag = pickIntlTag(locale, { ar: "en-GB", en: "en-US" });
+    return d.toLocaleDateString(tag, isLatinLocale(locale) ? { month: "short", day: "numeric" } : { day: "2-digit", month: "2-digit" });
   } catch {
     return String(isoDate || "");
   }
@@ -72,8 +82,8 @@ function formatChartDay(isoDate, locale = "ar") {
 function formatChartMonth(isoDate, locale = "ar") {
   try {
     const d = new Date(isoDate);
-    const tag = locale === "en" ? "en-US" : "en-GB";
-    return d.toLocaleDateString(tag, locale === "en" ? { month: "short", year: "2-digit" } : { month: "2-digit", year: "2-digit" });
+    const tag = pickIntlTag(locale, { ar: "en-GB", en: "en-US" });
+    return d.toLocaleDateString(tag, isLatinLocale(locale) ? { month: "short", year: "2-digit" } : { month: "2-digit", year: "2-digit" });
   } catch {
     return String(isoDate || "");
   }
@@ -106,8 +116,8 @@ export function StatCardLink({ to, children, className = "" }) {
 function formatStatValue(item, t, locale = "ar") {
   if (item.missing) return item.failed ? t(LABEL_LOAD_FAILED) : t(LABEL_UNAVAILABLE);
   if (item.money) return formatMoneyJod(item.value, locale);
-  if (item.percent) return `${formatInt(item.value)}${locale === "en" ? "%" : "٪"}`;
-  return formatInt(item.value);
+  if (item.percent) return `${formatInt(item.value, locale)}${isLatinLocale(locale) ? "%" : "٪"}`;
+  return formatInt(item.value, locale);
 }
 
 export function SectionFailedBlock({ message, onRetry }) {
@@ -219,7 +229,7 @@ function resolvePlatformInsightText(t, item, locale = "ar") {
       delete params.labelKey;
     }
     if (params.pct != null) params.pct = formatPctChange(params.pct, locale);
-    if (params.count != null) params.count = formatInt(params.count);
+    if (params.count != null) params.count = formatInt(params.count, locale);
     return t(item.textKey, params);
   }
   return item.text || "";
@@ -322,7 +332,7 @@ export function TopList({
   const formatVal = money ? (value) => formatMoneyJod(value, locale) : formatInt;
   const rowLabel = (row) => {
     if (labelKey === "fullName" && row.fullName) return row.fullName;
-    if (locale === "en") {
+    if (locale === "en" || isNewLocale(locale)) {
       if (row.planTitle || row.planTitleEn || row.planName) {
         const plan = localizeCanonicalPlanTitle(row, locale);
         if (plan) return plan;

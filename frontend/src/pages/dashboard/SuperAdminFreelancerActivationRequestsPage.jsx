@@ -7,7 +7,7 @@ import DashboardEmptyState from "../../components/dashboard/DashboardEmptyState"
 import DashboardLoadingState from "../../components/dashboard/DashboardLoadingState";
 import DashboardErrorState from "../../components/dashboard/DashboardErrorState";
 import { adminBreadcrumbs, superAdminBreadcrumbs } from "../../components/dashboard/dashboardBreadcrumbs";
-import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
+import { getSafeApiErrorMessage, isAxiosNetworkError } from "../../utils/apiErrorMessage";
 import {
   listSuperAdminFreelancerActivationRequestsRequest,
   getSuperAdminFreelancerActivationRequestRequest,
@@ -30,12 +30,13 @@ const KYC_STATUS_TONE = {
   cancelled: "inactive",
 };
 import { useTranslation } from "../../i18n/LanguageProvider";
+import { pickIntlTag } from "../../i18n/intlLocale.js";
 import "../../i18n/activationResources";
 
 function formatDate(value, locale) {
   if (!value) return "—";
   try {
-    const tag = locale === "en" ? "en-JO-u-nu-latn" : "ar-JO-u-nu-latn";
+    const tag = pickIntlTag(locale, { ar: "ar-JO-u-nu-latn", en: "en-JO-u-nu-latn" });
     return new Date(value).toLocaleString(tag);
   } catch {
     return String(value);
@@ -50,10 +51,9 @@ function kycImageErrorMessage(err, t) {
   if (status === 404) return t("activation.requests.kycNotFound");
   if (status === 401 || status === 403) return t("activation.requests.kycForbidden");
   if (status === 502 || status === 503) return t("activation.requests.kycLoadFailed");
+  if (isAxiosNetworkError(err)) return t("activation.requests.kycLoadFailed");
   const fromApi = getSafeApiErrorMessage(err, "");
-  if (fromApi && fromApi !== "تعذر الاتصال بالخادم. تحقق من الاتصال وحاول مجدداً.") {
-    return fromApi;
-  }
+  if (fromApi) return fromApi;
   if (status >= 400) return t("activation.requests.kycLoadFailed");
   return t("activation.requests.kycLoadFailed");
 }

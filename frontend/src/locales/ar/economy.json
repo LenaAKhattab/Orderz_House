@@ -127,7 +127,9 @@
     "grantBids": "منح عروض",
     "resolvedReview": "تم حل المراجعة اليدوية.",
     "packageCreated": "تم إنشاء الباقة.",
-    "bidsGranted": "تم منح العروض."
+    "bidsGranted": "تم منح العروض.",
+    "purchaseLine": "#{{id}} · مستخدم {{userId}} · {{bids}} {{bidUnit}} / {{price}} د.أ · تنفيذ={{status}} · عكس={{reversal}}",
+    "purchaseReversalMeta": "مستهلك@العكس={{consumed}} · مجمّد={{frozen}} · ملغى={{revoked}}"
   },
   "bidCreditsCard": {
     "paymentConfirming": "تم استلام الدفع — جارٍ تأكيد إضافة العروض…",

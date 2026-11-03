@@ -11,6 +11,7 @@ import ConfirmDialog from "../../../components/dashboard/ConfirmDialog";
 import Pagination from "../../../components/common/Pagination";
 import { superAdminBreadcrumbs } from "../../../components/dashboard/dashboardBreadcrumbs";
 import { useTranslation } from "../../../i18n/LanguageProvider";
+import { intlTagOrDefault, pickIntlTag } from "../../../i18n/intlLocale.js";
 import { useToast } from "../../../components/ui/toastContext";
 import {
   adminApproveInstitutionalOrderRequest,
@@ -26,16 +27,16 @@ import { getSafeApiErrorMessage, isAxiosTimeoutError } from "../../../utils/apiE
 const BASE = "/dashboard/super-admin/institutional-order-storage";
 const PAGE_SIZE_OPTIONS = [10, 20, 50];
 
-function formatMoney(value, t) {
+function formatMoney(value, t, locale) {
   const n = Number(value);
   if (!Number.isFinite(n)) return "—";
-  return `${n.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${t("dashboard.institutionalOrderStorage.currencyJod")}`;
+  return `${n.toLocaleString(intlTagOrDefault(locale), { maximumFractionDigits: 2 })} ${t("dashboard.institutionalOrderStorage.currencyJod")}`;
 }
 
 function formatDateTime(value, locale) {
   if (!value) return "—";
   try {
-    return new Date(value).toLocaleString(locale === "en" ? "en-GB" : "ar-JO-u-nu-latn");
+    return new Date(value).toLocaleString(pickIntlTag(locale, { ar: "ar-JO-u-nu-latn", en: "en-GB" }));
   } catch {
     return String(value);
   }
@@ -193,18 +194,18 @@ export default function InstitutionalPendingApprovalsPage() {
           <ul className="m-0 grid list-none gap-1 p-0">
             <li>
               {t("dashboard.institutionalOrderStorage.financialLimit")}:{" "}
-              {formatMoney(order.storageFinancialLimitJod, t)}
+              {formatMoney(order.storageFinancialLimitJod, t, locale)}
             </li>
             <li>
               {t("dashboard.institutionalOrderStorage.remaining")}:{" "}
-              {formatMoney(order.storageRemainingJod, t)}
+              {formatMoney(order.storageRemainingJod, t, locale)}
             </li>
             <li>
-              {t("dashboard.institutionalOrderStorage.price")}: {formatMoney(order.orderPriceJod, t)}
+              {t("dashboard.institutionalOrderStorage.price")}: {formatMoney(order.orderPriceJod, t, locale)}
             </li>
             <li>
               {t("dashboard.institutionalOrderStorage.remainingAfterApproval")}:{" "}
-              {formatMoney(order.remainingAfterApprovalJod, t)}
+              {formatMoney(order.remainingAfterApprovalJod, t, locale)}
             </li>
           </ul>
         </div>
@@ -387,7 +388,7 @@ export default function InstitutionalPendingApprovalsPage() {
                 </thead>
                 <tbody>
                   {orders.map((o) => {
-                    const instText = (o.institutions || []).map((i) => i.name).join(locale === "en" ? ", " : "، ") || "—";
+                    const instText = (o.institutions || []).map((i) => i.name).join(t("platformPages.common.listJoiner")) || "—";
                     return (
                       <tr key={o.id}>
                         <td className="max-w-[12rem] align-middle">
@@ -411,7 +412,7 @@ export default function InstitutionalPendingApprovalsPage() {
                             : t("dashboard.institutionalOrderStorage.projectFixed")}
                         </td>
                         <td className="align-middle tabular-nums whitespace-nowrap">
-                          {formatMoney(o.orderPriceJod, t)}
+                          {formatMoney(o.orderPriceJod, t, locale)}
                         </td>
                         <td className="align-middle break-words">{o.submittedByName || "—"}</td>
                         <td className="align-middle whitespace-nowrap">
@@ -428,7 +429,7 @@ export default function InstitutionalPendingApprovalsPage() {
 
             <ul className="m-0 grid list-none gap-3 p-0 lg:hidden">
               {orders.map((o) => {
-                const instText = (o.institutions || []).map((i) => i.name).join(locale === "en" ? ", " : "، ") || "—";
+                const instText = (o.institutions || []).map((i) => i.name).join(t("platformPages.common.listJoiner")) || "—";
                 return (
                   <li key={`m-${o.id}`} className="dash-ui-form-card grid gap-2 p-3.5">
                     <strong className="break-words">{o.title}</strong>
@@ -446,7 +447,7 @@ export default function InstitutionalPendingApprovalsPage() {
                         : t("dashboard.institutionalOrderStorage.projectFixed")}
                     </span>
                     <span className="text-sm">
-                      {t("dashboard.institutionalOrderStorage.price")}: {formatMoney(o.orderPriceJod, t)}
+                      {t("dashboard.institutionalOrderStorage.price")}: {formatMoney(o.orderPriceJod, t, locale)}
                     </span>
                     <span className="text-sm">
                       {t("dashboard.institutionalOrderStorage.submittedBy")}: {o.submittedByName || "—"}

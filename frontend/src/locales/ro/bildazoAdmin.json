@@ -1,0 +1,50 @@
+{
+  "page": {
+    "title": "Legături de autor Bildazo",
+    "description": "Verificați cererile de legare a contului de autor și marcați cererile după verificarea manuală. Conturile Bildazo nu se creează de aici.",
+    "schemaMissing": "Tabelul de legături nu este încă pregătit (migrarea 164). Puteți deschide pagina, dar nu puteți lega conturi până la aplicarea migrării.",
+    "searchLabel": "Căutare",
+    "searchPlaceholder": "Nume / e-mail / ID public",
+    "searchSubmit": "Căutați",
+    "emptyTitle": "Nicio cerere",
+    "emptyDesc": "Nicio cerere de legare nu corespunde filtrului curent.",
+    "loadSchemaError": "Tabelul de legături Bildazo nu este pregătit.",
+    "loadFailed": "Cererile de legare nu au putut fi încărcate.",
+    "freelancerFallback": "Freelancer #{{id}}",
+    "linkedBadge": "Cont de autor legat",
+    "emailMatches": " — e-mailul corespunde cu OrderzHouse",
+    "flowLabel": "Flux:",
+    "flowNew": "Cont nou",
+    "flowExisting": "Cont existent",
+    "termsLabel": "Termeni:",
+    "existingAccount": "Cont existent:",
+    "linkAccount": "Legați contul",
+    "manualLinkSaved": "Legătura manuală a contului de autor a fost salvată.",
+    "manualLinkFailed": "Legătura manuală nu a putut fi salvată.",
+    "statusUpdated": "Starea cererii a fost actualizată.",
+    "statusUpdateFailed": "Starea nu a putut fi actualizată.",
+    "reviewReasonPrompt": "Motivul verificării (obligatoriu):",
+    "reviewReasonRequired": "Motivul verificării este obligatoriu pentru starea „eșuat” sau „blocat”."
+  },
+  "filters": {
+    "all": "Toate",
+    "pending_new_account": "Cerere de cont nou",
+    "pending_existing_account": "Cerere de cont existent",
+    "pending_external_verification": "Verificare externă",
+    "needs_manual_review": "Verificare manuală",
+    "linked": "Legat",
+    "failed": "Eșuat",
+    "blocked": "Blocat"
+  },
+  "dialog": {
+    "title": "Legați contul",
+    "lede": "Legare manuală în OrderzHouse după verificarea externă. Conturile Bildazo nu se creează din această pagină.",
+    "bildazoUserId": "ID utilizator Bildazo (opțional)",
+    "bildazoPublicId": "ID public Bildazo",
+    "bildazoProfileUrl": "URL profil Bildazo",
+    "reviewNote": "Notă de verificare (opțional)",
+    "confirmVerified": "Confirm că am verificat dreptul de proprietate asupra contului Bildazo înainte de legare.",
+    "cancel": "Anulați",
+    "submit": "Legați contul"
+  }
+}

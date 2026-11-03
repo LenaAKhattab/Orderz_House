@@ -1,0 +1,309 @@
+{
+  "heroIpad": {
+    "free": "Kostenlos",
+    "dayUnit": "Tage",
+    "brand": "OrderzHouse",
+    "sidebarNavAria": "Bereichsnavigation",
+    "menuOpen": "Menü öffnen",
+    "menuClose": "Menü schließen",
+    "loading": "Wird geladen",
+    "nav": {
+      "overview": {
+        "label": "Dashboard",
+        "title": "Dashboard",
+        "description": "Kurzkennzahlen und eine Übersicht, die sich nach Ihrer Rolle auf der Plattform richtet."
+      },
+      "services": {
+        "label": "Leistungen",
+        "title": "Leistungen",
+        "description": "Leistungskategorien wie auf der öffentlichen Leistungsseite."
+      },
+      "plans": {
+        "label": "Pakete",
+        "title": "Pakete",
+        "description": "Abonnementpakete für Freelancer wie auf der öffentlichen Paketseite."
+      },
+      "orders": {
+        "label": "Aufträge",
+        "title": "Aufträge & Marktplatz",
+        "description": "Liste offener Aufträge und Bearbeitungsstatus für Freelancer."
+      },
+      "auth": {
+        "label": "Anmelden",
+        "title": "Anmelden",
+        "description": "Anmelde- und Registrierungsablauf der Plattform."
+      }
+    },
+    "overview": {
+      "kicker": "Willkommen in Ihrem Dashboard",
+      "hint": "Der Inhalt ändert sich je nach Rolle: Kunde, Freelancer oder Administrator."
+    },
+    "services": {
+      "kicker": "Leistungskategorien",
+      "loadError": "Kategorien konnten nicht geladen werden. Prüfen Sie die Verbindung zum Server.",
+      "empty": "Derzeit keine aktiven Kategorien.",
+      "footHint": "Daten aus der Tabelle der aktiven Kategorien der Plattform."
+    },
+    "plans": {
+      "loadError": "Pakete konnten nicht geladen werden. Prüfen Sie die Verbindung zum Server.",
+      "empty": "Derzeit keine sichtbaren Pakete.",
+      "popularBadge": "Am beliebtesten",
+      "footHint": "Daten der aktiven, auf der Plattform angezeigten Pakete."
+    },
+    "orders": {
+      "table": {
+        "order": "Auftrag",
+        "status": "Status",
+        "budget": "Budget"
+      },
+      "loadError": "Die Auftragsgalerie konnte nicht geladen werden. Prüfen Sie die Verbindung zum Server.",
+      "empty": "Derzeit keine Aufträge in der Galerie.",
+      "footHint": "Dieselben Daten wie in der öffentlichen Auftragsgalerie (/orders).",
+      "projectType": {
+        "fixed": "Festpreis",
+        "bidding": "Ausschreibung"
+      }
+    },
+    "auth": {
+      "title": "Beginnen Sie Ihren Weg auf der Plattform",
+      "lede": "Wählen Sie den passenden Kontotyp, um fortzufahren.",
+      "roles": {
+        "client": {
+          "title": "Kunde",
+          "description": "Aufträge erstellen und die besten Freelancer finden."
+        },
+        "freelancer": {
+          "title": "Freelancer",
+          "description": "Aufträge erhalten und ganz einfach loslegen."
+        }
+      },
+      "continue": "Weiter",
+      "signIn": "Anmelden",
+      "signUp": "Konto erstellen"
+    },
+    "analytics": {
+      "kpiVisits": "Besuche",
+      "kpiVisitsValue": "12,4 Tsd.",
+      "kpiVisitsDelta": "↑ 9%",
+      "kpiActiveOrders": "Aktive Aufträge",
+      "kpiActiveOrdersValue": "124",
+      "kpiActiveOrdersDelta": "↑ 3%",
+      "kpiRevenue": "Umsatz",
+      "kpiRevenueValue": "4.280 JOD",
+      "kpiRevenueDelta": "↑ 6%",
+      "weeklyOrdersTitle": "Aufträge pro Woche",
+      "weeklyOrdersCaption": "Letzte 10 Tage",
+      "topServicesTitle": "Meistgefragte Leistungen",
+      "topServicesBarsAria": "Relatives Balkendiagramm nach Kategorie",
+      "completionRateTitle": "Abschlussquote",
+      "completionRateValue": "82%",
+      "completionRateSub": "Pünktliche Lieferung",
+      "userActivityLabel": "Nutzeraktivität",
+      "serviceBars": {
+        "dev": "Entwicklung",
+        "design": "Design",
+        "content": "Inhalte",
+        "biz": "Wirtschaft",
+        "acad": "Wissenschaft"
+      }
+    },
+    "lite": {
+      "dashboard": "Dashboard",
+      "statActivity": "Aktivität",
+      "statActivityValue": "128",
+      "statOrders": "Aufträge",
+      "statOrdersValue": "24",
+      "statComplete": "Abgeschlossen",
+      "statCompleteValue": "96%",
+      "quickGlance": "Auf einen Blick",
+      "recentActivity": "Letzte Aktivitäten",
+      "rowDesign": "Designauftrag",
+      "rowDev": "Entwicklungsleistung",
+      "pillInProgress": "In Bearbeitung",
+      "pillNew": "Neu"
+    }
+  },
+  "hero": {
+    "title": "Eine Plattform, die Sie mit den passenden Leistungen und Freelancern verbindet",
+    "lead": "Starten Sie Ihren Auftrag ganz einfach, vergleichen Sie verfügbare Leistungen und verfolgen Sie jeden Schritt an einem Ort, bis Sie die gewünschten Ergebnisse erhalten.",
+    "leadShort": "Starten Sie Ihren Auftrag ganz einfach, vergleichen Sie verfügbare Leistungen und verfolgen Sie jeden Schritt an einem Ort.",
+    "startNow": "Jetzt starten",
+    "browseServicesNow": "Jetzt unsere Leistungen ansehen",
+    "ctaPrimary": "Jetzt Auftrag starten",
+    "ctaSecondary": "Leistungen entdecken",
+    "greeting": "Willkommen bei",
+    "searchPlaceholder": "Leistung oder Kategorie suchen...",
+    "searchAria": "Nach einer Leistung suchen",
+    "featuredAria": "Erste Schritte",
+    "statsAria": "Plattformstatistiken",
+    "adsAria": "Werbeaktionen",
+    "logoAlt": "Orderz House-Logo",
+    "featured": {
+      "startOrder": "Jetzt unsere Leistungen beauftragen",
+      "startOrderTag": "Kunde",
+      "exploreServices": "Jetzt beitreten",
+      "exploreTag": "Freelancer"
+    }
+  },
+  "categories": {
+    "title": "Kategorien entdecken",
+    "titleAccent": "in Sekunden",
+    "subtitle": "Wählen Sie den passenden Bereich und starten Sie Ihren Auftrag in wenigen Minuten",
+    "featuredTitle": "Ausgewählte Leistungen",
+    "viewAll": "Alle anzeigen",
+    "latestOrders": "Neueste Aufträge",
+    "ordersListAria": "Liste der neuesten Aufträge",
+    "loadError": "Aufträge konnten nicht geladen werden.",
+    "emptyOrders": "Derzeit keine verfügbaren Aufträge."
+  },
+  "orders": {
+    "fallbackTitle": "Auftrag ohne Titel",
+    "fallbackCategory": "Auftrag"
+  },
+  "featuredServices": {
+    "frontendDevelopment": "Frontend-Entwicklung",
+    "backendDevelopment": "Backend-Entwicklung",
+    "mobileApps": "Mobile Anwendungen",
+    "artificialIntelligence": "Künstliche Intelligenz",
+    "graphicDesign": "Grafikdesign",
+    "uiUxDesign": "UI/UX-Design",
+    "digitalMarketing": "Digitales Marketing",
+    "contentWriting": "Texterstellung",
+    "specialRequests": "Sonderanfragen",
+    "specialRequestsWhatsappMessage": "Hallo, ich möchte über Orderz House eine Sonderanfrage stellen."
+  },
+  "faq": {
+    "title": "Häufig gestellte Fragen",
+    "subtitle": "Schnelle, klare Antworten auf die häufigsten Fragen.",
+    "whyBrand": "Warum Orderz House?",
+    "quote": "Eine Plattform, um Leistungen anzufragen, Angebote zu vergleichen und Ihr Projekt bis zur Lieferung zu verfolgen – klar und übersichtlich.",
+    "mobilePromoText": "Leistungen anfragen, Angebote vergleichen und Ihr Projekt übersichtlich verfolgen.",
+    "cta": "Jetzt starten",
+    "englishUnavailable": "Für diesen Eintrag sind noch keine englischen Inhalte verfügbar.",
+    "items": {
+      "trust": {
+        "question": "Ist Orderz House eine vertrauenswürdige Plattform, und werden die erbrachten Leistungen anerkannt?",
+        "answer": "Wir arbeiten nach klaren Richtlinien für Aufträge und Bewertungen, und Sie können den Status Ihres Auftrags in Ihrem Dashboard verfolgen. Eine offizielle Anerkennung hängt von den Richtlinien des jeweiligen Arbeitgebers ab; wir empfehlen, Liefernachweise und Kommunikation innerhalb der Plattform aufzubewahren."
+      },
+      "worth": {
+        "question": "Lohnen sich die kostenpflichtigen Leistungen der Plattform?",
+        "answer": "Das hängt von Ihrem Bedarf ab: Sie können Angebote von Freelancern vergleichen, Bewertungen lesen und den Umfang festlegen, bevor Sie sich verpflichten. Beginnen Sie mit einem kleinen Auftrag, um die Qualität zu prüfen, und bauen Sie die Zusammenarbeit aus, wenn Sie zufrieden sind."
+      },
+      "plus": {
+        "question": "Was beinhalten Premium-Pakete oder erweiterte Optionen, und sind sie das Richtige für mich?",
+        "answer": "Sofern Pakete oder Zusatzoptionen verfügbar sind, werden sie auf der Preis- oder Einstellungsseite erläutert. Prüfen Sie, was jede Stufe umfasst, und wählen Sie, was zur Größe Ihres Teams oder zu Ihrem Auftragsvolumen passt."
+      },
+      "free": {
+        "question": "Gibt es kostenlose Ressourcen oder Leitfäden für Nutzer?",
+        "answer": "Wir bieten hilfreiche Inhalte, häufig gestellte Fragen und erklärende Seiten auf der Website. Neuigkeiten finden Sie im Hilfebereich oder im Blog, sofern verfügbar."
+      },
+      "popular": {
+        "question": "Welche Arten von Aufträgen sind auf der Plattform am beliebtesten?",
+        "answer": "Das ändert sich im Laufe der Zeit; Aufträge aus den Bereichen Programmierung, Design und Texterstellung sind oft am aktivsten. Durchsuchen Sie die Kategorien, um zu sehen, was aktuell verfügbar ist."
+      },
+      "career": {
+        "question": "Wie hilft mir die Plattform, den richtigen Freelancer zu finden oder mein Projekt abzuschließen?",
+        "answer": "Sie wählen Kategorie, Details und Frist; anschließend können passende Freelancer Ihren Auftrag sehen. Vergleichen Sie Angebote und kommunizieren Sie sicher innerhalb des Auftrags, bevor Sie sich entscheiden."
+      },
+      "business": {
+        "question": "Welche Leistungen bietet die Plattform für Teams oder Unternehmen, und wie ist die Preisgestaltung aufgebaut?",
+        "answer": "Wenn Sie wiederkehrenden Bedarf oder ein größeres Volumen haben, sehen Sie auf der Kontaktseite oder – sofern aufgeführt – bei den Unternehmensleistungen nach, oder wenden Sie sich an den Support, um ein auf Ihr Team zugeschnittenes Angebot zu erhalten."
+      }
+    }
+  },
+  "partners": {
+    "title": "Erfolgspartner",
+    "subtitle": "Wir sind stolz auf unsere Partnerschaften mit führenden Organisationen, die zu bemerkenswerten Erfolgsgeschichten beigetragen haben.",
+    "logosAria": "Partnerlogos",
+    "visitSite": "Website von {{name}} besuchen"
+  },
+  "metrics": {
+    "activeUsers": "Aktive Nutzer",
+    "activeSub": "Plattformaktivität · letzte 7 Tage",
+    "views": "Seitenaufrufe",
+    "viewsSub": "Insgesamt erfasste Besuche",
+    "availableOrders": "Verfügbare Aufträge",
+    "availableSub": "Jetzt offen für Bewerbungen",
+    "completedOrders": "Abgeschlossene Aufträge",
+    "completedSub": "Tatsächlich abgeschlossene Aufträge sowie Trainingsrunden, die nach dem aktuellen Erfassungsbeginn abgeschlossen wurden",
+    "zeroViews": "Noch keine Aufrufe erfasst",
+    "zeroActive": "Keine Aktivität in den letzten 7 Tagen",
+    "statsAria": "Plattformstatistiken",
+    "degraded": "Statistiken sind derzeit nicht verfügbar",
+    "dbUnavailable": "Plattformstatistiken sind vorübergehend nicht verfügbar",
+    "devTrackingDisabled": "Tracking ist in der Entwicklungsumgebung deaktiviert"
+  },
+  "partnersTrustedTagline": "Mehr als 150 Unternehmen vertrauen uns",
+  "promoAds": {
+    "sponsored": "Anzeige",
+    "noImages": "Keine Bilder",
+    "previous": "Zurück",
+    "next": "Weiter",
+    "slideN": "Folie {{n}}",
+    "defaultImageAlt": "Anzeigenbild",
+    "brandFallback": "Orderz House",
+    "offersSectionTitle": "Ausgewählte Angebote & Anzeigen",
+    "offersSectionAria": "Angebote und Anzeigen",
+    "showMore": "Mehr anzeigen",
+    "discountUpTo": "Bis zu {{n}}% Rabatt",
+    "discountPercent": "{{n}}% reduziert",
+    "discountShort": "{{n}}% Rabatt",
+    "closeAd": "Anzeige schließen",
+    "stickyDockAria": "Ausgewählte Angebote – schwebend",
+    "stickyEyebrow": "Angebote und Anzeigen",
+    "carouselRole": "Karussell",
+    "carouselHeroAria": "Ausgewählte Anzeigen – Karussell",
+    "carouselOffersAria": "Ausgewählte Angebote und Anzeigen – Karussell",
+    "previousAd": "Vorherige Anzeige",
+    "nextAd": "Nächste Anzeige",
+    "dotsAria": "Folienanzeige",
+    "slideOf": "Folie {{current}} von {{total}}",
+    "offerDetailAria": "Anzeigendetails ansehen: {{title}}",
+    "closeDetailModal": "Detaildialog schließen",
+    "noExtraDescription": "Keine weitere Beschreibung.",
+    "discountLabel": "Rabatt:",
+    "phoneLabel": "Telefon:",
+    "whatsapp": "WhatsApp",
+    "loadingAds": "Anzeigen werden geladen…"
+  },
+  "heroStrip": {
+    "open": "Offen",
+    "openHint": "Aufträge, die auf den Start warten",
+    "inProgress": "In Bearbeitung",
+    "inProgressHint": "Aktive Aufträge",
+    "completed": "Abgeschlossen",
+    "completedHint": "Erledigte Aufträge",
+    "views": "Aufrufe",
+    "viewsHint": "Gesamte Website",
+    "activeUsers": "Aktive Nutzer",
+    "activeUsersHint": "Diese Woche",
+    "loadingStat": "Statistik wird geladen…"
+  },
+  "heroMockup": {
+    "analyticsCaption": "Besucher- und Aktivitätskennzahlen der Plattform",
+    "projectsCaption": "Aufträge und Projekte auf einen Blick",
+    "previewAria": "Dashboard-Vorschau",
+    "sectionsAria": "Dashboard-Bereiche",
+    "overviewTitle": "Übersicht & Analysen",
+    "projectsTitle": "Projekte & Aufträge",
+    "welcome": "Willkommen"
+  },
+  "hiw": {
+    "defaultTitle": "So funktioniert es",
+    "illustrationAlt": "Abbildung",
+    "empty": "Derzeit sind keine Inhalte verfügbar.",
+    "loading": "Wird geladen…",
+    "unavailableTitle": "Seite nicht verfügbar",
+    "unavailableText": "Diese Seite ist möglicherweise ausgeblendet oder der Link ist falsch.",
+    "loadFailed": "Die Seite konnte nicht geladen werden. Bitte versuchen Sie es erneut."
+  },
+  "publicSite": {
+    "loading": "Seite wird geladen…",
+    "unavailableTitle": "Seite nicht verfügbar",
+    "unavailableText": "Diese Seite ist möglicherweise nicht veröffentlicht oder der Link ist falsch.",
+    "loadFailedTitle": "Seite konnte nicht geladen werden",
+    "loadFailedText": "Die Seite konnte nicht geladen werden. Bitte versuchen Sie es erneut.",
+    "fallbackTitle": "Öffentliche Seite",
+    "englishUnavailable": "Für diese Seite sind noch keine englischen Inhalte verfügbar."
+  }
+}

@@ -17,6 +17,8 @@ import { freelancerListMyCoursesRequest } from "../../services/api";
 import LinkifiedText from "../../components/ui/LinkifiedText";
 import { useToast } from "../../components/ui/toastContext";
 import { useTranslation } from "../../i18n/LanguageProvider";
+import { pickIntlTag } from "../../i18n/intlLocale.js";
+import { tPlural } from "../../i18n/plural.js";
 import DashboardHubPage from "../../components/dashboard/hub/DashboardHubPage";
 import DashboardHubEmpty from "../../components/dashboard/hub/DashboardHubEmpty";
 import HubMetricSkeleton from "../../components/dashboard/hub/HubMetricSkeleton";
@@ -90,7 +92,7 @@ function formatCourseDate(value, locale) {
   if (!value) return null;
   const d = new Date(value);
   if (!Number.isFinite(d.getTime())) return null;
-  const tag = locale === "ar" ? "ar-JO-u-nu-latn" : "en-GB";
+  const tag = pickIntlTag(locale, { ar: "ar-JO-u-nu-latn", en: "en-GB" });
   return new Intl.DateTimeFormat(tag, { dateStyle: "medium" }).format(d);
 }
 
@@ -193,7 +195,8 @@ function CourseCard({ course, isFavorite, onToggleFavorite, t, locale }) {
   const untitled = t("freelancerDashboard.training.card.untitled");
   const isLockedByPlan = course.isLockedByPlan === true || course.canAccess === false;
   const tierHelper = formatCourseRequiredTierHelper(course.requiredTierCode, {
-    isEn: locale !== "ar",
+    isEn: locale === "en",
+    locale,
   });
 
   const courseTo = `/dashboard/freelancer/courses/${course.id}`;
@@ -271,9 +274,7 @@ function CourseCard({ course, isFavorite, onToggleFavorite, t, locale }) {
           <li>
             <BookOpen size={13} strokeWidth={2} aria-hidden />
             {total > 0
-              ? t(total === 1 ? "freelancerDashboard.training.card.lessonCount" : "freelancerDashboard.training.card.lessonCount_plural", {
-                  count: total,
-                })
+              ? tPlural(t, locale, "freelancerDashboard.training.card.lessonCount", total)
               : t("freelancerDashboard.training.card.noLessons")}
           </li>
           {!isLockedByPlan ? (
@@ -304,7 +305,7 @@ function CourseCard({ course, isFavorite, onToggleFavorite, t, locale }) {
               requiredTierCode={course.requiredTierCode}
               currentTierCode={course.currentTierCode}
               targetRoute={course.upgradePath || "/dashboard/freelancer/plans"}
-              isEn={locale !== "ar"}
+              isEn={locale === "en"}
             />
             {tierHelper ? <p className="fc-course-card__tier-hint">{tierHelper}</p> : null}
           </div>
@@ -329,12 +330,7 @@ function CourseCard({ course, isFavorite, onToggleFavorite, t, locale }) {
             <div className="fc-course-card__footer">
               <span className="fc-course-card__progress-sub">
                 <span className="fc-course-card__progress-sub-long">
-                  {t(
-                    total === 1
-                      ? "freelancerDashboard.training.card.lessonsCompleted"
-                      : "freelancerDashboard.training.card.lessonsCompleted_plural",
-                    { completed, total },
-                  )}
+                  {tPlural(t, locale, "freelancerDashboard.training.card.lessonsCompleted", total, { completed, total })}
                 </span>
                 <span className="fc-course-card__progress-sub-short">
                   {t("freelancerDashboard.training.card.lessonsShort", { completed, total })}
@@ -503,10 +499,7 @@ export default function FreelancerCoursesPage() {
     return { title: t(`${es}.genericTitle`), sub: t(`${es}.genericSub`) };
   }, [courses.length, filter, searchInput, t]);
 
-  const countLabel =
-    displayedCourses.length === 1
-      ? t("freelancerDashboard.training.courseCount", { count: displayedCourses.length })
-      : t("freelancerDashboard.training.courseCount_plural", { count: displayedCourses.length });
+  const countLabel = tPlural(t, locale, "freelancerDashboard.training.courseCount", displayedCourses.length);
 
   return (
     <DashboardHubPage className="fdash-page--courses">

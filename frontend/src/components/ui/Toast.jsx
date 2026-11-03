@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useTranslation } from "../../i18n/LanguageProvider";
+import { isLatinUiLocale } from "../../i18n/intlLocale";
 
 const ICON_BY_TYPE = {
   success: "✓",
@@ -48,7 +49,8 @@ export default function Toast({ toast, index = 0, onClose }) {
   const icon = ICON_BY_TYPE[type] || ICON_BY_TYPE.info;
   const defaultTitle = t(`common.toast.${type}`);
   const sanitize = (value) => {
-    if (locale === "en" && /[\u0600-\u06FF]/.test(String(value || ""))) {
+    // Latin-script UIs (en / de / nl / ro) never show raw Arabic server text.
+    if (isLatinUiLocale(locale) && /[\u0600-\u06FF]/.test(String(value || ""))) {
       return t("common.errors.generic");
     }
     return value;

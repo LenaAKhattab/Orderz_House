@@ -8,8 +8,19 @@ import { useTranslation } from "../../i18n/LanguageProvider";
 import {
   formatSilverUpgradeButtonLabel,
   silverConversionErrorMessage,
+  silverConversionSuccessMessage,
   SILVER_CONVERSION_SUCCESS_AR,
 } from "../../constants/freelancerActivationConversion";
+import { isNewLocale } from "../../i18n/systemContent";
+
+const SC_COPY = "platformComponents.silverConversion";
+
+/** Server CTA copy is Arabic-only: German / Dutch / Romanian render the catalog copy for the same reason. */
+function descriptionKeyForReason(reason) {
+  if (reason === "trial_expired") return `${SC_COPY}.description.trialExpired`;
+  if (reason === "work_cap_reached") return `${SC_COPY}.description.workCapReached`;
+  return `${SC_COPY}.description.default`;
+}
 
 /**
  * Phase A6 — Silver conversion card. Starts marketplace activation-request handoff.
@@ -20,7 +31,8 @@ export default function FreelancerSilverConversionCard({
   isEn = false,
   onCheckoutStarted = null,
 }) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
+  const newLocale = isNewLocale(locale);
   const sc = "freelancerDashboard.silverConversion";
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -39,8 +51,14 @@ export default function FreelancerSilverConversionCard({
 
   const cta = conversion.cta || {};
   const priceJod = conversion.silverPlan?.priceJod;
-  const buttonLabel =
-    cta.buttonLabel || formatSilverUpgradeButtonLabel(priceJod);
+  const buttonLabel = newLocale
+    ? formatSilverUpgradeButtonLabel(priceJod, locale)
+    : cta.buttonLabel || formatSilverUpgradeButtonLabel(priceJod);
+  const titleText = newLocale ? t(`${sc}.defaultTitle`) : cta.title || t(`${sc}.defaultTitle`);
+  const descriptionText = newLocale ? t(descriptionKeyForReason(conversion.reason)) : cta.description;
+  const secondaryText = newLocale
+    ? t(`${sc}.earnedBalanceLink`)
+    : cta.secondaryLabel || t(`${sc}.earnedBalanceLink`);
   const plansRoute = conversion.handoff?.plansRoute || "/dashboard/freelancer/plans";
 
   async function onUpgrade() {
@@ -55,7 +73,7 @@ export default function FreelancerSilverConversionCard({
         window.location.assign(data.checkoutUrl);
         return;
       }
-      setSuccess(data.messageAr || SILVER_CONVERSION_SUCCESS_AR);
+      setSuccess(newLocale ? silverConversionSuccessMessage(locale) : data.messageAr || SILVER_CONVERSION_SUCCESS_AR);
       if (data.plansRoute) {
         /* keep user on articles; secondary link covers plans */
       }
@@ -73,10 +91,10 @@ export default function FreelancerSilverConversionCard({
       data-reason={conversion.reason || "none"}
     >
       <p className="mb-1 text-[0.95rem] font-extrabold text-[color:var(--dash-text,#172033)]">
-        {cta.title || t(`${sc}.defaultTitle`)}
+        {titleText}
       </p>
       <p className="mb-2 text-[0.84rem] font-semibold text-[color:var(--dash-text-secondary,#4b5563)]">
-        {cta.description}
+        {descriptionText}
       </p>
       {error ? (
         <p
@@ -109,7 +127,7 @@ export default function FreelancerSilverConversionCard({
           className="text-[0.82rem] font-bold text-[color:var(--dash-primary,#2f3b65)]"
           data-testid="silver-earned-balance-secondary"
         >
-          {cta.secondaryLabel || t(`${sc}.earnedBalanceLink`)}
+          {secondaryText}
         </a>
         <Link
           to={plansRoute}

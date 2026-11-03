@@ -1,8 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { fetchSuperAdminOverview } from "../services/superAdminAnalytics";
 import { getSafeApiErrorMessage } from "../utils/apiErrorMessage.js";
+import { getActiveLocale, localeFromEnFlag, pt } from "../i18n/activeLocale.js";
+import { pickIntlTag } from "../i18n/intlLocale.js";
 
 const REFRESH_MS = 60_000;
+
+/** Arabic-only legacy copy: unchanged on the Arabic / English UI, translated for German / Dutch / Romanian. */
+const loadErrorText = (key) => pt(`platformCore.superAdminLoad.${key}`, undefined, localeFromEnFlag(false));
 
 function mapAnalyticsError(e) {
   const code = e?.code || "";
@@ -12,13 +17,13 @@ function mapAnalyticsError(e) {
   }
   if (code === "ECONNABORTED" || /timeout/i.test(message)) {
     return {
-      message: "استغرق تحميل التحليلات وقتًا أطول من المتوقع. حاول التحديث بعد قليل.",
+      message: loadErrorText("analyticsTimeout"),
       code: "TIMEOUT",
       canceled: false,
     };
   }
   return {
-    message: getSafeApiErrorMessage(e, "تعذر تحميل لوحة التحليلات."),
+    message: getSafeApiErrorMessage(e, loadErrorText("analyticsFailed")),
     code: e?.response?.data?.code || "",
     canceled: false,
   };
@@ -144,8 +149,9 @@ function indexByDate(rows, key) {
  * Merge PostHog trends with optional fast DB revenue series for charts.
  * @param {object|null} analyticsData — PostHog product analytics
  * @param {object|null} businessData — DB business KPIs (`revenueByDay`)
+ * @param {string} [locale] UI locale for the day labels (defaults to the active UI locale)
  */
-export function buildChartPack(analyticsData, businessData = null) {
+export function buildChartPack(analyticsData, businessData = null, locale = getActiveLocale()) {
   const rev = businessData?.revenueByDay || analyticsData?.trends?.revenueByDay || [];
   const vis = analyticsData?.trends?.visitorsByDay || [];
   const ord = analyticsData?.trends?.ordersByDay || [];
@@ -166,7 +172,7 @@ export function buildChartPack(analyticsData, businessData = null) {
 
   const unified = sorted.map((date) => ({
     date,
-    label: formatChartDay(date),
+    label: formatChartDay(date, locale),
     visitors: vm.get(date) || 0,
     orders: om.get(date) || 0,
     revenueJod: rm.get(date) || 0,
@@ -175,11 +181,13 @@ export function buildChartPack(analyticsData, businessData = null) {
   return { unified, visitors: vis, orders: ord, revenue: rev };
 }
 
-function formatChartDay(isoDate) {
+function formatChartDay(isoDate, locale) {
   try {
     const [y, m, d] = isoDate.split("-").map(Number);
     const dt = new Date(Date.UTC(y, (m || 1) - 1, d || 1));
-    return dt.toLocaleDateString("ar-JO-u-nu-latn", { month: "short", day: "numeric" });
+    // Arabic and English dashboards keep the historical Arabic (Latin-digit) labels.
+    const tag = pickIntlTag(locale, { ar: "ar-JO-u-nu-latn", en: "ar-JO-u-nu-latn" });
+    return dt.toLocaleDateString(tag, { month: "short", day: "numeric" });
   } catch {
     return isoDate;
   }

@@ -1,3 +1,5 @@
+import { ct } from "./constantsI18n.js";
+
 /** WhatsApp business number for طلبات خاصة (fixed, not admin-editable for now). */
 export const HOME_SPECIAL_REQUESTS_WHATSAPP_PHONE = "971543266550";
 
@@ -101,10 +103,11 @@ export function buildSpecialRequestsWhatsappUrl(message) {
  */
 export function getHomeFeaturedServiceHref(item, { t } = {}) {
   if (item?.type === "external") {
+    // Without `t`: catalog fallback in the non-English UI locale (Arabic, or the active de / nl / ro locale).
     const message =
       typeof t === "function"
         ? t("home.featuredServices.specialRequestsWhatsappMessage")
-        : "مرحباً، أريد تقديم طلب خاص عبر أوردرز هاوس.";
+        : ct("homeFeaturedServices.specialRequestsWhatsappMessage");
     return buildSpecialRequestsWhatsappUrl(message);
   }
   const id = String(item?.subSubcategoryId || "").trim();

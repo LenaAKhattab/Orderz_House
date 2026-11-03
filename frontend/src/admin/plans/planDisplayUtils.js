@@ -1,34 +1,55 @@
 /** Client-side display helpers for admin plan cards (no API changes). */
 
 import { planListItems } from "../../components/plans/planDisplayUtils";
+import { pt } from "../../i18n/activeLocale.js";
+import { pickIntlTag } from "../../i18n/intlLocale.js";
+import { legacyArabicUiLocale } from "../adminLocale.js";
 
-export function formatPriceJod(priceJod) {
-  if (priceJod == null || Number.isNaN(Number(priceJod))) return null;
-  return `${Number(priceJod).toLocaleString("ar-JO-u-nu-latn", {
+/** Admin plan cards historically used Arabic copy in both AR and EN UIs; de / nl / ro get their own. */
+function formatJodAmount(v, loc) {
+  return Number(v).toLocaleString(pickIntlTag(loc, { ar: "ar-JO-u-nu-latn", en: "ar-JO-u-nu-latn" }), {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
-  })} د.أ`;
+  });
 }
 
-export function formatOrderValueRange(minJod, maxJod) {
-  const fmt = (v) =>
-    Number(v).toLocaleString("ar-JO-u-nu-latn", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+export function formatPriceJod(priceJod, locale) {
+  if (priceJod == null || Number.isNaN(Number(priceJod))) return null;
+  const loc = legacyArabicUiLocale(locale);
+  return pt("platformAdmin.planCard.priceJod", { amount: formatJodAmount(priceJod, loc) }, loc);
+}
+
+export function formatOrderValueRange(minJod, maxJod, locale) {
+  const loc = legacyArabicUiLocale(locale);
+  const fmt = (v) => formatJodAmount(v, loc);
 
   const min = minJod != null && !Number.isNaN(Number(minJod)) ? Number(minJod) : null;
   const max = maxJod != null && !Number.isNaN(Number(maxJod)) ? Number(maxJod) : null;
 
-  if (min != null && max != null) return `${fmt(min)} د.أ → ${fmt(max)} د.أ`;
-  if (min != null) return `من ${fmt(min)} د.أ`;
-  if (max != null) return `حتى ${fmt(max)} د.أ`;
+  if (min != null && max != null) {
+    return pt("platformAdmin.planCard.orderRange.between", { min: fmt(min), max: fmt(max) }, loc);
+  }
+  if (min != null) return pt("platformAdmin.planCard.orderRange.from", { min: fmt(min) }, loc);
+  if (max != null) return pt("platformAdmin.planCard.orderRange.upTo", { max: fmt(max) }, loc);
   return null;
 }
 
+function planCardFeature(key, icon) {
+  return Object.freeze({
+    key,
+    get label() {
+      return pt(`platformAdmin.planCard.features.${key}`, undefined, legacyArabicUiLocale());
+    },
+    icon,
+  });
+}
+
 export const PLAN_CARD_FEATURES = [
-  { key: "selfSubscribeAllowed", label: "شراء ذاتي مباشر", icon: "🛒" },
-  { key: "requiresCompanyVisit", label: "تفعيل بزيارة ميدانية", icon: "📍" },
-  { key: "isVisible", label: "معروضة في المتجر", icon: "👁" },
-  { key: "isFeatured", label: "باقة مميزة في الواجهة", icon: "★" },
-  { key: "isPopular", label: "موسومة كالأكثر شيوعاً", icon: "◆" },
+  planCardFeature("selfSubscribeAllowed", "🛒"),
+  planCardFeature("requiresCompanyVisit", "📍"),
+  planCardFeature("isVisible", "👁"),
+  planCardFeature("isFeatured", "★"),
+  planCardFeature("isPopular", "◆"),
 ];
 
 const BENEFIT_ICON_DEFAULT = "✓";

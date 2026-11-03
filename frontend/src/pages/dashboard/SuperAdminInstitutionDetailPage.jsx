@@ -13,6 +13,7 @@ import Pagination from "../../components/common/Pagination";
 import { superAdminBreadcrumbs } from "../../components/dashboard/dashboardBreadcrumbs";
 import "../../i18n/institutionsResources";
 import { useTranslation } from "../../i18n/LanguageProvider";
+import { pickIntlTag } from "../../i18n/intlLocale.js";
 import { useToast } from "../../components/ui/toastContext";
 import { useAuth } from "../../context/useAuth";
 import {
@@ -236,7 +237,7 @@ export default function SuperAdminInstitutionDetailPage() {
   const formatDate = (value) => {
     if (!value) return "—";
     try {
-      return new Date(value).toLocaleString(locale === "en" ? "en-GB" : "ar-JO-u-nu-latn");
+      return new Date(value).toLocaleString(pickIntlTag(locale, { ar: "ar-JO-u-nu-latn", en: "en-GB" }));
     } catch {
       return String(value);
     }

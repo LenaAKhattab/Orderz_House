@@ -12,6 +12,9 @@ import {
 import { getDashboardPath, ROLE } from "../constants/authRoutes";
 import { userHasPermission, userHasAnyPermission } from "../constants/dashboardPermissions";
 import { getTranslation } from "../lib/translation/getTranslation.js";
+// Session errors were Arabic-only (also on the English UI); localeFromEnFlag(false) keeps that and translates
+// them for German / Dutch / Romanian.
+import { localeFromEnFlag } from "../i18n/activeLocale.js";
 import { AuthContext } from "./authContext";
 import { clearAnalyticsUser, trackEvent } from "../services/analytics";
 import { invalidateFreelancerSessionCache, invalidatePublicPlansCache } from "../services/freelancerSessionCacheStore";
@@ -82,7 +85,7 @@ export function AuthProvider({ children }) {
     const data = await loginRequest(email, password);
     const nextUser = data?.data?.user;
     if (!nextUser) {
-      throw new Error(getTranslation("auth.register.validation.invalidServerResponse"));
+      throw new Error(getTranslation("auth.register.validation.invalidServerResponse", localeFromEnFlag(false)));
     }
     resetSessionBootstrap();
     applySession(nextUser);
@@ -101,7 +104,7 @@ export function AuthProvider({ children }) {
     }
     const nextUser = data?.data?.user;
     if (!nextUser) {
-      throw new Error(getTranslation("auth.register.validation.invalidServerResponse"));
+      throw new Error(getTranslation("auth.register.validation.invalidServerResponse", localeFromEnFlag(false)));
     }
     resetSessionBootstrap();
     applySession(nextUser);
@@ -114,7 +117,7 @@ export function AuthProvider({ children }) {
     const data = await verifyRegisterOtpRequest(email, otp);
     const nextUser = data?.data?.user;
     if (!nextUser) {
-      throw new Error(getTranslation("auth.register.validation.invalidServerResponse"));
+      throw new Error(getTranslation("auth.register.validation.invalidServerResponse", localeFromEnFlag(false)));
     }
     resetSessionBootstrap();
     applySession(nextUser);

@@ -1,9 +1,18 @@
+import { withCatalogLabels } from "./constantsI18n.js";
+
+/**
+ * Plan tier option: `value` is the stored code, `labelKey` the catalog key; the legacy `labelAr` getter returns
+ * the non-English UI label (Arabic, or the active de / nl / ro locale).
+ */
+const tierOption = (value) =>
+  Object.freeze(withCatalogLabels({ value }, `freelancerActivationArticleOps.planTiers.${value}`, { labelAr: "local" }));
+
 export const FREELANCER_ACTIVATION_PLAN_TIER_OPTIONS = Object.freeze([
-  { value: "starter", labelAr: "تجربة / مجاني" },
-  { value: "trial", labelAr: "تجربة" },
-  { value: "silver", labelAr: "فضية (Silver)" },
-  { value: "pro", labelAr: "احترافية (Pro)" },
-  { value: "elite", labelAr: "نخبة (Elite)" },
+  tierOption("starter"),
+  tierOption("trial"),
+  tierOption("silver"),
+  tierOption("pro"),
+  tierOption("elite"),
 ]);
 
 /**
@@ -11,10 +20,10 @@ export const FREELANCER_ACTIVATION_PLAN_TIER_OPTIONS = Object.freeze([
  * Prefer this over FREELANCER_ACTIVATION_PLAN_TIER_OPTIONS in Super Admin articles UI.
  */
 export const ARTICLE_CANONICAL_PLAN_TIER_OPTIONS = Object.freeze([
-  { value: "starter", labelAr: "تجربة / مجاني" },
-  { value: "silver", labelAr: "فضية (Silver)" },
-  { value: "pro", labelAr: "احترافية (Pro)" },
-  { value: "elite", labelAr: "نخبة (Elite)" },
+  tierOption("starter"),
+  tierOption("silver"),
+  tierOption("pro"),
+  tierOption("elite"),
 ]);
 
 export const FREELANCER_ACTIVATION_PLAN_SPLIT_DEFAULTS = Object.freeze({

@@ -2,13 +2,21 @@
 
 import arArticles from "../../locales/ar/articles.json" with { type: "json" };
 import enArticles from "../../locales/en/articles.json" with { type: "json" };
+import { localeFromEnFlag, pt } from "../../i18n/activeLocale.js";
 
 function articleLocale({ isEn = false, locale } = {}) {
   if (locale) return locale;
-  return isEn ? "en" : "ar";
+  return localeFromEnFlag(isEn);
 }
 
 function articleT(key, loc = "ar", values) {
+  if (loc !== "ar" && loc !== "en") {
+    // German / Dutch / Romanian: lazily loaded locale bundle (articles namespace) via the shared translator.
+    const fullKey = `articles.${key}`;
+    const translated = pt(fullKey, values, loc);
+    if (translated !== fullKey) return translated;
+    return articleT(key, "en", values);
+  }
   const bundle = loc === "en" ? enArticles : arArticles;
   const parts = String(key || "").split(".");
   let node = bundle;

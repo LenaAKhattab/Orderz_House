@@ -1,0 +1,248 @@
+{
+  "title": "Lidmaatschap Orderz House-marktplaats",
+  "hero": {
+    "title": "Lidmaatschap Orderz House-marktplaats",
+    "eyebrow": "Kies het niveau dat bij uw traject past",
+    "subtitle": "Vergelijk biedingen, daglimieten en projectplafonds in enkele seconden."
+  },
+  "categories": {
+    "aria": "Pakketcategorieën",
+    "training": "Trainingspakketten",
+    "membership": "Lidmaatschap OrderzHouse-marktplaats",
+    "annual": "Jaarpakketten"
+  },
+  "annual": {
+    "sectionAria": "Jaarpakketten",
+    "empty": "Er zijn momenteel geen jaarpakketten beschikbaar.",
+    "footnote": "De jaarlijkse looptijd start wanneer u uw eerste echte opdracht ontvangt. Inbegrepen voordelen worden rechtstreeks door het bedrijf geleverd."
+  },
+  "training": {
+    "sectionAria": "Professionele trainingspakketten",
+    "includes": "Het pakket omvat",
+    "featuresAria": "Inhoud van het trainingspakket",
+    "cta": "Neem contact op",
+    "buyCta": "Pakket kopen",
+    "buyBusy": "Doorsturen naar afrekenen…",
+    "resumeCta": "Betaling voortzetten",
+    "processing": "Betaling wordt bevestigd",
+    "processingNotice": "De betaling voor dit pakket wordt bevestigd. Vernieuw de pagina over enkele ogenblikken.",
+    "statusUnavailable": "We konden de betalingsstatus nu niet controleren. Probeer het zo meteen opnieuw.",
+    "purchased": "Gekocht",
+    "currentTitle": "Uw huidige trainingspakket",
+    "waiting": "Wacht op betalingsbevestiging",
+    "companyFollowUp": "Uw trainingspakket is gekocht. Het bedrijf neemt buiten het platform contact met u op over het verdere verloop van de training.",
+    "checkoutFailed": "Afrekenen voor het trainingspakket kon niet worden gestart.",
+    "checkoutMissingUrl": "Afrekenen kon niet worden gestart.",
+    "mostRequested": "Meest gevraagd",
+    "footnote": "Neem via WhatsApp contact met ons op voor details over inschrijving en betaling.",
+    "whatsappAria": "Contact via WhatsApp over {{package}}",
+    "hero": {
+      "eyebrow": "Ontwikkel uw vaardigheden en start uw carrière",
+      "title": "Professionele trainingspakketten",
+      "subtitle": "Kies het juiste pakket en begin aan uw traject in vaardigheden en freelancen."
+    }
+  },
+  "specialOffer": {
+    "cta": "Profiteer nu van deze aanbieding",
+    "ctaWhatsapp": "Neem contact op voor deze aanbieding",
+    "checkoutBusy": "Doorsturen naar afrekenen…",
+    "checkoutFailed": "Afrekenen voor de aanbieding kon niet worden gestart.",
+    "checkoutMissingUrl": "Betaling kon niet worden gestart.",
+    "freelancersOnly": "Deze aanbieding is alleen beschikbaar voor freelancers.",
+    "totalOffers": "Totaal aantal aanmeldingen",
+    "dailyLimit": "Daglimiet",
+    "maxProject": "Max. projectwaarde",
+    "duration": "Looptijd van het pakket",
+    "durationShort": "Looptijd",
+    "days": "dagen",
+    "available": "beschikbaar",
+    "offersPerDay": "aanmeldingen / dag",
+    "upTo": "Tot",
+    "perProject": "per project",
+    "unlimitedProjects": "Geen projectplafond",
+    "savePercent": "Bespaar {{percent}}%",
+    "refundDetailsLink": "Terugbetalingsdetails van het pakket",
+    "refundDetailsLinkShort": "Hoe werkt terugbetaling?",
+    "refundModalTitle": "Terugbetalingsdetails pakket speciale aanbieding",
+    "refundModalGotIt": "Begrepen",
+    "refundSummaryAria": "Overzicht van de waarde van de aanbieding",
+    "refundSectionFallback": "Bijzonderheden",
+    "defaultBadge": "Speciale aanbieding",
+    "defaultRibbon": "Beperkte tijd",
+    "refundSections": {
+      "monthly": "Maandelijkse terugbetaling",
+      "inactiveMonths": "Inactieve maanden",
+      "orderIncome": "Inkomsten uit opdrachten",
+      "importantNotice": "Belangrijke mededeling"
+    }
+  },
+  "sectionAria": "Pakketten voor marktplaatslidmaatschap",
+  "membership": {
+    "free": "Proef",
+    "metricsAria": "Belangrijkste kenmerken van het lidmaatschap",
+    "bidsAvailable": "aanmeldingen",
+    "bidsForTerm": "aanmeldingen voor de looptijd van het pakket",
+    "bidsPerDay": "aanmeldingen per dag",
+    "includedBenefitsAria": "Inbegrepen voordelen van het pakket",
+    "applicationNote": "Een aanmelding betekent dat u een bod uitbrengt op een opdracht; dit garandeert niet dat u een opdracht ontvangt.",
+    "projectCapMax": "per project",
+    "projectCapValue": "Tot {{value}} {{currency}}",
+    "projectCapUnlimited": "Projectplafond",
+    "unlimitedShort": "Geen plafond",
+    "withdrawalOn": "Uitbetalingen beschikbaar",
+    "withdrawalOff": "Geen directe uitbetaling van financiële bedragen"
+  },
+  "mobile": {
+    "compareTitle": "Pakketten vergelijken",
+    "packageCount": "Pakketten: {{count}}",
+    "footnote": "Pakketten zijn bedoeld voor freelancers die op het platform zijn geregistreerd."
+  },
+  "errors": {
+    "loadFailed": "Pakketten konden nu niet worden geladen. Probeer het later opnieuw."
+  },
+  "pageUnavailable": {
+    "title": "Pakkettenpagina niet beschikbaar",
+    "message": "Deze pagina is mogelijk inactief of verlopen, of de link is onjuist."
+  },
+  "mobileLabel": "Abonnementspakketten",
+  "lede": "Kies het juiste pakket voor uw werk, vergelijk kenmerken en start of upgrade uw abonnement op één plek.",
+  "featuresAria": "Kenmerken van het pakket",
+  "showFeatures": "Kenmerken tonen ({{count}})",
+  "hideFeatures": "Kenmerken verbergen",
+  "showMoreFeatures": "Meer kenmerken tonen (+{{count}})",
+  "extraFeaturesAria": "Extra kenmerken",
+  "extraDetails": "Meer details",
+  "fullYear": "Volledig jaar",
+  "days": "{{count}} dag(en)",
+  "months": "{{count}} maand(en)",
+  "priceTotal": "Totaal: {{amount}} JOD",
+  "installmentAtSignup": "{{amount}} JOD bij inschrijving",
+  "installmentMonthly": "{{amount}} JOD per maand × {{months}} mnd.",
+  "badges": {
+    "mostPopular": "Meest populair",
+    "premium": "Premiumpakket"
+  },
+  "sale": {
+    "percentOff": "{{percent}}% KORTING",
+    "sectionTitle": "Pakketkorting",
+    "enable": "Korting inschakelen",
+    "percentage": "Kortingspercentage (%)",
+    "reason": "Reden korting (Arabisch)",
+    "reasonEn": "Reden korting (Engels)",
+    "previewOriginal": "Oorspronkelijke prijs: {{amount}} JOD",
+    "previewPercent": "Korting: {{percent}}%",
+    "previewFinal": "Prijs na korting: {{amount}} JOD"
+  },
+  "tierLabels": {
+    "basic": "Basis",
+    "advance": "Gevorderd",
+    "premium": "Premium",
+    "popular": "Populair",
+    "proPlus": "Pro+",
+    "platinum": "Platina"
+  },
+  "activationFeeNote": {
+    "prefix": "Activeringskosten abonnement:",
+    "suffix": "eenmaal per jaar te betalen"
+  },
+  "currency": {
+    "jod": "JOD",
+    "equivalentJod": "Gelijk aan {{amount}}",
+    "checkoutChargedInJod": "De betaling wordt verwerkt in Jordaanse dinar (JOD)"
+  },
+  "freePlanActivationFeeNote": "Het pakket is gratis, maar de jaarlijkse activeringskosten van {{amount}} zijn verplicht.",
+  "activationFee": {
+    "paidSuccessTitle": "Activeringskosten betaald",
+    "paidSuccessMessage": "De activeringskosten zijn betaald.",
+    "cancelledTitle": "Betaling geannuleerd",
+    "cancelledMessage": "De betaling van de activeringskosten is niet voltooid."
+  },
+  "checkout": {
+    "paidSuccessTitle": "Betaling ontvangen",
+    "paidSuccessMessage": "Betaling op de server geverifieerd. Uw account wacht op activering door het bedrijf.",
+    "cancelledTitle": "Betaling geannuleerd",
+    "cancelledMessage": "De betaling is niet voltooid.",
+    "verifyFailedTitle": "Betaling kon niet worden geverifieerd",
+    "verifyFailedMessage": "Er is geen Stripe-sessie-ID ontvangen. Wacht even en vernieuw de pagina, of bekijk de pakkettenpagina nadat de betalingswebhook is binnengekomen.",
+    "confirmPendingTitle": "Betaling nog niet bevestigd",
+    "confirmPendingMessage": "Wacht even en vernieuw de pagina, of controleer of de Stripe-webhook de server bereikt. Een betaling wordt niet alleen via de browser bevestigd."
+  },
+  "cta": {
+    "freelancersOnly": "Alleen voor freelancers",
+    "currentPlan": "Uw huidige pakket",
+    "lowerPlan": "Lager pakket",
+    "alreadySubscribed": "Al geabonneerd",
+    "upgrade": "Pakket upgraden",
+    "payActivationFee": "Activeringskosten betalen",
+    "autoActivated": "Automatisch geactiveerd",
+    "companyActivation": "Activering via het bedrijf",
+    "viewMembership": "Lidmaatschap bekijken",
+    "buyMembership": "Pakket kopen",
+    "continuePayment": "Betaling voortzetten",
+    "confirmingPayment": "Betaling wordt bevestigd",
+    "activateStarter": "Gratis pakket activeren",
+    "startNow": "Nu beginnen"
+  },
+  "checkoutErrors": {
+    "processing": "De betaling voor dit pakket wordt bevestigd. Vernieuw de pagina over enkele ogenblikken.",
+    "statusUnavailable": "We konden de betalingsstatus nu niet controleren. Probeer het zo meteen opnieuw.",
+    "providerError": "We konden de betaalprovider nu niet bereiken. Probeer het zo meteen opnieuw."
+  },
+  "membershipWait": {
+    "status": "Wacht op de eerste opdracht",
+    "startsOnFirstOrder": "Uw lidmaatschapsperiode start wanneer u uw eerste echte opdracht ontvangt."
+  },
+  "pages": {
+    "freelancers": {
+      "trustSimple": "Eenvoudige prijzen",
+      "trustNoFees": "Geen verborgen kosten",
+      "footnote": "Na het afsluiten van het abonnement wordt een contract ondertekend. Accountverificatie kost eenmalig {{amount}}, voor alle pakketten."
+    }
+  },
+  "cards": {
+    "free": {
+      "title": "Gratis pakket",
+      "description": "Abonnementsduur: een volledig jaar op het freelanceplatform",
+      "orderValue": "Opdrachtwaarde: 3 tot 7 JOD",
+      "activationRequirements": "Na afronding van de training en examens worden de resultaten via STUDYZHOUSE verstuurd. Wanneer het resultaat \"Geslaagd\" aangeeft, wordt uw account op het platform geactiveerd.",
+      "features": [
+        "Gratis training contentschrijven – niveau 1",
+        "Geen ondertekening van een contract vereist",
+        "Geen bezoek aan het kantoor van het bedrijf vereist",
+        "Geen directe begeleiding"
+      ]
+    },
+    "standard": {
+      "title": "Pakket van 50 JOD",
+      "description": "Abonnementsduur: een volledig jaar op het freelanceplatform",
+      "orderValue": "Opdrachtwaarde: 7 tot 20 JOD",
+      "paymentNotes": "Eenmalige betaling van 50 JOD bij het afsluiten van het abonnement.",
+      "offerLabel": "Abonnementskosten terugbetaald wanneer u uw eerste opdracht ontvangt (aanbieding geldig tot 30 september 2026)",
+      "activationRequirements": "Geactiveerd na voltooiing van de betaling en goedkeuring door het bedrijf; de looptijd start bij uw eerste geaccepteerde opdracht.",
+      "refundPolicy": "De abonnementskosten worden terugbetaald wanneer u uw eerste opdracht ontvangt (binnen de actieperiode).",
+      "features": [
+        "Gratis training contentschrijven – niveau 1",
+        "Gratis training contentschrijven – niveau 2",
+        "Gratis ontwerptraining",
+        "Ondertekening van het contract op het kantoor van het bedrijf",
+        "Begeleiding na afronding van niveau 1 en de start van niveau 2"
+      ]
+    },
+    "platinum": {
+      "title": "Platinapakket",
+      "description": "Diploma digitale freelancebedrijfsvoering — een volledig jaar op het platform",
+      "orderValue": "Opdrachtwaarde: 10 JOD en hoger",
+      "paymentNotes": "300 JOD bij inschrijving + 50 JOD per maand gedurende 12 maanden (600 JOD extra). Totale programmakosten 900 JOD.",
+      "installment": "300 JOD bij inschrijving · 50 JOD per maand × 12 maanden",
+      "activationRequirements": "Geactiveerd na de inschrijvingsbetaling (300 JOD) en goedkeuring door het bedrijf; de maandelijkse termijnen worden voorlopig buiten het platform bijgehouden.",
+      "refundPolicy": "Betaalde kosten worden pas terugbetaald nadat het werk aan het tweede abonnement (pakket van 50 JOD) is gestart.",
+      "features": [
+        "Diploma digitale freelancebedrijfsvoering",
+        "Training contentschrijven – niveau 1 en 2",
+        "Training grafisch ontwerp",
+        "Training programmeren met AI",
+        "Ondertekening van het contract op het kantoor van het bedrijf"
+      ]
+    }
+  }
+}

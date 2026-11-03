@@ -1,0 +1,59 @@
+{
+  "title": "Over ons",
+  "lead": "is uw platform voor succes als freelancer. Wij maken het voor getalenteerde freelancers eenvoudiger om mooie projecten te vinden en helpen bedrijven de juiste mensen aan te nemen. Wij zijn de brug tussen vaardigheden en kansen — voor een soepelere, succesvollere werkervaring voor iedereen.",
+  "hero": {
+    "title": "Over Orderz House",
+    "subtitle": "Uw platform voor succes als freelancer — wij verbinden talent met kansen en maken samenwerken eenvoudiger voor iedereen."
+  },
+  "vision": {
+    "title": "Onze visie",
+    "text": "Wereldwijd vooroplopen in innovatie op het gebied van freelancing, de toekomst van werken op afstand vormgeven en een wereld zonder grenzen voor talent bouwen.",
+    "tag": "Gedreven door innovatie"
+  },
+  "mission": {
+    "title": "Onze missie",
+    "text": "Freelancers en bedrijven versterken met slimme, veilige en naadloze samenwerking die wereldwijd succes en innovatie stimuleert.",
+    "tag": "Gericht op excellentie"
+  },
+  "values": {
+    "title": "Onze kernwaarden",
+    "subtitle": "De principes die richting geven aan alles wat wij doen en onze toewijding aan excellentie weerspiegelen.",
+    "excellence": {
+      "title": "Uitmuntende service",
+      "body": "Wij streven naar de hoogste kwaliteitsnormen in elk project en leveren resultaten die de verwachtingen overtreffen."
+    },
+    "trust": {
+      "title": "Transparantie en vertrouwen",
+      "body": "Wij bouwen duurzame relaties op door eerlijke communicatie en betrouwbare samenwerkingen."
+    },
+    "innovation": {
+      "title": "Innovatie mogelijk maken",
+      "body": "Wij stimuleren creativiteit en leveren geavanceerde oplossingen die de groei van bedrijven ondersteunen."
+    },
+    "human": {
+      "title": "Technologie met de mens centraal",
+      "body": "Wij zetten technologie in om in de eerste plaats mensen te dienen — niet andersom."
+    }
+  },
+  "howWeWork": {
+    "title": "Hoe wij werken",
+    "subtitle": "Een eenvoudig proces in 4 stappen dat talent en kansen naadloos verbindt.",
+    "stepsAria": "Werkstappen",
+    "step1": {
+      "title": "Aanmelden als freelancer",
+      "text": "Maak uw account en profiel aan om uw vaardigheden te laten zien."
+    },
+    "step2": {
+      "title": "Werk vinden",
+      "text": "Bekijk projecten die bij u passen en dien uw voorstellen in."
+    },
+    "step3": {
+      "title": "Het project opleveren",
+      "text": "Voer het werk uit met hoge kwaliteit en op tijd."
+    },
+    "step4": {
+      "title": "Betaald krijgen",
+      "text": "Ontvang uw verdiensten veilig na goedkeuring door de klant."
+    }
+  }
+}

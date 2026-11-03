@@ -4,6 +4,9 @@
  * realtime | current_status | estimate | lifetime_ranking
  */
 
+import { pt } from "../../../i18n/activeLocale";
+import { legacyArabicUiLocale } from "../../../admin/adminLocale";
+
 export const SCOPE_LABELS = {
   platform_total: "analysis.scope.platformTotal",
   current_status: "analysis.scope.currentStatus",
@@ -46,7 +49,7 @@ export function periodScopeLabel(period) {
 }
 
 export function periodBannerText(period) {
-  return `يتم عرض البيانات بناءً على: ${periodScopeLabel(period)}`;
+  return pt("platformAdmin.analytics.periodBanner", { label: periodScopeLabel(period) }, legacyArabicUiLocale());
 }
 
 /** Hero strip KPI scopes (fixed, not filtered by period picker). */

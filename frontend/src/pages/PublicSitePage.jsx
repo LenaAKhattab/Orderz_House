@@ -3,6 +3,7 @@ import usePublicSitePage from "../hooks/usePublicSitePage";
 import RichContent from "../components/content/RichContent";
 import { useTranslation } from "../i18n/LanguageProvider";
 import { pickLocalizedPlatformCopy } from "../lib/i18n/platformContentLocale";
+import { isNewLocale, normalizeSystemContentSource, translateSystemContent } from "../i18n/systemContent.js";
 import "../styles/publicSitePage.css";
 
 /**
@@ -45,9 +46,20 @@ export default function PublicSitePage({ slug }) {
     );
   }
 
+  const contentEn = page?.contentEn || page?.content_en;
   const title = pickLocalizedPlatformCopy(page?.title, page?.titleEn || page?.title_en, locale);
-  const content = pickLocalizedPlatformCopy(page?.content, page?.contentEn || page?.content_en, locale);
+  const content = pickLocalizedPlatformCopy(page?.content, contentEn, locale);
+  // English never falls back to the Arabic body: a missing English version is announced instead.
   const missingEnglish = locale === "en" && !content;
+  // German / Dutch / Romanian: require a translation-memory hit for the body. Legal/policy slugs must not
+  // silently show English/Arabic obligations under a DE/NL/RO chrome — block the body until translated.
+  const contentSource = normalizeSystemContentSource(contentEn) || normalizeSystemContentSource(page?.content);
+  const missingTranslation =
+    isNewLocale(locale) && Boolean(contentSource) && translateSystemContent(contentSource, locale) == null;
+  const LEGAL_SLUGS = new Set(["privacy-policy", "terms-conditions", "guarantee"]);
+  const blockUntranslatedBody = missingTranslation && LEGAL_SLUGS.has(String(slug || ""));
+  const bodyText = isNewLocale(locale) && contentSource ? translateSystemContent(contentSource, locale) : content;
+  const displayBody = blockUntranslatedBody ? null : bodyText ?? content;
 
   return (
     <main className="container page-content public-site-page">
@@ -57,7 +69,8 @@ export default function PublicSitePage({ slug }) {
         </h1>
         <div className="public-site-page__content">
           {missingEnglish ? <p>{t(`${ps}.englishUnavailable`)}</p> : null}
-          <RichContent text={content} />
+          {missingTranslation ? <p>{t("platformPages.publicSite.translationUnavailable")}</p> : null}
+          {displayBody ? <RichContent text={displayBody} /> : null}
         </div>
       </section>
     </main>

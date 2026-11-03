@@ -1,0 +1,77 @@
+{
+  "listSeparator": ", ",
+  "durationUnits": {
+    "day": "day",
+    "day_plural": "days",
+    "hour": "hour",
+    "hour_plural": "hours",
+    "minute": "minute",
+    "minute_plural": "minutes"
+  },
+  "plans": {
+    "trainingPrefix": "Training: ",
+    "subscriptionDurationDays": "Subscription duration: {{days}} days",
+    "orderValue": {
+      "range": "Order value: from {{min}} to {{max}} JOD",
+      "fromMin": "Order value: from {{min}} JOD and above",
+      "upToMax": "Order value: up to {{max}} JOD"
+    },
+    "installment": {
+      "upfront": "{{amount}} JOD at signup",
+      "monthly": "{{amount}} JOD monthly × {{months}} months"
+    },
+    "loadingPlansSr": "Loading plans"
+  },
+  "orderDetailsStatus": {
+    "status": {
+      "published": "Published",
+      "open_for_freelancers": "Open to freelancers",
+      "open_for_bids": "Open for bids",
+      "assigned": "Assigned",
+      "in_progress": "In progress",
+      "ready_for_work": "Ready for work",
+      "pending_payment": "Awaiting payment",
+      "pending_client_review": "Awaiting client review",
+      "completed": "Completed",
+      "cancelled": "Cancelled",
+      "closed": "Closed",
+      "draft": "Draft",
+      "archived": "Archived"
+    },
+    "awaitingApproval": "Awaiting approval"
+  },
+  "openOrders": {
+    "projectType": {
+      "fixed": "Fixed price",
+      "bidding": "Bidding"
+    },
+    "noDescription": "No description"
+  },
+  "heroStats": {
+    "hints": {
+      "zeroTrafficViews": "No views recorded yet",
+      "zeroTrafficActive": "No activity recorded in the last 7 days",
+      "dbUnavailable": "Platform statistics are temporarily unavailable",
+      "devTrackingDisabled": "Tracking is disabled in the development environment"
+    }
+  },
+  "silverConversion": {
+    "description": {
+      "trialExpired": "Your work trial has ended. Upgrade to Silver to keep applying for opportunities.",
+      "workCapReached": "You have reached the trial limit for accepted work. To continue, move to Silver.",
+      "default": "You have tried the real work cycle on the platform. To continue after the trial and reach more opportunities, move to the Silver plan."
+    }
+  },
+  "auth": {
+    "unknownInitial": "?"
+  },
+  "toast": {
+    "regionAria": "Notifications"
+  },
+  "orders": {
+    "typeAndPriceAria": "order type and price"
+  },
+  "ads": {
+    "saleStickerOff": "OFF"
+  }
+}

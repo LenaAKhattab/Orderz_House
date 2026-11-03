@@ -1,4 +1,5 @@
 import { formatHomePublicStat } from "../../utils/homePublicStatFormat.js";
+import { localeFromEnFlag, pt } from "../../i18n/activeLocale.js";
 
 /** @deprecated Demo fallbacks removed from hero display — kept for tests/legacy imports only. */
 export const FALLBACK_DEMO = {
@@ -9,14 +10,20 @@ export const FALLBACK_DEMO = {
   open: 62,
 };
 
-const REASON_HINTS = {
+/** Catalog keys under `platformComponents.heroStats.hints` (null = no hint). */
+const REASON_HINT_KEYS = {
   toggle_off: null,
   ok: null,
-  zero_traffic_views: "لا مشاهدات مسجّلة بعد",
-  zero_traffic_active: "لا نشاط مسجّل خلال 7 أيام",
-  db_unavailable: "إحصائيات المنصة غير متاحة مؤقتاً",
-  dev_tracking_disabled: "التتبع معطّل في بيئة التطوير",
+  zero_traffic_views: "zeroTrafficViews",
+  zero_traffic_active: "zeroTrafficActive",
+  db_unavailable: "dbUnavailable",
+  dev_tracking_disabled: "devTrackingDisabled",
 };
+
+function reasonHint(reason, locale) {
+  const key = Object.prototype.hasOwnProperty.call(REASON_HINT_KEYS, reason) ? REASON_HINT_KEYS[reason] : null;
+  return key ? pt(`platformComponents.heroStats.hints.${key}`, undefined, locale) : null;
+}
 
 /**
  * Valid public hero count: finite number, integer, >= 0.
@@ -126,13 +133,18 @@ function shouldHideZeroVisitors(payload, key) {
   return false;
 }
 
-export function resolveAnalyticsHint(payload, key) {
+/**
+ * @param {string} [locale] defaults to Arabic for the Arabic / English UI (unchanged) and to the active locale
+ *   for German / Dutch / Romanian
+ */
+export function resolveAnalyticsHint(payload, key, locale = localeFromEnFlag(false)) {
   const reason = reasonForKey(payload, key);
   if (reason === "zero_traffic") {
-    return key === "views" ? REASON_HINTS.zero_traffic_views : REASON_HINTS.zero_traffic_active;
+    return reasonHint(key === "views" ? "zero_traffic_views" : "zero_traffic_active", locale);
   }
-  if (reason && REASON_HINTS[reason]) return REASON_HINTS[reason];
-  if (payload?.analyticsDegraded) return REASON_HINTS.db_unavailable;
+  const hint = reason ? reasonHint(reason, locale) : null;
+  if (hint) return hint;
+  if (payload?.analyticsDegraded) return reasonHint("db_unavailable", locale);
   return null;
 }
 

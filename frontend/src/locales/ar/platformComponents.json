@@ -1,0 +1,77 @@
+{
+  "listSeparator": "، ",
+  "durationUnits": {
+    "day": "يوم",
+    "day_plural": "أيام",
+    "hour": "ساعة",
+    "hour_plural": "ساعات",
+    "minute": "دقيقة",
+    "minute_plural": "دقائق"
+  },
+  "plans": {
+    "trainingPrefix": "تدريب: ",
+    "subscriptionDurationDays": "مدة الاشتراك: {{days}} يوم",
+    "orderValue": {
+      "range": "قيمة الطلبات: من {{min}} إلى {{max}} د.أ",
+      "fromMin": "قيمة الطلبات: من {{min}} د.أ وأكثر",
+      "upToMax": "قيمة الطلبات: حتى {{max}} د.أ"
+    },
+    "installment": {
+      "upfront": "{{amount}} د.أ عند الاشتراك",
+      "monthly": "{{amount}} د.أ شهرياً × {{months}} شهر"
+    },
+    "loadingPlansSr": "Loading plans"
+  },
+  "orderDetailsStatus": {
+    "status": {
+      "published": "منشور",
+      "open_for_freelancers": "مفتوح للمستقلين",
+      "open_for_bids": "مفتوح للعروض",
+      "assigned": "مسند",
+      "in_progress": "قيد التنفيذ",
+      "ready_for_work": "جاهز للعمل",
+      "pending_payment": "بانتظار الدفع",
+      "pending_client_review": "بانتظار مراجعة العميل",
+      "completed": "مكتمل",
+      "cancelled": "ملغى",
+      "closed": "مغلق",
+      "draft": "مسودة",
+      "archived": "مؤرشف"
+    },
+    "awaitingApproval": "بانتظار الاعتماد"
+  },
+  "openOrders": {
+    "projectType": {
+      "fixed": "سعر ثابت",
+      "bidding": "مزايدة"
+    },
+    "noDescription": "لا يوجد وصف"
+  },
+  "heroStats": {
+    "hints": {
+      "zeroTrafficViews": "لا مشاهدات مسجّلة بعد",
+      "zeroTrafficActive": "لا نشاط مسجّل خلال 7 أيام",
+      "dbUnavailable": "إحصائيات المنصة غير متاحة مؤقتاً",
+      "devTrackingDisabled": "التتبع معطّل في بيئة التطوير"
+    }
+  },
+  "silverConversion": {
+    "description": {
+      "trialExpired": "انتهت تجربة العمل. يمكنك الترقية إلى Silver للاستمرار في التقديم على الفرص.",
+      "workCapReached": "لقد وصلت إلى الحد التجريبي للأعمال المقبولة. للمتابعة، انتقل إلى Silver.",
+      "default": "لقد جرّبت دورة العمل الحقيقية داخل المنصة. للمتابعة بعد التجربة والوصول إلى فرص أكثر، انتقل إلى باقة Silver."
+    }
+  },
+  "auth": {
+    "unknownInitial": "؟"
+  },
+  "toast": {
+    "regionAria": "Notifications"
+  },
+  "orders": {
+    "typeAndPriceAria": "order type and price"
+  },
+  "ads": {
+    "saleStickerOff": "OFF"
+  }
+}

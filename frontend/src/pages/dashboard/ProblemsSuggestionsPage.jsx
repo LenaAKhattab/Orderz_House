@@ -42,6 +42,7 @@ function toLegacyCategoryOptions() {
     key: opt.value,
     label: opt.ar,
     labelEn: opt.en,
+    labelKey: opt.labelKey,
     isLegacyType: true,
   }));
 }
@@ -302,7 +303,7 @@ export default function ProblemsSuggestionsPage() {
                         onChange={() => onCategoryChange(cat.id)}
                       />
                       <span className="ps-feedback-type-option__text">
-                        {useLegacyTypes && locale === "en" && cat.labelEn ? cat.labelEn : cat.label}
+                        {useLegacyTypes && cat.labelKey ? t(cat.labelKey) : cat.label}
                       </span>
                     </label>
                   ))}

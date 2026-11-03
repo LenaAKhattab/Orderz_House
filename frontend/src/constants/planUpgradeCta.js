@@ -2,6 +2,7 @@
  * Phase A10 — Plan upgrade CTA helpers (frontend).
  * Only for plan/tier/value locks — not verification, Bids, Bildazo, training, or campaign pauses.
  */
+import { ctFromEnFlag } from "./constantsI18n.js";
 
 export const PLAN_UPGRADE_DEFAULT_ROUTE = "/dashboard/freelancer/plans";
 
@@ -66,19 +67,21 @@ export function normalizeRequiredTierCode(raw) {
   return code;
 }
 
-export function formatRequiredTierLabel(tierCode, { isEn = false } = {}) {
+/** Plan names are never translated (Silver / Pro / Elite); the legacy `{ isEn }` option is accepted and ignored. */
+export function formatRequiredTierLabel(tierCode, _options = {}) {
   const code = normalizeRequiredTierCode(tierCode);
   if (!code) return null;
-  if (code === "silver") return isEn ? "Silver" : "Silver";
-  if (code === "pro") return isEn ? "Pro" : "Pro";
-  if (code === "elite") return isEn ? "Elite" : "Elite";
+  if (code === "silver") return "Silver";
+  if (code === "pro") return "Pro";
+  if (code === "elite") return "Elite";
   return code;
 }
 
-export function formatCourseRequiredTierHelper(tierCode, { isEn = false } = {}) {
+/** `locale` (optional) wins over the legacy `isEn` flag. */
+export function formatCourseRequiredTierHelper(tierCode, { isEn = false, locale } = {}) {
   const code = normalizeRequiredTierCode(tierCode);
   if (!code) return null;
-  return isEn ? "Available after upgrading your plan" : "متاحة بعد ترقية الباقة";
+  return ctFromEnFlag("planUpgradeCta.courseTierHelper", isEn, undefined, locale);
 }
 
 function normalizeReasonCode(reason) {
@@ -87,21 +90,22 @@ function normalizeReasonCode(reason) {
 
 /**
  * Compact + standard microcopy for plan locks.
+ * `locale` (optional) wins over the legacy `isEn` flag.
  * @returns {{ headline: string, action: string|null, button: string|null, requiredTierCode: string|null, mode: "upgrade"|"support" }}
  */
 export function buildPlanUpgradeCopy({
   requiredTierCode = null,
   reason = null,
   isEn = false,
+  locale = undefined,
 } = {}) {
   const code = normalizeReasonCode(reason);
   const tier = normalizeRequiredTierCode(requiredTierCode);
+  const tr = (key) => ctFromEnFlag(`planUpgradeCta.${key}`, isEn, undefined, locale);
 
   if (code === "INTERNAL_PLAN_CONFIGURATION") {
     return {
-      headline: isEn
-        ? "We couldn't verify your plan eligibility right now. Please contact support."
-        : "تعذر التحقق من أهلية خطتك حالياً. يرجى التواصل مع الدعم.",
+      headline: tr("internalConfigurationHeadline"),
       action: null,
       button: null,
       requiredTierCode: null,
@@ -111,25 +115,21 @@ export function buildPlanUpgradeCopy({
 
   if (code === "NO_ACTIVE_PLAN") {
     return {
-      headline: isEn
-        ? "Activate your plan to receive orders"
-        : "فعّل باقتك لاستلام الطلبات",
+      headline: tr("noActivePlanHeadline"),
       action: null,
-      button: isEn ? "View plans" : "عرض الباقات",
+      button: tr("viewPlans"),
       requiredTierCode: null,
       mode: "upgrade",
     };
   }
 
   if (code === "COURSE_PLAN_UPGRADE_REQUIRED") {
-    const tierHelper = formatCourseRequiredTierHelper(requiredTierCode, { isEn });
+    const tierHelper = formatCourseRequiredTierHelper(requiredTierCode, { isEn, locale });
     return {
-      headline: isEn
-        ? "This course is available on higher plans"
-        : "هذه الدورة متاحة لباقات أعلى",
+      headline: tr("courseHeadline"),
       subline: tierHelper,
       action: null,
-      button: isEn ? "Upgrade plan" : "ترقية الباقة",
+      button: tr("upgradePlan"),
       requiredTierCode: tier,
       mode: "upgrade",
     };
@@ -137,11 +137,9 @@ export function buildPlanUpgradeCopy({
 
   // PLAN_TOO_LOW and generic plan locks
   return {
-    headline: isEn
-      ? "This order's value exceeds your current plan limit"
-      : "قيمة هذا الطلب أعلى من حد باقتك الحالية",
+    headline: tr("orderValueExceedsHeadline"),
     action: null,
-    button: isEn ? "Upgrade plan" : "ترقية الباقة",
+    button: tr("upgradePlan"),
     requiredTierCode: tier,
     mode: "upgrade",
   };

@@ -1,5 +1,12 @@
 import { formatInt, formatMoneyJod } from "./superAdminHomeBundleUi";
 import { SCOPE_LABELS } from "./dashboardMetricScope";
+import { pt } from "../../../i18n/activeLocale";
+import { legacyArabicUiLocale } from "../../../admin/adminLocale";
+
+/** Copy was Arabic in both AR and EN UIs (kept); German / Dutch / Romanian get their own. */
+function forecastLabel(key) {
+  return pt(`platformAdmin.analytics.forecasts.${key}`, undefined, legacyArabicUiLocale());
+}
 
 /**
  * Linear month-end projection from month-to-date actuals.
@@ -37,7 +44,7 @@ export function buildForecasts({ intelligence, periodMetrics }) {
   if (ordersMtd > 0) {
     forecasts.push({
       id: "orders",
-      label: "طلبات",
+      label: forecastLabel("orders"),
       estimate: Math.round(ordersMtd * factor),
       unit: "count",
     });
@@ -46,7 +53,7 @@ export function buildForecasts({ intelligence, periodMetrics }) {
   if (subsMtd > 0) {
     forecasts.push({
       id: "subscriptions",
-      label: "اشتراكات جديدة",
+      label: forecastLabel("subscriptions"),
       estimate: Math.round(subsMtd * factor),
       unit: "count",
     });
@@ -55,19 +62,20 @@ export function buildForecasts({ intelligence, periodMetrics }) {
   if (revenueMtd > 0) {
     forecasts.push({
       id: "revenue",
-      label: "إيرادات",
+      label: forecastLabel("revenue"),
       estimate: Math.round(revenueMtd * factor * 100) / 100,
       unit: "money",
     });
   }
 
+  const loc = legacyArabicUiLocale();
   return forecasts.map((f) => ({
     ...f,
     scopeLabel: SCOPE_LABELS.estimate_month,
     isEstimate: true,
     display:
       f.unit === "money"
-        ? formatMoneyJod(f.estimate)
-        : `${formatInt(f.estimate)} ${f.label}`,
+        ? formatMoneyJod(f.estimate, loc)
+        : `${formatInt(f.estimate, loc)} ${f.label}`,
   }));
 }

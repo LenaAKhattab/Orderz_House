@@ -1,0 +1,249 @@
+{
+  "errors": {
+    "operationFailed": "Die Aktion konnte nicht ausgeführt werden. Bitte versuchen Sie es erneut.",
+    "loadPagesFailed": "Seiten konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
+    "noServerUrl": "Der Server hat keine URL zurückgegeben.",
+    "imageUploadFailed": "Hochladen des Bildes fehlgeschlagen.",
+    "enterQuestionAndAnswer": "Geben Sie Frage und Antwort ein.",
+    "enterBlockTitle": "Geben Sie einen Titel für den Block ein.",
+    "enterTitleOrText": "Geben Sie einen Titel oder Text ein.",
+    "addImageOrUrl": "Fügen Sie ein Bild oder eine URL hinzu.",
+    "addTitleTextOrImage": "Fügen Sie einen Titel, Text oder ein Bild hinzu.",
+    "enterPageTitle": "Geben Sie den Seitentitel ein."
+  },
+  "common": {
+    "close": "Schließen",
+    "cancel": "Abbrechen",
+    "add": "Hinzufügen",
+    "edit": "Bearbeiten",
+    "delete": "Löschen",
+    "retry": "Erneut versuchen",
+    "saving": "Wird gespeichert…",
+    "saveChanges": "Änderungen speichern",
+    "saveEdit": "Änderung speichern",
+    "saveTitle": "Titel speichern",
+    "visible": "Sichtbar",
+    "hidden": "Ausgeblendet",
+    "visiblePage": "Sichtbar",
+    "hiddenPage": "Ausgeblendet",
+    "show": "Anzeigen",
+    "hide": "Ausblenden",
+    "busy": "Wird ausgeführt…",
+    "back": "Zurück",
+    "backToFooterSections": "← Zurück zu den Fußzeilenbereichen",
+    "yes": "Ja",
+    "no": "Nein",
+    "published": "Veröffentlicht",
+    "draft": "Entwurf",
+    "enabled": "Aktiviert",
+    "disabled": "Deaktiviert",
+    "moveUp": "Nach oben",
+    "moveDown": "Nach unten",
+    "showFieldOnSite": "{{label}} auf der Website anzeigen",
+    "loadingSettings": "Einstellungen werden geladen…",
+    "loadingPages": "Seiten werden geladen…",
+    "loadingQuestions": "Fragen werden geladen…",
+    "loadingContent": "Inhalte werden geladen…",
+    "loadingPage": "Seite wird geladen…",
+    "loadingSectionStatus": "Bereichsstatus wird geladen…",
+    "editSection": "Bereich bearbeiten",
+    "editSectionShort": "Bearbeiten"
+  },
+  "imagePicker": {
+    "uploading": "Wird hochgeladen…",
+    "changeImage": "Bild ändern",
+    "uploadImage": "Bild hochladen",
+    "remove": "Entfernen",
+    "pasteUrlLabel": "Oder Bild-URL einfügen"
+  },
+  "blockTypes": {
+    "title": "Titel",
+    "text": "Text",
+    "image": "Bild",
+    "text_image": "Text + Bild",
+    "content": "Inhalt"
+  },
+  "howItWorksPages": {
+    "freelancer": "So funktioniert es für Freelancer",
+    "client": "So erteilen Kunden Aufträge"
+  },
+  "sections": {
+    "faq": {
+      "title": "FAQ",
+      "description": "Fragen und Antworten auf der Startseite bearbeiten",
+      "editLabel": "Bereich bearbeiten"
+    },
+    "howItWorks": {
+      "title": "So funktioniert’s",
+      "description": "Seiten „So funktioniert’s“ für Freelancer und Kunden bearbeiten",
+      "editLabel": "Bereich bearbeiten"
+    },
+    "sitePages": {
+      "title": "Öffentliche Seiten",
+      "description": "Öffentliche Website-Seiten bearbeiten (Datenschutz, AGB, Hilfecenter und mehr)",
+      "editLabel": "Bereich bearbeiten"
+    },
+    "footerHub": {
+      "title": "Fußzeile der Website bearbeiten",
+      "description": "Kontaktdaten, Geschäftszeiten und den App-Download-Bereich in der Fußzeile der Website bearbeiten.",
+      "editLabel": "Bereich bearbeiten"
+    }
+  },
+  "footerSections": {
+    "contact": {
+      "title": "Kontaktieren Sie uns",
+      "description": "Telefon, E-Mail, WhatsApp und Standort bearbeiten.",
+      "editLabel": "Bearbeiten"
+    },
+    "workingHours": {
+      "title": "Geschäftszeiten",
+      "description": "Den im Bereich „Geschäftszeiten“ angezeigten Text bearbeiten.",
+      "editLabel": "Bearbeiten"
+    },
+    "appDownloads": {
+      "title": "App-Download",
+      "description": "Titel des App-Download-Bereichs und Links zu App Store / Google Play bearbeiten.",
+      "editLabel": "Bearbeiten"
+    },
+    "contactCenter": {
+      "title": "Kontaktcenter",
+      "description": "Text und Link des Kontaktcenters sowie die Sichtbarkeitsoptionen in der Fußzeile bearbeiten.",
+      "editLabel": "Bearbeiten"
+    }
+  },
+  "editWebsiteHub": {
+    "pageTitle": "Website bearbeiten",
+    "pageDescription": "Wählen Sie einen Bereich des öffentlichen Website-Inhalts zum Bearbeiten.",
+    "sectionTitle": "Bearbeitbare Website-Bereiche"
+  },
+  "faq": {
+    "pageTitle": "FAQ",
+    "pageDescription": "Fragen und Antworten im FAQ-Bereich der Startseite verwalten.",
+    "sectionTitle": "Fragenliste",
+    "toolbarHint": "Änderungen erscheinen sofort im FAQ-Bereich der Startseite.",
+    "addQuestion": "Frage hinzufügen",
+    "emptyTitle": "Noch keine Fragen",
+    "emptyDescription": "Fügen Sie den ersten FAQ-Eintrag für die Startseite hinzu.",
+    "modalEditTitle": "Frage bearbeiten",
+    "modalAddTitle": "Frage hinzufügen",
+    "fieldQuestion": "Frage (Arabisch)",
+    "fieldQuestionEn": "Frage (Englisch)",
+    "fieldAnswer": "Antwort (Arabisch)",
+    "fieldAnswerEn": "Antwort (Englisch)",
+    "deleteConfirm": "Frage löschen: „{{preview}}…“?"
+  },
+  "howItWorksHub": {
+    "pageTitle": "So funktioniert’s",
+    "pageDescription": "Seiten „So funktioniert’s“ für Freelancer und Kunden verwalten.",
+    "sectionTitle": "Seiten „So funktioniert’s“"
+  },
+  "howItWorksEditor": {
+    "pageDescription": "Seiteninhalte hinzufügen, bearbeiten und neu anordnen. Das Layout ist fest und kann hier nicht geändert werden.",
+    "unknownPage": "Unbekannte Seite.",
+    "pageSettingsTitle": "Seiteneinstellungen",
+    "pageTitleLabel": "Seitentitel",
+    "contentSectionTitle": "Seiteninhalt",
+    "contentHint": "Fügen Sie Inhaltsblöcke hinzu (Titel, Text, Bild, Text + Bild) und ordnen Sie sie so an, wie Besucher sie sehen.",
+    "addContent": "Inhalt hinzufügen",
+    "emptyTitle": "Noch kein Inhalt",
+    "emptyDescription": "Fügen Sie den ersten Inhaltsblock für diese Seite hinzu.",
+    "modalEditTitle": "Inhalt bearbeiten",
+    "modalAddTitle": "Inhalt hinzufügen",
+    "contentType": "Inhaltstyp",
+    "fieldTitle": "Titel (Arabisch)",
+    "fieldTitleEn": "Titel (Englisch)",
+    "fieldText": "Text (Arabisch)",
+    "fieldTextEn": "Text (Englisch)",
+    "fieldImage": "Bild",
+    "deleteConfirm": "Löschen: „{{preview}}“?"
+  },
+  "footerHub": {
+    "pageTitle": "Fußzeile der Website bearbeiten",
+    "pageDescription": "Wählen Sie einen Bereich der Fußzeile zum Bearbeiten.",
+    "sectionTitle": "Bereiche der Fußzeile"
+  },
+  "footerContact": {
+    "pageTitle": "Kontaktieren Sie uns",
+    "pageDescription": "Bearbeiten Sie die in der Fußzeile der Website angezeigten Kontaktdaten.",
+    "sectionTitle": "Kontaktdaten",
+    "toastSaved": "Kontaktdaten erfolgreich gespeichert.",
+    "showSectionInFooter": "Bereich in der Fußzeile anzeigen",
+    "showContactSectionInFooter": "Bereich „Kontaktieren Sie uns“ in der Fußzeile anzeigen",
+    "phone": "Telefonnummer",
+    "email": "E-Mail",
+    "whatsapp": "WhatsApp-Nummer",
+    "location": "Standort"
+  },
+  "footerHours": {
+    "pageTitle": "Geschäftszeiten",
+    "pageDescription": "Bearbeiten Sie Titel und Text der Geschäftszeiten in der Fußzeile der Website.",
+    "sectionTitle": "Geschäftszeiten",
+    "toastSaved": "Geschäftszeiten erfolgreich gespeichert.",
+    "showSectionInFooter": "Bereich in der Fußzeile anzeigen",
+    "showWorkingHoursSectionInFooter": "Bereich „Geschäftszeiten“ in der Fußzeile anzeigen",
+    "sectionTitleField": "Bereichstitel",
+    "textField": "Text",
+    "showHoursTextOnSite": "Text der Geschäftszeiten auf der Website anzeigen"
+  },
+  "footerApps": {
+    "pageTitle": "App-Download",
+    "pageDescription": "Bearbeiten Sie den Titel des App-Download-Bereichs und die Store-Links in der Fußzeile der Website.",
+    "sectionTitle": "Einstellungen für den App-Download",
+    "toastSaved": "Einstellungen für den App-Download erfolgreich gespeichert.",
+    "showSectionInFooter": "Bereich in der Fußzeile anzeigen",
+    "showAppDownloadsSectionInFooter": "Bereich „App-Download“ in der Fußzeile anzeigen",
+    "sectionTitleField": "Bereichstitel",
+    "sectionTitleHint": "Wird in der Fußzeile der Website angezeigt.",
+    "showSectionTitleOnSite": "Bereichstitel auf der Website anzeigen",
+    "googlePlayUrl": "Link zu Google Play",
+    "showGooglePlayOnSite": "Schaltfläche für Google Play auf der Website anzeigen",
+    "appStoreUrl": "Link zum App Store",
+    "showAppStoreOnSite": "Schaltfläche für den App Store auf der Website anzeigen"
+  },
+  "footerContactCenter": {
+    "pageTitle": "Kontaktcenter",
+    "pageDescription": "Bearbeiten Sie die Inhalte des Kontaktcenters in der Fußzeile der Website.",
+    "sectionTitle": "Kontaktcenter",
+    "toastSaved": "Kontaktcenter erfolgreich gespeichert.",
+    "showContactCenterInFooter": "Kontaktcenter in der Fußzeile anzeigen",
+    "helperTextLabel": "Hilfetext",
+    "showHelperText": "Hilfetext anzeigen",
+    "buttonTextLabel": "Schaltflächentext",
+    "showContactCenterButton": "Schaltfläche des Kontaktcenters anzeigen",
+    "buttonBehaviorHint": "Die Schaltfläche des Kontaktcenters führt angemeldete Nutzer je nach Rolle immer zur Seite für Probleme und Vorschläge und Besucher zur Anmeldung."
+  },
+  "sitePages": {
+    "pageTitle": "Öffentliche Seiten",
+    "pageDescription": "Öffentliche Website-Seiten verwalten (Fußzeile und mobiles Menü).",
+    "sectionTitle": "Seitenliste",
+    "toolbarHint": "Veröffentlichte Seiten erscheinen je nach Einstellung unter „Wichtige Links“ in der Fußzeile (Desktop) und im mobilen Menü.",
+    "tableTitle": "Titel",
+    "tableLink": "Link",
+    "tablePublish": "Veröffentlichung",
+    "tableMobile": "Mobil",
+    "tableFooter": "Fußzeile",
+    "tableAction": "Aktion"
+  },
+  "sitePageEdit": {
+    "editPageFallback": "Seite bearbeiten",
+    "pageDescription": "Bearbeiten Sie den Seiteninhalt und die Sichtbarkeit in der Fußzeile und im mobilen Menü.",
+    "sectionTitle": "Seiteninhalt",
+    "toastSaved": "Seite gespeichert.",
+    "pagePathLabel": "Seiten-URL:",
+    "pageTitle": "Seitentitel (Arabisch)",
+    "pageTitleEn": "Seitentitel (Englisch)",
+    "menuLabel": "Bezeichnung des Menülinks (Arabisch)",
+    "menuLabelEn": "Bezeichnung des Menülinks (Englisch)",
+    "sortOrder": "Anzeigereihenfolge",
+    "publishedToggle": "Veröffentlicht",
+    "showMobile": "Im mobilen Menü anzeigen",
+    "showFooter": "In der Fußzeile anzeigen",
+    "contentLabel": "Inhalt (Arabisch)",
+    "contentLabelEn": "Inhalt (Englisch)",
+    "contentHint": "Schreiben Sie reinen Text. Trennen Sie Absätze durch eine Leerzeile. Verwenden Sie ## vor einer Zwischenüberschrift.",
+    "seoOptional": "Optionale SEO-Einstellungen",
+    "metaTitle": "SEO-Titel (optional)",
+    "metaDescription": "SEO-Beschreibung (optional)",
+    "backToList": "Zurück zur Liste"
+  }
+}

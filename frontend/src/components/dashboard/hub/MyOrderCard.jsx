@@ -14,12 +14,14 @@ import { JodOrderBudgetDisplay } from "../../money/JodMoneyDisplay";
 import { orderStatusDisplayBadge } from "../../../utils/orderFlowUi";
 import { useTranslation } from "../../../i18n/LanguageProvider";
 import { fdashBadgeClassFromOh } from "./orderBadgeUi";
+import { pickIntlTag } from "../../../i18n/intlLocale";
+import { tPlural } from "../../../i18n/plural";
 
 function formatJoDate(value, locale) {
   if (!value) return null;
   const d = new Date(value);
   if (!Number.isFinite(d.getTime())) return null;
-  const intlLocale = locale === "en" ? "en-JO-u-nu-latn" : "ar-JO-u-nu-latn";
+  const intlLocale = pickIntlTag(locale, { ar: "ar-JO-u-nu-latn", en: "en-JO-u-nu-latn" });
   return new Intl.DateTimeFormat(intlLocale, { dateStyle: "medium" }).format(d);
 }
 
@@ -34,7 +36,7 @@ function deadlineHint(order, t, locale) {
   if (!Number.isFinite(end.getTime())) return { text: label, className: "" };
   const days = Math.ceil((end.getTime() - Date.now()) / 86400000);
   if (days < 0) return { text: `${label} · ${t("orders.card.overdue")}`, className: "fmo-order-row__stat-value--urgent" };
-  const daysLabel = t(days === 1 ? "orders.card.daysLeft" : "orders.card.daysLeft_plural", { count: days });
+  const daysLabel = tPlural(t, locale, "orders.card.daysLeft", days);
   if (days <= 3) return { text: `${label} · ${daysLabel}`, className: "fmo-order-row__stat-value--urgent" };
   return { text: `${label} · ${daysLabel}`, className: "" };
 }
@@ -86,7 +88,7 @@ export default function MyOrderCard({ order, detailsPath }) {
   const descriptionDir = resolveUserContentDir(description, dir);
   const filesLabel =
     filesCount > 0
-      ? t(filesCount === 1 ? "orders.card.files" : "orders.card.files_plural", { count: filesCount })
+      ? tPlural(t, locale, "orders.card.files", filesCount)
       : t("orders.card.noAttachments");
 
   const openDetails = () => navigate(path);

@@ -140,7 +140,8 @@
     "heldArticles": "مقالات محجوزة",
     "releases": "إطلاقات",
     "rejects": "رفض من المراجعة",
-    "empty": "لا يوجد نشاط محجوز مسجّل."
+    "empty": "لا يوجد نشاط محجوز مسجّل.",
+    "heldBidOrderLine": "طلب #{{orderId}} · {{amount}} د.أ"
   },
   "addWorkflow": {
     "title": "إضافة مستخدم إلى القيود",

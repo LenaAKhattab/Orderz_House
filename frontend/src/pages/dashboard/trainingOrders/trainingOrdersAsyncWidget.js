@@ -1,6 +1,8 @@
 import { getSafeApiErrorMessage } from "../../../utils/apiErrorMessage";
+import { pt } from "../../../i18n/activeLocale.js";
+
 export function widgetErrMsg(e) {
-  return getSafeApiErrorMessage(e, "حدث خطأ غير متوقع.");
+  return getSafeApiErrorMessage(e, pt("platformPages.trainingOrders.widgetError"));
 }
 
 /** @returns {Promise<{ status: 'success', data: T } | { status: 'error', error: string }>} */

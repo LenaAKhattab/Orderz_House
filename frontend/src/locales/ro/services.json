@@ -1,0 +1,37 @@
+{
+  "title": "Servicii",
+  "hero": {
+    "title": "Servicii",
+    "subtitle": "Explorați serviciile disponibile pe platformă — soluții integrate pentru nevoile afacerilor și ale proiectelor, de la redactare și editare până la dezvoltare și design."
+  },
+  "lede": "Explorați serviciile disponibile pe platformă — soluții integrate pentru nevoile afacerilor și ale proiectelor, de la redactare și editare până la dezvoltare și design.",
+  "benefitsAria": "Avantajele platformei",
+  "specialtiesWithin": "Specializări în",
+  "specialtiesAria": "Specializări",
+  "emptySubcategories": "Nu există subcategorii pentru această secțiune.",
+  "emptyDetails": "Nu există elemente detaliate.",
+  "card": {
+    "explore": "Explorați serviciul"
+  },
+  "categories": {
+    "programming": {
+      "description": "Servicii profesionale de programare pentru afaceri, cercetare academică și proiecte personale."
+    },
+    "design": {
+      "description": "Servicii profesionale de design pentru afaceri, lucrări academice și nevoi personale."
+    },
+    "content-writing": {
+      "description": "Servicii profesionale de redactare pentru afaceri, cercetare academică și nevoi personale."
+    }
+  },
+  "benefits": {
+    "qualityTitle": "Calitate garantată",
+    "qualityDesc": "Standarde înalte în fiecare serviciu",
+    "executionTitle": "Execuție profesională",
+    "executionDesc": "Specialiști în fiecare domeniu",
+    "communicationTitle": "Comunicare directă",
+    "communicationDesc": "Contact ușor și urmărire continuă",
+    "paymentTitle": "Plăți de încredere",
+    "paymentDesc": "Opțiuni de plată sigure și flexibile"
+  }
+}

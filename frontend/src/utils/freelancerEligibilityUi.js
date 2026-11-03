@@ -1,8 +1,21 @@
-/** Shown when pool take/bid is blocked until admin approves the subscription. */
-export const FREELANCER_ADMIN_APPROVAL_PENDING_MSG =
-  "بانتظار موافقة الإدارة قبل بدء استلام الطلبات";
+import { localeFromEnFlag, pt } from "../i18n/activeLocale.js";
+import { isNewLocale } from "../i18n/systemContent.js";
 
-export function getFreelancerOrderEligibilityMessage(eligibility, subscription = null, t = null) {
+const EL = "platformUtils.eligibility";
+
+/** Shown when pool take/bid is blocked until admin approves the subscription (Arabic, legacy export). */
+export const FREELANCER_ADMIN_APPROVAL_PENDING_MSG = pt(`${EL}.adminApprovalPending`, undefined, "ar");
+
+/**
+ * @param {string} [locale] copy locale for the untranslated path (no `t`): Arabic unless given; follows
+ *   German / Dutch / Romanian UIs.
+ */
+export function getFreelancerOrderEligibilityMessage(
+  eligibility,
+  subscription = null,
+  t = null,
+  locale = localeFromEnFlag(false),
+) {
   const reason = String(eligibility?.reason || "");
   const activationStatus = String(subscription?.activationStatus || "");
   const paymentStatus = String(subscription?.paymentStatus || "");
@@ -42,40 +55,41 @@ export function getFreelancerOrderEligibilityMessage(eligibility, subscription =
     return t("freelancerDashboard.status.eligibility.generic");
   }
 
+  const msg = (key) => pt(`${EL}.${key}`, undefined, locale);
+
   if (isCompanyPending || reason === "company_activation_pending") {
-    return FREELANCER_ADMIN_APPROVAL_PENDING_MSG;
+    return msg("adminApprovalPending");
   }
 
   if (reason === "no_subscription") {
-    return "فعّل باقتك أولاً لاستلام الطلبات.";
+    return msg("noSubscription");
   }
 
   if (reason === "status_inactive" || reason === "status_cancelled") {
-    return "اشتراكك غير نشط حالياً. يرجى الاشتراك أولاً.";
+    return msg("inactive");
   }
 
   if (reason === "payment_not_completed") {
-    return "تعذر تفعيل استلام الطلبات لأن حالة الدفع للاشتراك غير مكتملة.";
+    return msg("paymentIncomplete");
   }
 
   if (reason === "expired") {
-    return "اشتراكك منتهي. يرجى تجديد الاشتراك لاستلام الطلبات.";
+    return msg("expired");
   }
 
   if (reason === "activation_fee_unpaid") {
-    return "يجب دفع رسوم التفعيل السنوية قبل استلام الطلبات.";
+    return msg("activationFeeUnpaid");
   }
 
   if (reason === "account_hold_payment_failed") {
-    return (
-      eligibility?.freezeMessage?.message ||
-      "تعذر سحب رسوم الاشتراك الشهري البالغة 15 د.أ من البطاقة المسجلة، لذلك تم تجميد حسابك مؤقتًا. يرجى التواصل معنا لإعادة تفعيل الحساب."
-    );
+    // The API's freezeMessage is Arabic-only: German / Dutch / Romanian use the catalog copy.
+    if (isNewLocale(locale)) return msg("accountHoldPaymentFailed");
+    return eligibility?.freezeMessage?.message || msg("accountHoldPaymentFailed");
   }
 
   if (reason === "plan_configuration_error") {
-    return "تعذر التحقق من أهلية خطتك حالياً. يرجى التواصل مع الدعم.";
+    return msg("planConfigurationError");
   }
 
-  return "حسابك غير مؤهل حالياً لاستلام طلبات من المعرض (تحقق من الاشتراك).";
+  return msg("generic");
 }

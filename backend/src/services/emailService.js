@@ -1,8 +1,130 @@
 const { Resend } = require("resend");
 const { createAppError } = require("../utils/AppError");
+const { normalizeOtpEmailLocale, DEFAULT_OTP_EMAIL_LOCALE } = require("../utils/requestLocale");
 
 /** User-facing copy when OTP email cannot be delivered (never forward vendor text). */
 const SAFE_OTP_EMAIL_AR = "تعذر إرسال رسالة رمز التحقق. يمكنك إعادة إرسال الرمز من نفس الصفحة.";
+
+const OTP_STRONG = 'font-size: 1.25rem; letter-spacing: 0.2em;';
+
+/** @type {Record<string, { subject: string; dir: "rtl"|"ltr"; lines: (otp: string) => string[] }>} */
+const REGISTER_OTP_COPY = {
+  ar: {
+    subject: "رمز تأكيد الحساب — Orderz House",
+    dir: "rtl",
+    lines: (otp) => [
+      "أهلاً بك في Orderz House",
+      `رمز التحقق الخاص بك هو: <strong style="${OTP_STRONG}">${otp}</strong>`,
+      "صالح لمدة 10 دقائق.",
+    ],
+  },
+  en: {
+    subject: "Your Orderz House verification code",
+    dir: "ltr",
+    lines: (otp) => [
+      "Welcome to Orderz House",
+      `Your verification code is: <strong style="${OTP_STRONG}">${otp}</strong>`,
+      "It is valid for 10 minutes.",
+    ],
+  },
+  de: {
+    subject: "Ihr Bestätigungscode für Orderz House",
+    dir: "ltr",
+    lines: (otp) => [
+      "Willkommen bei Orderz House",
+      `Ihr Bestätigungscode lautet: <strong style="${OTP_STRONG}">${otp}</strong>`,
+      "Er ist 10 Minuten gültig.",
+    ],
+  },
+  nl: {
+    subject: "Uw verificatiecode voor Orderz House",
+    dir: "ltr",
+    lines: (otp) => [
+      "Welkom bij Orderz House",
+      `Uw verificatiecode is: <strong style="${OTP_STRONG}">${otp}</strong>`,
+      "De code is 10 minuten geldig.",
+    ],
+  },
+  ro: {
+    subject: "Codul dvs. de verificare Orderz House",
+    dir: "ltr",
+    lines: (otp) => [
+      "Bun venit la Orderz House",
+      `Codul dvs. de verificare este: <strong style="${OTP_STRONG}">${otp}</strong>`,
+      "Este valabil 10 minute.",
+    ],
+  },
+};
+
+/** @type {Record<string, { subject: string; dir: "rtl"|"ltr"; lines: (otp: string) => string[] }>} */
+const FORGOT_OTP_COPY = {
+  ar: {
+    subject: "رمز إعادة تعيين كلمة المرور — Orderz House",
+    dir: "rtl",
+    lines: (otp) => [
+      "استخدم هذا الرمز لإعادة تعيين كلمة المرور:",
+      `<strong style="${OTP_STRONG}">${otp}</strong>`,
+      "صالح لمدة 10 دقائق.",
+      "إذا لم تطلب ذلك، تجاهل الرسالة.",
+    ],
+  },
+  en: {
+    subject: "Your Orderz House password reset code",
+    dir: "ltr",
+    lines: (otp) => [
+      "Use this code to reset your password:",
+      `<strong style="${OTP_STRONG}">${otp}</strong>`,
+      "It is valid for 10 minutes.",
+      "If you did not request this, you can ignore this email.",
+    ],
+  },
+  de: {
+    subject: "Ihr Code zum Zurücksetzen des Passworts — Orderz House",
+    dir: "ltr",
+    lines: (otp) => [
+      "Verwenden Sie diesen Code, um Ihr Passwort zurückzusetzen:",
+      `<strong style="${OTP_STRONG}">${otp}</strong>`,
+      "Er ist 10 Minuten gültig.",
+      "Wenn Sie dies nicht angefordert haben, ignorieren Sie diese E-Mail.",
+    ],
+  },
+  nl: {
+    subject: "Uw code voor het resetten van uw wachtwoord — Orderz House",
+    dir: "ltr",
+    lines: (otp) => [
+      "Gebruik deze code om uw wachtwoord te resetten:",
+      `<strong style="${OTP_STRONG}">${otp}</strong>`,
+      "De code is 10 minuten geldig.",
+      "Als u dit niet heeft aangevraagd, kunt u deze e-mail negeren.",
+    ],
+  },
+  ro: {
+    subject: "Codul dvs. pentru resetarea parolei — Orderz House",
+    dir: "ltr",
+    lines: (otp) => [
+      "Utilizați acest cod pentru a vă reseta parola:",
+      `<strong style="${OTP_STRONG}">${otp}</strong>`,
+      "Este valabil 10 minute.",
+      "Dacă nu ați solicitat acest lucru, ignorați acest e-mail.",
+    ],
+  },
+};
+
+function buildOtpEmailHtml(copy, otpPlain) {
+  const paragraphs = copy.lines(String(otpPlain))
+    .map((line) => `<p>${line}</p>`)
+    .join("\n        ");
+  return `
+      <div dir="${copy.dir}" style="font-family: system-ui, sans-serif; line-height: 1.6;">
+        ${paragraphs}
+      </div>
+    `;
+}
+
+function resolveOtpCopy(map, locale) {
+  const loc = normalizeOtpEmailLocale(locale) || DEFAULT_OTP_EMAIL_LOCALE;
+  return map[loc] || map[DEFAULT_OTP_EMAIL_LOCALE];
+}
 
 const EMAIL_SEND_TIMEOUT_MS = Number(process.env.EMAIL_SEND_TIMEOUT_MS || 12000);
 
@@ -104,25 +226,21 @@ function wrapOtpEmailError(error) {
 /**
  * @param {string} email
  * @param {string} otpPlain six digits
+ * @param {string} [locale] ar | en | de | nl | ro (default ar)
  */
-async function sendRegisterOtpEmail(email, otpPlain) {
+async function sendRegisterOtpEmail(email, otpPlain, locale = DEFAULT_OTP_EMAIL_LOCALE) {
   if (mockSendOtp("register", email, otpPlain)) {
     return { id: "dev_console" };
   }
+  const copy = resolveOtpCopy(REGISTER_OTP_COPY, locale);
   const resend = getResend();
   try {
     const { data, error } = await withEmailSendTimeout(
       resend.emails.send({
         from: fromAddress(),
         to: [email],
-        subject: "رمز تأكيد الحساب",
-        html: `
-      <div dir="rtl" style="font-family: system-ui, sans-serif; line-height: 1.6;">
-        <p>أهلاً بك في أوردرز هاوس</p>
-        <p>رمز التحقق الخاص بك هو: <strong style="font-size: 1.25rem; letter-spacing: 0.2em;">${otpPlain}</strong></p>
-        <p>صالح لمدة 10 دقائق.</p>
-      </div>
-    `,
+        subject: copy.subject,
+        html: buildOtpEmailHtml(copy, otpPlain),
       }),
     );
     if (error) {
@@ -139,26 +257,21 @@ async function sendRegisterOtpEmail(email, otpPlain) {
 /**
  * @param {string} email
  * @param {string} otpPlain six digits
+ * @param {string} [locale] ar | en | de | nl | ro (default ar)
  */
-async function sendForgotPasswordOtpEmail(email, otpPlain) {
+async function sendForgotPasswordOtpEmail(email, otpPlain, locale = DEFAULT_OTP_EMAIL_LOCALE) {
   if (mockSendOtp("forgot_password", email, otpPlain)) {
     return { id: "dev_console" };
   }
+  const copy = resolveOtpCopy(FORGOT_OTP_COPY, locale);
   const resend = getResend();
   try {
     const { data, error } = await withEmailSendTimeout(
       resend.emails.send({
         from: fromAddress(),
         to: [email],
-        subject: "رمز إعادة تعيين كلمة المرور",
-        html: `
-      <div dir="rtl" style="font-family: system-ui, sans-serif; line-height: 1.6;">
-        <p>استخدم هذا الرمز لإعادة تعيين كلمة المرور:</p>
-        <p><strong style="font-size: 1.25rem; letter-spacing: 0.2em;">${otpPlain}</strong></p>
-        <p>صالح لمدة 10 دقائق.</p>
-        <p>إذا لم تطلب ذلك، تجاهل الرسالة.</p>
-      </div>
-    `,
+        subject: copy.subject,
+        html: buildOtpEmailHtml(copy, otpPlain),
       }),
     );
     if (error) {

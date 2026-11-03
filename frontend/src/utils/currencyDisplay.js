@@ -3,16 +3,21 @@ import {
   DISPLAY_CURRENCY,
   JOD_TO_EGP_RATE,
 } from "../config/currencyDisplayConfig.js";
+import { pt } from "../i18n/activeLocale.js";
+import { currencyLabel, numberFormatFor } from "./localeFormat.js";
 
 const EGYPT_COUNTRY_CODES = new Set(["EG", "EGY", "EGYPT"]);
+
+const JOD_OPTIONS = Object.freeze({ maximumFractionDigits: 2 });
+const EGP_OPTIONS = Object.freeze({ maximumFractionDigits: 0 });
 
 function formatJodAmount(amountJod, locale = "ar") {
   if (amountJod === null || amountJod === undefined) return null;
   const n = Number(amountJod);
   if (!Number.isFinite(n)) return null;
-  const formatted = n.toLocaleString("en-US", { maximumFractionDigits: 2 });
-  if (n === 0) return locale === "en" ? "Free" : "مجانية";
-  return locale === "en" ? `${formatted} JOD` : `${formatted} د.أ`;
+  const formatted = numberFormatFor(locale, JOD_OPTIONS).format(n);
+  if (n === 0) return pt("platformUtils.money.free", undefined, locale);
+  return `${formatted} ${currencyLabel("JOD", locale)}`;
 }
 
 export function normalizeCountryCode(value) {
@@ -85,10 +90,8 @@ export function formatEgpAmount(amountEgp, locale = "ar") {
   const n = Number(amountEgp);
   if (!Number.isFinite(n)) return null;
   const rounded = Math.round(n);
-  const formatted = rounded.toLocaleString(locale === "en" ? "en-US" : "ar-EG", {
-    maximumFractionDigits: 0,
-  });
-  return locale === "en" ? `${formatted} EGP` : `${formatted} ج.م`;
+  const formatted = numberFormatFor(locale, EGP_OPTIONS, { ar: "ar-EG", en: "en-US" }).format(rounded);
+  return `${formatted} ${currencyLabel("EGP", locale)}`;
 }
 
 /**
@@ -156,10 +159,7 @@ export function resolvePlanPriceDisplay(plan, basePrice, locale, t, displayCurre
   if (checkoutJodRaw != null && checkoutJod !== totalJod) {
     const totalEgp = formatPriceFromJod(totalJod, { locale, displayCurrency: DISPLAY_CURRENCY.EGP });
     if (totalEgp) {
-      sub =
-        locale === "en"
-          ? `Total: ${totalEgp}${sub ? ` · ${sub}` : ""}`
-          : `الإجمالي ${totalEgp}${sub ? ` · ${sub}` : ""}`;
+      sub = `${pt("platformUtils.money.total", { amount: totalEgp }, locale || "ar")}${sub ? ` · ${sub}` : ""}`;
     }
   }
 

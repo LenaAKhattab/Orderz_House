@@ -1,0 +1,50 @@
+{
+  "page": {
+    "title": "Bildazo-Autorenverknüpfungen",
+    "description": "Prüfen Sie Anfragen zur Autorenverknüpfung und markieren Sie Anfragen nach manueller Verifizierung. Bildazo-Konten werden hier nicht erstellt.",
+    "schemaMissing": "Die Verknüpfungstabelle ist noch nicht bereit (Migration 164). Sie können diese Seite öffnen, aber erst verknüpfen, wenn die Migration angewendet wurde.",
+    "searchLabel": "Suche",
+    "searchPlaceholder": "Name / E-Mail / öffentliche ID",
+    "searchSubmit": "Suchen",
+    "emptyTitle": "Keine Anfragen",
+    "emptyDesc": "Keine Verknüpfungsanfragen entsprechen dem aktuellen Filter.",
+    "loadSchemaError": "Die Bildazo-Verknüpfungstabelle ist nicht bereit.",
+    "loadFailed": "Verknüpfungsanfragen konnten nicht geladen werden.",
+    "freelancerFallback": "Freelancer Nr. {{id}}",
+    "linkedBadge": "Autorenkonto verknüpft",
+    "emailMatches": " — E-Mail stimmt mit OrderzHouse überein",
+    "flowLabel": "Ablauf:",
+    "flowNew": "Neues Konto",
+    "flowExisting": "Bestehendes Konto",
+    "termsLabel": "Bedingungen:",
+    "existingAccount": "Bestehendes Konto:",
+    "linkAccount": "Konto verknüpfen",
+    "manualLinkSaved": "Manuelle Autorenverknüpfung gespeichert.",
+    "manualLinkFailed": "Manuelle Verknüpfung konnte nicht gespeichert werden.",
+    "statusUpdated": "Anfragestatus aktualisiert.",
+    "statusUpdateFailed": "Status konnte nicht aktualisiert werden.",
+    "reviewReasonPrompt": "Prüfungsgrund (erforderlich):",
+    "reviewReasonRequired": "Für den Status „Fehlgeschlagen“ oder „Gesperrt“ ist ein Prüfungsgrund erforderlich."
+  },
+  "filters": {
+    "all": "Alle",
+    "pending_new_account": "Anfrage für neues Konto",
+    "pending_existing_account": "Anfrage für bestehendes Konto",
+    "pending_external_verification": "Externe Verifizierung",
+    "needs_manual_review": "Manuelle Prüfung",
+    "linked": "Verknüpft",
+    "failed": "Fehlgeschlagen",
+    "blocked": "Gesperrt"
+  },
+  "dialog": {
+    "title": "Konto verknüpfen",
+    "lede": "Manuelle Verknüpfung innerhalb von OrderzHouse nach externer Verifizierung. Bildazo-Konten werden auf dieser Seite nicht erstellt.",
+    "bildazoUserId": "Bildazo-Benutzer-ID (optional)",
+    "bildazoPublicId": "Öffentliche Bildazo-ID",
+    "bildazoProfileUrl": "Bildazo-Profil-URL",
+    "reviewNote": "Prüfungsnotiz (optional)",
+    "confirmVerified": "Ich bestätige, dass ich vor der Verknüpfung verifiziert habe, dass das Bildazo-Konto dem Inhaber gehört.",
+    "cancel": "Abbrechen",
+    "submit": "Konto verknüpfen"
+  }
+}

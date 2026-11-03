@@ -1,0 +1,111 @@
+{
+  "economyForm": {
+    "fields": {
+      "commissionPct": "Commission %",
+      "cashFee": "Cash processing fee",
+      "eliteOrdersPerCycle": "Elite orders / cycle",
+      "offerDuration": "Offer duration",
+      "carryForwardDays": "Carry-forward days",
+      "maxCarryForward": "Max carry-forward",
+      "assignmentStrategy": "Assignment strategy",
+      "fairLookback": "Fair Distribution lookback (days)",
+      "fairnessWeight": "Fairness weight",
+      "tokenWeight": "Token weight",
+      "performanceWeight": "Performance weight",
+      "recencyWeight": "Recency weight",
+      "workloadWeight": "Workload weight",
+      "minApplicants": "Min applicants",
+      "maxApplicants": "Max applicants",
+      "defaultApplicants": "Default applicants",
+      "minBidCost": "Min Bid cost",
+      "maxBidCost": "Max Bid cost",
+      "defaultBidCost": "Default Bid cost",
+      "minApplicationHours": "Min application hours",
+      "maxApplicationHours": "Max application hours",
+      "defaultApplicationHours": "Default application hours",
+      "minExecutionHours": "Min execution hours",
+      "maxExecutionHours": "Max execution hours",
+      "defaultExecutionHours": "Default execution hours",
+      "articleMinBids": "Article min required bids",
+      "articleDefaultBids": "Article default required bids",
+      "pantryMinBids": "Pantry min required bids",
+      "pantryDefaultBids": "Pantry default required bids"
+    },
+    "validation": {
+      "moneyPositive": "{{label}}: must be > 0.",
+      "moneyNonNeg": "{{label}}: must be ≥ 0.",
+      "percentRange": "{{label}}: must be 0–100.",
+      "intRange": "{{label}}: integer between {{min}} and {{max}}.",
+      "invalidValue": "{{label}}: invalid value.",
+      "hybridUnavailable": "{{label}}: HYBRID unavailable until weight policy is defined (FAIR_DISTRIBUTION_HYBRID_WEIGHT_POLICY_REQUIRED).",
+      "minOrderInvalid": "Min order value invalid.",
+      "maxOrderInvalid": "Max order value invalid."
+    },
+    "strategies": {
+      "HIGHEST_TOKEN_ONLY": "Highest eligible first",
+      "FAIR_DISTRIBUTION_FIRST": "Fair distribution first",
+      "HYBRID": "HYBRID (unavailable — weight policy required)"
+    }
+  },
+  "articleApplications": {
+    "autoAssignCandidate": "#{{rank}} app {{applicationId}} · weight {{weight}}"
+  },
+  "common": {
+    "close": "Close"
+  },
+  "planCard": {
+    "priceJod": "{{amount}} JOD",
+    "orderRange": {
+      "between": "{{min}} JOD → {{max}} JOD",
+      "from": "From {{min}} JOD",
+      "upTo": "Up to {{max}} JOD"
+    },
+    "features": {
+      "selfSubscribeAllowed": "Direct self-purchase",
+      "requiresCompanyVisit": "Activation via on-site visit",
+      "isVisible": "Shown in the store",
+      "isFeatured": "Featured plan on the storefront",
+      "isPopular": "Tagged as most popular"
+    }
+  },
+  "analytics": {
+    "leaderboards": {
+      "sub": {
+        "freelancers": "completed orders",
+        "clients": "spend",
+        "courses": "enrolled",
+        "categories": "orders"
+      },
+      "titles": {
+        "freelancers": "Top freelancers",
+        "clients": "Top clients",
+        "courses": "Top courses",
+        "categories": "Top categories"
+      }
+    },
+    "snapshot": {
+      "newSubscriptions": "+{{count}} new subscription",
+      "newSubscriptions_plural": "+{{count}} new subscriptions",
+      "newOrders": "+{{count}} new order",
+      "newOrders_plural": "+{{count}} new orders",
+      "newClaims": "+{{count}} payment claim",
+      "newClaims_plural": "+{{count}} payment claims",
+      "periodRevenue": "Period revenue: {{amount}}",
+      "topCategory": "Top category: {{name}}"
+    },
+    "attention": {
+      "severity": {
+        "urgent": "Urgent",
+        "medium": "Medium",
+        "info": "Info"
+      },
+      "awaitingFollowUp": "{{count}} awaiting follow-up"
+    },
+    "forecasts": {
+      "orders": "orders",
+      "subscriptions": "new subscriptions",
+      "revenue": "revenue"
+    },
+    "periodBanner": "Data shown based on: {{label}}"
+  }
+}

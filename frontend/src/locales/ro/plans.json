@@ -1,0 +1,248 @@
+{
+  "title": "Abonament de membru pe piața Orderz House",
+  "hero": {
+    "title": "Abonament de membru pe piața Orderz House",
+    "eyebrow": "Alegeți nivelul potrivit parcursului dumneavoastră",
+    "subtitle": "Comparați ofertele, limitele zilnice și plafoanele proiectelor în câteva secunde."
+  },
+  "categories": {
+    "aria": "Categorii de pachete",
+    "training": "Pachete de formare",
+    "membership": "Abonament de membru pe piața OrderzHouse",
+    "annual": "Pachete anuale"
+  },
+  "annual": {
+    "sectionAria": "Pachete anuale",
+    "empty": "Momentan nu sunt disponibile pachete anuale.",
+    "footnote": "Perioada anuală începe când primiți prima comandă reală. Beneficiile incluse sunt oferite direct de companie."
+  },
+  "training": {
+    "sectionAria": "Pachete de formare profesională",
+    "includes": "Pachetul include",
+    "featuresAria": "Conținutul pachetului de formare",
+    "cta": "Contactați-ne",
+    "buyCta": "Cumpărați pachetul",
+    "buyBusy": "Redirecționare către plată…",
+    "resumeCta": "Continuați plata",
+    "processing": "Se confirmă plata",
+    "processingNotice": "Plata pentru acest pachet este în curs de confirmare. Reîmprospătați pagina în scurt timp.",
+    "statusUnavailable": "Momentan nu am putut verifica starea plății. Vă rugăm să încercați din nou în scurt timp.",
+    "purchased": "Achiziționat",
+    "currentTitle": "Pachetul dumneavoastră de formare actual",
+    "waiting": "În așteptarea confirmării plății",
+    "companyFollowUp": "Pachetul de formare a fost achiziționat cu succes. Compania vă va contacta în legătură cu procesul de formare, în afara platformei.",
+    "checkoutFailed": "Plata pachetului de formare nu a putut fi inițiată.",
+    "checkoutMissingUrl": "Plata nu a putut fi inițiată.",
+    "mostRequested": "Cel mai solicitat",
+    "footnote": "Contactați-ne pe WhatsApp pentru detalii despre înscriere și plată.",
+    "whatsappAria": "Contactați-ne pe WhatsApp despre {{package}}",
+    "hero": {
+      "eyebrow": "Dezvoltați-vă competențele și începeți-vă parcursul profesional",
+      "title": "Pachete de formare profesională",
+      "subtitle": "Alegeți pachetul potrivit și începeți-vă parcursul în dezvoltarea competențelor și în activitatea de freelancing."
+    }
+  },
+  "specialOffer": {
+    "cta": "Obțineți oferta acum",
+    "ctaWhatsapp": "Contactați-ne pentru această ofertă",
+    "checkoutBusy": "Redirecționare către plată…",
+    "checkoutFailed": "Plata ofertei nu a putut fi inițiată.",
+    "checkoutMissingUrl": "Plata nu a putut fi inițiată.",
+    "freelancersOnly": "Această ofertă este disponibilă doar pentru freelanceri.",
+    "totalOffers": "Total candidaturi",
+    "dailyLimit": "Limită zilnică",
+    "maxProject": "Valoare maximă per proiect",
+    "duration": "Durata pachetului",
+    "durationShort": "Durată",
+    "days": "zile",
+    "available": "disponibile",
+    "offersPerDay": "candidaturi / zi",
+    "upTo": "Până la",
+    "perProject": "per proiect",
+    "unlimitedProjects": "Fără plafon pentru proiecte",
+    "savePercent": "Economisiți {{percent}}%",
+    "refundDetailsLink": "Detalii despre rambursarea pachetului",
+    "refundDetailsLinkShort": "Cum funcționează rambursarea?",
+    "refundModalTitle": "Detalii despre rambursarea pachetului de ofertă specială",
+    "refundModalGotIt": "Am înțeles",
+    "refundSummaryAria": "Rezumatul valorii ofertei",
+    "refundSectionFallback": "Detalii",
+    "defaultBadge": "Ofertă specială",
+    "defaultRibbon": "Timp limitat",
+    "refundSections": {
+      "monthly": "Rambursare lunară",
+      "inactiveMonths": "Luni inactive",
+      "orderIncome": "Venituri din comenzi",
+      "importantNotice": "Notă importantă"
+    }
+  },
+  "sectionAria": "Pachete de abonament de membru pe piață",
+  "membership": {
+    "free": "Probă",
+    "metricsAria": "Indicatorii cheie ai abonamentului",
+    "bidsAvailable": "candidaturi",
+    "bidsForTerm": "candidaturi pentru durata pachetului",
+    "bidsPerDay": "candidaturi pe zi",
+    "includedBenefitsAria": "Beneficiile incluse în pachet",
+    "applicationNote": "O candidatură înseamnă trimiterea unei oferte pentru o comandă; nu garantează primirea unei comenzi.",
+    "projectCapMax": "per proiect",
+    "projectCapValue": "Până la {{value}} {{currency}}",
+    "projectCapUnlimited": "Plafon per proiect",
+    "unlimitedShort": "Fără plafon",
+    "withdrawalOn": "Retrageri disponibile",
+    "withdrawalOff": "Fără plata directă a sumelor"
+  },
+  "mobile": {
+    "compareTitle": "Comparați pachetele",
+    "packageCount": "Pachete: {{count}}",
+    "footnote": "Pachetele sunt destinate freelancerilor înregistrați pe platformă."
+  },
+  "errors": {
+    "loadFailed": "Momentan pachetele nu au putut fi încărcate. Vă rugăm să încercați din nou mai târziu."
+  },
+  "pageUnavailable": {
+    "title": "Pagina de pachete nu este disponibilă",
+    "message": "Este posibil ca această pagină să fie inactivă sau expirată ori ca linkul să fie incorect."
+  },
+  "mobileLabel": "Pachete de abonament",
+  "lede": "Alegeți pachetul potrivit pentru activitatea dumneavoastră, comparați caracteristicile și începeți sau îmbunătățiți-vă abonamentul dintr-un singur loc.",
+  "featuresAria": "Caracteristicile pachetului",
+  "showFeatures": "Afișați caracteristicile ({{count}})",
+  "hideFeatures": "Ascundeți caracteristicile",
+  "showMoreFeatures": "Afișați caracteristici suplimentare (+{{count}})",
+  "extraFeaturesAria": "Caracteristici suplimentare",
+  "extraDetails": "Mai multe detalii",
+  "fullYear": "Un an întreg",
+  "days": "Durată (zile): {{count}}",
+  "months": "Durată (luni): {{count}}",
+  "priceTotal": "Preț total: {{amount}} JOD",
+  "installmentAtSignup": "{{amount}} JOD la înscriere",
+  "installmentMonthly": "{{amount}} JOD lunar · număr de luni: {{months}}",
+  "badges": {
+    "mostPopular": "Cel mai popular",
+    "premium": "Pachet premium"
+  },
+  "sale": {
+    "percentOff": "REDUCERE {{percent}}%",
+    "sectionTitle": "Reducere pentru pachet",
+    "enable": "Activați reducerea",
+    "percentage": "Procent de reducere (%)",
+    "reason": "Motivul reducerii (arabă)",
+    "reasonEn": "Motivul reducerii",
+    "previewOriginal": "Preț inițial: {{amount}} JOD",
+    "previewPercent": "Reducere: {{percent}}%",
+    "previewFinal": "Preț după reducere: {{amount}} JOD"
+  },
+  "tierLabels": {
+    "basic": "De bază",
+    "advance": "Avansat",
+    "premium": "Premium",
+    "popular": "Cel mai popular",
+    "proPlus": "Pro+",
+    "platinum": "Platină"
+  },
+  "activationFeeNote": {
+    "prefix": "Taxă de activare a abonamentului:",
+    "suffix": "plătită o dată pe an"
+  },
+  "currency": {
+    "jod": "JOD",
+    "equivalentJod": "Echivalentul a {{amount}}",
+    "checkoutChargedInJod": "Plata se procesează în dinari iordanieni (JOD)"
+  },
+  "freePlanActivationFeeNote": "Pachetul este gratuit, dar taxa anuală de activare de {{amount}} este obligatorie.",
+  "activationFee": {
+    "paidSuccessTitle": "Taxa de activare a fost plătită",
+    "paidSuccessMessage": "Taxa de activare a fost plătită cu succes.",
+    "cancelledTitle": "Plată anulată",
+    "cancelledMessage": "Plata taxei de activare nu a fost finalizată."
+  },
+  "checkout": {
+    "paidSuccessTitle": "Plată primită",
+    "paidSuccessMessage": "Plata a fost verificată pe server. Contul dumneavoastră așteaptă activarea de către companie.",
+    "cancelledTitle": "Plată anulată",
+    "cancelledMessage": "Plata nu a fost finalizată.",
+    "verifyFailedTitle": "Plata nu a putut fi verificată",
+    "verifyFailedMessage": "Nu a fost primit niciun ID de sesiune Stripe. Așteptați puțin și reîmprospătați pagina sau verificați pagina de pachete după sosirea webhookului de plată.",
+    "confirmPendingTitle": "Plata nu a fost încă confirmată",
+    "confirmPendingMessage": "Așteptați puțin și reîmprospătați pagina sau asigurați-vă că webhookul Stripe ajunge la server. Plata nu este confirmată doar din browser."
+  },
+  "cta": {
+    "freelancersOnly": "Doar pentru freelanceri",
+    "currentPlan": "Pachetul dumneavoastră actual",
+    "lowerPlan": "Pachet inferior",
+    "alreadySubscribed": "Deja abonat",
+    "upgrade": "Treceți la un pachet superior",
+    "payActivationFee": "Plătiți taxa de activare",
+    "autoActivated": "Activat automat",
+    "companyActivation": "Activat prin companie",
+    "viewMembership": "Vedeți abonamentul",
+    "buyMembership": "Cumpărați pachetul",
+    "continuePayment": "Continuați plata",
+    "confirmingPayment": "Se confirmă plata",
+    "activateStarter": "Activați pachetul gratuit",
+    "startNow": "Începeți acum"
+  },
+  "checkoutErrors": {
+    "processing": "Plata pentru acest pachet este în curs de confirmare. Reîmprospătați pagina în scurt timp.",
+    "statusUnavailable": "Momentan nu am putut verifica starea plății. Vă rugăm să încercați din nou în scurt timp.",
+    "providerError": "Momentan nu am putut contacta furnizorul de plăți. Vă rugăm să încercați din nou în scurt timp."
+  },
+  "membershipWait": {
+    "status": "În așteptarea primei comenzi",
+    "startsOnFirstOrder": "Perioada abonamentului începe când primiți prima comandă reală."
+  },
+  "pages": {
+    "freelancers": {
+      "trustSimple": "Prețuri simple",
+      "trustNoFees": "Fără taxe ascunse",
+      "footnote": "După abonare se semnează un contract. Verificarea contului presupune o taxă unică de {{amount}}, valabilă pentru toate pachetele."
+    }
+  },
+  "cards": {
+    "free": {
+      "title": "Pachet gratuit",
+      "description": "Durata abonamentului: un an întreg pe platforma de freelancing",
+      "orderValue": "Valoarea comenzii: între 3 și 7 JOD",
+      "activationRequirements": "După finalizarea formării și a examenelor, rezultatele sunt trimise prin STUDYZHOUSE. Când rezultatul indică „Promovat”, contul dumneavoastră este activat pe platformă.",
+      "features": [
+        "Formare gratuită în redactarea de conținut – Nivelul 1",
+        "Nu este necesară semnarea unui contract",
+        "Nu este necesară vizita la sediul companiei",
+        "Fără monitorizare directă"
+      ]
+    },
+    "standard": {
+      "title": "Pachet de 50 JOD",
+      "description": "Durata abonamentului: un an întreg pe platforma de freelancing",
+      "orderValue": "Valoarea comenzii: între 7 și 20 JOD",
+      "paymentNotes": "O singură plată de 50 JOD la abonare.",
+      "offerLabel": "Taxa de abonament se rambursează când primiți prima comandă (ofertă valabilă până la 30 sept. 2026)",
+      "activationRequirements": "Se activează după finalizarea plății și aprobarea companiei; perioada începe de la prima comandă acceptată.",
+      "refundPolicy": "Taxa de abonament se rambursează când primiți prima comandă (în perioada ofertei).",
+      "features": [
+        "Formare gratuită în redactarea de conținut – Nivelul 1",
+        "Formare gratuită în redactarea de conținut – Nivelul 2",
+        "Formare gratuită în design",
+        "Semnarea contractului la sediul companiei",
+        "Monitorizare după finalizarea Nivelului 1 și începerea Nivelului 2"
+      ]
+    },
+    "platinum": {
+      "title": "Pachet Platină",
+      "description": "Diplomă în operațiuni de freelancing digital — un an întreg pe platformă",
+      "orderValue": "Valoarea comenzii: de la 10 JOD în sus",
+      "paymentNotes": "300 JOD la înscriere + 50 JOD lunar timp de 12 luni (600 JOD suplimentar). Costul total al programului: 900 JOD.",
+      "installment": "300 JOD la înscriere · 50 JOD lunar × 12 luni",
+      "activationRequirements": "Se activează după plata de înscriere (300 JOD) și aprobarea companiei; ratele lunare sunt urmărite deocamdată în afara platformei.",
+      "refundPolicy": "Taxele plătite sunt rambursabile doar după începerea lucrului pe al doilea abonament (pachetul de 50 JOD).",
+      "features": [
+        "Diplomă în operațiuni de freelancing digital",
+        "Formare în redactarea de conținut – Nivelurile 1 și 2",
+        "Formare în design grafic",
+        "Formare în programare cu ajutorul inteligenței artificiale",
+        "Semnarea contractului la sediul companiei"
+      ]
+    }
+  }
+}

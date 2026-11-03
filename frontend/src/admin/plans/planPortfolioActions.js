@@ -15,6 +15,9 @@ import {
   HEALTH_THRESHOLDS,
   pickTopPlan,
 } from "./planPerformanceUtils";
+import "../../i18n/planAdminResources";
+import { pt } from "../../i18n/activeLocale.js";
+import { legacyArabicUiLocale } from "../adminLocale.js";
 
 export const ACTION_PRIORITY = {
   high: "high",
@@ -40,19 +43,44 @@ const PRIORITY_EMOJI = {
   low: "🟢",
 };
 
-/** @deprecated Arabic-only fallbacks when `t` is omitted */
-export const ACTION_SIGNAL_LABELS = {
-  promote: "⭐ مرشّحة للترويج",
-  review: "🛠 تحتاج مراجعة",
-  declining: "⬇ انخفاض في النشاط الشهري",
-  concentration: "⚠️ تعتمد قيمة الاشتراكات المدفوعة بشكل كبير على هذه الباقة",
-};
+/**
+ * Translator used when `t` is omitted. These helpers historically answered in Arabic without `t`; that stays
+ * for Arabic / English, while German / Dutch / Romanian resolve their own planAdmin copy.
+ */
+function fallbackT(key, values) {
+  return pt(key, values, legacyArabicUiLocale());
+}
 
-/** @deprecated Arabic-only fallbacks when `t` is omitted */
+/** @deprecated Arabic-only fallbacks when `t` is omitted (now resolved from planAdmin.metrics.portfolio.signals) */
+export const ACTION_SIGNAL_LABELS = Object.freeze({
+  get promote() {
+    return fallbackT("planAdmin.metrics.portfolio.signals.promote");
+  },
+  get review() {
+    return fallbackT("planAdmin.metrics.portfolio.signals.review");
+  },
+  get declining() {
+    return fallbackT("planAdmin.metrics.portfolio.signals.declining");
+  },
+  get concentration() {
+    return fallbackT("planAdmin.metrics.portfolio.signals.concentration");
+  },
+});
+
+function priorityLabelEntry(key) {
+  return Object.freeze({
+    get label() {
+      return fallbackT(`planAdmin.metrics.portfolio.priority.${key}`);
+    },
+    emoji: PRIORITY_EMOJI[key],
+  });
+}
+
+/** @deprecated Arabic-only fallbacks when `t` is omitted (now resolved from planAdmin.metrics.portfolio.priority) */
 export const PRIORITY_LABELS = {
-  high: { label: "أولوية عالية", emoji: PRIORITY_EMOJI.high },
-  medium: { label: "أولوية متوسطة", emoji: PRIORITY_EMOJI.medium },
-  low: { label: "أولوية منخفضة", emoji: PRIORITY_EMOJI.low },
+  high: priorityLabelEntry("high"),
+  medium: priorityLabelEntry("medium"),
+  low: priorityLabelEntry("low"),
 };
 
 function actionSignalLabel(key, t) {
@@ -279,34 +307,17 @@ export function filterPlansByDecision(plans, decisionFilter, _platformContext) {
 export function computePortfolioActionChips(plans, platformContext, t = null) {
   const chip = (oneKey, manyKey, count) => {
     const n = formatInt(count);
-    if (t) {
-      return count === 1 ? t(`planAdmin.metrics.portfolio.chips.${oneKey}`) : t(`planAdmin.metrics.portfolio.chips.${manyKey}`, { count: n });
-    }
-    if (count === 1) {
-      const oneFallback = {
-        reviewOne: "باقة واحدة تحتاج مراجعة",
-        promoteOne: "باقة واحدة مرشّحة للترويج",
-        noSubsOne: "باقة واحدة بلا اشتراكات سارية",
-        highRiskOne: "باقة واحدة عالية المخاطر",
-      };
-      return oneFallback[oneKey];
-    }
-    const manyFallback = {
-      reviewMany: `${n} باقات تحتاج مراجعة`,
-      promoteMany: `${n} باقات مرشّحة للترويج`,
-      noSubsMany: `${n} باقات بلا اشتراكات سارية`,
-      highRiskMany: `${n} باقات عالية المخاطر`,
-    };
-    return manyFallback[manyKey];
+    const tr = t || fallbackT;
+    return count === 1
+      ? tr(`planAdmin.metrics.portfolio.chips.${oneKey}`)
+      : tr(`planAdmin.metrics.portfolio.chips.${manyKey}`, { count: n });
   };
 
   const concentrationLabel = (severe) => {
-    if (t) {
-      return severe
-        ? t("planAdmin.metrics.portfolio.chips.concentrationSevere")
-        : t("planAdmin.metrics.portfolio.chips.concentrationElevated");
-    }
-    return severe ? "تركّز شديد على باقة واحدة" : "باقة واحدة تحمل قيمة مدفوعة كبيرة";
+    const tr = t || fallbackT;
+    return severe
+      ? tr("planAdmin.metrics.portfolio.chips.concentrationSevere")
+      : tr("planAdmin.metrics.portfolio.chips.concentrationElevated");
   };
   const okPlans = (plans || []).filter((p) => p.performance?.state === "ok");
   if (!okPlans.length) return [];
@@ -376,20 +387,10 @@ export function computePortfolioActionChips(plans, platformContext, t = null) {
 export function computePortfolioSummarySentence(plans, platformContext, t = null) {
   const summary = (key, params) => {
     if (t) return t(`planAdmin.metrics.portfolio.summary.${key}`, params);
-    const ar = {
-      stable: "محفظة الباقات مستقرة.",
-      urgentOne: "باقة واحدة تحتاج قراراً عاجلاً.",
-      urgentMany: `${formatInt(params?.count)} باقات تحتاج قراراً عاجلاً.`,
-      reviewOne: "باقة واحدة تحتاج مراجعة.",
-      reviewMany: `${formatInt(params?.count)} باقات تحتاج مراجعة.`,
-      decliningOne: "باقة واحدة تشهد انخفاضاً شهرياً.",
-      decliningMany: `${formatInt(params?.count)} باقات تشهد انخفاضاً شهرياً.`,
-      needsAttention: "محفظة الباقات تحتاج متابعة.",
-      concentration: `تعتمد ${formatInt(params?.pct)}٪ من القيمة المدفوعة على باقة واحدة.`,
-      promoteOne: "باقة واحدة مرشّحة للترويج.",
-      promoteMany: `${formatInt(params?.count)} باقات مرشّحة للترويج.`,
-    };
-    return ar[key];
+    const formatted = params
+      ? Object.fromEntries(Object.entries(params).map(([k, v]) => [k, formatInt(v)]))
+      : undefined;
+    return fallbackT(`planAdmin.metrics.portfolio.summary.${key}`, formatted);
   };
   const okPlans = (plans || []).filter((p) => p.performance?.state === "ok");
   if (!okPlans.length) return null;

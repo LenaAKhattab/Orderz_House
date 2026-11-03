@@ -45,6 +45,9 @@ import {
 import LinkifiedText from "../../components/ui/LinkifiedText";
 import { useToast } from "../../components/ui/toastContext";
 import { useTranslation } from "../../i18n/LanguageProvider";
+import { getActiveLocale } from "../../i18n/activeLocale.js";
+import { pickIntlTag } from "../../i18n/intlLocale.js";
+import { tPlural } from "../../i18n/plural.js";
 import "../../i18n/coursesResources";
 import DashboardHubPage from "../../components/dashboard/hub/DashboardHubPage";
 import CourseDetailsPageSkeleton from "../../components/dashboard/courses/CourseDetailsPageSkeleton";
@@ -150,25 +153,25 @@ function toEmbedUrl(videoId) {
   return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(String(videoId || ""))}?rel=0&modestbranding=1&playsinline=1`;
 }
 
-function formatLessonDuration(seconds, t) {
+function formatLessonDuration(seconds, t, locale = getActiveLocale()) {
   const s = Number(seconds);
   if (!Number.isFinite(s) || s <= 0) return null;
   const mins = Math.max(1, Math.round(s / 60));
   if (mins < 60) {
-    return t(mins === 1 ? `${CD}.duration.minute` : `${CD}.duration.minute_plural`, { count: mins });
+    return tPlural(t, locale, `${CD}.duration.minute`, mins);
   }
   const h = Math.floor(mins / 60);
   const r = mins % 60;
   if (r > 0) {
     return t(`${CD}.duration.hoursAndMinutes`, { hours: h, minutes: r });
   }
-  return t(h === 1 ? `${CD}.duration.hoursOnly` : `${CD}.duration.hoursOnly_plural`, { count: h });
+  return tPlural(t, locale, `${CD}.duration.hoursOnly`, h);
 }
 
-function formatTotalCourseDuration(lessons, t) {
+function formatTotalCourseDuration(lessons, t, locale = getActiveLocale()) {
   const totalSec = (lessons || []).reduce((sum, l) => sum + (Number(l.durationSeconds) || 0), 0);
   if (totalSec <= 0) return null;
-  return formatLessonDuration(totalSec, t) || null;
+  return formatLessonDuration(totalSec, t, locale) || null;
 }
 
 function formatLastActivityLabel(value, t, locale) {
@@ -179,17 +182,17 @@ function formatLastActivityLabel(value, t, locale) {
   const mins = Math.floor(diff / 60000);
   if (mins < 1) return t(`${CD}.activity.now`);
   if (mins < 60) {
-    return t(mins === 1 ? `${CD}.activity.minutesAgo` : `${CD}.activity.minutesAgo_plural`, { count: mins });
+    return tPlural(t, locale, `${CD}.activity.minutesAgo`, mins);
   }
   const hours = Math.floor(mins / 60);
   if (hours < 24) {
-    return t(hours === 1 ? `${CD}.activity.hoursAgo` : `${CD}.activity.hoursAgo_plural`, { count: hours });
+    return tPlural(t, locale, `${CD}.activity.hoursAgo`, hours);
   }
   const days = Math.floor(hours / 24);
   if (days < 7) {
-    return t(days === 1 ? `${CD}.activity.daysAgo` : `${CD}.activity.daysAgo_plural`, { count: days });
+    return tPlural(t, locale, `${CD}.activity.daysAgo`, days);
   }
-  const tag = locale === "ar" ? "ar-JO-u-nu-latn" : "en-GB";
+  const tag = pickIntlTag(locale, { ar: "ar-JO-u-nu-latn", en: "en-GB" });
   return new Intl.DateTimeFormat(tag, { dateStyle: "medium" }).format(d);
 }
 
@@ -202,6 +205,7 @@ function getHeaderCompletionPresentation({
   totalLessons,
   testingEnabled,
   t,
+  locale = getActiveLocale(),
 }) {
   if (courseDone) {
     return {
@@ -232,7 +236,7 @@ function getHeaderCompletionPresentation({
   return {
     label:
       total > 0
-        ? t(total === 1 ? `${CD}.progress.lessonsProgress` : `${CD}.progress.lessonsProgress_plural`, {
+        ? tPlural(t, locale, `${CD}.progress.lessonsProgress`, total, {
             done,
             total,
           })
@@ -663,7 +667,7 @@ function FinalTestCompletedSection({ courseId, testLink, promptFileLink, modelAn
   const examMarks = Array.isArray(assignment?.examQuestionMarks) ? assignment.examQuestionMarks : [];
   const submittedAt = assignment?.auditSubmittedAt || assignment?.completedAt || null;
   const submittedLabel = submittedAt
-    ? new Intl.DateTimeFormat(locale === "ar" ? "ar-JO-u-nu-latn" : "en-GB", { dateStyle: "medium" }).format(
+    ? new Intl.DateTimeFormat(pickIntlTag(locale, { ar: "ar-JO-u-nu-latn", en: "en-GB" }), { dateStyle: "medium" }).format(
         new Date(submittedAt),
       )
     : null;
@@ -1733,10 +1737,10 @@ export default function FreelancerCourseDetailsPage() {
   const totalLessons = progress?.totalLessons ?? lessons.length;
   const lastActivityAt =
     assignment?.auditSubmittedAt || assignment?.completedAt || course?.updatedAt || course?.createdAt || null;
-  const activeLessonDuration = formatLessonDuration(activeLesson?.durationSeconds, t);
+  const activeLessonDuration = formatLessonDuration(activeLesson?.durationSeconds, t, locale);
   const activeNoteKey = activeLesson?.id ? String(activeLesson.id) : "";
 
-  const totalDurationLabel = formatTotalCourseDuration(lessons, t) || t(`${CD}.header.durationUnknown`);
+  const totalDurationLabel = formatTotalCourseDuration(lessons, t, locale) || t(`${CD}.header.durationUnknown`);
   const lastActivityLabel = formatLastActivityLabel(lastActivityAt, t, locale) || t(`${CD}.header.noActivity`);
 
   const lessonNavLocked = markingLessonComplete;
@@ -1751,6 +1755,7 @@ export default function FreelancerCourseDetailsPage() {
         totalLessons,
         testingEnabled,
         t,
+        locale,
       }),
     [
       courseDone,
@@ -1760,6 +1765,7 @@ export default function FreelancerCourseDetailsPage() {
       totalLessons,
       testingEnabled,
       t,
+      locale,
     ],
   );
 
@@ -1857,7 +1863,7 @@ export default function FreelancerCourseDetailsPage() {
               <ol className={`fcd-sidebar__list${sidebarExpanded ? " fcd-sidebar__list--expanded" : ""}`}>
                 {lessons.map((lesson, idx) => {
                   const isActive = !isFinalTestView && String(lesson.id) === String(activeLesson?.id);
-                  const duration = formatLessonDuration(lesson.durationSeconds, t);
+                  const duration = formatLessonDuration(lesson.durationSeconds, t, locale);
                   const statusLine = lesson.isCompleted
                     ? duration
                       ? t(`${CD}.sidebar.completedWithDuration`, { duration })
@@ -2121,7 +2127,7 @@ export default function FreelancerCourseDetailsPage() {
               requiredTierCode={planLock.requiredTierCode}
               currentTierCode={planLock.currentTierCode}
               targetRoute={planLock.upgradePath}
-              isEn={locale !== "ar"}
+              isEn={locale === "en"}
               className="oh-plan-upgrade-cta oh-plan-upgrade-cta--panel fcd-plan-locked__cta"
             />
             <NavLink to="/dashboard/freelancer/courses" className="fcd-btn fcd-btn--ghost fcd-plan-locked__back">

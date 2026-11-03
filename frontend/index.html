@@ -9,11 +9,18 @@
     <script>
       (function () {
         try {
+          // Keep in sync with src/i18n/localeRelease.js (RELEASED) and localePreference.js (SUPPORTED) — tested.
+          var RELEASED = ["ar", "en", "de", "nl", "ro"];
+          var SUPPORTED = ["ar", "en", "de", "nl", "ro"];
+          var q = /[?&]i18n_preview=([01])/.exec(window.location.search || "");
+          if (q && q[1] === "1") localStorage.setItem("orderzhouse.i18nPreview", "1");
+          if (q && q[1] === "0") localStorage.removeItem("orderzhouse.i18nPreview");
+          var preview = localStorage.getItem("orderzhouse.i18nPreview") === "1";
           var stored = localStorage.getItem("orderzhouse.locale") || localStorage.getItem("oh_locale");
-          var locale = stored === "en" ? "en" : "ar";
+          var locale = RELEASED.indexOf(stored) >= 0 || (preview && SUPPORTED.indexOf(stored) >= 0) ? stored : "ar";
           var root = document.documentElement;
           root.lang = locale;
-          root.dir = locale === "en" ? "ltr" : "rtl";
+          root.dir = locale === "ar" ? "rtl" : "ltr";
           root.setAttribute("data-locale", locale);
         } catch (e) {}
       })();

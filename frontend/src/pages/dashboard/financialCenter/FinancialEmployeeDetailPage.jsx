@@ -67,7 +67,7 @@ function DetailField({ label, children }) {
 export default function FinancialEmployeeDetailPage() {
   const { personId } = useParams();
   const navigate = useNavigate();
-  const { t, dir: uiDir } = useTranslation();
+  const { t, locale, dir: uiDir } = useTranslation();
   const { push } = useToast();
 
   const [loading, setLoading] = useState(true);
@@ -317,7 +317,7 @@ export default function FinancialEmployeeDetailPage() {
             <DetailField label={t("finance.financialCenter.colPaymentDetails")}>{person?.paymentDetails}</DetailField>
             <DetailField label={t("finance.financialCenter.colNotes")}>{person?.notes}</DetailField>
             <DetailField label={t("finance.financialCenter.employeeDetail.addedAt")}>
-              {formatDate(person?.createdAt)}
+              {formatDate(person?.createdAt, locale)}
             </DetailField>
           </div>
         </DashboardSection>
@@ -337,7 +337,7 @@ export default function FinancialEmployeeDetailPage() {
             {person?.accountCreatedAt ? (
               <div className="fc-preview-row">
                 <span>{t("finance.financialCenter.accountCreatedAt")}</span>
-                <strong>{formatDate(person.accountCreatedAt)}</strong>
+                <strong>{formatDate(person.accountCreatedAt, locale)}</strong>
               </div>
             ) : null}
             <div className="fc-actions">
@@ -373,23 +373,23 @@ export default function FinancialEmployeeDetailPage() {
         <div className="fc-summary-grid">
           <div className="fc-summary-card">
             <span className="fc-summary-card__label">{t("finance.financialCenter.colTotalBonus")}</span>
-            <strong className="fc-summary-card__value">{formatMoney(person?.totalBonus, currency)}</strong>
+            <strong className="fc-summary-card__value">{formatMoney(person?.totalBonus, currency, locale)}</strong>
           </div>
           <div className="fc-summary-card">
             <span className="fc-summary-card__label">{t("finance.financialCenter.colPaid")}</span>
-            <strong className="fc-summary-card__value">{formatMoney(person?.totalPaid, currency)}</strong>
+            <strong className="fc-summary-card__value">{formatMoney(person?.totalPaid, currency, locale)}</strong>
           </div>
           <div className="fc-summary-card">
             <span className="fc-summary-card__label">{t("finance.financialCenter.colUnpaid")}</span>
-            <strong className="fc-summary-card__value">{formatMoney(person?.totalUnpaid, currency)}</strong>
+            <strong className="fc-summary-card__value">{formatMoney(person?.totalUnpaid, currency, locale)}</strong>
           </div>
           <div className="fc-summary-card">
             <span className="fc-summary-card__label">{t("finance.financialUser.monthBonus")}</span>
-            <strong className="fc-summary-card__value">{formatMoney(currentMonthBonus, currency)}</strong>
+            <strong className="fc-summary-card__value">{formatMoney(currentMonthBonus, currency, locale)}</strong>
           </div>
           <div className="fc-summary-card">
             <span className="fc-summary-card__label">{t("finance.financialCenter.employeeDetail.lastPayment")}</span>
-            <strong className="fc-summary-card__value">{formatDate(lastPaymentAt)}</strong>
+            <strong className="fc-summary-card__value">{formatDate(lastPaymentAt, locale)}</strong>
           </div>
         </div>
 
@@ -431,13 +431,13 @@ export default function FinancialEmployeeDetailPage() {
                         <td className="fc-col-compact">{item.monthKey}</td>
                         <FcTdEllipsis>{item.title}</FcTdEllipsis>
                         <FcTdEllipsis>{sourceLabel(item.sourceType, t)}</FcTdEllipsis>
-                        <td className="fc-col-money">{formatMoney(item.bonusPoolAmount, currency)}</td>
+                        <td className="fc-col-money">{formatMoney(item.bonusPoolAmount, currency, locale)}</td>
                         <td className="fc-col-compact">{item.percentageShare}%</td>
-                        <td className="fc-col-money">{formatMoney(item.calculatedAmount, currency)}</td>
+                        <td className="fc-col-money">{formatMoney(item.calculatedAmount, currency, locale)}</td>
                         <td className="fc-col-compact">
                           <StatusBadge tone={paid.tone}>{paid.label}</StatusBadge>
                         </td>
-                        <td className="fc-col-compact">{formatDate(item.paidAt)}</td>
+                        <td className="fc-col-compact">{formatDate(item.paidAt, locale)}</td>
                         <FcTdEllipsis>{item.note || "—"}</FcTdEllipsis>
                       </tr>
                     );
@@ -453,7 +453,7 @@ export default function FinancialEmployeeDetailPage() {
             <ul className="fc-audit-list">
               {auditLogs.map((log) => (
                 <li key={log.id}>
-                  <strong>{getAuditActionLabel(log.action, log.entityType, t)}</strong> — {formatDate(log.createdAt)}
+                  <strong>{getAuditActionLabel(log.action, log.entityType, t)}</strong> — {formatDate(log.createdAt, locale)}
                   {log.actorName ? ` · ${log.actorName}` : ""}
                 </li>
               ))}

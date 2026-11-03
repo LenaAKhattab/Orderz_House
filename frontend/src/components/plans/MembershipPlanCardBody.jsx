@@ -1,6 +1,8 @@
 import { Briefcase, CalendarDays, Check, Infinity as InfinityIcon, MinusCircle, Target } from "lucide-react";
 import { getLocalizedField } from "../../lib/i18n/getLocalizedField";
 import { ApproximateCurrencyLine } from "../money/JodMoneyDisplay";
+import { pickIntlTag } from "../../i18n/intlLocale";
+import { isNewLocale, localizeSystemText } from "../../i18n/systemContent";
 
 /**
  * Presentational membership metrics + secondary rows for public /plans cards.
@@ -13,10 +15,14 @@ export default function MembershipPlanCardBody({ plan, locale = "ar", t }) {
   const bidsForTerm = plan?.bidAllowanceScope === "term";
   const includedBenefits = Array.isArray(plan?.includedBenefits) ? plan.includedBenefits : [];
   const withdrawalEnabled = plan?.withdrawalEnabled;
-  const tagline =
-    locale === "en"
+  const newLocale = isNewLocale(locale);
+  const tagline = newLocale
+    ? localizeSystemText(locale, { ar: plan?.taglineAr, en: plan?.taglineEn })
+    : locale === "en"
       ? plan?.taglineEn || plan?.taglineAr || ""
       : plan?.taglineAr || plan?.taglineEn || "";
+  // Latin digits; Arabic / English keep en-US grouping, German / Dutch / Romanian use their own separators.
+  const amountTag = pickIntlTag(locale, { ar: "en-US", en: "en-US" });
   const unlimited = Boolean(metrics.unlimitedProjects || plan?.unlimitedRealOrderValue);
   const projectValue =
     unlimited
@@ -34,7 +40,7 @@ export default function MembershipPlanCardBody({ plan, locale = "ar", t }) {
   const priceJod = Number(plan?.priceJod);
   const isFree = Number.isFinite(priceJod) && priceJod === 0;
   const priceAmount = Number.isFinite(priceJod)
-    ? priceJod.toLocaleString("en-US", { maximumFractionDigits: 2 })
+    ? priceJod.toLocaleString(amountTag, { maximumFractionDigits: 2 })
     : "—";
 
   const sale = plan?.sale;
@@ -49,7 +55,7 @@ export default function MembershipPlanCardBody({ plan, locale = "ar", t }) {
           <div className="pricing-card__price-sale">
             <div className="pricing-card__price-stack">
               <span className="pricing-card__price-amount">
-                {Number(sale.effectivePriceJod).toLocaleString("en-US", {
+                {Number(sale.effectivePriceJod).toLocaleString(amountTag, {
                   maximumFractionDigits: 2,
                 })}
               </span>
@@ -58,7 +64,7 @@ export default function MembershipPlanCardBody({ plan, locale = "ar", t }) {
             {sale.originalPriceJod != null ? (
               <p className="pricing-card__price-sale-meta">
                 <s className="pricing-card__price-original">
-                  {Number(sale.originalPriceJod).toLocaleString("en-US", {
+                  {Number(sale.originalPriceJod).toLocaleString(amountTag, {
                     maximumFractionDigits: 2,
                   })}{" "}
                   {t("plans.currency.jod")}
@@ -167,7 +173,13 @@ export default function MembershipPlanCardBody({ plan, locale = "ar", t }) {
                 className="pricing-card__withdrawal pricing-card__withdrawal--on"
               >
                 <Check size={14} strokeWidth={2.4} aria-hidden="true" />
-                <span>{locale === "en" ? benefit.labelEn : benefit.labelAr}</span>
+                <span>
+                  {newLocale
+                    ? localizeSystemText(locale, { ar: benefit.labelAr, en: benefit.labelEn })
+                    : locale === "en"
+                      ? benefit.labelEn
+                      : benefit.labelAr}
+                </span>
               </li>
             ))}
           </ul>

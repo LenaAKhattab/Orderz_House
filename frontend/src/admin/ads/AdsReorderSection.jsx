@@ -5,6 +5,7 @@ import { getAdAdminStatus, formatCtr } from "./adAdminStatus";
 import { priorityLabel } from "../../components/ads/bannerAdMeta";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import "../../i18n/adsResources";
+import { pickIntlTag } from "../../i18n/intlLocale";
 
 function fmtDate(iso, locale) {
   if (!iso) return "—";
@@ -12,7 +13,7 @@ function fmtDate(iso, locale) {
     const d = new Date(iso);
     return Number.isNaN(d.getTime())
       ? "—"
-      : d.toLocaleDateString(locale === "en" ? "en" : "ar", { month: "short", day: "numeric" });
+      : d.toLocaleDateString(pickIntlTag(locale, { ar: "ar", en: "en" }), { month: "short", day: "numeric" });
   } catch {
     return "—";
   }

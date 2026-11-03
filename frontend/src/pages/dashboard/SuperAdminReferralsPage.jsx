@@ -317,7 +317,7 @@ function ReferralDrawer({ id, onClose, money }) {
                 </div>
                 <div>
                   <span>{t("referrals.admin.types")}</span>
-                  <strong>{(detail.eligiblePaymentTypes || []).map((p) => t(`referrals.common.paymentTypes.${p}`)).join(locale === "ar" ? "، " : ", ")}</strong>
+                  <strong>{(detail.eligiblePaymentTypes || []).map((p) => t(`referrals.common.paymentTypes.${p}`)).join(t("platformPages.common.listJoiner"))}</strong>
                 </div>
                 <div>
                   <span>{t("referrals.admin.discount")}</span>
@@ -1132,7 +1132,7 @@ function SettingsTab({ money, onSaved }) {
                 </td>
                 <td>{t(`referrals.common.modes.${row.calculationMode}`)}</td>
                 <td dir="ltr">{formatCommissionRate(row, locale)}</td>
-                <td>{row.eligiblePaymentTypes.map((p) => t(`referrals.common.paymentTypes.${p}`)).join(locale === "ar" ? "، " : ", ")}</td>
+                <td>{row.eligiblePaymentTypes.map((p) => t(`referrals.common.paymentTypes.${p}`)).join(t("platformPages.common.listJoiner"))}</td>
                 <td>{row.commissionHoldDays}</td>
                 <td>{money(row.minimumWithdrawalMinor)}</td>
                 <td>
@@ -1142,7 +1142,7 @@ function SettingsTab({ money, onSaved }) {
                         {row.discountMode === "percentage" ? `${(row.discountPercentageBps || 0) / 100}%` : money(row.discountFixedMinor)}
                       </span>
                       <div className="oh-sa-users-cell-sub">
-                        {(row.discountPaymentTypes || []).map((p) => t(`referrals.common.paymentTypes.${p}`)).join(locale === "ar" ? "، " : ", ")}
+                        {(row.discountPaymentTypes || []).map((p) => t(`referrals.common.paymentTypes.${p}`)).join(t("platformPages.common.listJoiner"))}
                       </div>
                     </>
                   ) : (

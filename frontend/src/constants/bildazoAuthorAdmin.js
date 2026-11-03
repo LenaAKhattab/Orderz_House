@@ -1,14 +1,24 @@
-/** Super Admin review filters for OrderzHouse-side Bildazo author link requests. */
-export const BILDAZO_ADMIN_STATUS_FILTERS = Object.freeze([
-  { value: "all", labelAr: "الكل" },
-  { value: "pending_new_account", labelAr: "طلب حساب جديد" },
-  { value: "pending_existing_account", labelAr: "طلب حساب موجود" },
-  { value: "pending_external_verification", labelAr: "تحقق خارجي" },
-  { value: "needs_manual_review", labelAr: "مراجعة يدوية" },
-  { value: "linked", labelAr: "مرتبط" },
-  { value: "failed", labelAr: "فشل" },
-  { value: "blocked", labelAr: "موقوف" },
-]);
+import { ct, withCatalogLabels } from "./constantsI18n.js";
+
+/**
+ * Super Admin review filters for OrderzHouse-side Bildazo author link requests.
+ * `labelKey` is the catalog key; the legacy `labelAr` getter follows the non-English UI branch (Arabic, or the
+ * active de / nl / ro locale).
+ */
+export const BILDAZO_ADMIN_STATUS_FILTERS = Object.freeze(
+  [
+    "all",
+    "pending_new_account",
+    "pending_existing_account",
+    "pending_external_verification",
+    "needs_manual_review",
+    "linked",
+    "failed",
+    "blocked",
+  ].map((value) =>
+    Object.freeze(withCatalogLabels({ value }, `bildazoAuthorAdmin.statusFilters.${value}`, { labelAr: "local" })),
+  ),
+);
 
 export const BILDAZO_ADMIN_REVIEW_STATUSES = Object.freeze([
   "needs_manual_review",
@@ -16,9 +26,11 @@ export const BILDAZO_ADMIN_REVIEW_STATUSES = Object.freeze([
   "blocked",
 ]);
 
-export function bildazoAdminStatusLabel(status) {
+/** @param {string} [locale] default: Arabic, or the active de / nl / ro locale */
+export function bildazoAdminStatusLabel(status, locale) {
   const hit = BILDAZO_ADMIN_STATUS_FILTERS.find((item) => item.value === status);
-  return hit?.labelAr || status || "—";
+  if (hit) return ct(`bildazoAuthorAdmin.statusFilters.${hit.value}`, undefined, locale);
+  return status || "—";
 }
 
 export function bildazoAdminStatusTone(status) {

@@ -9,7 +9,7 @@ function HowItWorksUnavailable() {
   const { t, locale, dir } = useTranslation();
   const hiw = "home.hiw";
   return (
-    <main className="hiw-page hiw-page--unavailable page-content" lang={locale === "en" ? "en" : "ar"} dir={dir || "rtl"}>
+    <main className="hiw-page hiw-page--unavailable page-content" lang={locale || "ar"} dir={dir || "rtl"}>
       <div className="hiw-page__inner hiw-page__inner--center">
         <div className="hiw-unavailable" aria-live="polite">
           <div className="hiw-unavailable__code" aria-hidden>
@@ -27,9 +27,9 @@ function HowItWorksUnavailable() {
 }
 
 export default function HowItWorksPage({ routeKey }) {
-  const { t, locale, dir } = useTranslation();
-  const lang = locale === "en" ? "en" : "ar";
-  const direction = dir || (locale === "en" ? "ltr" : "rtl");
+  const { t, locale, dir, isRtl } = useTranslation();
+  const lang = locale || "ar";
+  const direction = dir || (isRtl ? "rtl" : "ltr");
   const slug = HOW_IT_WORKS_ROUTE_TO_SLUG[routeKey];
   const { page, blocks, loading, unavailable, error } = usePublicWebsitePage(slug);
 

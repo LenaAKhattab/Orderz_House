@@ -1,0 +1,121 @@
+{
+  "money": {
+    "free": "Kostenlos",
+    "total": "Gesamt: {{amount}}",
+    "currency": {
+      "JOD": "JOD",
+      "EGP": "EGP",
+      "SAR": "SAR",
+      "AED": "AED",
+      "QAR": "QAR",
+      "KWD": "KWD",
+      "BHD": "BHD",
+      "OMR": "OMR",
+      "USD": "USD",
+      "EUR": "EUR",
+      "GBP": "GBP"
+    }
+  },
+  "country": {
+    "unknown": "Unbekannt",
+    "unspecified": "Nicht angegeben",
+    "awaitingPayment": "Zahlung ausstehend"
+  },
+  "bidPaymentReturn": {
+    "pendingVerify": {
+      "title": "Zahlung wird geprüft",
+      "message": "Die Zahlung ist noch nicht bestätigt (der Webhook kann einen Moment dauern). Warten Sie kurz und laden Sie dann neu. Wenn der Auftrag nach einigen Minuten weiterhin „Zahlung ausstehend“ anzeigt, wenden Sie sich an den Support."
+    },
+    "serviceUnavailable": {
+      "title": "Zahlungsdienst nicht verfügbar",
+      "message": "Der Zahlungsanbieter ist nicht verfügbar. Versuchen Sie es später erneut oder wenden Sie sich an den Support."
+    },
+    "stateChanged": {
+      "title": "Auftrags- oder Angebotsstatus geändert",
+      "message": "Diese Angebotszahlung kann im aktuellen Status nicht bestätigt werden. Laden Sie die Seite neu oder starten Sie den Checkout erneut über die Auftragskarte. Wenn Sie glauben, belastet worden zu sein, warten Sie kurz und laden Sie neu; andernfalls wenden Sie sich an den Support."
+    },
+    "generic": {
+      "title": "Angebotszahlung konnte nicht bestätigt werden",
+      "message": "Wir konnten die Zahlung für das ausgewählte Angebot nicht bestätigen. Wenn Stripe eine erfolgreiche Belastung anzeigt, warten Sie kurz und laden Sie neu. Wenn das anhält, wenden Sie sich mit Ihrer Auftrags-ID an den Support."
+    }
+  },
+  "duration": {
+    "lessThanMinute": "Weniger als eine Minute",
+    "partJoiner": ", ",
+    "day": "{{count}} Tag",
+    "day_plural": "{{count}} Tage",
+    "hour": "{{count}} Stunde",
+    "hour_plural": "{{count}} Stunden",
+    "minute": "{{count}} Minute",
+    "minute_plural": "{{count}} Minuten"
+  },
+  "membershipSchedule": {
+    "monthOne": "1 Monat",
+    "monthTwo": "2 Monate",
+    "monthsFew": "{{count}} Monate",
+    "monthsMany": "{{count}} Monate",
+    "awaitingFirstOrder": "Erster Auftrag ausstehend",
+    "startsOnFirstOrder": "Beginnt mit dem ersten Auftrag",
+    "expiryAfterStart": "Wird nach Start des Abonnements berechnet"
+  },
+  "eligibility": {
+    "adminApprovalPending": "Admin-Freigabe ausstehend, bevor Sie Aufträge erhalten können",
+    "noSubscription": "Aktivieren Sie zuerst Ihr Paket, um Aufträge zu erhalten.",
+    "inactive": "Ihr Abonnement ist nicht aktiv. Bitte schließen Sie zuerst ein Abonnement ab.",
+    "paymentIncomplete": "Auftragsannahme konnte nicht aktiviert werden, weil die Abonnementzahlung unvollständig ist.",
+    "expired": "Ihr Abonnement ist abgelaufen. Bitte verlängern Sie, um Aufträge zu erhalten.",
+    "activationFeeUnpaid": "Zahlen Sie die jährliche Aktivierungsgebühr, bevor Sie Aufträge erhalten.",
+    "accountHoldPaymentFailed": "Die monatliche Abonnementgebühr von 15 JOD konnte nicht von Ihrer hinterlegten Karte abgebucht werden; Ihr Konto wurde vorübergehend gesperrt. Bitte kontaktieren Sie uns zur Reaktivierung.",
+    "planConfigurationError": "Ihre Paketberechtigung konnte gerade nicht geprüft werden. Bitte wenden Sie sich an den Support.",
+    "generic": "Ihr Konto ist derzeit nicht für Marketplace-Aufträge berechtigt (prüfen Sie Ihr Abonnement)."
+  },
+  "upload": {
+    "totalSizeExceeded": "Die Gesamtdateigröße darf {{mb}} MB nicht überschreiten",
+    "totalSizeHelper": "Maximale Gesamtdateigröße: {{mb}} MB",
+    "fileSize": {
+      "bytes": "{{size}} Bytes",
+      "kilobytes": "{{size}} kB",
+      "megabytes": "{{size}} MB (Megabyte)"
+    }
+  },
+  "applicants": {
+    "guestMessage": "Nach Anmeldung sichtbar",
+    "guestMessageLong": "Die Anzahl der Bewerber ist nur für angemeldete Nutzer sichtbar",
+    "empty": "Keine",
+    "count": "{{count}} Bewerber",
+    "count_plural": "{{count}} Bewerber",
+    "singular": "Bewerber",
+    "plural": "Bewerber"
+  },
+  "poolPlan": {
+    "lockBadge": "In Ihrem Paket nicht verfügbar",
+    "messages": {
+      "PLAN_TOO_LOW": "Der Wert dieses Auftrags liegt über dem Limit Ihres aktuellen Pakets",
+      "NO_ACTIVE_PLAN": "Aktivieren Sie Ihr Paket, um Aufträge zu erhalten",
+      "INTERNAL_PLAN_CONFIGURATION": "Ihre Paketberechtigung konnte gerade nicht geprüft werden. Bitte wenden Sie sich an den Support."
+    }
+  },
+  "homeCategories": {
+    "imageAlt": "Kategorie",
+    "exploreServices": "Dienste entdecken",
+    "fallback": {
+      "programming": {
+        "title": "Programmierdienste",
+        "text": "Professionelle Programmierung für Unternehmen, akademische Forschung und individuelle Projekte."
+      },
+      "design": {
+        "title": "Designdienste",
+        "text": "Professionelles Design für Unternehmen, Wissenschaft und persönliche Anforderungen."
+      },
+      "contentWriting": {
+        "title": "Content-Erstellung",
+        "text": "Professionelle Texterstellung für Unternehmen, akademische Forschung und persönliche Anforderungen."
+      },
+      "specialRequests": {
+        "title": "Sonderwünsche",
+        "text": "Lassen Sie Ihren Auftrag direkt vom Support-Team der Website bearbeiten",
+        "button": "Per WhatsApp kontaktieren"
+      }
+    }
+  }
+}

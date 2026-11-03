@@ -1,5 +1,6 @@
 import { arabicDurationUnit } from "../../../utils/arTime.js";
 import { formatLocaleDateTime } from "../../../i18n/formatLocale.js";
+import { pt } from "../../../i18n/activeLocale.js";
 
 const ADMIN_DATE_PART_FMT = new Intl.DateTimeFormat("en-US", {
   timeZone: "Asia/Amman",
@@ -133,27 +134,41 @@ function englishDurationUnit(value, unit, labels) {
 }
 
 /**
- * Duration with English digits (Arabic unit labels when locale is ar).
+ * Duration with English digits (Arabic unit labels — with Arabic dual forms — when locale is ar; otherwise the
+ * caller's localized `labels`, see buildDurationLabels).
  */
 export function formatAdminDuration(value, unit, locale = "ar", labels = null) {
   const n = Number(value);
   const normalizedUnit = String(unit || "days").toLowerCase();
   if (!Number.isFinite(n) || n <= 0 || !normalizedUnit) return "—";
   const num = formatAdminNumber(n);
-  if (locale === "en") {
-    return `${num} ${englishDurationUnit(n, normalizedUnit, labels)}`;
+  const uiLocale = locale || "ar";
+  if (uiLocale === "ar") {
+    return `${num} ${arabicDurationUnit(n, normalizedUnit)}`;
   }
-  return `${num} ${arabicDurationUnit(n, normalizedUnit)}`;
+  return `${num} ${englishDurationUnit(n, normalizedUnit, labels)}`;
 }
 
 const ADMIN_NUMBER_FMT = new Intl.NumberFormat("en-US");
 
-export const ROUND_STATUS_AR = {
-  scheduled: "مجدولة",
-  active: "نشطة",
-  expired: "منتهية",
-  stopped: "متوقفة",
-};
+/** Fallback labels (platformPages.trainingOrders.*) when a trainingOrders.* status key is missing. */
+function catalogFallbackLabel(t, group, code) {
+  if (!code) return null;
+  const key = `platformPages.trainingOrders.${group}.${code}`;
+  const label = t(key);
+  return label === key ? null : label;
+}
+
+const arabicT = (key, values) => pt(key, values, "ar");
+
+export const ROUND_STATUS_AR = Object.freeze(
+  Object.fromEntries(
+    ["scheduled", "active", "expired", "stopped"].map((status) => [
+      status,
+      catalogFallbackLabel(arabicT, "roundStatus", status),
+    ]),
+  ),
+);
 
 /**
  * @param {string|number|Date|null|undefined} value
@@ -173,11 +188,7 @@ export function formatJoDateTime(value, locale = "ar") {
 }
 
 export function automationStatusAr(status) {
-  if (status === "success") return "نجاح";
-  if (status === "skipped_no_templates") return "تخطي — لا قوالب";
-  if (status === "skipped_lock") return "تخطي — قفل";
-  if (status === "failed") return "فشل";
-  return status || "—";
+  return catalogFallbackLabel(arabicT, "automationStatus", status) || status || "—";
 }
 
 export function unwrapTrainingPayload(res) {
@@ -185,9 +196,7 @@ export function unwrapTrainingPayload(res) {
 }
 
 export function roundSourceAr(source) {
-  if (source === "automation") return "تلقائي";
-  if (source === "manual") return "يدوي";
-  return "—";
+  return catalogFallbackLabel(arabicT, "roundSource", source) || "—";
 }
 
 export function formatRoundPeriod(startsAt, expiresAt, locale = "ar") {
@@ -256,7 +265,7 @@ export function formatTimeRemaining(expiresAt, t) {
 export function getRoundStatusLabel(status, t) {
   const key = `trainingOrders.roundStatus.${status}`;
   const label = t(key);
-  return label === key ? ROUND_STATUS_AR[status] || status || "—" : label;
+  return label === key ? catalogFallbackLabel(t, "roundStatus", status) || status || "—" : label;
 }
 
 /**
@@ -267,10 +276,7 @@ export function getFakeOrderStatusLabel(status, t) {
   const key = `trainingOrders.fakeOrderStatus.${status}`;
   const label = t(key);
   if (label !== key) return label;
-  if (status === "active") return "نشط";
-  if (status === "expired") return "منتهٍ";
-  if (status === "stopped") return "متوقف";
-  return status || "—";
+  return catalogFallbackLabel(t, "fakeOrderStatus", status) || status || "—";
 }
 
 /**
@@ -280,7 +286,7 @@ export function getFakeOrderStatusLabel(status, t) {
 export function getAutomationStatusLabel(status, t) {
   const key = `trainingOrders.automationStatus.${status}`;
   const label = t(key);
-  return label === key ? automationStatusAr(status) : label;
+  return label === key ? catalogFallbackLabel(t, "automationStatus", status) || status || "—" : label;
 }
 
 /**
@@ -290,7 +296,7 @@ export function getAutomationStatusLabel(status, t) {
 export function getRoundSourceLabel(source, t) {
   const key = `trainingOrders.roundSource.${source}`;
   const label = t(key);
-  return label === key ? roundSourceAr(source) : label;
+  return label === key ? catalogFallbackLabel(t, "roundSource", source) || "—" : label;
 }
 
 /**

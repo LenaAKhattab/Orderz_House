@@ -1,0 +1,360 @@
+{
+  "wizard": {
+    "steps": {
+      "core": "Detaliile comenzii",
+      "assignment": "Atribuire",
+      "files": "Fișiere",
+      "review": "Verificare și trimitere"
+    },
+    "skills": {
+      "remove": "Eliminați",
+      "add": "Adăugați",
+      "placeholder": "Tastați o competență sau alegeți din sugestii…",
+      "historyHelp": "Pe măsură ce tastați, apar competențele folosite anterior în acest câmp, pentru selectare rapidă."
+    },
+    "select": {
+      "searchPlaceholder": "Căutați în listă…",
+      "empty": "Niciun rezultat"
+    },
+    "errors": {
+      "orderCode": "Numărul comenzii este obligatoriu.",
+      "title": "Titlul proiectului este obligatoriu.",
+      "description": "Descrierea proiectului este obligatorie (cel puțin 10 caractere).",
+      "categoryId": "Selectați o categorie.",
+      "projectType": "Selectați un tip de proiect.",
+      "budget": "Introduceți un buget valid, mai mare de 0.",
+      "bidBudgetMin": "Introduceți o sumă minimă validă.",
+      "bidBudgetMax": "Introduceți o sumă maximă validă.",
+      "bidBudgetMaxOrder": "Suma maximă trebuie să fie mai mare sau egală cu suma minimă.",
+      "durationValue": "Introduceți o durată validă, mai mare de 0.",
+      "durationUnit": "Selectați o unitate de timp.",
+      "maxFiles": "Maximum 5 fișiere.",
+      "stepMultiple": "Completați toate câmpurile obligatorii din acest pas.",
+      "stepIncomplete": "Completați câmpurile obligatorii din acest pas pentru a continua."
+    },
+    "toast": {
+      "categoriesLoadFailed": "Categoriile nu au putut fi încărcate",
+      "fileSizeTitle": "Dimensiunea fișierelor",
+      "fileLimitTitle": "Limită de fișiere",
+      "fileLimitMessage": "Puteți încărca cel mult 5 fișiere.",
+      "validationTitle": "Verificați câmpurile",
+      "validationMessage": "Completați corect informațiile obligatorii.",
+      "createdInstitutionalTitle": "Comanda instituțională a fost creată",
+      "createdTitle": "Comanda a fost creată",
+      "createdInstitutionalMessage": "„{{title}}” a fost creată în depozit.",
+      "createdClientMessage": "Comanda „{{title}}” a fost creată.",
+      "createdAdminMessage": "Numărul comenzii: {{orderCode}}",
+      "createFailedTitle": "Comanda nu a putut fi creată"
+    },
+    "upload": {
+      "totalSizeMessage": "Dimensiunea totală a fișierelor nu trebuie să depășească 5 MB",
+      "totalSizeHelper": "Dimensiune totală maximă de încărcare: 5 MB"
+    },
+    "header": {
+      "createClientTitle": "Creați comandă",
+      "createAdminTitle": "Creați comandă (administrator)",
+      "createClientDescription": "Același flux de creare a comenzii, doar cu permisiuni de client și fără atribuirea unui freelancer.",
+      "createAdminDescription": "Comanda este publicată imediat, fără plată. Puteți atribui un freelancer în timpul creării.",
+      "breadcrumbHome": "Acasă",
+      "breadcrumbOrders": "Comenzi",
+      "back": "Înapoi",
+      "allOrders": "Toate comenzile"
+    },
+    "projectType": {
+      "label": "Tipul comenzii",
+      "fixed": "Preț fix",
+      "bidding": "Licitație",
+      "helpFixedAdmin": "Preț fix: publicată în marketplace; freelancerii o primesc conform fluxului de aprobare.",
+      "helpBiddingClient": "Licitație: comanda este publicată pentru a primi oferte; plata se face când selectați o ofertă.",
+      "helpBiddingAdmin": "Licitație: fără interval de preț la creare; freelancerii trimit oferte, iar dumneavoastră gestionați procesul din panoul de comenzi."
+    },
+    "fields": {
+      "orderCode": "Numărul comenzii",
+      "orderCodePlaceholder": "de ex. ORD-1001",
+      "title": "Titlul proiectului",
+      "titlePlaceholder": "Introduceți titlul proiectului",
+      "description": "Descrierea cerințelor",
+      "descriptionPlaceholder": "Descrieți proiectul clar și detaliat",
+      "category": "Categorie",
+      "categoryPlaceholder": "— Selectați —",
+      "extraCategories": "Categorii suplimentare (opțional)",
+      "categoryRow": "Categorie",
+      "subSubcategory": "Categorie detaliată",
+      "remove": "Eliminați",
+      "subSubcategoryPlaceholder": "Selectați categoria detaliată (opțional)",
+      "subSubcategorySearch": "Căutați categoria detaliată…",
+      "noExtraCategories": "Nicio categorie suplimentară.",
+      "pickPrimaryCategoryFirst": "Selectați mai întâi categoria principală",
+      "noExtraCategoryAvailable": "Nu există nicio categorie suplimentară disponibilă",
+      "close": "Închideți",
+      "addExtraCategory": "Adăugați categorie suplimentară",
+      "extraCategoryPlaceholder": "Selectați o categorie suplimentară",
+      "extraCategorySearch": "Căutați categoria…",
+      "subSubcategoryShort": "Detaliată",
+      "subSubcategoryNone": "— Niciuna —",
+      "budget": "Buget",
+      "budgetRange": "Interval de buget",
+      "budgetMinPlaceholder": "Minim",
+      "budgetMaxPlaceholder": "Maxim",
+      "duration": "Durata livrării",
+      "unit": "Unitate",
+      "unitDays": "Zile",
+      "unitHours": "Ore",
+      "unitMinutes": "Minute",
+      "skills": "Competențe necesare",
+      "skillsPlaceholder": "Adăugați competențele necesare"
+    },
+    "assignment": {
+      "headingInstitutional": "2) Atribuire",
+      "headingOptional": "5) Atribuire (opțional)",
+      "institutionalHelp1": "În depozitul de comenzi instituționale nu se atribuie niciun freelancer la creare.",
+      "institutionalHelp2": "După aprobarea super administratorului și eliberarea către instituție, candidaturile și atribuirea urmează fluxul standard al comenzilor.",
+      "pickFreelancer": "Selectați freelancerul",
+      "pickFreelancerHelp": "Sunt afișați freelancerii activi și inactivi; pot fi atribuiți doar freelancerii eligibili (cont activ, e-mail verificat, abonament care permite primirea comenzilor)."
+    },
+    "files": {
+      "heading": "6) Fișiere (opțional)",
+      "dropzoneTitle": "Trageți fișierele aici sau faceți clic pentru a alege (cel mult 5 fișiere)",
+      "dropzoneHelp": "Puteți adăuga fișiere ale proiectului (opțional).",
+      "selectedLabel": "Fișiere selectate:",
+      "addMoreTitle": "Adăugați mai multe fișiere",
+      "addMore": "Adăugați mai multe fișiere",
+      "maxFilesTitle": "Limita maximă a fost atinsă (5 fișiere)",
+      "clearFiles": "Ștergeți fișierele"
+    },
+    "review": {
+      "heading": "7) Verificare și trimitere",
+      "title": "Titlu",
+      "description": "Descriere",
+      "category": "Categorie",
+      "subSubcategory": "Categorie detaliată",
+      "skills": "Competențe necesare",
+      "skillsNone": "Nu sunt necesare competențe specifice",
+      "projectType": "Tipul proiectului",
+      "budget": "Buget",
+      "duration": "Durata livrării",
+      "freelancer": "Freelancer",
+      "files": "Fișiere",
+      "filesCount": "Fișiere: {{count}}",
+      "noFiles": "Nu au fost adăugate fișiere",
+      "noteClientFixed": "După ce continuați către plată, comanda va fi activată și publicată în marketplace.",
+      "noteClientBidding": "Comanda va fi publicată pentru a primi oferte; plata este datorată când selectați o ofertă.",
+      "noteAssigned": "Comanda va fi atribuită direct acestui freelancer",
+      "noteArchive": "Comanda va fi salvată în arhivă (inactivă deocamdată). O puteți activa ulterior din panoul de control.",
+      "notePublish": "Comanda va fi publicată în lista comenzilor disponibile",
+      "archiveCheckbox": "Salvați în arhivă (inactivă deocamdată)",
+      "archiveHelp": "Când opțiunea este activată, comanda nu va apărea în lista comenzilor disponibile. O puteți activa ulterior.",
+      "payNowLabel": "Suma de plată acum",
+      "payNowHint": "Veți continua către plata securizată prin Stripe. Comanda este publicată în marketplace doar după confirmarea plății."
+    },
+    "freelancer": {
+      "unassigned": "Neatribuit",
+      "fallbackName": "Freelancer",
+      "fallbackId": "Freelancer nr. {{id}}"
+    },
+    "durationUnits": {
+      "day": "zi",
+      "dayTwo": "zile",
+      "days": "zile",
+      "hour": "oră",
+      "hourTwo": "ore",
+      "hours": "ore",
+      "minute": "minut",
+      "minuteTwo": "minute",
+      "minutes": "minute"
+    },
+    "nav": {
+      "cancel": "Anulați",
+      "close": "Închideți",
+      "previous": "Anterior",
+      "next": "Următorul",
+      "creating": "Se creează…",
+      "continuePayment": "Continuați către plată",
+      "publishForBids": "Publicați comanda pentru oferte",
+      "createOrder": "Creați comanda"
+    }
+  },
+  "freelancerSelector": {
+    "noSubscription": "Fără abonament",
+    "subscriptionActive": "Abonament activ",
+    "subscriptionNotStarted": "Abonament (neînceput)",
+    "subscriptionStatus": "Abonament: {{status}}",
+    "loadFailed": "Lista freelancerilor nu a putut fi încărcată.",
+    "searchPlaceholder": "Căutați după numele freelancerului, e-mail sau ID-ul contului…",
+    "hint": "Pot fi selectați doar freelancerii eligibili. Freelancerii neeligibili sunt afișați împreună cu motivul și nu pot fi aleși.",
+    "unassign": "Neatribuit",
+    "empty": "Niciun freelancer nu corespunde căutării.",
+    "listAriaLabel": "Rezultate freelanceri",
+    "accountLine": "Cont: {{accountId}} · {{email}}",
+    "accountActive": "Cont activ",
+    "accountInactive": "Cont inactiv"
+  },
+  "listPage": {
+    "toast": {
+      "reloadFailed": "Lista nu a putut fi reîmprospătată",
+      "loadFailed": "Comenzile nu au putut fi încărcate",
+      "orderLoadFailed": "Detaliile comenzii nu au putut fi încărcate.",
+      "deliveryOpenFailed": "Verificarea livrării nu a putut fi deschisă",
+      "bidApprovedTitle": "Ofertă aprobată",
+      "bidApprovedMessage": "Proiectul a fost atribuit freelancerului fără plată prin platformă.",
+      "bidApproveFailed": "Oferta nu a putut fi aprobată",
+      "revisionSentTitle": "Cererea de revizie a fost trimisă",
+      "revisionSentMessage": "Freelancerul o va vedea și poate livra din nou după efectuarea modificărilor."
+    },
+    "header": {
+      "eyebrow": "Panou de control",
+      "title": "Comenzi interne",
+      "description": "Comenzi create de administrator sau super administrator (fără plată).",
+      "breadcrumbHome": "Acasă",
+      "breadcrumbOrders": "Comenzi",
+      "viewCards": "Vizualizare carduri",
+      "viewTable": "Vizualizare tabel",
+      "createOrder": "Creați comandă"
+    },
+    "loading": "Se încarcă comenzile…",
+    "empty": {
+      "title": "Încă nu există comenzi interne",
+      "description": "Creați o comandă de administrator și va apărea aici imediat. Puteți atribui un freelancer sau o puteți publica în marketplace.",
+      "createFirst": "Creați prima comandă"
+    },
+    "card": {
+      "institutionalOrder": "Comandă instituțională",
+      "claimsNotForFixed": "Fluxul cererilor de plată nu este disponibil pentru comenzile cu preț fix.",
+      "priceBids": "Oferte de preț",
+      "loading": "Se încarcă…",
+      "receiveOrder": "Recepționați comanda",
+      "freelancerDeliveryFiles": "Fișierele de livrare ale freelancerului"
+    },
+    "table": {
+      "orderCode": "Numărul comenzii",
+      "title": "Titlu",
+      "scope": "Domeniu",
+      "description": "Descriere",
+      "category": "Categorie",
+      "subSubcategory": "Categorie detaliată",
+      "extraCategories": "Categorii suplimentare",
+      "type": "Tip",
+      "budget": "Buget",
+      "currency": "Monedă",
+      "duration": "Durată",
+      "status": "Stare",
+      "deliveryTiming": "Livrare față de termen",
+      "inPool": "În pool-ul de comenzi",
+      "archived": "Arhivată",
+      "actions": "Acțiuni",
+      "scopeGeneral": "Generală",
+      "noFiles": "Nu au fost adăugate fișiere",
+      "applicants": "Candidați",
+      "bids": "Oferte",
+      "created": "Creată",
+      "filesCount": "Fișiere: {{count}}"
+    },
+    "bidsModal": {
+      "title": "Oferte de preț (licitație internă)",
+      "refresh": "Reîmprospătați lista",
+      "close": "Închideți",
+      "hint": "Aprobarea unei oferte atribuie proiectul fără plată prin Stripe (comandă de administrator).",
+      "empty": "Încă nu există oferte.",
+      "amount": "Sumă: {{amount}}",
+      "status": "Stare: {{status}}",
+      "cannotApprove": "Această ofertă nu poate fi aprobată",
+      "approving": "Se aprobă…",
+      "approve": "Aprobați"
+    },
+    "attachments": {
+      "button": "Atașamente ({{count}})",
+      "title": "Atașamentele comenzii",
+      "empty": "Această comandă nu are atașamente.",
+      "loadFailed": "Atașamentele comenzii nu au putut fi încărcate"
+    }
+  },
+  "orderCard": {
+    "timeExpired": "Termenul limită al proiectului a expirat.",
+    "timeRemaining": "Timp rămas: {{span}}.",
+    "timePartJoiner": ", ",
+    "summaryAria": "Rezumatul comenzii",
+    "skillsAria": "Competențe",
+    "hideDetails": "Ascundeți detaliile",
+    "showDetails": "Vedeți detaliile",
+    "priceSummary": "Preț (rezumat)",
+    "technicalStatus": "Stare tehnică",
+    "published": "Publicată",
+    "archived": "Arhivată",
+    "extraCategories": "Categorii suplimentare",
+    "paidCurrencySuffix": " JOD"
+  },
+  "orderDetails": {
+    "files": {
+      "titleDefault": "Fișiere",
+      "emptyDefault": "Niciun fișier",
+      "defaultFileName": "Fișier",
+      "view": "Vedeți",
+      "download": "Descărcați",
+      "opening": "Se deschide…",
+      "downloading": "Se descarcă…",
+      "loginHint": "Conectați-vă cu permisiunile corespunzătoare pentru a vedea fișierele în siguranță",
+      "openSuccessTitle": "Deschis",
+      "openSuccessMessage": "Fișierul a fost deschis într-o filă nouă.",
+      "openErrorTitle": "Fișierul nu a putut fi deschis",
+      "downloadErrorTitle": "Descărcarea a eșuat",
+      "downloadSuccessTitle": "Descărcarea a început",
+      "genericError": "Operațiunea a eșuat.",
+      "unauthorized": "Nu aveți permisiunea de a vedea acest fișier.",
+      "notFound": "Fișierul nu a fost găsit.",
+      "openError": "Atașamentul nu a putut fi deschis. Încercați din nou.",
+      "downloadError": "Atașamentul nu a putut fi descărcat. Încercați din nou.",
+      "unavailable": "Fișierul original nu este disponibil",
+      "planLockedHint": "Atașamentele devin disponibile când pachetul dumneavoastră acoperă această comandă.",
+      "freelancersOnlyHint": "Atașamentele sunt disponibile freelancerilor eligibili pentru această comandă.",
+      "errors": {
+        "session": "Sesiunea dumneavoastră a expirat. Conectați-vă din nou.",
+        "forbidden": "Nu aveți permisiunea de a accesa acest atașament.",
+        "missing": "Fișierul original nu este disponibil.",
+        "notFound": "Atașamentul nu a fost găsit.",
+        "rateLimited": "Prea multe solicitări. Încercați din nou în scurt timp.",
+        "storage": "Stocarea fișierelor este temporar indisponibilă. Încercați din nou în scurt timp.",
+        "server": "A apărut o eroare de server. Încercați din nou în scurt timp.",
+        "network": "Conexiunea a eșuat. Verificați conexiunea la internet și încercați din nou.",
+        "generic": "Operațiunea a eșuat. Încercați din nou."
+      }
+    },
+    "submissionHistory": {
+      "title": "Istoricul livrărilor și reviziilor",
+      "submissionMeta": "Livrarea nr. {{number}} · {{date}}",
+      "noSubmissionFiles": "Nu sunt înregistrate fișiere de livrare pentru această intrare.",
+      "fileDefault": "Fișier",
+      "attachmentDefault": "Atașament",
+      "revisionTitle": "Cerere de revizie",
+      "loading": "…",
+      "badge": {
+        "final": "Livrare finală",
+        "current": "Livrare curentă",
+        "past": "Livrare anterioară"
+      },
+      "status": {
+        "submitted": "Livrat",
+        "revision_requested": "Revizie solicitată",
+        "accepted": "Acceptat",
+        "superseded": "Înlocuit"
+      },
+      "requestedBy": {
+        "client": "client",
+        "admin": "administrator",
+        "super_admin": "super administrator"
+      },
+      "requestedByPrefix": "De către {{who}}",
+      "unknownStatus": "Stare necunoscută",
+      "unknownRole": "Rol necunoscut"
+    }
+  },
+  "deliveryTiming": {
+    "lessThanMinute": "Mai puțin de un minut",
+    "zeroHours": "0 ore",
+    "zeroMinutes": "0 minute",
+    "partJoiner": "și",
+    "workDuration": "Timp de la primire până la livrare: ({{span}}).",
+    "late": "Lucrarea a fost primită de la freelancer cu o întârziere de ({{span}}).",
+    "onTime": "Lucrarea a fost livrată la timp.",
+    "early": "Lucrarea a fost livrată la timp, cu ({{span}}) înainte de termenul limită."
+  }
+}

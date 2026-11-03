@@ -258,8 +258,8 @@ export default function FreelancerMyOrderDetailsPage() {
   const skillsLine = useMemo(() => {
     if (!order) return t("orders.details.noPreferredSkills");
     const names = Array.isArray(order.preferredSkills) ? order.preferredSkills.map((s) => s.name).filter(Boolean) : [];
-    return names.length ? names.join(locale === "en" ? ", " : "، ") : t("orders.details.noPreferredSkills");
-  }, [order, locale, t]);
+    return names.length ? names.join(t("platformPages.common.listJoiner")) : t("orders.details.noPreferredSkills");
+  }, [order, t]);
 
   return (
     <main className="container page-content dash-shell od-page od-page--pool od-page--pool-has-main" dir={dir}>

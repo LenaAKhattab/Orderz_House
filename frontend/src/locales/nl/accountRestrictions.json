@@ -1,0 +1,197 @@
+{
+  "title": "Accountbeperkingen",
+  "subtitle": "Beoordelingsblokkades op de marktplaats voor freelancers — los van het uitschakelen van accounts.",
+  "listTitle": "Beperkte accounts",
+  "listCount": "Beperkingen: {{count}}",
+  "searchPlaceholder": "Zoek op naam, e-mail of gebruikers-ID",
+  "filterAria": "Beperkingen filteren",
+  "primaryTabs": {
+    "users": "Gebruikers",
+    "plans": "Pakketten",
+    "aria": "Onderdelen van accountbeperkingen"
+  },
+  "tabs": {
+    "active": "Actief",
+    "expired": "Verlopen",
+    "revoked": "Opgeheven",
+    "all": "Alle"
+  },
+  "plans": {
+    "listTitle": "Pakketbeperkingen",
+    "listCount": "Pakketten: {{count}}",
+    "emptyTitle": "Geen pakketten om weer te geven",
+    "emptyDescription": "De standaard lidmaatschapspakketten van de marktplaats verschijnen hier.",
+    "addPlan": "+ Pakket beperken",
+    "restrictPlan": "Pakket beperken",
+    "restrictAgain": "Opnieuw beperken",
+    "marketplaceMembership": "Marktplaatslidmaatschap",
+    "impactConfirmTitle": "Pakketbeperking bevestigen",
+    "impactConfirmBody": "Deze beperking geldt voor elke gebruiker met het huidige pakket {{tier}}, inclusief iedereen die naar dit pakket overstapt terwijl de beperking actief is.",
+    "impactCount": "Momenteel getroffen gebruikers: {{count}}",
+    "alreadyActive": "Voor dit pakket geldt al een actieve beperking",
+    "selectPlan": "Pakket selecteren",
+    "changePlan": "Pakket wijzigen",
+    "currentSubscribers": "Huidige abonnees",
+    "existingRestriction": "Bestaande beperking",
+    "notRestricted": "Niet beperkt",
+    "inheritedLabel": "Overgenomen van pakket: {{tier}}",
+    "saveOk": "Pakketbeperking toegevoegd.",
+    "updateOk": "Pakketbeperking bijgewerkt.",
+    "revokeOk": "Pakketbeperking opgeheven.",
+    "extendOk": "Pakketbeperking verlengd.",
+    "columns": {
+      "plan": "Pakket",
+      "code": "Code",
+      "subscribers": "Huidige abonnees",
+      "status": "Status beperking",
+      "scope": "Bereik",
+      "startsAt": "Begint op",
+      "expiresAt": "Verloopt op",
+      "addedBy": "Toegevoegd door",
+      "actions": "Acties"
+    },
+    "statusLabels": {
+      "ACTIVE": "Beperkt",
+      "EXPIRED": "Verlopen",
+      "REVOKED": "Beperking opgeheven",
+      "NONE": "Niet beperkt"
+    },
+    "sections": {
+      "plan": "Pakket",
+      "restriction": "Beperking",
+      "impact": "Gevolgen",
+      "audit": "Auditlogboek"
+    },
+    "drawerTitle": "Pakketbeperking",
+    "addWorkflowTitle": "Een pakket beperken"
+  },
+  "emptyTitle": "Er zijn momenteel geen beperkte accounts.",
+  "emptyDescription": "Voeg een gebruiker toe om diens marktplaatsactiviteit te beperken.",
+  "addUser": "+ Gebruiker toevoegen",
+  "addRestriction": "Beperking toevoegen",
+  "edit": "Bereik bewerken",
+  "revoke": "Beperking opheffen",
+  "extend": "Duur verlengen",
+  "viewDetails": "Details bekijken",
+  "viewHistory": "Activiteitenlogboek bekijken",
+  "viewLog": "Logboek bekijken",
+  "restrictAgain": "Opnieuw beperken",
+  "manage": "Beperking beheren",
+  "addFromUsers": "Beperking toevoegen",
+  "columns": {
+    "user": "Gebruiker",
+    "userId": "Gebruikers-ID",
+    "email": "E-mail",
+    "plan": "Huidig pakket",
+    "status": "Status beperking",
+    "scope": "Bereik",
+    "addedAt": "Toegevoegd op",
+    "expiresAt": "Verloopt op",
+    "addedBy": "Toegevoegd door",
+    "actions": "Acties"
+  },
+  "statusLabels": {
+    "ACTIVE": "Beperkt",
+    "EXPIRED": "Verlopen",
+    "REVOKED": "Beperking opgeheven"
+  },
+  "restrictionTypeLabel": "Accountbeperking",
+  "scopes": "Bereik van de beperking",
+  "scopeMode": {
+    "all": "Hele marktplaats",
+    "custom": "Aangepast bereik"
+  },
+  "scopesLabels": {
+    "ALL_MARKETPLACE": "Hele marktplaats",
+    "bids": "Biedingen",
+    "direct_claims": "Directe claims",
+    "order_assignments": "Opdrachttoewijzingen",
+    "articles": "Artikelen",
+    "competitions": "Wedstrijden",
+    "messaging": "Berichten"
+  },
+  "duration": {
+    "label": "Duur",
+    "none": "Geen vervaldatum",
+    "h24": "24 uur",
+    "d3": "3 dagen",
+    "d7": "7 dagen",
+    "d30": "30 dagen",
+    "custom": "Aangepaste datum"
+  },
+  "internalReason": "Interne reden",
+  "internalReasonPlaceholder": "Voer de interne reden voor deze beperking in...",
+  "internalNote": "Interne notitie",
+  "internalNotePlaceholder": "Optionele beheernotitie…",
+  "noExpiry": "Geen vervaldatum",
+  "activeHoldBadge": "Actieve beperking",
+  "noActive": "Geen actieve beperking",
+  "drawerTitle": "Accountbeperkingen",
+  "detailsTitle": "Details van de beperking",
+  "sections": {
+    "user": "Gebruiker",
+    "restriction": "Beperking",
+    "activity": "Activiteit tijdens beperking",
+    "audit": "Audittijdlijn"
+  },
+  "activity": {
+    "heldBids": "Vastgehouden biedingen",
+    "heldClaims": "Vastgehouden directe claims",
+    "heldArticles": "Vastgehouden artikelen",
+    "releases": "Vrijgaven",
+    "rejects": "Afgewezen na beoordeling",
+    "empty": "Geen vastgehouden activiteit geregistreerd.",
+    "heldBidOrderLine": "Opdracht #{{orderId}} · {{amount}} JOD"
+  },
+  "addWorkflow": {
+    "title": "Gebruiker aan beperkingen toevoegen",
+    "searchLabel": "Freelancer zoeken",
+    "searchPlaceholder": "Naam, e-mail of gebruikers-ID",
+    "noResults": "Geen overeenkomende resultaten.",
+    "selectUser": "Selecteren",
+    "changeUser": "Gebruiker wijzigen",
+    "hasActive": "Er bestaat al een actieve beperking",
+    "confirmTitle": "Beperking bevestigen",
+    "confirmBody": "De marktplaatsactiviteit van deze gebruiker wordt beperkt volgens het geselecteerde bereik. Doorgaan?",
+    "confirmAdd": "Beperking toevoegen"
+  },
+  "extendWorkflow": {
+    "title": "Duur verlengen",
+    "confirm": "Verlengen"
+  },
+  "editWorkflow": {
+    "title": "Bereik bewerken",
+    "confirm": "Wijzigingen opslaan"
+  },
+  "revokeWorkflow": {
+    "title": "Beperking opheffen",
+    "description": "De actieve beperking wordt opgeheven. Historische gegevens blijven behouden.",
+    "confirm": "Beperking opheffen",
+    "reasonOptional": "Reden van opheffing (optioneel)"
+  },
+  "form": {
+    "reasonRequired": "Een interne reden is verplicht",
+    "save": "Opslaan",
+    "cancel": "Annuleren",
+    "close": "Sluiten",
+    "working": "Bezig…"
+  },
+  "heldBids": "Biedingen in beoordeling",
+  "releaseBid": "Bod vrijgeven aan klant",
+  "rejectBid": "Bod afwijzen en credits terugzetten",
+  "loadError": "Beperkingen konden niet worden geladen.",
+  "saveOk": "Beperking toegevoegd.",
+  "updateOk": "Beperking bijgewerkt.",
+  "revokeOk": "Beperking opgeheven.",
+  "extendOk": "Beperking verlengd.",
+  "privacyNote": "Interne redenen worden nooit aan freelancers of klanten getoond.",
+  "refresh": "Vernieuwen",
+  "actionsFor": "Acties voor {{name}}",
+  "unnamed": "Naamloos",
+  "identity": "Identiteit",
+  "eligibility": "Geschiktheid",
+  "accountActive": "Actief",
+  "accountInactive": "Inactief",
+  "checking": "Beperkingen controleren…",
+  "checkFailed": "Beperkingen konden niet worden gecontroleerd"
+}

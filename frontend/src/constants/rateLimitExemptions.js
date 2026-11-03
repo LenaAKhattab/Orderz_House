@@ -1,15 +1,18 @@
-/** Allowed rate-limit exemption scopes (mirrors backend; auth scopes forbidden). */
-export const RATE_LIMIT_EXEMPTION_SCOPES = [
-  { value: "order_create", label: "إنشاء الطلبات (order_create)" },
-  { value: "fake_order_create", label: "طلبات التدريب الوهمية (fake_order_create)" },
-  { value: "training_bulk", label: "توليد تدريبي جماعي (training_bulk)" },
-  { value: "admin_write", label: "كتابات الإدارة (admin_write)" },
-];
+import { withCatalogLabels } from "./constantsI18n.js";
 
-export const RATE_LIMIT_EXEMPTION_MODES = [
-  { value: "bypass", label: "تجاوز الحد (bypass)" },
-  { value: "increased_limit", label: "حد أعلى (increased_limit)" },
-];
+/**
+ * `value` is the API code; `labelKey` the catalog key. The legacy `label` getter follows the non-English UI branch
+ * (Arabic, or the active de / nl / ro locale).
+ */
+const optionRow = (group, value) =>
+  withCatalogLabels({ value }, `rateLimitExemptions.${group}.${value}`, { label: "local" });
+
+/** Allowed rate-limit exemption scopes (mirrors backend; auth scopes forbidden). */
+export const RATE_LIMIT_EXEMPTION_SCOPES = ["order_create", "fake_order_create", "training_bulk", "admin_write"].map(
+  (value) => optionRow("scopes", value),
+);
+
+export const RATE_LIMIT_EXEMPTION_MODES = ["bypass", "increased_limit"].map((value) => optionRow("modes", value));
 
 export const RATE_LIMIT_EXEMPTION_FORBIDDEN_SCOPES = [
   "auth_login",

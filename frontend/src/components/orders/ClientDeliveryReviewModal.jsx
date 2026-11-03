@@ -219,7 +219,7 @@ export default function ClientDeliveryReviewModal({
               ) : null}
               {historyLoadFailed ? (
                 <p className="oh-dialog-error" role="alert">
-                  {t(`${d}.loadDeliveryFailed`, { defaultValue: "تعذر تحميل تفاصيل التسليم. حاول مرة أخرى." })}
+                  {t(`${d}.loadDeliveryFailed`)}
                 </p>
               ) : null}
               {waitingForHistory ? (

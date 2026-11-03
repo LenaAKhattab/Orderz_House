@@ -1,0 +1,1246 @@
+{
+  "header": {
+    "loadErrorTitle": "Kan dashboard niet laden",
+    "loadErrorDefault": "Het dashboard kan niet worden geladen.",
+    "retry": "Opnieuw proberen"
+  },
+  "hero": {
+    "ariaLabel": "Welkom op uw dashboard",
+    "title": "Welkom op uw dashboard",
+    "subtitle": "Eén centrale plek om uw freelancewerk te beheren, opdrachten te volgen, uw vaardigheden te ontwikkelen en uw inkomen te verhogen.",
+    "browseOrders": "Beschikbare opdrachten bekijken",
+    "myOrders": "Mijn opdrachten bekijken",
+    "metricsAria": "Snel overzicht",
+    "coursesStart": {
+      "ariaLabel": "Begin met cursussen",
+      "title": "Begin met cursussen",
+      "body": "Cursussen zijn uw eerste stap om de werkwijze te begrijpen en opdrachten te ontvangen.",
+      "cta": "Cursussen bekijken"
+    },
+    "welcomeName": "Hallo, {{name}}",
+    "controlCenterTitle": "Controlecentrum",
+    "controlCenterSubtitle": "Een volledig overzicht van uw werk, abonnement en opdrachten."
+  },
+  "stats": {
+    "trustLevel": "Vertrouwensniveau",
+    "trustLevelNumber": "Niveau {{level}}",
+    "totalEarnings": "Totale verdiensten",
+    "fromClaims": "Uit declaraties",
+    "paidTotal": "Totaal betaald",
+    "activeOrders": "Actieve opdrachten",
+    "activeOrdersSub": "In uitvoering",
+    "overallRating": "Algemene beoordeling",
+    "noRatingYet": "Nog geen",
+    "outOfFive": "van de 5",
+    "reviewCount": "{{count}} beoordeling",
+    "reviewCount_plural": "{{count}} beoordelingen",
+    "beginner": "Beginner",
+    "trustLevels": {
+      "beginner": "Beginner",
+      "active": "Actief",
+      "professional": "Professioneel",
+      "trusted": "Betrouwbaar",
+      "expert": "Expert"
+    },
+    "performance": {
+      "title": "Prestaties",
+      "completed": "Voltooid",
+      "completionRate": "Voltooiingspercentage",
+      "onTime": "Op tijd",
+      "revisions": "Revisies",
+      "avgDelivery": "Gem. oplevering",
+      "days": "{{count}} dag",
+      "days_plural": "{{count}} dagen",
+      "paidClaims": "Betaald (declaraties)",
+      "completedLast30": "{{count}} opdracht voltooid in de afgelopen 30 dagen.",
+      "completedLast30_plural": "{{count}} opdrachten voltooid in de afgelopen 30 dagen."
+    },
+    "courses": {
+      "assigned": "Toegewezen",
+      "inProgress": "In uitvoering",
+      "completed": "Voltooid",
+      "finalTest": "Eindtoets",
+      "totalCourses": "Totaal cursussen",
+      "inProgressLabel": "Bezig",
+      "avgProgress": "Gemiddelde voortgang"
+    },
+    "earnings": {
+      "paid": "Betaald",
+      "pending": "Te ontvangen / in afwachting",
+      "openClaims": "Openstaande declaraties"
+    },
+    "myOrders": {
+      "summaryAria": "Overzicht opdrachten",
+      "total": "Totaal opdrachten",
+      "active": "Actief",
+      "pendingReview": "In afwachting van beoordeling",
+      "completed": "Voltooid",
+      "cancelled": "Geannuleerd",
+      "showing": "{{shown}} van {{total}} opdracht weergegeven",
+      "showing_plural": "{{shown}} van {{total}} opdrachten weergegeven",
+      "perPage": "{{limit}} / pagina"
+    },
+    "financialClaims": {
+      "summaryAria": "Overzicht declaraties",
+      "total": "Totaal declaraties",
+      "underReview": "In beoordeling",
+      "paid": "Betaald"
+    },
+    "workload": {
+      "activeCount": "{{count}} actieve opdracht",
+      "activeCount_plural": "{{count}} actieve opdrachten"
+    }
+  },
+  "tip": {
+    "title": "Tip van de dag",
+    "profileCompletion": "Profielvolledigheid",
+    "percentComplete": "{{pct}}% voltooid",
+    "defaultHeadline": "Ga zo door",
+    "defaultDescription": "Focus op de kwaliteit van uw opleveringen en op het opbouwen van sterke klantbeoordelingen.",
+    "browseOrders": "Opdrachten bekijken"
+  },
+  "actions": {
+    "noUrgentTitle": "Momenteel geen dringende acties",
+    "noUrgentSubtitle": "U bent helemaal bij met uw opdrachten en meldingen.",
+    "moreCount": "(+{{count}} meer)",
+    "moreCount_plural": "(+{{count}} meer)",
+    "continue": "Doorgaan",
+    "viewCourse": "Cursus bekijken"
+  },
+  "training": {
+    "coursesTitle": "Cursussen en training",
+    "allCourses": "Alle cursussen",
+    "eligibilityNote": "Het voltooien van cursussen verandert uw geschiktheid voor de marktplaats niet automatisch — alleen bedoeld voor professionele ontwikkeling.",
+    "pendingFinalTest": "U hebt {{count}} cursus die op de eindtoets wacht.",
+    "pendingFinalTest_plural": "U hebt {{count}} cursussen die op de eindtoets wachten.",
+    "continueCourse": "Doorgaan: {{title}}",
+    "defaultCourseTitle": "Cursus",
+    "noAssignedCourses": "Nog geen cursussen toegewezen.",
+    "pageTitle": "Ontwikkel uw vaardigheden, bouw aan uw toekomst",
+    "pageSubtitle": "Bekijk toegewezen cursussen, volg uw voortgang en voltooi lessen en eindtoetsen in een leeromgeving die aan uw dashboard is gekoppeld.",
+    "searchPlaceholder": "Zoek een cursus of vaardigheid...",
+    "searchAria": "Cursussen zoeken",
+    "coursesSummaryAria": "Overzicht cursussen",
+    "filterAria": "Cursussen filteren",
+    "sortPrefix": "Sorteren:",
+    "sortAria": "Cursussen sorteren",
+    "yourCourses": "Uw cursussen",
+    "courseCount": "{{count}} cursus",
+    "courseCount_plural": "{{count}} cursussen",
+    "tabs": {
+      "all": "Alle",
+      "inProgress": "Bezig",
+      "completed": "Voltooid",
+      "notStarted": "Niet gestart",
+      "favorites": "Favorieten"
+    },
+    "sort": {
+      "newest": "Nieuwste",
+      "oldest": "Oudste",
+      "progressHigh": "Meeste voortgang",
+      "progressLow": "Minste voortgang",
+      "title": "Naam (A–Z)"
+    },
+    "card": {
+      "untitled": "Cursus zonder titel",
+      "defaultDescription": "Volg de videolessen en voldoe stap voor stap aan de cursusvereisten.",
+      "lessonCount": "{{count}} les",
+      "lessonCount_plural": "{{count}} lessen",
+      "noLessons": "Geen lessen",
+      "levelIntermediate": "Gemiddeld",
+      "lastUpdated": "Laatst bijgewerkt {{date}}",
+      "progressAria": "Voortgang {{pct}}%",
+      "lessonsCompleted": "{{completed}}/{{total}} les voltooid",
+      "lessonsCompleted_plural": "{{completed}}/{{total}} lessen voltooid",
+      "lessonsShort": "{{completed}}/{{total}} lessen",
+      "reviewCourse": "Cursus opnieuw bekijken",
+      "startCourse": "Cursus starten",
+      "continueLearning": "Verder leren",
+      "review": "Opnieuw bekijken",
+      "start": "Starten",
+      "continue": "Doorgaan",
+      "addFavorite": "Toevoegen aan favorieten",
+      "removeFavorite": "Verwijderen uit favorieten",
+      "statusCompleted": "Voltooid",
+      "statusInProgress": "Bezig",
+      "statusNotStarted": "Nog niet gestart",
+      "testCompleted": "Eindtoets voltooid",
+      "testPending": "Eindtoets in afwachting",
+      "testIncluded": "Inclusief eindtoets",
+      "lockedByPlan": "Deze cursus is beschikbaar bij hogere pakketten",
+      "upgradePlan": "Pakket upgraden",
+      "tierFromSilver": "Beschikbaar vanaf Silver en hoger",
+      "tierFromPro": "Beschikbaar vanaf Pro en hoger",
+      "tierFromElite": "Beschikbaar met Elite",
+      "activateOrUpgrade": "Activeer of upgrade uw pakket om toegang te krijgen tot deze cursus"
+    },
+    "loadError": "Kan cursussen niet laden."
+  },
+  "orders": {
+    "backToList": "Terug naar lijst",
+    "orderNotFound": "Opdracht niet gevonden",
+    "noFiles": "Geen bestanden bijgevoegd",
+    "alreadyParticipated": "U hebt uw deelname aan deze opdracht al geregistreerd.",
+    "alreadyBid": "U hebt al een bod op deze opdracht uitgebracht.",
+    "submitting": "Indienen…",
+    "bidSubmitted": "Bod ingediend",
+    "submitBid": "Bod uitbrengen",
+    "taking": "Accepteren…",
+    "registered": "Geregistreerd",
+    "takeOrder": "Opdracht aannemen",
+    "bidUnderReview": "Uw bod wordt beoordeeld voordat het aan de klant wordt getoond."
+  },
+  "myOrders": {
+    "title": "Mijn huidige opdrachten",
+    "subtitle": "Volg eenvoudig uw toegewezen werk, deadlines en uitvoeringsstatus.",
+    "searchPlaceholder": "Opdrachten zoeken (titel of opdrachtnummer)",
+    "searchAria": "Opdrachten zoeken",
+    "sortPrefix": "Sorteren:",
+    "sortAria": "Opdrachten sorteren",
+    "refreshAria": "Lijst vernieuwen",
+    "refreshTitle": "Lijst vernieuwen",
+    "listAria": "Lijst met opdrachten",
+    "loadError": "Kan opdrachten nu niet laden. Probeer het opnieuw.",
+    "loadErrorTitle": "Kan opdrachten niet laden",
+    "filterAria": "Opdrachten filteren op status",
+    "filters": {
+      "all": "Alle",
+      "revisionRequired": "Revisie vereist",
+      "assigned": "Toegewezen",
+      "inProgress": "In uitvoering",
+      "pendingReview": "In afwachting van beoordeling",
+      "completed": "Voltooid",
+      "cancelled": "Geannuleerd"
+    },
+    "sort": {
+      "newest": "Nieuwste",
+      "oldest": "Oudste",
+      "priceHigh": "Hoogste prijs",
+      "priceLow": "Laagste prijs"
+    },
+    "details": {
+      "loadErrorTitle": "Kan details van de opdracht niet laden",
+      "revisionSectionTitle": "Details van het revisie-/beoordelingsverzoek",
+      "requestedBy": "Aangevraagd door",
+      "requestMessage": "Bericht bij het verzoek",
+      "requestDate": "Datum van verzoek",
+      "deadline": "Deadline",
+      "status": "Status",
+      "linkedAttachments": "Gekoppelde bijlagen",
+      "noExtraAttachments": "Geen extra bijlagen.",
+      "submissionHistory": "Geschiedenis van opleveringen en revisies",
+      "yourDelivery": "Wat u hebt opgeleverd",
+      "deliverOrder": "Opdracht opleveren",
+      "deliveryHint": "Upload de definitieve bestanden of afbeeldingen (maximaal vijf bestanden).",
+      "selectFiles": "Bestanden kiezen",
+      "submitDelivery": "Oplevering indienen",
+      "submitting": "Indienen…",
+      "deliveryStatus": "Status van oplevering",
+      "pendingReviewMessage": "Uw oplevering is ter beoordeling verzonden en wacht op definitieve goedkeuring (klant/beheerder). Tijdens de beoordeling kan deze niet worden bewerkt; als er een revisie wordt gevraagd, kunt u een nieuwe oplevering versturen.",
+      "alertTitle": "Let op",
+      "selectFileRequired": "Selecteer ten minste één bestand.",
+      "fileSizeTitle": "Bestandsgrootte",
+      "uploadSizeHelper": "Maximale totale uploadgrootte: 5 MB.",
+      "uploadSizeError": "De totale bestandsgrootte mag niet meer dan 5 MB zijn.",
+      "deliverySuccessTitle": "Opgeleverd",
+      "deliverySuccessMessage": "De bijlagen zijn ter beoordeling naar de klant verzonden.",
+      "deliveryErrorTitle": "Oplevering mislukt",
+      "revisionRequesterAdmin": "Beheerder",
+      "revisionRequesterClient": "Klant",
+      "revisionDelivered": "Revisie opgeleverd",
+      "revisionInProgress": "Revisie in uitvoering",
+      "revisionPending": "Wacht op uitvoering van revisie",
+      "phaseRevisionInProgress": "Revisie in uitvoering",
+      "phasePendingClientApproval": "Wacht op goedkeuring van de oplevering door de klant",
+      "phaseCompleted": "Voltooid",
+      "phaseInProgressDeliver": "In uitvoering — u kunt bestanden indienen",
+      "deliveryNoteLabel": "Opmerking bij de oplevering (optioneel)",
+      "deliveryNotePlaceholder": "Beschrijf wat u hebt opgeleverd of waar u op wilt wijzen…",
+      "resubmitHint": "Voeg de bestanden van de herziene oplevering toe. De vorige oplevering blijft in de geschiedenis staan.",
+      "resubmitDelivery": "Oplevering opnieuw indienen",
+      "deliveryErrorMessage": "Kan de oplevering niet verzenden. Probeer het opnieuw."
+    }
+  },
+  "plans": {
+    "eyebrow": "Uw huidige pakket",
+    "loadingEyebrow": "Pakketten",
+    "loadingSubtitle": "Uw pakketten laden…",
+    "freePlanTitle": "Gratis abonnement",
+    "freePlanSubtitle": "Upgrade naar een hoger pakket voor opdrachten met een hogere waarde en extra voordelen.",
+    "paidPlanSubtitle": "Volg uw abonnement en upgrade naar het volgende pakket wanneer u er klaar voor bent.",
+    "nextPlanHint": "Volgend pakket: {{title}} — kies het in de lijst hieronder om te upgraden.",
+    "summaryAria": "Overzicht abonnement",
+    "upgradeSectionAria": "Upgradepakketten",
+    "marketplaceCatalogAria": "Pakketten voor freelancelidmaatschap",
+    "pageCatalogAria": "Paginapakketten",
+    "subscriptionStatus": "Abonnementsstatus",
+    "payment": "Betaling",
+    "companyActivation": "Activering door bedrijf",
+    "marketplaceEligibility": "Geschiktheid voor marktplaats",
+    "orderValueRange": "Bereik opdrachtwaarde",
+    "expiresOn": "Verloopt op",
+    "canApply": "U kunt zich aanmelden",
+    "notEligible": "Niet geschikt",
+    "planAndEligibility": "Pakket en geschiktheid",
+    "choosePlan": "Pakket kiezen",
+    "noActiveSubscription": "Geen actief abonnement — kies een pakket om te beginnen.",
+    "subscriptionLabel": "Abonnement",
+    "realOrders": "Echte opdrachten",
+    "realOrdersFreeRange": "Beschikbaar binnen het bereik van 3–7 JOD",
+    "realOrdersPerPlan": "Beschikbaar volgens uw pakket",
+    "trainingOrders": "Trainingsopdrachten",
+    "trainingOrdersNote": "Beschikbaar volgens de platforminstellingen",
+    "currentWorkload": "Huidige werklast",
+    "remainingTime": "Resterende tijd",
+    "rangeFreePlan": "3 tot 7 JOD (echte opdrachten en trainingsopdrachten)",
+    "rangeMinMax": "{{min}} tot {{max}} JOD",
+    "rangeMinOnly": "Vanaf {{min}} JOD"
+  },
+  "marketplaceMembership": {
+    "title": "Freelancelidmaatschap",
+    "currentEyebrow": "Uw huidige lidmaatschap",
+    "purchasedEyebrow": "Gekocht",
+    "purchasedTitle": "Lidmaatschap gekocht",
+    "pendingStartBody": "Uw abonnementsperiode begint pas wanneer u uw eerste opdracht ontvangt. Voltooi de identiteitsverificatie en de training voordat u zich voor opdrachten aanmeldt.",
+    "applyGatesReminder": "Voltooi de identiteitsverificatie en de vereiste training voordat u zich voor opdrachten aanmeldt.",
+    "purchasedAt": "Aankoopdatum",
+    "termStatus": "Status looptijd",
+    "termNotStarted": "Nog niet gestart",
+    "termStartsWhen": "Start abonnement",
+    "termStartsOnFirstOrder": "Wanneer u uw eerste opdracht ontvangt",
+    "statusPurchasedPendingStart": "Gekocht — wacht op de eerste opdracht",
+    "statusAssignedNotStarted": "Wacht op de eerste opdracht",
+    "assignedNotStartedBody": "Uw lidmaatschapsperiode begint wanneer u uw eerste echte opdracht ontvangt.",
+    "checkoutSuccessTitle": "Lidmaatschap succesvol gekocht",
+    "checkoutSuccessMessage": "Lidmaatschap succesvol gekocht. Uw abonnementsperiode begint pas wanneer u uw eerste opdracht ontvangt. Voltooi de identiteitsverificatie en de training voordat u zich voor opdrachten aanmeldt.",
+    "checkoutWebhookHint": "De betalingsbevestiging kan even duren als het systeem de webhook nog verwerkt. Vernieuw de pagina zo meteen als het lidmaatschap nog niet wordt weergegeven.",
+    "checkoutCancelledTitle": "Betaling geannuleerd",
+    "checkoutCancelledMessage": "De betaling is niet voltooid. Als uw kaart is geweigerd, probeer dan een andere kaart of neem contact op met uw bank. U kunt op elk moment opnieuw een pakket kiezen.",
+    "dismissBanner": "Sluiten",
+    "checkoutFailedTitle": "Kan betaling niet starten",
+    "checkoutFailed": "Kan de betaalpagina niet openen. Probeer het opnieuw.",
+    "checkoutMissingUrl": "De server heeft geen betaal-URL teruggegeven.",
+    "checkoutUnsupportedPlan": "Dit pakket kan niet via Stripe worden gekocht.",
+    "starterActivatedTitle": "Starter geactiveerd",
+    "starterActivatedMessage": "Uw gratis Starter-lidmaatschap is nu actief.",
+    "starterActivateFailedTitle": "Kan Starter niet activeren",
+    "starterActivateFailed": "Kan Starter niet activeren. Voltooi de verificatie en probeer het opnieuw.",
+    "starterReadyEyebrow": "Gratis pakket",
+    "starterReadyTitle": "Gratis pakket staat klaar",
+    "starterReadyBody": "Uw proefperiode start pas nadat u de identiteitsverificatie en de training hebt voltooid en op Proefperiode starten hebt gedrukt.",
+    "starterGatesReminder": "Voltooi de identiteitsverificatie en de training om uw proefperiode te starten.",
+    "startTrialCta": "Proefperiode starten",
+    "statusStarterPendingStart": "Klaar — proefperiode niet gestart",
+    "starterTrialStartedTitle": "Proefperiode gestart",
+    "starterTrialStartedMessage": "Uw gratis Starter-proefperiode is nu 10 dagen actief.",
+    "starterTrialFailedTitle": "Kan proefperiode niet starten",
+    "starterTrialFailed": "Kan de proefperiode niet starten. Voltooi de identiteitsverificatie en de training en probeer het opnieuw.",
+    "remainingDays": "Resterende dagen",
+    "summaryAria": "Overzicht freelancelidmaatschap",
+    "loading": "Lidmaatschapsstatus laden…",
+    "none": "Geen actief freelancelidmaatschap",
+    "noneHint": "Kies hieronder een pakket om uw lidmaatschap te starten.",
+    "status": "Status",
+    "statusActive": "Actief",
+    "statusPending": "Verzoek tot activering van lidmaatschap in beoordeling",
+    "statusSuspended": "Opgeschort",
+    "statusExpired": "Lidmaatschap verlopen",
+    "statusEnded": "Beëindigd",
+    "endsOn": "Eindigt op",
+    "bidsAvailable": "Beschikbare biedingen",
+    "dailyLimit": "Daglimiet",
+    "currentPlan": "Huidig pakket",
+    "cycleStart": "Begin cyclus",
+    "cycleEnd": "Einde cyclus",
+    "priorityBidUsage": "Gebruik van voorrangsbiedingen",
+    "bidsPerMonth": "Biedingen / maand",
+    "articleAccessLevel": "Toegangsniveau artikelen",
+    "articleAccessLevelHint": "Geeft toegang tot en aanmelding voor artikelniveaus tot en met dit niveau — geen gratis of onbeperkte aanmeldingen.",
+    "engineComingSoon": "Het systeem voor voorrangsbiedingen komt binnenkort — dit overzicht dient alleen voor de administratie.",
+    "loadErrorTitle": "Kan uw lidmaatschapsstatus niet laden",
+    "loadErrorHint": "Dit verandert niets aan uw lidmaatschap. Vernieuw de pagina voordat u een pakket koopt."
+  },
+  "bidCredits": {
+    "title": "Beschikbare biedingen",
+    "subtitle": "1 bod = 1 gewone aanmelding op de marktplaats. Bewerken kost geen extra bod.",
+    "loading": "Biedingen laden…",
+    "available": "Beschikbaar",
+    "fromMembership": "Uit lidmaatschap",
+    "fromAdmin": "Toegekend door beheerder",
+    "monthlyAllowance": "Maandelijks tegoed",
+    "unlockedThisMonth": "Deze maand vrijgegeven",
+    "nextExpiry": "Eerstvolgende vervaldatum",
+    "engineComingSoon": "Binnenkort beschikbaar — het biedcreditsysteem is nog niet actief.",
+    "engineOn": "Het biedcreditsysteem is beschikbaar.",
+    "ledgerEvents": {
+      "NORMAL_APPLICATION_BID_REFUND": "Bod teruggeboekt",
+      "APPLICATION_BID_CONSUME": "Bod gebruikt",
+      "MEMBERSHIP_BID_GRANT": "Vrijgegeven via lidmaatschap",
+      "ADMIN_BID_GRANT": "Toekenning door beheerder",
+      "ADMIN_BID_ADJUSTMENT": "Correctie door beheerder",
+      "BID_EXPIRED": "Bod verlopen"
+    }
+  },
+  "financialClaims": {
+    "title": "Declaraties",
+    "subtitle": "Maak een nieuwe declaratie aan en volg per opdracht de beoordeling, de uitbetalingstermijn en de betaalde en resterende bedragen.",
+    "newClaim": "Nieuwe declaratie",
+    "loading": "Declaraties laden…",
+    "loadErrorTitle": "Kan declaraties niet laden",
+    "emptyTitle": "Nog geen declaraties",
+    "emptySub": "Maak uw eerste declaratie aan om deze hier per status gegroepeerd te zien.",
+    "groupEmpty": "Geen items in deze groep.",
+    "wallet": "Verdiensten en portemonnee",
+    "walletLink": "Portemonnee",
+    "earningsNote": "De cijfers komen uit uw goedgekeurde declaraties — niet uit de opdrachtwaarden op het platform.",
+    "earningsHero": {
+      "aria": "Overzicht verdiensten freelancer",
+      "title": "Uw verdiensten",
+      "paid": "Netto betaald",
+      "pending": "Uitbetaling in afwachting",
+      "openClaims": "Openstaande declaraties"
+    },
+    "latestClaim": "Laatste declaratie",
+    "noClaimsYet": "Nog geen declaraties.",
+    "createSuccessTitle": "Declaratie aangemaakt",
+    "createSuccessMessage": "Uw declaratie is succesvol ingediend.",
+    "createErrorTitle": "Kan declaratie niet aanmaken",
+    "errors": {
+      "kycRequired": "U kunt geen declaratie aanmaken vóór de accountactivering.",
+      "kycPending": "Uw activeringsverzoek wordt beoordeeld.",
+      "kycRejected": "Uw activeringsverzoek is afgewezen. Bekijk de reden en dien het opnieuw in.",
+      "pricingNotAllowed": "Prijsvelden zijn niet toegestaan bij het aanmaken van een declaratie."
+    },
+    "modal": {
+      "title": "Nieuwe declaratie",
+      "subtitle": "Voer de gegevens van de opdracht in om de declaratie ter beoordeling in te dienen",
+      "close": "Sluiten",
+      "modeAria": "Type declaratie",
+      "fromDoneProject": "Declaratie voor een voltooide opdracht",
+      "manual": "Handmatige declaratie voor een nieuwe opdracht",
+      "searchDoneProjects": "Voltooide projecten zoeken",
+      "searchPlaceholder": "Zoeken op opdrachtnummer of titel...",
+      "selectProject": "Selecteer een voltooide opdracht",
+      "selectProjectPlaceholder": "Selecteer een opdracht...",
+      "noTitle": "Zonder titel",
+      "missingCompletionDate": "Deze opdracht heeft geen werkelijke voltooiingsdatum. Voeg de datum toe voordat u de declaratie aanmaakt.",
+      "projectHint": "Voltooiingsdatum: {{date}} | Status: {{status}}",
+      "projectMeta": "Bron: {{source}} | Betaling: {{payment}} | Bedrag: {{amount}}{{currency}}",
+      "orderNumber": "Opdrachtnummer",
+      "orderNumberPlaceholder": "Bijvoorbeeld: ORD-2024-001",
+      "requestTitle": "Titel van de opdracht",
+      "requestTitlePlaceholder": "Duidelijke titel van de opdracht",
+      "requestTitleFromProject": "Titel van de opdracht (uit de voltooide opdracht)",
+      "categories": "Categorieën",
+      "noCategories": "Momenteel zijn er geen categorieën beschikbaar.",
+      "durationMinutes": "Gewerkte minuten",
+      "completionDate": "Werkelijke voltooiingsdatum",
+      "cancel": "Annuleren",
+      "submit": "Declaratie indienen",
+      "submitting": "Indienen..."
+    },
+    "fields": {
+      "orderNumber": "Opdrachtnummer",
+      "completionDate": "Werkelijke voltooiingsdatum",
+      "submittedAt": "Ingediend op",
+      "payoutWindow": "Uitbetalingstermijn",
+      "payoutStatus": "Uitbetalingsstatus",
+      "totalPrice": "Totaalprijs",
+      "freelancerAmount": "Bedrag freelancer",
+      "paid": "Betaald",
+      "remaining": "Resterend",
+      "adminNote": "Opmerking beheerder:"
+    },
+    "groups": {
+      "underReview": "In beoordeling",
+      "notDue": "Nog niet opeisbaar",
+      "due": "Klaar voor uitbetaling",
+      "paid": "Betaald",
+      "blocked": "Afgewezen / bevroren / persoonlijke beoordeling vereist"
+    }
+  },
+  "settings": {
+    "eyebrow": "Freelancerinstellingen",
+    "title": "Accountinstellingen",
+    "description": "Werk uw openbare profiel, accountbeveiliging en meldingen bij. Alle velden worden via de API opgeslagen.",
+    "breadcrumb": "Accountinstellingen",
+    "loadError": "Kan niet laden.",
+    "avatar": {
+      "title": "Profielfoto",
+      "upload": "Foto uploaden",
+      "uploading": "Uploaden…",
+      "remove": "Foto verwijderen",
+      "hint": "JPEG, PNG of WebP, maximaal 2 MB.",
+      "sizeError": "De afbeelding mag niet groter zijn dan 2 MB.",
+      "success": "Foto bijgewerkt.",
+      "uploadError": "Uploaden van foto mislukt.",
+      "removeSuccess": "Foto verwijderd.",
+      "removeError": "Kan foto niet verwijderen."
+    },
+    "basic": {
+      "title": "Basisgegevens",
+      "firstName": "Voornaam",
+      "fatherName": "Naam van vader",
+      "familyName": "Achternaam",
+      "professionalTitle": "Beroepstitel",
+      "freelancerMemberId": "Freelancer-ID",
+      "phone": "Mobiel nummer (E.164)",
+      "whatsapp": "WhatsApp-nummer (E.164)",
+      "bio": "Bio (max. 2000 tekens)",
+      "skills": "Vaardigheden (gescheiden door komma's)",
+      "website": "Website",
+      "portfolio": "Portfolio",
+      "save": "Gegevens opslaan",
+      "saving": "Opslaan…",
+      "saveSuccess": "Instellingen opgeslagen.",
+      "saveError": "Kan niet opslaan.",
+      "nameTooShort": "De volledige naam moet minimaal 2 tekens bevatten.",
+      "phoneInvalid": "Het mobiele nummer moet in internationaal formaat zijn: +966…",
+      "whatsappInvalid": "Het WhatsApp-nummer moet in internationaal formaat zijn.",
+      "urlInvalid": "{{label}}: ongeldige URL (gebruik http of https).",
+      "bioTooLong": "De bio is langer dan toegestaan."
+    },
+    "payout": {
+      "title": "Uitbetalingen en declaraties",
+      "hint": "In dit onderdeel worden alleen veilige voorkeuren opgeslagen — geen volledige rekeningnummers of gevoelige gegevens.",
+      "method": "Gewenste uitbetalingsmethode",
+      "methodPlaceholder": "— Selecteren —",
+      "bankTransfer": "Bankoverschrijving",
+      "wallet": "Digitale portemonnee",
+      "cash": "Contant ophalen",
+      "other": "Overig",
+      "notes": "Korte, veilige notities",
+      "notesPlaceholder": "Bijvoorbeeld: alleen de naam van de bank, geen volledig rekeningnummer",
+      "save": "Uitbetalingsgegevens opslaan"
+    },
+    "security": {
+      "title": "Beveiliging",
+      "mustChangeTitle": "Wachtwoord wijzigen vereist",
+      "mustChangeBody": "Uw account is aangemaakt met een tijdelijk wachtwoord. Stel hieronder een nieuw wachtwoord in voordat u verdergaat. Gebruik uw nationale identificatienummer als huidig wachtwoord als u het nog niet eerder hebt gewijzigd.",
+      "currentPassword": "Huidig wachtwoord",
+      "newPassword": "Nieuw wachtwoord",
+      "confirmPassword": "Wachtwoord bevestigen",
+      "hint": "Het nieuwe wachtwoord moet een letter en een cijfer bevatten (minimaal 8 tekens).",
+      "update": "Wachtwoord bijwerken",
+      "updating": "Bijwerken…",
+      "mismatch": "De wachtwoorden komen niet overeen.",
+      "tooShort": "Het nieuwe wachtwoord is te kort.",
+      "success": "Wachtwoord bijgewerkt.",
+      "error": "Kan wachtwoord niet wijzigen."
+    },
+    "preferredCurrencyTitle": "Voorkeursvaluta voor weergave",
+    "notifications": {
+      "title": "Meldingsinstellingen",
+      "orders": "Meldingen over opdrachten",
+      "claims": "Meldingen over declaraties",
+      "courses": "Meldingen over cursussen",
+      "save": "Meldingsvoorkeuren opslaan"
+    }
+  },
+  "courseDetails": {
+    "finalTestTitle": "Eindtoets na de cursus",
+    "examMarkMaxError": "De score mag het maximum voor deze vraag niet overschrijden",
+    "examMarkNegativeError": "De score mag niet negatief zijn.",
+    "stepStatus": {
+      "done": "Voltooid",
+      "available": "Nu beschikbaar",
+      "locked": "Vergrendeld",
+      "waitingUpload": "Wacht op upload van bestand",
+      "waitingChatgpt": "Wacht op ChatGPT-resultaat",
+      "waitingMarks": "Wacht op invoer van scores"
+    },
+    "fileLegacy": "Dit bestand moet opnieuw worden geüpload door de beheerder.",
+    "fileOpenFailed": "Kan het bestand niet openen. Vraag de beheerder het opnieuw te uploaden.",
+    "progress": {
+      "fullyCompleted": "Cursus volledig voltooid",
+      "readyForTest": "Klaar voor de eindtoets",
+      "lessonsCompleted": "Alle lessen voltooid",
+      "lessonsProgress": "{{done}} van {{total}} les voltooid",
+      "lessonsProgress_plural": "{{done}} van {{total}} lessen voltooid",
+      "notStarted": "Nog geen voortgang",
+      "ringCaption": "Totale voortgang",
+      "completed": "Voltooid",
+      "ready": "Klaar",
+      "lessons": "Lessen"
+    },
+    "loadError": "Kan cursus niet laden.",
+    "completeLessonsFirst": "Voltooi eerst alle videolessen om de eindtoets te ontgrendelen.",
+    "saveProgressInfo": "Uw voortgang wordt opgeslagen en u gaat naar de volgende les...",
+    "lessonCompleteSuccess": "Bekijken van de les geregistreerd.",
+    "testUnlocked": "Eindtoets ontgrendeld — rond nu uw inzending af.",
+    "saveProgressError": "Kan de voortgang niet opslaan. Probeer het opnieuw.",
+    "mustCompleteLessons": "U moet alle videolessen voltooien voordat u indient.",
+    "chatgptRequired": "Plak het beoordelingsresultaat van ChatGPT of upload het beoordelingsrapport.",
+    "completeAllMarks": "Vul de scores van alle vragen in voordat u indient.",
+    "uploadCompletedFirst": "U moet het uitgewerkte bestand uploaden voordat u indient.",
+    "courseFinishedSuccess": "Cursus succesvol voltooid.",
+    "courseFinishError": "Kan de cursus niet afronden.",
+    "uploadError": "Kan het bestand niet uploaden. Controleer of het een PDF is en probeer het opnieuw.",
+    "uploadSuccess": "Uitgewerkt bestand succesvol geüpload",
+    "uploadCompletedError": "Kan het uitgewerkte bestand niet uploaden.",
+    "duration": {
+      "minute": "{{count}} minuut",
+      "minute_plural": "{{count}} minuten",
+      "hour": "{{count}} uur",
+      "hour_plural": "{{count}} uur",
+      "hoursAndMinutes": "{{hours}} u {{minutes}} min",
+      "hoursOnly": "{{count}} uur",
+      "hoursOnly_plural": "{{count}} uur"
+    },
+    "activity": {
+      "now": "Zojuist",
+      "minutesAgo": "{{count}} min geleden",
+      "minutesAgo_plural": "{{count}} min geleden",
+      "hoursAgo": "{{count}} uur geleden",
+      "hoursAgo_plural": "{{count}} uur geleden",
+      "daysAgo": "{{count}} dag geleden",
+      "daysAgo_plural": "{{count}} dagen geleden"
+    },
+    "fileSize": {
+      "bytes": "{{count}} B",
+      "kb": "{{size}} kB",
+      "mb": "{{size}} MB"
+    },
+    "file": {
+      "viewFile": "Bestand bekijken",
+      "downloadFile": "Bestand downloaden",
+      "copyInstructions": "Instructies kopiëren",
+      "needsReuploadShort": "Opnieuw uploaden nodig",
+      "available": "Beschikbaar",
+      "unavailable": "Niet beschikbaar",
+      "needsReuploadBadge": "Bestand moet opnieuw worden geüpload",
+      "notAttachedByAdmin": "Dit bestand is nog niet door de beheerder bijgevoegd.",
+      "openFailedTryDownload": "Kan het bestand niet openen. Probeer het te downloaden.",
+      "completedWorkFile": "Uitgewerkt bestand",
+      "completedWorkFileDefault": "Uitgewerkt toetsbestand geüpload",
+      "uploadedSuccessfully": "Succesvol geüpload",
+      "replaceFile": "Bestand vervangen",
+      "removeFile": "Bestand verwijderen",
+      "removeFileAria": "Bestand verwijderen",
+      "chooseFile": "Bestand kiezen",
+      "replace": "Vervangen",
+      "remove": "Verwijderen",
+      "defaultCompletedPdf": "uitgewerkt-bestand.pdf"
+    },
+    "flow": {
+      "phaseTag": "Fase {{num}}",
+      "trackAria": "Stappenpad 1 tot en met 5"
+    },
+    "completed": {
+      "congratsTitle": "Goed gedaan! Cursus succesvol voltooid",
+      "congratsSub": "Uw antwoord op de eindtoets is geregistreerd en de cursus is voltooid. U kunt de toets- en inzendingsbestanden altijd bekijken.",
+      "finalGrade": "Eindcijfer: {{grade}}%",
+      "submittedAt": " — Ingediend: {{date}}",
+      "questionGrades": "Scores per vraag",
+      "questionCount": " (aantal vragen: {{count}})",
+      "questionLabel": "Vraag {{num}}",
+      "filesAndSubmission": "Toetsbestanden en inzending",
+      "downloadTestFile": "Toetsbestand downloaden",
+      "downloadInstructionsFile": "Instructiebestand downloaden",
+      "downloadModelAnswer": "Bestand met modelantwoord downloaden",
+      "viewAnswerFile": "Geüpload antwoordbestand bekijken",
+      "downloadAnswerFile": "Geüpload antwoordbestand downloaden",
+      "submissionSummary": "Samenvatting van de inzending",
+      "viewAnswerText": "Antwoordtekst bekijken",
+      "answerText": "Antwoordtekst",
+      "hideText": "Tekst verbergen",
+      "answerFileOnlyNote": "Er is een antwoordbestand ingediend. Gebruik de knoppen hierboven om het te bekijken of te downloaden."
+    },
+    "sidebar": {
+      "finalStepBadge": "Laatste stap",
+      "statusCompleted": "Voltooid",
+      "statusLocked": "Voltooi alle lessen om de eindtoets te ontgrendelen",
+      "statusReady": "Klaar om in te dienen",
+      "contentAria": "Cursusinhoud",
+      "contentTitle": "Cursusinhoud",
+      "completedWithDuration": "{{duration}} • Voltooid",
+      "completed": "Voltooid",
+      "watchingWithDuration": "{{duration}} • Bezig met kijken",
+      "watching": "Bezig met kijken",
+      "noDuration": "Geen duur",
+      "showAllLessons": "Alle lessen tonen ({{count}})"
+    },
+    "header": {
+      "trainingChip": "Trainingscursus",
+      "backToCourses": "Terug naar cursussen",
+      "summaryAria": "Cursusoverzicht",
+      "lessonsCompleted": "Voltooide lessen: {{completed}} van {{total}}",
+      "totalDuration": "Totale duur: {{duration}}",
+      "lastActivity": "Laatste activiteit: {{activity}}",
+      "durationUnknown": "Niet opgegeven",
+      "noActivity": "Geen",
+      "courseFinishedBanner": "Deze cursus is succesvol voltooid.",
+      "completionRecorded": "De voltooiingsdatum is in het systeem vastgelegd."
+    },
+    "lesson": {
+      "noVideo": "Geen video beschikbaar voor deze les.",
+      "untitled": "Les zonder titel",
+      "videoChip": "Video",
+      "lessonOf": "Les {{current}} van {{total}}",
+      "finalTestReadyHint": "U hebt alle video's bekeken — de eindtoets staat klaar in de zijbalk.",
+      "prevLesson": "Vorige les",
+      "nextLesson": "Volgende les",
+      "finalTestNav": "Eindtoets",
+      "markComplete": "Les als voltooid markeren",
+      "savingProgress": "Voortgang opslaan…",
+      "summaryTitle": "Samenvatting van de les / uw notities",
+      "summaryPlaceholder": "Schrijf hier uw samenvatting…",
+      "summaryAria": "Samenvatting van de les"
+    },
+    "finish": {
+      "allLessonsDone": "U hebt alle lessen voltooid. Klik hieronder als de voltooiing niet automatisch is geregistreerd.",
+      "submitting": "Registreren…",
+      "finishCourse": "Cursus afronden"
+    },
+    "empty": {
+      "loadFailed": "Kan de cursus niet weergeven. Ga terug naar de cursuslijst en probeer het opnieuw.",
+      "backToCourses": "Trainingscursussen"
+    },
+    "planLocked": {
+      "title": "Cursus vergrendeld",
+      "message": "Deze cursus is beschikbaar bij hogere pakketten.",
+      "upgrade": "Pakket upgraden",
+      "activateOrUpgrade": "Activeer of upgrade uw pakket om toegang te krijgen tot deze cursus"
+    },
+    "exam": {
+      "lockedTitle": "Eindtoets vergrendeld",
+      "lockedSub": "Voltooi alle videolessen ({{completed}}/{{total}}) om deze laatste stap te ontgrendelen en de cursus af te ronden.",
+      "lessonsDoneBanner": "🎉 Gefeliciteerd! U hebt alle lessen voltooid.",
+      "lessonsDoneBannerSub": "Voltooi de drie stappen in volgorde om de eindtoets af te ronden.",
+      "lessonsCompletedCount": "({{completed}}/{{total}} lessen voltooid)",
+      "introSub": "Download het toetsbestand en maak het werk, upload het uitgewerkte bestand, gebruik ChatGPT met de beoordelingsbestanden en voer de scores per vraag in vóór de definitieve inzending.",
+      "step1Title": "Stap 1: Toetsbestand downloaden en uitgewerkt bestand uploaden",
+      "testFileTitle": "Toetsbestand",
+      "testFileDesc": "Download het toetsbestand en werk uw antwoord buiten het platform uit.",
+      "downloadTestFile": "Toetsbestand downloaden",
+      "uploadCompletedTitle": "Upload uw uitgewerkte bestand nadat u de toets hebt gemaakt",
+      "uploadCompletedHint": "Alleen PDF — maximaal 5 MB",
+      "uploadCompletedBtn": "Uitgewerkt bestand uploaden",
+      "uploading": "Uploaden…",
+      "uploadCompletedSuccess": "Uitgewerkt bestand succesvol geüpload",
+      "step1Required": "U moet het uitgewerkte bestand uploaden voordat u naar de volgende stap gaat.",
+      "step2Title": "Stap 2: Promptbestand en modelantwoord downloaden",
+      "step2Note": "Geef ChatGPT deze bestanden: het uitgewerkte bestand, het promptbestand en het modelantwoord — plak daarna het resultaat van ChatGPT hier of upload het als bestand.",
+      "promptFileTitle": "Beoordelingsinstructies / promptbestand",
+      "promptFileDesc": "Download het promptbestand om met ChatGPT te gebruiken.",
+      "downloadPromptFile": "Promptbestand downloaden",
+      "modelAnswerTitle": "Bestand met modelantwoord",
+      "modelAnswerDesc": "Download het modelantwoord om met ChatGPT te gebruiken.",
+      "downloadModelAnswer": "Modelantwoord downloaden",
+      "chatgptFileSelected": "Resultaatbestand van ChatGPT geselecteerd",
+      "uploadChatgptTitle": "ChatGPT-resultaat als bestand uploaden",
+      "pasteChatgptLabel": "Of plak het ChatGPT-resultaat",
+      "pasteChatgptPlaceholder": "Plak hier het beoordelingsresultaat van ChatGPT…",
+      "step3Title": "Stap 3: Scores per vraag invoeren",
+      "step3Note": "Voer de score van elke vraag in op basis van het ChatGPT-resultaat. Het eindcijfer is de som van de scores ÷ de som van de maximale scores.",
+      "questionWithText": "Vraag {{num}}: {{text}}",
+      "questionNumber": "Vraag {{num}}",
+      "markLabel": "Score",
+      "noGradedQuestions": "Deze cursus heeft geen beoordeelde vragen. Voltooi de vorige twee stappen en dien daarna in.",
+      "submitting": "Indienen…",
+      "submitFinale": "Resultaten indienen en cursus afronden",
+      "hintUploadFirst": "Upload eerst het uitgewerkte bestand.",
+      "hintChatgptRequired": "Voeg de resultaattekst van ChatGPT toe of upload het resultaatbestand.",
+      "hintCompleteMarks": "Vul de scores van alle vragen in.",
+      "hintCompleteAllSteps": "Voltooi alle stappen voordat u indient."
+    }
+  },
+  "apiInsights": {
+    "profileIncomplete": {
+      "title": "Vul uw profiel aan",
+      "description": "Uw profiel is voor {{percent}}% compleet — een sterker profiel vergroot uw kans om geaccepteerd te worden.",
+      "actionLabel": "Profiel bijwerken"
+    },
+    "revisionsPending": {
+      "title": "Opdrachten vereisen revisie",
+      "description": "U hebt {{count}} opdracht die een revisie of een bijgewerkte oplevering nodig heeft.",
+      "description_plural": "U hebt {{count}} opdrachten die een revisie of een bijgewerkte oplevering nodig hebben.",
+      "actionLabel": "Revisies bekijken"
+    },
+    "courseProgress": {
+      "title": "U hebt de cursus bijna afgerond",
+      "description": "U hebt {{percent}}% van {{course}} voltooid.",
+      "actionLabel": "Cursus voortzetten"
+    },
+    "finalTest": {
+      "title": "Er wacht een eindtoets op u",
+      "description": "{{count}} cursus wacht op de eindtoets.",
+      "description_plural": "{{count}} cursussen wachten op de eindtoets.",
+      "actionLabel": "Toets afronden"
+    },
+    "deliveryExcellent": {
+      "title": "Uw percentage tijdige opleveringen is uitstekend",
+      "description": "{{percent}}% van uw voltooide opdrachten is op tijd opgeleverd."
+    },
+    "subExpiring": {
+      "title": "Uw abonnement verloopt binnenkort",
+      "description": "Bekijk uw pakket voordat uw toegang verandert.",
+      "actionLabel": "Pakketten bekijken"
+    },
+    "addPortfolio": {
+      "title": "Voeg werk toe aan uw portfolio",
+      "description": "Koppel uw Behance-profiel of website om het vertrouwen van klanten op te bouwen.",
+      "actionLabel": "Links bijwerken"
+    },
+    "startFirstOrder": {
+      "title": "Begin aan uw eerste project",
+      "description": "Bekijk beschikbare opdrachten en bouw uw staat van dienst op het platform op.",
+      "actionLabel": "Beschikbare opdrachten"
+    },
+    "reviewsStrong": {
+      "title": "Uw beoordelingen zijn uitstekend",
+      "description": "Gemiddeld {{rating}} uit {{count}} beoordeling.",
+      "description_plural": "Gemiddeld {{rating}} uit {{count}} beoordelingen.",
+      "actionLabel": "Details bekijken"
+    },
+    "claimsHint": {
+      "title": "Herinnering: verdiensten via de portemonnee",
+      "description": "Dien na het afronden van projecten uw declaraties in via het onderdeel Portemonnee.",
+      "actionLabel": "Portemonnee"
+    },
+    "reviewAnalytics": {
+      "title": "Inzicht uit klantfeedback",
+      "description": "Gebaseerd op uw geverifieerde klantbeoordelingen.",
+      "actionLabel": "Beoordelingen bekijken"
+    }
+  },
+  "recommendations": {
+    "title": "Inzichten en aanbevelingen",
+    "finalTestPending": "Er wacht een eindtoets op u",
+    "completeTest": "Toets afronden"
+  },
+  "status": {
+    "subscription": {
+      "active": "Actief",
+      "assignedNotStarted": "Wacht op de eerste opdracht",
+      "expired": "Verlopen",
+      "inactive": "Inactief"
+    },
+    "payment": {
+      "paid": "Betaald",
+      "pending": "In verwerking",
+      "failed": "Mislukt",
+      "notRequired": "Niet vereist",
+      "unpaid": "Onbetaald",
+      "refunded": "Terugbetaald",
+      "skippedByAdmin": "Betaling overgeslagen (beheerder)"
+    },
+    "activation": {
+      "approved": "Geactiveerd",
+      "pending": "Wacht op bedrijf"
+    },
+    "claim": {
+      "paid": "Betaald",
+      "pending": "In beoordeling",
+      "accepted": "Geaccepteerd",
+      "rejected": "Afgewezen",
+      "frozen": "Bevroren",
+      "inPersonReview": "Persoonlijke beoordeling",
+      "requiresInPersonReview": "Persoonlijke beoordeling vereist"
+    },
+    "payout": {
+      "missingCompletionDate": "Geen voltooiingsdatum",
+      "notDueYet": "Nog niet opeisbaar",
+      "withinWindow": "Binnen uitbetalingstermijn",
+      "lateAfterWindow": "Te laat na uitbetalingstermijn",
+      "paid": "Betaald"
+    },
+    "chips": {
+      "trainingAndLimitedMarketplace": "Training + beperkte marktplaats",
+      "marketplaceEligible": "Geschikt voor marktplaats",
+      "notEligibleNow": "Momenteel niet geschikt",
+      "activeSubscription": "Actief abonnement",
+      "waitingFirstOrder": "Wacht op de eerste opdracht",
+      "expired": "Verlopen"
+    },
+    "marketplace": {
+      "canApply": "U kunt zich aanmelden",
+      "notEligible": "Niet geschikt"
+    },
+    "timeRemaining": {
+      "expired": "Abonnement verlopen",
+      "remaining": "Nog {{parts}}",
+      "day": "{{count}} dag",
+      "day_plural": "{{count}} dagen",
+      "hour": "{{count}} uur",
+      "hour_plural": "{{count}} uur",
+      "minute": "{{count}} minuut",
+      "minute_plural": "{{count}} minuten",
+      "joiner": " en "
+    },
+    "eligibility": {
+      "adminApprovalPending": "Wacht op goedkeuring door de beheerder voordat u opdrachten kunt ontvangen",
+      "noSubscription": "U kunt geen opdrachten ontvangen omdat u geen abonnement hebt. Neem eerst een abonnement.",
+      "inactive": "Uw abonnement is niet actief. Neem eerst een abonnement.",
+      "paymentIncomplete": "Het ontvangen van opdrachten kon niet worden ingeschakeld omdat de betaling van het abonnement niet is voltooid.",
+      "expired": "Uw abonnement is verlopen. Verleng het om opdrachten te ontvangen.",
+      "activationFeeUnpaid": "Betaal de jaarlijkse activeringskosten voordat u opdrachten ontvangt.",
+      "subscriptionRenewalFailedTitle": "Verlenging van abonnement mislukt",
+      "subscriptionRenewalFailed": "We konden de maandelijkse abonnementskosten van 1 JOD niet afschrijven van uw opgeslagen kaart. Uw account is tijdelijk bevroren. Neem contact met ons op om het opnieuw te activeren.",
+      "planConfigurationError": "We kunnen de geschiktheid van uw pakket nu niet controleren. Neem contact op met de support.",
+      "planTooLow": "Deze opdracht is beschikbaar bij hogere pakketten. Upgrade uw pakket om deze te ontvangen.",
+      "noActivePlan": "Activeer eerst uw pakket om opdrachten te ontvangen.",
+      "generic": "Uw account komt momenteel niet in aanmerking voor opdrachten op de marktplaats (controleer uw abonnement)."
+    }
+  },
+  "emptyStates": {
+    "myOrders": {
+      "noneTitle": "Nog geen opdrachten",
+      "noneSub": "Er zijn nog geen opdrachten aan u toegewezen. Bekijk de beschikbare opdrachten en meld u aan voor opdrachten die bij uw vaardigheden passen.",
+      "browseOrders": "Beschikbare opdrachten bekijken",
+      "searchTitle": "Geen zoekresultaten",
+      "searchSub": "Probeer andere zoekwoorden of wis de zoekopdracht om de volledige lijst te zien.",
+      "clearSearch": "Zoekopdracht wissen",
+      "filterTitle": "Geen opdrachten met deze status",
+      "filterSub": "Kies een ander filter of bekijk Alle om de volledige lijst te zien.",
+      "showAll": "Alles tonen"
+    },
+    "courses": {
+      "noneTitle": "Geen toegewezen cursussen",
+      "noneSub": "Wanneer er een cursus aan uw account wordt toegewezen, verschijnt deze hier met de voortgang en een eventuele eindtoets.",
+      "searchTitle": "Geen zoekresultaten",
+      "searchSub": "Probeer andere zoekwoorden of wis de zoekopdracht om de volledige lijst te zien.",
+      "clearSearch": "Zoekopdracht wissen",
+      "favoritesTitle": "Geen favoriete cursussen",
+      "favoritesSub": "Tik op de ster bij een cursus om deze aan uw favorieten toe te voegen.",
+      "completedTitle": "Nog geen voltooide cursussen",
+      "completedSub": "Voltooi de lessen van een cursus en, indien vereist, de eindtoets om ze hier te zien.",
+      "inProgressTitle": "Geen lopende cursussen",
+      "inProgressSub": "Start een les in een van uw cursussen om deze in dit tabblad te zien.",
+      "notStartedTitle": "Geen niet-gestarte cursussen",
+      "notStartedSub": "Alle toegewezen cursussen zijn gestart of voltooid.",
+      "genericTitle": "Geen resultaten",
+      "genericSub": "Probeer een ander tabblad of filter."
+    },
+    "performance": {
+      "noHistory": "Nog geen opdrachtgeschiedenis — begin aan uw eerste project om statistieken te zien."
+    },
+    "reviews": {
+      "empty": "Nog geen beoordelingen — ze verschijnen nadat klanten u hebben beoordeeld op voltooide projecten.",
+      "clientLabel": "Klant"
+    },
+    "reputation": {
+      "empty": "Voltooi opdrachten en uw profiel om uw vertrouwensniveau te verhogen."
+    },
+    "achievements": {
+      "empty": "Voltooi opdrachten en cursussen om professionele prestaties te behalen."
+    },
+    "profile": {
+      "complete": "Uw profiel is compleet — goed gedaan!",
+      "completeProfile": "Profiel aanvullen"
+    }
+  },
+  "notifications": {
+    "title": "Mijn berichten",
+    "viewAll": "Alles bekijken",
+    "empty": "Geen recente berichten.",
+    "defaultTitle": "Melding",
+    "loadError": "Kan berichten niet laden."
+  },
+  "sidebar": {
+    "badges": {
+      "required": "Vereist",
+      "startHere": "Begin hier"
+    }
+  },
+  "controlCenter": {
+    "reputation": {
+      "title": "Vertrouwensscore",
+      "note": "Berekend op basis van uw echte prestaties op het platform — geen nepbeoordelingen.",
+      "improveProfile": "Profiel en aanwezigheid verbeteren"
+    },
+    "reviews": {
+      "title": "Beoordelingen",
+      "viewAll": "Alles bekijken",
+      "recommendationRate": "Aanbevelingspercentage: {{rate}}%",
+      "loadError": "Kan beoordelingen niet laden."
+    },
+    "profile": {
+      "title": "Profielvolledigheid",
+      "update": "Bijwerken"
+    },
+    "achievements": {
+      "title": "Prestaties"
+    },
+    "earnings": {
+      "loadError": "Kan verdiensten niet laden. We tonen geen cijfers die mogelijk misleidend zijn."
+    },
+    "courses": {
+      "loadError": "Kan cursussen niet laden."
+    },
+    "performance": {
+      "loadError": "Kan prestatiestatistieken niet laden."
+    },
+    "widgetLoadError": "Kan dit onderdeel niet laden."
+  },
+  "pendingActions": {
+    "title": "Vereiste acties",
+    "clear": "Geen dringende acties — u bent helemaal bij.",
+    "choosePlan": {
+      "title": "Kies een abonnementspakket",
+      "description": "Geen actief abonnement — begin met het kiezen van het juiste pakket.",
+      "cta": "Pakketten bekijken"
+    },
+    "completePayment": {
+      "title": "Betaling voltooien",
+      "description": "De betaling wordt verwerkt of is nog niet voltooid.",
+      "cta": "Betaling voltooien"
+    },
+    "companyApproval": {
+      "title": "Goedkeuring door beheerder",
+      "description": "Wacht op goedkeuring door de beheerder voordat u opdrachten kunt ontvangen.",
+      "cta": "Account controleren"
+    },
+    "renewSubscription": {
+      "title": "Abonnement verlengen",
+      "description": "Uw abonnement is verlopen — verleng het om terug te keren naar de marktplaats.",
+      "cta": "Verlengen"
+    },
+    "reviewPlans": {
+      "cta": "Pakketten bekijken"
+    },
+    "revisionRequired": {
+      "title": "Revisie vereist ({{count}})",
+      "title_plural": "Revisies vereist ({{count}})",
+      "descriptionWithOrder": "Opdracht #{{code}} vereist revisie en een bijgewerkte oplevering.",
+      "descriptionGeneric": "U hebt opdrachten die revisie vereisen — bekijk ze in Mijn opdrachten.",
+      "cta": "Revisie voortzetten"
+    },
+    "finalTest": {
+      "title": "Eindtoets wacht ({{count}})",
+      "title_plural": "Eindtoetsen wachten ({{count}})",
+      "descriptionWithCourse": "Voltooi de eindtoets voor de cursus ‘{{course}}’.",
+      "descriptionGeneric": "Voltooi de eindtoets om de cursus af te ronden.",
+      "descriptionActivation": "Voltooi de eindtoets voor {{course}} om aan de activeringsvereisten te voldoen.",
+      "descriptionActivationGeneric": "Voltooi de eindtoets voor uw huidige cursus om aan de activeringsvereisten te voldoen.",
+      "cta": "Toets afronden",
+      "viewCourse": "Cursus bekijken"
+    },
+    "coursesPending": {
+      "title": "Verplichte cursus wacht ({{count}})",
+      "title_plural": "Verplichte cursussen wachten ({{count}})",
+      "description": "Voltooi de verplichte cursussen om door te gaan naar de eindtoets.",
+      "cta": "Cursussen voortzetten"
+    },
+    "claimsReview": {
+      "title": "Declaratie in beoordeling ({{count}})",
+      "title_plural": "Declaraties in beoordeling ({{count}})",
+      "description": "Uw declaraties wachten op goedkeuring door de beheerder.",
+      "cta": "Portemonnee bekijken"
+    },
+    "claimsAcceptedPayout": {
+      "title": "Geaccepteerde declaratie wacht op uitbetaling ({{count}})",
+      "title_plural": "Geaccepteerde declaraties wachten op uitbetaling ({{count}})",
+      "description": "Geaccepteerde bedragen zijn nog niet volledig uitbetaald — bekijk uw portemonnee.",
+      "cta": "Portemonnee bekijken"
+    }
+  },
+  "statusHeadline": {
+    "noSubscription": {
+      "headline": "Uw abonnement is nog niet geactiveerd",
+      "sub": "Kies een pakket om op het platform aan de slag te gaan."
+    },
+    "expired": {
+      "headline": "Uw abonnement is verlopen",
+      "sub": "Verleng het om nieuwe opdrachten te ontvangen."
+    },
+    "paymentPending": {
+      "headline": "Voltooi de betaling om uw account te activeren",
+      "sub": "U kunt geen opdrachten van de marktplaats ontvangen totdat de betaling is voltooid."
+    },
+    "companyPending": {
+      "headline": "Wacht op goedkeuring door de beheerder",
+      "sub": "Wacht op goedkeuring door de beheerder voordat u opdrachten kunt ontvangen."
+    },
+    "expiringDays": {
+      "headline": "Uw abonnement verloopt over {{count}} dag",
+      "headline_plural": "Uw abonnement verloopt over {{count}} dagen"
+    },
+    "expiringTomorrow": {
+      "headline": "Uw abonnement verloopt morgen"
+    },
+    "expiringHours": {
+      "headline": "Uw abonnement verloopt over {{count}} uur",
+      "headline_plural": "Uw abonnement verloopt over {{count}} uur"
+    },
+    "expiringToday": {
+      "headline": "Uw abonnement verloopt vandaag"
+    },
+    "freePlanExplore": {
+      "headline": "U kunt de beschikbare opdrachten op de marktplaats verkennen",
+      "sub": "Voor echte opdrachten op de marktplaats is een upgrade van uw abonnement nodig."
+    },
+    "firstOrder": {
+      "headline": "U kunt uw eerste opdracht ontvangen",
+      "sub": "Uw abonnementsperiode begint wanneer u uw eerste opdracht accepteert."
+    },
+    "eligible": {
+      "headline": "U kunt opdrachten ontvangen",
+      "sub": "Uw account komt in aanmerking om zich volgens uw pakket aan te melden voor beschikbare opdrachten."
+    },
+    "notEligible": {
+      "headline": "U kunt momenteel geen opdrachten ontvangen",
+      "sub": "Bekijk de abonnementsgegevens hieronder."
+    }
+  },
+  "notificationsPage": {
+    "titleFreelancer": "Uw meldingen",
+    "titleAdmin": "Beheerdersmeldingen",
+    "titleSuperAdmin": "Meldingen voor superbeheerders",
+    "subtitleHub": "Volg updates over opdrachten, berichten en betalingen op één plek.",
+    "subtitleStaff": "Volg updates over opdrachten, betalingen en declaraties op één plek.",
+    "summaryAria": "Overzicht meldingen",
+    "total": "Totaal aantal meldingen",
+    "unread": "Ongelezen",
+    "searchPlaceholder": "Meldingen zoeken…",
+    "searchAria": "Meldingen zoeken",
+    "filterAria": "Meldingen filteren",
+    "filterAll": "Alle",
+    "filterUnread": "Ongelezen",
+    "markAllRead": "Alles als gelezen markeren",
+    "listAria": "Lijst met meldingen",
+    "emptySearch": "Geen zoekresultaten",
+    "emptyUnread": "Geen ongelezen meldingen",
+    "emptyAll": "Nog geen meldingen",
+    "emptySearchSub": "Probeer andere zoektermen of wis het zoekveld.",
+    "emptyDefaultSub": "Nieuwe updates verschijnen hier zodra ze beschikbaar zijn.",
+    "newNotification": "Nieuwe melding",
+    "unreadSuffix": " — ongelezen",
+    "unreadTitle": "Ongelezen",
+    "categoryMessages": "Berichten",
+    "categoryClaims": "Declaraties",
+    "categoryCourses": "Cursussen",
+    "categoryOrders": "Opdrachten",
+    "categoryAlert": "Waarschuwing",
+    "feedbackCategoryPrefix": "Categorie",
+    "feedbackTopicPrefix": "Standaardonderwerp",
+    "relativeNow": "Nu",
+    "relativeMinutes": "{{count}} min geleden",
+    "relativeMinutes_plural": "{{count}} min geleden",
+    "relativeHours": "{{count}} uur geleden",
+    "relativeHours_plural": "{{count}} uur geleden",
+    "relativeDays": "{{count}} dag geleden",
+    "relativeDays_plural": "{{count}} dagen geleden"
+  },
+  "common": {
+    "retry": "Opnieuw proberen",
+    "loading": "Laden",
+    "unavailable": "Niet beschikbaar",
+    "loadFailed": "Kan niet laden",
+    "emDash": "—",
+    "currencyJod": "JOD",
+    "currencyJodLabel": "JOD",
+    "defaultCourse": "Cursus",
+    "client": "Klant",
+    "cancel": "Annuleren",
+    "submit": "Indienen",
+    "submitting": "Indienen…",
+    "save": "Opslaan",
+    "saving": "Opslaan…",
+    "close": "Sluiten",
+    "viewAll": "Alles bekijken",
+    "update": "Bijwerken",
+    "alert": "Let op"
+  },
+  "activateAccount": {
+    "title": "Account activeren",
+    "subtitle": "Dien na het uploaden van uw identiteitsbewijs een verzoek tot accountactivering in ter beoordeling door de beheerder.",
+    "cardTitle": "Activeringsstatus",
+    "hint": "Uw account wordt niet direct geactiveerd. De beheerder beoordeelt uw verzoek.",
+    "cta": "Activeringsverzoek indienen",
+    "activating": "Indienen…",
+    "activated": "Account geactiveerd",
+    "successMessage": "Uw account is geactiveerd en de abonnementsperiode is gestart.",
+    "successWithStarter": "Uw account is geactiveerd en u hebt het gratis STARTER-lidmaatschap ontvangen.",
+    "successKeptMembership": "Uw account is geactiveerd en uw huidige lidmaatschap is behouden.",
+    "alreadyActiveMessage": "Uw account is goedgekeurd. De abonnementsperiode begint wanneer u uw eerste echte opdracht ontvangt.",
+    "errorTitle": "Kan activeringsverzoek niet indienen",
+    "loadError": "Kan activeringsstatus niet laden.",
+    "status": {
+      "approved": "Geactiveerd",
+      "pending": "In afwachting van beoordeling"
+    },
+    "fields": {
+      "activation": "Activeringsstatus",
+      "subscription": "Abonnementsstatus",
+      "startedAt": "Begin periode",
+      "expiresAt": "Einde periode"
+    },
+    "termsModalTitle": "Voorwaarden voor het ontvangen en uitvoeren van opdrachten en aanbestedingen",
+    "agreeCheckbox": "Ik ga akkoord met de voorwaarden voor accountactivering en het gebruik van het platform.",
+    "termsFallback": "Door verder te gaan, gaat u akkoord met de gebruiksvoorwaarden en het platformbeleid van Orderz House.",
+    "termsLoadError": "Kan de gebruiksvoorwaarden niet laden. U kunt na het doorlezen toch akkoord gaan, of het opnieuw proberen.",
+    "kyc": {
+      "pageTitle": "Identiteitsverificatie",
+      "pageSubtitle": "Upload uw identiteitsdocumenten om de accountactivering voort te zetten.",
+      "uploadHint": "Upload uw identiteitsdocumenten om de accountactivering voort te zetten.",
+      "notVerifiedYet": "Uw identiteit is nog niet geverifieerd",
+      "notImmediate": "Uw account wordt niet direct geactiveerd. De beheerder beoordeelt uw verzoek tot identiteitsverificatie.",
+      "termsCheckbox": "Ik ga akkoord met de voorwaarden voor accountactivering en het gebruik van het platform.",
+      "submitCta": "Identiteitsverificatie indienen",
+      "resubmitCta": "Identiteitsverificatie opnieuw indienen",
+      "submitSuccess": "Uw verzoek tot identiteitsverificatie is ontvangen en wordt door de beheerder beoordeeld.",
+      "pendingTitle": "Identiteitsverificatie in beoordeling",
+      "pendingBody": "Uw identiteitsdocumenten zijn ontvangen en worden door de beheerder beoordeeld voordat uw account wordt geactiveerd.",
+      "approvedTitle": "Uw identiteit is geverifieerd",
+      "approvedIdentityTitle": "Uw identiteit is geverifieerd",
+      "approvedManualTitle": "Identiteit administratief geverifieerd",
+      "identityVerifiedLabel": "Identiteit",
+      "identityVerifiedValue": "Geverifieerd",
+      "accountApprovalLabel": "Goedkeuring account",
+      "accountApprovedValue": "Goedgekeurd",
+      "accountPendingValue": "In afwachting van goedkeuring",
+      "membershipLabel": "Lidmaatschap",
+      "membershipActiveValue": "Uw lidmaatschap is actief en de abonnementsperiode loopt.",
+      "membershipWaitingFirstOrderValue": "Uw account is goedgekeurd. De abonnementsperiode begint wanneer u uw eerste echte opdracht ontvangt.",
+      "membershipInactiveValue": "Wacht op de eerste opdracht",
+      "rejectedTitle": "Identiteitsverificatie afgewezen",
+      "rejectionReasonLabel": "Reden van afwijzing",
+      "idFront": "Voorkant identiteitsbewijs",
+      "idBack": "Achterkant identiteitsbewijs",
+      "idFrontSide": "Voorkant",
+      "idBackSide": "Achterkant",
+      "chooseImage": "Tik om een afbeelding te kiezen",
+      "changeImage": "Afbeelding wijzigen",
+      "removeImage": "Verwijderen",
+      "imageSelected": "Afbeelding geselecteerd",
+      "uploadFormats": "JPG, PNG of WEBP · duidelijke foto van uw identiteitsbewijs",
+      "filesRequired": "Upload zowel de voor- als de achterkant van uw identiteitsbewijs.",
+      "termsRequired": "U moet de voorwaarden voor accountactivering accepteren.",
+      "goDashboard": "Naar dashboard",
+      "goArticles": "Artikelen op de marktplaats",
+      "policyTitle": "Voorwaarden voor het ontvangen en opleveren van opdrachten en aanbestedingen",
+      "policyReadTerms": "Lees de volledige gebruiksvoorwaarden"
+    }
+  },
+  "onboardingPanel": {
+    "completeNow": "Nu voltooien",
+    "gettingStarted": "Aan de slag",
+    "remindLater": "Later herinneren"
+  },
+  "silverConversion": {
+    "defaultTitle": "Blijf werkkansen ontvangen met Silver",
+    "starting": "Starten…",
+    "earnedBalanceLink": "Details van verdiend saldo bekijken",
+    "openPlans": "Pakketten bekijken"
+  },
+  "eliteOffer": {
+    "title": "Persoonlijk direct aanbod",
+    "loading": "Aanbod laden…",
+    "unavailableTitle": "Dit aanbod is niet beschikbaar",
+    "unavailableText": "Het aanbod is mogelijk verlopen of niet aan uw account gericht, of directe aanbiedingen zijn momenteel niet ingeschakeld.",
+    "back": "Terug naar dashboard",
+    "expires": "Aanbod verloopt",
+    "accept": "Aanbod accepteren",
+    "decline": "Aanbod afwijzen",
+    "actionFailed": "Kan deze actie op het aanbod niet uitvoeren. Probeer het opnieuw.",
+    "status": {
+      "pending": "Wacht op uw reactie",
+      "accepted": "Geaccepteerd",
+      "declined": "Afgewezen",
+      "expired": "Verlopen",
+      "cancelled": "Geannuleerd",
+      "unknown": "Niet beschikbaar"
+    }
+  }
+}

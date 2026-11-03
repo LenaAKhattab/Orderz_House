@@ -83,6 +83,7 @@ function PlanFilterEmptyState() {
       <PlanUpgradeRequiredCta
         reason="plan_locked"
         isEn={locale === "en"}
+        locale={locale}
         className="oh-orders-plan-empty__cta-wrap"
       />
     </div>

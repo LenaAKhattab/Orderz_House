@@ -4,6 +4,8 @@ import { getAnalyticsDiagnostics, isAnalyticsEnabled, isDevTrackingDisabled } fr
 import StatusBadge from "../../dashboard/StatusBadge";
 import DashboardLoadingState from "../../dashboard/DashboardLoadingState";
 import { useTranslation } from "../../../i18n/LanguageProvider";
+import { getActiveLocale } from "../../../i18n/activeLocale";
+import { pickIntlTag } from "../../../i18n/intlLocale";
 import { getSafeApiErrorMessage } from "../../../utils/apiErrorMessage";
 import "./registerAnalysisLocale";
 
@@ -16,7 +18,7 @@ function toneFromOk(ok) {
 function fmtTime(iso) {
   if (!iso) return "—";
   try {
-    return new Intl.DateTimeFormat(document.documentElement.lang === "en" ? "en-US" : "ar-JO-u-nu-latn", { dateStyle: "short", timeStyle: "short" }).format(new Date(iso));
+    return new Intl.DateTimeFormat(pickIntlTag(getActiveLocale(), { ar: "ar-JO-u-nu-latn", en: "en-US" }), { dateStyle: "short", timeStyle: "short" }).format(new Date(iso));
   } catch {
     return "—";
   }

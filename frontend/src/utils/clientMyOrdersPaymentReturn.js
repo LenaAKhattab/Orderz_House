@@ -2,6 +2,7 @@
  * Toast copy for Stripe return URLs (`paid=1` / `cancelled=1`) on Client My Orders.
  * Keeps fixed-order vs bid-selection flows separate (bid failures must not imply draft purge).
  */
+import { getActiveLocale, pt } from "../i18n/activeLocale.js";
 
 /** @param {{ response?: { status?: number, data?: { code?: string, message?: string } }, message?: string }}} axiosLike */
 export function parseConfirmPaymentAxiosError(axiosLike) {
@@ -11,33 +12,38 @@ export function parseConfirmPaymentAxiosError(axiosLike) {
   return { status, code, message: String(message) };
 }
 
+/** Arabic when asked; otherwise the active non-Arabic UI locale (English when the UI itself is Arabic). */
+function localeFromArabicFlag(isArabic) {
+  if (isArabic) return "ar";
+  const active = getActiveLocale();
+  return active === "ar" ? "en" : active;
+}
+
+function toastCopy(variantKey, locale) {
+  const base = `platformUtils.bidPaymentReturn.${variantKey}`;
+  return {
+    title: pt(`${base}.title`, undefined, locale),
+    message: pt(`${base}.message`, undefined, locale),
+  };
+}
+
 /**
  * Bid-selection: confirm failed — never use fixed-order purge messaging.
  * @param {boolean} isArabic
  * @param {{ status?: number, code?: string, message?: string }} errInfo
+ * @param {string} [locale] UI locale (overrides `isArabic` when given)
  */
-export function getBidPaymentConfirmFailureToast(isArabic, errInfo) {
+export function getBidPaymentConfirmFailureToast(isArabic, errInfo, locale) {
   const { status, code, message } = errInfo;
   const msgLower = String(message).toLowerCase();
+  const loc = locale || localeFromArabicFlag(isArabic);
 
   if (status === 402 || code === "PAYMENT_NOT_COMPLETED") {
-    return {
-      title: isArabic ? "جاري التحقق من الدفع" : "Verifying payment",
-      message: isArabic
-        ? "لم يُؤكَّد الدفع بعد من الخادم (قد يتأخر الويب هوك لحظات). انتظر قليلاً ثم حدّث الصفحة. إذا بقي الطلب بانتظار الدفع بعد عدة دقائق، تواصل مع الدعم."
-        : "Payment is not confirmed yet (the webhook can take a moment). Wait briefly, then refresh. If the order still shows awaiting payment after a few minutes, contact support.",
-      variant: "pending_verify",
-    };
+    return { ...toastCopy("pendingVerify", loc), variant: "pending_verify" };
   }
 
   if (status === 503) {
-    return {
-      title: isArabic ? "خدمة الدفع غير متاحة" : "Payment service unavailable",
-      message: isArabic
-        ? "تعذّر الاتصال بمزود الدفع حالياً. حاول لاحقاً أو تواصل مع الدعم."
-        : "The payment provider is unavailable. Try again later or contact support.",
-      variant: "service",
-    };
+    return { ...toastCopy("serviceUnavailable", loc), variant: "service" };
   }
 
   if (status === 409) {
@@ -46,23 +52,9 @@ export function getBidPaymentConfirmFailureToast(isArabic, errInfo) {
       msgLower.includes("does not match") ||
       msgLower.includes("payment is not completed")
     ) {
-      return {
-        title: isArabic ? "حالة الطلب أو العرض تغيّرت" : "Order or bid state changed",
-        message: isArabic
-          ? "لا يمكن إتمام تأكيد دفع العرض بالحالة الحالية. حدّث الصفحة، أو أعد فتح الدفع من بطاقة الطلب. إذا ظننت أن الدفع نُزِف بالفعل، انتظر قليلاً ثم حدّث؛ وإلا تواصل مع الدعم."
-          : "This bid payment cannot be confirmed in the current state. Refresh the page or start checkout again from the order card. If you believe you were charged, wait briefly and refresh; otherwise contact support.",
-        variant: "state",
-      };
+      return { ...toastCopy("stateChanged", loc), variant: "state" };
     }
   }
 
-  return {
-    title: isArabic ? "تعذّر تأكيد دفع العرض" : "Could not confirm bid payment",
-    message: isArabic
-      ? "لم نتمكن من تأكيد دفع العرض المختار. إذا نجح الدفع في Stripe، انتظر قليلاً ثم حدّث الصفحة. إذا تكرّر الخطأ أو لم يُحدَّث الطلب، تواصل مع الدعم مع ذكر عنوان الطلب والبريد المسجّل."
-      : "We could not confirm payment for the selected bid. If Stripe shows a successful charge, wait briefly and refresh. If this persists, contact support with your order ID.",
-    variant: "generic",
-  };
+  return { ...toastCopy("generic", loc), variant: "generic" };
 }
-
-

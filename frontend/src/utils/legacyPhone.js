@@ -1,4 +1,7 @@
 ﻿import { ARAB_COUNTRIES, DEFAULT_DIAL_CODE } from "../constants/arabCountries";
+import { localeFromEnFlag } from "../i18n/activeLocale.js";
+import { isNewLocale } from "../i18n/systemContent.js";
+import { regionDisplayName } from "./localeFormat.js";
 
 /** Longest dial-code first so +971 wins over +97, +962 over +96, etc. */
 const DIAL_CODES_LONGEST_FIRST = Object.freeze(
@@ -82,10 +85,15 @@ export function phonePlaceholderForDial(dialCode) {
   return PLACEHOLDERS_BY_DIAL[normalizePhonePart(dialCode)] || "XXXXXXXX";
 }
 
-export function dialCodeOptions() {
+/**
+ * @param {string} [locale] country names in Arabic unless given; follows German / Dutch / Romanian UIs
+ *   (Intl.DisplayNames from the ISO code).
+ */
+export function dialCodeOptions(locale = localeFromEnFlag(false)) {
+  const localName = (c) => (isNewLocale(locale) && regionDisplayName(c.code, locale)) || c.nameAr;
   return ARAB_COUNTRIES.map((c) => ({
     value: c.dialCode,
-    label: `${c.flag ? `${c.flag} ` : ""}${c.dialCode} — ${c.nameAr}`,
+    label: `${c.flag ? `${c.flag} ` : ""}${c.dialCode} — ${localName(c)}`,
     compactLabel: `${c.flag ? `${c.flag} ` : ""}${c.dialCode}`,
     flag: c.flag,
     nameAr: c.nameAr,

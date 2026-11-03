@@ -11,8 +11,12 @@ import {
   listClientEliteOffersForOrder,
 } from "../../services/eliteDirectOrdersApi";
 import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
+import { useTranslation } from "../../i18n/LanguageProvider";
+
+const P = "platformPages.eliteDirectOffer";
 
 export default function ClientEliteDirectOfferPanel({ orderId }) {
+  const { t } = useTranslation();
   const [engineOn, setEngineOn] = useState(false);
   const [offers, setOffers] = useState([]);
   const [targetId, setTargetId] = useState("");
@@ -44,12 +48,12 @@ export default function ClientEliteDirectOfferPanel({ orderId }) {
   }
 
   return (
-    <section className="elite-direct-offer-panel" aria-label="Elite Direct Offer">
-      <h3>Elite Direct Offer</h3>
-      <p>Send a private timed offer to one Elite Freelancer.</p>
+    <section className="elite-direct-offer-panel" aria-label={t(`${P}.title`)}>
+      <h3>{t(`${P}.title`)}</h3>
+      <p>{t(`${P}.description`)}</p>
       {error ? <p role="alert">{error}</p> : null}
       <div>
-        <label htmlFor="elite-target-id">Elite Freelancer user id</label>
+        <label htmlFor="elite-target-id">{t(`${P}.targetLabel`)}</label>
         <input
           id="elite-target-id"
           value={targetId}
@@ -75,13 +79,21 @@ export default function ClientEliteDirectOfferPanel({ orderId }) {
             });
           }}
         >
-          Send offer
+          {t(`${P}.send`)}
         </button>
       </div>
       <ul>
         {offers.map((o) => (
           <li key={o.id}>
-            #{o.id} → Freelancer {o.targetFreelancerUserId} — {o.status}
+            {t(`${P}.offerLine`, {
+              id: o.id,
+              freelancerId: o.targetFreelancerUserId,
+              status: (() => {
+                const key = `${P}.status.${o.status}`;
+                const label = t(key);
+                return label === key ? o.status : label;
+              })(),
+            })}
             {o.status === "pending" ? (
               <button
                 type="button"
@@ -98,7 +110,7 @@ export default function ClientEliteDirectOfferPanel({ orderId }) {
                   });
                 }}
               >
-                Cancel
+                {t(`${P}.cancel`)}
               </button>
             ) : null}
           </li>

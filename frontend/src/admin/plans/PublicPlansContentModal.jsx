@@ -43,8 +43,7 @@ function formFromPayload(data) {
 
 export default function PublicPlansContentModal({ open, onClose }) {
   const { push } = useToast();
-  const { t, locale } = useTranslation();
-  const isEn = locale === "en";
+  const { t, dir } = useTranslation();
   const [form, setForm] = useState(emptyForm);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -135,7 +134,7 @@ export default function PublicPlansContentModal({ open, onClose }) {
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        dir={isEn ? "ltr" : "rtl"}
+        dir={dir}
       >
         <header className="oh-sapl-modal__head">
           <div>

@@ -1,3 +1,5 @@
+import { isNewLocale, localizeSystemText } from "../i18n/systemContent.js";
+
 /** Safe public fallbacks for footer app-download block (used when CMS is unavailable). */
 export const FOOTER_APP_DOWNLOAD_FALLBACKS = Object.freeze({
   titleAr: "تحميل التطبيق",
@@ -53,13 +55,22 @@ export function mergeFooterAppDownloads(settings) {
 }
 
 /**
+ * CMS title (system content): Arabic / English columns as before; German / Dutch / Romanian translate the English
+ * (else Arabic) title through the system-content memory.
  * @param {{ titleAr: string, titleEn: string }} settings
  * @param {string} locale
  */
 export function pickFooterAppDownloadTitle(settings, locale) {
-  const isEn = String(locale || "").toLowerCase().startsWith("en");
+  const loc = String(locale || "").toLowerCase();
+  const isEn = loc.startsWith("en");
   if (isEn) {
     return coalesceFooterAppText(settings?.titleEn, FOOTER_APP_DOWNLOAD_FALLBACKS.titleEn);
+  }
+  if (isNewLocale(loc)) {
+    return localizeSystemText(loc, {
+      ar: coalesceFooterAppText(settings?.titleAr, FOOTER_APP_DOWNLOAD_FALLBACKS.titleAr),
+      en: coalesceFooterAppText(settings?.titleEn, FOOTER_APP_DOWNLOAD_FALLBACKS.titleEn),
+    });
   }
   return coalesceFooterAppText(settings?.titleAr, FOOTER_APP_DOWNLOAD_FALLBACKS.titleAr);
 }

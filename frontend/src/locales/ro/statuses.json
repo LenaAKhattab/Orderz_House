@@ -1,0 +1,76 @@
+{
+  "orders": {
+    "published": "Publicată",
+    "open_for_freelancers": "Deschisă pentru freelanceri",
+    "open_for_bids": "Deschisă pentru oferte",
+    "assigned": "Atribuită",
+    "in_progress": "În desfășurare",
+    "ready_for_work": "Pregătită pentru lucru",
+    "pending_payment": "În așteptarea plății",
+    "pending_client_review": "În așteptarea verificării clientului",
+    "completed": "Finalizată",
+    "cancelled": "Anulată",
+    "closed": "Închisă",
+    "draft": "Ciornă",
+    "archived": "Arhivată",
+    "awaiting_payment_after_bid_selection": "În așteptarea plății pentru oferta selectată",
+    "pending_freelancer_acceptance": "În așteptarea acceptării de către freelancer"
+  },
+  "subscriptions": {
+    "assigned_not_started": "În așteptarea primei comenzi",
+    "active": "Activ",
+    "expired": "Expirat",
+    "cancelled": "Anulat",
+    "pending": "În așteptare",
+    "company_approved": "Aprobat de companie",
+    "suspended": "Suspendat",
+    "purchased_pending_start": "Plătit — în așteptarea începerii",
+    "inactive": "Inactiv",
+    "superseded": "Înlocuit cu un pachet mai nou"
+  },
+  "kyc": {
+    "pending": "În așteptare",
+    "approved": "Aprobată",
+    "rejected": "Respinsă",
+    "resubmission_required": "Retrimitere necesară",
+    "not_submitted": "Netrimisă"
+  },
+  "bids": {
+    "pending": "În așteptare",
+    "accepted": "Acceptată",
+    "rejected": "Respinsă",
+    "withdrawn": "Retrasă",
+    "submitted": "Trimisă"
+  },
+  "payments": {
+    "paid": "Plătită",
+    "unpaid": "Neplătită",
+    "pending": "În așteptare",
+    "failed": "Eșuată",
+    "refunded": "Rambursată",
+    "not_required": "Nu este necesară",
+    "skipped_by_admin": "Scutită de administrator",
+    "expired": "Sesiunea de plată a expirat"
+  },
+  "claims": {
+    "pending": "În așteptare",
+    "approved": "Aprobată",
+    "rejected": "Respinsă",
+    "paid": "Plătită",
+    "open": "Deschisă",
+    "closed": "Închisă",
+    "accepted": "Acceptată",
+    "frozen": "Înghețată",
+    "requires_in_person_review": "Necesită verificare în persoană"
+  },
+  "articles": {
+    "draft": "Ciornă",
+    "submitted": "Trimis spre verificare",
+    "under_review": "În curs de verificare",
+    "revision_requested": "Revizie solicitată",
+    "approved": "Aprobat",
+    "rejected": "Respins",
+    "published": "Publicat",
+    "closed": "Închis"
+  }
+}

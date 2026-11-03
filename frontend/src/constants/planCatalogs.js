@@ -3,6 +3,8 @@
  * Persist these values, never Admin UI labels.
  */
 
+import { withCatalogLabels } from "./constantsI18n.js";
+
 export const PLAN_CATALOG = Object.freeze({
   MAIN_PLANS: "main_plans",
   PAGE_PLANS: "page_plans",
@@ -14,11 +16,18 @@ export const PLAN_CATALOG_VALUES = Object.freeze(Object.values(PLAN_CATALOG));
 /** Behavior-preserving initial value: current public `/plans` source. */
 export const DEFAULT_PLAN_CATALOG_INITIAL_VALUE = PLAN_CATALOG.MARKETPLACE_PLANS;
 
-export const PLAN_CATALOG_LABELS = Object.freeze({
-  [PLAN_CATALOG.MAIN_PLANS]: { ar: "الباقات الرئيسية", en: "Main plans" },
-  [PLAN_CATALOG.PAGE_PLANS]: { ar: "باقات الصفحات", en: "Page plans" },
-  [PLAN_CATALOG.MARKETPLACE_PLANS]: { ar: "باقات العمل", en: "Work memberships" },
-});
+/**
+ * Catalog labels (platformConstants.planCatalogs.<id>): `ar` follows the non-English UI branch (Arabic, or the
+ * active de / nl / ro locale), `en` is English, `labelKey` the catalog key.
+ */
+export const PLAN_CATALOG_LABELS = Object.freeze(
+  Object.fromEntries(
+    PLAN_CATALOG_VALUES.map((id) => [
+      id,
+      Object.freeze(withCatalogLabels({}, `planCatalogs.${id}`, { ar: "local", en: "en" })),
+    ]),
+  ),
+);
 
 export function isPlanCatalog(value) {
   return PLAN_CATALOG_VALUES.includes(String(value || "").trim());

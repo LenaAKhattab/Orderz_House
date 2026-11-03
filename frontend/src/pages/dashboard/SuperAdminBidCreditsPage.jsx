@@ -10,6 +10,7 @@ import {
 } from "../../services/api";
 import Button from "../../components/ui/Button";
 import { useTranslation } from "../../i18n/LanguageProvider";
+import { isNewLocale, localizeSystemText } from "../../i18n/systemContent.js";
 import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
 import "../../i18n/economyResources";
 
@@ -177,7 +178,13 @@ export default function SuperAdminBidCreditsPage() {
         <ul>
           {(packages || []).map((pkg) => (
             <li key={pkg.id} style={{ marginBottom: 8 }}>
-              <strong>{locale === "en" ? pkg.nameEn || pkg.nameAr : pkg.nameAr}</strong> — {pkg.bidQuantity}{" "}
+              <strong>
+                {isNewLocale(locale)
+                  ? localizeSystemText(locale, { ar: pkg.nameAr, en: pkg.nameEn })
+                  : locale === "en"
+                    ? pkg.nameEn || pkg.nameAr
+                    : pkg.nameAr}
+              </strong> — {pkg.bidQuantity}{" "}
               {t("economy.bidCreditsAdmin.bidUnit")} / {pkg.priceJod} JOD
               {pkg.validityDays != null
                 ? ` / ${pkg.validityDays} ${t("economy.bidCreditsAdmin.days")}`
@@ -248,13 +255,23 @@ export default function SuperAdminBidCreditsPage() {
             {purchases.map((p) => (
               <li key={p.id} style={{ borderTop: "1px solid rgba(0,0,0,0.08)", paddingTop: 8 }}>
                 <div>
-                  #{p.id} · user {p.freelancerUserId} · {p.bidQuantitySnapshot} Bids / {p.priceJodSnapshot}{" "}
-                  JOD · fulfill={p.status} · reversal={p.paymentReversalStatus}
+                  {t("economy.bidCreditsAdmin.purchaseLine", {
+                    id: p.id,
+                    userId: p.freelancerUserId,
+                    bids: p.bidQuantitySnapshot,
+                    bidUnit: t("economy.bidCreditsAdmin.bidUnit"),
+                    price: p.priceJodSnapshot,
+                    status: p.status,
+                    reversal: p.paymentReversalStatus,
+                  })}
                 </div>
                 <div style={{ fontSize: "0.85rem", opacity: 0.85 }}>
-                  consumed@reversal={p.consumedBeforeReversal ?? "—"} · frozen={p.unusedFrozenAmount} ·
-                  revoked={p.unusedRevokedAmount}
-                  {p.manualReviewRequired ? (t("economy.bidCreditsAdmin.manualReview")) : ""}
+                  {t("economy.bidCreditsAdmin.purchaseReversalMeta", {
+                    consumed: p.consumedBeforeReversal ?? "—",
+                    frozen: p.unusedFrozenAmount,
+                    revoked: p.unusedRevokedAmount,
+                  })}
+                  {p.manualReviewRequired ? t("economy.bidCreditsAdmin.manualReview") : ""}
                 </div>
                 {p.manualReviewRequired ? (
                   <div style={{ display: "flex", gap: 8, marginTop: 6, flexWrap: "wrap" }}>

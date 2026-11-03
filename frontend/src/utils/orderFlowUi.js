@@ -1,5 +1,7 @@
 import { getTranslation } from "../lib/translation/getTranslation";
 import { DEFAULT_LOCALE } from "../i18n/resources";
+import { localeFromEnFlag, pt } from "../i18n/activeLocale.js";
+import { isNewLocale } from "../i18n/systemContent.js";
 import { orderHasAssignment } from "./orderPrivacyUi";
 
 /** Matches backend pool listing / freelancer visibility. */
@@ -21,8 +23,15 @@ const ORDER_STATUS_BADGE_CLASS = {
   ready_for_work: "oh-badge oh-badge--success",
 };
 
+/**
+ * Without a translator: Arabic (default locale) for Arabic / English UIs as before; the active locale for
+ * German / Dutch / Romanian.
+ */
 function resolveTranslator(t) {
-  return typeof t === "function" ? t : (key) => getTranslation(key, DEFAULT_LOCALE);
+  if (typeof t === "function") return t;
+  const locale = localeFromEnFlag(false);
+  if (isNewLocale(locale)) return (key) => pt(key, undefined, locale);
+  return (key) => getTranslation(key, DEFAULT_LOCALE);
 }
 
 /**

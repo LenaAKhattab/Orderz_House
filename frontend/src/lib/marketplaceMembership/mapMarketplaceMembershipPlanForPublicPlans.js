@@ -5,6 +5,19 @@
  * Does NOT fall back to legacy GET /api/plans catalog data.
  */
 
+import { pt } from "../../i18n/activeLocale.js";
+import { isNewLocale, localizeSystemText } from "../../i18n/systemContent.js";
+
+/**
+ * Static card copy lives in the `platformCore.membership` catalog. The DTO keeps its Arabic / English columns
+ * (filled from the ar / en catalogs, so they are unchanged) plus the catalog key, so German / Dutch / Romanian
+ * can render the same copy from their own catalog (see `localizeMembershipCardText`).
+ */
+const tierTaglineKey = (tier) => `platformCore.membership.tiers.${tier}.tagline`;
+const MEMBERSHIP_VIEW_KEY = "platformCore.membership.viewMembership";
+const WITHDRAWAL_ON_KEY = "platformCore.membership.withdrawalOn";
+const WITHDRAWAL_OFF_KEY = "platformCore.membership.withdrawalOff";
+
 /** Public catalog progression (ignore DB id / accidental price sorts). */
 export const PUBLIC_MARKETPLACE_MEMBERSHIP_TIER_ORDER = Object.freeze([
   "starter",
@@ -14,28 +27,49 @@ export const PUBLIC_MARKETPLACE_MEMBERSHIP_TIER_ORDER = Object.freeze([
 ]);
 
 /** Display-only labels (not commercial values). Values still come from DTO fields. */
+function tierDisplay(tier, code) {
+  const taglineKey = tierTaglineKey(tier);
+  return Object.freeze({
+    code,
+    taglineKey,
+    taglineAr: pt(taglineKey, undefined, "ar"),
+    taglineEn: pt(taglineKey, undefined, "en"),
+  });
+}
+
 export const PUBLIC_MEMBERSHIP_TIER_DISPLAY = Object.freeze({
-  starter: {
-    code: "STARTER",
-    taglineAr: "للبداية",
-    taglineEn: "To get started",
-  },
-  silver: {
-    code: "SILVER",
-    taglineAr: "للانطلاق",
-    taglineEn: "To grow",
-  },
-  pro: {
-    code: "PRO",
-    taglineAr: "للمحترفين",
-    taglineEn: "For professionals",
-  },
-  elite: {
-    code: "ELITE",
-    taglineAr: "لأعلى مستوى",
-    taglineEn: "Maximum access",
-  },
+  starter: tierDisplay("starter", "STARTER"),
+  silver: tierDisplay("silver", "SILVER"),
+  pro: tierDisplay("pro", "PRO"),
+  elite: tierDisplay("elite", "ELITE"),
 });
+
+/**
+ * Display text of a mapped membership card field for any UI locale.
+ * Arabic / English read the DTO columns exactly as before (`<field>Ar` / `<field>En`, each falling back to the
+ * other); German / Dutch / Romanian use the catalog key carried by the DTO (`<field>Key`), else the
+ * system-content translation of the columns.
+ *
+ * @param {Record<string, unknown> | null | undefined} plan mapped card DTO
+ * @param {"tagline" | "buttonText"} field
+ * @param {string} locale
+ * @returns {string}
+ */
+export function localizeMembershipCardText(plan, field, locale) {
+  if (!plan) return "";
+  const ar = String((field === "buttonText" ? plan.buttonText : plan[`${field}Ar`]) ?? "");
+  const en = String(plan[`${field}En`] ?? "");
+  if (isNewLocale(locale)) {
+    const key = plan[`${field}Key`];
+    if (key) {
+      const value = pt(String(key), undefined, locale);
+      if (value && value !== key) return value;
+    }
+    return localizeSystemText(locale, { ar, en });
+  }
+  if (locale === "en") return en || ar || "";
+  return ar || en || "";
+}
 
 const PUBLIC_TIER_RANK = new Map(
   PUBLIC_MARKETPLACE_MEMBERSHIP_TIER_ORDER.map((code, index) => [code, index]),
@@ -55,22 +89,18 @@ function isPublicMarketplaceTier(tierCode) {
  * Secondary status lines (withdrawal only).
  * Duration is shown under the price; Bids/daily/project cap live in primary metrics UI.
  */
-function buildSecondaryFeatures(plan, isEn) {
-  const features = [];
+function buildSecondaryFeatureKeys(plan) {
+  const keys = [];
 
   const withdrawal =
     plan?.withdrawalEnabled ?? plan?.capabilities?.withdrawalEnabled;
   if (withdrawal === false) {
-    features.push(
-      isEn
-        ? "No direct payout of financial amounts"
-        : "لا يوجد استلام مباشر للقيم المالية",
-    );
+    keys.push(WITHDRAWAL_OFF_KEY);
   } else if (withdrawal === true) {
-    features.push(isEn ? "Withdrawal available" : "السحب متاح");
+    keys.push(WITHDRAWAL_ON_KEY);
   }
 
-  return features;
+  return keys;
 }
 
 function buildPrimaryMetrics(plan) {
@@ -122,6 +152,7 @@ export function mapMarketplaceMembershipPlanForPublicPlans(plan) {
     titleEn: display.code,
     taglineAr: display.taglineAr,
     taglineEn: display.taglineEn,
+    taglineKey: display.taglineKey,
     isPopular: tierCode === "pro",
   });
 }
@@ -182,8 +213,10 @@ function buildMembershipPlanCard(plan, tierCode, display) {
     !durationMonths && Number.isFinite(durationDaysRaw) && durationDaysRaw > 0 ? durationDaysRaw : null;
 
   const primaryMetrics = buildPrimaryMetrics(plan);
-  const featuresAr = buildSecondaryFeatures(plan, false);
-  const featuresEn = buildSecondaryFeatures(plan, true);
+  // Data columns: always the Arabic and the English catalog text (independent of the UI locale).
+  const featureKeys = buildSecondaryFeatureKeys(plan);
+  const featuresAr = featureKeys.map((key) => pt(key, undefined, "ar"));
+  const featuresEn = featureKeys.map((key) => pt(key, undefined, "en"));
 
   return {
     id: String(plan.id),
@@ -199,6 +232,7 @@ function buildMembershipPlanCard(plan, tierCode, display) {
     titleEn: display.titleEn,
     taglineAr: display.taglineAr,
     taglineEn: display.taglineEn,
+    taglineKey: display.taglineKey || null,
     description: "",
     descriptionEn: "",
     priceJod,
@@ -215,11 +249,13 @@ function buildMembershipPlanCard(plan, tierCode, display) {
     planFeatures: featuresAr.map((text, i) => ({
       featureText: text,
       featureTextEn: featuresEn[i] || text,
+      featureKey: featureKeys[i],
       isIncluded: true,
     })),
     selfCheckoutEligible: false,
-    buttonText: "عرض العضوية",
-    buttonTextEn: "View membership",
+    buttonText: pt(MEMBERSHIP_VIEW_KEY, undefined, "ar"),
+    buttonTextEn: pt(MEMBERSHIP_VIEW_KEY, undefined, "en"),
+    buttonTextKey: MEMBERSHIP_VIEW_KEY,
     isPopular: display.isPopular,
     isFeatured: display.isPopular,
     monthlyBidAllowance: Number(plan.monthlyBidAllowance) || 0,

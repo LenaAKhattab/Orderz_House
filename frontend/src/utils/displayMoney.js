@@ -1,11 +1,14 @@
-import { BASE_CURRENCY, CURRENCY_LABELS } from "../constants/displayCurrencies.js";
+import { BASE_CURRENCY } from "../constants/displayCurrencies.js";
+import { localeFromEnFlag } from "../i18n/activeLocale.js";
+import { isNewLocale } from "../i18n/systemContent.js";
+import { currencyLabel, numberFormatFor } from "./localeFormat.js";
 
-const JOD_FORMAT = new Intl.NumberFormat("en-US", {
+const JOD_OPTIONS = Object.freeze({
   minimumFractionDigits: 0,
   maximumFractionDigits: 2,
 });
 
-const APPROX_FORMAT = new Intl.NumberFormat("en-US", {
+const APPROX_OPTIONS = Object.freeze({
   minimumFractionDigits: 0,
   maximumFractionDigits: 2,
 });
@@ -13,12 +16,18 @@ const APPROX_FORMAT = new Intl.NumberFormat("en-US", {
 export function formatJodAmount(amount, { locale = "ar" } = {}) {
   const n = Number(amount);
   if (!Number.isFinite(n)) return null;
-  const formatted = JOD_FORMAT.format(n);
-  const suffix = locale === "en" ? "JOD" : CURRENCY_LABELS.JOD;
-  return `${formatted} ${suffix}`;
+  const formatted = numberFormatFor(locale, JOD_OPTIONS).format(n);
+  return `${formatted} ${currencyLabel("JOD", locale)}`;
 }
 
-export function formatApproximateCurrency(amountJod, targetCurrency, rate) {
+/**
+ * Approximate converted amount (display only).
+ * Arabic / English keep the historical Arabic labels ("ر.س"); German / Dutch / Romanian use their catalog label
+ * (ISO code) and number separators. Without `locale`, follows the UI (unchanged for Arabic / English).
+ *
+ * @param {{ locale?: string }} [options]
+ */
+export function formatApproximateCurrency(amountJod, targetCurrency, rate, { locale = localeFromEnFlag(false) } = {}) {
   const n = Number(amountJod);
   const r = Number(rate);
   const code = String(targetCurrency || "").toUpperCase();
@@ -26,8 +35,8 @@ export function formatApproximateCurrency(amountJod, targetCurrency, rate) {
   if (!code || code === BASE_CURRENCY) return null;
   const converted = n * r;
   if (!Number.isFinite(converted)) return null;
-  const suffix = CURRENCY_LABELS[code] || code;
-  return `${APPROX_FORMAT.format(converted)} ${suffix}`;
+  const suffix = currencyLabel(code, isNewLocale(locale) ? locale : "ar");
+  return `${numberFormatFor(locale, APPROX_OPTIONS).format(converted)} ${suffix}`;
 }
 
 export function shouldShowApproximate(displayCurrency, rate) {

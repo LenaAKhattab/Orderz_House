@@ -2,7 +2,9 @@
  * Special Offer Package — independent promotional package (tier special_offer).
  * purchaseMode=checkout uses dedicated marketplace plan, not SILVER/PRO/ELITE.
  */
+import { isNewLocale, localizeSystemText } from "../i18n/systemContent.js";
 import { TRAINING_WHATSAPP_E164 } from "./trainingPlansCatalog.js";
+import { ct, ctAr, ctEnglish, withCatalogLabels } from "./constantsI18n.js";
 
 export const SPECIAL_OFFER_PURCHASE_MODE = Object.freeze({
   CHECKOUT: "checkout",
@@ -11,12 +13,22 @@ export const SPECIAL_OFFER_PURCHASE_MODE = Object.freeze({
 
 export const SPECIAL_OFFER_PLAN_TIER_CODE = "special_offer";
 
-export const SPECIAL_OFFER_ACCESS_LEVEL_OPTIONS = Object.freeze([
-  { key: "starter", level: 1, labelAr: "مستوى STARTER", labelEn: "STARTER level" },
-  { key: "silver", level: 2, labelAr: "مستوى SILVER", labelEn: "SILVER level" },
-  { key: "pro", level: 3, labelAr: "مستوى PRO", labelEn: "PRO level" },
-  { key: "elite", level: 5, labelAr: "مستوى ELITE", labelEn: "ELITE level" },
-]);
+/**
+ * Access levels: `labelKey` is the catalog key; legacy `labelAr` returns the non-English UI label (Arabic, or the
+ * active de / nl / ro locale) and `labelEn` the English label.
+ */
+export const SPECIAL_OFFER_ACCESS_LEVEL_OPTIONS = Object.freeze(
+  [
+    { key: "starter", level: 1 },
+    { key: "silver", level: 2 },
+    { key: "pro", level: 3 },
+    { key: "elite", level: 5 },
+  ].map((row) =>
+    Object.freeze(
+      withCatalogLabels(row, `specialOfferPackage.accessLevels.${row.key}`, { labelAr: "local", labelEn: "en" }),
+    ),
+  ),
+);
 
 export const SPECIAL_OFFER_DEFAULT_REFUND_EXPLANATION_AR = `يُسترد مبلغ 100 دينار بواقع 20 دينارًا عن كل شهر نشط ومؤهل، حتى استرداد كامل مبلغ 100 دينار، ضمن مدة التزام مقدارها 6 أشهر. يمكن أن تكون الأشهر المؤهلة متتالية أو متفرقة.
 
@@ -51,9 +63,7 @@ const SPECIAL_OFFER_EN_BY_FIELD = Object.freeze({
   },
 });
 
-export function localizedSpecialOfferText(offer, field, locale) {
-  const arabic = String(offer?.[field] ?? "");
-  if (locale !== "en") return arabic;
+function englishSpecialOfferText(offer, field, arabic) {
   const direct = String(offer?.[`${field}En`] || "").trim();
   if (direct) return direct;
   if (field === "refundExplanationAr") {
@@ -67,12 +77,31 @@ export function localizedSpecialOfferText(offer, field, locale) {
   return SPECIAL_OFFER_EN_BY_FIELD[field]?.[arabic.trim()] || "";
 }
 
-export const SPECIAL_OFFER_REFUND_SECTION_TITLES_AR = Object.freeze([
-  "الاسترداد الشهري",
-  "الأشهر غير النشطة",
-  "الدخل من الطلبات",
-  "تنبيه مهم",
-]);
+/**
+ * Special-offer system content for a UI locale. Arabic: the stored Arabic field; English: the English field or the
+ * canonical English copy ("" when none); German / Dutch / Romanian: the system-content translation of the English
+ * (else Arabic) source.
+ */
+export function localizedSpecialOfferText(offer, field, locale) {
+  const arabic = String(offer?.[field] ?? "");
+  if (isNewLocale(locale)) {
+    return localizeSystemText(locale, { ar: arabic, en: englishSpecialOfferText(offer, field, arabic) });
+  }
+  if (locale !== "en") return arabic;
+  return englishSpecialOfferText(offer, field, arabic);
+}
+
+const REFUND_SECTION_TITLE_KEYS = Object.freeze(["monthlyRefund", "inactiveMonths", "ordersIncome", "importantNotice"]);
+
+/** Arabic refund section titles (catalog: platformConstants.specialOfferPackage.refundSectionTitles). */
+export const SPECIAL_OFFER_REFUND_SECTION_TITLES_AR = Object.freeze(
+  REFUND_SECTION_TITLE_KEYS.map((key) => ctAr(`specialOfferPackage.refundSectionTitles.${key}`)),
+);
+
+/** Refund section titles for a UI locale (default: Arabic, or the active de / nl / ro locale). */
+export function specialOfferRefundSectionTitles(locale) {
+  return REFUND_SECTION_TITLE_KEYS.map((key) => ct(`specialOfferPackage.refundSectionTitles.${key}`, undefined, locale));
+}
 
 export const SPECIAL_OFFER_DEFAULTS = Object.freeze({
   isVisible: false,
@@ -103,11 +132,15 @@ export const SPECIAL_OFFER_DEFAULTS = Object.freeze({
   canCreateNewVersion: false,
 });
 
-export const SPECIAL_OFFER_LOCKED_WARNING_AR =
-  "هذه باقة عرض تم شراؤها من مستخدمين، لذلك تم تجميد السعر والمزايا. يمكنك إخفاؤها أو إنشاء عرض جديد، وسيحتفظ المشتركون الحاليون بالمزايا التي دفعوا عليها.";
+/** Arabic / English copies (catalog: platformConstants.specialOfferPackage.lockedWarning). */
+export const SPECIAL_OFFER_LOCKED_WARNING_AR = ctAr("specialOfferPackage.lockedWarning");
 
-export const SPECIAL_OFFER_LOCKED_WARNING_EN =
-  "This special offer has been purchased by users, so price and benefits are frozen. You can hide it or create a new offer; current buyers keep the benefits they paid for.";
+export const SPECIAL_OFFER_LOCKED_WARNING_EN = ctEnglish("specialOfferPackage.lockedWarning");
+
+/** Locked-offer warning for any UI locale (`isEn ? …_EN : …_AR` replacement). */
+export function specialOfferLockedWarning(locale) {
+  return ct("specialOfferPackage.lockedWarning", undefined, locale);
+}
 
 export function accessLevelKeyFromArticleLevel(level) {
   const n = Number(level);

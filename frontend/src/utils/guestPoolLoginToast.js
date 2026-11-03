@@ -1,5 +1,7 @@
 import { getTranslation } from "../lib/translation/getTranslation";
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from "../i18n/resources";
+import { localeFromEnFlag, pt } from "../i18n/activeLocale.js";
+import { isNewLocale } from "../i18n/systemContent.js";
 
 const GUEST_LOGIN_TITLE_KEY = "auth.guestLogin.title";
 const GUEST_LOGIN_MESSAGE_KEY = "auth.guestLogin.message";
@@ -29,6 +31,15 @@ export const FILE_ACCESS_LOGIN_MESSAGE_KEY = FILE_ACCESS_MESSAGE_KEY;
 const GUEST_TOAST_COOLDOWN_MS = 4000;
 const SESSION_KEY = "oh_guest_pool_login_toast_v1";
 let lastGuestPoolToastAt = 0;
+
+/**
+ * Copy when no translator is passed: Arabic (default locale) for Arabic / English UIs as before; the active
+ * locale for German / Dutch / Romanian.
+ */
+function fallbackTranslation(key) {
+  const locale = localeFromEnFlag(false);
+  return isNewLocale(locale) ? pt(key, undefined, locale) : getTranslation(key);
+}
 
 function allLocaleTexts(key) {
   return SUPPORTED_LOCALES.map((locale) => getTranslation(key, locale));
@@ -98,7 +109,7 @@ export function pushGuestPoolLoginToast(push, t) {
   if (now - lastGuestPoolToastAt < GUEST_TOAST_COOLDOWN_MS) return;
   lastGuestPoolToastAt = now;
   writeSessionTs(now);
-  const resolve = (key) => (typeof t === "function" ? t(key) : getTranslation(key));
+  const resolve = (key) => (typeof t === "function" ? t(key) : fallbackTranslation(key));
   push({
     type: "info",
     title: resolve(GUEST_LOGIN_TITLE_KEY),
@@ -114,7 +125,7 @@ function loginRouteMessagePayload(message, t) {
   const text = String(message || "").trim();
   if (!text) return null;
 
-  const resolve = (key) => (typeof t === "function" ? t(key) : getTranslation(key));
+  const resolve = (key) => (typeof t === "function" ? t(key) : fallbackTranslation(key));
 
   if (matchesAnyLocaleText(text, PASSWORD_RESET_MESSAGE_KEY)) {
     return {

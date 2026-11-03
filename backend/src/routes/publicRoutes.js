@@ -24,10 +24,13 @@ const { publicSubSubcategoriesListValidators } = require("../validators/categori
 const publicGeoController = require("../controllers/publicGeoController");
 const publicCurrencyDisplayController = require("../controllers/publicCurrencyDisplayController");
 const trainingPackagesController = require("../controllers/trainingPackagesController");
+const systemContentTranslationsController = require("../controllers/systemContentTranslationsController");
 
 const router = express.Router();
 
 router.get("/public/geo", publicGeoController.getPublicGeo);
+// German / Dutch / Romanian translations of system-authored DB content (allowlisted locales, cacheable).
+router.get("/i18n/system-content/:locale", systemContentTranslationsController.getSystemContent);
 router.get(
   "/public/currency-display",
   optionalAuth,

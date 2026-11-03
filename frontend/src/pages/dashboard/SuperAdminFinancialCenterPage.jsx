@@ -49,20 +49,26 @@ import FinancialCenterPagination, { FC_TABLE_PAGE_SIZE } from "./financialCenter
 import { allocationPaidBadge, getAuditActionLabel } from "./financialCenter/financialCenterAuditLabels";
 import { getFinancialDepartmentLabel } from "./financialCenter/financialDepartmentLabels";
 import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
+import { pt } from "../../i18n/activeLocale.js";
+import { pickIntlTag } from "../../i18n/intlLocale.js";
 import "./financialCenter/superAdminFinancialCenter.css";
 
 const FC_EMPLOYEE_PATH = (id) => `/dashboard/super-admin/financial-center/employees/${id}`;
 
-function formatMoney(value, currency = "د.أ") {
+/** Historical tag for both Arabic and English (Latin digits); German / Dutch / Romanian use their own. */
+const FC_INTL_LEGACY = { ar: "ar-JO-u-nu-latn", en: "ar-JO-u-nu-latn" };
+
+function formatMoney(value, currency, locale) {
   if (value == null || Number.isNaN(Number(value))) return "—";
-  return `${new Intl.NumberFormat("ar-JO-u-nu-latn", { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(Number(value))} ${currency}`;
+  const suffix = currency === undefined ? pt("platformPages.common.jodSuffix", undefined, locale) : currency;
+  return `${new Intl.NumberFormat(pickIntlTag(locale, FC_INTL_LEGACY), { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(Number(value))} ${suffix}`;
 }
 
-function formatDate(value) {
+function formatDate(value, locale) {
   if (!value) return "—";
   const d = new Date(value);
   if (!Number.isFinite(d.getTime())) return "—";
-  return new Intl.DateTimeFormat("ar-JO-u-nu-latn", { dateStyle: "medium", timeStyle: "short" }).format(d);
+  return new Intl.DateTimeFormat(pickIntlTag(locale, FC_INTL_LEGACY), { dateStyle: "medium", timeStyle: "short" }).format(d);
 }
 
 function FcTdEllipsis({ children, className = "", dir }) {
@@ -236,7 +242,7 @@ function AllocationAddButton({ onClick, t }) {
 }
 
 export default function SuperAdminFinancialCenterPage() {
-  const { t, dir: uiDir } = useTranslation();
+  const { t, locale, dir: uiDir } = useTranslation();
   const { push } = useToast();
   const navigate = useNavigate();
   const [monthFilter, setMonthFilter] = useState(currentMonthKey());
@@ -781,15 +787,15 @@ export default function SuperAdminFinancialCenterPage() {
             </div>
             <div className="fc-summary-card">
               <span className="fc-summary-card__label">{t("finance.financialCenter.totalBonusMonth")}</span>
-              <strong className="fc-summary-card__value">{formatMoney(summary?.totalBonusMonth, currency)}</strong>
+              <strong className="fc-summary-card__value">{formatMoney(summary?.totalBonusMonth, currency, locale)}</strong>
             </div>
             <div className="fc-summary-card">
               <span className="fc-summary-card__label">{t("finance.financialCenter.totalPaidMonth")}</span>
-              <strong className="fc-summary-card__value">{formatMoney(summary?.totalPaidMonth, currency)}</strong>
+              <strong className="fc-summary-card__value">{formatMoney(summary?.totalPaidMonth, currency, locale)}</strong>
             </div>
             <div className="fc-summary-card">
               <span className="fc-summary-card__label">{t("finance.financialCenter.totalUnpaid")}</span>
-              <strong className="fc-summary-card__value">{formatMoney(summary?.totalUnpaid, currency)}</strong>
+              <strong className="fc-summary-card__value">{formatMoney(summary?.totalUnpaid, currency, locale)}</strong>
             </div>
             <div className="fc-summary-card">
               <span className="fc-summary-card__label">{t("finance.financialCenter.unreceivedRows")}</span>
@@ -884,10 +890,10 @@ export default function SuperAdminFinancialCenterPage() {
                         </span>
                       </td>
                       <td className="fc-col-compact">{accountStatusBadge(p.accountStatus, t)}</td>
-                      <td className="fc-col-money">{formatMoney(p.totalBonus, currency)}</td>
-                      <td className="fc-col-money">{formatMoney(p.totalPaid, currency)}</td>
-                      <td className="fc-col-money">{formatMoney(p.totalUnpaid, currency)}</td>
-                      <td className="fc-col-compact">{formatDate(p.lastBonusAt)}</td>
+                      <td className="fc-col-money">{formatMoney(p.totalBonus, currency, locale)}</td>
+                      <td className="fc-col-money">{formatMoney(p.totalPaid, currency, locale)}</td>
+                      <td className="fc-col-money">{formatMoney(p.totalUnpaid, currency, locale)}</td>
+                      <td className="fc-col-compact">{formatDate(p.lastBonusAt, locale)}</td>
                       <td className="fc-col-actions">
                         <FinancialCenterRowActions
                           label={t("finance.financialCenter.actions")}
@@ -1035,10 +1041,10 @@ export default function SuperAdminFinancialCenterPage() {
                       <td className="fc-col-compact">{r.monthKey}</td>
                       <FcTdEllipsis>{r.title}</FcTdEllipsis>
                       <FcTdEllipsis>{sourceLabel(r.sourceType, t)}</FcTdEllipsis>
-                      <td className="fc-col-money">{formatMoney(r.grossAmount, currency)}</td>
-                      <td className="fc-col-compact">{formatMoney(r.stripeFeeAmount, currency)}</td>
-                      <td className="fc-col-compact">{formatMoney(r.netAmountAfterStripe, currency)}</td>
-                      <td className="fc-col-money">{formatMoney(r.bonusPoolAmount, currency)}</td>
+                      <td className="fc-col-money">{formatMoney(r.grossAmount, currency, locale)}</td>
+                      <td className="fc-col-compact">{formatMoney(r.stripeFeeAmount, currency, locale)}</td>
+                      <td className="fc-col-compact">{formatMoney(r.netAmountAfterStripe, currency, locale)}</td>
+                      <td className="fc-col-money">{formatMoney(r.bonusPoolAmount, currency, locale)}</td>
                       <td className="fc-col-compact">{r.beneficiaryCount ?? 0}</td>
                       <td className="fc-col-compact">{receivedBadge(r.receivedStatus, t)}</td>
                       <td className="fc-col-compact">{rowStatusBadge(r.status, t)}</td>
@@ -1349,7 +1355,7 @@ export default function SuperAdminFinancialCenterPage() {
                   >
                     <div>{item.label}</div>
                     <div>
-                      {formatMoney(item.amountJod, currency)} — {formatDate(item.paidAt)}
+                      {formatMoney(item.amountJod, currency, locale)} — {formatDate(item.paidAt, locale)}
                     </div>
                   </button>
                 ))}
@@ -1406,19 +1412,19 @@ export default function SuperAdminFinancialCenterPage() {
           <div className="fc-preview-box">
             <div className="fc-preview-row">
               <span>{t("finance.financialCenter.grossAmount")}</span>
-              <strong>{formatMoney(preview.grossAmount, currency)}</strong>
+              <strong>{formatMoney(preview.grossAmount, currency, locale)}</strong>
             </div>
             <div className="fc-preview-row">
               <span>{t("finance.financialCenter.stripeFee")}</span>
-              <strong>{formatMoney(preview.stripeFeeAmount, currency)}</strong>
+              <strong>{formatMoney(preview.stripeFeeAmount, currency, locale)}</strong>
             </div>
             <div className="fc-preview-row">
               <span>{t("finance.financialCenter.netAfterStripe")}</span>
-              <strong>{formatMoney(preview.netAmountAfterStripe, currency)}</strong>
+              <strong>{formatMoney(preview.netAmountAfterStripe, currency, locale)}</strong>
             </div>
             <div className="fc-preview-row">
               <span>{t("finance.financialCenter.bonusPoolAmount")}</span>
-              <strong>{formatMoney(preview.bonusPoolAmount, currency)}</strong>
+              <strong>{formatMoney(preview.bonusPoolAmount, currency, locale)}</strong>
             </div>
           </div>
 
@@ -1493,7 +1499,7 @@ export default function SuperAdminFinancialCenterPage() {
                         <div className="fc-allocation-row__field fc-allocation-row__amount">
                           <label className="fc-allocation-row__label">{t("finance.financialCenter.colAmount")}</label>
                           <div className="fc-allocation-amount-pill" aria-live="polite">
-                            {formatMoney(preview.allocations[idx]?.calculatedAmount, currency)}
+                            {formatMoney(preview.allocations[idx]?.calculatedAmount, currency, locale)}
                           </div>
                         </div>
 
@@ -1607,15 +1613,15 @@ export default function SuperAdminFinancialCenterPage() {
             <div className="fc-preview-box">
               <div className="fc-preview-row">
                 <span>{t("finance.financialCenter.grossAmount")}</span>
-                <strong>{formatMoney(detailRow.grossAmount, currency)}</strong>
+                <strong>{formatMoney(detailRow.grossAmount, currency, locale)}</strong>
               </div>
               <div className="fc-preview-row">
                 <span>{t("finance.financialCenter.netAfterStripe")}</span>
-                <strong>{formatMoney(detailRow.netAmountAfterStripe, currency)}</strong>
+                <strong>{formatMoney(detailRow.netAmountAfterStripe, currency, locale)}</strong>
               </div>
               <div className="fc-preview-row">
                 <span>{t("finance.financialCenter.bonusPoolAmount")}</span>
-                <strong>{formatMoney(detailRow.bonusPoolAmount, currency)}</strong>
+                <strong>{formatMoney(detailRow.bonusPoolAmount, currency, locale)}</strong>
               </div>
               <div className="fc-preview-row">
                 <span>{t("finance.financialCenter.receivedStatus")}</span>
@@ -1647,7 +1653,7 @@ export default function SuperAdminFinancialCenterPage() {
                     <tr key={a.id}>
                       <FcTdEllipsis>{a.personName}</FcTdEllipsis>
                       <td className="fc-col-compact">{a.percentageShare}%</td>
-                      <td className="fc-col-money">{formatMoney(a.calculatedAmount, currency)}</td>
+                      <td className="fc-col-money">{formatMoney(a.calculatedAmount, currency, locale)}</td>
                       <td className="fc-col-compact">
                         <StatusBadge tone={paid.tone}>{paid.label}</StatusBadge>
                       </td>
@@ -1707,7 +1713,7 @@ export default function SuperAdminFinancialCenterPage() {
                 <ul className="fc-audit-list">
                   {detailRow.auditLogs.map((log) => (
                     <li key={log.id}>
-                      <strong>{getAuditActionLabel(log.action, log.entityType, t)}</strong> — {formatDate(log.createdAt)}
+                      <strong>{getAuditActionLabel(log.action, log.entityType, t)}</strong> — {formatDate(log.createdAt, locale)}
                       {log.actorName ? ` · ${log.actorName}` : ""}
                     </li>
                   ))}

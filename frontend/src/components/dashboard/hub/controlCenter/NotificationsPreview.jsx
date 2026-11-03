@@ -2,12 +2,13 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "../../../../i18n/LanguageProvider";
 import WidgetLoadError from "./WidgetLoadError";
 import { getNotificationText } from "../../../../utils/notificationDisplay";
+import { pickIntlTag } from "../../../../i18n/intlLocale";
 
 function fmtShort(value, locale) {
   if (!value) return "";
   const d = new Date(value);
   if (!Number.isFinite(d.getTime())) return "";
-  const intlLocale = locale === "en" ? "en-JO-u-nu-latn" : "ar-JO-u-nu-latn";
+  const intlLocale = pickIntlTag(locale, { ar: "ar-JO-u-nu-latn", en: "en-JO-u-nu-latn" });
   return new Intl.DateTimeFormat(intlLocale, { dateStyle: "short", timeStyle: "short" }).format(d);
 }
 

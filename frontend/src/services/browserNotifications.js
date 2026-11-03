@@ -1,3 +1,6 @@
+import { pt } from "../i18n/activeLocale.js";
+import { getLocaleDirection, isSupportedLocale } from "../i18n/localePreference.js";
+
 export function isBrowserNotificationSupported() {
   return typeof window !== "undefined" && "Notification" in window;
 }
@@ -27,13 +30,14 @@ export function showBrowserNotification({ title, body, link, tag }) {
   if (!isBrowserNotificationSupported()) return null;
   if (Notification.permission !== "granted") return null;
 
-  // Follow the UI language (set on <html lang> by the language provider).
-  const lang = typeof document !== "undefined" && document.documentElement.lang === "en" ? "en" : "ar";
-  const n = new Notification(title || (lang === "en" ? "New notification" : "إشعار جديد"), {
+  // Follow the UI language (set on <html lang> by the language provider); unknown → Arabic.
+  const docLang = typeof document !== "undefined" ? String(document.documentElement.lang || "") : "";
+  const lang = isSupportedLocale(docLang) ? docLang : "ar";
+  const n = new Notification(title || pt("platformCore.browserNotification.newNotification", undefined, lang), {
     body: body || "",
     tag: tag || undefined,
     icon: "/logo.png",
-    dir: lang === "en" ? "ltr" : "rtl",
+    dir: getLocaleDirection(lang),
     lang,
   });
 

@@ -1,6 +1,7 @@
 import { orderPriceText } from "../components/open-orders/openOrdersFormatters";
 import { getLocaleField, getLocalizedField } from "../lib/i18n/getLocalizedField";
 import { getLocalizedMarketplaceOrderTitle } from "../lib/i18n/getLocalizedMarketplaceOrderText";
+import { isNewLocale } from "../i18n/systemContent.js";
 
 const PREVIEW_LIMIT = 3;
 
@@ -10,12 +11,15 @@ const PREVIEW_LIMIT = 3;
  * @param {string} fallbackTitle
  */
 function resolveHomeMobileLatestOrderTitle(order, locale, fallbackTitle) {
-  if (locale === "en") {
+  // Order titles are user content: German / Dutch / Romanian show the original text exactly like English
+  // (never the system-content translation memory).
+  const latinUi = locale === "en" || isNewLocale(locale);
+  if (latinUi) {
     const title = getLocalizedMarketplaceOrderTitle(order, "en");
     if (title && title !== "—") return title;
   }
 
-  return getLocalizedField(order, "title", locale).trim() || fallbackTitle;
+  return getLocalizedField(order, "title", latinUi ? "en" : locale).trim() || fallbackTitle;
 }
 
 /**

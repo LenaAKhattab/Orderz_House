@@ -2,8 +2,9 @@
  * Shared JOD money display for dashboard KPIs and tables.
  * Always uses Western digits (latn) and amount-then-currency order.
  */
+import { currencyLabel, numberFormatFor } from "./localeFormat.js";
 
-const JOD_NUMBER_FORMAT = new Intl.NumberFormat("en-US", {
+const JOD_NUMBER_OPTIONS = Object.freeze({
   minimumFractionDigits: 0,
   maximumFractionDigits: 2,
 });
@@ -23,6 +24,7 @@ export function coerceJodAmount(amount) {
  * Format a JOD amount with Western digits and a stable suffix.
  * Examples (ar): `0 د.أ`, `50 د.أ`, `1,250 د.أ`, `12.5 د.أ`
  * Examples (en): `0 JOD`, `1,250 JOD`
+ * German / Dutch / Romanian use their own separators (de: `1.250 JOD`, `12,5 JOD`); the amount never changes.
  *
  * Never returns `-`, `NaN`, `null`, or bare currency.
  *
@@ -32,7 +34,6 @@ export function coerceJodAmount(amount) {
  */
 export function formatJodMoney(amount, { locale = "ar" } = {}) {
   const n = coerceJodAmount(amount);
-  const formatted = JOD_NUMBER_FORMAT.format(n);
-  const suffix = locale === "en" ? "JOD" : "د.أ";
-  return `${formatted} ${suffix}`;
+  const formatted = numberFormatFor(locale, JOD_NUMBER_OPTIONS).format(n);
+  return `${formatted} ${currencyLabel("JOD", locale)}`;
 }

@@ -1,4 +1,7 @@
 import { buildPlanPagesIndex } from "./planAdminSections";
+import { localeFromEnFlag } from "../../i18n/activeLocale.js";
+import { pickIntlTag } from "../../i18n/intlLocale.js";
+import { isNewLocale, localizeSystemText } from "../../i18n/systemContent.js";
 
 export function formatPlanPagePath(page) {
   if (!page) return "/plans";
@@ -7,27 +10,38 @@ export function formatPlanPagePath(page) {
 
 export function formatPlanPageOptionLabel(page, isEn = false) {
   if (!page) return "";
-  const title =
-    isEn && page.titleEn ? String(page.titleEn) : String(page.title || "").trim() || "—";
+  const loc = localeFromEnFlag(isEn);
+  const title = isNewLocale(loc)
+    ? localizeSystemText(loc, { ar: page.title, en: page.titleEn }) || "—"
+    : isEn && page.titleEn
+      ? String(page.titleEn)
+      : String(page.title || "").trim() || "—";
   return `${title} (${formatPlanPagePath(page)})`;
 }
 
 export function formatCheckoutPlanPriceLabel(priceJod, isEn = false) {
+  const loc = localeFromEnFlag(isEn);
+  // Arabic keeps the dinar sign; every Latin-script locale uses the currency code JOD.
+  const latin = loc !== "ar";
   const n = priceJod == null || priceJod === "" ? 0 : Number(priceJod);
   if (!Number.isFinite(n) || n === 0) {
-    return isEn ? "0 JOD" : "0 د.أ";
+    return latin ? "0 JOD" : "0 د.أ";
   }
-  const formatted = n.toLocaleString(isEn ? "en-US" : "ar-JO-u-nu-latn", {
+  const formatted = n.toLocaleString(pickIntlTag(loc, { ar: "ar-JO-u-nu-latn", en: "en-US" }), {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
   });
-  return isEn ? `${formatted} JOD` : `${formatted} د.أ`;
+  return latin ? `${formatted} JOD` : `${formatted} د.أ`;
 }
 
 export function formatCheckoutPlanOptionLabel(plan, isEn = false) {
   if (!plan) return "";
-  const title =
-    isEn && plan.titleEn ? String(plan.titleEn) : String(plan.title || plan.name || "").trim();
+  const loc = localeFromEnFlag(isEn);
+  const title = isNewLocale(loc)
+    ? localizeSystemText(loc, { ar: plan.title || plan.name, en: plan.titleEn })
+    : isEn && plan.titleEn
+      ? String(plan.titleEn)
+      : String(plan.title || plan.name || "").trim();
   const price = formatCheckoutPlanPriceLabel(plan.priceJod, isEn);
   return `${title} — ${price}`;
 }

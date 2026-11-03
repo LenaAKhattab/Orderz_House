@@ -18,10 +18,15 @@
   "language": {
     "ar": "العربية",
     "en": "English",
+    "de": "Deutsch",
+    "nl": "Nederlands",
+    "ro": "Română",
     "switchTo": "العربية",
     "switchAria": "تبديل اللغة إلى الإنجليزية",
     "switchToArAria": "تبديل اللغة إلى العربية",
-    "switching": "جارٍ تبديل اللغة…"
+    "switching": "جارٍ تبديل اللغة…",
+    "menuLabel": "اللغة",
+    "changeAria": "تغيير اللغة (الحالية: {{language}})"
   },
   "actions": {
     "cancel": "إلغاء",

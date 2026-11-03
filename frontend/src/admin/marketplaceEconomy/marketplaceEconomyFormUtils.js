@@ -3,6 +3,19 @@
  * Mirrors backend validation — configuration only; no economy / auction execution.
  */
 
+import { localeFromEnFlag, pt } from "../../i18n/activeLocale.js";
+
+const ECONOMY_FALLBACK_VALIDATION_KINDS = new Set([
+  "moneyPositive",
+  "moneyNonNeg",
+  "percentRange",
+  "intRange",
+  "invalidValue",
+  "hybridUnavailable",
+  "minOrderInvalid",
+  "maxOrderInvalid",
+]);
+
 export const MARKETPLACE_ECONOMY_DEFAULT_FORM = Object.freeze({
   workTokenValueJod: "0.100",
   normalApplicationTokensPerOrderJod: "1",
@@ -104,22 +117,29 @@ const ASSIGNMENT_STRATEGIES = new Set([
   // HYBRID reserved — not selectable until weight policy is approved
 ]);
 
+/** Strategy options; `label` resolves for the active UI locale (Arabic / English keep the original English copy). */
 export const ASSIGNMENT_STRATEGIES_UI = Object.freeze([
-  {
+  Object.freeze({
     value: "HIGHEST_TOKEN_ONLY",
-    label: "Highest eligible first",
+    get label() {
+      return pt("platformAdmin.economyForm.strategies.HIGHEST_TOKEN_ONLY");
+    },
     available: true,
-  },
-  {
+  }),
+  Object.freeze({
     value: "FAIR_DISTRIBUTION_FIRST",
-    label: "Fair distribution first",
+    get label() {
+      return pt("platformAdmin.economyForm.strategies.FAIR_DISTRIBUTION_FIRST");
+    },
     available: true,
-  },
-  {
+  }),
+  Object.freeze({
     value: "HYBRID",
-    label: "HYBRID (unavailable — weight policy required)",
+    get label() {
+      return pt("platformAdmin.economyForm.strategies.HYBRID");
+    },
     available: false,
-  },
+  }),
 ]);
 
 function toFiniteNumber(value) {
@@ -281,27 +301,13 @@ export function settingsToFormState(settings) {
 export function validateMarketplaceEconomyForm(form, { isEn = false, translate: tr, t: tOpt } = {}) {
   const errors = {};
   const translate = tr ?? tOpt;
-  const t = (ar, en) => (isEn ? en : ar);
-  const fieldLabel = (key, ar, en) => (translate ? translate(`economy.fields.${key}`) : t(ar, en));
+  const loc = localeFromEnFlag(isEn);
+  const fieldLabel = (key) =>
+    translate ? translate(`economy.fields.${key}`) : pt(`platformAdmin.economyForm.fields.${key}`, undefined, loc);
   const valErr = (kind, label, extra = {}) => {
     if (translate) return translate(`economy.validation.${kind}`, { label, ...extra });
-    if (kind === "moneyPositive") return t(`${label}: يجب أن تكون أكبر من 0.`, `${label}: must be > 0.`);
-    if (kind === "moneyNonNeg") return t(`${label}: يجب أن تكون ≥ 0.`, `${label}: must be ≥ 0.`);
-    if (kind === "percentRange") return t(`${label}: بين 0 و 100.`, `${label}: must be 0–100.`);
-    if (kind === "intRange") {
-      const { min, max } = extra;
-      return t(`${label}: عدد صحيح بين ${min} و ${max}.`, `${label}: integer between ${min} and ${max}.`);
-    }
-    if (kind === "invalidValue") return t(`${label}: قيمة غير صالحة.`, `${label}: invalid value.`);
-    if (kind === "hybridUnavailable") {
-      return t(
-        `${label}: HYBRID غير متاح حتى تُعرَّف أوزان الدمج.`,
-        `${label}: HYBRID unavailable until weight policy is defined (FAIR_DISTRIBUTION_HYBRID_WEIGHT_POLICY_REQUIRED).`,
-      );
-    }
-    if (kind === "minOrderInvalid") return t("الحد الأدنى لقيمة الطلب غير صالح.", "Min order value invalid.");
-    if (kind === "maxOrderInvalid") return t("الحد الأقصى لقيمة الطلب غير صالح.", "Max order value invalid.");
-    return t(`${label}: قيمة غير صالحة.`, `${label}: invalid value.`);
+    const known = ECONOMY_FALLBACK_VALIDATION_KINDS.has(kind) ? kind : "invalidValue";
+    return pt(`platformAdmin.economyForm.validation.${known}`, { label, ...extra }, loc);
   };
 
   const moneyPositive = (key, label) => {
@@ -371,35 +377,35 @@ export function validateMarketplaceEconomyForm(form, { isEn = false, translate: 
   const patch = {
     platformCommissionPercentage: percent(
       "platformCommissionPercentage",
-      fieldLabel("commissionPct", "نسبة العمولة", "Commission %"),
+      fieldLabel("commissionPct"),
     ),
     cashProcessingFeeJod: moneyNonNeg(
       "cashProcessingFeeJod",
-      fieldLabel("cashFee", "رسوم الدفع النقدي", "Cash processing fee"),
+      fieldLabel("cashFee"),
     ),
     // Phase B7B: omit verification Work Token amount knobs; engine forced OFF.
     eliteDirectOrdersPerCycle: intRange(
       "eliteDirectOrdersPerCycle",
-      fieldLabel("eliteOrdersPerCycle", "طلبات Elite لكل دورة", "Elite orders / cycle"),
+      fieldLabel("eliteOrdersPerCycle"),
       0,
       1000,
     ),
     eliteOfferDurationMinutes: intRange(
       "eliteOfferDurationMinutes",
-      fieldLabel("offerDuration", "مدة العرض", "Offer duration"),
+      fieldLabel("offerDuration"),
       1,
       10080,
     ),
     eliteCarryForwardEnabled: Boolean(form.eliteCarryForwardEnabled),
     eliteCarryForwardDays: intRange(
       "eliteCarryForwardDays",
-      fieldLabel("carryForwardDays", "أيام الترحيل", "Carry-forward days"),
+      fieldLabel("carryForwardDays"),
       0,
       3650,
     ),
     eliteMaximumCarryForward: intRange(
       "eliteMaximumCarryForward",
-      fieldLabel("maxCarryForward", "الحد الأقصى للترحيل", "Max carry-forward"),
+      fieldLabel("maxCarryForward"),
       0,
       1000,
     ),
@@ -415,22 +421,22 @@ export function validateMarketplaceEconomyForm(form, { isEn = false, translate: 
     fairWorkDistributionEnabled: Boolean(form.fairWorkDistributionEnabled),
     assignmentStrategy: strategy(
       "assignmentStrategy",
-      fieldLabel("assignmentStrategy", "استراتيجية التعيين", "Assignment strategy"),
+      fieldLabel("assignmentStrategy"),
     ),
     fairDistributionLookbackDays: intRange(
       "fairDistributionLookbackDays",
-      fieldLabel("fairLookback", "نافذة التوزيع العادل (أيام)", "Fair Distribution lookback (days)"),
+      fieldLabel("fairLookback"),
       1,
       3650,
     ),
-    fairnessWeight: percent("fairnessWeight", fieldLabel("fairnessWeight", "وزن العدالة", "Fairness weight")),
-    tokenWeight: percent("tokenWeight", fieldLabel("tokenWeight", "وزن العروض", "Token weight")),
+    fairnessWeight: percent("fairnessWeight", fieldLabel("fairnessWeight")),
+    tokenWeight: percent("tokenWeight", fieldLabel("tokenWeight")),
     performanceWeight: percent(
       "performanceWeight",
-      fieldLabel("performanceWeight", "وزن الأداء", "Performance weight"),
+      fieldLabel("performanceWeight"),
     ),
-    recencyWeight: percent("recencyWeight", fieldLabel("recencyWeight", "وزن الحداثة", "Recency weight")),
-    workloadWeight: percent("workloadWeight", fieldLabel("workloadWeight", "وزن عبء العمل", "Workload weight")),
+    recencyWeight: percent("recencyWeight", fieldLabel("recencyWeight")),
+    workloadWeight: percent("workloadWeight", fieldLabel("workloadWeight")),
     eligibleLossPriorityEffect: String(form.eligibleLossPriorityEffect || "INCREASE_PRIORITY"),
     awardResetPolicy: String(form.awardResetPolicy || "RESET_TO_ZERO"),
     declinePriorityEffect: String(form.declinePriorityEffect || "NO_BOOST"),
@@ -460,73 +466,73 @@ export function validateMarketplaceEconomyForm(form, { isEn = false, translate: 
     })(),
     normalOrderMinTargetApplicants: intRange(
       "normalOrderMinTargetApplicants",
-      fieldLabel("minApplicants", "حد أدنى للمتقدمين", "Min applicants"),
+      fieldLabel("minApplicants"),
       1,
       10000,
     ),
     normalOrderMaxTargetApplicants: intRange(
       "normalOrderMaxTargetApplicants",
-      fieldLabel("maxApplicants", "حد أقصى للمتقدمين", "Max applicants"),
+      fieldLabel("maxApplicants"),
       1,
       10000,
     ),
     normalOrderDefaultTargetApplicants: intRange(
       "normalOrderDefaultTargetApplicants",
-      fieldLabel("defaultApplicants", "العدد الافتراضي للمتقدمين", "Default applicants"),
+      fieldLabel("defaultApplicants"),
       1,
       10000,
     ),
     normalOrderMinBidCost: intRange(
       "normalOrderMinBidCost",
-      fieldLabel("minBidCost", "حد أدنى لتكلفة العرض", "Min Bid cost"),
+      fieldLabel("minBidCost"),
       1,
       1000,
     ),
     normalOrderMaxBidCost: intRange(
       "normalOrderMaxBidCost",
-      fieldLabel("maxBidCost", "حد أقصى لتكلفة العرض", "Max Bid cost"),
+      fieldLabel("maxBidCost"),
       1,
       1000,
     ),
     normalOrderDefaultBidCost: intRange(
       "normalOrderDefaultBidCost",
-      fieldLabel("defaultBidCost", "تكلفة العرض الافتراضية", "Default Bid cost"),
+      fieldLabel("defaultBidCost"),
       1,
       1000,
     ),
     normalOrderMinApplicationPeriodHours: intRange(
       "normalOrderMinApplicationPeriodHours",
-      fieldLabel("minApplicationHours", "حد أدنى لساعات التقديم", "Min application hours"),
+      fieldLabel("minApplicationHours"),
       1,
       8760,
     ),
     normalOrderMaxApplicationPeriodHours: intRange(
       "normalOrderMaxApplicationPeriodHours",
-      fieldLabel("maxApplicationHours", "حد أقصى لساعات التقديم", "Max application hours"),
+      fieldLabel("maxApplicationHours"),
       1,
       8760,
     ),
     normalOrderDefaultApplicationPeriodHours: intRange(
       "normalOrderDefaultApplicationPeriodHours",
-      fieldLabel("defaultApplicationHours", "ساعات التقديم الافتراضية", "Default application hours"),
+      fieldLabel("defaultApplicationHours"),
       1,
       8760,
     ),
     normalOrderMinExecutionDurationHours: intRange(
       "normalOrderMinExecutionDurationHours",
-      fieldLabel("minExecutionHours", "حد أدنى لساعات التنفيذ", "Min execution hours"),
+      fieldLabel("minExecutionHours"),
       1,
       87600,
     ),
     normalOrderMaxExecutionDurationHours: intRange(
       "normalOrderMaxExecutionDurationHours",
-      fieldLabel("maxExecutionHours", "حد أقصى لساعات التنفيذ", "Max execution hours"),
+      fieldLabel("maxExecutionHours"),
       1,
       87600,
     ),
     normalOrderDefaultExecutionDurationHours: intRange(
       "normalOrderDefaultExecutionDurationHours",
-      fieldLabel("defaultExecutionHours", "ساعات التنفيذ الافتراضية", "Default execution hours"),
+      fieldLabel("defaultExecutionHours"),
       1,
       87600,
     ),
@@ -554,13 +560,13 @@ export function validateMarketplaceEconomyForm(form, { isEn = false, translate: 
     normalOrderBusinessTimezone: String(form.normalOrderBusinessTimezone || "Asia/Amman"),
     articleMinRequiredBids: intRange(
       "articleMinRequiredBids",
-      fieldLabel("articleMinBids", "حد أدنى لمناقصات المقال", "Article min required bids"),
+      fieldLabel("articleMinBids"),
       1,
       10000,
     ),
     articleDefaultRequiredBidCount: intRange(
       "articleDefaultRequiredBidCount",
-      fieldLabel("articleDefaultBids", "الافتراضي لمناقصات المقال", "Article default required bids"),
+      fieldLabel("articleDefaultBids"),
       1,
       10000,
     ),
@@ -573,13 +579,13 @@ export function validateMarketplaceEconomyForm(form, { isEn = false, translate: 
     articleRefundPolicy: "full_on_minimum_not_met",
     pantryMinRequiredBids: intRange(
       "pantryMinRequiredBids",
-      fieldLabel("pantryMinBids", "حد أدنى لمناقصات بيت المونة", "Pantry min required bids"),
+      fieldLabel("pantryMinBids"),
       1,
       10000,
     ),
     pantryDefaultRequiredBidCount: intRange(
       "pantryDefaultRequiredBidCount",
-      fieldLabel("pantryDefaultBids", "الافتراضي لمناقصات بيت المونة", "Pantry default required bids"),
+      fieldLabel("pantryDefaultBids"),
       1,
       10000,
     ),

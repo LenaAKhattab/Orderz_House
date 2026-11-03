@@ -1,0 +1,295 @@
+{
+  "fallback": {
+    "order": "تحديث على طلب",
+    "wallet": "تحديث مالي",
+    "course": "تحديث تدريبي",
+    "message": "رسالة جديدة",
+    "bell": "إشعار جديد"
+  },
+  "details": {
+    "category": "التصنيف",
+    "topic": "الموضوع الجاهز"
+  },
+  "types": {
+    "ad_created": {
+      "title": "تم إنشاء إعلان",
+      "message": "تم إنشاء إعلان جديد."
+    },
+    "ad_expired": {
+      "title": "انتهى إعلان",
+      "message": "وصل إعلان إلى تاريخ انتهائه ولم يعد يُعرض."
+    },
+    "ad_published": {
+      "title": "تم نشر إعلان",
+      "message": "أصبح إعلان ظاهراً على المنصة."
+    },
+    "ad_scheduled": {
+      "title": "تمت جدولة إعلان",
+      "message": "تمت جدولة إعلان للنشر."
+    },
+    "ad_unpublished": {
+      "title": "تم إيقاف إعلان",
+      "message": "تم إيقاف نشر إعلان."
+    },
+    "ad_updated": {
+      "title": "تم تحديث إعلان",
+      "message": "تم تحديث إعلان."
+    },
+    "bid_pool_allocated": {
+      "title": "وصلتك عروض",
+      "message": "تمت إضافة {{allocatedBids}} عرضاً إلى رصيدك."
+    },
+    "bid_pool_returned_unused": {
+      "title": "أُعيدت العروض غير المستخدمة إلى المجمع",
+      "message": "أُعيدت العروض غير المستخدمة إلى مجمع التوزيع."
+    },
+    "course_assigned": {
+      "title": "تم إسناد دورة تدريبية لك",
+      "message": "تم إسناد دورة جديدة إلى حسابك."
+    },
+    "course_completed": {
+      "title": "اكتملت الدورة بنجاح",
+      "message": "ممتاز! لقد أكملت جميع دروس هذه الدورة."
+    },
+    "course_lesson_added": {
+      "title": "تمت إضافة دروس جديدة",
+      "message": "تمت إضافة دروس جديدة إلى إحدى دوراتك."
+    },
+    "course_lesson_completed": {
+      "title": "تم تسجيل إكمال الدرس",
+      "message": "تم تسجيل درسك كمكتمل."
+    },
+    "elite_direct_offer_accepted": {
+      "title": "تم قبول عرض Elite Direct",
+      "message": "قبل المستقل عرض Elite Direct الخاص بك."
+    },
+    "elite_direct_offer_created": {
+      "title": "عرض Elite Direct جديد",
+      "message": "وصلك عرض Elite Direct خاص — راجع وقبول أو رفض قبل انتهاء المدة."
+    },
+    "elite_direct_offer_declined": {
+      "title": "تم رفض عرض Elite Direct",
+      "message": "رفض المستقل عرض Elite Direct. يمكنك إرسال عرض جديد لمستقل Elite آخر."
+    },
+    "elite_direct_offer_expired": {
+      "title": "انتهت مدة عرض Elite Direct",
+      "message": "انتهت مدة العرض دون قبول. يمكنك إرسال عرض جديد لمستقل Elite آخر."
+    },
+    "feedback_created": {
+      "title": "ملاحظة جديدة",
+      "message": "أرسل مستخدم بلاغاً أو اقتراحاً جديداً."
+    },
+    "feedback_status_resolved": {
+      "title": "تحديث حالة ملاحظتك",
+      "message": "تم تحديث حالة ملاحظتك إلى: تم الحل."
+    },
+    "financial_claim_created": {
+      "title": "تم إرسال مطالبتك المالية",
+      "message": "تم إنشاء المطالبة المالية وهي الآن قيد المراجعة."
+    },
+    "financial_claim_paid": {
+      "title": "تم دفع مستحقات المطالبة",
+      "message": "تم تسجيل عملية الدفع وإغلاق المطالبة كمدفوعة."
+    },
+    "financial_claim_pricing_updated": {
+      "title": "تم تحديث تسعير المطالبة",
+      "message": "تم تحديث تفاصيل التسعير والمبلغ المستحق لمطالبتك."
+    },
+    "financial_claim_status_changed": {
+      "title": "تم تحديث حالة المطالبة المالية",
+      "message": "تم تحديث حالة مطالبتك المالية."
+    },
+    "freelancer_review_received": {
+      "title": "تقييم جديد من عميل",
+      "message": "ترك عميل تقييماً على أحد طلباتك."
+    },
+    "general_test": {
+      "title": "إشعار تجريبي",
+      "message": "تم تحديث إعدادات إشعارات المتصفح."
+    },
+    "order_applications_admin_review_required": {
+      "title": "انتهى موعد التقديم",
+      "message": "تم إغلاق باب التقديم عند حلول الموعد. يمكنك المتابعة بالمتقدمين الحاليين."
+    },
+    "order_applications_deadline_cancelled": {
+      "title": "الطلب بحاجة لمراجعة الإدارة",
+      "message": "انتهى موعد التقديم قبل الوصول للعدد المطلوب من المتقدمين، ويلزم مراجعة من الإدارة."
+    },
+    "order_applications_deadline_reached": {
+      "title": "انتهى موعد التقديم",
+      "message": "تم إغلاق باب التقديم عند حلول الموعد. يمكنك المتابعة بالمتقدمين الحاليين."
+    },
+    "order_applications_target_reached": {
+      "title": "اكتمل عدد المتقدمين",
+      "message": "تم إغلاق باب التقديم تلقائياً بعد الوصول للعدد المطلوب."
+    },
+    "order_assigned": {
+      "title": "تم استلام المشروع",
+      "message": "قام مستقل باستلام المشروع وبدأ التنفيذ."
+    },
+    "order_bid_refunded": {
+      "title": "تم استرجاع العروض المتاحة",
+      "message": "تم استرجاع عروضك المتاحة بعد إغلاق الطلب أو إلغائه دون اختيار."
+    },
+    "order_bid_rejected": {
+      "title": "تم رفض عرضك على المشروع",
+      "message": "تم قبول عرض مستقل آخر لهذا المشروع."
+    },
+    "order_bid_selected": {
+      "title": "تم اختيار عرضك بانتظار الدفع",
+      "message": "اختار العميل عرضك، وسيتم تثبيت الإسناد بعد إتمام الدفع."
+    },
+    "order_bid_submitted": {
+      "title": "عرض جديد على مشروعك",
+      "message": "قدّم مستقل عرضاً على مشروعك."
+    },
+    "order_bid_updated": {
+      "title": "تم تحديث عرض",
+      "message": "قام مستقل بتحديث عرضه على مشروعك."
+    },
+    "order_claim_withdrawn": {
+      "title": "تم سحب طلب التقديم",
+      "message": "قام المستقل بسحب طلب التقديم على المشروع."
+    },
+    "order_created": {
+      "title": "مشروع مزايدة جديد",
+      "message": "تم نشر مشروع جديد بنظام المزايدة."
+    },
+    "order_delivery_approved": {
+      "title": "تم قبول التسليم",
+      "message": "تم قبول التسليم وإغلاق المشروع بنجاح."
+    },
+    "order_delivery_submitted": {
+      "title": "تم إرسال تسليم جديد",
+      "message": "أُرسل تسليم جديد لهذا الطلب — يرجى المراجعة."
+    },
+    "order_freelancer_assigned": {
+      "title": "تم إسناد مشروع لك",
+      "message": "تم اعتمادك للعمل على المشروع."
+    },
+    "order_freelancer_rejected": {
+      "title": "تم رفض طلبك على المشروع",
+      "message": "تم اختيار مستقل آخر لهذا المشروع."
+    },
+    "order_message_received": {
+      "title": "رسالة جديدة على الطلب",
+      "message": "لديك رسالة جديدة بخصوص أحد طلباتك."
+    },
+    "order_payment_started": {
+      "title": "تم بدء عملية الدفع",
+      "message": "تم إنشاء جلسة الدفع للطلب، أكمل الدفع للمتابعة."
+    },
+    "order_pool_summary": {
+      "title": "تمت إضافة مجموعة جديدة من الطلبات",
+      "message": "طلبات جديدة مناسبة لك متاحة الآن: {{visibleCount}}."
+    },
+    "order_pool_summary_training": {
+      "title": "تمت إضافة مجموعة جديدة من الطلبات التدريبية",
+      "message": "طلبات تدريبية جديدة مناسبة لك متاحة الآن: {{visibleCount}}."
+    },
+    "order_review_reminder": {
+      "title": "قيّم تجربتك مع المستقل",
+      "message": "شاركنا رأيك في مشروعك المكتمل — يستغرق أقل من دقيقة."
+    },
+    "order_revision_requested": {
+      "title": "تم طلب تعديلات",
+      "message": "طلب العميل تعديلات على التسليم."
+    },
+    "pantry_bid_refunded": {
+      "title": "تم استرجاع العروض المتاحة",
+      "message": "تم استرجاع عروضك المتاحة بعد إغلاق طلب بيت المونة دون إسناد."
+    },
+    "payment_client_order_failed": {
+      "title": "فشل الدفع",
+      "message": "تعذر إتمام الدفع للطلب. حاول مرة أخرى."
+    },
+    "payment_client_order_succeeded": {
+      "title": "تم الدفع بنجاح",
+      "message": "تم استلام الدفع وفتح الطلب للمستقلين."
+    },
+    "plan_created": {
+      "title": "تم إنشاء باقة جديدة",
+      "message": "تم إنشاء باقة جديدة."
+    },
+    "plan_deleted": {
+      "title": "تم تعطيل باقة",
+      "message": "تم تعطيل باقة أو إخفاؤها عن الاستخدام الجديد."
+    },
+    "plan_updated": {
+      "title": "تم تحديث باقة",
+      "message": "تم تحديث إعدادات باقة."
+    },
+    "referral_bonus": {
+      "title": "مكافأة إحالة",
+      "message": "تم إضافة مكافأة إحالة إلى رصيدك المتاح."
+    },
+    "referral_commission_available": {
+      "title": "عمولة إحالة متاحة",
+      "message": "أصبحت عمولة إحالة متاحة للسحب."
+    },
+    "referral_commission_pending": {
+      "title": "عمولة إحالة معلّقة",
+      "message": "تم تسجيل عمولة إحالة وهي قيد فترة الأمان."
+    },
+    "referral_registration": {
+      "title": "تسجيل إحالة جديد",
+      "message": "انضم مستخدم جديد عبر رابط الإحالة الخاص بك."
+    },
+    "subscription_assigned": {
+      "title": "تم تعيين اشتراك لك",
+      "message": "قامت الإدارة بتعيين باقة اشتراك لحسابك."
+    },
+    "subscription_company_activated": {
+      "title": "تم تفعيل اشتراكك من الشركة",
+      "message": "تمت الموافقة على الاشتراك ويمكنك البدء باستلام المشاريع."
+    },
+    "subscription_company_activation_pending": {
+      "title": "اشتراك بانتظار تفعيل الشركة",
+      "message": "تم دفع اشتراك وهو بانتظار تفعيل الشركة."
+    },
+    "subscription_payment_started": {
+      "title": "تم بدء دفع الاشتراك",
+      "message": "تم إنشاء جلسة دفع الاشتراك، أكمل الدفع للمتابعة."
+    },
+    "subscription_started": {
+      "title": "بدأ اشتراكك فعلياً",
+      "message": "بدأ اشتراكك مع أول مشروع مقبول."
+    },
+    "subscription_renewal_failed": {
+      "title": "فشل تجديد الاشتراك",
+      "message": "تعذر دفع تجديد اشتراكك. حدّث وسيلة الدفع للحفاظ على اشتراكك."
+    },
+    "payment_success": {
+      "title": "تم تفعيل الاشتراك",
+      "message": "تم تفعيل اشتراكك كمستقل بنجاح."
+    },
+    "payment_failed": {
+      "title": "فشل الدفع",
+      "message": "تعذر إتمام دفع الاشتراك. حاول مرة أخرى."
+    },
+    "payment_cancelled": {
+      "title": "تم إلغاء الدفع",
+      "message": "تم إلغاء دفع الاشتراك."
+    },
+    "user_account_activated": {
+      "title": "تم تفعيل حسابك",
+      "message": "تم تفعيل حسابك ويمكنك الآن استخدام المنصة."
+    },
+    "user_account_deactivated": {
+      "title": "تم إيقاف حسابك",
+      "message": "تم إيقاف حسابك. تواصل مع الدعم إن كانت لديك أسئلة."
+    },
+    "user_account_reactivated": {
+      "title": "تمت إعادة تفعيل حسابك",
+      "message": "أصبح حسابك نشطاً مجدداً ويمكنك استخدام المنصة."
+    },
+    "user_account_suspended": {
+      "title": "تم تعليق حسابك",
+      "message": "تم تعليق حسابك. تواصل مع الدعم إن كانت لديك أسئلة."
+    },
+    "user_registered": {
+      "title": "تم إنشاء حسابك بنجاح",
+      "message": "مرحباً بك في منصة أوردرز هاوس."
+    }
+  }
+}

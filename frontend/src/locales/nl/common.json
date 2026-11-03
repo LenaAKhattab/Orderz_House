@@ -1,0 +1,99 @@
+{
+  "brand": "OrderzHouse",
+  "brandWordmark": "OrderzHouse",
+  "titles": {
+    "users": "Gebruikers",
+    "institutions": "Organisaties",
+    "legacy": "Beheercentrum voor bestaande freelancers",
+    "analysis": "Analyses",
+    "financialCenter": "Financieel centrum",
+    "claims": "Declaraties",
+    "settlements": "Afrekeningen",
+    "courses": "Cursussen",
+    "articles": "Artikelen",
+    "orders": "Opdrachten",
+    "subscriptions": "Abonnementen",
+    "plans": "Pakketten"
+  },
+  "language": {
+    "ar": "العربية",
+    "en": "English",
+    "de": "Deutsch",
+    "nl": "Nederlands",
+    "ro": "Română",
+    "switchTo": "العربية",
+    "switchAria": "Taal wijzigen naar Engels",
+    "switchToArAria": "Taal wijzigen naar Arabisch",
+    "switching": "Taal wordt gewijzigd…",
+    "menuLabel": "Taal",
+    "changeAria": "Taal wijzigen (huidig: {{language}})"
+  },
+  "actions": {
+    "cancel": "Annuleren",
+    "retry": "Opnieuw proberen",
+    "showMore": "Meer tonen",
+    "backHome": "Terug naar de startpagina",
+    "startNow": "Nu beginnen",
+    "explore": "Ontdekken"
+  },
+  "loading": {
+    "default": "Laden…",
+    "redirecting": "Doorsturen…",
+    "sending": "Verzenden…",
+    "saving": "Opslaan…",
+    "verifying": "Verifiëren…"
+  },
+  "empty": {
+    "faq": "Momenteel zijn er geen veelgestelde vragen beschikbaar.",
+    "plans": "Momenteel zijn er geen pakketten beschikbaar.",
+    "categories": "Momenteel zijn er geen categorieën beschikbaar.",
+    "orders": "Momenteel geen opdrachten",
+    "ordersHint": "Nieuwe opdrachten verschijnen hier zodra ze worden gepubliceerd."
+  },
+  "errors": {
+    "loadCategories": "Kan categorieën niet laden. Probeer het later opnieuw.",
+    "loadSubcategories": "Kan subcategorieën niet laden.",
+    "loadSubSubcategories": "Kan gedetailleerde categorieën niet laden.",
+    "loadOrders": "Kan opdrachten niet laden. Probeer het opnieuw.",
+    "loadPage": "Kan deze pagina niet laden",
+    "generic": "Er is iets misgegaan. Probeer het opnieuw.",
+    "timeout": "Het verzoek duurde te lang. Controleer uw verbinding en probeer het opnieuw.",
+    "network": "Kan de server niet bereiken. Controleer uw verbinding en probeer het opnieuw.",
+    "unavailable": "Deze actie is niet beschikbaar.",
+    "pricingChanged": "De goedgekeurde prijs is gewijzigd. Vernieuw de pagina en controleer het bedrag in JOD voordat u opnieuw verzendt.",
+    "rateLimited": "Er zijn te veel verzoeken verzonden. Wacht even en probeer het opnieuw.",
+    "orderCreateFailed": "Kan de opdracht niet aanmaken. Probeer het opnieuw."
+  },
+  "pagination": {
+    "navAria": "Paginering",
+    "next": "Volgende",
+    "previous": "Vorige",
+    "pageOf": "Pagina {{current}} van {{total}}"
+  },
+  "notFound": {
+    "title": "Pagina niet beschikbaar",
+    "text": "Deze pagina is mogelijk verborgen of de link is onjuist."
+  },
+  "copyright": "© {{year}} Orderz House. Alle rechten voorbehouden.",
+  "toast": {
+    "success": "Gelukt",
+    "error": "Fout",
+    "warning": "Waarschuwing",
+    "info": "Informatie",
+    "closeAria": "Melding sluiten"
+  },
+  "skeleton": {
+    "loading": "Laden…",
+    "loadingPage": "Pagina laden…",
+    "loadingOrders": "Opdrachten laden…"
+  },
+  "a11y": {
+    "explain": "Uitleg: {{label}}",
+    "dataScope": "Gegevensbereik: {{scope}}"
+  },
+  "secureCheckout": {
+    "lead": "U gaat verder naar de beveiligde betaalpagina van Stripe om met uw kaart te betalen in Jordaanse dinar (JOD) — op ondersteunde apparaten kan Apple Pay of Google Pay verschijnen.",
+    "returnOrder": "Als u terugkomt zonder te betalen, wordt er niets in rekening gebracht en blijft uw opdracht opgeslagen — gebruik op elk gewenst moment ‘Betaling voortzetten’.",
+    "returnPackage": "Als u terugkomt zonder te betalen, wordt er niets in rekening gebracht en kunt u later verdergaan."
+  }
+}

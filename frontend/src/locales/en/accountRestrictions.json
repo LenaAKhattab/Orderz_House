@@ -140,7 +140,8 @@
     "heldArticles": "Held articles",
     "releases": "Releases",
     "rejects": "Rejected from review",
-    "empty": "No held activity recorded."
+    "empty": "No held activity recorded.",
+    "heldBidOrderLine": "Order #{{orderId}} · {{amount}} JOD"
   },
   "addWorkflow": {
     "title": "Add user to restrictions",

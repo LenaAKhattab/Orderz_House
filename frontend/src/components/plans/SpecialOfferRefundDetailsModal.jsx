@@ -7,6 +7,7 @@ import {
   splitSpecialOfferRefundSections,
 } from "../../constants/specialOfferPackage";
 import { useTranslation } from "../../i18n/LanguageProvider";
+import { pickIntlTag } from "../../i18n/intlLocale";
 
 const REFUND_SECTION_TITLE_KEYS = [
   "plans.specialOffer.refundSections.monthly",
@@ -16,10 +17,11 @@ const REFUND_SECTION_TITLE_KEYS = [
 ];
 import "./specialOfferRefundDetailsModal.css";
 
-function formatAmount(value) {
+/** Latin digits; Arabic / English keep en-US grouping, German / Dutch / Romanian use their own separators. */
+function formatAmount(value, locale) {
   const n = Number(value);
   if (!Number.isFinite(n)) return "—";
-  return n.toLocaleString("en-US", { maximumFractionDigits: 2 });
+  return n.toLocaleString(pickIntlTag(locale, { ar: "en-US", en: "en-US" }), { maximumFractionDigits: 2 });
 }
 
 const SECTION_ICONS = [Wallet, CalendarDays, Briefcase, ShieldAlert];
@@ -43,19 +45,19 @@ export default function SpecialOfferRefundDetailsModal({
     if (!offer) return [];
     const maxProject =
       offer.maxProjectValueJod != null
-        ? `${tr("plans.specialOffer.upTo")} ${formatAmount(offer.maxProjectValueJod)} ${jod}`
+        ? `${tr("plans.specialOffer.upTo")} ${formatAmount(offer.maxProjectValueJod, locale)} ${jod}`
         : tr("plans.specialOffer.unlimitedProjects");
     return [
       {
         key: "offers",
         label: tr("plans.specialOffer.totalOffers"),
-        value: `${formatAmount(offer.totalOffers)} ${tr("plans.specialOffer.available")}`,
+        value: `${formatAmount(offer.totalOffers, locale)} ${tr("plans.specialOffer.available")}`,
         Icon: Target,
       },
       {
         key: "daily",
         label: tr("plans.specialOffer.dailyLimit"),
-        value: `${formatAmount(offer.dailyLimit)} ${tr("plans.specialOffer.offersPerDay")}`,
+        value: `${formatAmount(offer.dailyLimit, locale)} ${tr("plans.specialOffer.offersPerDay")}`,
         Icon: CalendarDays,
       },
       {
@@ -71,7 +73,7 @@ export default function SpecialOfferRefundDetailsModal({
         Icon: CalendarDays,
       },
     ];
-  }, [offer, jod, t, tHook]);
+  }, [offer, jod, t, tHook, locale]);
 
   if (!offer) return null;
 

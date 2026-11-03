@@ -1,13 +1,24 @@
+import { pt } from "../../i18n/activeLocale.js";
+import { pickIntlTag } from "../../i18n/intlLocale.js";
+import { resolveUiLocale } from "../i18n/newLocaleSystemCopy.js";
+
 const BUDGET_RANGE_SEP = " - ";
 
-export function formatMoney(value) {
+/**
+ * Whole-JOD amount. Arabic / English (and no locale) keep en-US digits and grouping; German / Dutch /
+ * Romanian use their own separators.
+ * @param {unknown} value
+ * @param {string} [locale]
+ */
+export function formatMoney(value, locale) {
   const n = Number(value);
   if (!Number.isFinite(n)) return "—";
-  return new Intl.NumberFormat("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Math.round(n));
+  const tag = pickIntlTag(resolveUiLocale(locale), { ar: "en-US", en: "en-US" });
+  return new Intl.NumberFormat(tag, { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Math.round(n));
 }
 
-function currencySuffix(locale = "ar") {
-  return locale === "en" ? " JOD" : " د.أ";
+function withCurrency(amountText, locale) {
+  return pt("platformCore.money.jodAmount", { amount: amountText }, locale);
 }
 
 function toBudgetNumber(value) {
@@ -25,15 +36,15 @@ export function formatBudgetRange(min, max, locale = "ar") {
   const maxN = toBudgetNumber(max);
   const hasMin = Number.isFinite(minN);
   const hasMax = Number.isFinite(maxN);
-  const suffix = currencySuffix(locale);
+  const uiLocale = resolveUiLocale(locale);
 
   if (!hasMin && !hasMax) return "—";
   if (hasMin && hasMax) {
-    if (minN === maxN) return `${formatMoney(minN)}${suffix}`;
-    return `${formatMoney(minN)}${BUDGET_RANGE_SEP}${formatMoney(maxN)}${suffix}`;
+    if (minN === maxN) return withCurrency(formatMoney(minN, uiLocale), uiLocale);
+    return withCurrency(`${formatMoney(minN, uiLocale)}${BUDGET_RANGE_SEP}${formatMoney(maxN, uiLocale)}`, uiLocale);
   }
   const single = hasMin ? minN : maxN;
-  return `${formatMoney(single)}${suffix}`;
+  return withCurrency(formatMoney(single, uiLocale), uiLocale);
 }
 
 /** Marketplace/order card budget label. */

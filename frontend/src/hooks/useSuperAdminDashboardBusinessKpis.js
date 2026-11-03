@@ -1,8 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { fetchSuperAdminBusinessKpis } from "../services/superAdminAnalytics";
 import { getSafeApiErrorMessage } from "../utils/apiErrorMessage.js";
+import { localeFromEnFlag, pt } from "../i18n/activeLocale.js";
 
 const REFRESH_MS = 60_000;
+
+/** Arabic-only legacy copy: unchanged on the Arabic / English UI, translated for German / Dutch / Romanian. */
+const loadErrorText = (key) => pt(`platformCore.superAdminLoad.${key}`, undefined, localeFromEnFlag(false));
 
 function mapBusinessKpisError(e) {
   const code = e?.code || "";
@@ -12,13 +16,13 @@ function mapBusinessKpisError(e) {
   }
   if (code === "ECONNABORTED" || /timeout/i.test(message)) {
     return {
-      message: "تعذر تحميل مؤشرات الأعمال حالياً.",
+      message: loadErrorText("businessKpisTimeout"),
       code: "TIMEOUT",
       canceled: false,
     };
   }
   return {
-    message: getSafeApiErrorMessage(e, "تعذر تحميل مؤشرات الأعمال."),
+    message: getSafeApiErrorMessage(e, loadErrorText("businessKpisFailed")),
     code: e?.response?.data?.code || "",
     canceled: false,
   };

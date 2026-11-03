@@ -1,0 +1,77 @@
+{
+  "listSeparator": ", ",
+  "durationUnits": {
+    "day": "dag",
+    "day_plural": "dagen",
+    "hour": "uur",
+    "hour_plural": "uren",
+    "minute": "minuut",
+    "minute_plural": "minuten"
+  },
+  "plans": {
+    "trainingPrefix": "Opleiding: ",
+    "subscriptionDurationDays": "Abonnementsduur: {{days}} dagen",
+    "orderValue": {
+      "range": "Opdrachtwaarde: van {{min}} tot {{max}} JOD",
+      "fromMin": "Opdrachtwaarde: vanaf {{min}} JOD",
+      "upToMax": "Opdrachtwaarde: tot {{max}} JOD"
+    },
+    "installment": {
+      "upfront": "{{amount}} JOD bij aanmelding",
+      "monthly": "{{amount}} JOD per maand × {{months}} maanden"
+    },
+    "loadingPlansSr": "Pakketten laden"
+  },
+  "orderDetailsStatus": {
+    "status": {
+      "published": "Gepubliceerd",
+      "open_for_freelancers": "Open voor freelancers",
+      "open_for_bids": "Open voor biedingen",
+      "assigned": "Toegewezen",
+      "in_progress": "In uitvoering",
+      "ready_for_work": "Klaar om te starten",
+      "pending_payment": "In afwachting van betaling",
+      "pending_client_review": "In afwachting van klantbeoordeling",
+      "completed": "Voltooid",
+      "cancelled": "Geannuleerd",
+      "closed": "Gesloten",
+      "draft": "Concept",
+      "archived": "Gearchiveerd"
+    },
+    "awaitingApproval": "In afwachting van goedkeuring"
+  },
+  "openOrders": {
+    "projectType": {
+      "fixed": "Vaste prijs",
+      "bidding": "Bieding"
+    },
+    "noDescription": "Geen beschrijving"
+  },
+  "heroStats": {
+    "hints": {
+      "zeroTrafficViews": "Nog geen weergaven geregistreerd",
+      "zeroTrafficActive": "Geen activiteit geregistreerd in de afgelopen 7 dagen",
+      "dbUnavailable": "Platformstatistieken zijn tijdelijk niet beschikbaar",
+      "devTrackingDisabled": "Tracking is uitgeschakeld in de ontwikkelomgeving"
+    }
+  },
+  "silverConversion": {
+    "description": {
+      "trialExpired": "Uw werkproef is beëindigd. Upgrade naar Silver om door te gaan met solliciteren.",
+      "workCapReached": "U heeft de proeflimiet voor geaccepteerd werk bereikt. Ga verder met Silver.",
+      "default": "U heeft de echte werkcyclus op het platform uitgeprobeerd. Om na de proef door te gaan en meer kansen te krijgen, kiest u het Silver-pakket."
+    }
+  },
+  "auth": {
+    "unknownInitial": "?"
+  },
+  "toast": {
+    "regionAria": "Meldingen"
+  },
+  "orders": {
+    "typeAndPriceAria": "opdrachttype en prijs"
+  },
+  "ads": {
+    "saleStickerOff": "OFF"
+  }
+}

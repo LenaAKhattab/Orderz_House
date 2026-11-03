@@ -1,0 +1,37 @@
+{
+  "title": "Diensten",
+  "hero": {
+    "title": "Diensten",
+    "subtitle": "Ontdek de diensten op het platform — complete oplossingen voor zakelijke en projectbehoeften, van schrijven en redactie tot ontwikkeling en ontwerp."
+  },
+  "lede": "Ontdek de diensten op het platform — complete oplossingen voor zakelijke en projectbehoeften, van schrijven en redactie tot ontwikkeling en ontwerp.",
+  "benefitsAria": "Voordelen van het platform",
+  "specialtiesWithin": "Specialisaties binnen",
+  "specialtiesAria": "Specialisaties",
+  "emptySubcategories": "Geen subcategorieën voor deze sectie.",
+  "emptyDetails": "Geen gedetailleerde items.",
+  "card": {
+    "explore": "Dienst bekijken"
+  },
+  "categories": {
+    "programming": {
+      "description": "Professionele programmeerdiensten voor bedrijven, academisch onderzoek en persoonlijke projecten."
+    },
+    "design": {
+      "description": "Professionele ontwerpdiensten voor bedrijven, academisch werk en persoonlijke behoeften."
+    },
+    "content-writing": {
+      "description": "Professionele schrijfdiensten voor bedrijven, academisch onderzoek en persoonlijke behoeften."
+    }
+  },
+  "benefits": {
+    "qualityTitle": "Gegarandeerde kwaliteit",
+    "qualityDesc": "Hoge normen bij elke dienst",
+    "executionTitle": "Professionele uitvoering",
+    "executionDesc": "Specialisten in elk vakgebied",
+    "communicationTitle": "Direct contact",
+    "communicationDesc": "Eenvoudig contact en doorlopende opvolging",
+    "paymentTitle": "Betrouwbare betalingen",
+    "paymentDesc": "Veilige, flexibele betaalmogelijkheden"
+  }
+}

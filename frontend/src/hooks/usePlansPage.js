@@ -4,6 +4,7 @@ import { isOrderzhouseFreePlan } from "../constants/orderzhousePlansCatalog";
 import { useFreelancerPlansCheckout } from "./useFreelancerPlansCheckout";
 import { useDefaultCatalogPlans } from "./useDefaultCatalogPlans";
 import { getSafeApiErrorMessage } from "../utils/apiErrorMessage.js";
+import { localeFromEnFlag, pt } from "../i18n/activeLocale.js";
 
 /**
  * Public `/plans` (no slug) uses the Super Admin-selected default catalog.
@@ -56,7 +57,10 @@ export function usePlansPage({ slug, returnPath }) {
           setSlugActivationFee(null);
           return;
         }
-        setSlugError(getSafeApiErrorMessage(err, "تعذر تحميل صفحة الباقات."));
+        // Arabic-only legacy copy: unchanged on the Arabic / English UI, translated for German / Dutch / Romanian.
+        setSlugError(
+          getSafeApiErrorMessage(err, pt("platformCore.plansLoad.planPageFailed", undefined, localeFromEnFlag(false))),
+        );
       })
       .finally(() => {
         if (!cancelled) setSlugLoading(false);

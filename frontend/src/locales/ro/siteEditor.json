@@ -1,0 +1,249 @@
+{
+  "errors": {
+    "operationFailed": "Acțiunea nu a putut fi finalizată. Încercați din nou.",
+    "loadPagesFailed": "Paginile nu au putut fi încărcate. Încercați din nou.",
+    "noServerUrl": "Serverul nu a returnat un URL.",
+    "imageUploadFailed": "Încărcarea imaginii a eșuat.",
+    "enterQuestionAndAnswer": "Introduceți întrebarea și răspunsul.",
+    "enterBlockTitle": "Introduceți un titlu pentru bloc.",
+    "enterTitleOrText": "Introduceți un titlu sau un text.",
+    "addImageOrUrl": "Adăugați o imagine sau un URL.",
+    "addTitleTextOrImage": "Adăugați un titlu, un text sau o imagine.",
+    "enterPageTitle": "Introduceți titlul paginii."
+  },
+  "common": {
+    "close": "Închideți",
+    "cancel": "Anulați",
+    "add": "Adăugați",
+    "edit": "Editați",
+    "delete": "Ștergeți",
+    "retry": "Încercați din nou",
+    "saving": "Se salvează…",
+    "saveChanges": "Salvați modificările",
+    "saveEdit": "Salvați modificarea",
+    "saveTitle": "Salvați titlul",
+    "visible": "Vizibil",
+    "hidden": "Ascuns",
+    "visiblePage": "Vizibilă",
+    "hiddenPage": "Ascunsă",
+    "show": "Afișați",
+    "hide": "Ascundeți",
+    "busy": "Se procesează…",
+    "back": "Înapoi",
+    "backToFooterSections": "← Înapoi la secțiunile subsolului",
+    "yes": "Da",
+    "no": "Nu",
+    "published": "Publicată",
+    "draft": "Ciornă",
+    "enabled": "Activat",
+    "disabled": "Dezactivat",
+    "moveUp": "Mutați în sus",
+    "moveDown": "Mutați în jos",
+    "showFieldOnSite": "Afișați {{label}} pe site",
+    "loadingSettings": "Se încarcă setările…",
+    "loadingPages": "Se încarcă paginile…",
+    "loadingQuestions": "Se încarcă întrebările…",
+    "loadingContent": "Se încarcă conținutul…",
+    "loadingPage": "Se încarcă pagina…",
+    "loadingSectionStatus": "Se încarcă starea secțiunilor…",
+    "editSection": "Editați secțiunea",
+    "editSectionShort": "Editați"
+  },
+  "imagePicker": {
+    "uploading": "Se încarcă…",
+    "changeImage": "Schimbați imaginea",
+    "uploadImage": "Încărcați o imagine",
+    "remove": "Eliminați",
+    "pasteUrlLabel": "Sau lipiți URL-ul imaginii"
+  },
+  "blockTypes": {
+    "title": "Titlu",
+    "text": "Text",
+    "image": "Imagine",
+    "text_image": "Text + imagine",
+    "content": "Conținut"
+  },
+  "howItWorksPages": {
+    "freelancer": "Cum funcționează pentru freelanceri",
+    "client": "Cum comandă clienții"
+  },
+  "sections": {
+    "faq": {
+      "title": "Întrebări frecvente",
+      "description": "Editați întrebările și răspunsurile afișate pe pagina principală",
+      "editLabel": "Editați secțiunea"
+    },
+    "howItWorks": {
+      "title": "Cum funcționează",
+      "description": "Editați paginile „Cum funcționează” pentru freelanceri și clienți",
+      "editLabel": "Editați secțiunea"
+    },
+    "sitePages": {
+      "title": "Pagini publice",
+      "description": "Editați paginile publice ale site-ului (confidențialitate, termeni, centru de ajutor și altele)",
+      "editLabel": "Editați secțiunea"
+    },
+    "footerHub": {
+      "title": "Editați subsolul site-ului",
+      "description": "Editați datele de contact, programul de lucru și secțiunea de descărcare a aplicației din subsolul site-ului.",
+      "editLabel": "Editați secțiunea"
+    }
+  },
+  "footerSections": {
+    "contact": {
+      "title": "Contactați-ne",
+      "description": "Editați telefonul, e-mailul, WhatsApp și locația.",
+      "editLabel": "Editați"
+    },
+    "workingHours": {
+      "title": "Program de lucru",
+      "description": "Editați textul afișat în secțiunea programului de lucru.",
+      "editLabel": "Editați"
+    },
+    "appDownloads": {
+      "title": "Descărcarea aplicației",
+      "description": "Editați titlul secțiunii de descărcare a aplicației și linkurile App Store / Google Play.",
+      "editLabel": "Editați"
+    },
+    "contactCenter": {
+      "title": "Centrul de contact",
+      "description": "Editați textul și linkul centrului de contact, precum și opțiunile de vizibilitate în subsol.",
+      "editLabel": "Editați"
+    }
+  },
+  "editWebsiteHub": {
+    "pageTitle": "Editați site-ul",
+    "pageDescription": "Alegeți o secțiune din conținutul site-ului public pentru a o edita.",
+    "sectionTitle": "Secțiuni editabile ale site-ului"
+  },
+  "faq": {
+    "pageTitle": "Întrebări frecvente",
+    "pageDescription": "Gestionați întrebările și răspunsurile afișate în secțiunea „Întrebări frecvente” de pe pagina principală.",
+    "sectionTitle": "Lista întrebărilor",
+    "toolbarHint": "Modificările apar imediat în secțiunea „Întrebări frecvente” de pe pagina principală.",
+    "addQuestion": "Adăugați o întrebare",
+    "emptyTitle": "Încă nu există întrebări",
+    "emptyDescription": "Adăugați prima întrebare frecventă care să apară pe pagina principală.",
+    "modalEditTitle": "Editați întrebarea",
+    "modalAddTitle": "Adăugați o întrebare",
+    "fieldQuestion": "Întrebare (arabă)",
+    "fieldQuestionEn": "Întrebare (engleză)",
+    "fieldAnswer": "Răspuns (arabă)",
+    "fieldAnswerEn": "Răspuns (engleză)",
+    "deleteConfirm": "Ștergeți întrebarea: „{{preview}}…”?"
+  },
+  "howItWorksHub": {
+    "pageTitle": "Cum funcționează",
+    "pageDescription": "Gestionați paginile „Cum funcționează” pentru freelanceri și clienți.",
+    "sectionTitle": "Paginile „Cum funcționează”"
+  },
+  "howItWorksEditor": {
+    "pageDescription": "Adăugați, editați și reordonați conținutul paginii. Aspectul este fix și nu poate fi modificat de aici.",
+    "unknownPage": "Pagină necunoscută.",
+    "pageSettingsTitle": "Setările paginii",
+    "pageTitleLabel": "Titlul paginii",
+    "contentSectionTitle": "Conținutul paginii",
+    "contentHint": "Adăugați blocuri de conținut (titlu, text, imagine, text + imagine) și ordonați-le așa cum le văd vizitatorii.",
+    "addContent": "Adăugați conținut",
+    "emptyTitle": "Încă nu există conținut",
+    "emptyDescription": "Adăugați primul bloc de conținut pentru această pagină.",
+    "modalEditTitle": "Editați conținutul",
+    "modalAddTitle": "Adăugați conținut",
+    "contentType": "Tipul conținutului",
+    "fieldTitle": "Titlu (arabă)",
+    "fieldTitleEn": "Titlu (engleză)",
+    "fieldText": "Text (arabă)",
+    "fieldTextEn": "Text (engleză)",
+    "fieldImage": "Imagine",
+    "deleteConfirm": "Ștergeți: „{{preview}}”?"
+  },
+  "footerHub": {
+    "pageTitle": "Editați subsolul site-ului",
+    "pageDescription": "Alegeți o secțiune a subsolului pentru a o edita.",
+    "sectionTitle": "Secțiunile subsolului"
+  },
+  "footerContact": {
+    "pageTitle": "Contactați-ne",
+    "pageDescription": "Editați datele de contact afișate în subsolul site-ului.",
+    "sectionTitle": "Date de contact",
+    "toastSaved": "Datele de contact au fost salvate cu succes.",
+    "showSectionInFooter": "Afișați secțiunea în subsolul site-ului",
+    "showContactSectionInFooter": "Afișați secțiunea „Contactați-ne” în subsolul site-ului",
+    "phone": "Număr de telefon",
+    "email": "E-mail",
+    "whatsapp": "Număr WhatsApp",
+    "location": "Locație"
+  },
+  "footerHours": {
+    "pageTitle": "Program de lucru",
+    "pageDescription": "Editați titlul și textul programului de lucru din subsolul site-ului.",
+    "sectionTitle": "Program de lucru",
+    "toastSaved": "Programul de lucru a fost salvat cu succes.",
+    "showSectionInFooter": "Afișați secțiunea în subsolul site-ului",
+    "showWorkingHoursSectionInFooter": "Afișați secțiunea „Program de lucru” în subsolul site-ului",
+    "sectionTitleField": "Titlul secțiunii",
+    "textField": "Text",
+    "showHoursTextOnSite": "Afișați textul programului de lucru pe site"
+  },
+  "footerApps": {
+    "pageTitle": "Descărcarea aplicației",
+    "pageDescription": "Editați titlul secțiunii de descărcare a aplicației și linkurile magazinelor din subsolul site-ului.",
+    "sectionTitle": "Setări pentru descărcarea aplicației",
+    "toastSaved": "Setările pentru descărcarea aplicației au fost salvate cu succes.",
+    "showSectionInFooter": "Afișați secțiunea în subsolul site-ului",
+    "showAppDownloadsSectionInFooter": "Afișați secțiunea „Descărcarea aplicației” în subsolul site-ului",
+    "sectionTitleField": "Titlul secțiunii",
+    "sectionTitleHint": "Afișat în subsolul site-ului.",
+    "showSectionTitleOnSite": "Afișați titlul secțiunii pe site",
+    "googlePlayUrl": "Link Google Play",
+    "showGooglePlayOnSite": "Afișați butonul Google Play pe site",
+    "appStoreUrl": "Link App Store",
+    "showAppStoreOnSite": "Afișați butonul App Store pe site"
+  },
+  "footerContactCenter": {
+    "pageTitle": "Centrul de contact",
+    "pageDescription": "Editați conținutul centrului de contact afișat în subsolul site-ului.",
+    "sectionTitle": "Centrul de contact",
+    "toastSaved": "Centrul de contact a fost salvat cu succes.",
+    "showContactCenterInFooter": "Afișați centrul de contact în subsolul site-ului",
+    "helperTextLabel": "Text explicativ",
+    "showHelperText": "Afișați textul explicativ",
+    "buttonTextLabel": "Textul butonului",
+    "showContactCenterButton": "Afișați butonul centrului de contact",
+    "buttonBehaviorHint": "Butonul centrului de contact duce întotdeauna la pagina de probleme și sugestii pentru utilizatorii conectați, în funcție de rol, sau la conectare pentru vizitatori."
+  },
+  "sitePages": {
+    "pageTitle": "Pagini publice",
+    "pageDescription": "Gestionați paginile publice ale site-ului (subsol și meniul mobil).",
+    "sectionTitle": "Lista paginilor",
+    "toolbarHint": "Paginile publicate apar la „Linkuri importante” în subsol (desktop) și în meniul mobil, în funcție de setări.",
+    "tableTitle": "Titlu",
+    "tableLink": "Link",
+    "tablePublish": "Publicare",
+    "tableMobile": "Mobil",
+    "tableFooter": "Subsol",
+    "tableAction": "Acțiune"
+  },
+  "sitePageEdit": {
+    "editPageFallback": "Editați pagina",
+    "pageDescription": "Editați conținutul paginii și vizibilitatea acesteia în subsol și în meniul mobil.",
+    "sectionTitle": "Conținutul paginii",
+    "toastSaved": "Pagina a fost salvată.",
+    "pagePathLabel": "URL-ul paginii:",
+    "pageTitle": "Titlul paginii (arabă)",
+    "pageTitleEn": "Titlul paginii (engleză)",
+    "menuLabel": "Eticheta linkului din meniu (arabă)",
+    "menuLabelEn": "Eticheta linkului din meniu (engleză)",
+    "sortOrder": "Ordinea de afișare",
+    "publishedToggle": "Publicată",
+    "showMobile": "Afișați în meniul mobil",
+    "showFooter": "Afișați în subsol",
+    "contentLabel": "Conținut (arabă)",
+    "contentLabelEn": "Conținut (engleză)",
+    "contentHint": "Scrieți text simplu. Separați paragrafele cu un rând gol. Folosiți ## înaintea unui subtitlu.",
+    "seoOptional": "Setări SEO opționale",
+    "metaTitle": "Titlu SEO (opțional)",
+    "metaDescription": "Descriere SEO (opțional)",
+    "backToList": "Înapoi la listă"
+  }
+}

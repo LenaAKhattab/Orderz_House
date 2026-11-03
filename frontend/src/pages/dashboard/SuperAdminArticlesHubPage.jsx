@@ -29,7 +29,15 @@ import {
   listSuperAdminActivationLiveArticlesRequest,
 } from "../../services/api";
 import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
+import { isNewLocale, localizeSystemText } from "../../i18n/systemContent.js";
 import "./super-admin-articles-hub.css";
+
+/** Server-generated bilingual message: Arabic / English unchanged; de / nl / ro via the system-content memory. */
+function serverMessage(locale, messageAr, messageEn, { enFallsBackToAr = false } = {}) {
+  if (isNewLocale(locale)) return localizeSystemText(locale, { ar: messageAr, en: messageEn });
+  if (locale === "ar") return messageAr;
+  return enFallsBackToAr ? messageEn || messageAr : messageEn;
+}
 
 /** Legacy activation inventory UI (title + plan only). Compatibility only — not the OZ03 source of truth. */
 const SHOW_LEGACY_ACTIVATION_INVENTORY_UI = false;
@@ -589,7 +597,9 @@ export default function SuperAdminArticlesHubPage() {
       if (data?.messageAr) {
         push({
           type: data.releasedCount > 0 || (data.articles || []).length > 0 ? "success" : "error",
-          message: data.messageAr,
+          message: isNewLocale(locale)
+            ? localizeSystemText(locale, { ar: data.messageAr, en: data.messageEn })
+            : data.messageAr,
         });
       } else {
         push({ type: "success", message: t("hub.funding.autoRunSuccess") });
@@ -924,11 +934,7 @@ export default function SuperAdminArticlesHubPage() {
                     const metaReason = String(e?.metadata?.reason || "");
                     const reason = String(e?.reason || "");
                     const refundLabel =
-                      metaReason === "minimum_not_met_refund" ||
-                      reason.includes("عدم اكتمال") ||
-                      reason.includes("minimum")
-                        ? t("fundEntry.refundMinNotMet")
-                        : reason || null;
+                      metaReason === "minimum_not_met_refund" ? t("fundEntry.refundMinNotMet") : reason || null;
                     const typeLabel =
                       e.entryType === "daily_allocation_released"
                         ? t("fundEntry.refundArticle")
@@ -1045,11 +1051,11 @@ export default function SuperAdminArticlesHubPage() {
                       <div key={p.allocationId || p.planTierCode}>
                         {p.planTierCode}:{" "}
                         {p.skipReason === "not_release_day"
-                          ? (locale === "ar" ? p.messageAr : p.messageEn) || t("hub.funding.notReleaseDay")
+                          ? serverMessage(locale, p.messageAr, p.messageEn) || t("hub.funding.notReleaseDay")
                           : p.skipReason === "inventory_empty"
-                            ? (locale === "ar" ? p.messageAr : p.messageEn) || t("hub.emptyInventory")
+                            ? serverMessage(locale, p.messageAr, p.messageEn) || t("hub.emptyInventory")
                             : p.skipReason === "insufficient_fund"
-                              ? (locale === "ar" ? p.messageAr : p.messageEn) || t("hub.insufficientFund")
+                              ? serverMessage(locale, p.messageAr, p.messageEn) || t("hub.insufficientFund")
                               : p.skipped
                                 ? t("hub.funding.skipped", { reason: p.skipReason || "—" })
                                 : t("hub.funding.planned", { count: p.plannedCount || 0 })}
@@ -1057,7 +1063,7 @@ export default function SuperAdminArticlesHubPage() {
                     ))}
                     {releasePreview.messageAr ? (
                       <strong data-testid="articles-release-preview-msg">
-                        {locale === "ar" ? releasePreview.messageAr : releasePreview.messageEn || releasePreview.messageAr}
+                        {serverMessage(locale, releasePreview.messageAr, releasePreview.messageEn, { enFallsBackToAr: true })}
                       </strong>
                     ) : null}
                     {(releasePreview.plans || releasePreview.allocations || []).some((p) => p.skipReason === "not_release_day") ? (

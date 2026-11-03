@@ -1,5 +1,6 @@
 import heroLogoEn from "../../assets/brand/orderzhouse-logo-en-transparent.png";
 import heroLogoEnTrimmed from "../../assets/brand/orderzhouse-logo-en-transparent-trimmed.png";
+import { isLatinUiLocale } from "../../i18n/intlLocale.js";
 
 /** Full wordmark — Arabic hero and other spacious placements */
 export const BRAND_LOGO_FULL_AR_SRC = "/hero/fullLogp.png";
@@ -22,7 +23,8 @@ export function getBrandLogoSrc(locale, variant = "default") {
   // Navbar keeps the compact icon in all languages to avoid layout break.
   if (variant === "navbar") return BRAND_LOGO_ICON_SRC;
 
-  if (locale === "en") {
+  // Latin-script wordmark for every left-to-right locale (English, German, Dutch, Romanian).
+  if (isLatinUiLocale(locale)) {
     if (variant === "hero") return BRAND_LOGO_EN_HERO_SRC;
     return BRAND_LOGO_EN_SRC;
   }

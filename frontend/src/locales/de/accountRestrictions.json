@@ -1,0 +1,197 @@
+{
+  "title": "Kontobeschränkungen",
+  "subtitle": "Marktplatz-Prüfsperren für Freelancer — getrennt von der Kontodeaktivierung.",
+  "listTitle": "Beschränkte Konten",
+  "listCount": "Beschränkungen: {{count}}",
+  "searchPlaceholder": "Nach Name, E-Mail oder Benutzer-ID suchen",
+  "filterAria": "Beschränkungen filtern",
+  "primaryTabs": {
+    "users": "Benutzer",
+    "plans": "Pakete",
+    "aria": "Bereiche der Kontobeschränkungen"
+  },
+  "tabs": {
+    "active": "Aktiv",
+    "expired": "Abgelaufen",
+    "revoked": "Aufgehoben",
+    "all": "Alle"
+  },
+  "plans": {
+    "listTitle": "Paketbeschränkungen",
+    "listCount": "Pakete: {{count}}",
+    "emptyTitle": "Keine Pakete vorhanden",
+    "emptyDescription": "Hier erscheinen die Standard-Mitgliedschaftspakete des Marktplatzes.",
+    "addPlan": "+ Paket beschränken",
+    "restrictPlan": "Paket beschränken",
+    "restrictAgain": "Erneut beschränken",
+    "marketplaceMembership": "Marktplatz-Mitgliedschaft",
+    "impactConfirmTitle": "Paketbeschränkung bestätigen",
+    "impactConfirmBody": "Diese Beschränkung gilt für alle Benutzer, deren aktuelles Paket {{tier}} ist, einschließlich aller, die während der aktiven Beschränkung zu diesem Paket wechseln.",
+    "impactCount": "Derzeit betroffene Benutzer: {{count}}",
+    "alreadyActive": "Für dieses Paket besteht bereits eine aktive Beschränkung",
+    "selectPlan": "Paket auswählen",
+    "changePlan": "Paket ändern",
+    "currentSubscribers": "Aktuelle Abonnenten",
+    "existingRestriction": "Bestehende Beschränkung",
+    "notRestricted": "Nicht beschränkt",
+    "inheritedLabel": "Vom Paket übernommen: {{tier}}",
+    "saveOk": "Paketbeschränkung hinzugefügt.",
+    "updateOk": "Paketbeschränkung aktualisiert.",
+    "revokeOk": "Paketbeschränkung aufgehoben.",
+    "extendOk": "Paketbeschränkung verlängert.",
+    "columns": {
+      "plan": "Paket",
+      "code": "Code",
+      "subscribers": "Aktuelle Abonnenten",
+      "status": "Beschränkungsstatus",
+      "scope": "Umfang",
+      "startsAt": "Beginnt am",
+      "expiresAt": "Läuft ab am",
+      "addedBy": "Hinzugefügt von",
+      "actions": "Aktionen"
+    },
+    "statusLabels": {
+      "ACTIVE": "Beschränkt",
+      "EXPIRED": "Abgelaufen",
+      "REVOKED": "Beschränkung aufgehoben",
+      "NONE": "Nicht beschränkt"
+    },
+    "sections": {
+      "plan": "Paket",
+      "restriction": "Beschränkung",
+      "impact": "Auswirkung",
+      "audit": "Prüfprotokoll"
+    },
+    "drawerTitle": "Paketbeschränkung",
+    "addWorkflowTitle": "Paket beschränken"
+  },
+  "emptyTitle": "Derzeit gibt es keine beschränkten Konten.",
+  "emptyDescription": "Fügen Sie einen Benutzer hinzu, um seine Marktplatzaktivität zu beschränken.",
+  "addUser": "+ Benutzer hinzufügen",
+  "addRestriction": "Beschränkung hinzufügen",
+  "edit": "Umfang bearbeiten",
+  "revoke": "Beschränkung aufheben",
+  "extend": "Dauer verlängern",
+  "viewDetails": "Details anzeigen",
+  "viewHistory": "Aktivitätsprotokoll anzeigen",
+  "viewLog": "Protokoll anzeigen",
+  "restrictAgain": "Erneut beschränken",
+  "manage": "Beschränkung verwalten",
+  "addFromUsers": "Beschränkung hinzufügen",
+  "columns": {
+    "user": "Benutzer",
+    "userId": "Benutzer-ID",
+    "email": "E-Mail",
+    "plan": "Aktuelles Paket",
+    "status": "Beschränkungsstatus",
+    "scope": "Umfang",
+    "addedAt": "Hinzugefügt am",
+    "expiresAt": "Läuft ab am",
+    "addedBy": "Hinzugefügt von",
+    "actions": "Aktionen"
+  },
+  "statusLabels": {
+    "ACTIVE": "Beschränkt",
+    "EXPIRED": "Abgelaufen",
+    "REVOKED": "Beschränkung aufgehoben"
+  },
+  "restrictionTypeLabel": "Kontobeschränkung",
+  "scopes": "Beschränkungsumfang",
+  "scopeMode": {
+    "all": "Gesamter Marktplatz",
+    "custom": "Benutzerdefinierter Umfang"
+  },
+  "scopesLabels": {
+    "ALL_MARKETPLACE": "Gesamter Marktplatz",
+    "bids": "Angebote",
+    "direct_claims": "Direktübernahmen",
+    "order_assignments": "Auftragszuweisungen",
+    "articles": "Artikel",
+    "competitions": "Wettbewerbe",
+    "messaging": "Nachrichten"
+  },
+  "duration": {
+    "label": "Dauer",
+    "none": "Kein Ablaufdatum",
+    "h24": "24 Stunden",
+    "d3": "3 Tage",
+    "d7": "7 Tage",
+    "d30": "30 Tage",
+    "custom": "Benutzerdefiniertes Datum"
+  },
+  "internalReason": "Interner Grund",
+  "internalReasonPlaceholder": "Geben Sie den internen Grund für diese Beschränkung ein…",
+  "internalNote": "Interne Notiz",
+  "internalNotePlaceholder": "Optionale administrative Notiz…",
+  "noExpiry": "Kein Ablauf",
+  "activeHoldBadge": "Aktive Beschränkung",
+  "noActive": "Keine aktive Beschränkung",
+  "drawerTitle": "Kontobeschränkungen",
+  "detailsTitle": "Beschränkungsdetails",
+  "sections": {
+    "user": "Benutzer",
+    "restriction": "Beschränkung",
+    "activity": "Aktivität während der Beschränkung",
+    "audit": "Prüfverlauf"
+  },
+  "activity": {
+    "heldBids": "Zurückgehaltene Angebote",
+    "heldClaims": "Zurückgehaltene Direktübernahmen",
+    "heldArticles": "Zurückgehaltene Artikel",
+    "releases": "Freigaben",
+    "rejects": "Bei Prüfung abgelehnt",
+    "empty": "Keine zurückgehaltenen Aktivitäten erfasst.",
+    "heldBidOrderLine": "Auftrag Nr. {{orderId}} · {{amount}} JOD"
+  },
+  "addWorkflow": {
+    "title": "Benutzer zu Beschränkungen hinzufügen",
+    "searchLabel": "Freelancer suchen",
+    "searchPlaceholder": "Name, E-Mail oder Benutzer-ID",
+    "noResults": "Keine passenden Ergebnisse.",
+    "selectUser": "Auswählen",
+    "changeUser": "Benutzer ändern",
+    "hasActive": "Es besteht bereits eine aktive Beschränkung",
+    "confirmTitle": "Beschränkung bestätigen",
+    "confirmBody": "Die Marktplatzaktivität dieses Benutzers wird gemäß dem ausgewählten Umfang beschränkt. Fortfahren?",
+    "confirmAdd": "Beschränkung hinzufügen"
+  },
+  "extendWorkflow": {
+    "title": "Dauer verlängern",
+    "confirm": "Verlängern"
+  },
+  "editWorkflow": {
+    "title": "Umfang bearbeiten",
+    "confirm": "Änderungen speichern"
+  },
+  "revokeWorkflow": {
+    "title": "Beschränkung aufheben",
+    "description": "Die aktive Beschränkung wird aufgehoben. Historische Einträge bleiben erhalten.",
+    "confirm": "Beschränkung aufheben",
+    "reasonOptional": "Grund für die Aufhebung (optional)"
+  },
+  "form": {
+    "reasonRequired": "Ein interner Grund ist erforderlich",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "close": "Schließen",
+    "working": "Wird bearbeitet…"
+  },
+  "heldBids": "Angebote in Prüfung",
+  "releaseBid": "Angebot für Kunden freigeben",
+  "rejectBid": "Angebot ablehnen und Credits zurückgeben",
+  "loadError": "Beschränkungen konnten nicht geladen werden.",
+  "saveOk": "Beschränkung hinzugefügt.",
+  "updateOk": "Beschränkung aktualisiert.",
+  "revokeOk": "Beschränkung aufgehoben.",
+  "extendOk": "Beschränkung verlängert.",
+  "privacyNote": "Interne Gründe werden Freelancern oder Kunden nie angezeigt.",
+  "refresh": "Aktualisieren",
+  "actionsFor": "Aktionen für {{name}}",
+  "unnamed": "Unbenannt",
+  "identity": "Identität",
+  "eligibility": "Berechtigung",
+  "accountActive": "Aktiv",
+  "accountInactive": "Inaktiv",
+  "checking": "Beschränkungen werden geprüft…",
+  "checkFailed": "Beschränkungen konnten nicht geprüft werden"
+}

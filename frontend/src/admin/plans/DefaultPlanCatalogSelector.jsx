@@ -19,8 +19,7 @@ function catalogLabel(catalogId, t) {
 }
 
 function DefaultPlanCatalogConfirmModal({ open, catalogId, submitting, error, onClose, onConfirm }) {
-  const { t, locale } = useTranslation();
-  const isEn = locale === "en";
+  const { t, dir } = useTranslation();
   if (!open || !catalogId) return null;
   const label = catalogLabel(catalogId, t);
 
@@ -37,7 +36,7 @@ function DefaultPlanCatalogConfirmModal({ open, catalogId, submitting, error, on
         role="dialog"
         aria-modal="true"
         aria-labelledby="oh-default-catalog-confirm-title"
-        dir={isEn ? "ltr" : "rtl"}
+        dir={dir}
       >
         <header className="oh-sapl-modal__head">
           <div>

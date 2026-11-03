@@ -1,0 +1,23 @@
+{
+  "title": "Uw Orderz House-account verwijderen",
+  "intro": "U kunt in de mobiele app verwijdering aanvragen van uw Orderz House-account en de bijbehorende persoonsgegevens via:",
+  "inAppPath": "Mijn account → Accountinstellingen → Account verwijderen",
+  "fallbackIntro": "Als u geen toegang meer hebt tot de app, kunt u accountverwijdering per e-mail aanvragen via het onderstaande adres.",
+  "whatHappensTitle": "Wat gebeurt er als een account wordt verwijderd?",
+  "bullets": {
+    "deactivate": "Het account wordt gedeactiveerd en inloggen wordt geblokkeerd.",
+    "personalData": "Niet-noodzakelijke persoonsgegevens, zoals telefoonnummer en profielfoto, worden waar mogelijk verwijderd of verborgen.",
+    "retention": "Wij kunnen bepaalde gegevens met betrekking tot opdrachten, betalingen, geschillen, facturen of wettelijke/operationele vereisten bewaren voor beveiliging, fraudepreventie, naleving van wet- en regelgeving en boekhouding.",
+    "ordersPayments": "Opdrachten en betalingen worden niet verwijderd op een manier die klanten, freelancers of financiële administratie schaadt."
+  },
+  "howToTitle": "Accountverwijdering aanvragen",
+  "howToBody": "Stuur een e-mail naar het onderstaande adres, vermeld het e-mailadres dat aan uw account is gekoppeld en schrijf de zin:",
+  "requestPhrase": "Verzoek tot verwijdering Orderz House-account",
+  "supportEmail": "support@orderzhouse.com",
+  "ctaMailto": "Accountverwijdering per e-mail aanvragen",
+  "privacyLink": "Zie ook ons privacybeleid",
+  "homeLink": "Terug naar de startpagina",
+  "privacyAppendixTitle": "Accountverwijdering en bewaring van gegevens",
+  "privacyAppendixBody": "U kunt verwijdering van uw Orderz House-account aanvragen in de mobiele app of via onze openbare pagina voor accountverwijdering. Bij verwijdering wordt het account gedeactiveerd en worden niet-noodzakelijke persoonsgegevens waar mogelijk verwijderd of verborgen, terwijl gegevens over opdrachten, betalingen en wettelijk vereiste gegevens kunnen worden bewaard.",
+  "privacyAppendixLink": "Accountverwijdering / pagina voor verwijderingsverzoeken"
+}

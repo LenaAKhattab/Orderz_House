@@ -7,6 +7,7 @@ import DashboardLoadingState from "../../components/dashboard/DashboardLoadingSt
 import StatusBadge from "../../components/dashboard/StatusBadge";
 import { useToast } from "../../components/ui/toastContext";
 import { useTranslation } from "../../i18n/LanguageProvider";
+import { pickIntlTag } from "../../i18n/intlLocale.js";
 import { getFinancialUserMyBonusesRequest, getFinancialUserSummaryRequest } from "../../services/api";
 import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage.js";
 import { monthOptions } from "./financialCenter/financialCenterCalculations";
@@ -16,11 +17,12 @@ import { allocationPaidBadge } from "./financialCenter/financialCenterAuditLabel
 import { JodMoneyDisplay } from "../../components/money/JodMoneyDisplay";
 import "./financialCenter/superAdminFinancialCenter.css";
 
-function formatDate(value) {
+function formatDate(value, locale = document.documentElement.lang) {
   if (!value) return "—";
   const d = new Date(value);
   if (!Number.isFinite(d.getTime())) return "—";
-  return new Intl.DateTimeFormat(document.documentElement.lang === "en" ? "en-US" : "ar-JO-u-nu-latn", { dateStyle: "medium", timeStyle: "short" }).format(d);
+  const tag = pickIntlTag(locale, { ar: "ar-JO-u-nu-latn", en: "en-US" });
+  return new Intl.DateTimeFormat(tag, { dateStyle: "medium", timeStyle: "short" }).format(d);
 }
 
 function sourceLabel(type, t) {
@@ -31,7 +33,7 @@ function sourceLabel(type, t) {
 }
 
 export default function FinancialUserMyBonusesPage() {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const { push } = useToast();
   const [monthFilter, setMonthFilter] = useState("");
   const [busy, setBusy] = useState(true);
@@ -114,7 +116,7 @@ export default function FinancialUserMyBonusesPage() {
             </div>
             <div className="fc-summary-card">
               <span className="fc-summary-card__label">{t("dashboard.financialUser.lastPayment")}</span>
-              <strong className="fc-summary-card__value">{formatDate(summary?.lastPaidAt)}</strong>
+              <strong className="fc-summary-card__value">{formatDate(summary?.lastPaidAt, locale)}</strong>
             </div>
           </div>
         )}
@@ -152,7 +154,7 @@ export default function FinancialUserMyBonusesPage() {
                         <td>
                           <StatusBadge tone={paid.tone}>{paid.label}</StatusBadge>
                         </td>
-                        <td>{formatDate(item.paidAt)}</td>
+                        <td>{formatDate(item.paidAt, locale)}</td>
                         <td>{item.note || "—"}</td>
                       </tr>
                     );

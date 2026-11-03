@@ -3,7 +3,8 @@
  * or missing hashed assets after a deploy) so users are not stuck on a blank page.
  */
 
-import { readStoredLocale } from "../i18n/localePreference.js";
+import { pt } from "../i18n/activeLocale.js";
+import { getLocaleDirection, isSupportedLocale, readStoredLocale } from "../i18n/localePreference.js";
 
 export const CHUNK_RELOAD_SESSION_KEY = "oh_chunk_reload_once";
 
@@ -62,17 +63,19 @@ export function clearChunkReloadFlag() {
 }
 
 /**
- * Minimal Arabic fallback when auto-reload already ran once.
+ * Minimal fallback (stored UI locale; Arabic by default) when auto-reload already ran once.
+ * A locale whose bundle failed to load falls back to English copy through the catalog chain.
  * @param {ParentNode | null | undefined} root
  */
 export function showChunkLoadFallback(root = typeof document !== "undefined" ? document.getElementById("root") : null) {
   if (!root || typeof document === "undefined") return;
 
-  const english = readStoredLocale() === "en";
+  const stored = readStoredLocale();
+  const locale = isSupportedLocale(stored) ? stored : "ar";
   root.innerHTML = "";
   const wrap = document.createElement("div");
-  wrap.setAttribute("dir", english ? "ltr" : "rtl");
-  wrap.setAttribute("lang", english ? "en" : "ar");
+  wrap.setAttribute("dir", getLocaleDirection(locale));
+  wrap.setAttribute("lang", locale);
   wrap.setAttribute("role", "alert");
   wrap.style.cssText =
     "min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;font-family:Cairo,Tahoma,sans-serif;background:#f8fafc;color:#0f172a;text-align:center;";
@@ -81,14 +84,12 @@ export function showChunkLoadFallback(root = typeof document !== "undefined" ? d
   box.style.cssText = "max-width:28rem;";
 
   const msg = document.createElement("p");
-  msg.textContent = english
-    ? "The site files were updated. Please refresh the page."
-    : "حدث تحديث في ملفات الموقع. يرجى تحديث الصفحة.";
+  msg.textContent = pt("platformCore.chunkReload.message", undefined, locale);
   msg.style.cssText = "margin:0 0 1.25rem;font-size:1.125rem;line-height:1.7;font-weight:600;";
 
   const btn = document.createElement("button");
   btn.type = "button";
-  btn.textContent = english ? "Refresh page" : "تحديث الصفحة";
+  btn.textContent = pt("platformCore.chunkReload.refresh", undefined, locale);
   btn.style.cssText =
     "appearance:none;border:0;border-radius:10px;padding:0.75rem 1.5rem;font:inherit;font-weight:700;cursor:pointer;background:#0f766e;color:#fff;";
   btn.addEventListener("click", () => {

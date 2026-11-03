@@ -11,6 +11,7 @@ import DashboardLoadingState from "../../components/dashboard/DashboardLoadingSt
 import PopupAdModal from "../../components/ads/PopupAdModal";
 import "./popupAdsSettings.css";
 import { useTranslation } from "../../i18n/LanguageProvider";
+import { isNewLocale, localizeSystemText } from "../../i18n/systemContent";
 import "../../i18n/adsResources";
 
 const EMPTY_FORM = {
@@ -97,7 +98,7 @@ export default function PopupAdsSettings({
   actionHandlersRef,
   onActionMetaChange,
 }) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const toast = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -297,7 +298,9 @@ export default function PopupAdsSettings({
                 onClick={() => selectAd(ad)}
               >
                 <span className="oh-popup-ads-settings__list-item-title">
-                  {ad.titleAr || ad.titleEn || t("ads.common.noTitle")}
+                  {(isNewLocale(locale)
+                    ? localizeSystemText(locale, { ar: ad.titleAr, en: ad.titleEn })
+                    : ad.titleAr || ad.titleEn) || t("ads.common.noTitle")}
                 </span>
                 <span className="oh-popup-ads-settings__list-item-meta">
                   {t(`ads.popup.pageScopeOptions.${ad.pageScope}`)} · {t(`ads.popup.audienceOptions.${ad.audience}`)}

@@ -23,6 +23,8 @@ import {
   poolMarketplaceStatusBadge,
 } from "../../utils/orderFlowUi";
 import { orderHasAssignment } from "../../utils/orderPrivacyUi";
+import { pickIntlTag } from "../../i18n/intlLocale";
+import { pluralDurationUnit } from "./durationUnitLabel";
 
 function priceLabel(order, locale, t) {
   if (order?.projectType === "bidding" && (order?.paymentAmount != null || order?.paymentCurrency)) {
@@ -88,12 +90,12 @@ function timeLeftLabel(order, t, locale) {
   const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
   const minutes = totalMinutes % 60;
 
-  const nf = new Intl.NumberFormat(locale === "en" ? "en-US" : "ar");
+  const nf = new Intl.NumberFormat(pickIntlTag(locale, { ar: "ar", en: "en-US" }));
   const du = "ordersAdmin.wizard.durationUnits";
   const part = (n, unit) => {
-    if (locale === "en") {
-      const label = unit === "days" ? (n === 1 ? t(`${du}.day`) : t(`${du}.days`)) : unit === "hours" ? (n === 1 ? t(`${du}.hour`) : t(`${du}.hours`)) : n === 1 ? t(`${du}.minute`) : t(`${du}.minutes`);
-      return `${nf.format(n)} ${label}`;
+    // Latin-script locales: per-locale plural rules. Arabic keeps its dual / 3–10 forms below.
+    if (locale !== "ar") {
+      return `${nf.format(n)} ${pluralDurationUnit(t, locale, unit, n)}`;
     }
     const label =
       unit === "days"
@@ -160,7 +162,7 @@ export default function OrderCard({
   const applicantPoolCount =
     Number(order?.applicantsCount ?? order?.bidsCount ?? 0) ||
     (bidUsers.length ? bidUsers.length : 0);
-  const applicantJoiner = locale === "ar" ? "، " : ", ";
+  const applicantJoiner = t("platformComponents.listSeparator");
 
   useEffect(() => {
     const id = setInterval(() => setNowMs(Date.now()), 60 * 1000);

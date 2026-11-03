@@ -1,4 +1,5 @@
 import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage.js";
+import { localeFromEnFlag, pt } from "../../i18n/activeLocale.js";
 /**
  * Shared helpers for Admin list pages — request races, soft refresh errors, Abort.
  * Web-Admin-List-Timeout-02 / 05
@@ -19,12 +20,32 @@ export const ADMIN_LIST_HEAVY_TIMEOUT_MS = 25000;
 /** Debounce for list search inputs (450–600ms). */
 export const ADMIN_LIST_SEARCH_DEBOUNCE_MS = 500;
 
-/** Soft note when refresh fails but previous rows stay visible. */
-export const ADMIN_LIST_REFRESH_SOFT_NOTE = "تعذر تحديث القائمة الآن. يمكنك إعادة المحاولة.";
+/**
+ * Admin list notes were Arabic-only copy (also on the English UI). `localeFromEnFlag(false)` keeps Arabic for
+ * the Arabic and English UIs and uses the German / Dutch / Romanian catalog for the new locales.
+ */
+const adminListLocale = () => localeFromEnFlag(false);
 
-/** Soft/hard note when the API returns HTTP 429. */
-export const ADMIN_LIST_RATE_LIMIT_NOTE =
-  "تم إرسال طلبات كثيرة خلال وقت قصير. انتظر قليلاً ثم حاول مجددًا.";
+/** Soft note when refresh fails but previous rows stay visible (UI-locale aware). */
+export function adminListRefreshSoftNote(locale = adminListLocale()) {
+  return pt("platformCore.adminList.refreshSoftNote", undefined, locale);
+}
+
+/** Soft/hard note when the API returns HTTP 429 (UI-locale aware). */
+export function adminListRateLimitNote(locale = adminListLocale()) {
+  return pt("platformCore.adminList.rateLimitNote", undefined, locale);
+}
+
+/** Initial-load error when no mapped API message is available (UI-locale aware). */
+export function adminListLoadFailedMessage(locale = adminListLocale()) {
+  return pt("platformCore.adminList.loadFailed", undefined, locale);
+}
+
+/** Soft note when refresh fails but previous rows stay visible (Arabic; prefer `adminListRefreshSoftNote()`). */
+export const ADMIN_LIST_REFRESH_SOFT_NOTE = adminListRefreshSoftNote("ar");
+
+/** Soft/hard note when the API returns HTTP 429 (Arabic; prefer `adminListRateLimitNote()`). */
+export const ADMIN_LIST_RATE_LIMIT_NOTE = adminListRateLimitNote("ar");
 
 /** Local UI cooldown after 429 before allowing search/refresh again. */
 export const ADMIN_LIST_RATE_LIMIT_COOLDOWN_MS = 15000;
@@ -52,7 +73,7 @@ export function resolveAdminListFailure({ hasExistingRows, error, mapError }) {
   if (isRateLimitedError(error)) {
     if (hasExistingRows) {
       return {
-        softNote: ADMIN_LIST_RATE_LIMIT_NOTE,
+        softNote: adminListRateLimitNote(),
         hardError: "",
         shouldClearRows: false,
         rateLimited: true,
@@ -60,7 +81,7 @@ export function resolveAdminListFailure({ hasExistingRows, error, mapError }) {
     }
     return {
       softNote: "",
-      hardError: ADMIN_LIST_RATE_LIMIT_NOTE,
+      hardError: adminListRateLimitNote(),
       shouldClearRows: true,
       rateLimited: true,
     };
@@ -74,7 +95,7 @@ export function resolveAdminListFailure({ hasExistingRows, error, mapError }) {
         : "";
   if (hasExistingRows) {
     return {
-      softNote: ADMIN_LIST_REFRESH_SOFT_NOTE,
+      softNote: adminListRefreshSoftNote(),
       hardError: "",
       shouldClearRows: false,
       rateLimited: false,
@@ -82,7 +103,7 @@ export function resolveAdminListFailure({ hasExistingRows, error, mapError }) {
   }
   return {
     softNote: "",
-    hardError: mapped || "تعذر تحميل القائمة. حاول مجدداً.",
+    hardError: mapped || adminListLoadFailedMessage(),
     shouldClearRows: true,
     rateLimited: false,
   };

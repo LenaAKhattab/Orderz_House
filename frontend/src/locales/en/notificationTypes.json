@@ -1,0 +1,295 @@
+{
+  "fallback": {
+    "order": "Order update",
+    "wallet": "Payment update",
+    "course": "Training update",
+    "message": "New message",
+    "bell": "New notification"
+  },
+  "details": {
+    "category": "Category",
+    "topic": "Ready-made topic"
+  },
+  "types": {
+    "ad_created": {
+      "title": "Ad created",
+      "message": "A new ad was created."
+    },
+    "ad_expired": {
+      "title": "Ad expired",
+      "message": "An ad reached its end date and is no longer shown."
+    },
+    "ad_published": {
+      "title": "Ad published",
+      "message": "An ad is now live on the platform."
+    },
+    "ad_scheduled": {
+      "title": "Ad scheduled",
+      "message": "An ad was scheduled for publishing."
+    },
+    "ad_unpublished": {
+      "title": "Ad unpublished",
+      "message": "An ad was taken offline."
+    },
+    "ad_updated": {
+      "title": "Ad updated",
+      "message": "An ad was updated."
+    },
+    "bid_pool_allocated": {
+      "title": "You received Bids",
+      "message": "{{allocatedBids}} Bids were added to your balance."
+    },
+    "bid_pool_returned_unused": {
+      "title": "Unused Bids returned to the pool",
+      "message": "Unused Bids were returned to the distribution pool."
+    },
+    "course_assigned": {
+      "title": "A training course was assigned to you",
+      "message": "A new course was assigned to your account."
+    },
+    "course_completed": {
+      "title": "Course completed",
+      "message": "Great work! You completed all lessons of this course."
+    },
+    "course_lesson_added": {
+      "title": "New lessons added",
+      "message": "New lessons were added to one of your courses."
+    },
+    "course_lesson_completed": {
+      "title": "Lesson completion recorded",
+      "message": "Your lesson was marked as completed."
+    },
+    "elite_direct_offer_accepted": {
+      "title": "Elite Direct offer accepted",
+      "message": "The freelancer accepted your Elite Direct offer."
+    },
+    "elite_direct_offer_created": {
+      "title": "New Elite Direct offer",
+      "message": "You received a private Elite Direct offer — review it and accept or decline before it expires."
+    },
+    "elite_direct_offer_declined": {
+      "title": "Elite Direct offer declined",
+      "message": "The freelancer declined the Elite Direct offer. You can send a new offer to another Elite freelancer."
+    },
+    "elite_direct_offer_expired": {
+      "title": "Elite Direct offer expired",
+      "message": "The offer expired without being accepted. You can send a new offer to another Elite freelancer."
+    },
+    "feedback_created": {
+      "title": "New feedback received",
+      "message": "A user submitted a new problem report or suggestion."
+    },
+    "feedback_status_resolved": {
+      "title": "Your feedback was updated",
+      "message": "Your feedback was marked as resolved."
+    },
+    "financial_claim_created": {
+      "title": "Your payment claim was submitted",
+      "message": "Your payment claim was created and is now under review."
+    },
+    "financial_claim_paid": {
+      "title": "Payment claim paid",
+      "message": "The payment was recorded and the claim was closed as paid."
+    },
+    "financial_claim_pricing_updated": {
+      "title": "Claim pricing updated",
+      "message": "The pricing details and the amount due for your claim were updated."
+    },
+    "financial_claim_status_changed": {
+      "title": "Payment claim status updated",
+      "message": "The status of your payment claim was updated."
+    },
+    "freelancer_review_received": {
+      "title": "New review from a client",
+      "message": "A client left a review on one of your orders."
+    },
+    "general_test": {
+      "title": "Test notification",
+      "message": "Your browser notification settings were updated."
+    },
+    "order_applications_admin_review_required": {
+      "title": "Application deadline reached",
+      "message": "Applications closed at the deadline. You can continue with the current applicants."
+    },
+    "order_applications_deadline_cancelled": {
+      "title": "Order needs admin review",
+      "message": "The application deadline passed before the target number of applicants was reached. An admin review is required."
+    },
+    "order_applications_deadline_reached": {
+      "title": "Application deadline reached",
+      "message": "Applications closed at the deadline. You can continue with the current applicants."
+    },
+    "order_applications_target_reached": {
+      "title": "Applicant target reached",
+      "message": "Applications closed automatically after the required number of applicants was reached."
+    },
+    "order_assigned": {
+      "title": "Project accepted",
+      "message": "A freelancer accepted the project and started working on it."
+    },
+    "order_bid_refunded": {
+      "title": "Bids returned",
+      "message": "Your available Bids were returned after the order was closed or cancelled without a selection."
+    },
+    "order_bid_rejected": {
+      "title": "Your bid was not selected",
+      "message": "Another freelancer's bid was accepted for this project."
+    },
+    "order_bid_selected": {
+      "title": "Your bid was selected — awaiting payment",
+      "message": "The client selected your bid. The assignment is confirmed once the payment is completed."
+    },
+    "order_bid_submitted": {
+      "title": "New bid received",
+      "message": "A freelancer submitted a bid on your project."
+    },
+    "order_bid_updated": {
+      "title": "Bid updated",
+      "message": "A freelancer updated their bid on your project."
+    },
+    "order_claim_withdrawn": {
+      "title": "Application withdrawn",
+      "message": "The freelancer withdrew their application for the project."
+    },
+    "order_created": {
+      "title": "New bidding project",
+      "message": "A new project was published for bidding."
+    },
+    "order_delivery_approved": {
+      "title": "Delivery approved",
+      "message": "The delivery was approved and the project was completed successfully."
+    },
+    "order_delivery_submitted": {
+      "title": "New delivery submitted",
+      "message": "A new delivery was submitted for this order — please review it."
+    },
+    "order_freelancer_assigned": {
+      "title": "A project was assigned to you",
+      "message": "You were approved to work on the project."
+    },
+    "order_freelancer_rejected": {
+      "title": "Your application was not selected",
+      "message": "Another freelancer was selected for this project."
+    },
+    "order_message_received": {
+      "title": "New message on an order",
+      "message": "You have a new message about one of your orders."
+    },
+    "order_payment_started": {
+      "title": "Payment started",
+      "message": "A payment session was created for the order. Complete the payment to continue."
+    },
+    "order_pool_summary": {
+      "title": "A new batch of orders was added",
+      "message": "New orders suitable for you are now available: {{visibleCount}}."
+    },
+    "order_pool_summary_training": {
+      "title": "A new batch of training orders was added",
+      "message": "New training orders suitable for you are now available: {{visibleCount}}."
+    },
+    "order_review_reminder": {
+      "title": "Rate your experience with the freelancer",
+      "message": "Tell us about your completed project — it takes less than a minute."
+    },
+    "order_revision_requested": {
+      "title": "Revisions requested",
+      "message": "The client requested revisions to the delivery."
+    },
+    "pantry_bid_refunded": {
+      "title": "Bids returned",
+      "message": "Your available Bids were returned after the Bayt Al-Mooneh order was closed without an assignment."
+    },
+    "payment_client_order_failed": {
+      "title": "Payment failed",
+      "message": "The payment for the order could not be completed. Please try again."
+    },
+    "payment_client_order_succeeded": {
+      "title": "Payment successful",
+      "message": "The payment was received and the order is now open to freelancers."
+    },
+    "plan_created": {
+      "title": "New plan created",
+      "message": "A new plan was created."
+    },
+    "plan_deleted": {
+      "title": "Plan disabled",
+      "message": "A plan was disabled or hidden from new use."
+    },
+    "plan_updated": {
+      "title": "Plan updated",
+      "message": "A plan's settings were updated."
+    },
+    "referral_bonus": {
+      "title": "Referral bonus",
+      "message": "A referral bonus was added to your available balance."
+    },
+    "referral_commission_available": {
+      "title": "Referral commission available",
+      "message": "A referral commission is now available for withdrawal."
+    },
+    "referral_commission_pending": {
+      "title": "Referral commission pending",
+      "message": "A referral commission was recorded and is in its holding period."
+    },
+    "referral_registration": {
+      "title": "New referral registration",
+      "message": "A new user joined through your referral link."
+    },
+    "subscription_assigned": {
+      "title": "A subscription was assigned to you",
+      "message": "The administration assigned a subscription plan to your account."
+    },
+    "subscription_company_activated": {
+      "title": "Your subscription was activated",
+      "message": "Your subscription was approved and you can start receiving projects."
+    },
+    "subscription_company_activation_pending": {
+      "title": "Subscription awaiting activation",
+      "message": "A subscription was paid and is waiting for activation by the company."
+    },
+    "subscription_payment_started": {
+      "title": "Subscription payment started",
+      "message": "A subscription payment session was created. Complete the payment to continue."
+    },
+    "subscription_started": {
+      "title": "Your subscription has started",
+      "message": "Your subscription started with your first accepted project."
+    },
+    "subscription_renewal_failed": {
+      "title": "Subscription renewal failed",
+      "message": "The payment for your subscription renewal failed. Update your payment method to keep your subscription."
+    },
+    "payment_success": {
+      "title": "Subscription activated",
+      "message": "Your freelancer subscription was activated successfully."
+    },
+    "payment_failed": {
+      "title": "Payment failed",
+      "message": "The subscription payment could not be completed. Please try again."
+    },
+    "payment_cancelled": {
+      "title": "Payment cancelled",
+      "message": "The subscription payment was cancelled."
+    },
+    "user_account_activated": {
+      "title": "Your account was activated",
+      "message": "Your account is active and you can now use the platform."
+    },
+    "user_account_deactivated": {
+      "title": "Your account was deactivated",
+      "message": "Your account was deactivated. Contact support if you have questions."
+    },
+    "user_account_reactivated": {
+      "title": "Your account was reactivated",
+      "message": "Your account is active again and you can use the platform."
+    },
+    "user_account_suspended": {
+      "title": "Your account was suspended",
+      "message": "Your account was suspended. Contact support if you have questions."
+    },
+    "user_registered": {
+      "title": "Your account was created",
+      "message": "Welcome to Orderz House."
+    }
+  }
+}

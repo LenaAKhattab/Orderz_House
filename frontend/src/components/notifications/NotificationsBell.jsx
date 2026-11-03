@@ -12,12 +12,13 @@ import { useTranslation } from "../../i18n/LanguageProvider";
 import "../../i18n/notificationsUiResources";
 import { getNotificationDetails, getNotificationText } from "../../utils/notificationDisplay";
 import { resolveNotificationNavPath } from "../../utils/resolveNotificationNavPath";
+import { pickIntlTag } from "../../i18n/intlLocale";
 
 function fmtDate(value, locale) {
   if (!value) return "";
   const d = new Date(value);
   if (!Number.isFinite(d.getTime())) return "";
-  const tag = locale === "en" ? "en-JO-u-nu-latn" : "ar-JO-u-nu-latn";
+  const tag = pickIntlTag(locale, { en: "en-JO-u-nu-latn", ar: "ar-JO-u-nu-latn" });
   return new Intl.DateTimeFormat(tag, { dateStyle: "short", timeStyle: "short" }).format(d);
 }
 

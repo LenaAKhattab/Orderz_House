@@ -1,0 +1,295 @@
+{
+  "fallback": {
+    "order": "Opdrachtsaktualisierung",
+    "wallet": "Betalingsaktualisierung",
+    "course": "Trainingsaktualisierung",
+    "message": "Neue Nachricht",
+    "bell": "Neue Melding"
+  },
+  "details": {
+    "category": "Kategorie",
+    "topic": "Fertiges Thema"
+  },
+  "types": {
+    "ad_created": {
+      "title": "Anzeige erstellt",
+      "message": "Eine neue Anzeige is erstellt."
+    },
+    "ad_expired": {
+      "title": "Anzeige abgelaufen",
+      "message": "Eine Anzeige hat ihr Enddatum erreicht und wird niet mehr angezeigt."
+    },
+    "ad_published": {
+      "title": "Anzeige veröffentlicht",
+      "message": "Eine Anzeige ist jetzt live auf der Plattform."
+    },
+    "ad_scheduled": {
+      "title": "Anzeige geplant",
+      "message": "Eine Anzeige is zur Veröffentlichung geplant."
+    },
+    "ad_unpublished": {
+      "title": "Anzeige offline",
+      "message": "Eine Anzeige is offline genommen."
+    },
+    "ad_updated": {
+      "title": "Anzeige aktualisiert",
+      "message": "Eine Anzeige is aktualisiert."
+    },
+    "bid_pool_allocated": {
+      "title": "U heeft Bids erhalten",
+      "message": "{{allocatedBids}} Bids zijn Uw Guthaben gutgeschrieben."
+    },
+    "bid_pool_returned_unused": {
+      "title": "Unbenutzte Bids an den Pool zurückgegeben",
+      "message": "Unbenutzte Bids zijn an den Verteilungspool zurückgegeben."
+    },
+    "course_assigned": {
+      "title": "Ihnen is ein Trainingskurs zugewiesen",
+      "message": "Ein neuer Cursus is Uw Konto zugewiesen."
+    },
+    "course_completed": {
+      "title": "Cursus abgesloten",
+      "message": "Gut gemacht! U heeft alle Lektionen dieses Cursuses abgesloten."
+    },
+    "course_lesson_added": {
+      "title": "Neue Lektionen hinzugefügt",
+      "message": "Neue Lektionen zijn zu einem Uw Cursuse hinzugefügt."
+    },
+    "course_lesson_completed": {
+      "title": "Lektionsabschluss erfasst",
+      "message": "Uw Lektion is als abgesloten markiert."
+    },
+    "elite_direct_offer_accepted": {
+      "title": "Elite Direct-Bod angenommen",
+      "message": "Der Freelancer hat Uw Elite Direct-Bod angenommen."
+    },
+    "elite_direct_offer_created": {
+      "title": "Neues Elite Direct-Bod",
+      "message": "U heeft ein privates Elite Direct-Bod erhalten — prüfen Sie es und nehmen Sie an oder lehnen Sie ab, bevor es abläuft."
+    },
+    "elite_direct_offer_declined": {
+      "title": "Elite Direct-Bod abgelehnt",
+      "message": "Der Freelancer hat das Elite Direct-Bod abgelehnt. U kunt ein neues Bod an einen anderen Elite-Freelancer senden."
+    },
+    "elite_direct_offer_expired": {
+      "title": "Elite Direct-Bod abgelaufen",
+      "message": "Das Bod ist ohne Annahme abgelaufen. U kunt ein neues Bod an einen anderen Elite-Freelancer senden."
+    },
+    "feedback_created": {
+      "title": "Neues Feedback erhalten",
+      "message": "Ein Nutzer hat einen neuen Problembericht oder Vorschlag eingereicht."
+    },
+    "feedback_status_resolved": {
+      "title": "Uw Feedback is aktualisiert",
+      "message": "Uw Feedback is als gelöst markiert."
+    },
+    "financial_claim_created": {
+      "title": "Uw Betalingsanspruch is eingereicht",
+      "message": "Uw Betalingsanspruch is erstellt und wird nun geprüft."
+    },
+    "financial_claim_paid": {
+      "title": "Betalingsanspruch ausgezahlt",
+      "message": "Die Betaling is erfasst und der Anspruch als bezahlt abgesloten."
+    },
+    "financial_claim_pricing_updated": {
+      "title": "Anspruchspreise aktualisiert",
+      "message": "Die Preisdetails und der fällige Betrag für Uw Anspruch zijn aktualisiert."
+    },
+    "financial_claim_status_changed": {
+      "title": "Status des Betalingsanspruchs aktualisiert",
+      "message": "Der Status Ihres Betalingsanspruchs is aktualisiert."
+    },
+    "freelancer_review_received": {
+      "title": "Neue Bewertung von einem Klantn",
+      "message": "Ein Klant hat eine Bewertung zu einem Uw Opdrachten hinterlassen."
+    },
+    "general_test": {
+      "title": "Testbenachrichtigung",
+      "message": "Uw Browser-Meldingseinstellungen zijn aktualisiert."
+    },
+    "order_applications_admin_review_required": {
+      "title": "Sollicitatiesfrist erreicht",
+      "message": "Sollicitatieen zijn zum Fristende gesloten. U kunt mit den aktuellen Sollicitantn fortfahren."
+    },
+    "order_applications_deadline_cancelled": {
+      "title": "Opdracht benötigt Admin-Prüfung",
+      "message": "Die Sollicitatiesfrist endete, bevor die Zielanzahl an Sollicitantn erreicht wurde. Eine Admin-Prüfung ist erforderlich."
+    },
+    "order_applications_deadline_reached": {
+      "title": "Sollicitatiesfrist erreicht",
+      "message": "Sollicitatieen zijn zum Fristende gesloten. U kunt mit den aktuellen Sollicitantn fortfahren."
+    },
+    "order_applications_target_reached": {
+      "title": "Sollicitantziel erreicht",
+      "message": "Sollicitatieen zijn automatisch gesloten, nachdem die erforderliche Anzahl an Sollicitantn erreicht wurde."
+    },
+    "order_assigned": {
+      "title": "Projekt angenommen",
+      "message": "Ein Freelancer hat das Projekt angenommen und mit der Arbeit begonnen."
+    },
+    "order_bid_refunded": {
+      "title": "Bids zurückgegeben",
+      "message": "Uw beschikbaren Bids zijn zurückgegeben, nachdem der Opdracht ohne Auswahl gesloten oder storniert wurde."
+    },
+    "order_bid_rejected": {
+      "title": "Uw Bod is niet ausgewählt",
+      "message": "Das Bod eines anderen Freelancers is für dieses Projekt angenommen."
+    },
+    "order_bid_selected": {
+      "title": "Uw Bod is ausgewählt — Betaling ausstehend",
+      "message": "Der Klant hat Uw Bod ausgewählt. Die Zuweisung wird nach Abschluss der Betaling bestätigt."
+    },
+    "order_bid_submitted": {
+      "title": "Neues Bod erhalten",
+      "message": "Ein Freelancer hat ein Bod für Uw Projekt eingereicht."
+    },
+    "order_bid_updated": {
+      "title": "Bod aktualisiert",
+      "message": "Ein Freelancer hat sein Bod für Uw Projekt aktualisiert."
+    },
+    "order_claim_withdrawn": {
+      "title": "Sollicitatie zurückgezogen",
+      "message": "Der Freelancer hat seine Sollicitatie für das Projekt zurückgezogen."
+    },
+    "order_created": {
+      "title": "Neues Ausschreibungsprojekt",
+      "message": "Ein neues Projekt is zur Ausschreibung veröffentlicht."
+    },
+    "order_delivery_approved": {
+      "title": "Lieferung freigegeben",
+      "message": "Die Lieferung is freigegeben und das Projekt erfolgreich abgesloten."
+    },
+    "order_delivery_submitted": {
+      "title": "Neue Lieferung eingereicht",
+      "message": "Eine neue Lieferung is für diesen Opdracht eingereicht — bitte prüfen Sie sie."
+    },
+    "order_freelancer_assigned": {
+      "title": "Ihnen is ein Projekt zugewiesen",
+      "message": "Sie zijn für die Arbeit am Projekt freigegeben."
+    },
+    "order_freelancer_rejected": {
+      "title": "Uw Sollicitatie is niet ausgewählt",
+      "message": "Für dieses Projekt is ein anderer Freelancer ausgewählt."
+    },
+    "order_message_received": {
+      "title": "Neue Nachricht zu einem Opdracht",
+      "message": "U heeft eine neue Nachricht zu einem Uw Opdrachten."
+    },
+    "order_payment_started": {
+      "title": "Betaling gestartet",
+      "message": "Eine Betalingssitzung für den Opdracht is erstellt. Schließen Sie die Betaling ab, um fortzufahren."
+    },
+    "order_pool_summary": {
+      "title": "Neue Opdrachtscharge hinzugefügt",
+      "message": "Neue für Sie passende Opdrachten sind jetzt beschikbar: {{visibleCount}}."
+    },
+    "order_pool_summary_training": {
+      "title": "Neue Charge Trainingsaufträge hinzugefügt",
+      "message": "Neue für Sie passende Trainingsaufträge sind jetzt beschikbar: {{visibleCount}}."
+    },
+    "order_review_reminder": {
+      "title": "Bewerten Sie Uw Erfahrung mit dem Freelancer",
+      "message": "Erzählen Sie uns von Uw abgeslotenen Projekt — es dauert weniger als eine Minute."
+    },
+    "order_revision_requested": {
+      "title": "Überarbeitungen angefordert",
+      "message": "Der Klant hat Überarbeitungen der Lieferung angefordert."
+    },
+    "pantry_bid_refunded": {
+      "title": "Bids zurückgegeben",
+      "message": "Uw beschikbaren Bids zijn zurückgegeben, nachdem der Bayt-Al-Mooneh-Opdracht ohne Zuweisung gesloten wurde."
+    },
+    "payment_client_order_failed": {
+      "title": "Betaling fehlgeschlagen",
+      "message": "Die Betaling für den Opdracht kon niet abgesloten werden. Probeer het opnieuw."
+    },
+    "payment_client_order_succeeded": {
+      "title": "Betaling erfolgreich",
+      "message": "Die Betaling is erhalten und der Opdracht ist jetzt für Freelancer offen."
+    },
+    "plan_created": {
+      "title": "Neues Pakket erstellt",
+      "message": "Ein neues Pakket is erstellt."
+    },
+    "plan_deleted": {
+      "title": "Pakket deaktiviert",
+      "message": "Ein Pakket is deaktiviert oder für neue Nutzung ausgeblendet."
+    },
+    "plan_updated": {
+      "title": "Pakket aktualisiert",
+      "message": "Die Einstellungen eines Pakkets zijn aktualisiert."
+    },
+    "referral_bonus": {
+      "title": "Doorverwijzingsbonus",
+      "message": "Ein Doorverwijzingsbonus is Uw beschikbaren Guthaben gutgeschrieben."
+    },
+    "referral_commission_available": {
+      "title": "Doorverwijzingsprovision beschikbar",
+      "message": "Eine Doorverwijzingsprovision steht jetzt zur Auszahlung bereit."
+    },
+    "referral_commission_pending": {
+      "title": "Doorverwijzingsprovision ausstehend",
+      "message": "Eine Doorverwijzingsprovision is erfasst und befindet sich in der Haltefrist."
+    },
+    "referral_registration": {
+      "title": "Neue Doorverwijzingsregistrierung",
+      "message": "Ein neuer Nutzer ist über Uw Doorverwijzingslink beigetreten."
+    },
+    "subscription_assigned": {
+      "title": "Ihnen is ein Abonnement zugewiesen",
+      "message": "Die Administration hat Uw Konto ein Abonnementpaket zugewiesen."
+    },
+    "subscription_company_activated": {
+      "title": "Uw Abonnement is aktiviert",
+      "message": "Uw Abonnement is freigegeben und U kunt Projekte erhalten."
+    },
+    "subscription_company_activation_pending": {
+      "title": "Abonnement wartet auf Aktivierung",
+      "message": "Ein Abonnement is bezahlt und wartet auf Aktivierung durch das Unternehmen."
+    },
+    "subscription_payment_started": {
+      "title": "Abonnementzahlung gestartet",
+      "message": "Eine Betalingssitzung für das Abonnement is erstellt. Schließen Sie die Betaling ab, um fortzufahren."
+    },
+    "subscription_started": {
+      "title": "Uw Abonnement hat begonnen",
+      "message": "Uw Abonnement begann mit Uw ersten angenommenen Projekt."
+    },
+    "subscription_renewal_failed": {
+      "title": "Abonnementverlängerung fehlgeschlagen",
+      "message": "Die Betaling für Uw Abonnementverlängerung ist fehlgeschlagen. Aktualisieren Sie Uw Betalingsmethode, um Uw Abonnement zu behalten."
+    },
+    "payment_success": {
+      "title": "Abonnement aktiviert",
+      "message": "Uw Freelancer-Abonnement is erfolgreich aktiviert."
+    },
+    "payment_failed": {
+      "title": "Betaling fehlgeschlagen",
+      "message": "Die Abonnementzahlung kon niet abgesloten werden. Probeer het opnieuw."
+    },
+    "payment_cancelled": {
+      "title": "Betaling storniert",
+      "message": "Die Abonnementzahlung is storniert."
+    },
+    "user_account_activated": {
+      "title": "Uw account is aktiviert",
+      "message": "Uw account ist aktiv und U kunt die Plattform jetzt nutzen."
+    },
+    "user_account_deactivated": {
+      "title": "Uw account is deaktiviert",
+      "message": "Uw account is deaktiviert. Wenden Sie sich bei Fragen an den support."
+    },
+    "user_account_reactivated": {
+      "title": "Uw account is reaktiviert",
+      "message": "Uw account ist wieder aktiv und U kunt die Plattform nutzen."
+    },
+    "user_account_suspended": {
+      "title": "Uw account is gesperrt",
+      "message": "Uw account is gesperrt. Wenden Sie sich bei Fragen an den support."
+    },
+    "user_registered": {
+      "title": "Uw account is erstellt",
+      "message": "Willkommen bei Orderz House."
+    }
+  }
+}

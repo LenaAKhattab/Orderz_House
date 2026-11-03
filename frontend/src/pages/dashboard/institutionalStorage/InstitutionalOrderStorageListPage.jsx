@@ -10,6 +10,7 @@ import DashboardTable from "../../../components/dashboard/DashboardTable";
 import Pagination from "../../../components/common/Pagination";
 import { superAdminBreadcrumbs } from "../../../components/dashboard/dashboardBreadcrumbs";
 import { useTranslation } from "../../../i18n/LanguageProvider";
+import { intlTagOrDefault, pickIntlTag } from "../../../i18n/intlLocale.js";
 import { useToast } from "../../../components/ui/toastContext";
 import {
   adminCreateInstitutionalStorageRequest,
@@ -54,16 +55,16 @@ function StatusBadge({ status, t }) {
   );
 }
 
-function formatMoney(value, t) {
+function formatMoney(value, t, locale) {
   const n = Number(value);
   if (!Number.isFinite(n)) return "—";
-  return `${n.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${t("dashboard.institutionalOrderStorage.currencyJod")}`;
+  return `${n.toLocaleString(intlTagOrDefault(locale), { maximumFractionDigits: 2 })} ${t("dashboard.institutionalOrderStorage.currencyJod")}`;
 }
 
 function formatDate(value, locale) {
   if (!value) return "—";
   try {
-    return new Date(value).toLocaleDateString(locale === "en" ? "en-GB" : "ar-JO-u-nu-latn");
+    return new Date(value).toLocaleDateString(pickIntlTag(locale, { ar: "ar-JO-u-nu-latn", en: "en-GB" }));
   } catch {
     return String(value);
   }
@@ -72,7 +73,7 @@ function formatDate(value, locale) {
 function formatDateTime(value, locale) {
   if (!value) return "—";
   try {
-    return new Date(value).toLocaleString(locale === "en" ? "en-GB" : "ar-JO-u-nu-latn");
+    return new Date(value).toLocaleString(pickIntlTag(locale, { ar: "ar-JO-u-nu-latn", en: "en-GB" }));
   } catch {
     return String(value);
   }
@@ -395,12 +396,12 @@ export default function InstitutionalOrderStorageListPage() {
             {
               key: "limits",
               label: t("dashboard.institutionalOrderStorage.metricTotalLimits"),
-              value: formatMoney(summary.totalFinancialLimitsJod, t),
+              value: formatMoney(summary.totalFinancialLimitsJod, t, locale),
             },
             {
               key: "remaining",
               label: t("dashboard.institutionalOrderStorage.metricTotalRemaining"),
-              value: formatMoney(summary.totalRemainingJod, t),
+              value: formatMoney(summary.totalRemainingJod, t, locale),
             },
             {
               key: "pending",
@@ -604,7 +605,7 @@ export default function InstitutionalOrderStorageListPage() {
               <dl className="m-0 grid gap-2 text-sm">
                 <div className="flex justify-between gap-3">
                   <dt className="text-slate-500">{t("dashboard.institutionalOrderStorage.financialLimit")}</dt>
-                  <dd className="m-0 font-semibold tabular-nums">{formatMoney(form.financialLimitJod, t)}</dd>
+                  <dd className="m-0 font-semibold tabular-nums">{formatMoney(form.financialLimitJod, t, locale)}</dd>
                 </div>
                 <div className="flex justify-between gap-3">
                   <dt className="text-slate-500">{t("dashboard.institutionalOrderStorage.months")}</dt>
@@ -793,7 +794,7 @@ export default function InstitutionalOrderStorageListPage() {
                 <tbody>
                   {storages.map((s) => {
                     const names = institutionNames(s);
-                    const namesText = names.join(locale === "en" ? ", " : "، ") || "—";
+                    const namesText = names.join(t("platformPages.common.listJoiner")) || "—";
                     return (
                       <tr key={s.id}>
                         <td className="max-w-[14rem] align-middle">
@@ -811,10 +812,10 @@ export default function InstitutionalOrderStorageListPage() {
                           </span>
                         </td>
                         <td className="align-middle tabular-nums whitespace-nowrap">
-                          {formatMoney(s.financialLimitJod, t)}
+                          {formatMoney(s.financialLimitJod, t, locale)}
                         </td>
                         <td className="align-middle tabular-nums whitespace-nowrap">
-                          {formatMoney(s.remainingJod, t)}
+                          {formatMoney(s.remainingJod, t, locale)}
                         </td>
                         <td className="align-middle">
                           <StatusBadge status={s.status} t={t} />
@@ -843,7 +844,7 @@ export default function InstitutionalOrderStorageListPage() {
             <ul className="oh-ios-mobile-cards m-0 grid list-none gap-3 p-0 xl:hidden">
               {storages.map((s) => {
                 const names = institutionNames(s);
-                const namesText = names.join(locale === "en" ? ", " : "، ") || "—";
+                const namesText = names.join(t("platformPages.common.listJoiner")) || "—";
                 return (
                   <li key={`m-${s.id}`} className="dash-ui-form-card grid gap-2 p-3.5">
                     <Link to={`${BASE}/${s.id}`} className="break-words text-base font-bold leading-snug" title={s.name}>
@@ -854,10 +855,10 @@ export default function InstitutionalOrderStorageListPage() {
                     </span>
                     <span className="text-sm">
                       <strong>{t("dashboard.institutionalOrderStorage.financialLimit")}:</strong>{" "}
-                      {formatMoney(s.financialLimitJod, t)}
+                      {formatMoney(s.financialLimitJod, t, locale)}
                       {" · "}
                       <strong>{t("dashboard.institutionalOrderStorage.remaining")}:</strong>{" "}
-                      {formatMoney(s.remainingJod, t)}
+                      {formatMoney(s.remainingJod, t, locale)}
                     </span>
                     <span className="flex flex-wrap items-center gap-2 text-sm">
                       <strong>{t("dashboard.institutionalOrderStorage.status")}:</strong>

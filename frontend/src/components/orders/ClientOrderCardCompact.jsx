@@ -360,7 +360,7 @@ export default function ClientOrderCardCompact({
               <div className="coc__fact">
                 <span className="coc__fact-label">{t(`${oc}.applicantsLabel`).replace(/[:：]\s*$/, "")}</span>
                 <span className="coc__fact-value">
-                  {bidUsers.slice(0, 2).map((b) => bidderDisplayName(b)).join(locale === "ar" ? "، " : ", ")}
+                  {bidUsers.slice(0, 2).map((b) => bidderDisplayName(b)).join(t("platformComponents.listSeparator"))}
                   {bidUsers.length > 2 ? ` +${bidUsers.length - 2}` : ""}
                 </span>
               </div>

@@ -97,7 +97,7 @@ export default function MarketplaceArticleCard({
         <div>
           <dt>{t("card.value")}</dt>
           <dd>
-            {value} {locale === "en" ? t("common.jod") : t("common.jod")}
+            {value} {t("common.jod")}
           </dd>
         </div>
         <div>

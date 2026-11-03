@@ -90,9 +90,9 @@ async function markRegistrationOtpEmailSent(otpId) {
   );
 }
 
-async function sendRegistrationOtpEmailAfterPersist(emailNorm, otpPlain, otpId) {
+async function sendRegistrationOtpEmailAfterPersist(emailNorm, otpPlain, otpId, locale) {
   try {
-    await emailService.sendRegisterOtpEmail(emailNorm, otpPlain);
+    await emailService.sendRegisterOtpEmail(emailNorm, otpPlain, locale);
     await markRegistrationOtpEmailSent(otpId);
   } catch (e) {
     if (e && typeof e.statusCode === "number") {
@@ -116,7 +116,7 @@ async function sendRegistrationOtpEmailAfterPersist(emailNorm, otpPlain, otpId) 
 /**
  * @param {import("pg").PoolClient} [client]
  */
-async function insertRegistrationOtp({ userId, email }, client = null) {
+async function insertRegistrationOtp({ userId, email, locale }, client = null) {
   const emailNorm = normalizeEmail(email);
   let otpId;
   let otpPlain;
@@ -134,7 +134,7 @@ async function insertRegistrationOtp({ userId, email }, client = null) {
     // then call sendRegistrationOtpEmailAfterPersist() outside the transaction (same as the
     // pool.connect path below).
     await persist(client);
-    await sendRegistrationOtpEmailAfterPersist(emailNorm, otpPlain, otpId);
+    await sendRegistrationOtpEmailAfterPersist(emailNorm, otpPlain, otpId, locale);
     return;
   }
 
@@ -150,7 +150,7 @@ async function insertRegistrationOtp({ userId, email }, client = null) {
     c.release();
   }
 
-  await sendRegistrationOtpEmailAfterPersist(emailNorm, otpPlain, otpId);
+  await sendRegistrationOtpEmailAfterPersist(emailNorm, otpPlain, otpId, locale);
 }
 
 async function verifyRegistrationOtp(emailRaw, otpPlain) {
@@ -239,7 +239,7 @@ async function verifyRegistrationOtp(emailRaw, otpPlain) {
  * - Verified email: same as unknown (does not reveal registration state).
  * - Unverified email: cooldown from last register OTP send; then send via Resend (same as before).
  */
-async function resendRegistrationOtp(emailRaw) {
+async function resendRegistrationOtp(emailRaw, locale) {
   const emailNorm = normalizeEmail(emailRaw);
   let otpId;
   let otpPlain;
@@ -291,7 +291,7 @@ async function resendRegistrationOtp(emailRaw) {
     client.release();
   }
 
-  await sendRegistrationOtpEmailAfterPersist(emailNorm, otpPlain, otpId);
+  await sendRegistrationOtpEmailAfterPersist(emailNorm, otpPlain, otpId, locale);
 }
 
 /**
@@ -299,7 +299,7 @@ async function resendRegistrationOtp(emailRaw) {
  * - Unknown email: no email sent; `sleepEnumerationSafeJitterMs` (enumeration + timing).
  * - Known email: cooldown 60s from last forgot OTP send; then hash OTP, invalidate old rows, send via Resend.
  */
-async function requestForgotPasswordOtp(emailRaw) {
+async function requestForgotPasswordOtp(emailRaw, locale) {
   const emailNorm = normalizeEmail(emailRaw);
   const { rows: uRows } = await pool.query(
     `SELECT id FROM users WHERE ${sqlEmailEquals("email", "$1")} AND is_active = TRUE LIMIT 1`,
@@ -338,7 +338,7 @@ async function requestForgotPasswordOtp(emailRaw) {
       ) VALUES (lower($1::text), $2::bigint, $3::text, $4::text, $5::timestamptz, $6::timestamptz, $6::timestamptz, $6::timestamptz)`,
       [String(emailNorm), Number(user.id), PURPOSE_FORGOT, otpHash, expiresAt, now],
     );
-    await emailService.sendForgotPasswordOtpEmail(emailNorm, otpPlain);
+    await emailService.sendForgotPasswordOtpEmail(emailNorm, otpPlain, locale);
     await client.query("COMMIT");
   } catch (e) {
     try {

@@ -39,6 +39,7 @@ import {
   listLegacyDocumentTypesRequest,
 } from "../../../services/api";
 import { formatDate, getWorkspaceTabs } from "./legacyAdminShared";
+import { pickIntlTag } from "../../../i18n/intlLocale.js";
 import LegacyFreelancersPanel from "./LegacyFreelancersPanel";
 import LegacyCampaignLinkModal from "./LegacyCampaignLinkModal";
 import "./legacyAdminCenter.css";
@@ -46,6 +47,7 @@ import "./legacyAdminCenter.css";
 const LIST_PATH = "/dashboard/legacy-freelancers";
 
 function InsightCard({ label, value, hint, icon: Icon, tone = "default" }) {
+  const { locale } = useTranslation();
   return (
     <article className="oh-legacy-admin__stat">
       <div
@@ -57,7 +59,7 @@ function InsightCard({ label, value, hint, icon: Icon, tone = "default" }) {
       <div className="oh-legacy-admin__stat-body">
         <p className="oh-legacy-admin__stat-label">{label}</p>
         <p className="oh-legacy-admin__stat-value">
-          {value == null ? "—" : Number(value).toLocaleString("en-US")}
+          {value == null ? "—" : Number(value).toLocaleString(pickIntlTag(locale, { ar: "en-US", en: "en-US" }))}
         </p>
         {hint ? <p className="oh-legacy-admin__stat-hint">{hint}</p> : null}
       </div>
@@ -411,7 +413,7 @@ export default function LegacyCampaignWorkspacePage() {
                 <dd>{campaign.name}</dd>
               </div>
               <div>
-                <dt>Slug</dt>
+                <dt>{t("legacy.common.slug")}</dt>
                 <dd dir="ltr">{campaign.slug}</dd>
               </div>
               <div>
@@ -484,7 +486,7 @@ export default function LegacyCampaignWorkspacePage() {
                   />
                 </label>
                 <label>
-                  Slug
+                  {t("legacy.common.slug")}
                   <input
                     className="oh-legacy-admin__input"
                     dir="ltr"

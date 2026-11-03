@@ -8,6 +8,7 @@ import Button from "../components/ui/Button";
 import { useAuth } from "../context/useAuth";
 import { getDashboardPath } from "../constants/authRoutes";
 import { useTranslation } from "../i18n/LanguageProvider";
+import { isLatinUiLocale, pickIntlTag } from "../i18n/intlLocale.js";
 import { resendRegisterOtpRequest } from "../services/api";
 import { getAuthApiErrorMessage, isEmailAlreadyRegisteredError, isOtpEmailSendError, isRateLimitedError } from "../utils/apiErrorMessage";
 import { ARAB_COUNTRIES, DEFAULT_DIAL_CODE } from "../constants/arabCountries";
@@ -212,14 +213,15 @@ const Register = () => {
 
   const regionNames = useMemo(() => {
     try {
-      return new Intl.DisplayNames([locale === "en" ? "en" : "ar"], { type: "region" });
+      return new Intl.DisplayNames([pickIntlTag(locale, { ar: "ar", en: "en" })], { type: "region" });
     } catch {
       return null;
     }
   }, [locale]);
 
   const countryLabel = (code, nameAr) => {
-    if (locale === "en" && regionNames) {
+    // Arabic keeps the curated Arabic names; Latin-script locales use Intl region names.
+    if (isLatinUiLocale(locale) && regionNames) {
       return regionNames.of(code) || nameAr;
     }
     return nameAr;

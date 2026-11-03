@@ -1,4 +1,5 @@
 import { extractYoutubePlaylistId, extractYoutubeVideoId } from "./youtubeSourceUtils";
+import { pickIntlTag } from "../../i18n/intlLocale.js";
 
 export function fileNameFromUrl(url, t) {
   const raw = String(url || "").trim();
@@ -103,7 +104,7 @@ export function formatAssetDate(iso, locale = "ar") {
   try {
     const d = new Date(iso);
     if (Number.isNaN(d.getTime())) return null;
-    const loc = locale === "en" ? "en-JO-u-nu-latn" : "ar-JO-u-nu-latn";
+    const loc = pickIntlTag(locale, { ar: "ar-JO-u-nu-latn", en: "en-JO-u-nu-latn" });
     return d.toLocaleString(loc, { dateStyle: "medium", timeStyle: "short" });
   } catch {
     return null;

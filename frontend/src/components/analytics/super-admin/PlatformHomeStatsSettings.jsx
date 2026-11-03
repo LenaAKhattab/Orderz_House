@@ -1,16 +1,18 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "../../../i18n/LanguageProvider";
 import "../../../i18n/opsAdminResources";
+import { pickIntlTag } from "../../../i18n/intlLocale";
 import { getPublicHomeStatsRequest } from "../../../services/api";
 import HomeMetricsHelpCollapsible from "./HomeMetricsHelpCollapsible";
 
-function formatPreviewNumber(value) {
+function formatPreviewNumber(value, locale) {
   if (value == null || Number.isNaN(Number(value))) return "—";
-  return new Intl.NumberFormat("ar-JO-u-nu-latn").format(Math.trunc(Number(value)));
+  const tag = pickIntlTag(locale, { ar: "ar-JO-u-nu-latn", en: "ar-JO-u-nu-latn" });
+  return new Intl.NumberFormat(tag).format(Math.trunc(Number(value)));
 }
 
 function HomeStatsPreview({ showVisitors, showActiveUsers, visitors, activeUsers, loading }) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const hp = "opsAdmin.homePublicStats";
   const hasAny = showVisitors || showActiveUsers;
 
@@ -23,13 +25,13 @@ function HomeStatsPreview({ showVisitors, showActiveUsers, visitors, activeUsers
         <div className="sa-home-preview__row">
           {showVisitors ? (
             <div className="sa-home-preview__metric sa-home-preview__metric--visitors">
-              <span className="sa-home-preview__value">{loading ? "…" : formatPreviewNumber(visitors)}</span>
+              <span className="sa-home-preview__value">{loading ? "…" : formatPreviewNumber(visitors, locale)}</span>
               <span className="sa-home-preview__label">{t("home.metrics.views")}</span>
             </div>
           ) : null}
           {showActiveUsers ? (
             <div className="sa-home-preview__metric sa-home-preview__metric--active">
-              <span className="sa-home-preview__value">{loading ? "…" : formatPreviewNumber(activeUsers)}</span>
+              <span className="sa-home-preview__value">{loading ? "…" : formatPreviewNumber(activeUsers, locale)}</span>
               <span className="sa-home-preview__label">{t("home.metrics.activeUsers")}</span>
             </div>
           ) : null}

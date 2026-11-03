@@ -1,35 +1,50 @@
 /** Provisional product copy — not counsel-approved legal text. */
+import { ct, ctAr, ctFromEnFlag, newLocaleRegionName } from "./constantsI18n.js";
+
 export const ORDERZHOUSE_BILDAZO_AUTHOR_TERMS_VERSION = "2026-08-18-v1";
 
-export const ORDERZHOUSE_BILDAZO_AUTHOR_TERMS_COPY_AR =
-  "أوافق على شروط نشر المقالات وربطها بحساب الكاتب في Bildazo، وأقر بأن المقال المقبول قد يتم إرساله للمراجعة والنشر على Bildazo باسمي.";
+/** Arabic terms copy (catalog: platformConstants.bildazoAuthorTerms.termsCopy). */
+export const ORDERZHOUSE_BILDAZO_AUTHOR_TERMS_COPY_AR = ctAr("bildazoAuthorTerms.termsCopy");
 
 export const BILDAZO_AUTHOR_LINK_FLOWS = Object.freeze({
   NEW_ACCOUNT: "new_account",
   EXISTING_ACCOUNT: "existing_account",
 });
 
-export const BILDAZO_WRITER_ROLE_LABEL_AR = "كاتب";
+/** Arabic writer role label (catalog: platformConstants.bildazoAuthorTerms.writerRole). */
+export const BILDAZO_WRITER_ROLE_LABEL_AR = ctAr("bildazoAuthorTerms.writerRole");
 
-export const BILDAZO_AUTHOR_COUNTRIES = Object.freeze([
-  { iso: "JO", labelAr: "الأردن" },
-  { iso: "SA", labelAr: "السعودية" },
-  { iso: "AE", labelAr: "الإمارات" },
-  { iso: "EG", labelAr: "مصر" },
-  { iso: "IQ", labelAr: "العراق" },
-  { iso: "PS", labelAr: "فلسطين" },
-  { iso: "KW", labelAr: "الكويت" },
-  { iso: "QA", labelAr: "قطر" },
-  { iso: "BH", labelAr: "البحرين" },
-  { iso: "OM", labelAr: "عُمان" },
-  { iso: "LB", labelAr: "لبنان" },
-  { iso: "SY", labelAr: "سوريا" },
-  { iso: "YE", labelAr: "اليمن" },
-  { iso: "LY", labelAr: "ليبيا" },
-  { iso: "TN", labelAr: "تونس" },
-  { iso: "DZ", labelAr: "الجزائر" },
-  { iso: "MA", labelAr: "المغرب" },
-]);
+/** Arabic country names by ISO code; `labelAr` resolves to Intl.DisplayNames for de / nl / ro. */
+const BILDAZO_AUTHOR_COUNTRY_ENTRIES = [
+  { iso: "JO", nameAr: "الأردن" },
+  { iso: "SA", nameAr: "السعودية" },
+  { iso: "AE", nameAr: "الإمارات" },
+  { iso: "EG", nameAr: "مصر" },
+  { iso: "IQ", nameAr: "العراق" },
+  { iso: "PS", nameAr: "فلسطين" },
+  { iso: "KW", nameAr: "الكويت" },
+  { iso: "QA", nameAr: "قطر" },
+  { iso: "BH", nameAr: "البحرين" },
+  { iso: "OM", nameAr: "عُمان" },
+  { iso: "LB", nameAr: "لبنان" },
+  { iso: "SY", nameAr: "سوريا" },
+  { iso: "YE", nameAr: "اليمن" },
+  { iso: "LY", nameAr: "ليبيا" },
+  { iso: "TN", nameAr: "تونس" },
+  { iso: "DZ", nameAr: "الجزائر" },
+  { iso: "MA", nameAr: "المغرب" },
+];
+
+export const BILDAZO_AUTHOR_COUNTRIES = Object.freeze(
+  BILDAZO_AUTHOR_COUNTRY_ENTRIES.map(({ iso, nameAr }) =>
+    Object.freeze({
+      iso,
+      get labelAr() {
+        return newLocaleRegionName(iso) || nameAr;
+      },
+    }),
+  ),
+);
 
 export function emailsMatch(a, b) {
   const x = String(a || "").trim().toLowerCase();
@@ -45,35 +60,37 @@ export function hasExistingAccountIdentifier(payload) {
   );
 }
 
+/** Without `t`: catalog fallback in the non-English UI locale (Arabic, or de / nl / ro) — as before for AR / EN. */
+function validationMessage(t, key) {
+  return typeof t === "function" ? t(`articles.bildazoGate.errors.${key}`) : ct(`bildazoAuthorTerms.errors.${key}`);
+}
+
 export function validateBildazoPasswordPair(password, confirm, t) {
-  const msg = (key, ar) => (typeof t === "function" ? t(key) : ar);
+  const msg = (key) => validationMessage(t, key);
   const p = String(password || "");
   if (p.length < 8 || !/[A-Za-z\u0600-\u06FF]/.test(p) || !/\d/.test(p)) {
-    return msg(
-      "articles.bildazoGate.errors.passwordWeak",
-      "كلمة المرور يجب أن تكون 8 أحرف على الأقل وتتضمن حرفًا ورقمًا.",
-    );
+    return msg("passwordWeak");
   }
   if (confirm != null && String(confirm) !== p) {
-    return msg("articles.bildazoGate.errors.passwordMismatch", "تأكيد كلمة المرور غير مطابق.");
+    return msg("passwordMismatch");
   }
   return null;
 }
 
 export function validateBildazoAuthorLinkForm({ flow, payload, termsChecked, t }) {
-  const msg = (key, ar) => (typeof t === "function" ? t(key) : ar);
-  if (!termsChecked) return msg("articles.bildazoGate.errors.terms", "يجب الموافقة على شروط ربط حساب الكاتب.");
+  const msg = (key) => validationMessage(t, key);
+  if (!termsChecked) return msg("terms");
   if (flow === BILDAZO_AUTHOR_LINK_FLOWS.NEW_ACCOUNT) {
     if (String(payload?.fullName || "").trim().length < 3) {
-      return msg("articles.bildazoGate.errors.fullName", "الاسم الكامل مطلوب لإنشاء حساب الكاتب.");
+      return msg("fullName");
     }
     return validateBildazoPasswordPair(payload?.password, payload?.passwordConfirm, t);
   }
   if (!String(payload?.existingBildazoEmail || "").trim()) {
-    return msg("articles.bildazoGate.errors.existingCredentials", "أدخل بريد حساب Bildazo وكلمة المرور.");
+    return msg("existingCredentials");
   }
   if (!String(payload?.password || "").trim()) {
-    return msg("articles.bildazoGate.errors.existingCredentials", "أدخل بريد حساب Bildazo وكلمة المرور.");
+    return msg("existingCredentials");
   }
   return null;
 }
@@ -82,44 +99,18 @@ export function isBildazoAuthorLinked(link) {
   return String(link?.status || "") === "linked";
 }
 
+/** Without `t`: catalog fallback (English when `isEn`, otherwise Arabic or the active de / nl / ro locale). */
 export function bildazoLinkFailureMessage(link, isEn = false, t) {
   const code = String(link?.failureCode || "");
-  const pick = (key, ar, en) => (typeof t === "function" ? t(key) : isEn ? en : ar);
-  if (code === "INVALID_CREDENTIALS") {
-    return pick(
-      "articles.bildazoGate.failures.INVALID_CREDENTIALS",
-      "تعذر التحقق من حساب Bildazo. تأكد من البريد وكلمة المرور.",
-      "Could not verify the Bildazo account. Check the email and password.",
-    );
-  }
-  if (code === "ACCOUNT_UNAVAILABLE") {
-    return pick(
-      "articles.bildazoGate.failures.ACCOUNT_UNAVAILABLE",
-      "لا يمكن ربط حساب Bildazo هذا حالياً.",
-      "This Bildazo account cannot be linked right now.",
-    );
-  }
-  if (code === "ENDPOINT_UNAVAILABLE" || code === "CONFIG_MISSING") {
-    return pick(
-      "articles.bildazoGate.failures.ENDPOINT_UNAVAILABLE",
-      "خدمة ربط Bildazo غير متاحة مؤقتاً. أعد المحاولة لاحقاً.",
-      "Bildazo linking is temporarily unavailable. Try again later.",
-    );
-  }
-  if (code === "TIMEOUT" || code === "NETWORK") {
-    return pick(
-      "articles.bildazoGate.failures.TIMEOUT",
-      "تعذر الوصول إلى Bildazo. تحقق من الاتصال ثم أعد المحاولة.",
-      "Could not reach Bildazo. Check your connection and try again.",
-    );
-  }
-  if (String(link?.status || "") === "failed") {
-    return pick(
-      "articles.bildazoGate.failures.failed",
-      "تعذر إكمال الربط مع Bildazo. أعد المحاولة.",
-      "Could not complete the Bildazo link. Try again.",
-    );
-  }
+  const pick = (key) =>
+    typeof t === "function"
+      ? t(`articles.bildazoGate.failures.${key}`)
+      : ctFromEnFlag(`bildazoAuthorTerms.failures.${key}`, isEn);
+  if (code === "INVALID_CREDENTIALS") return pick("INVALID_CREDENTIALS");
+  if (code === "ACCOUNT_UNAVAILABLE") return pick("ACCOUNT_UNAVAILABLE");
+  if (code === "ENDPOINT_UNAVAILABLE" || code === "CONFIG_MISSING") return pick("ENDPOINT_UNAVAILABLE");
+  if (code === "TIMEOUT" || code === "NETWORK") return pick("TIMEOUT");
+  if (String(link?.status || "") === "failed") return pick("failed");
   return "";
 }
 

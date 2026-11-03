@@ -1,0 +1,23 @@
+{
+  "title": "Ștergeți contul Orderz House",
+  "intro": "Puteți solicita ștergerea contului Orderz House și a datelor personale asociate direct din aplicația mobilă, accesând:",
+  "inAppPath": "Contul meu → Setări cont → Ștergere cont",
+  "fallbackIntro": "Dacă nu mai puteți accesa aplicația, puteți solicita ștergerea contului prin e-mail, la adresa de mai jos.",
+  "whatHappensTitle": "Ce se întâmplă când un cont este șters?",
+  "bullets": {
+    "deactivate": "Contul este dezactivat, iar conectarea este blocată.",
+    "personalData": "Datele personale care nu sunt necesare, precum numărul de telefon și fotografia de profil, sunt șterse sau ascunse atunci când este posibil.",
+    "retention": "Putem păstra anumite înregistrări legate de comenzi, plăți, dispute, facturi sau cerințe legale/operaționale, în scopuri de securitate, prevenire a fraudei, conformitate legală și contabilitate.",
+    "ordersPayments": "Comenzile și plățile nu sunt șterse într-un mod care să afecteze clienții, freelancerii sau evidențele financiare."
+  },
+  "howToTitle": "Cum solicitați ștergerea contului",
+  "howToBody": "Trimiteți un e-mail la adresa de mai jos, menționați adresa de e-mail asociată contului și scrieți fraza:",
+  "requestPhrase": "Cerere de ștergere a contului Orderz House",
+  "supportEmail": "support@orderzhouse.com",
+  "ctaMailto": "Solicitați ștergerea contului prin e-mail",
+  "privacyLink": "Consultați și Politica noastră de confidențialitate",
+  "homeLink": "Înapoi la pagina principală",
+  "privacyAppendixTitle": "Ștergerea contului și păstrarea datelor",
+  "privacyAppendixBody": "Puteți solicita ștergerea contului Orderz House din aplicația mobilă sau prin pagina noastră publică de ștergere a contului. Ștergerea dezactivează contul și elimină sau ascunde, acolo unde este posibil, datele personale care nu sunt necesare, însă înregistrările privind comenzile, plățile și cele impuse de lege pot fi păstrate.",
+  "privacyAppendixLink": "Ștergerea contului / pagina pentru cereri de ștergere"
+}
