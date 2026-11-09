@@ -328,21 +328,25 @@ async function assertAssignableFreelancer({ freelancerUserId }, client) {
   if (!snap) {
     const err = new Error("Freelancer not found.");
     err.statusCode = 404;
+    err.assigneeReason = "not_found";
     throw err;
   }
   if (!snap.isFreelancer) {
     const err = new Error("Assigned user must be a freelancer.");
     err.statusCode = 400;
+    err.assigneeReason = "not_freelancer";
     throw err;
   }
   if (!snap.isActive) {
     const err = new Error("Assigned freelancer account is disabled.");
     err.statusCode = 400;
+    err.assigneeReason = "inactive";
     throw err;
   }
   if (!snap.emailVerified) {
     const err = new Error("Assigned freelancer email is not verified.");
     err.statusCode = 400;
+    err.assigneeReason = "email_unverified";
     throw err;
   }
 
@@ -350,6 +354,7 @@ async function assertAssignableFreelancer({ freelancerUserId }, client) {
   if (!eligibility.eligible && !ALLOW_ADMIN_ASSIGN_TO_INACTIVE_FREELANCERS) {
     const err = new Error("Assigned freelancer must have an active subscription.");
     err.statusCode = 400;
+    err.assigneeReason = "not_eligible";
     throw err;
   }
   return true;
@@ -723,6 +728,350 @@ async function getOrderById(orderId, client) {
   };
 }
 
+/**
+ * Canonical internal-order creation body. Runs inside the CALLER's open transaction on `client`
+ * (no BEGIN/COMMIT/ROLLBACK here) so other domains (e.g. external order intake approval) can
+ * create the canonical order atomically with their own rows.
+ *
+ * Returns `{ existingOrderId }` for an institutional replay, otherwise `{ orderRow }`.
+ * Objects uploaded here are pushed into `uploadedForRollback`; the caller discards them on rollback.
+ * Notifications created here are savepoint-isolated and dispatched only after the caller's COMMIT.
+ * The caller is responsible for post-commit work (e.g. scheduleRealOrderTranslation).
+ */
+async function createInternalOrderInTransaction(
+  client,
+  { actorUserId, actorRole, payload, uploadedFiles = [], options = {}, uploadedForRollback = [] },
+) {
+  const createdByRole = actorRole === "super_admin" ? "super_admin" : "admin";
+  const sourceType = createdByRole === "super_admin" ? "super_admin_created" : "admin_created";
+  const assignedFreelancerId = payload.assignedFreelancerId ? Number(payload.assignedFreelancerId) : null;
+  const wantsArchive = Boolean(payload.archive);
+  const visibilityScope = options.visibilityScope === "institution" ? "institution" : "public";
+  const skipFreelancerBroadcast = Boolean(options.skipFreelancerBroadcast) || visibilityScope === "institution";
+  const institutionalStorageId =
+    options.institutionalStorageId != null ? Number(options.institutionalStorageId) : null;
+  const institutionalStoredOrderId =
+    options.institutionalStoredOrderId != null ? Number(options.institutionalStoredOrderId) : null;
+  const institutionIdOpt =
+    options.institutionId != null && options.institutionId !== ""
+      ? Number(options.institutionId)
+      : null;
+  const institutionId =
+    Number.isInteger(institutionIdOpt) && institutionIdOpt > 0 ? institutionIdOpt : null;
+
+  if (Number.isInteger(institutionalStoredOrderId) && institutionalStoredOrderId > 0) {
+    const { rows: existingInst } = await client.query(
+      `SELECT id FROM orders WHERE institutional_stored_order_id = $1 ORDER BY id ASC LIMIT 1`,
+      [institutionalStoredOrderId],
+    );
+    if (existingInst[0]) {
+      return { existingOrderId: existingInst[0].id };
+    }
+  }
+
+  const chainResult = await assertCategoryChain(
+    {
+      categoryId: payload.categoryId,
+      subcategoryId: payload.subcategoryId || null,
+      subSubcategoryId: payload.subSubcategoryId || null,
+    },
+    client,
+  );
+
+  const effectiveSubcategoryId =
+    payload.subcategoryId || (chainResult && typeof chainResult === "object" ? chainResult.inferredSubcategoryId : null);
+
+  if (assignedFreelancerId) {
+    await assertAssignableFreelancer({ freelancerUserId: assignedFreelancerId }, client);
+  }
+
+  let orderCode = String(payload.orderCode || "").trim();
+  if (!orderCode) {
+    orderCode = await generateUniqueOrderCode(client);
+  }
+  const { rowCount: codeExists } = await client.query(`SELECT 1 FROM orders WHERE order_code = $1`, [orderCode]);
+  if (codeExists > 0) {
+    const err = new Error("Order code already exists.");
+    err.statusCode = 409;
+    throw err;
+  }
+  const isAssigned = Boolean(assignedFreelancerId);
+  // Official assignment moment (تاريخ الاستلام) for direct admin assignment.
+  const receivedAt = isAssigned ? new Date() : null;
+  const startedAt = receivedAt;
+  const dueAt = receivedAt ? computeDueAt(receivedAt, payload.durationValue, payload.durationUnit) : null;
+  const shouldArchive = !isAssigned && wantsArchive;
+  const isPublished = shouldArchive ? false : true;
+  const isOpenForPool = isAssigned ? false : !shouldArchive;
+  const isBidding = payload.projectType === "bidding";
+  /** Internal pool: fixed → published (claim); bidding → open_for_bids (priced bids only; min/max validated). */
+  let orderStatus;
+  if (isAssigned) {
+    orderStatus = ORDER_STATUSES.IN_PROGRESS;
+  } else if (shouldArchive) {
+    orderStatus = ORDER_STATUSES.DRAFT;
+  } else if (isBidding) {
+    orderStatus = ORDER_STATUSES.OPEN_FOR_BIDS;
+  } else {
+    orderStatus = ORDER_STATUSES.PUBLISHED;
+  }
+
+  const extraCategoryIds = Array.isArray(payload.extraCategoryIds)
+    ? payload.extraCategoryIds.map((x) => Number(x)).filter((n) => Number.isInteger(n) && n > 0)
+    : [];
+  // Don't duplicate the primary category and cap to 10.
+  const extraCategoryIdsSafe = extraCategoryIds.filter((n) => n !== Number(payload.categoryId)).slice(0, 10);
+
+  const extraDetailsRaw =
+    payload.extraCategoryDetails && typeof payload.extraCategoryDetails === "object" ? payload.extraCategoryDetails : {};
+  const extraCategoryDetailsSafe = {};
+  for (const catId of extraCategoryIdsSafe) {
+    const raw = extraDetailsRaw[String(catId)];
+    if (raw === undefined || raw === null || raw === "") continue; // optional
+    const ssId = Number(raw);
+    if (!Number.isInteger(ssId) || ssId < 1) continue;
+    // Validate the detailed sub-subcategory belongs to the category chain.
+    await assertCategoryChain({ categoryId: catId, subcategoryId: null, subSubcategoryId: ssId }, client);
+    extraCategoryDetailsSafe[String(catId)] = String(ssId);
+  }
+
+  let bidMinIns = null;
+  let bidMaxIns = null;
+  let budgetIns = null;
+  let currencyIns = "JOD";
+  if (!isBidding) {
+    budgetIns = Number(payload.budget);
+    currencyIns = "JOD";
+  } else {
+    const bm = payload.bidBudgetMin != null ? Number(payload.bidBudgetMin) : NaN;
+    const bx = payload.bidBudgetMax != null ? Number(payload.bidBudgetMax) : NaN;
+    if (!Number.isFinite(bm) || !Number.isFinite(bx) || bm <= 0 || bx < bm) {
+      const err = new Error("Bidding projects require valid bidBudgetMin and bidBudgetMax (max >= min > 0).");
+      err.statusCode = 400;
+      throw err;
+    }
+    bidMinIns = bm;
+    bidMaxIns = bx;
+    currencyIns = "JOD";
+  }
+
+  const { rows } = await client.query(
+    `INSERT INTO orders (
+      order_code, title, description,
+      category_id, subcategory_id,
+      sub_subcategory_id,
+      extra_category_ids,
+      extra_category_details,
+      project_type, budget, currency_code, duration_value, duration_unit,
+      created_by_user_id, created_by_role, source_type,
+      assigned_freelancer_id,
+      is_direct_admin_assignment,
+      received_at, started_at, due_at,
+      is_published, is_open_for_pool,
+      is_archived,
+      payment_required, payment_status,
+      order_status,
+      bid_budget_min, bid_budget_max,
+      visibility_scope,
+      institutional_storage_id,
+      institutional_stored_order_id,
+      institution_id
+    ) VALUES (
+      $1,$2,$3,
+      $4,$5,
+      $6,
+      $7,
+      $8,
+      $9,$10,$11,$12,$13,
+      $14,$15,$16,
+      $17,
+      $18,
+      $19,$20,$21,
+      $22,$23,
+      $24,
+      FALSE,'not_required',
+      $25,
+      $26, $27,
+      $28, $29, $30, $31
+    )
+    RETURNING *`,
+    [
+      orderCode,
+      payload.title,
+      payload.description,
+      Number(payload.categoryId),
+      effectiveSubcategoryId ? Number(effectiveSubcategoryId) : null,
+      payload.subSubcategoryId ? Number(payload.subSubcategoryId) : null,
+      extraCategoryIdsSafe,
+      extraCategoryDetailsSafe,
+      payload.projectType,
+      budgetIns,
+      currencyIns,
+      Number(payload.durationValue),
+      payload.durationUnit,
+      Number(actorUserId),
+      createdByRole,
+      sourceType,
+      assignedFreelancerId,
+      isAssigned,
+      receivedAt,
+      startedAt,
+      dueAt,
+      isPublished,
+      isOpenForPool,
+      shouldArchive,
+      orderStatus,
+      bidMinIns,
+      bidMaxIns,
+      visibilityScope,
+      Number.isInteger(institutionalStorageId) && institutionalStorageId > 0
+        ? institutionalStorageId
+        : null,
+      Number.isInteger(institutionalStoredOrderId) && institutionalStoredOrderId > 0
+        ? institutionalStoredOrderId
+        : null,
+      institutionId,
+    ],
+  );
+
+  let orderRow = rows[0];
+
+  // Phase E3: snapshot Admin-constrained Normal Order rules onto published bidding Orders.
+  {
+    const e3 = require("./marketplaceNormalOrderRulesService");
+    if (
+      isBidding &&
+      !isAssigned &&
+      isPublished &&
+      (await e3.normalOrderRulesSchemaReady(client))
+    ) {
+      const rules = await e3.getNormalOrderRules(client);
+      const snap = e3.buildOrderRulesSnapshotForCreate({
+        payload,
+        rules,
+        projectType: payload.projectType,
+        isBidding: true,
+      });
+      const { rows: e3Rows } = await client.query(
+        `UPDATE orders
+            SET application_bid_cost = $2,
+                target_applicant_count = $3,
+                application_deadline_at = $4::timestamptz,
+                deadline_incomplete_target_policy = $5,
+                e3_rules_version = $6,
+                e3_rules_snapshot = $7::jsonb,
+                updated_at = NOW()
+          WHERE id = $1
+          RETURNING *`,
+        [
+          orderRow.id,
+          snap.applicationBidCost,
+          snap.targetApplicantCount,
+          snap.applicationDeadlineAt,
+          snap.deadlineIncompleteTargetPolicy,
+          snap.e3RulesVersion,
+          JSON.stringify(snap.e3RulesSnapshot || {}),
+        ],
+      );
+      if (e3Rows[0]) orderRow = e3Rows[0];
+    }
+  }
+
+  await upsertSkillsAndAttach({ orderId: orderRow.id, skills: payload.preferredSkills }, client);
+
+  const preparedFiles = await uploadFilesToCloudinary({
+    orderId: orderRow.id,
+    files: uploadedFiles,
+    purpose: "brief",
+  });
+  uploadedForRollback.push(...preparedFiles);
+  await attachFiles({ orderId: orderRow.id, actorUserId, files: preparedFiles }, client);
+
+  if (assignedFreelancerId) {
+    // Phase 7.1: direct admin/partner assignment counts as effective work history
+    {
+      const fairDist = require("./marketplaceFairDistributionService");
+      await fairDist.recordAwarded({
+        client,
+        order: orderRow,
+        freelancerUserId: assignedFreelancerId,
+        reason: "direct_admin_assignment",
+        actorRole: actorRole || "admin",
+        actorUserId,
+      });
+      await fairDist.recordEffectiveAssignment({
+        client,
+        order: orderRow,
+        freelancerUserId: assignedFreelancerId,
+        reason: "direct_admin_assignment",
+        actorRole: actorRole || "admin",
+        actorUserId,
+      });
+    }
+    await safeNotify(() =>
+      notificationService.createIfNotExists(
+        {
+          recipientUserId: Number(assignedFreelancerId),
+          recipientRole: "freelancer",
+          actorUserId: Number(actorUserId),
+          type: "order.freelancer.assigned",
+          title: "تم إسناد مشروع لك",
+          message: "تم إسناد مشروع جديد لك مباشرة من الإدارة.",
+          entityType: "order",
+          entityId: Number(orderRow.id),
+          link: `/dashboard/freelancer/my-orders/${encodeURIComponent(String(orderRow.id))}`,
+          priority: "high",
+          metadata: { orderId: String(orderRow.id), source: "admin_direct_assignment" },
+        },
+        `freelancer_assigned_${String(orderRow.id)}`,
+        client,
+      ),
+    );
+  }
+  if (!assignedFreelancerId && !shouldArchive && !skipFreelancerBroadcast) {
+    await safeNotify(async () => {
+      const freelancerIds = await notificationEventsService.getRoleUserIds(["freelancer"], client);
+      await notificationEventsService.notifyUsers(
+        {
+          userIds: freelancerIds,
+          recipientRole: "freelancer",
+          actorUserId: Number(actorUserId),
+          type: "order.created",
+          title: "مشروع جديد متاح في الطلبات",
+          message: "تم نشر مشروع جديد ويمكنك التقديم عليه.",
+          entityType: "order",
+          entityId: Number(orderRow.id),
+          link: `/dashboard/freelancer/orders/${encodeURIComponent(String(orderRow.id))}`,
+          priority: "medium",
+          metadata: { orderId: String(orderRow.id), sourceType: sourceType },
+          dedupeKey: `order_created_pool_${String(orderRow.id)}`,
+        },
+        client,
+      );
+    });
+  }
+
+  // Phase 6: automatic Priority Auction when REAL priced-bidding Order becomes Freelancer-visible.
+  // Engines OFF → safe no-op. Idempotent; one auction lifetime per order.
+  if (
+    isBidding &&
+    isPublished &&
+    isOpenForPool &&
+    !assignedFreelancerId &&
+    orderStatus === ORDER_STATUSES.OPEN_FOR_BIDS
+  ) {
+    const priorityAuctionService = require("./marketplacePriorityAuctionService");
+    await priorityAuctionService.maybeCreatePriorityAuctionOnPricedBiddingOpen({
+      orderId: orderRow.id,
+      actorUserId,
+      client,
+      orderRow,
+    });
+  }
+
+  return { orderRow };
+}
+
 async function createInternalOrder({ actorUserId, actorRole, payload, uploadedFiles = [], options = {} }) {
   const client = await pool.connect();
   // Objects uploaded inside this transaction; deleted again if it rolls back (no orphaned objects).
@@ -730,334 +1079,19 @@ async function createInternalOrder({ actorUserId, actorRole, payload, uploadedFi
   let committed = false;
   try {
     await client.query("BEGIN");
-
-    const createdByRole = actorRole === "super_admin" ? "super_admin" : "admin";
-    const sourceType = createdByRole === "super_admin" ? "super_admin_created" : "admin_created";
-    const assignedFreelancerId = payload.assignedFreelancerId ? Number(payload.assignedFreelancerId) : null;
-    const wantsArchive = Boolean(payload.archive);
-    const visibilityScope = options.visibilityScope === "institution" ? "institution" : "public";
-    const skipFreelancerBroadcast = Boolean(options.skipFreelancerBroadcast) || visibilityScope === "institution";
-    const institutionalStorageId =
-      options.institutionalStorageId != null ? Number(options.institutionalStorageId) : null;
-    const institutionalStoredOrderId =
-      options.institutionalStoredOrderId != null ? Number(options.institutionalStoredOrderId) : null;
-    const institutionIdOpt =
-      options.institutionId != null && options.institutionId !== ""
-        ? Number(options.institutionId)
-        : null;
-    const institutionId =
-      Number.isInteger(institutionIdOpt) && institutionIdOpt > 0 ? institutionIdOpt : null;
-
-    if (Number.isInteger(institutionalStoredOrderId) && institutionalStoredOrderId > 0) {
-      const { rows: existingInst } = await client.query(
-        `SELECT id FROM orders WHERE institutional_stored_order_id = $1 ORDER BY id ASC LIMIT 1`,
-        [institutionalStoredOrderId],
-      );
-      if (existingInst[0]) {
-        await client.query("COMMIT");
-        return await getOrderById(existingInst[0].id);
-      }
-    }
-
-    const chainResult = await assertCategoryChain(
-      {
-        categoryId: payload.categoryId,
-        subcategoryId: payload.subcategoryId || null,
-        subSubcategoryId: payload.subSubcategoryId || null,
-      },
-      client,
-    );
-
-    const effectiveSubcategoryId =
-      payload.subcategoryId || (chainResult && typeof chainResult === "object" ? chainResult.inferredSubcategoryId : null);
-
-    if (assignedFreelancerId) {
-      await assertAssignableFreelancer({ freelancerUserId: assignedFreelancerId }, client);
-    }
-
-    let orderCode = String(payload.orderCode || "").trim();
-    if (!orderCode) {
-      orderCode = await generateUniqueOrderCode(client);
-    }
-    const { rowCount: codeExists } = await client.query(`SELECT 1 FROM orders WHERE order_code = $1`, [orderCode]);
-    if (codeExists > 0) {
-      const err = new Error("Order code already exists.");
-      err.statusCode = 409;
-      throw err;
-    }
-    const isAssigned = Boolean(assignedFreelancerId);
-    // Official assignment moment (تاريخ الاستلام) for direct admin assignment.
-    const receivedAt = isAssigned ? new Date() : null;
-    const startedAt = receivedAt;
-    const dueAt = receivedAt ? computeDueAt(receivedAt, payload.durationValue, payload.durationUnit) : null;
-    const shouldArchive = !isAssigned && wantsArchive;
-    const isPublished = shouldArchive ? false : true;
-    const isOpenForPool = isAssigned ? false : !shouldArchive;
-    const isBidding = payload.projectType === "bidding";
-    /** Internal pool: fixed → published (claim); bidding → open_for_bids (priced bids only; min/max validated). */
-    let orderStatus;
-    if (isAssigned) {
-      orderStatus = ORDER_STATUSES.IN_PROGRESS;
-    } else if (shouldArchive) {
-      orderStatus = ORDER_STATUSES.DRAFT;
-    } else if (isBidding) {
-      orderStatus = ORDER_STATUSES.OPEN_FOR_BIDS;
-    } else {
-      orderStatus = ORDER_STATUSES.PUBLISHED;
-    }
-
-    const extraCategoryIds = Array.isArray(payload.extraCategoryIds)
-      ? payload.extraCategoryIds.map((x) => Number(x)).filter((n) => Number.isInteger(n) && n > 0)
-      : [];
-    // Don't duplicate the primary category and cap to 10.
-    const extraCategoryIdsSafe = extraCategoryIds.filter((n) => n !== Number(payload.categoryId)).slice(0, 10);
-
-    const extraDetailsRaw =
-      payload.extraCategoryDetails && typeof payload.extraCategoryDetails === "object" ? payload.extraCategoryDetails : {};
-    const extraCategoryDetailsSafe = {};
-    for (const catId of extraCategoryIdsSafe) {
-      const raw = extraDetailsRaw[String(catId)];
-      if (raw === undefined || raw === null || raw === "") continue; // optional
-      const ssId = Number(raw);
-      if (!Number.isInteger(ssId) || ssId < 1) continue;
-      // Validate the detailed sub-subcategory belongs to the category chain.
-      await assertCategoryChain({ categoryId: catId, subcategoryId: null, subSubcategoryId: ssId }, client);
-      extraCategoryDetailsSafe[String(catId)] = String(ssId);
-    }
-
-    let bidMinIns = null;
-    let bidMaxIns = null;
-    let budgetIns = null;
-    let currencyIns = "JOD";
-    if (!isBidding) {
-      budgetIns = Number(payload.budget);
-      currencyIns = "JOD";
-    } else {
-      const bm = payload.bidBudgetMin != null ? Number(payload.bidBudgetMin) : NaN;
-      const bx = payload.bidBudgetMax != null ? Number(payload.bidBudgetMax) : NaN;
-      if (!Number.isFinite(bm) || !Number.isFinite(bx) || bm <= 0 || bx < bm) {
-        const err = new Error("Bidding projects require valid bidBudgetMin and bidBudgetMax (max >= min > 0).");
-        err.statusCode = 400;
-        throw err;
-      }
-      bidMinIns = bm;
-      bidMaxIns = bx;
-      currencyIns = "JOD";
-    }
-
-    const { rows } = await client.query(
-      `INSERT INTO orders (
-        order_code, title, description,
-        category_id, subcategory_id,
-        sub_subcategory_id,
-        extra_category_ids,
-        extra_category_details,
-        project_type, budget, currency_code, duration_value, duration_unit,
-        created_by_user_id, created_by_role, source_type,
-        assigned_freelancer_id,
-        is_direct_admin_assignment,
-        received_at, started_at, due_at,
-        is_published, is_open_for_pool,
-        is_archived,
-        payment_required, payment_status,
-        order_status,
-        bid_budget_min, bid_budget_max,
-        visibility_scope,
-        institutional_storage_id,
-        institutional_stored_order_id,
-        institution_id
-      ) VALUES (
-        $1,$2,$3,
-        $4,$5,
-        $6,
-        $7,
-        $8,
-        $9,$10,$11,$12,$13,
-        $14,$15,$16,
-        $17,
-        $18,
-        $19,$20,$21,
-        $22,$23,
-        $24,
-        FALSE,'not_required',
-        $25,
-        $26, $27,
-        $28, $29, $30, $31
-      )
-      RETURNING *`,
-      [
-        orderCode,
-        payload.title,
-        payload.description,
-        Number(payload.categoryId),
-        effectiveSubcategoryId ? Number(effectiveSubcategoryId) : null,
-        payload.subSubcategoryId ? Number(payload.subSubcategoryId) : null,
-        extraCategoryIdsSafe,
-        extraCategoryDetailsSafe,
-        payload.projectType,
-        budgetIns,
-        currencyIns,
-        Number(payload.durationValue),
-        payload.durationUnit,
-        Number(actorUserId),
-        createdByRole,
-        sourceType,
-        assignedFreelancerId,
-        isAssigned,
-        receivedAt,
-        startedAt,
-        dueAt,
-        isPublished,
-        isOpenForPool,
-        shouldArchive,
-        orderStatus,
-        bidMinIns,
-        bidMaxIns,
-        visibilityScope,
-        Number.isInteger(institutionalStorageId) && institutionalStorageId > 0
-          ? institutionalStorageId
-          : null,
-        Number.isInteger(institutionalStoredOrderId) && institutionalStoredOrderId > 0
-          ? institutionalStoredOrderId
-          : null,
-        institutionId,
-      ],
-    );
-
-    let orderRow = rows[0];
-
-    // Phase E3: snapshot Admin-constrained Normal Order rules onto published bidding Orders.
-    {
-      const e3 = require("./marketplaceNormalOrderRulesService");
-      if (
-        isBidding &&
-        !isAssigned &&
-        isPublished &&
-        (await e3.normalOrderRulesSchemaReady(client))
-      ) {
-        const rules = await e3.getNormalOrderRules(client);
-        const snap = e3.buildOrderRulesSnapshotForCreate({
-          payload,
-          rules,
-          projectType: payload.projectType,
-          isBidding: true,
-        });
-        const { rows: e3Rows } = await client.query(
-          `UPDATE orders
-              SET application_bid_cost = $2,
-                  target_applicant_count = $3,
-                  application_deadline_at = $4::timestamptz,
-                  deadline_incomplete_target_policy = $5,
-                  e3_rules_version = $6,
-                  e3_rules_snapshot = $7::jsonb,
-                  updated_at = NOW()
-            WHERE id = $1
-            RETURNING *`,
-          [
-            orderRow.id,
-            snap.applicationBidCost,
-            snap.targetApplicantCount,
-            snap.applicationDeadlineAt,
-            snap.deadlineIncompleteTargetPolicy,
-            snap.e3RulesVersion,
-            JSON.stringify(snap.e3RulesSnapshot || {}),
-          ],
-        );
-        if (e3Rows[0]) orderRow = e3Rows[0];
-      }
-    }
-
-    await upsertSkillsAndAttach({ orderId: orderRow.id, skills: payload.preferredSkills }, client);
-
-    const preparedFiles = await uploadFilesToCloudinary({
-      orderId: orderRow.id,
-      files: uploadedFiles,
-      purpose: "brief",
+    const created = await createInternalOrderInTransaction(client, {
+      actorUserId,
+      actorRole,
+      payload,
+      uploadedFiles,
+      options,
+      uploadedForRollback,
     });
-    uploadedForRollback.push(...preparedFiles);
-    await attachFiles({ orderId: orderRow.id, actorUserId, files: preparedFiles }, client);
-
-    if (assignedFreelancerId) {
-      // Phase 7.1: direct admin/partner assignment counts as effective work history
-      {
-        const fairDist = require("./marketplaceFairDistributionService");
-        await fairDist.recordAwarded({
-          client,
-          order: orderRow,
-          freelancerUserId: assignedFreelancerId,
-          reason: "direct_admin_assignment",
-          actorRole: actorRole || "admin",
-          actorUserId,
-        });
-        await fairDist.recordEffectiveAssignment({
-          client,
-          order: orderRow,
-          freelancerUserId: assignedFreelancerId,
-          reason: "direct_admin_assignment",
-          actorRole: actorRole || "admin",
-          actorUserId,
-        });
-      }
-      await safeNotify(() =>
-        notificationService.createIfNotExists(
-          {
-            recipientUserId: Number(assignedFreelancerId),
-            recipientRole: "freelancer",
-            actorUserId: Number(actorUserId),
-            type: "order.freelancer.assigned",
-            title: "تم إسناد مشروع لك",
-            message: "تم إسناد مشروع جديد لك مباشرة من الإدارة.",
-            entityType: "order",
-            entityId: Number(orderRow.id),
-            link: `/dashboard/freelancer/my-orders/${encodeURIComponent(String(orderRow.id))}`,
-            priority: "high",
-            metadata: { orderId: String(orderRow.id), source: "admin_direct_assignment" },
-          },
-          `freelancer_assigned_${String(orderRow.id)}`,
-          client,
-        ),
-      );
+    if (created.existingOrderId) {
+      await client.query("COMMIT");
+      return await getOrderById(created.existingOrderId);
     }
-    if (!assignedFreelancerId && !shouldArchive && !skipFreelancerBroadcast) {
-      await safeNotify(async () => {
-        const freelancerIds = await notificationEventsService.getRoleUserIds(["freelancer"], client);
-        await notificationEventsService.notifyUsers(
-          {
-            userIds: freelancerIds,
-            recipientRole: "freelancer",
-            actorUserId: Number(actorUserId),
-            type: "order.created",
-            title: "مشروع جديد متاح في الطلبات",
-            message: "تم نشر مشروع جديد ويمكنك التقديم عليه.",
-            entityType: "order",
-            entityId: Number(orderRow.id),
-            link: `/dashboard/freelancer/orders/${encodeURIComponent(String(orderRow.id))}`,
-            priority: "medium",
-            metadata: { orderId: String(orderRow.id), sourceType: sourceType },
-            dedupeKey: `order_created_pool_${String(orderRow.id)}`,
-          },
-          client,
-        );
-      });
-    }
-
-    // Phase 6: automatic Priority Auction when REAL priced-bidding Order becomes Freelancer-visible.
-    // Engines OFF → safe no-op. Idempotent; one auction lifetime per order.
-    if (
-      isBidding &&
-      isPublished &&
-      isOpenForPool &&
-      !assignedFreelancerId &&
-      orderStatus === ORDER_STATUSES.OPEN_FOR_BIDS
-    ) {
-      const priorityAuctionService = require("./marketplacePriorityAuctionService");
-      await priorityAuctionService.maybeCreatePriorityAuctionOnPricedBiddingOpen({
-        orderId: orderRow.id,
-        actorUserId,
-        client,
-        orderRow,
-      });
-    }
+    const { orderRow } = created;
 
     await client.query("COMMIT");
     committed = true;
@@ -4766,6 +4800,8 @@ module.exports = {
   ORDER_STATUSES,
   mapListOrderRow,
   createInternalOrder,
+  createInternalOrderInTransaction,
+  assertAssignableFreelancer,
   createClientOrder,
   listClientOrders,
   getOrderById,

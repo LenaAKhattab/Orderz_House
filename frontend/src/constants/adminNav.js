@@ -81,6 +81,15 @@ export const ADMIN_NAV_ITEM_DEFS = {
     matchPrefix: "/dashboard/admin/orders",
     permission: ADMIN_PAGE_PERMISSIONS.orders,
   },
+  whatsappOrders: {
+    key: "whatsappOrders",
+    to: "/dashboard/admin/whatsapp-orders",
+    labelKey: "dashboard.whatsappOrders.navLabel",
+    icon: "whatsapp-orders",
+    matchPrefix: "/dashboard/admin/whatsapp-orders",
+    permission: ADMIN_PAGE_PERMISSIONS.orders,
+    badgeKey: "externalIntakesPending",
+  },
   createOrder: {
     key: "createOrder",
     to: "/dashboard/admin/orders/create",
@@ -143,7 +152,7 @@ export const ADMIN_NAV_SECTION_DEFS = [
   {
     id: "ordersOps",
     labelKey: "dashboard.nav.sections.ordersOps",
-    itemKeys: ["internalRequests", "createOrder", "trainingRequests"],
+    itemKeys: ["internalRequests", "whatsappOrders", "createOrder", "trainingRequests"],
   },
   {
     id: "financeAdmin",
@@ -248,6 +257,7 @@ export function adminPageTitle(pathname, t) {
   if (pathname.includes("/identity")) return t("dashboard.nav.admin.identity");
   if (pathname.includes("/membership-activations")) return t("dashboard.nav.admin.membershipActivations");
   if (pathname.includes("/package-assignment")) return t("dashboard.nav.admin.packageAssignment");
+  if (pathname.includes("/whatsapp-orders")) return t("dashboard.whatsappOrders.navLabel");
   if (pathname.includes("/orders/create")) return t("dashboard.breadcrumbs.createInternalRequest");
   if (pathname.includes("/orders")) return t("dashboard.breadcrumbs.internalRequests");
   if (pathname.includes("/pantry")) return t("dashboard.nav.admin.pantry");
@@ -270,6 +280,7 @@ export function adminBreadcrumbKeys(pathname) {
     return [...base, "dashboard.breadcrumbs.membershipActivations"];
   }
   if (pathname.includes("/package-assignment")) return [...base, "dashboard.breadcrumbs.packageAssignment"];
+  if (pathname.includes("/whatsapp-orders")) return [...base, "dashboard.whatsappOrders.navLabel"];
   if (pathname.includes("/orders/create")) {
     return [...base, "dashboard.breadcrumbs.internalRequests", "dashboard.breadcrumbs.createInternalRequest"];
   }

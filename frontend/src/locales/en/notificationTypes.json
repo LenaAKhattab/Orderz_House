@@ -290,6 +290,10 @@
     "user_registered": {
       "title": "Your account was created",
       "message": "Welcome to Orderz House."
+    },
+    "external_order_intake_rejected": {
+      "title": "WhatsApp order not approved",
+      "message": "One of your WhatsApp orders was not approved. See WhatsApp Orders for details."
     }
   }
 }

@@ -6,6 +6,7 @@ import { useAuth } from "../context/useAuth";
 import { useClientCreateOrderModal } from "../context/ClientCreateOrderModalContext";
 import { getAccountSettingsPath, getNotificationsPath } from "../constants/authRoutes";
 import AdminGroupedNavList from "../components/dashboard/AdminGroupedNavList";
+import useExternalIntakePendingCount from "../hooks/useExternalIntakePendingCount";
 import AdminNavIcon from "../components/dashboard/AdminNavIcon";
 import {
   SUPER_ADMIN_NAV_CREATE_ORDER,
@@ -107,6 +108,11 @@ export default function SuperAdminLayout() {
     const sections = filterSuperAdminNavSections(user, userHasPermission);
     return sections.filter((section) => section.items.length > 0 || (section.showCreateOrder && showCreateOrder));
   }, [user, showCreateOrder]);
+  const canSeeWhatsappQueue = navSections.some((section) =>
+    section.items.some((item) => item.badgeKey === "externalIntakesPending"),
+  );
+  const externalIntakesPending = useExternalIntakePendingCount(canSeeWhatsappQueue);
+  const navBadges = useMemo(() => ({ externalIntakesPending }), [externalIntakesPending]);
   const panelTitleKey =
     role === "admin" ? "dashboard.nav.admin.panelTitle" : "dashboard.nav.superAdmin.panelTitle";
 
@@ -158,6 +164,7 @@ export default function SuperAdminLayout() {
                 pathname={pathname}
                 t={t}
                 onNavigate={() => setSidebarOpen(false)}
+                badges={navBadges}
                 renderSectionExtra={(section) =>
                   section.showCreateOrder && showCreateOrder ? (
                     <li>

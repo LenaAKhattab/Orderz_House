@@ -275,6 +275,14 @@
     "UNKNOWN_REORDER_ID": "Die Sortierliste enthält ein Paket, das nicht gefunden wurde.",
     "UNLIMITED_REQUIRES_NULL_MAX": "Wenn unbegrenzter Zugang aktiviert ist, lassen Sie das Limit für den realen Auftragswert leer.",
     "VERIFICATION_WORK_TOKEN_REWARDS_DEPRECATED": "Diese Funktion ist nicht mehr verfügbar.",
-    "WORK_TOKENS_ENGINE_DEPRECATED": "Diese Funktion ist nicht mehr verfügbar."
+    "WORK_TOKENS_ENGINE_DEPRECATED": "Diese Funktion ist nicht mehr verfügbar.",
+    "EXTERNAL_ORDER_ID_INVALID": "Ungültige Auftrags-ID. Nur lateinische Buchstaben und Ziffern verwenden (max. 64 Zeichen).",
+    "EXTERNAL_ORDER_ALREADY_REGISTERED": "Diese Auftrags-ID ist bereits registriert oder wird geprüft.",
+    "EXTERNAL_ORDER_ALREADY_PROCESSED": "Dieser Auftrag wurde bereits bearbeitet. Die Liste wurde aktualisiert.",
+    "EXTERNAL_ORDER_PRICE_INVALID": "Geben Sie einen gültigen Preis über null ein (bis zu 2 Dezimalstellen).",
+    "EXTERNAL_ORDER_NOT_FOUND": "WhatsApp-Auftrag nicht gefunden.",
+    "EXTERNAL_ORDER_REJECTION_REASON_INVALID": "Wählen Sie einen gültigen Ablehnungsgrund.",
+    "EXTERNAL_ORDER_FREELANCER_NOT_ELIGIBLE": "Der Auftrag kann diesem Freelancer derzeit nicht zugewiesen werden (Konto, Mitgliedschaft oder Verifizierung nicht berechtigt).",
+    "EXTERNAL_ORDER_DETAILS_INVALID": "Prüfen Sie Kategorie, Lieferzeit und Notiz."
   }
 }

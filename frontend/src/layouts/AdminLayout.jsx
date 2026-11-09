@@ -4,6 +4,7 @@ import LazyRouteOutlet from "../components/layout/LazyRouteOutlet";
 import { useAuth } from "../context/useAuth";
 import { getNotificationsPath, getAccountSettingsPath } from "../constants/authRoutes";
 import AdminGroupedNavList from "../components/dashboard/AdminGroupedNavList";
+import useExternalIntakePendingCount from "../hooks/useExternalIntakePendingCount";
 import AdminNavIcon from "../components/dashboard/AdminNavIcon";
 import {
   ADMIN_NAV_NOTIFICATIONS,
@@ -73,6 +74,11 @@ export default function AdminLayout() {
   const notificationsPath = getNotificationsPath(role);
   const settingsPath = getAccountSettingsPath(role);
   const navSections = useMemo(() => filterAdminNavSections(user, userHasPermission), [user]);
+  const canSeeWhatsappQueue = navSections.some((section) =>
+    section.items.some((item) => item.badgeKey === "externalIntakesPending"),
+  );
+  const externalIntakesPending = useExternalIntakePendingCount(canSeeWhatsappQueue);
+  const navBadges = useMemo(() => ({ externalIntakesPending }), [externalIntakesPending]);
   const hasBusinessPermissions = navSections.some(
     (section) => section.id !== "overview" && section.items.length > 0,
   );
@@ -108,6 +114,7 @@ export default function AdminLayout() {
             pathname={pathname}
             t={t}
             onNavigate={() => setSidebarOpen(false)}
+            badges={navBadges}
           />
 
           <ul className="oh-sa-nav__list oh-sa-nav__list--muted">

@@ -1058,5 +1058,134 @@
       "coursesCompletedPendingApprovalMessage": "Ați finalizat cursurile obligatorii. Acum vă puteți activa singur(ă) contul din Activarea contului; perioada abonamentului începe în momentul activării.",
       "reviewAccount": "Activați contul"
     }
+  },
+  "whatsappOrders": {
+    "navLabel": "Comenzi WhatsApp",
+    "badgeAria": "{{count}} în așteptarea verificării",
+    "title": "Comenzi WhatsApp",
+    "intro": "Introduceți ID-ul comenzii primit pe WhatsApp. Echipa noastră îl verifică și stabilește prețul înainte de activare.",
+    "form": {
+      "title": "Adăugați o comandă nouă",
+      "idLabel": "ID-ul comenzii",
+      "idPlaceholder": "Introduceți ID-ul comenzii",
+      "idHint": "Copiați ID-ul comenzii exact cum apare în mesajul WhatsApp. Nu sunt necesare alte detalii.",
+      "submit": "Adăugați comanda",
+      "submitting": "Se trimite…",
+      "required": "Introduceți mai întâi ID-ul comenzii.",
+      "invalid": "ID de comandă invalid. Folosiți doar litere latine și cifre (maximum 64 de caractere)."
+    },
+    "success": {
+      "title": "Comanda a fost trimisă spre verificare",
+      "body": "Comanda va apărea în comenzile dumneavoastră după ce administrația o aprobă și îi stabilește prețul.",
+      "alreadyTitle": "Ați trimis deja această comandă",
+      "currentStatus": "Stare curentă: {{status}}"
+    },
+    "history": {
+      "title": "Comenzi trimise",
+      "empty": "Nu ați trimis încă nicio comandă. Introduceți mai sus primul ID de comandă.",
+      "loading": "Se încarcă…",
+      "refresh": "Reîmprospătați",
+      "retry": "Încercați din nou"
+    },
+    "columns": {
+      "id": "ID comandă",
+      "status": "Stare",
+      "price": "Preț",
+      "orderStatus": "Starea comenzii",
+      "date": "Trimisă",
+      "action": "Acțiune"
+    },
+    "status": {
+      "pending_review": "În așteptarea aprobării și a prețului",
+      "approved": "Aprobată",
+      "rejected": "Neaprobată"
+    },
+    "actions": {
+      "openOrder": "Deschideți comanda",
+      "openOrderAria": "Deschideți comanda {{id}}"
+    },
+    "reasons": {
+      "invalid_id": "ID de comandă incorect",
+      "duplicate": "Comandă deja înregistrată",
+      "not_assigned_to_you": "Comanda nu vă este atribuită",
+      "cancelled_externally": "Comandă anulată la sursă",
+      "other": "Alt motiv – contactați asistența"
+    }
+  },
+  "whatsappOrdersAdmin": {
+    "title": "Comenzi WhatsApp",
+    "intro": "Verificați ID-urile de comandă trimise de freelanceri, stabiliți prețul și aprobați – comanda este creată și atribuită automat acelui freelancer.",
+    "pendingCount": "{{count}} în așteptare",
+    "filters": {
+      "aria": "Filtrați comenzile WhatsApp",
+      "id": "ID comandă",
+      "idPlaceholder": "Căutați după ID-ul comenzii",
+      "freelancer": "Freelancer",
+      "freelancerPlaceholder": "Nume, e-mail sau ID cont",
+      "status": "Stare",
+      "statusAll": "Toate stările",
+      "from": "De la",
+      "to": "Până la",
+      "clear": "Ștergeți filtrele",
+      "refresh": "Reîmprospătați"
+    },
+    "list": {
+      "title": "Coada de comenzi",
+      "total": "{{count}} comenzi",
+      "loading": "Se încarcă…",
+      "empty": "Nicio comandă potrivită.",
+      "retry": "Încercați din nou"
+    },
+    "columns": {
+      "id": "ID comandă",
+      "freelancer": "Freelancer",
+      "submitted": "Trimisă",
+      "status": "Stare",
+      "price": "Preț",
+      "order": "Comandă asociată",
+      "actions": "Acțiuni"
+    },
+    "actions": {
+      "review": "Verificați",
+      "details": "Detalii",
+      "reviewAria": "Verificați comanda {{id}}"
+    },
+    "review": {
+      "title": "Verificați comanda WhatsApp",
+      "previous": "Anterioara",
+      "next": "Următoarea",
+      "price": "Prețul comenzii",
+      "currency": "JOD",
+      "priceHint": "Suma totală a comenzii în dinari iordanieni (maximum 2 zecimale). Este distribuită prin procesul standard de câștiguri al platformei.",
+      "priceInvalid": "Introduceți un preț valid mai mare decât zero (maximum 2 zecimale).",
+      "moreOptions": "Mai multe opțiuni (opțional)",
+      "lessOptions": "Ascundeți opțiunile suplimentare",
+      "category": "Categorie",
+      "categoryDefault": "Cereri speciale (implicit)",
+      "duration": "Termen de livrare",
+      "durationValue": "Număr",
+      "durationUnit": "Unitate",
+      "days": "Zile",
+      "hours": "Ore",
+      "internalNote": "Notă internă (nu este vizibilă freelancerului)",
+      "approve": "Aprobați și creați comanda",
+      "approving": "Se aprobă…",
+      "rejectMode": "Nu aprobați",
+      "reject": "Confirmați respingerea",
+      "rejecting": "Se salvează…",
+      "back": "Înapoi",
+      "reason": "Motiv",
+      "reasonPlaceholder": "Alegeți un motiv",
+      "reasonHint": "Freelancerul va vedea acest motiv. Nota internă rămâne privată.",
+      "reasonRequired": "Alegeți mai întâi un motiv.",
+      "autoNext": "Treceți automat la comanda următoare",
+      "approvedToast": "Comanda {{id}} a fost aprobată, creată și atribuită freelancerului.",
+      "rejectedToast": "Comanda {{id}} a fost marcată ca neaprobată.",
+      "noMorePending": "Nu mai există comenzi în așteptare pe această pagină.",
+      "notEligible": "Atenție: contul acestui freelancer nu poate primi comenzi în acest moment (abonament sau verificare). Aprobarea va eșua până la rezolvare.",
+      "sameIdHistory": "Trimiteri anterioare ale acestui ID",
+      "reviewedBy": "Verificată de",
+      "close": "Închideți"
+    }
   }
 }

@@ -12,6 +12,7 @@ export const FREELANCER_NAV_MAIN = [
     requiresInstitutionMembership: true,
   },
   { to: "/dashboard/freelancer/my-orders", labelKey: "dashboard.nav.freelancer.myRequests", icon: "my-orders" },
+  { to: "/dashboard/freelancer/whatsapp-orders", labelKey: "dashboard.whatsappOrders.navLabel", icon: "whatsapp" },
   { to: "/dashboard/freelancer/financial-claims", labelKey: "dashboard.nav.freelancer.wallet", icon: "wallet" },
   { to: "/dashboard/referrals", labelKey: "dashboard.nav.freelancer.referrals", icon: "wallet" },
   { to: "/dashboard/freelancer/plans", labelKey: "dashboard.nav.freelancer.plans", icon: "plans" },

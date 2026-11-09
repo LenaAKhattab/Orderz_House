@@ -4060,3 +4060,59 @@ export const submitFreelancerPantryDeliveryRequest = async (id, payload) => {
   return data;
 };
 
+
+// External (WhatsApp) order intake — freelancer submits an Order ID; Admin prices + approves.
+export const submitExternalOrderIntakeRequest = async (externalOrderId) => {
+  const { data } = await api.post(
+    "/freelancer/external-order-intakes",
+    { externalOrderId },
+    { timeout: 30000 },
+  );
+  return data;
+};
+
+export const listMyExternalOrderIntakesRequest = async (params = {}, options = {}) => {
+  const { signal, timeout = ADMIN_LIST_TIMEOUT_MS } = options;
+  const { data } = await api.get("/freelancer/external-order-intakes", { params, signal, timeout });
+  return data;
+};
+
+export const listAdminExternalOrderIntakesRequest = async (params = {}, options = {}) => {
+  const { signal, timeout = ADMIN_LIST_TIMEOUT_MS } = options;
+  const { data } = await api.get("/admin/external-order-intakes", { params, signal, timeout });
+  return data;
+};
+
+export const getAdminExternalOrderIntakesPendingCountRequest = async (options = {}) => {
+  const { signal } = options;
+  const { data } = await api.get("/admin/external-order-intakes/pending-count", { signal, timeout: 15000 });
+  return data;
+};
+
+export const getAdminExternalOrderIntakeRequest = async (id, options = {}) => {
+  const { signal } = options;
+  const { data } = await api.get(`/admin/external-order-intakes/${encodeURIComponent(String(id))}`, {
+    signal,
+    timeout: ADMIN_LIST_TIMEOUT_MS,
+  });
+  return data;
+};
+
+/** Creates the canonical assigned order atomically — allow time for the server transaction. */
+export const approveAdminExternalOrderIntakeRequest = async (id, payload) => {
+  const { data } = await api.post(
+    `/admin/external-order-intakes/${encodeURIComponent(String(id))}/approve`,
+    payload,
+    { timeout: 60000 },
+  );
+  return data;
+};
+
+export const rejectAdminExternalOrderIntakeRequest = async (id, payload) => {
+  const { data } = await api.post(
+    `/admin/external-order-intakes/${encodeURIComponent(String(id))}/reject`,
+    payload,
+    { timeout: 30000 },
+  );
+  return data;
+};

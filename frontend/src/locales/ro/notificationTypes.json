@@ -290,6 +290,10 @@
     "user_registered": {
       "title": "Contul dumneavoastră a fost creat",
       "message": "Bun venit la Orderz House."
+    },
+    "external_order_intake_rejected": {
+      "title": "Comandă WhatsApp neaprobată",
+      "message": "Una dintre comenzile dumneavoastră WhatsApp nu a fost aprobată. Consultați Comenzi WhatsApp pentru detalii."
     }
   }
 }

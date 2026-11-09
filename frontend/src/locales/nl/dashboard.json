@@ -1058,5 +1058,134 @@
       "coursesCompletedPendingApprovalMessage": "U hebt de verplichte cursussen afgerond. U kunt uw account nu zelf activeren via Account activeren; uw abonnementsperiode begint op het moment dat u activeert.",
       "reviewAccount": "Account activeren"
     }
+  },
+  "whatsappOrders": {
+    "navLabel": "WhatsApp-opdrachten",
+    "badgeAria": "{{count}} wachten op beoordeling",
+    "title": "WhatsApp-opdrachten",
+    "intro": "Voer het opdracht-ID in dat u via WhatsApp hebt ontvangen. Ons team controleert het en bepaalt de prijs voordat de opdracht wordt geactiveerd.",
+    "form": {
+      "title": "Nieuwe opdracht toevoegen",
+      "idLabel": "Opdracht-ID",
+      "idPlaceholder": "Voer het opdracht-ID in",
+      "idHint": "Kopieer het opdracht-ID precies zoals het in het WhatsApp-bericht staat. Andere gegevens zijn niet nodig.",
+      "submit": "Opdracht toevoegen",
+      "submitting": "Bezig met verzenden…",
+      "required": "Voer eerst het opdracht-ID in.",
+      "invalid": "Ongeldig opdracht-ID. Gebruik alleen Latijnse letters en cijfers (maximaal 64 tekens)."
+    },
+    "success": {
+      "title": "Opdracht verzonden ter beoordeling",
+      "body": "De opdracht verschijnt bij uw opdrachten zodra de beheerders hem hebben goedgekeurd en geprijsd.",
+      "alreadyTitle": "U hebt deze opdracht al ingediend",
+      "currentStatus": "Huidige status: {{status}}"
+    },
+    "history": {
+      "title": "Ingediende opdrachten",
+      "empty": "U hebt nog geen opdrachten ingediend. Voer hierboven uw eerste opdracht-ID in.",
+      "loading": "Laden…",
+      "refresh": "Vernieuwen",
+      "retry": "Opnieuw proberen"
+    },
+    "columns": {
+      "id": "Opdracht-ID",
+      "status": "Status",
+      "price": "Prijs",
+      "orderStatus": "Opdrachtstatus",
+      "date": "Ingediend",
+      "action": "Actie"
+    },
+    "status": {
+      "pending_review": "Wacht op goedkeuring en prijs",
+      "approved": "Goedgekeurd",
+      "rejected": "Niet goedgekeurd"
+    },
+    "actions": {
+      "openOrder": "Opdracht openen",
+      "openOrderAria": "Opdracht {{id}} openen"
+    },
+    "reasons": {
+      "invalid_id": "Onjuist opdracht-ID",
+      "duplicate": "Opdracht al geregistreerd",
+      "not_assigned_to_you": "Opdracht is niet aan u toegewezen",
+      "cancelled_externally": "Opdracht bij de bron geannuleerd",
+      "other": "Andere reden – neem contact op met support"
+    }
+  },
+  "whatsappOrdersAdmin": {
+    "title": "WhatsApp-opdrachten",
+    "intro": "Controleer de door freelancers ingediende opdracht-ID's, stel de prijs in en keur goed – de opdracht wordt dan automatisch aangemaakt en aan die freelancer toegewezen.",
+    "pendingCount": "{{count}} openstaand",
+    "filters": {
+      "aria": "WhatsApp-opdrachten filteren",
+      "id": "Opdracht-ID",
+      "idPlaceholder": "Zoeken op opdracht-ID",
+      "freelancer": "Freelancer",
+      "freelancerPlaceholder": "Naam, e-mail of account-ID",
+      "status": "Status",
+      "statusAll": "Alle statussen",
+      "from": "Van",
+      "to": "Tot",
+      "clear": "Filters wissen",
+      "refresh": "Vernieuwen"
+    },
+    "list": {
+      "title": "Opdrachtwachtrij",
+      "total": "{{count}} opdrachten",
+      "loading": "Laden…",
+      "empty": "Geen overeenkomende opdrachten.",
+      "retry": "Opnieuw proberen"
+    },
+    "columns": {
+      "id": "Opdracht-ID",
+      "freelancer": "Freelancer",
+      "submitted": "Ingediend",
+      "status": "Status",
+      "price": "Prijs",
+      "order": "Gekoppelde opdracht",
+      "actions": "Acties"
+    },
+    "actions": {
+      "review": "Beoordelen",
+      "details": "Gegevens",
+      "reviewAria": "Opdracht {{id}} beoordelen"
+    },
+    "review": {
+      "title": "WhatsApp-opdracht beoordelen",
+      "previous": "Vorige",
+      "next": "Volgende",
+      "price": "Opdrachtprijs",
+      "currency": "JOD",
+      "priceHint": "Totaalbedrag van de opdracht in Jordaanse dinar (maximaal 2 decimalen). Het wordt verdeeld via het standaard verdienproces van het platform.",
+      "priceInvalid": "Voer een geldige prijs boven nul in (maximaal 2 decimalen).",
+      "moreOptions": "Meer opties (optioneel)",
+      "lessOptions": "Extra opties verbergen",
+      "category": "Categorie",
+      "categoryDefault": "Speciale verzoeken (standaard)",
+      "duration": "Levertijd",
+      "durationValue": "Aantal",
+      "durationUnit": "Eenheid",
+      "days": "Dagen",
+      "hours": "Uren",
+      "internalNote": "Interne notitie (niet zichtbaar voor de freelancer)",
+      "approve": "Goedkeuren en opdracht aanmaken",
+      "approving": "Bezig met goedkeuren…",
+      "rejectMode": "Niet goedkeuren",
+      "reject": "Afwijzing bevestigen",
+      "rejecting": "Bezig met opslaan…",
+      "back": "Terug",
+      "reason": "Reden",
+      "reasonPlaceholder": "Kies een reden",
+      "reasonHint": "De freelancer ziet deze reden. De interne notitie blijft privé.",
+      "reasonRequired": "Kies eerst een reden.",
+      "autoNext": "Automatisch naar de volgende opdracht",
+      "approvedToast": "Opdracht {{id}} goedgekeurd, aangemaakt en aan de freelancer toegewezen.",
+      "rejectedToast": "Opdracht {{id}} gemarkeerd als niet goedgekeurd.",
+      "noMorePending": "Geen openstaande opdrachten meer op deze pagina.",
+      "notEligible": "Let op: het account van deze freelancer kan momenteel geen opdrachten ontvangen (lidmaatschap of verificatie). Goedkeuren mislukt totdat dit is opgelost.",
+      "sameIdHistory": "Eerdere inzendingen van dit ID",
+      "reviewedBy": "Beoordeeld door",
+      "close": "Sluiten"
+    }
   }
 }

@@ -18,7 +18,7 @@ describe("Super Admin unified المقالات hub", () => {
     const nav = read("constants/superAdminNav.js");
     assert.match(
       nav,
-      /itemKeys:\s*\["internalRequests",\s*"trainingRequests",\s*"pantry",\s*"articles"\]/,
+      /itemKeys:\s*\["internalRequests",\s*"whatsappOrders",\s*"trainingRequests",\s*"pantry",\s*"articles"\]/,
     );
     assert.match(nav, /to:\s*"\/dashboard\/super-admin\/articles"/);
     const usersSection = nav.match(

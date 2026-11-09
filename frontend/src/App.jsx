@@ -97,6 +97,8 @@ import {
   HowItWorksFreelancerPage,
   HowItWorksClientPage,
   AdminOrdersPage,
+  AdminWhatsappOrdersPage,
+  FreelancerWhatsappOrdersPage,
   AdminCreateOrderPage,
   AdminSubscriptionsActivationPage,
   AdminCoursesPage,
@@ -538,6 +540,14 @@ function App() {
                   }
                 />
                 <Route
+                  path="/dashboard/super-admin/whatsapp-orders"
+                  element={
+                    <RequireStaffPage permission={ADMIN_PAGE_PERMISSIONS.orders}>
+                      <AdminWhatsappOrdersPage />
+                    </RequireStaffPage>
+                  }
+                />
+                <Route
                   path="/dashboard/super-admin/orders/create"
                   element={
                     <RequireStaffPage permission={ADMIN_PAGE_PERMISSIONS.createOrder}>
@@ -893,6 +903,16 @@ function App() {
                   }
                 />
                 <Route
+                  path="/dashboard/admin/whatsapp-orders"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.ADMIN]}>
+                      <RequirePermission permission={ADMIN_PAGE_PERMISSIONS.orders}>
+                        <AdminWhatsappOrdersPage />
+                      </RequirePermission>
+                    </RequireRole>
+                  }
+                />
+                <Route
                   path="/dashboard/admin/orders/create"
                   element={
                     <RequireRole allowedRoles={[ROLE.ADMIN]}>
@@ -1034,6 +1054,14 @@ function App() {
                   element={
                     <RequireRole allowedRoles={[ROLE.FREELANCER]}>
                       <FreelancerEliteOfferPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/freelancer/whatsapp-orders"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.FREELANCER]}>
+                      <FreelancerWhatsappOrdersPage />
                     </RequireRole>
                   }
                 />

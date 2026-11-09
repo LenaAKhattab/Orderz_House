@@ -305,7 +305,8 @@ describe("producers — representative flows rely on the canonical path", () => 
     const revision = slice(orders, "async function adminRequestInternalDeliveryRevision(", "\nasync function ");
     assert.ok(revision.indexOf('type: "order.revision.requested"') < revision.indexOf('await client.query("COMMIT")'));
     assert.match(revision, /\},\s*client,\s*\),\s*\);/);
-    const internal = slice(orders, "async function createInternalOrder(", "\nasync function ");
+    // Canonical body (also used atomically by external order intake approval).
+    const internal = slice(orders, "async function createInternalOrderInTransaction(", "\nasync function ");
     assert.match(internal, /type: "order\.created"[\s\S]*?\},\s*client,\s*\)/);
     const webhook = read("controllers/stripeWebhookController.js");
     const paid = slice(webhook, "async function applyCheckoutSessionClientOrderCompleted(", "\nasync function ");

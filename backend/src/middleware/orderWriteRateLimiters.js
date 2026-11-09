@@ -129,6 +129,22 @@ const adminWriteLimiter = rateLimit({
   handler: rateLimitJsonHandler("admin_write", ADMIN_WRITE_MSG, { windowMsFallback: 60 * 1000 }),
 });
 
+/**
+ * Freelancer external (WhatsApp) order-ID intake — burst protection only (no daily business quota:
+ * large legitimate batches are expected; DB uniqueness/idempotency is the primary protection).
+ * Default 30 / min / user. Exemption scope: order_create.
+ */
+const EXTERNAL_ORDER_INTAKE_SUBMIT_MAX_PER_MIN = parsePositiveInt("EXTERNAL_ORDER_INTAKE_SUBMIT_MAX_PER_MIN", 30);
+const externalOrderIntakeSubmitLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: createExemptionMax("order_create", EXTERNAL_ORDER_INTAKE_SUBMIT_MAX_PER_MIN, "minute"),
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => userOrIpKey("external_order_intake_submit", req),
+  skip: createExemptionSkip("order_create"),
+  handler: rateLimitJsonHandler("external_order_intake_submit", ORDER_CREATE_MSG, { windowMsFallback: 60 * 1000 }),
+});
+
 /** Soft guard for unread-count polling storms. Default 120 / min / user. (no exemption in v1) */
 const notificationsReadLimiter = rateLimit({
   windowMs: 60 * 1000,
@@ -146,5 +162,6 @@ module.exports = {
   trainingBulkGenerateLimiter,
   orderBidTakeLimiter,
   adminWriteLimiter,
+  externalOrderIntakeSubmitLimiter,
   notificationsReadLimiter,
 };
