@@ -275,6 +275,14 @@
     "UNKNOWN_REORDER_ID": "De sorteerlijst bevat een pakket dat niet is gevonden.",
     "UNLIMITED_REQUIRES_NULL_MAX": "Als onbeperkte toegang is ingeschakeld, laat u de limiet voor de werkelijke orderwaarde leeg.",
     "VERIFICATION_WORK_TOKEN_REWARDS_DEPRECATED": "Deze functie is niet meer beschikbaar.",
-    "WORK_TOKENS_ENGINE_DEPRECATED": "Deze functie is niet meer beschikbaar."
+    "WORK_TOKENS_ENGINE_DEPRECATED": "Deze functie is niet meer beschikbaar.",
+    "EXTERNAL_ORDER_ID_INVALID": "Ongeldig opdracht-ID. Gebruik alleen Latijnse letters en cijfers (maximaal 64 tekens).",
+    "EXTERNAL_ORDER_ALREADY_REGISTERED": "Dit opdracht-ID is al geregistreerd of wordt beoordeeld.",
+    "EXTERNAL_ORDER_ALREADY_PROCESSED": "Deze opdracht is al verwerkt. De lijst is vernieuwd.",
+    "EXTERNAL_ORDER_PRICE_INVALID": "Voer een geldige prijs boven nul in (maximaal 2 decimalen).",
+    "EXTERNAL_ORDER_NOT_FOUND": "WhatsApp-opdracht niet gevonden.",
+    "EXTERNAL_ORDER_REJECTION_REASON_INVALID": "Kies een geldige reden voor afwijzing.",
+    "EXTERNAL_ORDER_FREELANCER_NOT_ELIGIBLE": "De opdracht kan nu niet aan deze freelancer worden toegewezen (account, lidmaatschap of verificatie niet geschikt).",
+    "EXTERNAL_ORDER_DETAILS_INVALID": "Controleer de categorie, levertijd en notitie."
   }
 }

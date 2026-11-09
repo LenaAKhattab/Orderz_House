@@ -275,6 +275,14 @@
     "UNKNOWN_REORDER_ID": "The reorder list includes a plan that was not found.",
     "UNLIMITED_REQUIRES_NULL_MAX": "When unlimited access is enabled, leave the real order value limit empty.",
     "VERIFICATION_WORK_TOKEN_REWARDS_DEPRECATED": "This feature is no longer available.",
-    "WORK_TOKENS_ENGINE_DEPRECATED": "This feature is no longer available."
+    "WORK_TOKENS_ENGINE_DEPRECATED": "This feature is no longer available.",
+    "EXTERNAL_ORDER_ID_INVALID": "Invalid order ID. Use Latin letters and digits only (up to 64 characters).",
+    "EXTERNAL_ORDER_ALREADY_REGISTERED": "This order ID is already registered or under review.",
+    "EXTERNAL_ORDER_ALREADY_PROCESSED": "This order was already processed. The list has been refreshed.",
+    "EXTERNAL_ORDER_PRICE_INVALID": "Enter a valid price above zero (up to 2 decimals).",
+    "EXTERNAL_ORDER_NOT_FOUND": "WhatsApp order not found.",
+    "EXTERNAL_ORDER_REJECTION_REASON_INVALID": "Choose a valid rejection reason.",
+    "EXTERNAL_ORDER_FREELANCER_NOT_ELIGIBLE": "This order can't be assigned to this freelancer right now (account, membership or verification not eligible).",
+    "EXTERNAL_ORDER_DETAILS_INVALID": "Check the category, delivery time and note."
   }
 }

@@ -275,6 +275,14 @@
     "UNKNOWN_REORDER_ID": "Lista de reordonare include un pachet care nu a fost găsit.",
     "UNLIMITED_REQUIRES_NULL_MAX": "Când accesul nelimitat este activat, lăsați gol limita valorii reale a comenzii.",
     "VERIFICATION_WORK_TOKEN_REWARDS_DEPRECATED": "Această funcție nu mai este disponibilă.",
-    "WORK_TOKENS_ENGINE_DEPRECATED": "Această funcție nu mai este disponibilă."
+    "WORK_TOKENS_ENGINE_DEPRECATED": "Această funcție nu mai este disponibilă.",
+    "EXTERNAL_ORDER_ID_INVALID": "ID de comandă invalid. Folosiți doar litere latine și cifre (maximum 64 de caractere).",
+    "EXTERNAL_ORDER_ALREADY_REGISTERED": "Acest ID de comandă este deja înregistrat sau în curs de verificare.",
+    "EXTERNAL_ORDER_ALREADY_PROCESSED": "Această comandă a fost deja procesată. Lista a fost actualizată.",
+    "EXTERNAL_ORDER_PRICE_INVALID": "Introduceți un preț valid mai mare decât zero (maximum 2 zecimale).",
+    "EXTERNAL_ORDER_NOT_FOUND": "Comanda WhatsApp nu a fost găsită.",
+    "EXTERNAL_ORDER_REJECTION_REASON_INVALID": "Alegeți un motiv valid de respingere.",
+    "EXTERNAL_ORDER_FREELANCER_NOT_ELIGIBLE": "Comanda nu poate fi atribuită acum acestui freelancer (contul, abonamentul sau verificarea nu sunt eligibile).",
+    "EXTERNAL_ORDER_DETAILS_INVALID": "Verificați categoria, termenul de livrare și nota."
   }
 }

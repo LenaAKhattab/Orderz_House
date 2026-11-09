@@ -290,6 +290,10 @@
     "user_registered": {
       "title": "Uw account is erstellt",
       "message": "Willkommen bei Orderz House."
+    },
+    "external_order_intake_rejected": {
+      "title": "WhatsApp-opdracht niet goedgekeurd",
+      "message": "Een van uw WhatsApp-opdrachten is niet goedgekeurd. Bekijk WhatsApp-opdrachten voor details."
     }
   }
 }

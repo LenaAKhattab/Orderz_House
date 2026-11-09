@@ -53,6 +53,15 @@ export const SUPER_ADMIN_NAV_ITEM_DEFS = {
     icon: "internal-requests",
     permission: ADMIN_PAGE_PERMISSIONS.orders,
   },
+  whatsappOrders: {
+    key: "whatsappOrders",
+    to: "/dashboard/super-admin/whatsapp-orders",
+    labelKey: "dashboard.whatsappOrders.navLabel",
+    icon: "whatsapp-orders",
+    matchPrefix: "/dashboard/super-admin/whatsapp-orders",
+    permission: ADMIN_PAGE_PERMISSIONS.orders,
+    badgeKey: "externalIntakesPending",
+  },
   trainingRequests: {
     key: "trainingRequests",
     to: "/dashboard/super-admin/training-orders",
@@ -283,7 +292,7 @@ export const SUPER_ADMIN_NAV_SECTION_DEFS = [
   {
     id: "ordersOps",
     labelKey: "dashboard.nav.sections.ordersOps",
-    itemKeys: ["internalRequests", "trainingRequests", "pantry", "articles"],
+    itemKeys: ["internalRequests", "whatsappOrders", "trainingRequests", "pantry", "articles"],
     showCreateOrder: true,
   },
   {
@@ -393,6 +402,7 @@ export function superAdminBreadcrumbKeys(pathname) {
   if (pathname.includes("/orders/create")) {
     return [...base, "dashboard.breadcrumbs.internalRequests", "dashboard.breadcrumbs.createInternalRequest"];
   }
+  if (pathname.includes("/whatsapp-orders")) return [...base, "dashboard.whatsappOrders.navLabel"];
   if (pathname.includes("/onboarding")) {
     return [...base, "dashboard.breadcrumbs.onboarding"];
   }

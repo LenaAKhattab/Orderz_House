@@ -275,6 +275,14 @@
     "UNKNOWN_REORDER_ID": "قائمة الترتيب تتضمن باقة غير موجودة.",
     "UNLIMITED_REQUIRES_NULL_MAX": "عند تفعيل الوصول غير المحدود يجب ترك حد قيمة الطلب الحقيقي فارغاً.",
     "VERIFICATION_WORK_TOKEN_REWARDS_DEPRECATED": "هذه الميزة لم تعد متاحة.",
-    "WORK_TOKENS_ENGINE_DEPRECATED": "هذه الميزة لم تعد متاحة."
+    "WORK_TOKENS_ENGINE_DEPRECATED": "هذه الميزة لم تعد متاحة.",
+    "EXTERNAL_ORDER_ID_INVALID": "رقم الطلب غير صالح. استخدم الأحرف الإنجليزية والأرقام فقط (حتى 64 حرفًا).",
+    "EXTERNAL_ORDER_ALREADY_REGISTERED": "رقم الطلب هذا مسجّل مسبقًا أو قيد المراجعة.",
+    "EXTERNAL_ORDER_ALREADY_PROCESSED": "تمت معالجة هذا الطلب مسبقًا. تم تحديث القائمة.",
+    "EXTERNAL_ORDER_PRICE_INVALID": "أدخل سعرًا صحيحًا أكبر من صفر (حتى منزلتين عشريتين).",
+    "EXTERNAL_ORDER_NOT_FOUND": "طلب واتساب غير موجود.",
+    "EXTERNAL_ORDER_REJECTION_REASON_INVALID": "اختر سببًا صالحًا لعدم الاعتماد.",
+    "EXTERNAL_ORDER_FREELANCER_NOT_ELIGIBLE": "لا يمكن إسناد الطلب لهذا المستقل حاليًا (الحساب أو العضوية أو التحقق غير مؤهل).",
+    "EXTERNAL_ORDER_DETAILS_INVALID": "تحقق من التصنيف ومدة التنفيذ والملاحظة."
   }
 }

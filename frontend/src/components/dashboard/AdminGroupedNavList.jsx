@@ -22,6 +22,7 @@ export default function AdminGroupedNavList({
   t,
   onNavigate,
   renderSectionExtra,
+  badges = null,
 }) {
   return (
     <>
@@ -45,6 +46,14 @@ export default function AdminGroupedNavList({
                       <AdminNavIcon name={item.icon} />
                     </span>
                     <span className="oh-sa-navlink__label">{resolveNavLabel(item, t)}</span>
+                    {item.badgeKey && badges && Number(badges[item.badgeKey]) > 0 ? (
+                      <span
+                        className="oh-sa-navlink__badge"
+                        aria-label={t("dashboard.whatsappOrders.badgeAria", { count: Number(badges[item.badgeKey]) })}
+                      >
+                        {Number(badges[item.badgeKey]) > 99 ? "99+" : Number(badges[item.badgeKey])}
+                      </span>
+                    ) : null}
                   </NavLink>
                 </li>
               ))}

@@ -1061,5 +1061,134 @@
       "coursesCompletedPendingApprovalMessage": "You have completed the required courses. You can now activate your account yourself from Activate account; your subscription period starts when you activate.",
       "reviewAccount": "Activate account"
     }
+  },
+  "whatsappOrders": {
+    "navLabel": "WhatsApp Orders",
+    "badgeAria": "{{count}} pending review",
+    "title": "WhatsApp Orders",
+    "intro": "Enter the order ID you received on WhatsApp. Our team will review it and set the price before activating it.",
+    "form": {
+      "title": "Add a new order",
+      "idLabel": "Order ID",
+      "idPlaceholder": "Enter the order ID",
+      "idHint": "Copy the order ID exactly as it appears in the WhatsApp message. No other details are needed.",
+      "submit": "Add order",
+      "submitting": "Sending…",
+      "required": "Enter the order ID first.",
+      "invalid": "Invalid order ID. Use Latin letters and digits only (up to 64 characters)."
+    },
+    "success": {
+      "title": "Order sent for review",
+      "body": "The order will appear in your orders after the administration approves and prices it.",
+      "alreadyTitle": "You already submitted this order",
+      "currentStatus": "Current status: {{status}}"
+    },
+    "history": {
+      "title": "Submitted orders",
+      "empty": "You haven't submitted any orders yet. Enter your first order ID above.",
+      "loading": "Loading…",
+      "refresh": "Refresh",
+      "retry": "Try again"
+    },
+    "columns": {
+      "id": "Order ID",
+      "status": "Status",
+      "price": "Price",
+      "orderStatus": "Order status",
+      "date": "Submitted",
+      "action": "Action"
+    },
+    "status": {
+      "pending_review": "Awaiting approval & pricing",
+      "approved": "Approved",
+      "rejected": "Not approved"
+    },
+    "actions": {
+      "openOrder": "Open order",
+      "openOrderAria": "Open order {{id}}"
+    },
+    "reasons": {
+      "invalid_id": "Incorrect order ID",
+      "duplicate": "Order already registered",
+      "not_assigned_to_you": "Order not assigned to you",
+      "cancelled_externally": "Order cancelled at the source",
+      "other": "Other reason — contact support"
+    }
+  },
+  "whatsappOrdersAdmin": {
+    "title": "WhatsApp Orders",
+    "intro": "Review the order IDs submitted by freelancers, set the price, then approve to create the order and assign it automatically to that freelancer.",
+    "pendingCount": "{{count}} pending",
+    "filters": {
+      "aria": "Filter WhatsApp orders",
+      "id": "Order ID",
+      "idPlaceholder": "Search by order ID",
+      "freelancer": "Freelancer",
+      "freelancerPlaceholder": "Name, email or account ID",
+      "status": "Status",
+      "statusAll": "All statuses",
+      "from": "From",
+      "to": "To",
+      "clear": "Clear filters",
+      "refresh": "Refresh"
+    },
+    "list": {
+      "title": "Order queue",
+      "total": "{{count}} orders",
+      "loading": "Loading…",
+      "empty": "No matching orders.",
+      "retry": "Try again"
+    },
+    "columns": {
+      "id": "Order ID",
+      "freelancer": "Freelancer",
+      "submitted": "Submitted",
+      "status": "Status",
+      "price": "Price",
+      "order": "Linked order",
+      "actions": "Actions"
+    },
+    "actions": {
+      "review": "Review",
+      "details": "Details",
+      "reviewAria": "Review order {{id}}"
+    },
+    "review": {
+      "title": "Review WhatsApp order",
+      "previous": "Previous",
+      "next": "Next",
+      "price": "Order price",
+      "currency": "JOD",
+      "priceHint": "Full order amount in Jordanian dinars (up to 2 decimals). It is distributed by the platform's standard earnings process.",
+      "priceInvalid": "Enter a valid price above zero (up to 2 decimals).",
+      "moreOptions": "More options (optional)",
+      "lessOptions": "Hide extra options",
+      "category": "Category",
+      "categoryDefault": "Special requests (default)",
+      "duration": "Delivery time",
+      "durationValue": "Amount",
+      "durationUnit": "Unit",
+      "days": "Days",
+      "hours": "Hours",
+      "internalNote": "Internal note (not shown to the freelancer)",
+      "approve": "Approve & create order",
+      "approving": "Approving…",
+      "rejectMode": "Don't approve",
+      "reject": "Confirm rejection",
+      "rejecting": "Saving…",
+      "back": "Back",
+      "reason": "Reason",
+      "reasonPlaceholder": "Choose a reason",
+      "reasonHint": "The freelancer will see this reason. The internal note stays private.",
+      "reasonRequired": "Choose a reason first.",
+      "autoNext": "Go to the next order automatically",
+      "approvedToast": "Order {{id}} approved, created and assigned to the freelancer.",
+      "rejectedToast": "Order {{id}} marked as not approved.",
+      "noMorePending": "No more pending orders on this page.",
+      "notEligible": "Warning: this freelancer's account can't receive orders right now (membership or verification). Approval will fail until this is resolved.",
+      "sameIdHistory": "Earlier submissions of this ID",
+      "reviewedBy": "Reviewed by",
+      "close": "Close"
+    }
   }
 }

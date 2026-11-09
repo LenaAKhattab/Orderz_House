@@ -1058,5 +1058,134 @@
       "coursesCompletedPendingApprovalMessage": "Sie haben die erforderlichen Kurse abgeschlossen. Sie können Ihr Konto jetzt selbst unter „Konto aktivieren“ aktivieren; Ihr Abonnementzeitraum beginnt mit der Aktivierung.",
       "reviewAccount": "Konto aktivieren"
     }
+  },
+  "whatsappOrders": {
+    "navLabel": "WhatsApp-Aufträge",
+    "badgeAria": "{{count}} warten auf Prüfung",
+    "title": "WhatsApp-Aufträge",
+    "intro": "Geben Sie die Auftrags-ID ein, die Sie per WhatsApp erhalten haben. Unser Team prüft sie und legt den Preis fest, bevor der Auftrag aktiviert wird.",
+    "form": {
+      "title": "Neuen Auftrag hinzufügen",
+      "idLabel": "Auftrags-ID",
+      "idPlaceholder": "Auftrags-ID eingeben",
+      "idHint": "Kopieren Sie die Auftrags-ID genau so, wie sie in der WhatsApp-Nachricht steht. Weitere Angaben sind nicht nötig.",
+      "submit": "Auftrag hinzufügen",
+      "submitting": "Wird gesendet…",
+      "required": "Bitte zuerst die Auftrags-ID eingeben.",
+      "invalid": "Ungültige Auftrags-ID. Nur lateinische Buchstaben und Ziffern verwenden (max. 64 Zeichen)."
+    },
+    "success": {
+      "title": "Auftrag zur Prüfung gesendet",
+      "body": "Der Auftrag erscheint in Ihren Aufträgen, sobald die Verwaltung ihn freigegeben und bepreist hat.",
+      "alreadyTitle": "Sie haben diesen Auftrag bereits eingereicht",
+      "currentStatus": "Aktueller Status: {{status}}"
+    },
+    "history": {
+      "title": "Eingereichte Aufträge",
+      "empty": "Sie haben noch keine Aufträge eingereicht. Geben Sie oben Ihre erste Auftrags-ID ein.",
+      "loading": "Wird geladen…",
+      "refresh": "Aktualisieren",
+      "retry": "Erneut versuchen"
+    },
+    "columns": {
+      "id": "Auftrags-ID",
+      "status": "Status",
+      "price": "Preis",
+      "orderStatus": "Auftragsstatus",
+      "date": "Eingereicht",
+      "action": "Aktion"
+    },
+    "status": {
+      "pending_review": "Wartet auf Freigabe und Preis",
+      "approved": "Freigegeben",
+      "rejected": "Nicht freigegeben"
+    },
+    "actions": {
+      "openOrder": "Auftrag öffnen",
+      "openOrderAria": "Auftrag {{id}} öffnen"
+    },
+    "reasons": {
+      "invalid_id": "Falsche Auftrags-ID",
+      "duplicate": "Auftrag bereits registriert",
+      "not_assigned_to_you": "Auftrag ist Ihnen nicht zugewiesen",
+      "cancelled_externally": "Auftrag an der Quelle storniert",
+      "other": "Anderer Grund – wenden Sie sich an den Support"
+    }
+  },
+  "whatsappOrdersAdmin": {
+    "title": "WhatsApp-Aufträge",
+    "intro": "Prüfen Sie die von Freelancern eingereichten Auftrags-IDs, legen Sie den Preis fest und geben Sie frei – der Auftrag wird dann automatisch erstellt und diesem Freelancer zugewiesen.",
+    "pendingCount": "{{count}} offen",
+    "filters": {
+      "aria": "WhatsApp-Aufträge filtern",
+      "id": "Auftrags-ID",
+      "idPlaceholder": "Nach Auftrags-ID suchen",
+      "freelancer": "Freelancer",
+      "freelancerPlaceholder": "Name, E-Mail oder Konto-ID",
+      "status": "Status",
+      "statusAll": "Alle Status",
+      "from": "Von",
+      "to": "Bis",
+      "clear": "Filter zurücksetzen",
+      "refresh": "Aktualisieren"
+    },
+    "list": {
+      "title": "Auftragswarteschlange",
+      "total": "{{count}} Aufträge",
+      "loading": "Wird geladen…",
+      "empty": "Keine passenden Aufträge.",
+      "retry": "Erneut versuchen"
+    },
+    "columns": {
+      "id": "Auftrags-ID",
+      "freelancer": "Freelancer",
+      "submitted": "Eingereicht",
+      "status": "Status",
+      "price": "Preis",
+      "order": "Verknüpfter Auftrag",
+      "actions": "Aktionen"
+    },
+    "actions": {
+      "review": "Prüfen",
+      "details": "Einzelheiten",
+      "reviewAria": "Auftrag {{id}} prüfen"
+    },
+    "review": {
+      "title": "WhatsApp-Auftrag prüfen",
+      "previous": "Vorheriger",
+      "next": "Weiter",
+      "price": "Auftragspreis",
+      "currency": "JOD",
+      "priceHint": "Gesamtbetrag des Auftrags in jordanischen Dinar (bis zu 2 Dezimalstellen). Die Verteilung erfolgt über den regulären Vergütungsprozess der Plattform.",
+      "priceInvalid": "Geben Sie einen gültigen Preis über null ein (bis zu 2 Dezimalstellen).",
+      "moreOptions": "Weitere Optionen (optional)",
+      "lessOptions": "Zusätzliche Optionen ausblenden",
+      "category": "Kategorie",
+      "categoryDefault": "Sonderanfragen (Standard)",
+      "duration": "Lieferzeit",
+      "durationValue": "Anzahl",
+      "durationUnit": "Einheit",
+      "days": "Tage",
+      "hours": "Stunden",
+      "internalNote": "Interne Notiz (für den Freelancer nicht sichtbar)",
+      "approve": "Freigeben und Auftrag erstellen",
+      "approving": "Wird freigegeben…",
+      "rejectMode": "Nicht freigeben",
+      "reject": "Ablehnung bestätigen",
+      "rejecting": "Wird gespeichert…",
+      "back": "Zurück",
+      "reason": "Grund",
+      "reasonPlaceholder": "Grund auswählen",
+      "reasonHint": "Der Freelancer sieht diesen Grund. Die interne Notiz bleibt privat.",
+      "reasonRequired": "Bitte zuerst einen Grund auswählen.",
+      "autoNext": "Automatisch zum nächsten Auftrag",
+      "approvedToast": "Auftrag {{id}} freigegeben, erstellt und dem Freelancer zugewiesen.",
+      "rejectedToast": "Auftrag {{id}} als nicht freigegeben markiert.",
+      "noMorePending": "Keine weiteren offenen Aufträge auf dieser Seite.",
+      "notEligible": "Hinweis: Das Konto dieses Freelancers kann derzeit keine Aufträge erhalten (Mitgliedschaft oder Verifizierung). Die Freigabe schlägt fehl, bis das Problem behoben ist.",
+      "sameIdHistory": "Frühere Einreichungen dieser ID",
+      "reviewedBy": "Geprüft von",
+      "close": "Schließen"
+    }
   }
 }
