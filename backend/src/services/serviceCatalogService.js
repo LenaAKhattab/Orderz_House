@@ -329,6 +329,7 @@ module.exports = {
   createSnapshotInTransaction,
   getOrderFormSnapshot,
   getOrderFormSnapshotsMap,
+  mapSnapshotRow,
   listAdminServices,
   getAdminService,
   createService,

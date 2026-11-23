@@ -539,6 +539,10 @@ async function getOrderById(orderId, client) {
   const runner = client || pool;
   const { rows } = await runner.query(
     `SELECT o.*,
+       (SELECT row_to_json(fs) FROM (
+          SELECT service_code, service_version, definition, field_values, quantity::text AS quantity, quantity_unit,
+                 quantity_unspecified, created_at
+            FROM order_form_snapshots WHERE order_id = o.id LIMIT 1) fs) AS form_snapshot,
        ios.name AS institutional_storage_name,
        iso.released_at AS institutional_released_at,
        (
@@ -690,7 +694,8 @@ async function getOrderById(orderId, client) {
   }
 
   // Smart Orders S2: immutable service form snapshot (null for legacy orders — never fabricated).
-  const serviceForm = await require("./serviceCatalogService").getOrderFormSnapshot(orderId, runner);
+  // Loaded in the main order query (no extra round trip).
+  const serviceForm = require("./serviceCatalogService").mapSnapshotRow(rows[0]?.form_snapshot || null);
 
   return {
     ...base,
