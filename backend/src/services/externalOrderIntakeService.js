@@ -619,7 +619,7 @@ async function approveIntake({ intakeId, actorUserId, actorRole, price, category
           archive: false,
         },
         uploadedFiles: [],
-        options: { skipFreelancerBroadcast: true, visibilityScope: "public" },
+        options: { skipFreelancerBroadcast: true, visibilityScope: "public", orderChannel: "whatsapp" },
       });
     } catch (err) {
       throw mapAssigneeError(err);

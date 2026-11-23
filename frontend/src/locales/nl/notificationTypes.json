@@ -294,6 +294,10 @@
     "external_order_intake_rejected": {
       "title": "WhatsApp-opdracht niet goedgekeurd",
       "message": "Een van uw WhatsApp-opdrachten is niet goedgekeurd. Bekijk WhatsApp-opdrachten voor details."
+    },
+    "order_customer_account_linked": {
+      "title": "Opdracht gekoppeld aan het klantaccount",
+      "message": "De klant heeft een account geactiveerd en ziet de opdracht nu."
     }
   }
 }

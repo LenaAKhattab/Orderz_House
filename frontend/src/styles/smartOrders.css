@@ -1,0 +1,289 @@
+/* Smart Orders S1 — customer modes (Admin wizard / panel) and customer claim page. Logical properties keep RTL/LTR correct. */
+
+.smart-mode-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 12px;
+}
+
+.smart-mode-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 14px 16px;
+  text-align: start;
+  border: 1.5px solid var(--fd-surface-divider, #e2e8f0);
+  border-radius: var(--fd-radius, 12px);
+  background: var(--fd-surface-inset-bg, #fff);
+  cursor: pointer;
+  transition: border-color 0.15s var(--fd-ease, ease), box-shadow 0.15s var(--fd-ease, ease);
+}
+
+.smart-mode-card:hover:not(:disabled) {
+  border-color: var(--fd-primary, #2563eb);
+}
+
+.smart-mode-card:focus-visible {
+  outline: none;
+  box-shadow: var(--dash-focus-ring, 0 0 0 3px rgb(37 99 235 / 0.35));
+}
+
+.smart-mode-card--active {
+  border-color: var(--fd-primary, #2563eb);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--fd-primary, #2563eb) 18%, transparent);
+}
+
+.smart-mode-card__title {
+  font-weight: 700;
+}
+
+.smart-mode-card__desc {
+  font-size: 0.86rem;
+  opacity: 0.8;
+  line-height: 1.45;
+}
+
+.smart-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.smart-search .input {
+  flex: 1;
+}
+
+.smart-results {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.smart-results__item,
+.smart-selected {
+  display: flex;
+  width: 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 12px;
+  padding: 10px 12px;
+  text-align: start;
+  border: 1px solid var(--fd-surface-divider, #e2e8f0);
+  border-radius: 10px;
+  background: var(--fd-surface-inset-bg, #fff);
+}
+
+.smart-results__item {
+  cursor: pointer;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.smart-results__item:hover {
+  border-color: var(--fd-primary, #2563eb);
+}
+
+.smart-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.smart-msg {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.smart-msg__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.smart-msg__head .label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.smart-msg__lang {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.smart-msg__lang .help {
+  white-space: nowrap;
+}
+
+.smart-msg__text {
+  width: 100%;
+  min-height: 110px;
+  resize: vertical;
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+.smart-msg__actions,
+.smart-panel__inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.smart-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.smart-panel__section {
+  display: grid;
+  gap: 8px;
+  padding-block-end: 12px;
+  border-block-end: 1px solid var(--fd-surface-divider, #e2e8f0);
+}
+
+.smart-panel__section:last-child {
+  border-block-end: 0;
+}
+
+.smart-panel__section h3 {
+  margin: 0;
+  font-size: 1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.smart-panel__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  align-items: baseline;
+}
+
+.smart-panel__label {
+  min-inline-size: 140px;
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+.smart-panel__value {
+  flex: 1;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+.smart-events {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.smart-events li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 12px;
+}
+
+.smart-orders-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+  margin-block-end: 14px;
+}
+
+.smart-orders-toolbar__filter {
+  display: grid;
+  gap: 4px;
+  min-inline-size: 200px;
+}
+
+.smart-orders-toolbar__stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.claim-order-page {
+  display: flex;
+  justify-content: center;
+  padding: 48px 16px;
+}
+
+.claim-order-card {
+  inline-size: 100%;
+  max-inline-size: 520px;
+  display: grid;
+  gap: 14px;
+  justify-items: center;
+  text-align: center;
+  padding: 28px 24px;
+  border-radius: var(--fd-radius, 16px);
+  background: var(--fd-surface-3d-soft-bg, #fff);
+  box-shadow: var(--dash-shadow-md, 0 10px 30px rgb(15 23 42 / 0.08));
+}
+
+.claim-order-card h1 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.claim-order-card__icon {
+  color: var(--fd-primary, #2563eb);
+}
+
+.claim-order-card__facts {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  inline-size: 100%;
+}
+
+.claim-order-card__facts div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--fd-surface-inset-bg, #f8fafc);
+}
+
+.claim-order-card__facts dt {
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+.claim-order-card__facts dd {
+  margin: 0;
+  font-weight: 700;
+}
+
+.claim-order-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+@media (max-width: 480px) {
+  .smart-panel__label {
+    min-inline-size: 0;
+    inline-size: 100%;
+  }
+  .claim-order-page {
+    padding-block: 24px;
+  }
+}

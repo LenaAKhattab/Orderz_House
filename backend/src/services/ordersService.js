@@ -785,6 +785,13 @@ async function createInternalOrderInTransaction(
     await assertAssignableFreelancer({ freelancerUserId: assignedFreelancerId }, client);
   }
 
+  // Smart Orders S1: explicit order channel (never inferred from the title). Customer-linked orders
+  // set it through orderCustomerService below; other callers (e.g. WhatsApp intake) pass options.orderChannel.
+  const orderCustomerService = require("./orderCustomerService");
+  const orderChannelOpt = orderCustomerService.ORDER_CHANNELS.includes(String(options.orderChannel || ""))
+    ? String(options.orderChannel)
+    : null;
+
   let orderCode = String(payload.orderCode || "").trim();
   if (!orderCode) {
     orderCode = await generateUniqueOrderCode(client);
@@ -936,6 +943,19 @@ async function createInternalOrderInTransaction(
 
   let orderRow = rows[0];
 
+  let customerLink = null;
+  if (payload.customer) {
+    const linked = await orderCustomerService.attachCustomerInTransaction(client, {
+      orderRow,
+      actorUserId,
+      actorRole: createdByRole,
+      customer: payload.customer,
+    });
+    customerLink = linked.invitation || null;
+  } else if (orderChannelOpt) {
+    await client.query(`UPDATE orders SET order_channel = $2 WHERE id = $1`, [orderRow.id, orderChannelOpt]);
+  }
+
   // Phase E3: snapshot Admin-constrained Normal Order rules onto published bidding Orders.
   {
     const e3 = require("./marketplaceNormalOrderRulesService");
@@ -1069,7 +1089,7 @@ async function createInternalOrderInTransaction(
     });
   }
 
-  return { orderRow };
+  return { orderRow, customerLink };
 }
 
 async function createInternalOrder({ actorUserId, actorRole, payload, uploadedFiles = [], options = {} }) {
@@ -1091,12 +1111,17 @@ async function createInternalOrder({ actorUserId, actorRole, payload, uploadedFi
       await client.query("COMMIT");
       return await getOrderById(created.existingOrderId);
     }
-    const { orderRow } = created;
+    const { orderRow, customerLink } = created;
 
     await client.query("COMMIT");
     committed = true;
     scheduleRealOrderTranslation(orderRow.id, orderRow.title, orderRow.description);
-    return await getOrderById(orderRow.id);
+    const order = await getOrderById(orderRow.id);
+    // The one-time claim link is returned ONCE to the creating Admin (only its hash is stored).
+    if (order && customerLink && options.returnCustomerLink) {
+      Object.defineProperty(order, "customerLink", { value: customerLink, enumerable: false });
+    }
+    return order;
   } catch (err) {
     await client.query("ROLLBACK");
     if (!committed) await discardUploadedObjects(uploadedForRollback);
@@ -1436,22 +1461,41 @@ async function purgeClientUnpaidFixedOrderDraft({ clientUserId, orderId }, clien
   }
 }
 
-async function listAdminInternalOrders({ limit = 50, offset = 0 } = {}) {
+async function listAdminInternalOrders({ limit = 50, offset = 0, customerMode = null, channel = null } = {}) {
   const lim = Math.min(Math.max(Number(limit) || 50, 1), 200);
   const off = Math.max(Number(offset) || 0, 0);
+  const orderCustomerService = require("./orderCustomerService");
+  const where = [`source_type IN ('admin_created','super_admin_created')`];
+  const params = [];
+  const mode = String(customerMode || "").trim();
+  if (mode === "internal") where.push(`customer_mode IS NULL`);
+  else if (mode === "any_customer") where.push(`customer_mode IS NOT NULL`);
+  else if (orderCustomerService.CUSTOMER_MODES.includes(mode)) {
+    params.push(mode);
+    where.push(`customer_mode = $${params.length}`);
+  }
+  const ch = String(channel || "").trim();
+  if (orderCustomerService.ORDER_CHANNELS.includes(ch)) {
+    params.push(ch);
+    where.push(`order_channel = $${params.length}`);
+  }
+  params.push(lim, off);
   const { rows } = await pool.query(
     `SELECT id
      FROM orders
-     WHERE source_type IN ('admin_created','super_admin_created')
+     WHERE ${where.join(" AND ")}
      ORDER BY id DESC
-     LIMIT $1 OFFSET $2`,
-    [lim, off],
+     LIMIT $${params.length - 1} OFFSET $${params.length}`,
+    params,
   );
   const out = [];
   for (const r of rows) {
     const o = await getOrderById(r.id);
     if (o) out.push(o);
   }
+  // Admin-only customer badges (mode / channel / activation) - one batched query.
+  const summaries = await orderCustomerService.loadAdminListCustomerSummaries(out.map((o) => o.id));
+  for (const o of out) o.customerSummary = summaries.get(String(o.id)) || null;
   return out;
 }
 
@@ -1468,8 +1512,8 @@ async function listClientOrders({ clientUserId, limit = 50, offset = 0 } = {}) {
   const { rows: orderRows } = await pool.query(
     `SELECT *
      FROM orders
-     WHERE created_by_user_id = $1
-       AND source_type = 'client_created'
+     WHERE (created_by_user_id = $1 AND source_type = 'client_created')
+        OR customer_user_id = $1
      ORDER BY id DESC
      LIMIT $2 OFFSET $3`,
     [uid, lim, off],
@@ -1679,7 +1723,14 @@ async function listClientOrders({ clientUserId, limit = 50, offset = 0 } = {}) {
     o.bidsCount = bidCountByOrder.has(String(o.id)) ? bidCountByOrder.get(String(o.id)) : 0;
   }
 
-  return out.map((o) => sanitizeOrderForClient(o));
+  // Smart Orders S1: Admin-managed orders linked to this customer use the read-only projection.
+  const orderCustomerService = require("./orderCustomerService");
+  const rowById = new Map(orderRows.map((r) => [String(r.id), r]));
+  return out.map((o) =>
+    o.sourceType === "client_created"
+      ? sanitizeOrderForClient(o)
+      : orderCustomerService.projectManagedOrderForCustomer(o, rowById.get(String(o.id))),
+  );
 }
 
 /** Default page size for open pool (`GET /orders/pool`). */
@@ -2299,9 +2350,14 @@ async function enrichOrderWithSubmissionHistory(order, viewerRole) {
 }
 
 async function getClientOrderByIdForOwner({ clientUserId, orderId }) {
-  await assertClientOwnsOrder({ clientUserId, orderId });
+  const orderAuthz = require("./orderAuthorizationService");
+  const access = await orderAuthz.assertClientCanViewOrder(clientUserId, orderId);
   const order = await getOrderById(orderId);
   if (!order) return null;
+  if (access.managed) {
+    // Admin-managed order linked to this customer: sanitized read-only projection.
+    return require("./orderCustomerService").projectManagedOrderForCustomer(order, access.order);
+  }
   await enrichOrderWithSubmissionHistory(order, "client");
   return order;
 }
@@ -4593,9 +4649,10 @@ async function clientRequestDeliveryRevision({ clientUserId, orderId, note, uplo
 }
 
 async function prepareClientOrderFileDownload({ clientUserId, orderId, fileId }) {
-  await assertClientOwnsOrder({ clientUserId, orderId });
+  const orderAuthz = require("./orderAuthorizationService");
+  const access = await orderAuthz.assertClientCanViewOrder(clientUserId, orderId);
   const { rows } = await pool.query(
-    `SELECT id, order_id, file_path, file_url, secure_url, original_name, mime_type, storage_provider, storage_bucket, storage_key, public_id, source_missing_at
+    `SELECT id, order_id, file_path, file_url, secure_url, original_name, mime_type, storage_provider, storage_bucket, storage_key, public_id, source_missing_at, purpose
      FROM order_files
      WHERE id = $1 AND order_id = $2
      LIMIT 1`,
@@ -4605,6 +4662,11 @@ async function prepareClientOrderFileDownload({ clientUserId, orderId, fileId })
   if (!f) {
     const err = new Error("الملف غير موجود.");
     err.statusCode = 404;
+    throw err;
+  }
+  if (access.managed && !orderAuthz.isManagedCustomerFileAllowed(f.purpose, access.order.order_status)) {
+    const err = new Error("لا يمكنك الوصول إلى هذا الملف.");
+    err.statusCode = 403;
     throw err;
   }
   const downloadName = decodeMultipartOriginalName(f.original_name) || f.original_name || "file";

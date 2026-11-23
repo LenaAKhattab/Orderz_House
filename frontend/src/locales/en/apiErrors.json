@@ -283,6 +283,19 @@
     "EXTERNAL_ORDER_NOT_FOUND": "WhatsApp order not found.",
     "EXTERNAL_ORDER_REJECTION_REASON_INVALID": "Choose a valid rejection reason.",
     "EXTERNAL_ORDER_FREELANCER_NOT_ELIGIBLE": "This order can't be assigned to this freelancer right now (account, membership or verification not eligible).",
-    "EXTERNAL_ORDER_DETAILS_INVALID": "Check the category, delivery time and note."
+    "EXTERNAL_ORDER_DETAILS_INVALID": "Check the category, delivery time and note.",
+    "SMART_ORDER_CUSTOMER_INVALID": "The customer details are invalid.",
+    "SMART_ORDER_CUSTOMER_MODE_REQUIRED": "Choose who this order is for.",
+    "SMART_ORDER_CUSTOMER_NOT_ELIGIBLE": "The selected account is not an active, verified customer account.",
+    "SMART_ORDER_PHONE_INVALID": "Invalid phone number. Use the international format, e.g. +9627XXXXXXXX.",
+    "SMART_ORDER_ACCOUNT_MANAGER_INVALID": "The account manager must be an active Admin.",
+    "SMART_ORDER_PRICE_INVALID": "The customer price is invalid.",
+    "SMART_ORDER_NOT_FOUND": "Order not found.",
+    "SMART_ORDER_ACTION_NOT_ALLOWED": "This action is not available for this order.",
+    "SMART_ORDER_CONVERSION_EVIDENCE_REQUIRED": "Record how the customer asked for an account.",
+    "SMART_ORDER_CLAIM_INVALID": "This order link is invalid or has expired.",
+    "SMART_ORDER_CLAIM_CLIENT_ONLY": "Please sign in with a verified customer account to receive this order.",
+    "SMART_ORDER_CLAIM_ALREADY_LINKED": "This order is already linked to an account.",
+    "SMART_ORDER_MANAGED_BY_TEAM": "The OrderzHouse team manages this order. Contact your account manager for any change."
   }
 }

@@ -15,8 +15,15 @@ export default function ScrollToTop() {
 
   useEffect(() => {
     if (hash) {
-      const id = decodeURIComponent(hash.replace(/^#/, ""));
-      const target = document.getElementById(id) || document.querySelector(hash);
+      // A fragment is not always an element anchor (e.g. "#t=<token>" on /claim-order): an invalid
+      // selector or malformed escape must never throw and blank the page.
+      let target = null;
+      try {
+        const id = decodeURIComponent(hash.replace(/^#/, ""));
+        target = document.getElementById(id) || document.querySelector(hash);
+      } catch {
+        target = null;
+      }
       if (target) {
         target.scrollIntoView({ behavior: "smooth", block: "start" });
         return;

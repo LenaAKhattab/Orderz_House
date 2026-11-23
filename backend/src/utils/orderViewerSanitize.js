@@ -298,6 +298,8 @@ function sanitizeBidUsersForClient(bidUsers) {
 /** Client-owned order payloads: hide freelancer user/account IDs; keep safe display for bids. */
 function sanitizeOrderForClient(order) {
   if (!order || typeof order !== "object") return order;
+  // Already a customer projection of an Admin-managed order (orderCustomerService) — keep as is.
+  if (order.managedByAdmin === true) return order;
   const { attachClientOrderUiFlags } = require("./clientOrderUiFlags");
   const o = { ...order };
   delete o.assignedFreelancerId;

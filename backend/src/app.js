@@ -60,6 +60,7 @@ const superAdminFairDistributionRoutes = require("./routes/superAdminFairDistrib
 const superAdminEliteDirectOrdersRoutes = require("./routes/superAdminEliteDirectOrdersRoutes");
 const ordersRoutes = require("./routes/ordersRoutes");
 const externalOrderIntakeRoutes = require("./routes/externalOrderIntakeRoutes");
+const orderCustomerRoutes = require("./routes/orderCustomerRoutes");
 const notificationsRoutes = require("./routes/notificationsRoutes");
 const deviceTokensRoutes = require("./routes/deviceTokensRoutes");
 const profileRoutes = require("./routes/profileRoutes");
@@ -174,6 +175,7 @@ app.use("/api/referrals", referralRoutes);
 app.use("/api/super-admin/referrals", superAdminReferralRoutes);
 app.use("/api", healthRoutes);
 app.use("/api", publicRoutes);
+app.use("/api", orderCustomerRoutes.claimRouter);
 app.use("/api", translationRoutes);
 // Optional: automation tick for external cron (see FAKE_ORDERS_AUTOMATION_CRON_SECRET).
 app.use("/api/internal", internalAutomationRoutes);
@@ -191,6 +193,7 @@ app.use("/api/admin", adminPlanPagesRoutes);
 app.use("/api/admin", adminSubscriptionsRoutes);
 app.use("/api/admin", adminActionCenterRoutes);
 app.use("/api/admin", externalOrderIntakeRoutes.adminRouter);
+app.use("/api/admin", orderCustomerRoutes.adminRouter);
 app.use("/api/admin", adminOrdersRoutes);
 app.use("/api/admin", adminCoursesRoutes);
 app.use("/api/admin", adminFakeOrdersRoutes);

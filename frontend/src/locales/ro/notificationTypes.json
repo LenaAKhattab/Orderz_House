@@ -294,6 +294,10 @@
     "external_order_intake_rejected": {
       "title": "Comandă WhatsApp neaprobată",
       "message": "Una dintre comenzile dumneavoastră WhatsApp nu a fost aprobată. Consultați Comenzi WhatsApp pentru detalii."
+    },
+    "order_customer_account_linked": {
+      "title": "Comandă asociată contului clientului",
+      "message": "Clientul și-a activat contul și poate vedea acum comanda."
     }
   }
 }

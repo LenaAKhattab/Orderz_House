@@ -283,6 +283,19 @@
     "EXTERNAL_ORDER_NOT_FOUND": "طلب واتساب غير موجود.",
     "EXTERNAL_ORDER_REJECTION_REASON_INVALID": "اختر سببًا صالحًا لعدم الاعتماد.",
     "EXTERNAL_ORDER_FREELANCER_NOT_ELIGIBLE": "لا يمكن إسناد الطلب لهذا المستقل حاليًا (الحساب أو العضوية أو التحقق غير مؤهل).",
-    "EXTERNAL_ORDER_DETAILS_INVALID": "تحقق من التصنيف ومدة التنفيذ والملاحظة."
+    "EXTERNAL_ORDER_DETAILS_INVALID": "تحقق من التصنيف ومدة التنفيذ والملاحظة.",
+    "SMART_ORDER_CUSTOMER_INVALID": "بيانات العميل غير صالحة.",
+    "SMART_ORDER_CUSTOMER_MODE_REQUIRED": "اختر نوع ارتباط العميل بالطلب.",
+    "SMART_ORDER_CUSTOMER_NOT_ELIGIBLE": "الحساب المختار ليس حساب عميل مفعّلًا.",
+    "SMART_ORDER_PHONE_INVALID": "رقم الهاتف غير صالح. استخدم الصيغة الدولية مثل +9627XXXXXXXX.",
+    "SMART_ORDER_ACCOUNT_MANAGER_INVALID": "المسؤول عن المتابعة يجب أن يكون أدمن فعّالًا.",
+    "SMART_ORDER_PRICE_INVALID": "سعر العميل غير صالح.",
+    "SMART_ORDER_NOT_FOUND": "الطلب غير موجود.",
+    "SMART_ORDER_ACTION_NOT_ALLOWED": "هذا الإجراء غير متاح لهذا الطلب.",
+    "SMART_ORDER_CONVERSION_EVIDENCE_REQUIRED": "سجّل كيف طلب العميل إنشاء الحساب.",
+    "SMART_ORDER_CLAIM_INVALID": "رابط الطلب غير صالح أو منتهي الصلاحية.",
+    "SMART_ORDER_CLAIM_CLIENT_ONLY": "يجب تسجيل الدخول بحساب عميل مفعّل لاستلام الطلب.",
+    "SMART_ORDER_CLAIM_ALREADY_LINKED": "هذا الطلب مرتبط بحساب بالفعل.",
+    "SMART_ORDER_MANAGED_BY_TEAM": "يدير فريق OrderzHouse هذا الطلب. تواصل مع المسؤول عن طلبك لأي إجراء."
   }
 }

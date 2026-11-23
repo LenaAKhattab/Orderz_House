@@ -1,0 +1,225 @@
+{
+  "customerStep": {
+    "stepLabel": "Kunde",
+    "title": "Für wen ist dieser Auftrag?",
+    "subtitle": "Bitte ausdrücklich wählen. Eine Telefonnummer legt niemals automatisch ein Konto an.",
+    "modes": {
+      "internal": {
+        "title": "Interner Auftrag — ohne Kunde",
+        "desc": "Der bisherige Admin-Ablauf: Arbeit für das Team, kein Kunde wird verknüpft."
+      },
+      "existing": {
+        "title": "Bestehendes Kundenkonto",
+        "desc": "Den Auftrag sofort mit einem verifizierten Kundenkonto verknüpfen."
+      },
+      "new_account": {
+        "title": "Neues Kundenkonto anlegen",
+        "desc": "Der Kunde erhält einen sicheren Einmal-Link zur Kontoaktivierung; danach erscheint derselbe Auftrag in seinem Konto."
+      },
+      "guest": {
+        "title": "Einmaliger Gast — ohne Konto",
+        "desc": "Kein Benutzer, kein Passwort, kein OTP und keine App nötig. Das Team übernimmt die Kommunikation extern (z. B. WhatsApp)."
+      }
+    }
+  },
+  "fields": {
+    "channel": "Auftragsquelle",
+    "channelOptions": {
+      "whatsapp": "WhatsApp",
+      "admin": "Admin (intern)",
+      "app": "App",
+      "web": "Website",
+      "phone": "Telefonanruf",
+      "email": "E-Mail",
+      "other": "Sonstiges"
+    },
+    "accountManager": "Verantwortlicher Kundenbetreuer",
+    "accountManagerMe": "Ich",
+    "accountManagerHint": "Übernimmt die Betreuung des Kunden. Der Admin wird dadurch nicht zum Kunden.",
+    "searchCustomer": "Kundenkonto suchen",
+    "searchPlaceholder": "Konto-ID, exakte E-Mail, Telefon oder Name",
+    "searchHint": "Es werden nur verifizierte, aktive Kundenkonten angezeigt. Kontaktdaten sind maskiert.",
+    "searching": "Suche läuft…",
+    "noResults": "Kein passendes verifiziertes Kundenkonto.",
+    "selected": "Ausgewähltes Konto",
+    "change": "Ändern",
+    "phone": "Telefon des Kunden (internationales Format)",
+    "phonePlaceholder": "+9627XXXXXXXX",
+    "phoneHint": "Wird nur zum Senden des Aktivierungslinks verwendet. Kein Identitätsnachweis.",
+    "phoneMatchWarning": "Ein verifiziertes Kundenkonto nutzt diese Nummer bereits. Handelt es sich um dieselbe Person, wählen Sie „Bestehendes Kundenkonto“.",
+    "referenceName": "Referenzname (optional)",
+    "referenceNameHint": "Ein Vorname oder Spitzname für den Auftrag — keine Login-Identität.",
+    "contactChannel": "Bevorzugter Kontaktweg",
+    "contactOptions": {
+      "whatsapp": "WhatsApp",
+      "phone": "Telefon",
+      "email": "E-Mail",
+      "other": "Sonstiges"
+    },
+    "contactPhone": "Kontaktnummer",
+    "contactPhoneOptional": "Kontaktnummer (optional)",
+    "whatsappOnly": "Kontakt nur über WhatsApp",
+    "consent": "Wie der Kunde dem Kontakt zugestimmt hat",
+    "consentOptions": {
+      "customer_initiated": "Der Kunde hat uns kontaktiert",
+      "verbal": "Mündliche Zustimmung",
+      "written": "Schriftliche Zustimmung"
+    },
+    "note": "Interne Notiz (optional)",
+    "notePlaceholder": "Nur was das Team für diesen Auftrag braucht",
+    "priceSection": "Kundenpreis",
+    "priceAmount": "Preis, den der Kunde zahlt (optional)",
+    "priceCurrency": "Währung",
+    "pricePendingHint": "Leer lassen, damit der Auftrag „Preis ausstehend“ bleibt.",
+    "priceSeparateHint": "Getrennt vom Freelancer-Budget in den Auftragsdetails."
+  },
+  "errors": {
+    "mode": "Wählen Sie, für wen dieser Auftrag ist.",
+    "customer": "Wählen Sie ein Kundenkonto.",
+    "phone": "Geben Sie eine gültige internationale Telefonnummer ein (z. B. +9627XXXXXXXX).",
+    "phoneRequiredForChannel": "Für Kontakt per WhatsApp oder Telefon ist eine Kontaktnummer erforderlich.",
+    "price": "Geben Sie einen gültigen Preis (max. 2 Dezimalstellen) und eine Währung ein."
+  },
+  "review": {
+    "customerMode": "Kundenmodus",
+    "customer": "Kunde",
+    "channel": "Quelle",
+    "manager": "Kundenbetreuer",
+    "price": "Kundenpreis",
+    "pricePending": "Preis ausstehend",
+    "guestNoAccount": "Gast — es wird kein Konto angelegt"
+  },
+  "badges": {
+    "internal": "Intern",
+    "existing": "Kundenkonto",
+    "newAccountPending": "Aktivierung ausstehend",
+    "newAccountActive": "Konto aktiviert",
+    "guest": "Gast — ohne Konto",
+    "converted": "Gast → Konto",
+    "pricingPending": "Preis ausstehend"
+  },
+  "created": {
+    "title": "Auftrag erstellt",
+    "guestBody": "Gastauftrag {{orderCode}} wurde gespeichert. Es wurde kein Konto angelegt. Kopieren Sie die Nachricht unten und senden Sie sie an den Kunden.",
+    "accountBody": "Auftrag {{orderCode}} wurde gespeichert und wartet auf die Kontoaktivierung durch den Kunden. Senden Sie den Einmal-Link unten — er wird nur jetzt angezeigt.",
+    "existingBody": "Auftrag {{orderCode}} ist mit dem Kundenkonto verknüpft und für den Kunden sichtbar.",
+    "linkLabel": "Einmaliger Aktivierungslink",
+    "linkExpires": "Läuft ab am {{date}}",
+    "copyLink": "Link kopieren",
+    "copyMessage": "Nachricht kopieren",
+    "copied": "Kopiert",
+    "messageLanguage": "Sprache der Nachricht",
+    "close": "Fertig",
+    "openCustomer": "Kundenbereich öffnen"
+  },
+  "templates": {
+    "account": "Hallo, Ihr Auftrag {{orderCode}} wurde registriert — Leistung: {{service}} — Termin: {{dueAt}} — Preis: {{price}}. Um Ihr Konto zu aktivieren und den Auftrag anzusehen: {{link}}. Alle Details und Anhänge sind gespeichert; Sie müssen den Auftrag nicht erneut aufgeben.",
+    "guest": "Hallo, Ihr Auftrag {{orderCode}} wurde registriert — Leistung: {{service}} — Liefertermin: {{dueAt}} — Preis: {{price}}. Unser Team betreut Sie hier über WhatsApp; Sie müssen weder ein Konto anlegen noch die App installieren. Falls eine Zahlung nötig ist, erhalten Sie einen separaten sicheren Zahlungslink, und wir senden Ihnen Updates und die Lieferung hier.",
+    "conversion": "Hallo, wie gewünscht erhalten Sie hier einen sicheren Einmal-Link, um Ihr Konto anzulegen und den Auftrag {{orderCode}} damit zu verknüpfen: {{link}}. Der Auftrag, seine Dateien und sein Verlauf bleiben unverändert.",
+    "pricePending": "wird noch bestätigt",
+    "dueTbd": "wird noch bestätigt"
+  },
+  "panel": {
+    "open": "Kunde",
+    "title": "Kunde — Auftrag {{orderCode}}",
+    "loading": "Kundendaten werden geladen…",
+    "loadFailed": "Die Kundendaten konnten nicht geladen werden.",
+    "noCustomer": "Dies ist ein interner Auftrag. Es ist kein Kunde verknüpft.",
+    "mode": "Modus",
+    "channel": "Quelle",
+    "createdBy": "Erstellt von",
+    "manager": "Kundenbetreuer",
+    "changeManager": "Kundenbetreuer ändern",
+    "save": "Speichern",
+    "saved": "Gespeichert",
+    "pricing": "Kundenpreis",
+    "updatePrice": "Preis aktualisieren",
+    "account": "Kundenkonto",
+    "linkedAt": "Verknüpft am {{date}}",
+    "awaitingActivation": "Der Kunde hat noch kein Konto aktiviert.",
+    "guest": "Gastkontakt",
+    "referenceName": "Referenz",
+    "phone": "Telefon",
+    "reveal": "Vollständige Nummer anzeigen",
+    "revealNote": "Das Anzeigen der Nummer wird im Prüfprotokoll erfasst.",
+    "noPhone": "Keine Telefonnummer gespeichert",
+    "contact": "Kontaktweg",
+    "whatsappOnly": "Nur WhatsApp",
+    "consent": "Zustimmung",
+    "retention": "Kontaktdaten werden aufbewahrt bis {{date}}",
+    "invitation": "Kundenlink",
+    "invitationPurpose": {
+      "new_account": "Kontoaktivierung",
+      "guest_conversion": "Umwandlung Gast → Konto"
+    },
+    "invitationStatus": {
+      "pending": "Aktiv",
+      "claimed": "Verwendet",
+      "revoked": "Widerrufen",
+      "expired": "Abgelaufen"
+    },
+    "regenerate": "Neuen Aktivierungslink erstellen",
+    "revoke": "Link widerrufen",
+    "conversion": "Gast in Konto umwandeln",
+    "conversionHint": "Nur wenn der Kunde ausdrücklich ein Konto wünscht. Auftrag, Zahlung, Dateien und Verlauf bleiben erhalten.",
+    "evidence": "Wie hat der Kunde darum gebeten?",
+    "evidencePlaceholder": "z. B. Kunde hat am 23. Nov. per WhatsApp gefragt",
+    "createConversion": "Umwandlungslink erstellen",
+    "whatsappTemplate": "WhatsApp-Nachricht",
+    "privacyNote": "Freelancer sehen niemals die Kontaktdaten des Kunden.",
+    "events": "Verlauf",
+    "noEvents": "Noch kein Verlauf.",
+    "eventActions": {
+      "customer_mode_set": "Kundenmodus festgelegt",
+      "invitation_created": "Link erstellt",
+      "invitation_revoked": "Link widerrufen",
+      "account_claimed": "Kunde hat das Konto aktiviert",
+      "guest_converted": "Gast in Konto umgewandelt",
+      "account_manager_changed": "Kundenbetreuer geändert",
+      "customer_pricing_set": "Kundenpreis aktualisiert",
+      "guest_contact_revealed": "Kontaktnummer angezeigt"
+    }
+  },
+  "filters": {
+    "label": "Kunde",
+    "all": "Alle Aufträge",
+    "internal": "Nur intern",
+    "any_customer": "Mit Kunde",
+    "existing": "Kundenkonto",
+    "new_account": "Neues Konto",
+    "guest": "Gäste (ohne Konto)"
+  },
+  "summary": {
+    "title": "Kundenaufträge",
+    "guest": "Gastaufträge",
+    "newAccount": "Aufträge mit neuem Konto",
+    "activated": "Aktiviert",
+    "activationRate": "Aktivierungsrate",
+    "existing": "Bestehende Konten",
+    "pricingPending": "Preis ausstehend",
+    "whatsapp": "Über WhatsApp",
+    "converted": "Umgewandelte Gäste"
+  },
+  "claim": {
+    "title": "Ihr OrderzHouse-Auftrag",
+    "loading": "Ihr Link wird geprüft…",
+    "invalid": "Dieser Link ist ungültig, wurde bereits verwendet oder ist abgelaufen. Bitte fordern Sie bei unserem Team einen neuen Link an.",
+    "orderLabel": "Auftragsnummer",
+    "serviceLabel": "Leistung",
+    "intro": "Melden Sie sich an oder erstellen Sie ein Kundenkonto, um diesen Auftrag anzusehen. Ihr Auftrag, seine Details und Anhänge sind bereits gespeichert.",
+    "loginCta": "Anmelden",
+    "registerCta": "Konto erstellen",
+    "claimCta": "Diesen Auftrag zu meinem Konto hinzufügen",
+    "claiming": "Auftrag wird verknüpft…",
+    "signedInAs": "Sie sind angemeldet. Der Auftrag wird diesem Konto hinzugefügt.",
+    "wrongRole": "Bitte melden Sie sich mit einem Kundenkonto an, um diesen Auftrag zu erhalten.",
+    "successTitle": "Der Auftrag ist jetzt in Ihrem Konto",
+    "successBody": "Sie können Auftrag {{orderCode}} unter „Meine Aufträge“ verfolgen.",
+    "viewOrder": "Meine Aufträge ansehen"
+  },
+  "managed": {
+    "badge": "Vom OrderzHouse-Team betreut",
+    "readOnlyNote": "Unser Team betreut diesen Auftrag für Sie. Für Änderungen wenden Sie sich an Ihren Kundenbetreuer.",
+    "pricePending": "Preis wird noch bestätigt"
+  }
+}

@@ -69,15 +69,58 @@ async function loadOrderRow(orderId, clientMaybe) {
   return rows[0] || null;
 }
 
+/** True when `uid` is the linked customer of an Admin-managed order (Smart Orders S1). */
+function isManagedOrderCustomer(order, uid) {
+  return Boolean(
+    order &&
+      order.source_type !== "client_created" &&
+      order.customer_user_id != null &&
+      Number(order.customer_user_id) === Number(uid),
+  );
+}
+
 async function assertClientOwnsOrder(clientUserId, orderId, clientMaybe) {
   const uid = Number(clientUserId);
   const order = await loadOrderRow(orderId, clientMaybe);
   if (!order) throw notFoundError("الطلب غير موجود.");
   if (order.source_type !== "client_created" || Number(order.created_by_user_id) !== uid) {
     logBlockedAccess("client_owns_order", { orderId: String(orderId), clientUserId: String(uid) });
+    if (isManagedOrderCustomer(order, uid)) {
+      // Linked customer of an Admin-managed order: read-only; the account manager runs the workflow.
+      const err = authError(
+        "يدير فريق OrderzHouse هذا الطلب. تواصل مع المسؤول عن طلبك لأي إجراء.",
+        403,
+        "client_managed_order",
+      );
+      err.publicCode = "SMART_ORDER_MANAGED_BY_TEAM";
+      throw err;
+    }
     throw authError("لا يمكنك إدارة هذا الطلب.", 403, "client_not_owner");
   }
   return order;
+}
+
+/**
+ * Read access for a client: the self-service owner OR the linked customer of an Admin-managed order.
+ * Returns `{ order, managed }`. Mutating client actions must keep using assertClientOwnsOrder.
+ */
+async function assertClientCanViewOrder(clientUserId, orderId, clientMaybe) {
+  const uid = Number(clientUserId);
+  const order = await loadOrderRow(orderId, clientMaybe);
+  if (!order) throw notFoundError("الطلب غير موجود.");
+  if (order.source_type === "client_created" && Number(order.created_by_user_id) === uid) {
+    return { order, managed: false };
+  }
+  if (isManagedOrderCustomer(order, uid)) return { order, managed: true };
+  logBlockedAccess("client_view_order", { orderId: String(orderId), clientUserId: String(uid) });
+  throw notFoundError("الطلب غير موجود.");
+}
+
+/** Linked customers of managed orders see the brief, and the delivery only once the order is completed. */
+function isManagedCustomerFileAllowed(purpose, orderStatus) {
+  const p = String(purpose || "brief").trim();
+  if (p === "brief") return true;
+  return p === "delivery" && String(orderStatus || "") === "completed";
 }
 
 async function assertFreelancerAssignedToOrder(freelancerUserId, orderId, clientMaybe) {
@@ -283,6 +326,13 @@ async function assertCanAccessOrderFile({ auth, orderId, fileId }, clientMaybe) 
   if (!order) throw notFoundError();
 
   if (isClientAuth(auth)) {
+    if (isManagedOrderCustomer(order, uid)) {
+      if (!isManagedCustomerFileAllowed(fileRow.purpose, order.order_status)) {
+        logBlockedAccess("managed_customer_file", { orderId: String(oid), fileId: String(fid), userId: String(uid) });
+        throw authError("لا يمكنك الوصول إلى هذا الملف.", 403, "file_purpose_denied");
+      }
+      return { mode: "client_managed", order, fileRow };
+    }
     await assertClientOwnsOrder(uid, oid, clientMaybe);
     return { mode: "client", order, fileRow };
   }
@@ -318,6 +368,9 @@ module.exports = {
   logBlockedAccess,
   loadOrderRow,
   assertClientOwnsOrder,
+  assertClientCanViewOrder,
+  isManagedOrderCustomer,
+  isManagedCustomerFileAllowed,
   assertFreelancerAssignedToOrder,
   assertFreelancerCanAccessPoolOrder,
   assertFreelancerCanClaimOrder,

@@ -12,7 +12,7 @@ function sendAuthzError(res, err) {
   return res.status(status).json({
     success: false,
     message,
-    code: status === 401 ? "UNAUTHORIZED" : status === 404 ? "NOT_FOUND" : "FORBIDDEN",
+    code: err?.publicCode || (status === 401 ? "UNAUTHORIZED" : status === 404 ? "NOT_FOUND" : "FORBIDDEN"),
     ...(err?.reason && status === 403 ? { reason: err.reason } : {}),
   });
 }
@@ -43,6 +43,12 @@ function requireFreelancerPoolViewer(req, res, next) {
 const requireClientOwnsOrderParam = asyncAuthz(async (req) => {
   const uid = orderAuthz.requireAuthenticatedUserId(req.auth);
   await orderAuthz.assertClientOwnsOrder(uid, req.params.id);
+});
+
+/** Read-only: self-service owner OR linked customer of an Admin-managed order (Smart Orders S1). */
+const requireClientCanViewOrderParam = asyncAuthz(async (req) => {
+  const uid = orderAuthz.requireAuthenticatedUserId(req.auth);
+  await orderAuthz.assertClientCanViewOrder(uid, req.params.id);
 });
 
 const requireFreelancerAssignedOrderParam = asyncAuthz(async (req) => {
@@ -81,6 +87,7 @@ module.exports = {
   sendAuthzError,
   requireFreelancerPoolViewer,
   requireClientOwnsOrderParam,
+  requireClientCanViewOrderParam,
   requireFreelancerAssignedOrderParam,
   requireFreelancerPoolOrderAccess,
   requireFreelancerCanClaimOrderParam,

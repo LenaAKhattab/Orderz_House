@@ -294,6 +294,10 @@
     "external_order_intake_rejected": {
       "title": "WhatsApp order not approved",
       "message": "One of your WhatsApp orders was not approved. See WhatsApp Orders for details."
+    },
+    "order_customer_account_linked": {
+      "title": "Order linked to the customer account",
+      "message": "The customer activated an account and can now see the order."
     }
   }
 }
