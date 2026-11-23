@@ -1,4 +1,5 @@
 const ordersService = require("../services/ordersService");
+const orderCustomerService = require("../services/orderCustomerService");
 const adminUsersService = require("../services/adminUsersService");
 const { pipeOrderFileToResponse } = require("../utils/pipeOrderFileDownload");
 
@@ -70,6 +71,8 @@ const createInternalOrder = async (req, res, next) => {
       archive: String(req.body.archive || "").toLowerCase() === "true",
       extraCategoryIds,
       extraCategoryDetails,
+      // Smart Orders S1: explicit customer mode (absent -> legacy internal order, unchanged).
+      customer: orderCustomerService.parseCustomerInput(req.body.customer),
     };
 
     const order = await ordersService.createInternalOrder({
@@ -77,8 +80,13 @@ const createInternalOrder = async (req, res, next) => {
       actorRole,
       payload,
       uploadedFiles: req.files || [],
+      options: { returnCustomerLink: true },
     });
-    return res.status(201).json({ success: true, data: { order } });
+    const customerLink = order?.customerLink
+      ? { claimUrl: order.customerLink.claimUrl, expiresAt: order.customerLink.expiresAt }
+      : null;
+    const customer = payload.customer ? await orderCustomerService.getAdminOrderCustomer(order.id) : null;
+    return res.status(201).json({ success: true, data: { order, customer, customerLink } });
   } catch (err) {
     return next(err);
   }
@@ -88,7 +96,12 @@ const listInternalOrders = async (req, res, next) => {
   try {
     const limit = req.query.limit;
     const offset = req.query.offset;
-    const orders = await ordersService.listAdminInternalOrders({ limit, offset });
+    const orders = await ordersService.listAdminInternalOrders({
+      limit,
+      offset,
+      customerMode: req.query.customerMode,
+      channel: req.query.channel,
+    });
     return res.status(200).json({ success: true, data: { orders } });
   } catch (err) {
     return next(err);

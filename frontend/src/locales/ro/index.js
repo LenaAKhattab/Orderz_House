@@ -39,6 +39,7 @@ import ns_platformUtils from "./platformUtils.json";
 import ns_referrals from "./referrals.json";
 import ns_services from "./services.json";
 import ns_siteEditor from "./siteEditor.json";
+import ns_smartOrders from "./smartOrders.json";
 import ns_statuses from "./statuses.json";
 import ns_subscriptions from "./subscriptions.json";
 import ns_trainingOrders from "./trainingOrders.json";
@@ -84,6 +85,7 @@ export default {
   referrals: ns_referrals,
   services: ns_services,
   siteEditor: ns_siteEditor,
+  smartOrders: ns_smartOrders,
   statuses: ns_statuses,
   subscriptions: ns_subscriptions,
   trainingOrders: ns_trainingOrders,

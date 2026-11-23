@@ -283,6 +283,19 @@
     "EXTERNAL_ORDER_NOT_FOUND": "WhatsApp-Auftrag nicht gefunden.",
     "EXTERNAL_ORDER_REJECTION_REASON_INVALID": "Wählen Sie einen gültigen Ablehnungsgrund.",
     "EXTERNAL_ORDER_FREELANCER_NOT_ELIGIBLE": "Der Auftrag kann diesem Freelancer derzeit nicht zugewiesen werden (Konto, Mitgliedschaft oder Verifizierung nicht berechtigt).",
-    "EXTERNAL_ORDER_DETAILS_INVALID": "Prüfen Sie Kategorie, Lieferzeit und Notiz."
+    "EXTERNAL_ORDER_DETAILS_INVALID": "Prüfen Sie Kategorie, Lieferzeit und Notiz.",
+    "SMART_ORDER_CUSTOMER_INVALID": "Die Kundendaten sind ungültig.",
+    "SMART_ORDER_CUSTOMER_MODE_REQUIRED": "Wählen Sie, für wen dieser Auftrag ist.",
+    "SMART_ORDER_CUSTOMER_NOT_ELIGIBLE": "Das gewählte Konto ist kein aktives, verifiziertes Kundenkonto.",
+    "SMART_ORDER_PHONE_INVALID": "Ungültige Telefonnummer. Verwenden Sie das internationale Format, z. B. +9627XXXXXXXX.",
+    "SMART_ORDER_ACCOUNT_MANAGER_INVALID": "Der Kundenbetreuer muss ein aktiver Admin sein.",
+    "SMART_ORDER_PRICE_INVALID": "Der Kundenpreis ist ungültig.",
+    "SMART_ORDER_NOT_FOUND": "Auftrag nicht gefunden.",
+    "SMART_ORDER_ACTION_NOT_ALLOWED": "Diese Aktion ist für diesen Auftrag nicht verfügbar.",
+    "SMART_ORDER_CONVERSION_EVIDENCE_REQUIRED": "Erfassen Sie, wie der Kunde ein Konto angefordert hat.",
+    "SMART_ORDER_CLAIM_INVALID": "Dieser Auftragslink ist ungültig oder abgelaufen.",
+    "SMART_ORDER_CLAIM_CLIENT_ONLY": "Bitte melden Sie sich mit einem verifizierten Kundenkonto an, um diesen Auftrag zu erhalten.",
+    "SMART_ORDER_CLAIM_ALREADY_LINKED": "Dieser Auftrag ist bereits mit einem Konto verknüpft.",
+    "SMART_ORDER_MANAGED_BY_TEAM": "Das OrderzHouse-Team betreut diesen Auftrag. Wenden Sie sich für Änderungen an Ihren Kundenbetreuer."
   }
 }

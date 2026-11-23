@@ -283,6 +283,19 @@
     "EXTERNAL_ORDER_NOT_FOUND": "Comanda WhatsApp nu a fost găsită.",
     "EXTERNAL_ORDER_REJECTION_REASON_INVALID": "Alegeți un motiv valid de respingere.",
     "EXTERNAL_ORDER_FREELANCER_NOT_ELIGIBLE": "Comanda nu poate fi atribuită acum acestui freelancer (contul, abonamentul sau verificarea nu sunt eligibile).",
-    "EXTERNAL_ORDER_DETAILS_INVALID": "Verificați categoria, termenul de livrare și nota."
+    "EXTERNAL_ORDER_DETAILS_INVALID": "Verificați categoria, termenul de livrare și nota.",
+    "SMART_ORDER_CUSTOMER_INVALID": "Datele clientului nu sunt valide.",
+    "SMART_ORDER_CUSTOMER_MODE_REQUIRED": "Alegeți pentru cine este această comandă.",
+    "SMART_ORDER_CUSTOMER_NOT_ELIGIBLE": "Contul selectat nu este un cont de client activ și verificat.",
+    "SMART_ORDER_PHONE_INVALID": "Număr de telefon invalid. Folosiți formatul internațional, de ex. +9627XXXXXXXX.",
+    "SMART_ORDER_ACCOUNT_MANAGER_INVALID": "Responsabilul de cont trebuie să fie un Admin activ.",
+    "SMART_ORDER_PRICE_INVALID": "Prețul clientului nu este valid.",
+    "SMART_ORDER_NOT_FOUND": "Comanda nu a fost găsită.",
+    "SMART_ORDER_ACTION_NOT_ALLOWED": "Această acțiune nu este disponibilă pentru această comandă.",
+    "SMART_ORDER_CONVERSION_EVIDENCE_REQUIRED": "Înregistrați cum a cerut clientul crearea contului.",
+    "SMART_ORDER_CLAIM_INVALID": "Acest link de comandă este invalid sau a expirat.",
+    "SMART_ORDER_CLAIM_CLIENT_ONLY": "Autentificați-vă cu un cont de client verificat pentru a primi această comandă.",
+    "SMART_ORDER_CLAIM_ALREADY_LINKED": "Această comandă este deja asociată unui cont.",
+    "SMART_ORDER_MANAGED_BY_TEAM": "Echipa OrderzHouse gestionează această comandă. Pentru orice modificare, contactați responsabilul de cont."
   }
 }

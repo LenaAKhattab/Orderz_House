@@ -27,6 +27,10 @@ import { formatTrainingOrderBudget } from "../../pages/dashboard/trainingOrders/
 import SecureCheckoutNote from "../payments/SecureCheckoutNote";
 import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
 import { pluralDurationUnit } from "./durationUnitLabel";
+import "../../i18n/smartOrdersResources";
+import AdminOrderCustomerStep from "./smart/AdminOrderCustomerStep";
+import OrderCustomerCreatedDialog from "./smart/OrderCustomerCreatedDialog";
+import { buildCustomerPayload, emptyCustomerDraft, validateCustomerDraft } from "./smart/customerDraft";
 
 const ADMIN_STEP_KEYS = ["core", "assignment", "files", "review"];
 const CLIENT_STEP_KEYS = ["core", "files", "review"];
@@ -395,9 +399,17 @@ export default function AdminInternalOrderWizard({
       })),
     [t, poolWizardNs],
   );
+  // Smart Orders S1: explicit customer mode first — real Admin orders only (not institutional,
+  // training templates, client self-service or custom submit handlers).
+  const showCustomerStep =
+    !isFakePoolMode && !isClientAudience && !isInstitutionalMode && typeof onSubmitFormData !== "function";
   const adminSteps = useMemo(
-    () => ADMIN_STEP_KEYS.map((key) => ({ key, label: t(`ordersAdmin.wizard.steps.${key}`) })),
-    [t],
+    () =>
+      (showCustomerStep ? ["customer", ...ADMIN_STEP_KEYS] : ADMIN_STEP_KEYS).map((key) => ({
+        key,
+        label: key === "customer" ? t("smartOrders.customerStep.stepLabel") : t(`ordersAdmin.wizard.steps.${key}`),
+      })),
+    [t, showCustomerStep],
   );
   const clientSteps = useMemo(
     () => CLIENT_STEP_KEYS.map((key) => ({ key, label: t(`ordersAdmin.wizard.steps.${key}`) })),
@@ -434,6 +446,8 @@ export default function AdminInternalOrderWizard({
   const [attempted, setAttempted] = useState({});
 
   const [form, setForm] = useState(() => makeInitialForm(initialValues));
+  const [customerDraft, setCustomerDraft] = useState(emptyCustomerDraft);
+  const [createdCustomerResult, setCreatedCustomerResult] = useState(null);
 
   const set = (k, v) => setForm((prev) => ({ ...prev, [k]: v }));
 
@@ -447,6 +461,7 @@ export default function AdminInternalOrderWizard({
     setAssignedFreelancer(null);
     setExtraCategoryDetails({});
     setExtraCategoryPickerOpen(false);
+    setCustomerDraft(emptyCustomerDraft());
     // eslint-disable-next-line react-hooks/exhaustive-deps -- reset only when token changes
   }, [resetToken]);
 
@@ -465,9 +480,10 @@ export default function AdminInternalOrderWizard({
       stepIdx > 0 ||
       files.length > 0 ||
       Boolean(assignedFreelancer) ||
+      Boolean(customerDraft.mode) ||
       (Array.isArray(form.extraCategoryIds) && form.extraCategoryIds.length > 0);
     onDirtyChange(dirty);
-  }, [form, files, stepIdx, assignedFreelancer, initialValues, onDirtyChange]);
+  }, [form, files, stepIdx, assignedFreelancer, customerDraft.mode, initialValues, onDirtyChange]);
 
   // Remember skill *names* for searchable suggestions; each new order starts with empty skills.
   useEffect(() => {
@@ -488,6 +504,7 @@ export default function AdminInternalOrderWizard({
 
   const errorsByStep = useMemo(() => {
     const out = {};
+    out.customer = showCustomerStep ? validateCustomerDraft(customerDraft, t) : {};
 
     // Step 1: order details (type, classification, budget, duration)
     out.core = {};
@@ -547,7 +564,7 @@ export default function AdminInternalOrderWizard({
     out.review = {};
 
     return out;
-  }, [form, files, isClientAudience, isFakePoolMode, t]);
+  }, [form, files, isClientAudience, isFakePoolMode, t, showCustomerStep, customerDraft]);
 
   useEffect(() => {
     if (form.projectType === "bidding" && form.budget) {
@@ -570,7 +587,7 @@ export default function AdminInternalOrderWizard({
   const canSubmit = useMemo(() => {
     const coreOk = Object.keys(errorsByStep.core).length === 0;
     if (isFakePoolMode) return coreOk;
-    return coreOk && Object.keys(errorsByStep.files).length === 0;
+    return coreOk && Object.keys(errorsByStep.files).length === 0 && Object.keys(errorsByStep.customer).length === 0;
   }, [errorsByStep, isFakePoolMode]);
 
   useEffect(() => {
@@ -765,6 +782,10 @@ export default function AdminInternalOrderWizard({
         if (form.assignedFreelancerId) fd.append("assignedFreelancerId", String(form.assignedFreelancerId));
         fd.append("archive", String(!form.assignedFreelancerId && archiveOnCreate));
       }
+      if (showCustomerStep) {
+        const customerPayload = buildCustomerPayload(customerDraft);
+        if (customerPayload) fd.append("customer", JSON.stringify(customerPayload));
+      }
       files.forEach((f) => fd.append("files", f));
       if (isClientAudience) {
         fd.append("creationKey", clientCreationKey(creationInstanceRef.current, form, files));
@@ -790,10 +811,15 @@ export default function AdminInternalOrderWizard({
             ? t("ordersAdmin.wizard.toast.createdClientMessage", { title: form.title.trim() })
             : t("ordersAdmin.wizard.toast.createdAdminMessage", { orderCode: created?.orderCode || "" }),
       });
+      const createdCustomer = res?.data?.customer || null;
+      if (createdCustomer) {
+        setCreatedCustomerResult({ customer: createdCustomer, customerLink: res?.data?.customerLink || null });
+      }
       if (typeof onCreated === "function") {
         onCreated(res);
         return;
       }
+      setCustomerDraft(emptyCustomerDraft());
       // Reset for next order; skill names stay in local history for the searchable list only.
       creationInstanceRef.current = newCreationInstanceId();
       setFiles([]);
@@ -907,6 +933,7 @@ export default function AdminInternalOrderWizard({
 
   const shell = (
     <>
+      <OrderCustomerCreatedDialog result={createdCustomerResult} onClose={() => setCreatedCustomerResult(null)} />
       {!isModal ? (
         <DashboardPageHeader
           title={isClientAudience ? t("ordersAdmin.wizard.header.createClientTitle") : t("ordersAdmin.wizard.header.createAdminTitle")}
@@ -976,6 +1003,16 @@ export default function AdminInternalOrderWizard({
           style={{ gridColumn: "span 12" }}
         >
           <div className={isModal ? "co-modal-ref__form-card" : "co-modal-ref__form-card--page"}>
+          {currentStepKey === "customer" ? (
+            <AdminOrderCustomerStep
+              value={customerDraft}
+              onChange={setCustomerDraft}
+              errors={errorsByStep.customer}
+              showErrors={Boolean(attempted.customer)}
+              disabled={busy}
+            />
+          ) : null}
+
           {currentStepKey === "core" ? (
             <>
               {isFakePoolMode ? (
@@ -1490,6 +1527,34 @@ export default function AdminInternalOrderWizard({
                 {isFakePoolMode ? `${stepIdx + 1}) ${tpl("steps.review")}` : t("ordersAdmin.wizard.review.heading")}
               </h2>
               <div className="oh-review">
+                {showCustomerStep && customerDraft.mode ? (
+                  <div className="oh-review__2col" data-testid="smart-orders-review-customer">
+                    <CreateOrderReviewRow label={t("smartOrders.review.customerMode")}>
+                      {t(`smartOrders.customerStep.modes.${customerDraft.mode}.title`)}
+                    </CreateOrderReviewRow>
+                    {customerDraft.mode !== "internal" ? (
+                      <CreateOrderReviewRow label={t("smartOrders.review.customer")}>
+                        {customerDraft.mode === "existing"
+                          ? customerDraft.customer?.fullName || customerDraft.customer?.accountId || "—"
+                          : customerDraft.mode === "guest"
+                            ? `${customerDraft.referenceName || "—"} · ${t("smartOrders.review.guestNoAccount")}`
+                            : customerDraft.phone || "—"}
+                      </CreateOrderReviewRow>
+                    ) : null}
+                    {customerDraft.mode !== "internal" ? (
+                      <CreateOrderReviewRow label={t("smartOrders.review.channel")}>
+                        {t(`smartOrders.fields.channelOptions.${customerDraft.channel}`)}
+                      </CreateOrderReviewRow>
+                    ) : null}
+                    {customerDraft.mode !== "internal" ? (
+                      <CreateOrderReviewRow label={t("smartOrders.review.price")}>
+                        {String(customerDraft.priceAmount || "").trim()
+                          ? `${customerDraft.priceAmount} ${customerDraft.priceCurrency}`
+                          : t("smartOrders.review.pricePending")}
+                      </CreateOrderReviewRow>
+                    ) : null}
+                  </div>
+                ) : null}
                 <CreateOrderReviewRow label={isFakePoolMode ? tpl("reviewTitle") : t("ordersAdmin.wizard.review.title")}>
                   {form.title.trim() || tpl("emDash")}
                 </CreateOrderReviewRow>

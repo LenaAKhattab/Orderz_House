@@ -1,0 +1,225 @@
+{
+  "customerStep": {
+    "stepLabel": "Klant",
+    "title": "Voor wie is deze opdracht?",
+    "subtitle": "Kies dit uitdrukkelijk. Een telefoonnummer maakt nooit vanzelf een account aan.",
+    "modes": {
+      "internal": {
+        "title": "Interne opdracht — geen klant",
+        "desc": "De huidige Admin-werkwijze: werk voor het team, er wordt geen klant gekoppeld."
+      },
+      "existing": {
+        "title": "Bestaand klantaccount",
+        "desc": "Koppel de opdracht meteen aan een geverifieerd klantaccount."
+      },
+      "new_account": {
+        "title": "Nieuw klantaccount aanmaken",
+        "desc": "De klant krijgt een veilige eenmalige link om een account te activeren; daarna verschijnt dezelfde opdracht in zijn account."
+      },
+      "guest": {
+        "title": "Eenmalige gast — geen account",
+        "desc": "Geen gebruiker, geen wachtwoord, geen OTP en geen app nodig. Het team regelt het contact extern (bijv. WhatsApp)."
+      }
+    }
+  },
+  "fields": {
+    "channel": "Bron van de opdracht",
+    "channelOptions": {
+      "whatsapp": "WhatsApp",
+      "admin": "Admin (intern)",
+      "app": "App",
+      "web": "Website",
+      "phone": "Telefoongesprek",
+      "email": "E-mail",
+      "other": "Overig"
+    },
+    "accountManager": "Verantwoordelijke accountmanager",
+    "accountManagerMe": "Ik",
+    "accountManagerHint": "Verzorgt de opvolging met de klant. De Admin wordt hierdoor niet de klant.",
+    "searchCustomer": "Klantaccount zoeken",
+    "searchPlaceholder": "Account-ID, exact e-mailadres, telefoon of naam",
+    "searchHint": "Alleen geverifieerde, actieve klantaccounts worden getoond. Contactgegevens zijn gemaskeerd.",
+    "searching": "Zoeken…",
+    "noResults": "Geen overeenkomend geverifieerd klantaccount.",
+    "selected": "Gekozen account",
+    "change": "Wijzigen",
+    "phone": "Telefoon van de klant (internationaal formaat)",
+    "phonePlaceholder": "+9627XXXXXXXX",
+    "phoneHint": "Wordt alleen gebruikt om de activatielink te sturen. Het is geen identiteitsbewijs.",
+    "phoneMatchWarning": "Een geverifieerd klantaccount gebruikt dit nummer al. Gaat het om dezelfde persoon, kies dan „Bestaand klantaccount”.",
+    "referenceName": "Referentienaam (optioneel)",
+    "referenceNameHint": "Een voornaam of bijnaam voor de opdracht — geen inlogidentiteit.",
+    "contactChannel": "Voorkeur voor contact",
+    "contactOptions": {
+      "whatsapp": "WhatsApp",
+      "phone": "Telefoon",
+      "email": "E-mail",
+      "other": "Overig"
+    },
+    "contactPhone": "Contactnummer",
+    "contactPhoneOptional": "Contactnummer (optioneel)",
+    "whatsappOnly": "Alleen contact via WhatsApp",
+    "consent": "Hoe de klant instemde met contact",
+    "consentOptions": {
+      "customer_initiated": "De klant nam contact met ons op",
+      "verbal": "Mondelinge toestemming",
+      "written": "Schriftelijke toestemming"
+    },
+    "note": "Interne notitie (optioneel)",
+    "notePlaceholder": "Alleen wat het team nodig heeft voor deze opdracht",
+    "priceSection": "Klantprijs",
+    "priceAmount": "Prijs die de klant betaalt (optioneel)",
+    "priceCurrency": "Valuta",
+    "pricePendingHint": "Laat leeg om de opdracht op „prijs in afwachting” te houden.",
+    "priceSeparateHint": "Los van het freelancerbudget in de opdrachtgegevens."
+  },
+  "errors": {
+    "mode": "Kies voor wie deze opdracht is.",
+    "customer": "Kies een klantaccount.",
+    "phone": "Voer een geldig internationaal telefoonnummer in (bijv. +9627XXXXXXXX).",
+    "phoneRequiredForChannel": "Voor contact via WhatsApp of telefoon is een contactnummer verplicht.",
+    "price": "Voer een geldige prijs (max. 2 decimalen) en een valuta in."
+  },
+  "review": {
+    "customerMode": "Klantmodus",
+    "customer": "Klant",
+    "channel": "Bron",
+    "manager": "Accountmanager",
+    "price": "Klantprijs",
+    "pricePending": "Prijs in afwachting",
+    "guestNoAccount": "Gast — er wordt geen account aangemaakt"
+  },
+  "badges": {
+    "internal": "Intern",
+    "existing": "Klantaccount",
+    "newAccountPending": "Wacht op activatie",
+    "newAccountActive": "Account geactiveerd",
+    "guest": "Gast — geen account",
+    "converted": "Gast → account",
+    "pricingPending": "Prijs in afwachting"
+  },
+  "created": {
+    "title": "Opdracht aangemaakt",
+    "guestBody": "Gastopdracht {{orderCode}} is opgeslagen. Er is geen account aangemaakt. Kopieer het bericht hieronder en stuur het naar de klant.",
+    "accountBody": "Opdracht {{orderCode}} is opgeslagen en wacht tot de klant een account activeert. Stuur de eenmalige link hieronder — die wordt alleen nu getoond.",
+    "existingBody": "Opdracht {{orderCode}} is gekoppeld aan het klantaccount en zichtbaar voor de klant.",
+    "linkLabel": "Eenmalige activatielink",
+    "linkExpires": "Verloopt op {{date}}",
+    "copyLink": "Link kopiëren",
+    "copyMessage": "Bericht kopiëren",
+    "copied": "Gekopieerd",
+    "messageLanguage": "Taal van het bericht",
+    "close": "Klaar",
+    "openCustomer": "Klantpaneel openen"
+  },
+  "templates": {
+    "account": "Hallo, uw opdracht {{orderCode}} is geregistreerd — dienst: {{service}} — deadline: {{dueAt}} — prijs: {{price}}. Om uw account te activeren en de opdracht te bekijken: {{link}}. Alle details en bijlagen zijn bewaard; u hoeft de opdracht niet opnieuw te plaatsen.",
+    "guest": "Hallo, uw opdracht {{orderCode}} is geregistreerd — dienst: {{service}} — leverdatum: {{dueAt}} — prijs: {{price}}. Ons team volgt uw opdracht hier via WhatsApp op; u hoeft geen account aan te maken of de app te installeren. Als een betaling nodig is, ontvangt u een aparte veilige betaallink, en we sturen u updates en de levering hier.",
+    "conversion": "Hallo, zoals gevraagd ontvangt u hier een veilige eenmalige link om uw account aan te maken en opdracht {{orderCode}} eraan te koppelen: {{link}}. De opdracht, de bestanden en de geschiedenis blijven ongewijzigd.",
+    "pricePending": "nog te bevestigen",
+    "dueTbd": "nog te bevestigen"
+  },
+  "panel": {
+    "open": "Klant",
+    "title": "Klant — opdracht {{orderCode}}",
+    "loading": "Klantgegevens laden…",
+    "loadFailed": "De klantgegevens konden niet worden geladen.",
+    "noCustomer": "Dit is een interne opdracht. Er is geen klant gekoppeld.",
+    "mode": "Modus",
+    "channel": "Bron",
+    "createdBy": "Aangemaakt door",
+    "manager": "Accountmanager",
+    "changeManager": "Accountmanager wijzigen",
+    "save": "Opslaan",
+    "saved": "Opgeslagen",
+    "pricing": "Klantprijs",
+    "updatePrice": "Prijs bijwerken",
+    "account": "Klantaccount",
+    "linkedAt": "Gekoppeld op {{date}}",
+    "awaitingActivation": "De klant heeft nog geen account geactiveerd.",
+    "guest": "Gastcontact",
+    "referenceName": "Referentie",
+    "phone": "Telefoon",
+    "reveal": "Volledig nummer tonen",
+    "revealNote": "Het tonen van het nummer wordt in het auditlogboek vastgelegd.",
+    "noPhone": "Geen telefoonnummer opgeslagen",
+    "contact": "Contactwijze",
+    "whatsappOnly": "Alleen WhatsApp",
+    "consent": "Toestemming",
+    "retention": "Contactgegevens bewaard tot {{date}}",
+    "invitation": "Klantlink",
+    "invitationPurpose": {
+      "new_account": "Accountactivatie",
+      "guest_conversion": "Omzetting gast → account"
+    },
+    "invitationStatus": {
+      "pending": "Actief",
+      "claimed": "Gebruikt",
+      "revoked": "Ingetrokken",
+      "expired": "Verlopen"
+    },
+    "regenerate": "Nieuwe activatielink maken",
+    "revoke": "Link intrekken",
+    "conversion": "Gast omzetten naar account",
+    "conversionHint": "Alleen als de klant uitdrukkelijk om een account vraagt. Dezelfde opdracht, betaling, bestanden en geschiedenis blijven behouden.",
+    "evidence": "Hoe heeft de klant erom gevraagd?",
+    "evidencePlaceholder": "bijv. Klant vroeg het op 23 nov. via WhatsApp",
+    "createConversion": "Omzettingslink maken",
+    "whatsappTemplate": "WhatsApp-bericht",
+    "privacyNote": "Freelancers zien nooit de contactgegevens van de klant.",
+    "events": "Geschiedenis",
+    "noEvents": "Nog geen geschiedenis.",
+    "eventActions": {
+      "customer_mode_set": "Klantmodus ingesteld",
+      "invitation_created": "Link aangemaakt",
+      "invitation_revoked": "Link ingetrokken",
+      "account_claimed": "Klant heeft het account geactiveerd",
+      "guest_converted": "Gast omgezet naar account",
+      "account_manager_changed": "Accountmanager gewijzigd",
+      "customer_pricing_set": "Klantprijs bijgewerkt",
+      "guest_contact_revealed": "Contactnummer getoond"
+    }
+  },
+  "filters": {
+    "label": "Klant",
+    "all": "Alle opdrachten",
+    "internal": "Alleen intern",
+    "any_customer": "Met klant",
+    "existing": "Klantaccount",
+    "new_account": "Nieuw account",
+    "guest": "Gasten (geen account)"
+  },
+  "summary": {
+    "title": "Klantopdrachten",
+    "guest": "Gastopdrachten",
+    "newAccount": "Opdrachten met nieuw account",
+    "activated": "Geactiveerd",
+    "activationRate": "Activatiegraad",
+    "existing": "Bestaande accounts",
+    "pricingPending": "Prijs in afwachting",
+    "whatsapp": "Via WhatsApp",
+    "converted": "Omgezette gasten"
+  },
+  "claim": {
+    "title": "Uw OrderzHouse-opdracht",
+    "loading": "Uw link wordt gecontroleerd…",
+    "invalid": "Deze link is ongeldig, al gebruikt of verlopen. Vraag ons team om een nieuwe link.",
+    "orderLabel": "Opdrachtnummer",
+    "serviceLabel": "Dienst",
+    "intro": "Log in of maak een klantaccount aan om deze opdracht te bekijken. Uw opdracht, de details en de bijlagen zijn al opgeslagen.",
+    "loginCta": "Inloggen",
+    "registerCta": "Account aanmaken",
+    "claimCta": "Deze opdracht aan mijn account toevoegen",
+    "claiming": "Opdracht wordt gekoppeld…",
+    "signedInAs": "U bent ingelogd. De opdracht wordt aan dit account toegevoegd.",
+    "wrongRole": "Log in met een klantaccount om deze opdracht te ontvangen.",
+    "successTitle": "De opdracht staat nu in uw account",
+    "successBody": "U kunt opdracht {{orderCode}} volgen via „Mijn opdrachten”.",
+    "viewOrder": "Mijn opdrachten bekijken"
+  },
+  "managed": {
+    "badge": "Beheerd door het OrderzHouse-team",
+    "readOnlyNote": "Ons team beheert deze opdracht voor u. Neem voor wijzigingen contact op met uw accountmanager.",
+    "pricePending": "Prijs nog te bevestigen"
+  }
+}

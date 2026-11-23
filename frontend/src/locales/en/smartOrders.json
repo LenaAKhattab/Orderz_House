@@ -1,0 +1,225 @@
+{
+  "customerStep": {
+    "stepLabel": "Customer",
+    "title": "Who is this order for?",
+    "subtitle": "Choose explicitly. Entering a phone number never creates an account on its own.",
+    "modes": {
+      "internal": {
+        "title": "Internal order — no customer",
+        "desc": "The current Admin order flow: work for the team, no customer is linked."
+      },
+      "existing": {
+        "title": "Existing customer account",
+        "desc": "Link the order to a verified customer account right away."
+      },
+      "new_account": {
+        "title": "Create a new customer account",
+        "desc": "The customer gets a one-time secure link to activate an account; the same order then appears in their account."
+      },
+      "guest": {
+        "title": "One-time guest — no account",
+        "desc": "No user, no password, no OTP and no app needed. The team manages contact externally (e.g. WhatsApp)."
+      }
+    }
+  },
+  "fields": {
+    "channel": "Order source",
+    "channelOptions": {
+      "whatsapp": "WhatsApp",
+      "admin": "Admin (internal)",
+      "app": "App",
+      "web": "Website",
+      "phone": "Phone call",
+      "email": "Email",
+      "other": "Other"
+    },
+    "accountManager": "Responsible account manager",
+    "accountManagerMe": "Me",
+    "accountManagerHint": "Owns the follow-up with the customer. This does not make the Admin the customer.",
+    "searchCustomer": "Find customer account",
+    "searchPlaceholder": "Account ID, exact email, phone or name",
+    "searchHint": "Only verified, active customer accounts are listed. Contact details are masked.",
+    "searching": "Searching…",
+    "noResults": "No verified customer account matches.",
+    "selected": "Selected account",
+    "change": "Change",
+    "phone": "Customer phone (international format)",
+    "phonePlaceholder": "+9627XXXXXXXX",
+    "phoneHint": "Used only to send the activation link. It is not proof of identity.",
+    "phoneMatchWarning": "A verified customer account already uses this number. If it is the same person, choose “Existing customer account” instead.",
+    "referenceName": "Reference name (optional)",
+    "referenceNameHint": "A first name or nickname for the order — not a login identity.",
+    "contactChannel": "Preferred contact method",
+    "contactOptions": {
+      "whatsapp": "WhatsApp",
+      "phone": "Phone",
+      "email": "Email",
+      "other": "Other"
+    },
+    "contactPhone": "Contact number",
+    "contactPhoneOptional": "Contact number (optional)",
+    "whatsappOnly": "Contact through WhatsApp only",
+    "consent": "How the customer agreed to be contacted",
+    "consentOptions": {
+      "customer_initiated": "The customer contacted us",
+      "verbal": "Verbal agreement",
+      "written": "Written agreement"
+    },
+    "note": "Internal note (optional)",
+    "notePlaceholder": "Only what the team needs to serve this order",
+    "priceSection": "Customer price",
+    "priceAmount": "Price the customer pays (optional)",
+    "priceCurrency": "Currency",
+    "pricePendingHint": "Leave empty to keep the order as “pricing pending”.",
+    "priceSeparateHint": "Separate from the freelancer budget set in the order details."
+  },
+  "errors": {
+    "mode": "Choose who this order is for.",
+    "customer": "Select a customer account.",
+    "phone": "Enter a valid international phone number (e.g. +9627XXXXXXXX).",
+    "phoneRequiredForChannel": "A contact number is required for WhatsApp or phone contact.",
+    "price": "Enter a valid price (up to 2 decimals) and a currency."
+  },
+  "review": {
+    "customerMode": "Customer mode",
+    "customer": "Customer",
+    "channel": "Source",
+    "manager": "Account manager",
+    "price": "Customer price",
+    "pricePending": "Pricing pending",
+    "guestNoAccount": "Guest — no account will be created"
+  },
+  "badges": {
+    "internal": "Internal",
+    "existing": "Customer account",
+    "newAccountPending": "Awaiting activation",
+    "newAccountActive": "Account activated",
+    "guest": "Guest — no account",
+    "converted": "Guest → account",
+    "pricingPending": "Pricing pending"
+  },
+  "created": {
+    "title": "Order created",
+    "guestBody": "Guest order {{orderCode}} was saved. No account was created. Copy the message below and send it to the customer.",
+    "accountBody": "Order {{orderCode}} was saved and is waiting for the customer to activate an account. Send the one-time link below — it is shown only now.",
+    "existingBody": "Order {{orderCode}} is linked to the customer account and is visible to the customer.",
+    "linkLabel": "One-time activation link",
+    "linkExpires": "Expires {{date}}",
+    "copyLink": "Copy link",
+    "copyMessage": "Copy message",
+    "copied": "Copied",
+    "messageLanguage": "Message language",
+    "close": "Done",
+    "openCustomer": "Open customer panel"
+  },
+  "templates": {
+    "account": "Hello, your order {{orderCode}} has been registered — service: {{service}} — due: {{dueAt}} — price: {{price}}. To activate your account and view the order: {{link}}. All details and attachments are saved; there is no need to place the order again.",
+    "guest": "Hello, your order {{orderCode}} has been registered — service: {{service}} — due: {{dueAt}} — price: {{price}}. Our team will follow up with you here on WhatsApp; you don't need to create an account or install the app. If a payment is needed you will receive a separate secure payment link, and we will send updates and the delivery here.",
+    "conversion": "Hello, as requested, here is a one-time secure link to create your account and attach order {{orderCode}} to it: {{link}}. The order, its files and its history stay the same.",
+    "pricePending": "to be confirmed",
+    "dueTbd": "to be confirmed"
+  },
+  "panel": {
+    "open": "Customer",
+    "title": "Customer — order {{orderCode}}",
+    "loading": "Loading customer details…",
+    "loadFailed": "Could not load the customer details.",
+    "noCustomer": "This is an internal order. No customer is linked.",
+    "mode": "Mode",
+    "channel": "Source",
+    "createdBy": "Created by",
+    "manager": "Account manager",
+    "changeManager": "Change account manager",
+    "save": "Save",
+    "saved": "Saved",
+    "pricing": "Customer price",
+    "updatePrice": "Update price",
+    "account": "Customer account",
+    "linkedAt": "Linked on {{date}}",
+    "awaitingActivation": "The customer has not activated an account yet.",
+    "guest": "Guest contact",
+    "referenceName": "Reference",
+    "phone": "Phone",
+    "reveal": "Show full number",
+    "revealNote": "Revealing the number is recorded in the audit log.",
+    "noPhone": "No phone stored",
+    "contact": "Contact method",
+    "whatsappOnly": "WhatsApp only",
+    "consent": "Consent",
+    "retention": "Contact data retained until {{date}}",
+    "invitation": "Customer link",
+    "invitationPurpose": {
+      "new_account": "Account activation",
+      "guest_conversion": "Guest → account conversion"
+    },
+    "invitationStatus": {
+      "pending": "Active",
+      "claimed": "Used",
+      "revoked": "Revoked",
+      "expired": "Expired"
+    },
+    "regenerate": "Create a new activation link",
+    "revoke": "Revoke link",
+    "conversion": "Convert guest to account",
+    "conversionHint": "Only when the customer explicitly asks for an account. The same order, payment, files and history are kept.",
+    "evidence": "How did the customer ask?",
+    "evidencePlaceholder": "e.g. Customer asked on WhatsApp on 23 Nov",
+    "createConversion": "Create conversion link",
+    "whatsappTemplate": "WhatsApp message",
+    "privacyNote": "Freelancers never see the customer's contact details.",
+    "events": "History",
+    "noEvents": "No history yet.",
+    "eventActions": {
+      "customer_mode_set": "Customer mode set",
+      "invitation_created": "Link created",
+      "invitation_revoked": "Link revoked",
+      "account_claimed": "Customer activated the account",
+      "guest_converted": "Guest converted to account",
+      "account_manager_changed": "Account manager changed",
+      "customer_pricing_set": "Customer price updated",
+      "guest_contact_revealed": "Contact number revealed"
+    }
+  },
+  "filters": {
+    "label": "Customer",
+    "all": "All orders",
+    "internal": "Internal only",
+    "any_customer": "With a customer",
+    "existing": "Customer account",
+    "new_account": "New account",
+    "guest": "Guests (no account)"
+  },
+  "summary": {
+    "title": "Customer orders",
+    "guest": "Guest orders",
+    "newAccount": "New-account orders",
+    "activated": "Activated",
+    "activationRate": "Activation rate",
+    "existing": "Existing accounts",
+    "pricingPending": "Pricing pending",
+    "whatsapp": "From WhatsApp",
+    "converted": "Guests converted"
+  },
+  "claim": {
+    "title": "Your OrderzHouse order",
+    "loading": "Checking your link…",
+    "invalid": "This link is invalid, was already used, or has expired. Please ask our team for a new link.",
+    "orderLabel": "Order number",
+    "serviceLabel": "Service",
+    "intro": "Sign in or create a customer account to view this order. Your order, its details and attachments are already saved.",
+    "loginCta": "Sign in",
+    "registerCta": "Create an account",
+    "claimCta": "Add this order to my account",
+    "claiming": "Linking the order…",
+    "signedInAs": "You are signed in. The order will be added to this account.",
+    "wrongRole": "Please sign in with a customer account to receive this order.",
+    "successTitle": "The order is now in your account",
+    "successBody": "You can follow order {{orderCode}} from “My orders”.",
+    "viewOrder": "View my orders"
+  },
+  "managed": {
+    "badge": "Managed by the OrderzHouse team",
+    "readOnlyNote": "Our team manages this order for you. For any change, contact your account manager.",
+    "pricePending": "Price to be confirmed"
+  }
+}

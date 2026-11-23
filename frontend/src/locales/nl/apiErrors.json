@@ -283,6 +283,19 @@
     "EXTERNAL_ORDER_NOT_FOUND": "WhatsApp-opdracht niet gevonden.",
     "EXTERNAL_ORDER_REJECTION_REASON_INVALID": "Kies een geldige reden voor afwijzing.",
     "EXTERNAL_ORDER_FREELANCER_NOT_ELIGIBLE": "De opdracht kan nu niet aan deze freelancer worden toegewezen (account, lidmaatschap of verificatie niet geschikt).",
-    "EXTERNAL_ORDER_DETAILS_INVALID": "Controleer de categorie, levertijd en notitie."
+    "EXTERNAL_ORDER_DETAILS_INVALID": "Controleer de categorie, levertijd en notitie.",
+    "SMART_ORDER_CUSTOMER_INVALID": "De klantgegevens zijn ongeldig.",
+    "SMART_ORDER_CUSTOMER_MODE_REQUIRED": "Kies voor wie deze opdracht is.",
+    "SMART_ORDER_CUSTOMER_NOT_ELIGIBLE": "Het gekozen account is geen actief, geverifieerd klantaccount.",
+    "SMART_ORDER_PHONE_INVALID": "Ongeldig telefoonnummer. Gebruik het internationale formaat, bijv. +9627XXXXXXXX.",
+    "SMART_ORDER_ACCOUNT_MANAGER_INVALID": "De accountmanager moet een actieve Admin zijn.",
+    "SMART_ORDER_PRICE_INVALID": "De klantprijs is ongeldig.",
+    "SMART_ORDER_NOT_FOUND": "Opdracht niet gevonden.",
+    "SMART_ORDER_ACTION_NOT_ALLOWED": "Deze actie is niet beschikbaar voor deze opdracht.",
+    "SMART_ORDER_CONVERSION_EVIDENCE_REQUIRED": "Leg vast hoe de klant om een account heeft gevraagd.",
+    "SMART_ORDER_CLAIM_INVALID": "Deze opdrachtlink is ongeldig of verlopen.",
+    "SMART_ORDER_CLAIM_CLIENT_ONLY": "Log in met een geverifieerd klantaccount om deze opdracht te ontvangen.",
+    "SMART_ORDER_CLAIM_ALREADY_LINKED": "Deze opdracht is al aan een account gekoppeld.",
+    "SMART_ORDER_MANAGED_BY_TEAM": "Het OrderzHouse-team beheert deze opdracht. Neem voor wijzigingen contact op met uw accountmanager."
   }
 }

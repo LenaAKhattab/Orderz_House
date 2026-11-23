@@ -12,6 +12,8 @@ import PublicLayout from "./components/layout/PublicLayout";
 import Unauthorized from "./pages/Unauthorized";
 
 const MainLayout = lazy(() => import("./layouts/MainLayout"));
+const ClaimOrderPage = lazy(() => import("./pages/ClaimOrderPage"));
+import PendingOrderClaimResume from "./components/routing/PendingOrderClaimResume";
 import { ClientCreateOrderModalProvider } from "./context/ClientCreateOrderModalContext.jsx";
 import {
   DashboardRedirect,
@@ -238,6 +240,7 @@ function App() {
           <AnalyticsBridge />
           <ToastDashboardExitBridge />
           <ToastGuestPoolBridge />
+          <PendingOrderClaimResume />
           <Suspense fallback={null}>
             <PopupAdsHost />
           </Suspense>
@@ -265,6 +268,14 @@ function App() {
                 }
               />
               <Route path="/ref/:code" element={<ReferralLanding />} />
+              <Route
+                path="/claim-order"
+                element={
+                  <Suspense fallback={<RouteSuspenseFallback />}>
+                    <ClaimOrderPage />
+                  </Suspense>
+                }
+              />
               <Route
                 path="/register"
                 element={

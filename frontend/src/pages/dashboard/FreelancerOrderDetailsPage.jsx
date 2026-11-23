@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import ManagedOrderPrice, { ManagedOrderNotice } from "../../components/orders/smart/ManagedOrderPrice";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useToast } from "../../components/ui/toastContext";
 import { useAuth } from "../../context/useAuth";
@@ -258,6 +259,8 @@ export default function FreelancerOrderDetailsPage() {
 
   const typeAndBudgetValue = !order ? (
     t("freelancerDashboard.common.emDash")
+  ) : order?.managedByAdmin ? (
+    <ManagedOrderPrice order={order} />
   ) : order?.projectType === "bidding" && order?.bidBudgetMin != null && order?.bidBudgetMax != null ? (
     <span className="od-type-budget">
       <span>{typeLabel(order?.projectType, t)}</span>
@@ -374,6 +377,8 @@ export default function FreelancerOrderDetailsPage() {
           <p>{ineligibleMessage}</p>
         </div>
       ) : null}
+
+      {isClient && order?.managedByAdmin ? <ManagedOrderNotice /> : null}
 
       {busy ? (
         <OrderDetailsPageSkeleton />

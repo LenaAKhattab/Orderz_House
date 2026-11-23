@@ -294,6 +294,10 @@
     "external_order_intake_rejected": {
       "title": "WhatsApp-Auftrag nicht freigegeben",
       "message": "Einer Ihrer WhatsApp-Aufträge wurde nicht freigegeben. Details finden Sie unter WhatsApp-Aufträge."
+    },
+    "order_customer_account_linked": {
+      "title": "Auftrag mit dem Kundenkonto verknüpft",
+      "message": "Der Kunde hat ein Konto aktiviert und sieht den Auftrag jetzt."
     }
   }
 }

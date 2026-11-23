@@ -31,6 +31,13 @@ import DashboardModal from "../../components/dashboard/DashboardModal";
 import FileList from "../../components/orders/order-details/FileList";
 import { getSafeApiErrorMessage } from "../../utils/apiErrorMessage";
 import { statusLabel as bidStatusLabel } from "../../i18n/statusRegistry.js";
+import "../../i18n/smartOrdersResources";
+import "../../styles/smartOrders.css";
+import CustomerModeBadge from "../../components/orders/smart/CustomerModeBadge";
+import AdminOrderCustomerPanel from "../../components/orders/smart/AdminOrderCustomerPanel";
+import { adminCustomerOrdersSummaryRequest } from "../../services/api";
+
+const CUSTOMER_FILTERS = ["", "any_customer", "guest", "new_account", "existing", "internal"];
 
 function fullNameAr(f) {
   const parts = [f?.firstName, f?.fatherName, f?.familyName].filter(Boolean);
@@ -67,6 +74,10 @@ export default function AdminOrdersPage() {
   const [orders, setOrders] = useState([]);
   const [busy, setBusy] = useState(true);
   const [view, setView] = useState("cards"); // cards | table
+  // Smart Orders S1: customer-mode filter, per-order customer panel, aggregate summary.
+  const [customerFilter, setCustomerFilter] = useState("");
+  const [customerPanelOrderId, setCustomerPanelOrderId] = useState(null);
+  const [customerSummary, setCustomerSummary] = useState(null);
   const [bidsModalOrderId, setBidsModalOrderId] = useState(null);
   const [bidsByOrderId, setBidsByOrderId] = useState({});
   const [bidsBusyByOrderId, setBidsBusyByOrderId] = useState({});
@@ -99,20 +110,20 @@ export default function AdminOrdersPage() {
 
   const reloadOrders = useCallback(async () => {
     try {
-      const res = await adminListInternalOrdersRequest({ limit: 50, offset: 0 });
+      const res = await adminListInternalOrdersRequest({ limit: 50, offset: 0, ...(customerFilter ? { customerMode: customerFilter } : {}) });
       const list = res?.data?.orders ?? res?.orders;
       setOrders(Array.isArray(list) ? list : []);
     } catch (e) {
       push({ type: "error", title: t("ordersAdmin.listPage.toast.reloadFailed"), message: getSafeApiErrorMessage(e) });
     }
-  }, [push, t]);
+  }, [push, t, customerFilter]);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       setBusy(true);
       try {
-        const res = await adminListInternalOrdersRequest({ limit: 50, offset: 0 });
+        const res = await adminListInternalOrdersRequest({ limit: 50, offset: 0, ...(customerFilter ? { customerMode: customerFilter } : {}) });
         const list = res?.data?.orders ?? res?.orders;
         if (!cancelled) setOrders(Array.isArray(list) ? list : []);
       } catch (e) {
@@ -124,7 +135,19 @@ export default function AdminOrdersPage() {
     return () => {
       cancelled = true;
     };
-  }, [location.pathname, location.key, push, t]);
+  }, [location.pathname, location.key, push, t, customerFilter]);
+
+  useEffect(() => {
+    let cancelled = false;
+    adminCustomerOrdersSummaryRequest()
+      .then((res) => {
+        if (!cancelled) setCustomerSummary(res?.data?.summary || null);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [location.key]);
 
   useEffect(() => {
     window.addEventListener(INTERNAL_ORDERS_LIST_REFRESH, reloadOrders);
@@ -236,6 +259,24 @@ export default function AdminOrdersPage() {
     }
   };
 
+  const customerControls = (o) =>
+    o?.customerSummary?.mode ? (
+      <>
+        <CustomerModeBadge summary={o.customerSummary} />
+        {o.customerSummary.pricingStatus === "pending_pricing" ? (
+          <span className="oh-badge oh-badge--warning">{t("smartOrders.badges.pricingPending")}</span>
+        ) : null}
+        <button
+          type="button"
+          className="btn btn-secondary oh-admin-orders-table__btn"
+          data-testid={`admin-order-customer-${o.id}`}
+          onClick={() => setCustomerPanelOrderId(String(o.id))}
+        >
+          {t("smartOrders.panel.open")}
+        </button>
+      </>
+    ) : null;
+
   const attachmentsButton = (o) =>
     briefFilesOf(o).length ? (
       <button
@@ -331,6 +372,54 @@ export default function AdminOrdersPage() {
         />
 
         <DashboardSection>
+          <div className="smart-orders-toolbar" data-testid="smart-orders-toolbar">
+            <label className="smart-orders-toolbar__filter">
+              <span className="label">{t("smartOrders.filters.label")}</span>
+              <select
+                className="input"
+                value={customerFilter}
+                onChange={(e) => setCustomerFilter(e.target.value)}
+                data-testid="smart-orders-customer-filter"
+              >
+                {CUSTOMER_FILTERS.map((f) => (
+                  <option key={f || "all"} value={f}>
+                    {t(`smartOrders.filters.${f || "all"}`)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {customerSummary ? (
+              <div className="smart-orders-toolbar__stats" aria-label={t("smartOrders.summary.title")}>
+                <span className="oh-mini-chip">
+                  {t("smartOrders.summary.guest")}: <strong>{customerSummary.byMode.guest}</strong>
+                </span>
+                <span className="oh-mini-chip">
+                  {t("smartOrders.summary.newAccount")}: <strong>{customerSummary.byMode.newAccount}</strong>
+                  {" · "}
+                  {t("smartOrders.summary.activated")}: <strong>{customerSummary.newAccountActivated}</strong>
+                  {customerSummary.activationRatePercent != null ? ` (${customerSummary.activationRatePercent}%)` : ""}
+                </span>
+                <span className="oh-mini-chip">
+                  {t("smartOrders.summary.existing")}: <strong>{customerSummary.byMode.existing}</strong>
+                </span>
+                <span className="oh-mini-chip">
+                  {t("smartOrders.summary.pricingPending")}: <strong>{customerSummary.pricing.pendingPricing}</strong>
+                </span>
+                <span className="oh-mini-chip">
+                  {t("smartOrders.summary.whatsapp")}: <strong>{customerSummary.byChannel.whatsapp}</strong>
+                </span>
+                <span className="oh-mini-chip">
+                  {t("smartOrders.summary.converted")}: <strong>{customerSummary.guestConverted}</strong>
+                </span>
+              </div>
+            ) : null}
+          </div>
+          <AdminOrderCustomerPanel
+            orderId={customerPanelOrderId}
+            open={Boolean(customerPanelOrderId)}
+            onClose={() => setCustomerPanelOrderId(null)}
+            onChanged={() => void reloadOrders()}
+          />
           <div className="oh-internal-orders__list" aria-busy={busy}>
             {busy ? (
               <DashboardLoadingState label={t("ordersAdmin.listPage.loading")}>
@@ -397,6 +486,7 @@ export default function AdminOrdersPage() {
                         {o.institutionalStorageName ? ` · ${o.institutionalStorageName}` : ""}
                       </span>
                     ) : null}
+                    {customerControls(o)}
                     {attachmentsButton(o)}
                     {shouldShowApplicants ? (
                       <span className="help">{t("ordersAdmin.listPage.card.claimsNotForFixed")}</span>
@@ -517,6 +607,7 @@ export default function AdminOrdersPage() {
                       <td className="oh-admin-orders-table__col--actions">
                         <span className="oh-admin-orders-table__actions">
                         {deliveryButtons(o)}
+                        {customerControls(o)}
                         {attachmentsButton(o)}
                         {tableShowBids ? (
                           <button

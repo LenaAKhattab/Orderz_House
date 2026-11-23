@@ -4116,3 +4116,81 @@ export const rejectAdminExternalOrderIntakeRequest = async (id, payload) => {
   );
   return data;
 };
+
+// ---------------------------------------------------------------------------
+// Smart Orders S1 — customer modes (Admin) + order claim (customer)
+// ---------------------------------------------------------------------------
+const noCache = { headers: { "Cache-Control": "no-cache", Pragma: "no-cache" } };
+
+export const adminSearchCustomerAccountsRequest = async (q) => {
+  const { data } = await api.get("/admin/customer-accounts/search", { params: { q, _ts: Date.now() }, ...noCache });
+  return data;
+};
+
+export const adminCheckCustomerPhoneRequest = async (phone) => {
+  const { data } = await api.post("/admin/customer-accounts/phone-check", { phone });
+  return data;
+};
+
+export const adminListAccountManagersRequest = async () => {
+  const { data } = await api.get("/admin/customer-accounts/account-managers", { params: { _ts: Date.now() }, ...noCache });
+  return data;
+};
+
+export const adminCustomerOrdersSummaryRequest = async () => {
+  const { data } = await api.get("/admin/customer-orders/summary", { params: { _ts: Date.now() }, ...noCache });
+  return data;
+};
+
+export const adminGetOrderCustomerRequest = async (orderId) => {
+  const { data } = await api.get(`/admin/orders/${encodeURIComponent(orderId)}/customer`, {
+    params: { _ts: Date.now() },
+    ...noCache,
+  });
+  return data;
+};
+
+export const adminRevealGuestContactRequest = async (orderId) => {
+  const { data } = await api.post(`/admin/orders/${encodeURIComponent(orderId)}/customer/reveal-contact`);
+  return data;
+};
+
+export const adminSetOrderAccountManagerRequest = async (orderId, accountManagerAdminId) => {
+  const { data } = await api.patch(`/admin/orders/${encodeURIComponent(orderId)}/customer/account-manager`, {
+    accountManagerAdminId,
+  });
+  return data;
+};
+
+export const adminSetOrderCustomerPricingRequest = async (orderId, { priceAmount, priceCurrency }) => {
+  const { data } = await api.patch(`/admin/orders/${encodeURIComponent(orderId)}/customer/pricing`, {
+    priceAmount,
+    priceCurrency,
+  });
+  return data;
+};
+
+export const adminRegenerateActivationLinkRequest = async (orderId) => {
+  const { data } = await api.post(`/admin/orders/${encodeURIComponent(orderId)}/customer/activation-link`);
+  return data;
+};
+
+export const adminCreateGuestConversionLinkRequest = async (orderId, evidence) => {
+  const { data } = await api.post(`/admin/orders/${encodeURIComponent(orderId)}/customer/conversion-link`, { evidence });
+  return data;
+};
+
+export const adminRevokeCustomerLinkRequest = async (orderId) => {
+  const { data } = await api.post(`/admin/orders/${encodeURIComponent(orderId)}/customer/revoke-link`);
+  return data;
+};
+
+export const previewOrderClaimRequest = async (token) => {
+  const { data } = await api.post("/order-claims/preview", { token });
+  return data;
+};
+
+export const claimOrderRequest = async (token) => {
+  const { data } = await api.post("/client/order-claims/claim", { token });
+  return data;
+};

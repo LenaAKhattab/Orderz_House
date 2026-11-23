@@ -1,4 +1,5 @@
 ﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import ManagedOrderPrice, { ManagedOrderBadge } from "./smart/ManagedOrderPrice";
 import { ChevronDown, CircleAlert, CircleCheck, Clock3, PencilLine, CreditCard, Users, Archive } from "lucide-react";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import "../../i18n/clientAreaResources";
@@ -301,7 +302,9 @@ export default function ClientOrderCardCompact({
             ) : null}
             <span aria-hidden="true">·</span>
             <span className="coc__price">
-              {pricedBidding ? (
+              {order?.managedByAdmin ? (
+                <ManagedOrderPrice order={order} />
+              ) : pricedBidding ? (
                 order?.paymentAmount != null || order?.paymentCurrency ? (
                   <JodMoneyDisplay amount={order?.paymentAmount} compact />
                 ) : (
@@ -318,6 +321,7 @@ export default function ClientOrderCardCompact({
           </p>
         </div>
         <span className={`coc__badge ${badge.className}`}>{badge.label}</span>
+        {order?.managedByAdmin ? <ManagedOrderBadge /> : null}
       </header>
 
       <div className={`coc__next coc__next--${step.tone}`}>

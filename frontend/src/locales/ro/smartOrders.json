@@ -1,0 +1,225 @@
+{
+  "customerStep": {
+    "stepLabel": "Client",
+    "title": "Pentru cine este această comandă?",
+    "subtitle": "Alegeți explicit. Un număr de telefon nu creează niciodată singur un cont.",
+    "modes": {
+      "internal": {
+        "title": "Comandă internă — fără client",
+        "desc": "Fluxul actual al comenzilor Admin: lucru pentru echipă, fără client asociat."
+      },
+      "existing": {
+        "title": "Cont de client existent",
+        "desc": "Asociați imediat comanda unui cont de client verificat."
+      },
+      "new_account": {
+        "title": "Creați un cont de client nou",
+        "desc": "Clientul primește un link securizat de unică folosință pentru a-și activa contul; apoi aceeași comandă apare în contul său."
+      },
+      "guest": {
+        "title": "Client ocazional — fără cont",
+        "desc": "Fără utilizator, fără parolă, fără OTP și fără aplicație. Echipa gestionează comunicarea extern (de ex. WhatsApp)."
+      }
+    }
+  },
+  "fields": {
+    "channel": "Sursa comenzii",
+    "channelOptions": {
+      "whatsapp": "WhatsApp",
+      "admin": "Admin (intern)",
+      "app": "Aplicație",
+      "web": "Site web",
+      "phone": "Apel telefonic",
+      "email": "E-mail",
+      "other": "Altele"
+    },
+    "accountManager": "Responsabil de cont",
+    "accountManagerMe": "Eu",
+    "accountManagerHint": "Se ocupă de comunicarea cu clientul. Asta nu îl face pe Admin client.",
+    "searchCustomer": "Căutați contul clientului",
+    "searchPlaceholder": "ID cont, e-mail exact, telefon sau nume",
+    "searchHint": "Sunt afișate doar conturile de client verificate și active. Datele de contact sunt mascate.",
+    "searching": "Se caută…",
+    "noResults": "Niciun cont de client verificat nu corespunde.",
+    "selected": "Cont selectat",
+    "change": "Schimbă",
+    "phone": "Telefonul clientului (format internațional)",
+    "phonePlaceholder": "+9627XXXXXXXX",
+    "phoneHint": "Folosit doar pentru trimiterea linkului de activare. Nu este o dovadă de identitate.",
+    "phoneMatchWarning": "Un cont de client verificat folosește deja acest număr. Dacă este aceeași persoană, alegeți „Cont de client existent”.",
+    "referenceName": "Nume de referință (opțional)",
+    "referenceNameHint": "Un prenume sau o poreclă pentru comandă — nu o identitate de autentificare.",
+    "contactChannel": "Metoda de contact preferată",
+    "contactOptions": {
+      "whatsapp": "WhatsApp",
+      "phone": "Telefon",
+      "email": "E-mail",
+      "other": "Altele"
+    },
+    "contactPhone": "Număr de contact",
+    "contactPhoneOptional": "Număr de contact (opțional)",
+    "whatsappOnly": "Contact doar prin WhatsApp",
+    "consent": "Cum a acceptat clientul să fie contactat",
+    "consentOptions": {
+      "customer_initiated": "Clientul ne-a contactat",
+      "verbal": "Acord verbal",
+      "written": "Acord scris"
+    },
+    "note": "Notă internă (opțional)",
+    "notePlaceholder": "Doar ce are nevoie echipa pentru această comandă",
+    "priceSection": "Prețul clientului",
+    "priceAmount": "Prețul plătit de client (opțional)",
+    "priceCurrency": "Monedă",
+    "pricePendingHint": "Lăsați gol pentru ca prețul comenzii să rămână „în curs de stabilire”.",
+    "priceSeparateHint": "Separat de bugetul freelancerului din detaliile comenzii."
+  },
+  "errors": {
+    "mode": "Alegeți pentru cine este această comandă.",
+    "customer": "Selectați un cont de client.",
+    "phone": "Introduceți un număr de telefon internațional valid (de ex. +9627XXXXXXXX).",
+    "phoneRequiredForChannel": "Pentru contact prin WhatsApp sau telefon este necesar un număr de contact.",
+    "price": "Introduceți un preț valid (maximum 2 zecimale) și o monedă."
+  },
+  "review": {
+    "customerMode": "Mod client",
+    "customer": "Client",
+    "channel": "Sursă",
+    "manager": "Responsabil de cont",
+    "price": "Prețul clientului",
+    "pricePending": "Preț în curs de stabilire",
+    "guestNoAccount": "Client ocazional — nu se va crea niciun cont"
+  },
+  "badges": {
+    "internal": "Intern",
+    "existing": "Cont de client",
+    "newAccountPending": "Așteaptă activarea",
+    "newAccountActive": "Cont activat",
+    "guest": "Ocazional — fără cont",
+    "converted": "Ocazional → cont",
+    "pricingPending": "Preț în curs de stabilire"
+  },
+  "created": {
+    "title": "Comandă creată",
+    "guestBody": "Comanda ocazională {{orderCode}} a fost salvată. Nu a fost creat niciun cont. Copiați mesajul de mai jos și trimiteți-l clientului.",
+    "accountBody": "Comanda {{orderCode}} a fost salvată și așteaptă ca clientul să își activeze contul. Trimiteți linkul de unică folosință de mai jos — este afișat doar acum.",
+    "existingBody": "Comanda {{orderCode}} este asociată contului de client și este vizibilă pentru client.",
+    "linkLabel": "Link de activare de unică folosință",
+    "linkExpires": "Expiră pe {{date}}",
+    "copyLink": "Copiați linkul",
+    "copyMessage": "Copiați mesajul",
+    "copied": "Copiat",
+    "messageLanguage": "Limba mesajului",
+    "close": "Gata",
+    "openCustomer": "Deschideți panoul clientului"
+  },
+  "templates": {
+    "account": "Bună ziua, comanda dvs. {{orderCode}} a fost înregistrată — serviciu: {{service}} — termen: {{dueAt}} — preț: {{price}}. Pentru a vă activa contul și a vedea comanda: {{link}}. Toate detaliile și atașamentele sunt salvate; nu este nevoie să plasați din nou comanda.",
+    "guest": "Bună ziua, comanda dvs. {{orderCode}} a fost înregistrată — serviciu: {{service}} — termen de livrare: {{dueAt}} — preț: {{price}}. Echipa noastră vă va ține la curent aici, pe WhatsApp; nu este nevoie să creați un cont sau să instalați aplicația. Dacă este necesară o plată, veți primi un link de plată securizat separat, iar actualizările și livrarea vi le vom trimite aici.",
+    "conversion": "Bună ziua, conform solicitării dvs., iată un link securizat de unică folosință pentru a vă crea contul și a asocia comanda {{orderCode}}: {{link}}. Comanda, fișierele și istoricul ei rămân neschimbate.",
+    "pricePending": "urmează să fie confirmat",
+    "dueTbd": "urmează să fie confirmat"
+  },
+  "panel": {
+    "open": "Client",
+    "title": "Client — comanda {{orderCode}}",
+    "loading": "Se încarcă datele clientului…",
+    "loadFailed": "Datele clientului nu au putut fi încărcate.",
+    "noCustomer": "Aceasta este o comandă internă. Nu este asociat niciun client.",
+    "mode": "Mod",
+    "channel": "Sursă",
+    "createdBy": "Creată de",
+    "manager": "Responsabil de cont",
+    "changeManager": "Schimbați responsabilul de cont",
+    "save": "Salvați",
+    "saved": "Salvat",
+    "pricing": "Prețul clientului",
+    "updatePrice": "Actualizați prețul",
+    "account": "Contul clientului",
+    "linkedAt": "Asociat pe {{date}}",
+    "awaitingActivation": "Clientul nu și-a activat încă contul.",
+    "guest": "Contact ocazional",
+    "referenceName": "Referință",
+    "phone": "Telefon",
+    "reveal": "Afișați numărul complet",
+    "revealNote": "Afișarea numărului este înregistrată în jurnalul de audit.",
+    "noPhone": "Niciun număr salvat",
+    "contact": "Metodă de contact",
+    "whatsappOnly": "Doar WhatsApp",
+    "consent": "Consimțământ",
+    "retention": "Datele de contact sunt păstrate până pe {{date}}",
+    "invitation": "Linkul clientului",
+    "invitationPurpose": {
+      "new_account": "Activarea contului",
+      "guest_conversion": "Conversie ocazional → cont"
+    },
+    "invitationStatus": {
+      "pending": "Activ",
+      "claimed": "Folosit",
+      "revoked": "Revocat",
+      "expired": "Expirat"
+    },
+    "regenerate": "Creați un nou link de activare",
+    "revoke": "Revocați linkul",
+    "conversion": "Convertiți clientul ocazional în cont",
+    "conversionHint": "Doar când clientul cere explicit un cont. Se păstrează aceeași comandă, plată, fișiere și istoric.",
+    "evidence": "Cum a cerut clientul acest lucru?",
+    "evidencePlaceholder": "de ex. Clientul a cerut pe WhatsApp pe 23 nov.",
+    "createConversion": "Creați linkul de conversie",
+    "whatsappTemplate": "Mesaj WhatsApp",
+    "privacyNote": "Freelancerii nu văd niciodată datele de contact ale clientului.",
+    "events": "Istoric",
+    "noEvents": "Încă nu există istoric.",
+    "eventActions": {
+      "customer_mode_set": "Mod client setat",
+      "invitation_created": "Link creat",
+      "invitation_revoked": "Link revocat",
+      "account_claimed": "Clientul și-a activat contul",
+      "guest_converted": "Client ocazional convertit în cont",
+      "account_manager_changed": "Responsabil de cont schimbat",
+      "customer_pricing_set": "Prețul clientului actualizat",
+      "guest_contact_revealed": "Număr de contact afișat"
+    }
+  },
+  "filters": {
+    "label": "Client",
+    "all": "Toate comenzile",
+    "internal": "Doar interne",
+    "any_customer": "Cu client",
+    "existing": "Cont de client",
+    "new_account": "Cont nou",
+    "guest": "Ocazionali (fără cont)"
+  },
+  "summary": {
+    "title": "Comenzi de la clienți",
+    "guest": "Comenzi ocazionale",
+    "newAccount": "Comenzi cu cont nou",
+    "activated": "Activate",
+    "activationRate": "Rata de activare",
+    "existing": "Conturi existente",
+    "pricingPending": "Preț în curs de stabilire",
+    "whatsapp": "Din WhatsApp",
+    "converted": "Ocazionali convertiți"
+  },
+  "claim": {
+    "title": "Comanda dvs. OrderzHouse",
+    "loading": "Se verifică linkul…",
+    "invalid": "Acest link este invalid, a fost deja folosit sau a expirat. Cereți echipei noastre un link nou.",
+    "orderLabel": "Numărul comenzii",
+    "serviceLabel": "Serviciu",
+    "intro": "Autentificați-vă sau creați un cont de client pentru a vedea această comandă. Comanda, detaliile și atașamentele sunt deja salvate.",
+    "loginCta": "Autentificare",
+    "registerCta": "Creați un cont",
+    "claimCta": "Adăugați această comandă în contul meu",
+    "claiming": "Se asociază comanda…",
+    "signedInAs": "Sunteți autentificat. Comanda va fi adăugată în acest cont.",
+    "wrongRole": "Autentificați-vă cu un cont de client pentru a primi această comandă.",
+    "successTitle": "Comanda este acum în contul dvs.",
+    "successBody": "Puteți urmări comanda {{orderCode}} din „Comenzile mele”.",
+    "viewOrder": "Vedeți comenzile mele"
+  },
+  "managed": {
+    "badge": "Gestionată de echipa OrderzHouse",
+    "readOnlyNote": "Echipa noastră gestionează această comandă pentru dvs. Pentru orice modificare, contactați responsabilul de cont.",
+    "pricePending": "Prețul urmează să fie confirmat"
+  }
+}
