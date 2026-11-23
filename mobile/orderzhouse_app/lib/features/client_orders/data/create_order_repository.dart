@@ -18,13 +18,15 @@ class CreateOrderRepository {
   Future<CreateOrderResult> createOrder(
     CreateOrderDraft draft, {
     List<SelectedOrderAttachment> attachments = const [],
+    Map<String, dynamic>? serviceForm,
   }) async {
     if (attachments.isEmpty) {
       final payload = buildCreateOrderPayload(draft);
+      if (serviceForm != null) payload['serviceForm'] = serviceForm;
       return _api.createOrder(payload);
     }
 
-    final formData = await buildCreateOrderFormData(draft, attachments);
+    final formData = await buildCreateOrderFormData(draft, attachments, serviceForm: serviceForm);
     return _api.createOrderWithFormData(formData);
   }
 }

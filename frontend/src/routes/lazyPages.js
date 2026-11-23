@@ -173,6 +173,7 @@ export const HowItWorksClientPage = lazy(() =>
 /** Admin */
 export const AdminOrdersPage = lazy(() => import("../pages/dashboard/AdminOrdersPage"));
 export const AdminWhatsappOrdersPage = lazy(() => import("../pages/dashboard/AdminWhatsappOrdersPage"));
+export const AdminServiceCatalogPage = lazy(() => import("../pages/dashboard/AdminServiceCatalogPage"));
 export const FreelancerWhatsappOrdersPage = lazy(() => import("../pages/dashboard/FreelancerWhatsappOrdersPage"));
 export const AdminCreateOrderPage = lazy(() => import("../pages/dashboard/AdminCreateOrderPage"));
 export const AdminSubscriptionsActivationPage = lazy(

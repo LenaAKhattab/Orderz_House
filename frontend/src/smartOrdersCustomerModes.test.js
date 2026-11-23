@@ -74,7 +74,7 @@ describe("customer payload", () => {
 describe("wizard + pages wiring", () => {
   const wizard = read("components/orders/AdminInternalOrderWizard.jsx");
   it("customer step is first for real Admin orders only", () => {
-    assert.match(wizard, /showCustomerStep \? \["customer", \.\.\.ADMIN_STEP_KEYS\]/);
+    assert.match(wizard, /\.\.\.\(showCustomerStep \? \["customer"\] : \[\]\), \.\.\.\(showServiceStep \? \["service"\] : \[\]\), \.\.\.ADMIN_STEP_KEYS/);
     assert.match(wizard, /!isFakePoolMode && !isClientAudience && !isInstitutionalMode/);
     assert.match(wizard, /fd\.append\("customer", JSON\.stringify\(customerPayload\)\)/);
   });

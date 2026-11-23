@@ -4194,3 +4194,41 @@ export const claimOrderRequest = async (token) => {
   const { data } = await api.post("/client/order-claims/claim", { token });
   return data;
 };
+
+// ---------------------------------------------------------------------------
+// Smart Orders S2 — service catalog
+// ---------------------------------------------------------------------------
+export const publicServiceCatalogRequest = async () => {
+  const { data } = await api.get("/catalog/services", { params: { _ts: Date.now() } });
+  return data;
+};
+
+export const adminServiceCatalogOrderOptionsRequest = async () => {
+  const { data } = await api.get("/admin/service-catalog/order-options", { params: { _ts: Date.now() }, ...noCache });
+  return data;
+};
+
+export const adminListServiceCatalogRequest = async () => {
+  const { data } = await api.get("/admin/service-catalog", { params: { _ts: Date.now() }, ...noCache });
+  return data;
+};
+
+export const adminGetCatalogServiceRequest = async (id) => {
+  const { data } = await api.get(`/admin/service-catalog/${encodeURIComponent(id)}`, { params: { _ts: Date.now() }, ...noCache });
+  return data;
+};
+
+export const adminCreateCatalogServiceRequest = async (definition) => {
+  const { data } = await api.post("/admin/service-catalog", { definition });
+  return data;
+};
+
+export const adminUpdateCatalogServiceRequest = async (id, definition, changeNote) => {
+  const { data } = await api.put(`/admin/service-catalog/${encodeURIComponent(id)}`, { definition, changeNote });
+  return data;
+};
+
+export const adminSetCatalogServiceActiveRequest = async (id, active) => {
+  const { data } = await api.patch(`/admin/service-catalog/${encodeURIComponent(id)}/active`, { active });
+  return data;
+};

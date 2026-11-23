@@ -296,6 +296,12 @@
     "SMART_ORDER_CLAIM_INVALID": "Acest link de comandă este invalid sau a expirat.",
     "SMART_ORDER_CLAIM_CLIENT_ONLY": "Autentificați-vă cu un cont de client verificat pentru a primi această comandă.",
     "SMART_ORDER_CLAIM_ALREADY_LINKED": "Această comandă este deja asociată unui cont.",
-    "SMART_ORDER_MANAGED_BY_TEAM": "Echipa OrderzHouse gestionează această comandă. Pentru orice modificare, contactați responsabilul de cont."
+    "SMART_ORDER_MANAGED_BY_TEAM": "Echipa OrderzHouse gestionează această comandă. Pentru orice modificare, contactați responsabilul de cont.",
+    "SMART_ORDER_FORM_INVALID": "Formularul serviciului este incomplet sau nevalid.",
+    "SMART_ORDER_SERVICE_UNAVAILABLE": "Serviciul ales nu este disponibil.",
+    "SMART_ORDER_FORM_STALE": "Formularul serviciului a fost actualizat. Reîmprospătați și încercați din nou.",
+    "SERVICE_CATALOG_INVALID": "Definiția serviciului nu este validă.",
+    "SERVICE_CATALOG_NOT_FOUND": "Serviciul nu a fost găsit.",
+    "SERVICE_CATALOG_CODE_TAKEN": "Acest cod de serviciu este deja folosit."
   }
 }

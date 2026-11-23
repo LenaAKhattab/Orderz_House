@@ -4,6 +4,7 @@ import { ROLE, canRoleAccessPath, getDashboardPath } from "./authRoutes";
 export const ADMIN_PAGE_PERMISSIONS = {
   orders: "dashboard.admin.orders",
   createOrder: "dashboard.admin.create_order",
+  serviceCatalog: "dashboard.admin.service_catalog",
   courses: "dashboard.admin.courses",
   ads: "dashboard.admin.ads",
   subscriptionActivation: "dashboard.admin.subscription_activation",
@@ -49,6 +50,7 @@ export const ASSIGNABLE_DASHBOARD_PERMISSIONS = [
   SUPER_ADMIN_PAGE_PERMISSIONS.financialCenter,
   ADMIN_PAGE_PERMISSIONS.orders,
   ADMIN_PAGE_PERMISSIONS.createOrder,
+  ADMIN_PAGE_PERMISSIONS.serviceCatalog,
   SUPER_ADMIN_PAGE_PERMISSIONS.trainingOrders,
   SUPER_ADMIN_PAGE_PERMISSIONS.pantry,
   SUPER_ADMIN_PAGE_PERMISSIONS.institutions,
@@ -92,6 +94,7 @@ const SUPER_ADMIN_ROUTE_RULES = [
   { prefix: "/dashboard/super-admin/plans", permission: SUPER_ADMIN_PAGE_PERMISSIONS.plans },
   { prefix: "/dashboard/super-admin/courses", permission: ADMIN_PAGE_PERMISSIONS.courses },
   { prefix: "/dashboard/super-admin/ads", permission: ADMIN_PAGE_PERMISSIONS.ads },
+  { prefix: "/dashboard/super-admin/service-catalog", permission: ADMIN_PAGE_PERMISSIONS.serviceCatalog },
   { prefix: "/dashboard/super-admin/orders/create", permission: ADMIN_PAGE_PERMISSIONS.createOrder },
   { prefix: "/dashboard/super-admin/orders", permission: ADMIN_PAGE_PERMISSIONS.orders },
   { exact: "/dashboard/super-admin", permission: SUPER_ADMIN_PAGE_PERMISSIONS.overview },
@@ -103,6 +106,7 @@ const ADMIN_SHELL_NAV_ORDER = [
   { to: "/dashboard/admin/courses", permission: ADMIN_PAGE_PERMISSIONS.courses },
   { to: "/dashboard/admin/ads", permission: ADMIN_PAGE_PERMISSIONS.ads },
   { to: "/dashboard/admin/orders/create", permission: ADMIN_PAGE_PERMISSIONS.createOrder },
+  { to: "/dashboard/admin/service-catalog", permission: ADMIN_PAGE_PERMISSIONS.serviceCatalog },
 ];
 
 const SUPER_ADMIN_SHELL_NAV_ORDER = [
@@ -119,6 +123,7 @@ const SUPER_ADMIN_SHELL_NAV_ORDER = [
   { to: "/dashboard/super-admin/financial-center", permission: SUPER_ADMIN_PAGE_PERMISSIONS.financialCenter },
   { to: "/dashboard/super-admin/financial-claims", permission: SUPER_ADMIN_PAGE_PERMISSIONS.financialClaims },
   { to: "/dashboard/super-admin/orders", permission: ADMIN_PAGE_PERMISSIONS.orders },
+  { to: "/dashboard/super-admin/service-catalog", permission: ADMIN_PAGE_PERMISSIONS.serviceCatalog },
   { to: "/dashboard/super-admin/training-orders", permission: SUPER_ADMIN_PAGE_PERMISSIONS.trainingOrders },
   { to: "/dashboard/super-admin/pantry", permission: SUPER_ADMIN_PAGE_PERMISSIONS.pantry },
   { to: "/dashboard/super-admin/institutional-order-storage", permission: SUPER_ADMIN_PAGE_PERMISSIONS.institutionalOrderStorage },
@@ -133,6 +138,7 @@ const SUPER_ADMIN_SHELL_NAV_ORDER = [
 export const ADMIN_ROUTE_PERMISSIONS = {
   "/dashboard/admin/orders": ADMIN_PAGE_PERMISSIONS.orders,
   "/dashboard/admin/orders/create": ADMIN_PAGE_PERMISSIONS.createOrder,
+  "/dashboard/admin/service-catalog": ADMIN_PAGE_PERMISSIONS.serviceCatalog,
   "/dashboard/admin/courses": ADMIN_PAGE_PERMISSIONS.courses,
   "/dashboard/admin/ads": ADMIN_PAGE_PERMISSIONS.ads,
   "/dashboard/admin/subscriptions": ADMIN_PAGE_PERMISSIONS.subscriptionActivation,

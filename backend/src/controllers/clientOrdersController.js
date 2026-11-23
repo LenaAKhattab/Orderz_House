@@ -68,6 +68,8 @@ const createClientOrder = async (req, res, next) => {
       durationUnit: req.body.durationUnit,
       preferredSkills: parsePreferredSkills(req.body.preferredSkills),
       creationKey: req.body.creationKey || null,
+      // Smart Orders S2: client-visible catalog service + dynamic values (optional).
+      serviceForm: require("../services/serviceCatalogSchema").parseServiceFormInput(req.body.serviceForm),
     };
 
     const order = await ordersService.createClientOrder({

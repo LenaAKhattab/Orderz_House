@@ -68,7 +68,8 @@
       "subscriptions": "تفعيل الاشتراكات (غير مستخدم)",
       "createRequest": "إنشاء طلب",
       "noPermissions": "ليس لديك صلاحيات مفعلة حالياً. يرجى التواصل مع المدير الأعلى.",
-      "sidebarAria": "قائمة الإدارة"
+      "sidebarAria": "قائمة الإدارة",
+      "serviceCatalog": "كتالوج الخدمات"
     },
     "sections": {
       "overview": "نظرة عامة",
@@ -119,7 +120,8 @@
       "editWebsite": "تعديل الموقع",
       "createRequest": "إنشاء طلب",
       "panelTitle": "لوحة المدير الأعلى",
-      "sidebarAria": "قائمة المدير الأعلى"
+      "sidebarAria": "قائمة المدير الأعلى",
+      "serviceCatalog": "كتالوج الخدمات"
     }
   },
   "roles": {
@@ -424,7 +426,7 @@
     "tab_scheduler": "المجدول",
     "tabsLabel": "أقسام المخزن",
     "actionsToolbar": "إجراءات المخزن",
-    "actions": "إجراءات",
+    "actions": "الإجراءات",
     "action_resume": "استئناف",
     "createdAtLabel": "تاريخ الإنشاء",
     "updatedAtLabel": "آخر تحديث",
@@ -598,7 +600,6 @@
     "emptyFilteredHint": "جرّب تعديل البحث أو إعادة تعيين الفلاتر.",
     "loadError": "تعذر تحميل المخازن.",
     "timeoutError": "استغرق الطلب وقتًا طويلًا. تحقق من الاتصال وحاول مجددًا.",
-    "actions": "الإجراءات",
     "manage": "إدارة",
     "viewDetails": "عرض التفاصيل",
     "currencyJod": "د.أ",
@@ -706,7 +707,6 @@
     "noPeople": "لا يوجد موظفون مضافون بعد",
     "noRows": "لا توجد صفوف بونص بعد",
     "draft": "مسودة",
-    "readyForPayment": "جاهز للدفع",
     "cancelled": "ملغي",
     "search": "بحث",
     "month": "الشهر",

@@ -90,6 +90,14 @@ export const ADMIN_NAV_ITEM_DEFS = {
     permission: ADMIN_PAGE_PERMISSIONS.orders,
     badgeKey: "externalIntakesPending",
   },
+  serviceCatalog: {
+    key: "serviceCatalog",
+    to: "/dashboard/admin/service-catalog",
+    labelKey: "dashboard.nav.superAdmin.serviceCatalog",
+    icon: "service-catalog",
+    matchPrefix: "/dashboard/admin/service-catalog",
+    permission: ADMIN_PAGE_PERMISSIONS.serviceCatalog,
+  },
   createOrder: {
     key: "createOrder",
     to: "/dashboard/admin/orders/create",
@@ -152,7 +160,7 @@ export const ADMIN_NAV_SECTION_DEFS = [
   {
     id: "ordersOps",
     labelKey: "dashboard.nav.sections.ordersOps",
-    itemKeys: ["internalRequests", "whatsappOrders", "createOrder", "trainingRequests"],
+    itemKeys: ["internalRequests", "whatsappOrders", "createOrder", "serviceCatalog", "trainingRequests"],
   },
   {
     id: "financeAdmin",

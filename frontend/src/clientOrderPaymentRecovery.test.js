@@ -33,7 +33,9 @@ describe("client order creation key (one attempt = one order)", () => {
 
   it("the wizard sends the key for client orders and rotates it only for a new order", () => {
     const wiz = read("components/orders/AdminInternalOrderWizard.jsx");
-    assert.ok(wiz.includes('fd.append("creationKey", clientCreationKey(creationInstanceRef.current, form, files));'));
+    // S2: the key also covers the dynamic service form and its files (any edit = a new attempt).
+    assert.ok(wiz.includes('clientCreationKey(creationInstanceRef.current, { ...form, serviceForm: servicePayload }, [...files, ...dynamicFiles])'));
+    assert.ok(wiz.includes('"creationKey",'));
     assert.ok(wiz.includes("creationInstanceRef.current = newCreationInstanceId();"));
   });
 });

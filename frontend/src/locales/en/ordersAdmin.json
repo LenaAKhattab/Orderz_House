@@ -105,15 +105,15 @@
       "skillsPlaceholder": "Add required skills"
     },
     "assignment": {
-      "headingInstitutional": "2) Assignment",
-      "headingOptional": "5) Assignment (optional)",
+      "headingInstitutional": "Assignment",
+      "headingOptional": "Assignment (optional)",
       "institutionalHelp1": "Institution order storage does not assign a freelancer at creation.",
       "institutionalHelp2": "After super-admin approval and release to the institution, applications and assignment follow the standard order flow.",
       "pickFreelancer": "Select freelancer",
       "pickFreelancerHelp": "Active and inactive freelancers are listed; only eligible freelancers can be assigned (active account, verified email, subscription that allows receiving orders)."
     },
     "files": {
-      "heading": "6) Files (optional)",
+      "heading": "Files (optional)",
       "dropzoneTitle": "Drag files here or click to choose (up to 5 files)",
       "dropzoneHelp": "You can add project files (optional).",
       "selectedLabel": "Selected files:",
@@ -123,7 +123,7 @@
       "clearFiles": "Clear files"
     },
     "review": {
-      "heading": "7) Review & submit",
+      "heading": "Review & submit",
       "title": "Title",
       "description": "Description",
       "category": "Category",

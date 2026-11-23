@@ -80,6 +80,14 @@ export const SUPER_ADMIN_NAV_ITEM_DEFS = {
     matchPrefix: "/dashboard/super-admin/pantry",
     permission: SUPER_ADMIN_PAGE_PERMISSIONS.pantry,
   },
+  serviceCatalog: {
+    key: "serviceCatalog",
+    to: "/dashboard/super-admin/service-catalog",
+    labelKey: "dashboard.nav.superAdmin.serviceCatalog",
+    icon: "service-catalog",
+    matchPrefix: "/dashboard/super-admin/service-catalog",
+    permission: ADMIN_PAGE_PERMISSIONS.serviceCatalog,
+  },
   articles: {
     key: "articles",
     to: "/dashboard/super-admin/articles",
@@ -292,7 +300,7 @@ export const SUPER_ADMIN_NAV_SECTION_DEFS = [
   {
     id: "ordersOps",
     labelKey: "dashboard.nav.sections.ordersOps",
-    itemKeys: ["internalRequests", "whatsappOrders", "trainingRequests", "pantry", "articles"],
+    itemKeys: ["internalRequests", "whatsappOrders", "serviceCatalog", "trainingRequests", "pantry", "articles"],
     showCreateOrder: true,
   },
   {

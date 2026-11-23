@@ -105,15 +105,15 @@
       "skillsPlaceholder": "Erforderliche Fähigkeiten hinzufügen"
     },
     "assignment": {
-      "headingInstitutional": "2) Zuweisung",
-      "headingOptional": "5) Zuweisung (optional)",
+      "headingInstitutional": "Zuweisung",
+      "headingOptional": "Zuweisung (optional)",
       "institutionalHelp1": "Im Auftragsspeicher der Institution wird bei der Erstellung kein Freelancer zugewiesen.",
       "institutionalHelp2": "Nach Genehmigung durch den Super-Admin und Freigabe an die Institution laufen Bewerbungen und Zuweisung über den regulären Auftragsablauf.",
       "pickFreelancer": "Freelancer auswählen",
       "pickFreelancerHelp": "Aktive und inaktive Freelancer werden angezeigt; zugewiesen werden können nur berechtigte Freelancer (aktives Konto, verifizierte E-Mail-Adresse, Abonnement, das den Empfang von Aufträgen erlaubt)."
     },
     "files": {
-      "heading": "6) Dateien (optional)",
+      "heading": "Dateien (optional)",
       "dropzoneTitle": "Dateien hierher ziehen oder zum Auswählen klicken (bis zu 5 Dateien)",
       "dropzoneHelp": "Sie können Projektdateien hinzufügen (optional).",
       "selectedLabel": "Ausgewählte Dateien:",
@@ -123,7 +123,7 @@
       "clearFiles": "Dateien entfernen"
     },
     "review": {
-      "heading": "7) Prüfen & absenden",
+      "heading": "Prüfen & absenden",
       "title": "Titel",
       "description": "Beschreibung",
       "category": "Kategorie",

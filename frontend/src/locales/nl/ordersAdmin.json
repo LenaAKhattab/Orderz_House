@@ -105,15 +105,15 @@
       "skillsPlaceholder": "Voeg vereiste vaardigheden toe"
     },
     "assignment": {
-      "headingInstitutional": "2) Toewijzing",
-      "headingOptional": "5) Toewijzing (optioneel)",
+      "headingInstitutional": "Toewijzing",
+      "headingOptional": "Toewijzing (optioneel)",
       "institutionalHelp1": "In de opdrachtvoorraad van organisaties wordt bij het aanmaken geen freelancer toegewezen.",
       "institutionalHelp2": "Na goedkeuring door de superbeheerder en vrijgave aan de organisatie verlopen aanmeldingen en toewijzing via het standaard opdrachtproces.",
       "pickFreelancer": "Freelancer selecteren",
       "pickFreelancerHelp": "Actieve en inactieve freelancers worden getoond; alleen geschikte freelancers kunnen worden toegewezen (actief account, geverifieerd e-mailadres, abonnement dat het ontvangen van opdrachten toestaat)."
     },
     "files": {
-      "heading": "6) Bestanden (optioneel)",
+      "heading": "Bestanden (optioneel)",
       "dropzoneTitle": "Sleep bestanden hierheen of klik om te kiezen (maximaal 5 bestanden)",
       "dropzoneHelp": "U kunt projectbestanden toevoegen (optioneel).",
       "selectedLabel": "Geselecteerde bestanden:",
@@ -123,7 +123,7 @@
       "clearFiles": "Bestanden wissen"
     },
     "review": {
-      "heading": "7) Controleren en verzenden",
+      "heading": "Controleren en verzenden",
       "title": "Titel",
       "description": "Beschrijving",
       "category": "Categorie",

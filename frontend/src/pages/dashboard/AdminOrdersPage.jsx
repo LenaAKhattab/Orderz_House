@@ -36,6 +36,8 @@ import "../../styles/smartOrders.css";
 import CustomerModeBadge from "../../components/orders/smart/CustomerModeBadge";
 import AdminOrderCustomerPanel from "../../components/orders/smart/AdminOrderCustomerPanel";
 import { adminCustomerOrdersSummaryRequest } from "../../services/api";
+import ServiceFormSnapshotView from "../../components/orders/smart/ServiceFormSnapshotView";
+import { pickLocalized } from "../../components/orders/smart/catalogForm";
 
 const CUSTOMER_FILTERS = ["", "any_customer", "guest", "new_account", "existing", "internal"];
 
@@ -78,6 +80,7 @@ export default function AdminOrdersPage() {
   const [customerFilter, setCustomerFilter] = useState("");
   const [customerPanelOrderId, setCustomerPanelOrderId] = useState(null);
   const [customerSummary, setCustomerSummary] = useState(null);
+  const [serviceModalOrder, setServiceModalOrder] = useState(null);
   const [bidsModalOrderId, setBidsModalOrderId] = useState(null);
   const [bidsByOrderId, setBidsByOrderId] = useState({});
   const [bidsBusyByOrderId, setBidsBusyByOrderId] = useState({});
@@ -259,6 +262,18 @@ export default function AdminOrdersPage() {
     }
   };
 
+  const serviceControls = (o) =>
+    o?.serviceForm ? (
+      <button
+        type="button"
+        className="btn btn-secondary oh-admin-orders-table__btn"
+        data-testid={`admin-order-service-${o.id}`}
+        onClick={() => setServiceModalOrder(o)}
+      >
+        {pickLocalized(o.serviceForm.name, locale)}
+      </button>
+    ) : null;
+
   const customerControls = (o) =>
     o?.customerSummary?.mode ? (
       <>
@@ -414,6 +429,13 @@ export default function AdminOrdersPage() {
               </div>
             ) : null}
           </div>
+          <DashboardModal
+            open={Boolean(serviceModalOrder)}
+            title={serviceModalOrder ? `${t("smartOrders.form.snapshotTitle")} — ${serviceModalOrder.orderCode || ""}` : ""}
+            onClose={() => setServiceModalOrder(null)}
+          >
+            <ServiceFormSnapshotView serviceForm={serviceModalOrder?.serviceForm} />
+          </DashboardModal>
           <AdminOrderCustomerPanel
             orderId={customerPanelOrderId}
             open={Boolean(customerPanelOrderId)}
@@ -486,6 +508,7 @@ export default function AdminOrdersPage() {
                         {o.institutionalStorageName ? ` · ${o.institutionalStorageName}` : ""}
                       </span>
                     ) : null}
+                    {serviceControls(o)}
                     {customerControls(o)}
                     {attachmentsButton(o)}
                     {shouldShowApplicants ? (
@@ -607,6 +630,7 @@ export default function AdminOrdersPage() {
                       <td className="oh-admin-orders-table__col--actions">
                         <span className="oh-admin-orders-table__actions">
                         {deliveryButtons(o)}
+                        {serviceControls(o)}
                         {customerControls(o)}
                         {attachmentsButton(o)}
                         {tableShowBids ? (

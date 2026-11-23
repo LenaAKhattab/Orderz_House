@@ -100,6 +100,7 @@ import {
   HowItWorksClientPage,
   AdminOrdersPage,
   AdminWhatsappOrdersPage,
+  AdminServiceCatalogPage,
   FreelancerWhatsappOrdersPage,
   AdminCreateOrderPage,
   AdminSubscriptionsActivationPage,
@@ -551,6 +552,14 @@ function App() {
                   }
                 />
                 <Route
+                  path="/dashboard/super-admin/service-catalog"
+                  element={
+                    <RequireStaffPage permission={ADMIN_PAGE_PERMISSIONS.serviceCatalog}>
+                      <AdminServiceCatalogPage />
+                    </RequireStaffPage>
+                  }
+                />
+                <Route
                   path="/dashboard/super-admin/whatsapp-orders"
                   element={
                     <RequireStaffPage permission={ADMIN_PAGE_PERMISSIONS.orders}>
@@ -909,6 +918,16 @@ function App() {
                     <RequireRole allowedRoles={[ROLE.ADMIN]}>
                       <RequirePermission permission={ADMIN_PAGE_PERMISSIONS.orders}>
                         <AdminOrdersPage />
+                      </RequirePermission>
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/admin/service-catalog"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.ADMIN]}>
+                      <RequirePermission permission={ADMIN_PAGE_PERMISSIONS.serviceCatalog}>
+                        <AdminServiceCatalogPage />
                       </RequirePermission>
                     </RequireRole>
                   }

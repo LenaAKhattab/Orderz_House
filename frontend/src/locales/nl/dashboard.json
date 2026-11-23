@@ -68,7 +68,8 @@
       "subscriptions": "Abonnementsactivering (ongebruikt)",
       "createRequest": "Opdracht aanmaken",
       "noPermissions": "U hebt geen actieve rechten. Neem contact op met de superbeheerder.",
-      "sidebarAria": "Beheermenu"
+      "sidebarAria": "Beheermenu",
+      "serviceCatalog": "Dienstencatalogus"
     },
     "sections": {
       "overview": "Overzicht",
@@ -119,7 +120,8 @@
       "editWebsite": "Website bewerken",
       "createRequest": "Opdracht aanmaken",
       "panelTitle": "Dashboard superbeheerder",
-      "sidebarAria": "Menu superbeheerder"
+      "sidebarAria": "Menu superbeheerder",
+      "serviceCatalog": "Dienstencatalogus"
     }
   },
   "roles": {

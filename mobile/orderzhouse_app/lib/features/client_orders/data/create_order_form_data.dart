@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 
 import 'create_order_models.dart';
@@ -7,8 +9,9 @@ import 'order_attachment_models.dart';
 /// Builds multipart body matching web `AdminInternalOrderWizard` field names.
 Future<FormData> buildCreateOrderFormData(
   CreateOrderDraft draft,
-  List<SelectedOrderAttachment> attachments,
-) async {
+  List<SelectedOrderAttachment> attachments, {
+  Map<String, dynamic>? serviceForm,
+}) async {
   final payload = buildCreateOrderPayload(draft);
   final formData = FormData();
 
@@ -36,6 +39,9 @@ Future<FormData> buildCreateOrderFormData(
   if (payload.containsKey('bidBudgetMax')) {
     addField('bidBudgetMax', payload['bidBudgetMax']);
   }
+
+  // Smart Orders S2: catalog service + dynamic values (same JSON as the web wizard).
+  if (serviceForm != null) addField('serviceForm', jsonEncode(serviceForm));
 
   for (final file in attachments) {
     formData.files.add(

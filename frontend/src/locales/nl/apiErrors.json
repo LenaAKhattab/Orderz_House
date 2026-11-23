@@ -296,6 +296,12 @@
     "SMART_ORDER_CLAIM_INVALID": "Deze opdrachtlink is ongeldig of verlopen.",
     "SMART_ORDER_CLAIM_CLIENT_ONLY": "Log in met een geverifieerd klantaccount om deze opdracht te ontvangen.",
     "SMART_ORDER_CLAIM_ALREADY_LINKED": "Deze opdracht is al aan een account gekoppeld.",
-    "SMART_ORDER_MANAGED_BY_TEAM": "Het OrderzHouse-team beheert deze opdracht. Neem voor wijzigingen contact op met uw accountmanager."
+    "SMART_ORDER_MANAGED_BY_TEAM": "Het OrderzHouse-team beheert deze opdracht. Neem voor wijzigingen contact op met uw accountmanager.",
+    "SMART_ORDER_FORM_INVALID": "Het dienstformulier is onvolledig of ongeldig.",
+    "SMART_ORDER_SERVICE_UNAVAILABLE": "De gekozen dienst is niet beschikbaar.",
+    "SMART_ORDER_FORM_STALE": "Het dienstformulier is bijgewerkt. Vernieuw en probeer opnieuw.",
+    "SERVICE_CATALOG_INVALID": "De dienstdefinitie is ongeldig.",
+    "SERVICE_CATALOG_NOT_FOUND": "Dienst niet gevonden.",
+    "SERVICE_CATALOG_CODE_TAKEN": "Deze dienstcode is al in gebruik."
   }
 }
