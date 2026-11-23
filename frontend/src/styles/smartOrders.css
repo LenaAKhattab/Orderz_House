@@ -287,3 +287,219 @@
     padding-block: 24px;
   }
 }
+
+/* ---------- Smart Orders S2: dynamic service forms + snapshots + catalog admin ---------- */
+.smart-dyn-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: 14px 16px;
+  margin-top: 16px;
+}
+
+.smart-dyn-field {
+  min-inline-size: 0;
+}
+
+.smart-dyn-field[data-type="textarea"],
+.smart-dyn-field[data-type="multiselect"],
+.smart-dyn-field[data-type="radio"],
+.smart-dyn-field[data-type="file"] {
+  grid-column: 1 / -1;
+}
+
+.smart-dyn-field label {
+  overflow-wrap: anywhere;
+}
+
+.smart-req {
+  color: var(--fd-danger, #dc2626);
+}
+
+.smart-qty-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.smart-qty-row .input {
+  flex: 1;
+  min-inline-size: 0;
+}
+
+.smart-unit {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.smart-choice-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.smart-choice {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--fd-surface-divider, #e2e8f0);
+  border-radius: 999px;
+  cursor: pointer;
+  max-inline-size: 100%;
+  overflow-wrap: anywhere;
+}
+
+.smart-choice--on {
+  border-color: var(--fd-primary, #2563eb);
+  background: color-mix(in srgb, var(--fd-primary, #2563eb) 8%, transparent);
+}
+
+.smart-choice:focus-within {
+  box-shadow: var(--dash-focus-ring, 0 0 0 3px rgb(37 99 235 / 0.35));
+}
+
+.smart-file-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.smart-file-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+  overflow-wrap: anywhere;
+}
+
+.smart-snapshot {
+  margin-top: 12px;
+  padding: 14px 16px;
+  border-radius: var(--fd-radius, 12px);
+  border: 1px solid var(--fd-surface-divider, #e2e8f0);
+  background: var(--fd-surface-inset-bg, #f8fafc);
+}
+
+.smart-snapshot h3 {
+  margin: 0 0 10px;
+  font-size: 1rem;
+}
+
+.smart-snapshot dl {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.smart-snapshot dl > div {
+  display: grid;
+  grid-template-columns: minmax(120px, 34%) 1fr;
+  gap: 4px 12px;
+}
+
+.smart-snapshot dt {
+  font-weight: 600;
+  opacity: 0.8;
+  overflow-wrap: anywhere;
+}
+
+.smart-snapshot dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.smart-catalog-group {
+  margin-block-end: 18px;
+}
+
+.smart-catalog-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--fd-surface-divider, #e2e8f0);
+  border-radius: 10px;
+  margin-block-end: 8px;
+}
+
+.smart-catalog-row__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.smart-catalog-row__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.smart-editor-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-block-end: 12px;
+}
+
+.smart-editor-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 10px 14px;
+}
+
+.smart-editor-field {
+  border: 1px solid var(--fd-surface-divider, #e2e8f0);
+  border-radius: 10px;
+  padding: 12px;
+  margin-block-end: 10px;
+  display: grid;
+  gap: 10px;
+}
+
+.smart-editor-field__head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 6px;
+  align-items: center;
+}
+
+.smart-locale-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr));
+  gap: 8px;
+}
+
+@media (max-width: 480px) {
+  .smart-snapshot dl > div {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Global form styles give inputs width:100% — keep choice/checkbox controls at their natural size. */
+.smart-choice input[type="radio"],
+.smart-choice input[type="checkbox"],
+.smart-check input[type="checkbox"] {
+  inline-size: auto;
+  min-inline-size: 0;
+  flex: 0 0 auto;
+  margin: 0;
+}
+
+.smart-check {
+  justify-content: flex-start;
+  text-align: start;
+}
+
+.smart-choice span,
+.smart-check span {
+  white-space: normal;
+  word-break: normal;
+  overflow-wrap: break-word;
+}

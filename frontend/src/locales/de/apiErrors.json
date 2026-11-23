@@ -296,6 +296,12 @@
     "SMART_ORDER_CLAIM_INVALID": "Dieser Auftragslink ist ungültig oder abgelaufen.",
     "SMART_ORDER_CLAIM_CLIENT_ONLY": "Bitte melden Sie sich mit einem verifizierten Kundenkonto an, um diesen Auftrag zu erhalten.",
     "SMART_ORDER_CLAIM_ALREADY_LINKED": "Dieser Auftrag ist bereits mit einem Konto verknüpft.",
-    "SMART_ORDER_MANAGED_BY_TEAM": "Das OrderzHouse-Team betreut diesen Auftrag. Wenden Sie sich für Änderungen an Ihren Kundenbetreuer."
+    "SMART_ORDER_MANAGED_BY_TEAM": "Das OrderzHouse-Team betreut diesen Auftrag. Wenden Sie sich für Änderungen an Ihren Kundenbetreuer.",
+    "SMART_ORDER_FORM_INVALID": "Das Leistungsformular ist unvollständig oder ungültig.",
+    "SMART_ORDER_SERVICE_UNAVAILABLE": "Die gewählte Leistung ist nicht verfügbar.",
+    "SMART_ORDER_FORM_STALE": "Das Leistungsformular wurde aktualisiert. Bitte neu laden und erneut versuchen.",
+    "SERVICE_CATALOG_INVALID": "Die Leistungsdefinition ist ungültig.",
+    "SERVICE_CATALOG_NOT_FOUND": "Leistung nicht gefunden.",
+    "SERVICE_CATALOG_CODE_TAKEN": "Dieser Leistungscode wird bereits verwendet."
   }
 }

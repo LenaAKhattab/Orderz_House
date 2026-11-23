@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Gavel, Plus, Tag } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/useAuth";
@@ -31,6 +31,15 @@ import "../../i18n/smartOrdersResources";
 import AdminOrderCustomerStep from "./smart/AdminOrderCustomerStep";
 import OrderCustomerCreatedDialog from "./smart/OrderCustomerCreatedDialog";
 import { buildCustomerPayload, emptyCustomerDraft, validateCustomerDraft } from "./smart/customerDraft";
+import ServiceCatalogStep from "./smart/ServiceCatalogStep";
+import {
+  buildServiceFormPayload,
+  emptyServiceDraft,
+  focusFirstDynamicError,
+  pickLocalized,
+  serviceDraftFiles,
+  validateServiceDraft,
+} from "./smart/catalogForm";
 
 const ADMIN_STEP_KEYS = ["core", "assignment", "files", "review"];
 const CLIENT_STEP_KEYS = ["core", "files", "review"];
@@ -403,17 +412,28 @@ export default function AdminInternalOrderWizard({
   // training templates, client self-service or custom submit handlers).
   const showCustomerStep =
     !isFakePoolMode && !isClientAudience && !isInstitutionalMode && typeof onSubmitFormData !== "function";
+  // Smart Orders S2: catalog service + dynamic fields for real Admin and client orders.
+  const showServiceStep = !isFakePoolMode && !isInstitutionalMode && typeof onSubmitFormData !== "function";
+  const stepLabel = useCallback(
+    (key) =>
+      key === "customer"
+        ? t("smartOrders.customerStep.stepLabel")
+        : key === "service"
+          ? t("smartOrders.serviceStep.stepLabel")
+          : t(`ordersAdmin.wizard.steps.${key}`),
+    [t],
+  );
   const adminSteps = useMemo(
     () =>
-      (showCustomerStep ? ["customer", ...ADMIN_STEP_KEYS] : ADMIN_STEP_KEYS).map((key) => ({
+      [...(showCustomerStep ? ["customer"] : []), ...(showServiceStep ? ["service"] : []), ...ADMIN_STEP_KEYS].map((key) => ({
         key,
-        label: key === "customer" ? t("smartOrders.customerStep.stepLabel") : t(`ordersAdmin.wizard.steps.${key}`),
+        label: stepLabel(key),
       })),
-    [t, showCustomerStep],
+    [stepLabel, showCustomerStep, showServiceStep],
   );
   const clientSteps = useMemo(
-    () => CLIENT_STEP_KEYS.map((key) => ({ key, label: t(`ordersAdmin.wizard.steps.${key}`) })),
-    [t],
+    () => [...(showServiceStep ? ["service"] : []), ...CLIENT_STEP_KEYS].map((key) => ({ key, label: stepLabel(key) })),
+    [stepLabel, showServiceStep],
   );
   const steps = isFakePoolMode ? fakeTemplateSteps : isClientAudience ? clientSteps : adminSteps;
   const base = role ? getDashboardPath(role) : "/dashboard";
@@ -447,6 +467,10 @@ export default function AdminInternalOrderWizard({
 
   const [form, setForm] = useState(() => makeInitialForm(initialValues));
   const [customerDraft, setCustomerDraft] = useState(emptyCustomerDraft);
+  const [serviceDraft, setServiceDraft] = useState(emptyServiceDraft);
+  const [selectedService, setSelectedService] = useState(null);
+  const onServiceResolved = useCallback((svc) => setSelectedService(svc || null), []);
+  const dynamicFiles = useMemo(() => serviceDraftFiles(selectedService, serviceDraft), [selectedService, serviceDraft]);
   const [createdCustomerResult, setCreatedCustomerResult] = useState(null);
 
   const set = (k, v) => setForm((prev) => ({ ...prev, [k]: v }));
@@ -462,6 +486,7 @@ export default function AdminInternalOrderWizard({
     setExtraCategoryDetails({});
     setExtraCategoryPickerOpen(false);
     setCustomerDraft(emptyCustomerDraft());
+    setServiceDraft(emptyServiceDraft());
     // eslint-disable-next-line react-hooks/exhaustive-deps -- reset only when token changes
   }, [resetToken]);
 
@@ -505,6 +530,7 @@ export default function AdminInternalOrderWizard({
   const errorsByStep = useMemo(() => {
     const out = {};
     out.customer = showCustomerStep ? validateCustomerDraft(customerDraft, t) : {};
+    out.service = showServiceStep && selectedService ? validateServiceDraft(selectedService, serviceDraft) : {};
 
     // Step 1: order details (type, classification, budget, duration)
     out.core = {};
@@ -557,14 +583,14 @@ export default function AdminInternalOrderWizard({
     // Step 2: files (real orders only — templates do not persist attachments)
     out.files = {};
     if (!isFakePoolMode) {
-      if (files.length > 5) out.files.files = t("ordersAdmin.wizard.errors.maxFiles");
+      if (files.length + dynamicFiles.length > 5) out.files.files = t("ordersAdmin.wizard.errors.maxFiles");
       else if (!validateOrderFilesSize(files).ok) out.files.files = t("ordersAdmin.wizard.upload.totalSizeMessage");
     }
 
     out.review = {};
 
     return out;
-  }, [form, files, isClientAudience, isFakePoolMode, t, showCustomerStep, customerDraft]);
+  }, [form, files, isClientAudience, isFakePoolMode, t, showCustomerStep, customerDraft, showServiceStep, selectedService, serviceDraft, dynamicFiles]);
 
   useEffect(() => {
     if (form.projectType === "bidding" && form.budget) {
@@ -587,7 +613,12 @@ export default function AdminInternalOrderWizard({
   const canSubmit = useMemo(() => {
     const coreOk = Object.keys(errorsByStep.core).length === 0;
     if (isFakePoolMode) return coreOk;
-    return coreOk && Object.keys(errorsByStep.files).length === 0 && Object.keys(errorsByStep.customer).length === 0;
+    return (
+      coreOk &&
+      Object.keys(errorsByStep.files).length === 0 &&
+      Object.keys(errorsByStep.customer).length === 0 &&
+      Object.keys(errorsByStep.service).length === 0
+    );
   }, [errorsByStep, isFakePoolMode]);
 
   useEffect(() => {
@@ -646,6 +677,15 @@ export default function AdminInternalOrderWizard({
       cancelled = true;
     };
   }, [form.categoryId]);
+
+  useEffect(() => {
+    if (!selectedService) return;
+    setForm((p) =>
+      String(p.categoryId) === String(selectedService.categoryId)
+        ? p
+        : { ...p, categoryId: String(selectedService.categoryId), subSubcategoryId: selectedService.subSubcategoryId || "" },
+    );
+  }, [selectedService]);
 
   useEffect(() => {
     // If the admin assigns a freelancer, archiving no longer applies.
@@ -787,8 +827,15 @@ export default function AdminInternalOrderWizard({
         if (customerPayload) fd.append("customer", JSON.stringify(customerPayload));
       }
       files.forEach((f) => fd.append("files", f));
+      // Smart Orders S2: dynamic file fields upload with the order attachments (same secure R2 path).
+      dynamicFiles.forEach((f) => fd.append("files", f));
+      const servicePayload = showServiceStep ? buildServiceFormPayload(selectedService, serviceDraft) : null;
+      if (servicePayload) fd.append("serviceForm", JSON.stringify(servicePayload));
       if (isClientAudience) {
-        fd.append("creationKey", clientCreationKey(creationInstanceRef.current, form, files));
+        fd.append(
+          "creationKey",
+          clientCreationKey(creationInstanceRef.current, { ...form, serviceForm: servicePayload }, [...files, ...dynamicFiles]),
+        );
       }
 
       const res = onSubmitFormData
@@ -820,6 +867,7 @@ export default function AdminInternalOrderWizard({
         return;
       }
       setCustomerDraft(emptyCustomerDraft());
+      setServiceDraft(emptyServiceDraft());
       // Reset for next order; skill names stay in local history for the searchable list only.
       creationInstanceRef.current = newCreationInstanceId();
       setFiles([]);
@@ -1013,6 +1061,18 @@ export default function AdminInternalOrderWizard({
             />
           ) : null}
 
+          {currentStepKey === "service" ? (
+            <ServiceCatalogStep
+              audience={isClientAudience ? "client" : "admin"}
+              draft={serviceDraft}
+              onDraftChange={setServiceDraft}
+              onServiceResolved={onServiceResolved}
+              errors={errorsByStep.service}
+              showErrors={Boolean(attempted.service)}
+              disabled={busy}
+            />
+          ) : null}
+
           {currentStepKey === "core" ? (
             <>
               {isFakePoolMode ? (
@@ -1121,6 +1181,8 @@ export default function AdminInternalOrderWizard({
                   <select
                     id="adm-co-cat"
                     className="input"
+                    disabled={Boolean(selectedService)}
+                    aria-describedby={selectedService ? "adm-co-cat-locked" : undefined}
                     value={form.categoryId}
                     onChange={(e) => {
                       const v = e.target.value;
@@ -1141,6 +1203,11 @@ export default function AdminInternalOrderWizard({
                       </option>
                     ))}
                   </select>
+                  {selectedService ? (
+                    <div className="help" id="adm-co-cat-locked">
+                      {t("smartOrders.serviceStep.categoryLocked")}
+                    </div>
+                  ) : null}
                   <FieldError message={attempted.core ? errorsByStep.core.categoryId : ""} />
                 </div>
 
@@ -1461,7 +1528,7 @@ export default function AdminInternalOrderWizard({
           {!isClientAudience && currentStepKey === "assignment" && !isFakePoolMode ? (
             <>
               <h2 style={{ marginBottom: 10 }}>
-                {isInstitutionalMode ? t("ordersAdmin.wizard.assignment.headingInstitutional") : t("ordersAdmin.wizard.assignment.headingOptional")}
+                {`${stepIdx + 1}) ${isInstitutionalMode ? t("ordersAdmin.wizard.assignment.headingInstitutional") : t("ordersAdmin.wizard.assignment.headingOptional")}`}
               </h2>
               {isInstitutionalMode ? (
                 <div className="oh-review" style={{ marginTop: 4 }}>
@@ -1500,7 +1567,7 @@ export default function AdminInternalOrderWizard({
               <h2 style={{ marginBottom: 10 }}>
                 {isFakePoolMode
                   ? `${stepIdx + 1}) ${tpl("stepFilesOptional")}`
-                  : t("ordersAdmin.wizard.files.heading")}
+                  : `${stepIdx + 1}) ${t("ordersAdmin.wizard.files.heading")}`}
               </h2>
               {isFakePoolMode ? (
                 <div className="oh-review" style={{ marginTop: 4 }}>
@@ -1524,9 +1591,21 @@ export default function AdminInternalOrderWizard({
           {currentStepKey === "review" ? (
             <>
               <h2 style={{ marginBottom: 10 }}>
-                {isFakePoolMode ? `${stepIdx + 1}) ${tpl("steps.review")}` : t("ordersAdmin.wizard.review.heading")}
+                {`${stepIdx + 1}) ${isFakePoolMode ? tpl("steps.review") : t("ordersAdmin.wizard.review.heading")}`}
               </h2>
               <div className="oh-review">
+                {selectedService ? (
+                  <div className="oh-review__2col" data-testid="smart-orders-review-service">
+                    <CreateOrderReviewRow label={t("smartOrders.serviceStep.reviewService")}>
+                      {pickLocalized(selectedService.name, locale)}
+                    </CreateOrderReviewRow>
+                    <CreateOrderReviewRow label={t("smartOrders.serviceStep.reviewQuantity")}>
+                      {serviceDraft.quantityUnspecified
+                        ? t("smartOrders.form.unspecified")
+                        : `${serviceDraft.quantity || "—"} ${t(`smartOrders.units.${selectedService.quantity?.unit}`)}`}
+                    </CreateOrderReviewRow>
+                  </div>
+                ) : null}
                 {showCustomerStep && customerDraft.mode ? (
                   <div className="oh-review__2col" data-testid="smart-orders-review-customer">
                     <CreateOrderReviewRow label={t("smartOrders.review.customerMode")}>
@@ -1740,7 +1819,10 @@ export default function AdminInternalOrderWizard({
                 className="btn btn-primary"
                 onClick={() => {
                   markAttempted();
-                  if (!stepValid) return;
+                  if (!stepValid) {
+                    if (currentStepKey === "service") focusFirstDynamicError(errorsByStep.service);
+                    return;
+                  }
                   goNext();
                 }}
                 disabled={busy}

@@ -42,7 +42,7 @@ describe("WhatsApp orders — navigation & routes", () => {
 
   it("admin + super-admin sidebars place the queue in Orders/Operations with a pending badge", () => {
     const admin = read("constants/adminNav.js");
-    assert.match(admin, /itemKeys: \["internalRequests", "whatsappOrders", "createOrder", "trainingRequests"\]/);
+    assert.match(admin, /itemKeys: \["internalRequests", "whatsappOrders", "createOrder", "serviceCatalog", "trainingRequests"\]/);
     assert.match(admin, /to: "\/dashboard\/admin\/whatsapp-orders"[\s\S]*?permission: ADMIN_PAGE_PERMISSIONS\.orders,\s*badgeKey: "externalIntakesPending"/);
     const sa = read("constants/superAdminNav.js");
     assert.match(sa, /to: "\/dashboard\/super-admin\/whatsapp-orders"[\s\S]*?permission: ADMIN_PAGE_PERMISSIONS\.orders,\s*badgeKey: "externalIntakesPending"/);

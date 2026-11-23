@@ -68,7 +68,8 @@
       "subscriptions": "Subscription activation (unused)",
       "createRequest": "Create request",
       "noPermissions": "You do not have any active permissions. Please contact the super admin.",
-      "sidebarAria": "Admin menu"
+      "sidebarAria": "Admin menu",
+      "serviceCatalog": "Service catalog"
     },
     "sections": {
       "overview": "Overview",
@@ -106,7 +107,6 @@
       "internalRequests": "Requests",
       "trainingRequests": "Training requests",
       "pantry": "Pantry House",
-      "articles": "Articles",
       "admins": "Admin management",
       "users": "Users",
       "accountRestrictions": "Account Restrictions",
@@ -120,7 +120,8 @@
       "editWebsite": "Edit website",
       "createRequest": "Create request",
       "panelTitle": "Super admin dashboard",
-      "sidebarAria": "Super admin menu"
+      "sidebarAria": "Super admin menu",
+      "serviceCatalog": "Service catalog"
     }
   },
   "roles": {
@@ -599,7 +600,6 @@
     "emptyFilteredHint": "Try adjusting search or reset filters.",
     "loadError": "Failed to load storages.",
     "timeoutError": "The request took too long. Check your connection and try again.",
-    "actions": "Actions",
     "manage": "Manage",
     "viewDetails": "View details",
     "currencyJod": "JOD",
@@ -707,7 +707,6 @@
     "noPeople": "No employees added yet",
     "noRows": "No bonus rows yet",
     "draft": "Draft",
-    "readyForPayment": "Ready for payment",
     "cancelled": "Cancelled",
     "search": "Search",
     "month": "Month",

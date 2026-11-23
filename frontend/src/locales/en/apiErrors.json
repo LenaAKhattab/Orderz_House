@@ -296,6 +296,12 @@
     "SMART_ORDER_CLAIM_INVALID": "This order link is invalid or has expired.",
     "SMART_ORDER_CLAIM_CLIENT_ONLY": "Please sign in with a verified customer account to receive this order.",
     "SMART_ORDER_CLAIM_ALREADY_LINKED": "This order is already linked to an account.",
-    "SMART_ORDER_MANAGED_BY_TEAM": "The OrderzHouse team manages this order. Contact your account manager for any change."
+    "SMART_ORDER_MANAGED_BY_TEAM": "The OrderzHouse team manages this order. Contact your account manager for any change.",
+    "SMART_ORDER_FORM_INVALID": "The service form is incomplete or invalid.",
+    "SMART_ORDER_SERVICE_UNAVAILABLE": "The selected service is not available.",
+    "SMART_ORDER_FORM_STALE": "The service form was updated. Refresh and try again.",
+    "SERVICE_CATALOG_INVALID": "The service definition is invalid.",
+    "SERVICE_CATALOG_NOT_FOUND": "Service not found.",
+    "SERVICE_CATALOG_CODE_TAKEN": "This service code is already used."
   }
 }

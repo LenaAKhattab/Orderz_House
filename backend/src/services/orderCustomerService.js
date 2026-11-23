@@ -954,6 +954,7 @@ function projectManagedOrderForCustomer(order, row) {
     updatedAt: order.updatedAt,
     clientRevisionNote: null,
     revisionRequestedBy: null,
+    serviceForm: order.serviceForm || null,
     managedByAdmin: true,
     customerActionsAllowed: false,
     linkedAt: row?.customer_account_linked_at || null,

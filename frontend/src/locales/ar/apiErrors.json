@@ -296,6 +296,12 @@
     "SMART_ORDER_CLAIM_INVALID": "رابط الطلب غير صالح أو منتهي الصلاحية.",
     "SMART_ORDER_CLAIM_CLIENT_ONLY": "يجب تسجيل الدخول بحساب عميل مفعّل لاستلام الطلب.",
     "SMART_ORDER_CLAIM_ALREADY_LINKED": "هذا الطلب مرتبط بحساب بالفعل.",
-    "SMART_ORDER_MANAGED_BY_TEAM": "يدير فريق OrderzHouse هذا الطلب. تواصل مع المسؤول عن طلبك لأي إجراء."
+    "SMART_ORDER_MANAGED_BY_TEAM": "يدير فريق OrderzHouse هذا الطلب. تواصل مع المسؤول عن طلبك لأي إجراء.",
+    "SMART_ORDER_FORM_INVALID": "بيانات نموذج الخدمة غير مكتملة أو غير صالحة.",
+    "SMART_ORDER_SERVICE_UNAVAILABLE": "الخدمة المختارة غير متاحة.",
+    "SMART_ORDER_FORM_STALE": "تم تحديث نموذج الخدمة. حدّث الصفحة وأعد المحاولة.",
+    "SERVICE_CATALOG_INVALID": "تعريف الخدمة غير صالح.",
+    "SERVICE_CATALOG_NOT_FOUND": "الخدمة غير موجودة.",
+    "SERVICE_CATALOG_CODE_TAKEN": "رمز الخدمة مستخدم."
   }
 }

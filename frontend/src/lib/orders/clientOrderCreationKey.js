@@ -37,6 +37,7 @@ export function clientCreationKey(instanceId, form, files) {
     durationValue: String(form?.durationValue || ""),
     durationUnit: form?.durationUnit || "",
     skills: form?.preferredSkills || [],
+    serviceForm: form?.serviceForm ?? null,
     files: (files || []).map((f) => [f?.name, f?.size, f?.lastModified]),
   });
   return `${instanceId}:${contentHash(signature)}`;

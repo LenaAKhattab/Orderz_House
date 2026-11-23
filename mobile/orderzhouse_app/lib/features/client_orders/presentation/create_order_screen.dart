@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../data/service_catalog_models.dart';
+import 'service_dynamic_fields.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -390,9 +392,58 @@ class _StepCategory extends ConsumerWidget {
               ],
             ),
           ),
+          ..._serviceSection(context, ref),
         ],
       ],
     );
+  }
+
+  /// Smart Orders S2: catalog services of the chosen category (from the server) + dynamic fields.
+  List<Widget> _serviceSection(BuildContext context, WidgetRef ref) {
+    final notifier = ref.read(createOrderControllerProvider.notifier);
+    final services = state.catalog.forCategory(state.draft.categoryId);
+    if (services.isEmpty) return const [];
+    final locale = Localizations.localeOf(context).languageCode == 'en' ? 'en' : 'ar';
+    final selected = state.selectedService;
+    return [
+      const SizedBox(height: 12),
+      OhCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'الخدمة (اختياري)',
+              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: AppColors.textInk),
+            ),
+            const SizedBox(height: 8),
+            _SelectableTile(
+              label: 'طلب عام (بدون خدمة محددة)',
+              selected: selected == null,
+              onTap: () => notifier.selectService(null),
+            ),
+            const SizedBox(height: 8),
+            ...services.map(
+              (svc) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: _SelectableTile(
+                  label: pickLocalized(svc.name, locale),
+                  selected: selected?.serviceCode == svc.serviceCode,
+                  onTap: () => notifier.selectService(svc.serviceCode),
+                ),
+              ),
+            ),
+            if (selected != null)
+              ServiceDynamicFields(
+                service: selected,
+                draft: state.serviceDraft,
+                errors: state.serviceErrors,
+                onValue: notifier.setServiceValue,
+                onQuantity: notifier.setServiceQuantity,
+              ),
+          ],
+        ),
+      ),
+    ];
   }
 }
 
@@ -677,6 +728,18 @@ class _StepReview extends ConsumerWidget {
                 amountMax: double.tryParse(draft.bidBudgetMax.replaceAll(',', '.')),
               ),
             ),
+          if (state.selectedService != null) ...[
+            _ReviewRow(
+              'الخدمة',
+              pickLocalized(state.selectedService!.name, Localizations.localeOf(context).languageCode == 'en' ? 'en' : 'ar'),
+            ),
+            _ReviewRow(
+              'الكمية',
+              state.serviceDraft.quantityUnspecified
+                  ? 'غير محدد / بحاجة لتقدير'
+                  : '${state.serviceDraft.quantity} ${unitLabel(state.selectedService!.quantity.unit, 'ar')}',
+            ),
+          ],
           _ReviewRow(
             'المرفقات',
             state.attachments.isEmpty ? 'لا توجد مرفقات' : '${state.attachments.length} ملف',

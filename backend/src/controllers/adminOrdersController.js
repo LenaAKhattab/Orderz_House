@@ -1,5 +1,6 @@
 const ordersService = require("../services/ordersService");
 const orderCustomerService = require("../services/orderCustomerService");
+const serviceCatalogSchema = require("../services/serviceCatalogSchema");
 const adminUsersService = require("../services/adminUsersService");
 const { pipeOrderFileToResponse } = require("../utils/pipeOrderFileDownload");
 
@@ -73,6 +74,8 @@ const createInternalOrder = async (req, res, next) => {
       extraCategoryDetails,
       // Smart Orders S1: explicit customer mode (absent -> legacy internal order, unchanged).
       customer: orderCustomerService.parseCustomerInput(req.body.customer),
+      // Smart Orders S2: catalog service + dynamic values (absent → legacy free-form order).
+      serviceForm: serviceCatalogSchema.parseServiceFormInput(req.body.serviceForm),
     };
 
     const order = await ordersService.createInternalOrder({

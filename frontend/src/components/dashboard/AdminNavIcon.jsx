@@ -1,4 +1,5 @@
 import {
+  LayoutList,
   BadgeCheck,
   BarChart3,
   Bell,
@@ -35,6 +36,7 @@ const ICON_MAP = {
   analytics: BarChart3,
   "internal-requests": ClipboardList,
   "whatsapp-orders": MessageCircle,
+  "service-catalog": LayoutList,
   "training-requests": Sparkles,
   "financial-claims": Receipt,
   "financial-center": Landmark,

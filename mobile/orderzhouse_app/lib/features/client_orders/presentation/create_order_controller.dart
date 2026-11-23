@@ -7,6 +7,9 @@ import '../data/create_order_models.dart';
 import '../data/create_order_repository.dart';
 import '../data/order_attachment_limits.dart';
 import '../data/order_attachment_models.dart';
+import '../data/service_catalog_models.dart';
+import '../data/service_catalog_repository.dart';
+import '../data/service_form_logic.dart';
 
 class CreateOrderState {
   const CreateOrderState({
@@ -23,6 +26,9 @@ class CreateOrderState {
     this.stepErrors = const {},
     this.attachments = const [],
     this.attachmentsError,
+    this.catalog = ServiceCatalog.empty,
+    this.serviceDraft = const ServiceFormDraft(),
+    this.serviceErrors = const {},
   });
 
   static const stepCount = 5;
@@ -40,8 +46,21 @@ class CreateOrderState {
   final Map<String, String> stepErrors;
   final List<SelectedOrderAttachment> attachments;
   final String? attachmentsError;
+  // Smart Orders S2: server catalog + dynamic service form.
+  final ServiceCatalog catalog;
+  final ServiceFormDraft serviceDraft;
+  final Map<String, String> serviceErrors;
 
   bool get isSuccess => result != null;
+
+  CatalogService? get selectedService {
+    final code = serviceDraft.serviceCode;
+    if (code == null) return null;
+    for (final s in catalog.services) {
+      if (s.serviceCode == code) return s;
+    }
+    return null;
+  }
 
   CreateOrderState copyWith({
     int? step,
@@ -57,6 +76,9 @@ class CreateOrderState {
     Map<String, String>? stepErrors,
     List<SelectedOrderAttachment>? attachments,
     String? attachmentsError,
+    ServiceCatalog? catalog,
+    ServiceFormDraft? serviceDraft,
+    Map<String, String>? serviceErrors,
     bool clearSubmitError = false,
     bool clearResult = false,
     bool clearStepErrors = false,
@@ -76,6 +98,9 @@ class CreateOrderState {
       stepErrors: clearStepErrors ? const {} : (stepErrors ?? this.stepErrors),
       attachments: attachments ?? this.attachments,
       attachmentsError: clearAttachmentsError ? null : (attachmentsError ?? this.attachmentsError),
+      catalog: catalog ?? this.catalog,
+      serviceDraft: serviceDraft ?? this.serviceDraft,
+      serviceErrors: serviceErrors ?? this.serviceErrors,
     );
   }
 }
@@ -84,7 +109,38 @@ class CreateOrderController extends AutoDisposeNotifier<CreateOrderState> {
   @override
   CreateOrderState build() {
     Future.microtask(loadCategories);
+    Future.microtask(loadCatalog);
     return const CreateOrderState(categoriesLoading: true);
+  }
+
+  /// Catalog failures never block ordering: "general request" (no service) stays available.
+  Future<void> loadCatalog() async {
+    try {
+      final catalog = await ref.read(serviceCatalogRepositoryProvider).fetch();
+      state = state.copyWith(catalog: catalog);
+    } catch (_) {
+      state = state.copyWith(catalog: ServiceCatalog.empty);
+    }
+  }
+
+  void selectService(String? serviceCode) {
+    final svc = serviceCode == null ? null : state.catalog.services.where((s) => s.serviceCode == serviceCode).firstOrNull;
+    state = state.copyWith(
+      serviceDraft: svc == null ? const ServiceFormDraft() : ServiceFormDraft(serviceCode: svc.serviceCode, version: svc.version),
+      serviceErrors: const {},
+      clearStepErrors: true,
+    );
+  }
+
+  void setServiceValue(String key, Object? value) {
+    state = state.copyWith(serviceDraft: state.serviceDraft.withValue(key, value), serviceErrors: const {});
+  }
+
+  void setServiceQuantity({String? quantity, bool? unspecified}) {
+    state = state.copyWith(
+      serviceDraft: state.serviceDraft.withQuantity(quantity: quantity, unspecified: unspecified),
+      serviceErrors: const {},
+    );
   }
 
   Future<void> loadCategories() async {
@@ -119,7 +175,13 @@ class CreateOrderController extends AutoDisposeNotifier<CreateOrderState> {
 
   void selectCategory(ServiceCategory category) {
     final nextDraft = state.draft.copyWith(categoryId: category.id, clearSubSubcategory: true);
-    state = state.copyWith(draft: nextDraft, clearStepErrors: true);
+    final keepService = state.selectedService?.categoryId == category.id;
+    state = state.copyWith(
+      draft: nextDraft,
+      clearStepErrors: true,
+      serviceDraft: keepService ? state.serviceDraft : const ServiceFormDraft(),
+      serviceErrors: const {},
+    );
     loadSubSubcategories(category.id);
   }
 
@@ -167,6 +229,14 @@ class CreateOrderController extends AutoDisposeNotifier<CreateOrderState> {
       state = state.copyWith(stepErrors: validation.fieldErrors);
       return false;
     }
+    final svc = state.selectedService;
+    if (state.step == 1 && svc != null) {
+      final errors = validateServiceForm(svc, state.serviceDraft);
+      if (errors.isNotEmpty) {
+        state = state.copyWith(serviceErrors: errors);
+        return false;
+      }
+    }
     if (state.step < CreateOrderState.stepCount - 1) {
       state = state.copyWith(step: state.step + 1, clearStepErrors: true, clearSubmitError: true);
     }
@@ -200,10 +270,23 @@ class CreateOrderController extends AutoDisposeNotifier<CreateOrderState> {
       final result = await ref.read(createOrderRepositoryProvider).createOrder(
             state.draft,
             attachments: state.attachments,
+            serviceForm: buildServiceFormPayload(state.selectedService, state.serviceDraft),
           );
       state = state.copyWith(isSubmitting: false, result: result);
       return true;
     } catch (e) {
+      if (isStaleServiceFormError(e)) {
+        // The catalog changed on the server: drop the cache, reload, and send the user back to the service.
+        ref.read(serviceCatalogRepositoryProvider).invalidate();
+        await loadCatalog();
+        state = state.copyWith(
+          isSubmitting: false,
+          step: 1,
+          serviceDraft: const ServiceFormDraft(),
+          submitError: 'تم تحديث نموذج الخدمة. يرجى اختيار الخدمة وتعبئة الحقول من جديد.',
+        );
+        return false;
+      }
       state = state.copyWith(
         isSubmitting: false,
         submitError: apiErrorMessage(e, fallback: 'تعذر إنشاء الطلب.'),
@@ -215,6 +298,7 @@ class CreateOrderController extends AutoDisposeNotifier<CreateOrderState> {
   void reset() {
     state = const CreateOrderState(categoriesLoading: true);
     loadCategories();
+    loadCatalog();
   }
 }
 

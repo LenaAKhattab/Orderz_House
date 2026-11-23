@@ -539,6 +539,10 @@ async function getOrderById(orderId, client) {
   const runner = client || pool;
   const { rows } = await runner.query(
     `SELECT o.*,
+       (SELECT row_to_json(fs) FROM (
+          SELECT service_code, service_version, definition, field_values, quantity::text AS quantity, quantity_unit,
+                 quantity_unspecified, created_at
+            FROM order_form_snapshots WHERE order_id = o.id LIMIT 1) fs) AS form_snapshot,
        ios.name AS institutional_storage_name,
        iso.released_at AS institutional_released_at,
        (
@@ -689,12 +693,17 @@ async function getOrderById(orderId, client) {
     }
   }
 
+  // Smart Orders S2: immutable service form snapshot (null for legacy orders — never fabricated).
+  // Loaded in the main order query (no extra round trip).
+  const serviceForm = require("./serviceCatalogService").mapSnapshotRow(rows[0]?.form_snapshot || null);
+
   return {
     ...base,
     category,
     subcategory,
     subSubcategory,
     extraCategories,
+    serviceForm,
     preferredSkills: skillRows.map((r) => ({ id: String(r.id), name: r.name })),
     files: fileRows.map((r) => ({
       id: String(r.id),
@@ -783,6 +792,21 @@ async function createInternalOrderInTransaction(
 
   if (assignedFreelancerId) {
     await assertAssignableFreelancer({ freelancerUserId: assignedFreelancerId }, client);
+  }
+
+  // Smart Orders S2: catalog service + dynamic form (validated before the order row exists).
+  const serviceCatalogService = require("./serviceCatalogService");
+  const uploadedFileNames = (Array.isArray(uploadedFiles) ? uploadedFiles : []).map(
+    (f) => decodeMultipartOriginalName(f?.originalname) || f?.originalname || "",
+  );
+  let catalogSvc = null;
+  if (payload.serviceForm) {
+    catalogSvc = await serviceCatalogService.resolveServiceForOrder(client, {
+      serviceForm: payload.serviceForm,
+      audience: "admin",
+      categoryId: payload.categoryId,
+    });
+    serviceCatalogService.prevalidate(catalogSvc, payload.serviceForm, uploadedFileNames);
   }
 
   // Smart Orders S1: explicit order channel (never inferred from the title). Customer-linked orders
@@ -942,6 +966,16 @@ async function createInternalOrderInTransaction(
   );
 
   let orderRow = rows[0];
+
+  if (catalogSvc) {
+    await serviceCatalogService.createSnapshotInTransaction(client, {
+      orderId: orderRow.id,
+      svc: catalogSvc,
+      serviceForm: payload.serviceForm,
+      uploadedFileNames,
+      actorUserId,
+    });
+  }
 
   let customerLink = null;
   if (payload.customer) {
@@ -1201,6 +1235,21 @@ async function createClientOrder({ clientUserId, payload, uploadedFiles = [] }) 
     const effectiveSubcategoryId =
       payload.subcategoryId || (chainResult && typeof chainResult === "object" ? chainResult.inferredSubcategoryId : null);
 
+    // Smart Orders S2: client-visible catalog service + dynamic form.
+    const serviceCatalogService = require("./serviceCatalogService");
+    const clientUploadedFileNames = (Array.isArray(uploadedFiles) ? uploadedFiles : []).map(
+      (f) => decodeMultipartOriginalName(f?.originalname) || f?.originalname || "",
+    );
+    let clientCatalogSvc = null;
+    if (payload.serviceForm) {
+      clientCatalogSvc = await serviceCatalogService.resolveServiceForOrder(client, {
+        serviceForm: payload.serviceForm,
+        audience: "client",
+        categoryId: payload.categoryId,
+      });
+      serviceCatalogService.prevalidate(clientCatalogSvc, payload.serviceForm, clientUploadedFileNames);
+    }
+
     let orderCode = String(payload.orderCode || "").trim();
     if (!orderCode) {
       orderCode = await generateUniqueOrderCode(client);
@@ -1286,6 +1335,15 @@ async function createClientOrder({ clientUserId, payload, uploadedFiles = [] }) 
     );
 
     let orderRow = rows[0];
+    if (clientCatalogSvc) {
+      await serviceCatalogService.createSnapshotInTransaction(client, {
+        orderId: orderRow.id,
+        svc: clientCatalogSvc,
+        serviceForm: payload.serviceForm,
+        uploadedFileNames: clientUploadedFileNames,
+        actorUserId: clientUserId,
+      });
+    }
 
     // Phase E3: client bidding Orders snapshot Admin rules (same as internal create).
     if (!isFixed) {
@@ -1722,6 +1780,10 @@ async function listClientOrders({ clientUserId, limit = 50, offset = 0 } = {}) {
   for (const o of out) {
     o.bidsCount = bidCountByOrder.has(String(o.id)) ? bidCountByOrder.get(String(o.id)) : 0;
   }
+
+  // Smart Orders S2: immutable service snapshots for the page (one batched query).
+  const snapshots = await require("./serviceCatalogService").getOrderFormSnapshotsMap(orderIds);
+  for (const o of out) o.serviceForm = snapshots.get(String(o.id)) || null;
 
   // Smart Orders S1: Admin-managed orders linked to this customer use the read-only projection.
   const orderCustomerService = require("./orderCustomerService");

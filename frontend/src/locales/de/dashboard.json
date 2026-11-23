@@ -68,7 +68,8 @@
       "subscriptions": "Abonnementaktivierung (nicht verwendet)",
       "createRequest": "Auftrag erstellen",
       "noPermissions": "Sie haben keine aktiven Berechtigungen. Bitte wenden Sie sich an den Super-Admin.",
-      "sidebarAria": "Administratormenü"
+      "sidebarAria": "Administratormenü",
+      "serviceCatalog": "Leistungskatalog"
     },
     "sections": {
       "overview": "Übersicht",
@@ -119,7 +120,8 @@
       "editWebsite": "Website bearbeiten",
       "createRequest": "Auftrag erstellen",
       "panelTitle": "Super-Admin-Dashboard",
-      "sidebarAria": "Super-Admin-Menü"
+      "sidebarAria": "Super-Admin-Menü",
+      "serviceCatalog": "Leistungskatalog"
     }
   },
   "roles": {

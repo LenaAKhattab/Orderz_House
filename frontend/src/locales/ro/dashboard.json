@@ -68,7 +68,8 @@
       "subscriptions": "Activarea abonamentelor (neutilizat)",
       "createRequest": "Creați o comandă",
       "noPermissions": "Nu aveți nicio permisiune activă. Contactați super administratorul.",
-      "sidebarAria": "Meniul de administrare"
+      "sidebarAria": "Meniul de administrare",
+      "serviceCatalog": "Catalog de servicii"
     },
     "sections": {
       "overview": "Prezentare generală",
@@ -119,7 +120,8 @@
       "editWebsite": "Editați site-ul",
       "createRequest": "Creați o comandă",
       "panelTitle": "Panou de control super administrator",
-      "sidebarAria": "Meniul super administratorului"
+      "sidebarAria": "Meniul super administratorului",
+      "serviceCatalog": "Catalog de servicii"
     }
   },
   "roles": {

@@ -105,15 +105,15 @@
       "skillsPlaceholder": "Adăugați competențele necesare"
     },
     "assignment": {
-      "headingInstitutional": "2) Atribuire",
-      "headingOptional": "5) Atribuire (opțional)",
+      "headingInstitutional": "Atribuire",
+      "headingOptional": "Atribuire (opțional)",
       "institutionalHelp1": "În depozitul de comenzi instituționale nu se atribuie niciun freelancer la creare.",
       "institutionalHelp2": "După aprobarea super administratorului și eliberarea către instituție, candidaturile și atribuirea urmează fluxul standard al comenzilor.",
       "pickFreelancer": "Selectați freelancerul",
       "pickFreelancerHelp": "Sunt afișați freelancerii activi și inactivi; pot fi atribuiți doar freelancerii eligibili (cont activ, e-mail verificat, abonament care permite primirea comenzilor)."
     },
     "files": {
-      "heading": "6) Fișiere (opțional)",
+      "heading": "Fișiere (opțional)",
       "dropzoneTitle": "Trageți fișierele aici sau faceți clic pentru a alege (cel mult 5 fișiere)",
       "dropzoneHelp": "Puteți adăuga fișiere ale proiectului (opțional).",
       "selectedLabel": "Fișiere selectate:",
@@ -123,7 +123,7 @@
       "clearFiles": "Ștergeți fișierele"
     },
     "review": {
-      "heading": "7) Verificare și trimitere",
+      "heading": "Verificare și trimitere",
       "title": "Titlu",
       "description": "Descriere",
       "category": "Categorie",
