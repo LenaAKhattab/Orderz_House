@@ -6,6 +6,7 @@ const { uploadOrderFiles, handleOrderUploadErrors, enforceOrderUploadTotalSize }
 const { requireAuth, requireRole, optionalAuth } = require("../middleware/rbacMiddleware");
 const {
   requireClientOwnsOrderParam,
+  requireClientCanViewOrderParam,
   requireFreelancerAssignedOrderParam,
   requireFreelancerCanClaimOrderParam,
   requireFreelancerCanBidOrderParam,
@@ -55,7 +56,7 @@ router.get(
   requireRole("client"),
   orderIdParam,
   validateRequest,
-  requireClientOwnsOrderParam,
+  requireClientCanViewOrderParam,
   clientOrdersController.getMyClientOrderById,
 );
 

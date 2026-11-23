@@ -119,6 +119,10 @@
   gap: 6px;
 }
 
+.smart-msg__lang .help {
+  white-space: nowrap;
+}
+
 .smart-msg__text {
   width: 100%;
   min-height: 110px;

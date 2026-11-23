@@ -13,7 +13,7 @@ import {
   storePendingOrderClaim,
 } from "../lib/orders/pendingOrderClaim";
 
-const CLIENT_ORDERS_PATH = "/dashboard/client/orders";
+const CLIENT_ORDERS_PATH = "/dashboard/client/my-orders";
 
 /**
  * Smart Orders S1 — customer redeems the one-time link the Admin sent (WhatsApp). The token travels in
