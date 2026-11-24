@@ -383,5 +383,172 @@
       "previewHint": "هكذا سيظهر النموذج عند إنشاء الطلب.",
       "noFields": "لا توجد حقول بعد."
     }
+  },
+  "commercial": {
+    "open": "التسعير والإسناد",
+    "title": "التسعير والإسناد — {{orderCode}}",
+    "loading": "جارٍ التحميل…",
+    "notApplicable": "هذا طلب داخلي بدون عميل؛ يبقى على مسار الإسناد المباشر الحالي.",
+    "readiness": "جاهزية التنفيذ",
+    "readyPaid": "مدفوع",
+    "readyAuthorized": "مصرَّح قبل الدفع",
+    "notReady": "بانتظار الدفع أو التصريح",
+    "freelancerPay": "أجر المستقل الحالي",
+    "quote": {
+      "heading": "عرض السعر",
+      "none": "لا يوجد عرض سعر بعد.",
+      "base": "المبلغ الأساسي",
+      "currency": "العملة",
+      "adjustments": "إضافات / خصومات",
+      "adjLabel": "الوصف",
+      "adjAmount": "المبلغ (سالب للخصم)",
+      "addAdjustment": "إضافة بند",
+      "validDays": "صلاحية العرض (أيام)",
+      "tax": "المعالجة الضريبية (معلومة فقط)",
+      "taxOptions": {
+        "not_applicable": "غير مطبقة",
+        "taxable": "خاضع",
+        "zero_rated": "نسبة صفرية",
+        "exempt": "معفى",
+        "out_of_scope": "خارج النطاق"
+      },
+      "terms": "شروط تظهر للعميل (اختياري)",
+      "total": "الإجمالي",
+      "issue": "إصدار عرض السعر",
+      "revise": "إصدار نسخة جديدة",
+      "reviseHint": "النسخة الحالية تُحفظ كما هي وتُستبدل — لا يتم تعديلها.",
+      "cancel": "إلغاء العرض",
+      "guestLink": "رابط الدفع للضيف",
+      "newGuestLink": "إنشاء رابط جديد",
+      "linkOnce": "يظهر الرابط الآن فقط؛ الرابط السابق لم يعد يعمل.",
+      "recordAcceptance": "تسجيل موافقة العميل",
+      "evidence": "كيف وافق العميل؟",
+      "history": "سجل النسخ",
+      "status": {
+        "issued": "صادر",
+        "accepted": "مقبول",
+        "expired": "منتهي",
+        "superseded": "مستبدل",
+        "cancelled": "ملغى"
+      },
+      "payment": {
+        "unpaid": "غير مدفوع",
+        "paid": "مدفوع",
+        "paid_inactive": "دفعة لنسخة غير فعّالة — تحتاج مراجعة"
+      }
+    },
+    "assign": {
+      "heading": "الإسناد",
+      "offer": "إرسال عرض إسناد",
+      "compensation": "أجر المستقل (JOD)",
+      "deadline": "مهلة القبول (ساعات)",
+      "cancelOffer": "سحب العرض",
+      "wizardNote": "في طلبات العملاء يُرسل للمستقل عرض إسناد يقبله أو يرفضه؛ ولا يبدأ العمل إلا بعد الدفع أو تصريح الإدارة.",
+      "status": {
+        "pending": "بانتظار الرد",
+        "accepted": "مقبول",
+        "rejected": "مرفوض",
+        "expired": "منتهي",
+        "cancelled": "مسحوب"
+      }
+    },
+    "terms": {
+      "heading": "الشروط المتفق عليها",
+      "version": "نسخة الشروط {{version}}",
+      "immutable": "الشروط المقبولة لا تُعدَّل؛ أي تغيير يتم عبر طلب تعديل.",
+      "change": "طلب تعديل الأجر / الموعد",
+      "newAmount": "الأجر الجديد (JOD)",
+      "newDue": "موعد تسليم جديد (اختياري)",
+      "reason": "السبب",
+      "changeHint": "الزيادة تُطبّق فورًا مع توثيق؛ التخفيض يحتاج موافقة المستقل.",
+      "changeStatus": {
+        "pending_freelancer": "بانتظار موافقة المستقل",
+        "approved": "موافق عليه",
+        "rejected": "مرفوض",
+        "applied": "مطبّق",
+        "cancelled": "ملغى"
+      }
+    },
+    "override": {
+      "heading": "تصريح العمل قبل الدفع",
+      "reason": "سبب التصريح (يُحفظ في السجل)",
+      "submit": "تصريح",
+      "hint": "يتطلب صلاحية خاصة. لا يغيّر حالة الدفع."
+    },
+    "history": "السجل",
+    "saved": "تم الحفظ",
+    "failed": "تعذّر تنفيذ العملية",
+    "events": {
+      "quote_issued": "إصدار عرض سعر",
+      "quote_superseded": "استبدال عرض سعر",
+      "quote_cancelled": "إلغاء عرض سعر",
+      "quote_expired": "انتهاء عرض سعر",
+      "quote_accepted": "قبول عرض السعر",
+      "guest_link_created": "إنشاء رابط دفع",
+      "payment_checkout_created": "بدء الدفع",
+      "payment_confirmed": "تأكيد الدفع",
+      "payment_on_inactive_quote": "دفعة لنسخة غير فعّالة",
+      "offer_created": "إرسال عرض إسناد",
+      "offer_accepted": "قبول الإسناد",
+      "offer_rejected": "رفض الإسناد",
+      "offer_expired": "انتهاء مهلة الإسناد",
+      "offer_cancelled": "سحب عرض الإسناد",
+      "terms_snapshot": "تثبيت الشروط",
+      "change_requested": "طلب تعديل",
+      "change_approved": "قبول التعديل",
+      "change_rejected": "رفض التعديل",
+      "change_applied": "تطبيق التعديل",
+      "work_authorized": "تصريح العمل",
+      "work_started": "بدء العمل"
+    }
+  },
+  "customerQuote": {
+    "heading": "عرض السعر",
+    "version": "النسخة {{version}}",
+    "validUntil": "صالح حتى {{date}}",
+    "accept": "قبول عرض السعر",
+    "pay": "الدفع الآن",
+    "paid": "تم الدفع",
+    "processing": "جارٍ تأكيد الدفع…",
+    "expired": "انتهت صلاحية عرض السعر. تواصل مع فريقنا لعرض جديد.",
+    "taxNote": "لا تُطبّق ضريبة على هذا العرض."
+  },
+  "guestPay": {
+    "title": "عرض السعر والدفع",
+    "loading": "جارٍ تحميل عرض السعر…",
+    "invalid": "هذا الرابط غير صالح أو منتهي. اطلب رابطًا جديدًا من فريقنا.",
+    "order": "رقم الطلب",
+    "service": "الخدمة",
+    "noAccount": "لا حاجة لإنشاء حساب. الدفع آمن عبر Stripe.",
+    "successPending": "شكرًا لك. نقوم بتأكيد الدفع الآن وقد يستغرق ذلك لحظات.",
+    "confirmed": "تم تأكيد الدفع. سيتابع فريقنا طلبك عبر واتساب.",
+    "cancelled": "لم يكتمل الدفع. يمكنك المحاولة مرة أخرى.",
+    "refresh": "تحديث الحالة"
+  },
+  "offers": {
+    "navLabel": "عروض الإسناد",
+    "title": "عروض الإسناد",
+    "description": "راجع المتطلبات والأجر والمهلة ثم اقبل أو ارفض. لا يبدأ العمل إلا بعد الدفع أو تصريح الإدارة.",
+    "empty": "لا توجد عروض إسناد.",
+    "pay": "الأجر",
+    "duration": "مدة التنفيذ",
+    "respondBy": "الرد قبل {{date}}",
+    "accept": "قبول",
+    "reject": "رفض",
+    "rejectReason": "سبب الرفض",
+    "reasons": {
+      "unavailable": "غير متاح حاليًا",
+      "outside_skills": "خارج تخصصي",
+      "deadline_too_short": "المهلة قصيرة",
+      "compensation": "الأجر غير مناسب",
+      "other": "سبب آخر"
+    },
+    "acceptedTerms": "الشروط المتفق عليها",
+    "waitingStart": "مقبول — بانتظار الدفع أو تصريح الإدارة قبل البدء.",
+    "pendingChange": "تعديل مقترح على الشروط",
+    "approveChange": "موافق",
+    "rejectChange": "لا أوافق",
+    "accepted": "تم القبول",
+    "rejected": "تم الرفض"
   }
 }

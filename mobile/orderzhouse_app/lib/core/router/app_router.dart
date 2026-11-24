@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../features/freelancer/assignment_offers/assignment_offers_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -230,6 +231,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.freelancerAccountActivation,
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const AccountActivationKycScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.freelancerAssignmentOffers,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const AssignmentOffersScreen(),
       ),
       GoRoute(
         path: AppRoutes.freelancerFinancialClaims,

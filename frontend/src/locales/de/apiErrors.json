@@ -302,6 +302,25 @@
     "SMART_ORDER_FORM_STALE": "Das Leistungsformular wurde aktualisiert. Bitte neu laden und erneut versuchen.",
     "SERVICE_CATALOG_INVALID": "Die Leistungsdefinition ist ungültig.",
     "SERVICE_CATALOG_NOT_FOUND": "Leistung nicht gefunden.",
-    "SERVICE_CATALOG_CODE_TAKEN": "Dieser Leistungscode wird bereits verwendet."
+    "SERVICE_CATALOG_CODE_TAKEN": "Dieser Leistungscode wird bereits verwendet.",
+    "SMART_ORDER_COMMERCIAL_NOT_APPLICABLE": "Interner Auftrag ohne Kunde; Angebote gelten nicht.",
+    "SMART_ORDER_QUOTE_INVALID": "Die Angebotsdaten sind ungültig.",
+    "SMART_ORDER_QUOTE_PAID_LOCKED": "Das Angebot ist bezahlt; Änderungen erfordern einen genehmigten manuellen Prozess.",
+    "SMART_ORDER_QUOTE_NOT_ACTIVE": "Das Angebot ist nicht aktiv oder abgelaufen.",
+    "SMART_ORDER_QUOTE_ALREADY_PAID": "Dieses Angebot ist bereits bezahlt.",
+    "SMART_ORDER_QUOTE_LINK_INVALID": "Der Angebotslink ist ungültig oder abgelaufen.",
+    "SMART_ORDER_PAYMENT_UNAVAILABLE": "Online-Zahlung ist derzeit nicht verfügbar.",
+    "SMART_ORDER_PAYMENT_PROCESSING": "Die Zahlung wird bestätigt. Bitte gleich aktualisieren.",
+    "SMART_ORDER_OFFER_INVALID": "Das Zuweisungsangebot ist ungültig.",
+    "SMART_ORDER_OFFER_EXISTS": "Für diesen Auftrag besteht bereits ein offenes Angebot.",
+    "SMART_ORDER_ALREADY_ASSIGNED": "Der Auftrag ist bereits zugewiesen.",
+    "SMART_ORDER_OFFER_NOT_FOUND": "Zuweisungsangebot nicht gefunden.",
+    "SMART_ORDER_OFFER_EXPIRED": "Die Annahmefrist ist abgelaufen.",
+    "SMART_ORDER_OFFER_NOT_PENDING": "Dieses Angebot ist nicht mehr verfügbar.",
+    "SMART_ORDER_WORK_NOT_AUTHORIZED": "Die Arbeit kann erst nach Zahlungsbestätigung oder Admin-Freigabe beginnen.",
+    "SMART_ORDER_REASON_REQUIRED": "Bitte geben Sie einen klaren Grund an.",
+    "SMART_ORDER_CHANGE_INVALID": "Die Änderungsanfrage ist ungültig.",
+    "SMART_ORDER_NO_TERMS": "Es gibt noch keine vereinbarten Bedingungen.",
+    "SMART_ORDER_CHANGE_NOT_FOUND": "Änderungsanfrage nicht gefunden."
   }
 }

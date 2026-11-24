@@ -121,7 +121,9 @@
       "createRequest": "Creați o comandă",
       "panelTitle": "Panou de control super administrator",
       "sidebarAria": "Meniul super administratorului",
-      "serviceCatalog": "Catalog de servicii"
+      "serviceCatalog": "Catalog de servicii",
+      "commercialOverride": "Lucru înainte de plată",
+      "assignmentOffers": "Oferte de atribuire"
     }
   },
   "roles": {

@@ -121,7 +121,9 @@
       "createRequest": "Opdracht aanmaken",
       "panelTitle": "Dashboard superbeheerder",
       "sidebarAria": "Menu superbeheerder",
-      "serviceCatalog": "Dienstencatalogus"
+      "serviceCatalog": "Dienstencatalogus",
+      "commercialOverride": "Werk vóór betaling",
+      "assignmentOffers": "Toewijzingsaanbiedingen"
     }
   },
   "roles": {

@@ -91,8 +91,10 @@ async function recordFunnelEvent(input, db = getPool()) {
   const locale = normalizeLocale(input.locale);
   const sessionId = normalizeSessionId(input.stripeCheckoutSessionId);
   const paymentFlow = normalizeFlow(input.paymentFlow);
-  const actorUserId = Number(input.actorUserId);
-  if (!Number.isInteger(actorUserId) || actorUserId <= 0) {
+  // Guest quote payments (Smart Orders S3) have no signed-in actor; every other flow requires one.
+  const anonymousGuest = input.allowAnonymous === true && paymentFlow === "guest_quote" && input.actorUserId == null;
+  const actorUserId = anonymousGuest ? null : Number(input.actorUserId);
+  if (!anonymousGuest && (!Number.isInteger(actorUserId) || actorUserId <= 0)) {
     return { recorded: false, error: "INVALID_ACTOR" };
   }
 

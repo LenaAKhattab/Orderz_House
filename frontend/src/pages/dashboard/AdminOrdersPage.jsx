@@ -35,6 +35,7 @@ import "../../i18n/smartOrdersResources";
 import "../../styles/smartOrders.css";
 import CustomerModeBadge from "../../components/orders/smart/CustomerModeBadge";
 import AdminOrderCustomerPanel from "../../components/orders/smart/AdminOrderCustomerPanel";
+import AdminOrderCommercialPanel from "../../components/orders/smart/AdminOrderCommercialPanel";
 import { adminCustomerOrdersSummaryRequest } from "../../services/api";
 import ServiceFormSnapshotView from "../../components/orders/smart/ServiceFormSnapshotView";
 import { pickLocalized } from "../../components/orders/smart/catalogForm";
@@ -81,6 +82,7 @@ export default function AdminOrdersPage() {
   const [customerPanelOrderId, setCustomerPanelOrderId] = useState(null);
   const [customerSummary, setCustomerSummary] = useState(null);
   const [serviceModalOrder, setServiceModalOrder] = useState(null);
+  const [commercialOrderId, setCommercialOrderId] = useState(null);
   const [bidsModalOrderId, setBidsModalOrderId] = useState(null);
   const [bidsByOrderId, setBidsByOrderId] = useState({});
   const [bidsBusyByOrderId, setBidsBusyByOrderId] = useState({});
@@ -289,6 +291,14 @@ export default function AdminOrdersPage() {
         >
           {t("smartOrders.panel.open")}
         </button>
+        <button
+          type="button"
+          className="btn btn-secondary oh-admin-orders-table__btn"
+          data-testid={`admin-order-commercial-${o.id}`}
+          onClick={() => setCommercialOrderId(String(o.id))}
+        >
+          {t("smartOrders.commercial.open")}
+        </button>
       </>
     ) : null;
 
@@ -436,6 +446,12 @@ export default function AdminOrdersPage() {
           >
             <ServiceFormSnapshotView serviceForm={serviceModalOrder?.serviceForm} />
           </DashboardModal>
+          <AdminOrderCommercialPanel
+            orderId={commercialOrderId}
+            open={Boolean(commercialOrderId)}
+            onClose={() => setCommercialOrderId(null)}
+            onChanged={() => void reloadOrders()}
+          />
           <AdminOrderCustomerPanel
             orderId={customerPanelOrderId}
             open={Boolean(customerPanelOrderId)}

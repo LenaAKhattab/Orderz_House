@@ -29,6 +29,7 @@ abstract final class AppRoutes {
   static const freelancerPlans = '/freelancer/plans';
   static const freelancerAccountActivation = '/freelancer/account-activation';
   static const freelancerFinancialClaims = '/freelancer/financial-claims';
+  static const freelancerAssignmentOffers = '/freelancer/assignment-offers';
   static const freelancerMiniArticles = '/freelancer/mini-articles';
   static const freelancerMiniArticleDetail = '/freelancer/mini-articles/:id';
   static const freelancerMyArticles = '/freelancer/my-articles';

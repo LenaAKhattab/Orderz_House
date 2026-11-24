@@ -121,7 +121,9 @@
       "createRequest": "Auftrag erstellen",
       "panelTitle": "Super-Admin-Dashboard",
       "sidebarAria": "Super-Admin-Menü",
-      "serviceCatalog": "Leistungskatalog"
+      "serviceCatalog": "Leistungskatalog",
+      "commercialOverride": "Arbeit vor Zahlung",
+      "assignmentOffers": "Zuweisungsangebote"
     }
   },
   "roles": {

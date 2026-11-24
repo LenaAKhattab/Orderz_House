@@ -302,6 +302,25 @@
     "SMART_ORDER_FORM_STALE": "Formularul serviciului a fost actualizat. Reîmprospătați și încercați din nou.",
     "SERVICE_CATALOG_INVALID": "Definiția serviciului nu este validă.",
     "SERVICE_CATALOG_NOT_FOUND": "Serviciul nu a fost găsit.",
-    "SERVICE_CATALOG_CODE_TAKEN": "Acest cod de serviciu este deja folosit."
+    "SERVICE_CATALOG_CODE_TAKEN": "Acest cod de serviciu este deja folosit.",
+    "SMART_ORDER_COMMERCIAL_NOT_APPLICABLE": "Comandă internă fără client; ofertele nu se aplică.",
+    "SMART_ORDER_QUOTE_INVALID": "Datele ofertei nu sunt valide.",
+    "SMART_ORDER_QUOTE_PAID_LOCKED": "Oferta este plătită; orice modificare necesită un proces manual aprobat.",
+    "SMART_ORDER_QUOTE_NOT_ACTIVE": "Oferta nu este activă sau a expirat.",
+    "SMART_ORDER_QUOTE_ALREADY_PAID": "Această ofertă este deja plătită.",
+    "SMART_ORDER_QUOTE_LINK_INVALID": "Linkul ofertei este invalid sau a expirat.",
+    "SMART_ORDER_PAYMENT_UNAVAILABLE": "Plata online nu este disponibilă momentan.",
+    "SMART_ORDER_PAYMENT_PROCESSING": "Plata se confirmă. Reîmprospătați în curând.",
+    "SMART_ORDER_OFFER_INVALID": "Oferta de atribuire nu este validă.",
+    "SMART_ORDER_OFFER_EXISTS": "Comanda are deja o ofertă de atribuire deschisă.",
+    "SMART_ORDER_ALREADY_ASSIGNED": "Comanda este deja atribuită.",
+    "SMART_ORDER_OFFER_NOT_FOUND": "Oferta de atribuire nu a fost găsită.",
+    "SMART_ORDER_OFFER_EXPIRED": "Termenul de acceptare a expirat.",
+    "SMART_ORDER_OFFER_NOT_PENDING": "Această ofertă nu mai este disponibilă.",
+    "SMART_ORDER_WORK_NOT_AUTHORIZED": "Lucrul nu poate începe înainte de confirmarea plății sau autorizarea unui admin.",
+    "SMART_ORDER_REASON_REQUIRED": "Introduceți un motiv clar.",
+    "SMART_ORDER_CHANGE_INVALID": "Cererea de modificare nu este validă.",
+    "SMART_ORDER_NO_TERMS": "Nu există încă condiții convenite.",
+    "SMART_ORDER_CHANGE_NOT_FOUND": "Cererea de modificare nu a fost găsită."
   }
 }

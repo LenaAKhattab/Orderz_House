@@ -825,6 +825,8 @@ export default function AdminInternalOrderWizard({
       if (showCustomerStep) {
         const customerPayload = buildCustomerPayload(customerDraft);
         if (customerPayload) fd.append("customer", JSON.stringify(customerPayload));
+        // S3: a chosen freelancer receives an offer (24 h to accept by default).
+        if (customerPayload && form.assignedFreelancerId) fd.append("offerDeadlineHours", "24");
       }
       files.forEach((f) => fd.append("files", f));
       // Smart Orders S2: dynamic file fields upload with the order attachments (same secure R2 path).
@@ -1546,6 +1548,11 @@ export default function AdminInternalOrderWizard({
                   <div className="help" style={{ marginBottom: 8 }}>
                     {t("ordersAdmin.wizard.assignment.pickFreelancerHelp")}
                   </div>
+                  {showCustomerStep && customerDraft.mode && customerDraft.mode !== "internal" ? (
+                    <div className="oh-inline-alert" role="note" style={{ marginBottom: 8 }} data-testid="smart-offer-note">
+                      {t("smartOrders.commercial.assign.wizardNote")}
+                    </div>
+                  ) : null}
                   <AdminFreelancerSelector
                     active={currentStepKey === "assignment"}
                     value={form.assignedFreelancerId}

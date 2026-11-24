@@ -64,6 +64,7 @@ export const DASHBOARD_TITLE_KEYS = {
   "/dashboard/admin/ads": "dashboard.breadcrumbs.manageAds",
   "/dashboard/freelancer/my-orders": "dashboard.breadcrumbs.myRequests",
   "/dashboard/freelancer/whatsapp-orders": "dashboard.whatsappOrders.navLabel",
+  "/dashboard/freelancer/assignment-offers": "dashboard.nav.superAdmin.assignmentOffers",
   "/dashboard/admin/whatsapp-orders": "dashboard.whatsappOrders.navLabel",
   "/dashboard/admin/service-catalog": "dashboard.nav.superAdmin.serviceCatalog",
   "/dashboard/super-admin/service-catalog": "dashboard.nav.superAdmin.serviceCatalog",
@@ -227,6 +228,7 @@ const DASHBOARD_PATH_TO_ROLES = {
   "/dashboard/client/notifications": [ROLE.CLIENT],
   "/dashboard/freelancer/my-orders": [ROLE.FREELANCER],
   "/dashboard/freelancer/whatsapp-orders": [ROLE.FREELANCER],
+  "/dashboard/freelancer/assignment-offers": [ROLE.FREELANCER],
   "/dashboard/freelancer/institution-orders": [ROLE.FREELANCER],
   /** معرض الطلبات: مستقل يتقدّم ويعرض؛ عميل يتصفّح الطلبات المتاحة (نفس مسار الواجهة). */
   "/dashboard/freelancer/orders": [ROLE.FREELANCER, ROLE.CLIENT],

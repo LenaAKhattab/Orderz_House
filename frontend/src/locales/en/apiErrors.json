@@ -302,6 +302,25 @@
     "SMART_ORDER_FORM_STALE": "The service form was updated. Refresh and try again.",
     "SERVICE_CATALOG_INVALID": "The service definition is invalid.",
     "SERVICE_CATALOG_NOT_FOUND": "Service not found.",
-    "SERVICE_CATALOG_CODE_TAKEN": "This service code is already used."
+    "SERVICE_CATALOG_CODE_TAKEN": "This service code is already used.",
+    "SMART_ORDER_COMMERCIAL_NOT_APPLICABLE": "This internal order has no customer; quotes do not apply.",
+    "SMART_ORDER_QUOTE_INVALID": "The quote details are invalid.",
+    "SMART_ORDER_QUOTE_PAID_LOCKED": "The quote is paid; any change needs an approved manual process.",
+    "SMART_ORDER_QUOTE_NOT_ACTIVE": "The quote is not active or has expired.",
+    "SMART_ORDER_QUOTE_ALREADY_PAID": "This quote is already paid.",
+    "SMART_ORDER_QUOTE_LINK_INVALID": "The quote link is invalid or has expired.",
+    "SMART_ORDER_PAYMENT_UNAVAILABLE": "Online payment is currently unavailable.",
+    "SMART_ORDER_PAYMENT_PROCESSING": "The payment is being confirmed. Refresh shortly.",
+    "SMART_ORDER_OFFER_INVALID": "The assignment offer is invalid.",
+    "SMART_ORDER_OFFER_EXISTS": "This order already has an open assignment offer.",
+    "SMART_ORDER_ALREADY_ASSIGNED": "The order is already assigned.",
+    "SMART_ORDER_OFFER_NOT_FOUND": "Assignment offer not found.",
+    "SMART_ORDER_OFFER_EXPIRED": "The acceptance deadline has passed.",
+    "SMART_ORDER_OFFER_NOT_PENDING": "This assignment offer is no longer available.",
+    "SMART_ORDER_WORK_NOT_AUTHORIZED": "Work cannot start before payment is confirmed or an Admin authorizes it.",
+    "SMART_ORDER_REASON_REQUIRED": "Please enter a clear reason.",
+    "SMART_ORDER_CHANGE_INVALID": "The change request is invalid.",
+    "SMART_ORDER_NO_TERMS": "There are no agreed terms yet.",
+    "SMART_ORDER_CHANGE_NOT_FOUND": "Change request not found."
   }
 }

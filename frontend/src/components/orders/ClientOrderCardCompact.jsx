@@ -1,6 +1,7 @@
 ﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ServiceFormSnapshotView from "./smart/ServiceFormSnapshotView";
 import ManagedOrderPrice, { ManagedOrderBadge } from "./smart/ManagedOrderPrice";
+import CustomerQuoteCard from "./smart/CustomerQuoteCard";
 import { ChevronDown, CircleAlert, CircleCheck, Clock3, PencilLine, CreditCard, Users, Archive } from "lucide-react";
 import { useTranslation } from "../../i18n/LanguageProvider";
 import "../../i18n/clientAreaResources";
@@ -338,6 +339,9 @@ export default function ClientOrderCardCompact({
 
       {expanded ? (
         <div className="coc__details" id={detailsId}>
+          {order?.managedByAdmin && order?.quote ? (
+            <CustomerQuoteCard orderId={order.id} quote={order.quote} onChanged={onOrdersChange} />
+          ) : null}
           {order?.serviceForm ? <ServiceFormSnapshotView serviceForm={order.serviceForm} /> : null}
           <section className="coc__section">
             <h4 className="coc__section-title">{t(`${oc}.sections.description`)}</h4>

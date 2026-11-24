@@ -1009,6 +1009,9 @@ async function applyCheckoutSessionFreelancerActivationFeeOnlyCompleted(session,
  */
 async function applyCheckoutSessionExpired(session, dbPool = pool) {
   const purpose = String(session?.metadata?.purpose || "");
+  if (purpose === "order_quote_payment") {
+    return require("../services/orderCommercialService").applyQuoteCheckoutExpired(session, dbPool);
+  }
   if (purpose === "training_package_purchase") {
     const trainingCheckout = require("../services/trainingPackageCheckoutService");
     return trainingCheckout.applyTrainingPackageCheckoutSessionExpired(session, dbPool);
@@ -1040,6 +1043,10 @@ async function applyCheckoutSessionCompleted(session, dbPool = pool) {
     ...pickFazaatTrackingLogFields(meta),
   });
   const purpose = String(meta.purpose || "");
+  if (purpose === "order_quote_payment") {
+    // Smart Orders S3: quote payments (guest / linked customer) — exactly one outcome per quote.
+    return require("../services/orderCommercialService").applyQuoteCheckoutCompleted(session, dbPool);
+  }
   if (purpose === PURPOSE_RECURRING_SUBSCRIPTION || purpose === "freelancer_recurring_subscription") {
     return applyCheckoutSessionFreelancerRecurringCompleted(session, meta, dbPool);
   }

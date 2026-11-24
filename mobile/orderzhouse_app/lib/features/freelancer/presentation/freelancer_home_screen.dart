@@ -128,6 +128,13 @@ class FreelancerHomeScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 12),
                 HomeWideActionTile(
+                  title: 'عروض الإسناد',
+                  subtitle: 'اقبل أو ارفض المهام المرسلة لك قبل انتهاء المهلة',
+                  icon: Icons.assignment_turned_in_outlined,
+                  onTap: () => context.push(AppRoutes.freelancerAssignmentOffers),
+                ),
+                const SizedBox(height: 12),
+                HomeWideActionTile(
                   title: 'المطالبات المالية',
                   subtitle: 'تابع مستحقاتك وحالة الصرف',
                   icon: Icons.account_balance_wallet_outlined,
