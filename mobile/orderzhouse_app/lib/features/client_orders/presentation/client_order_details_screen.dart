@@ -191,6 +191,14 @@ class _ClientOrderDetailBody extends ConsumerWidget {
           children: [ServiceFormSnapshotView(snapshot: order.serviceForm!)],
         ),
       ],
+      for (final item in order.serviceItems) ...[
+        const SizedBox(height: 12),
+        OrderSectionCard(
+          title: 'خدمة إضافية',
+          icon: Icons.add_task_outlined,
+          children: [ServiceFormSnapshotView(snapshot: item)],
+        ),
+      ],
       if (isClient && managed) ...[
         const SizedBox(height: 12),
         OrderSectionCard(

@@ -315,6 +315,10 @@
       "title": "Neues Zuweisungsangebot",
       "message": "Ein neues Zuweisungsangebot wartet auf Ihre Antwort."
     },
+    "finance_reward_approved": {
+      "title": "Ihre Prämie wurde genehmigt",
+      "message": "Ein monatlicher Prämienzeitraum wurde genehmigt. Ihren Betrag sehen Sie unter „Meine Prämien“."
+    },
     "order_assignment_accepted": {
       "title": "Zuweisung angenommen",
       "message": "Der Freelancer hat den Auftrag angenommen."

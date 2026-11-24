@@ -315,6 +315,10 @@
       "title": "Nieuw toewijzingsaanbod",
       "message": "Er wacht een nieuw toewijzingsaanbod op uw antwoord."
     },
+    "finance_reward_approved": {
+      "title": "Je beloning is goedgekeurd",
+      "message": "Een maandelijkse beloningsperiode voor medewerkers is goedgekeurd. Bekijk je bedrag bij Mijn beloningen."
+    },
     "order_assignment_accepted": {
       "title": "Toewijzing geaccepteerd",
       "message": "De freelancer heeft de opdracht geaccepteerd."

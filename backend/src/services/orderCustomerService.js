@@ -955,6 +955,8 @@ function projectManagedOrderForCustomer(order, row) {
     clientRevisionNote: null,
     revisionRequestedBy: null,
     serviceForm: order.serviceForm || null,
+    // S5: additional services on the same order (customer price lines only; never freelancer pay).
+    serviceItems: Array.isArray(order.serviceItems) ? order.serviceItems : [],
     // S3: the customer's own commercial terms only (no freelancer pay / margin).
     quote: order.customerQuote || null,
     managedByAdmin: true,

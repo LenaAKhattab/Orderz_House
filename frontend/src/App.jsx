@@ -102,6 +102,7 @@ import {
   AdminOrdersPage,
   AdminWhatsappOrdersPage,
   AdminServiceCatalogPage,
+  AdminFinancePage,
   FreelancerAssignmentOffersPage,
   FreelancerWhatsappOrdersPage,
   AdminCreateOrderPage,
@@ -229,6 +230,22 @@ function ToastDashboardExitBridge() {
   }, [location.pathname, clear]);
 
   return null;
+}
+
+/**
+ * S6: /dashboard/admin/finance is the link in finance.reward.approved notifications (sent to every staff
+ * beneficiary). Admins stay here; a Super Admin is sent to the same page in the super-admin shell, keeping ?tab=.
+ */
+function AdminFinanceEntry() {
+  const { user } = useAuth();
+  const location = useLocation();
+  const role = user?.primaryRole || user?.role;
+  if (role === ROLE.SUPER_ADMIN) return <Navigate to={`/dashboard/super-admin/finance${location.search || ""}`} replace />;
+  return (
+    <RequireRole allowedRoles={[ROLE.ADMIN]}>
+      <AdminFinancePage />
+    </RequireRole>
+  );
 }
 
 function App() {
@@ -566,6 +583,14 @@ function App() {
                   element={
                     <RequireStaffPage permission={ADMIN_PAGE_PERMISSIONS.serviceCatalog}>
                       <AdminServiceCatalogPage />
+                    </RequireStaffPage>
+                  }
+                />
+                <Route
+                  path="/dashboard/super-admin/finance"
+                  element={
+                    <RequireStaffPage permission={ADMIN_PAGE_PERMISSIONS.financeView}>
+                      <AdminFinancePage />
                     </RequireStaffPage>
                   }
                 />
@@ -940,6 +965,13 @@ function App() {
                         <AdminServiceCatalogPage />
                       </RequirePermission>
                     </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/admin/finance"
+                  element={
+                    /* Any admin: "My rewards" is personal; finance/reward tabs are permission-filtered in the page. */
+                    <AdminFinanceEntry />
                   }
                 />
                 <Route

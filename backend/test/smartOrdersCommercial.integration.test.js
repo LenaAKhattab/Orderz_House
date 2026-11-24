@@ -147,6 +147,7 @@ describe("Smart Orders S3 — commercial handoff (Postgres)", { skip: !ok }, () 
 
   before(async () => {
     process.env.STRIPE_WEBHOOK_SECRET = WEBHOOK_SECRET;
+    process.env.FINANCE_STRIPE_FEE_LOOKUP = "0"; // S5 fee lookup would call the Stripe API.
     process.env.STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || "sk_test_integration_dummy_never_called";
     ({ pool } = require("../src/config/db"));
     ordersService = require("../src/services/ordersService");
@@ -180,6 +181,7 @@ describe("Smart Orders S3 — commercial handoff (Postgres)", { skip: !ok }, () 
       for (const t of ["order_financial_terms", "order_work_authorizations", "order_commercial_events"]) {
         await client.query(`ALTER TABLE ${t} DISABLE TRIGGER USER`);
       }
+      await client.query(`DELETE FROM payment_exceptions WHERE order_id = ANY($1::bigint[])`, [ids]);
       await client.query(`DELETE FROM client_order_payments WHERE order_id = ANY($1::bigint[])`, [ids]);
       await client.query(`DELETE FROM order_financial_terms WHERE order_id = ANY($1::bigint[])`, [ids]);
       await client.query(`DELETE FROM order_commercial_changes WHERE order_id = ANY($1::bigint[])`, [ids]);

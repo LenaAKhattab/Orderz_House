@@ -123,7 +123,13 @@
       "sidebarAria": "Menu superbeheerder",
       "serviceCatalog": "Dienstencatalogus",
       "commercialOverride": "Werk vóór betaling",
-      "assignmentOffers": "Toewijzingsaanbiedingen"
+      "assignmentOffers": "Toewijzingsaanbiedingen",
+      "finance": "Financiën & beloningen",
+      "financeView": "Financiën — rapporten en afrekeningen bekijken",
+      "financeManage": "Financiën — kosten, koersen en afrekeningen vastleggen",
+      "financePolicy": "Financiën — beleid wijzigen",
+      "rewardManage": "Medewerkersbeloningen — periodes beheren",
+      "payoutApprove": "Medewerkersbeloningen — goedkeuren en uitbetalen"
     }
   },
   "roles": {

@@ -98,6 +98,7 @@ class ClientOrder {
     this.managedByAdmin = false,
     this.quote,
     this.serviceForm,
+    this.serviceItems = const [],
     this.bidsCount = 0,
     this.clientRevisionNote,
     this.files = const [],
@@ -135,6 +136,8 @@ class ClientOrder {
   final CustomerQuote? quote;
   /// Smart Orders S2: immutable service form submitted with the order (null for legacy orders).
   final ServiceFormSnapshot? serviceForm;
+  /// Smart Orders S5: additional services on the same order (read-only; no prices here).
+  final List<ServiceFormSnapshot> serviceItems;
   final int bidsCount;
   final String? clientRevisionNote;
   final List<OrderFileDescriptor> files;
@@ -264,6 +267,9 @@ class ClientOrder {
       managedByAdmin: json['managedByAdmin'] == true,
       quote: CustomerQuote.tryParse(json['quote']),
       serviceForm: ServiceFormSnapshot.tryParse(json['serviceForm']),
+      serviceItems: (json['serviceItems'] is List)
+          ? (json['serviceItems'] as List).map(ServiceFormSnapshot.tryParse).whereType<ServiceFormSnapshot>().toList()
+          : const [],
       bidsCount: readInt(json, 'bidsCount', 'bids_count') ?? bids.length,
       clientRevisionNote: readMapField<String>(json, 'clientRevisionNote', 'client_revision_note'),
       files: parseOrderFilesList(json['files']),

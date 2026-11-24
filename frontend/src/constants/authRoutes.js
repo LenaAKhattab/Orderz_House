@@ -68,6 +68,8 @@ export const DASHBOARD_TITLE_KEYS = {
   "/dashboard/admin/whatsapp-orders": "dashboard.whatsappOrders.navLabel",
   "/dashboard/admin/service-catalog": "dashboard.nav.superAdmin.serviceCatalog",
   "/dashboard/super-admin/service-catalog": "dashboard.nav.superAdmin.serviceCatalog",
+  "/dashboard/admin/finance": "dashboard.nav.superAdmin.finance",
+  "/dashboard/super-admin/finance": "dashboard.nav.superAdmin.finance",
   "/dashboard/super-admin/whatsapp-orders": "dashboard.whatsappOrders.navLabel",
   "/dashboard/freelancer/orders": "dashboard.breadcrumbs.orders",
   "/dashboard/freelancer/financial-claims": "dashboard.breadcrumbs.financialClaims",
@@ -268,6 +270,9 @@ const DASHBOARD_PATH_TO_ROLES = {
   "/dashboard/admin/whatsapp-orders": [ROLE.ADMIN],
   "/dashboard/admin/service-catalog": [ROLE.ADMIN],
   "/dashboard/super-admin/service-catalog": STAFF_DASHBOARD_ROLES,
+  // Super Admin is redirected to /dashboard/super-admin/finance (notification deep link).
+  "/dashboard/admin/finance": STAFF_DASHBOARD_ROLES,
+  "/dashboard/super-admin/finance": STAFF_DASHBOARD_ROLES,
   "/dashboard/super-admin/whatsapp-orders": STAFF_DASHBOARD_ROLES,
   "/dashboard/super-admin/orders": STAFF_DASHBOARD_ROLES,
   "/dashboard/super-admin/orders/create": STAFF_DASHBOARD_ROLES,

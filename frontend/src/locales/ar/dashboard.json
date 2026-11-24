@@ -123,7 +123,13 @@
       "sidebarAria": "قائمة المدير الأعلى",
       "serviceCatalog": "كتالوج الخدمات",
       "commercialOverride": "تصريح العمل قبل الدفع",
-      "assignmentOffers": "عروض الإسناد"
+      "assignmentOffers": "عروض الإسناد",
+      "finance": "المالية والمكافآت",
+      "financeView": "المالية — عرض التقارير والتسويات",
+      "financeManage": "المالية — تسجيل التكاليف والأسعار والتسويات",
+      "financePolicy": "المالية — تعديل السياسات",
+      "rewardManage": "مكافآت الموظفين — إدارة الفترات",
+      "payoutApprove": "مكافآت الموظفين — الاعتماد والصرف"
     }
   },
   "roles": {

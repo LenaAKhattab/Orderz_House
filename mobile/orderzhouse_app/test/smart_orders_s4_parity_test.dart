@@ -6,6 +6,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:orderzhouse_app/core/router/deep_link_normalization.dart';
 import 'package:orderzhouse_app/core/router/routes.dart';
 import 'package:orderzhouse_app/features/client_orders/data/client_order_models.dart';
+import 'package:orderzhouse_app/features/client_orders/data/customer_quote.dart';
+import 'package:orderzhouse_app/features/client_orders/presentation/customer_quote_card.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:orderzhouse_app/features/client_orders/data/order_attachment_models.dart';
 import 'package:orderzhouse_app/features/client_orders/data/payment_return_flow.dart';
 import 'package:orderzhouse_app/features/client_orders/data/payment_return_parser.dart';
@@ -282,5 +285,179 @@ void main() {
     expect(display.clientOrderStatusLabel('draft'), 'قيد الإعداد');
     expect(display.paymentStatusLabel('not_required'), 'غير مطلوب');
     expect(ClientOrder.fromJson({'id': '1', 'title': 't', 'orderStatus': 'draft', 'managedByAdmin': true}).statusLabel, 'قيد الإعداد');
+  });
+
+  group('S5 multi-service (read-only on mobile)', () {
+    test('order parses additional service items; never expects prices on the order object', () {
+      final o = ClientOrder.fromJson({
+        'id': '1',
+        'title': 't',
+        'serviceItems': [
+          {
+            'itemNo': 2,
+            'serviceCode': 'website_development',
+            'version': 1,
+            'name': {'ar': 'تطوير موقع', 'en': 'Website development'},
+            'fields': [],
+            'values': {},
+            'quantity': {'unit': 'pages', 'value': '2', 'unspecified': false},
+          },
+        ],
+      });
+      expect(o.serviceItems.single.serviceCode, 'website_development');
+      expect(ClientOrder.fromJson({'id': '1', 'title': 't'}).serviceItems, isEmpty);
+    });
+
+    testWidgets('quote card lists frozen extra services with their customer price', (tester) async {
+      final q = CustomerQuote.tryParse({
+        'version': 1,
+        'status': 'issued',
+        'paymentStatus': 'unpaid',
+        'currency': 'JOD',
+        'baseAmount': '35.00',
+        'totalAmount': '35.00',
+        'items': [
+          {'itemNo': 2, 'name': {'ar': 'تطوير موقع', 'en': 'Website development'}, 'quantity': '2.00', 'unit': 'pages', 'price': {'amount': '35.00', 'currency': 'JOD'}},
+        ],
+      })!;
+      expect(q.items.single.priceAmount, '35.00');
+      await tester.pumpWidget(ProviderScope(child: host(CustomerQuoteCard(orderId: '1', quote: q))));
+      expect(find.textContaining('تطوير موقع'), findsOneWidget);
+      expect(find.textContaining('35.00 JOD'), findsWidgets);
+    });
+  });
+  group('S7 structured fields (mobile)', () {
+    final s7 = CatalogService.fromJson({
+      'serviceCode': 'svc_s7',
+      'categoryId': '3',
+      'version': 1,
+      'name': {'ar': 'خدمة', 'en': 'Service'},
+      'quantity': {'unit': 'pages'},
+      'fields': [
+        {
+          'key': 'code',
+          'type': 'text',
+          'label': {'ar': 'رمز', 'en': 'Code'},
+          'validationRegex': r'[A-Z]{2}\d{4}',
+          'validationMessage': {'ar': 'مثال AB1234', 'en': 'e.g. AB1234'},
+        },
+        {
+          'key': 'refs',
+          'type': 'repeater',
+          'label': {'ar': 'مراجع', 'en': 'References'},
+          'minItems': 1,
+          'maxItems': 2,
+          'fields': [
+            {'key': 'title', 'type': 'text', 'label': {'ar': 'عنوان', 'en': 'Title'}, 'required': true},
+          ],
+        },
+        {'key': 'needs_print', 'type': 'checkbox', 'label': {'ar': 'طباعة', 'en': 'Print'}},
+        {
+          'key': 'print',
+          'type': 'conditional_group',
+          'label': {'ar': 'الطباعة', 'en': 'Printing'},
+          'showIf': {'field': 'needs_print', 'in': [true]},
+          'fields': [
+            {
+              'key': 'size',
+              'type': 'select',
+              'label': {'ar': 'المقاس', 'en': 'Size'},
+              'required': true,
+              'options': [
+                {'value': 'a4', 'label': {'ar': 'A4', 'en': 'A4'}},
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    test('renderable now; same error codes and keys as the server', () {
+      expect(s7.mobileRenderable, isTrue);
+      var d = const ServiceFormDraft(serviceCode: 'svc_s7', version: 1).withValue('code', 'ab12');
+      expect(validateServiceForm(s7, d), {'code': 'invalid_format', 'refs': 'below_min'});
+      d = d.withValue('code', 'AB1234').withValue('refs', [<String, Object?>{}]).withValue('needs_print', true);
+      expect(validateServiceForm(s7, d), {'refs[0].title': 'required', 'print.size': 'required'});
+      d = d.withValue('refs', [
+        {'title': 'x'},
+      ]).withValue('print', {'size': 'a4'});
+      expect(validateServiceForm(s7, d), isEmpty);
+      expect((buildServiceFormPayload(s7, d)!['values'] as Map)['print'], {'size': 'a4'});
+    });
+
+    testWidgets('repeater add/remove rows; group shown only when its condition holds; custom format message', (tester) async {
+      var draft = const ServiceFormDraft(serviceCode: 'svc_s7', version: 1).withValue('code', 'x');
+      late StateSetter setter;
+      await tester.pumpWidget(host(
+        StatefulBuilder(builder: (context, set) {
+          setter = set;
+          return ServiceDynamicFields(
+            service: s7,
+            draft: draft,
+            errors: validateServiceForm(s7, draft),
+            onValue: (k, v) => setter(() => draft = draft.withValue(k, v)),
+            onQuantity: ({quantity, unspecified}) {},
+          );
+        }),
+        locale: const Locale('en'),
+      ));
+      expect(find.text('e.g. AB1234'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('refs-add-row')));
+      await tester.pumpAndSettle();
+      expect((draft.values['refs'] as List).length, 1);
+      await tester.tap(find.byKey(const ValueKey('refs-add-row')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('refs-add-row')), findsNothing, reason: 'maxItems reached');
+      await tester.tap(find.byKey(const ValueKey('refs-remove-row-1')));
+      await tester.pumpAndSettle();
+      expect((draft.values['refs'] as List).length, 1);
+      expect(find.text('Printing'), findsNothing);
+      setter(() => draft = draft.withValue('needs_print', true));
+      await tester.pumpAndSettle();
+      expect(find.text('Printing'), findsOneWidget);
+    });
+
+    test('snapshot renders repeater rows and groups with labels', () {
+      final snap = ServiceFormSnapshot.tryParse({
+        'serviceCode': 'svc_s7',
+        'version': 1,
+        'name': {'en': 'Service'},
+        'fields': [
+          {
+            'key': 'refs',
+            'type': 'repeater',
+            'label': {'en': 'References'},
+            'fields': [
+              {'key': 'title', 'type': 'text', 'label': {'en': 'Title'}},
+            ],
+          },
+          {
+            'key': 'print',
+            'type': 'conditional_group',
+            'label': {'en': 'Printing'},
+            'fields': [
+              {
+                'key': 'size',
+                'type': 'select',
+                'label': {'en': 'Size'},
+                'options': [
+                  {'value': 'a4', 'label': {'en': 'A4 paper'}},
+                ],
+              },
+            ],
+          },
+        ],
+        'values': {
+          'refs': [
+            {'title': 'Paper 1'},
+            {'title': 'Paper 2'},
+          ],
+          'print': {'size': 'a4'},
+        },
+      })!;
+      final rows = Map.fromEntries(snap.displayRows('en'));
+      expect(rows['References'], 'Title: Paper 1 | Title: Paper 2');
+      expect(rows['Printing'], 'Size: A4 paper');
+    });
   });
 }

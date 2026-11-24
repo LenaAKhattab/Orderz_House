@@ -68,6 +68,15 @@ class _CustomerQuoteCardState extends ConsumerState<CustomerQuoteCard> {
               ],
             ),
             const SizedBox(height: 8),
+            if (q.items.isNotEmpty) ...[
+              const Text('خدمات إضافية في هذا العرض', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.textInk)),
+              for (final it in q.items)
+                _line(
+                  '${it.localizedName(Localizations.localeOf(context).languageCode)}${it.quantity != null && !it.unspecified ? ' × ${it.quantity}' : ''}',
+                  it.priceAmount != null ? '${it.priceAmount} ${it.priceCurrency}' : '—',
+                ),
+              const SizedBox(height: 6),
+            ],
             _line('المبلغ الأساسي', '${q.baseAmount} ${q.currency}'),
             for (final a in q.adjustments) _line(a.label, '${a.amount} ${q.currency}'),
             const Divider(),

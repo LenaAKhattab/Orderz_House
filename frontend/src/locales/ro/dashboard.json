@@ -123,7 +123,13 @@
       "sidebarAria": "Meniul super administratorului",
       "serviceCatalog": "Catalog de servicii",
       "commercialOverride": "Lucru înainte de plată",
-      "assignmentOffers": "Oferte de atribuire"
+      "assignmentOffers": "Oferte de atribuire",
+      "finance": "Finanțe și recompense",
+      "financeView": "Finanțe — vizualizare rapoarte și decontări",
+      "financeManage": "Finanțe — înregistrare costuri, cursuri și decontări",
+      "financePolicy": "Finanțe — modificare politici",
+      "rewardManage": "Recompense angajați — gestionare perioade",
+      "payoutApprove": "Recompense angajați — aprobare și plată"
     }
   },
   "roles": {

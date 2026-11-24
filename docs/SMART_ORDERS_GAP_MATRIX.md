@@ -105,3 +105,37 @@ Legend: ✅ exists · 🟡 partial · ❌ missing · ⚠️ policy gate. Phase =
 Customer modes + guest contacts + guest orders + new-account claim + guest→account conversion +
 order channel + account manager + customer pricing status + WhatsApp copy templates + base
 channel/mode report. Path A (internal admin order with no customer), Path B, Path C unchanged.
+
+## S7 — final requirement-by-requirement status (2026-11-24)
+
+Legend: **LIVE** = implemented and verified (Staging Postgres + Production deploy checks) ·
+**POLICY OFF** = implemented, disabled until management approval · **EXTERNAL** = needs an external
+credential/configuration/human action · **NOT IMPLEMENTED** = deliberately not built (reason given).
+
+| # | Requirement | Status | Notes |
+|---|---|---|---|
+| 1–4, 9, 12–14 | Customer modes, guest contact (no users row), consistency CHECK, same Order ID | LIVE | S1 (mig 216) |
+| 5, 6, 10, 11 | Created-by / account manager, account lookup, WhatsApp templates, guest → account (same order) | LIVE | S1 |
+| 7, 8 | New account activation + existing phone | LIVE (claim link) / POLICY OFF G1 | Phone OTP provider not chosen (G1) |
+| 15, 17 | Versioned catalog + immutable form snapshots | LIVE | S2 (mig 217) |
+| 16 | 14 field types incl. repeater / conditional_group, validation_regex, price_modifier | LIVE (S7) | Regex vetted against catastrophic backtracking; one nesting level |
+| 18 | Multi-service order (items, separate pricing) | LIVE (S5, mig 219) | Immutable items frozen into the quote |
+| 18b | Independent assignment per item / task split | NOT IMPLEMENTED | Execution stays order-level; per-item tasks need a product decision on the task model |
+| 21–23 | Quotes (versioned), guest payment link, manual documented payment | LIVE | S3 (mig 218); manual payment = audited work authorization |
+| 22b | Real Stripe hosted Checkout in test mode | EXTERNAL | No Stripe TEST key/webhook secret configured on Staging |
+| 24–27 | Assignment offers, accept/reject/expiry, financial terms snapshot, delivery/revision | LIVE | S3 |
+| 28 | Gross→Tax→Fees→QC→Costs→Net→shares (exact decimal) | LIVE (S5) | Integer milli-units; identity enforced by DB CHECK |
+| 28b | Revenue split r = 50% | POLICY OFF (G3) | Agreed compensation stays immutable; split = suggestion only when enabled |
+| 29 | AED/JOD with dated FX snapshot | LIVE (S5) | Explicit staff-entered rate + source + timestamp; never fetched/invented |
+| 30 | Tax profiles taxable/zero/exempt/out-of-scope | LIVE treatments; VAT POLICY OFF (G4) | Taxable quotes refused while VAT disabled |
+| 31 | Quality-check costs (success only, 3 × 2 AED) | LIVE records; charging POLICY OFF (G6) | No Turnitin/licensed API integration — EXTERNAL |
+| 32 | Append-only ledger, reversal/correction entries | LIVE (S5) | Settlements versioned; adjustments; payment exceptions queue |
+| 32b | Actual Stripe processor fee from balance transaction | LIVE (S5) | Best-effort after payment; idempotent per balance txn |
+| 32c | Refund / dispute recording | LIVE (S5) | Record + exception only; refunds executed in Stripe by staff |
+| 33–34 | Employee reward pool (company share only), weights = 100.00%, closed periods immutable | LIVE architecture; POLICY OFF (G7) | Preview works; approval blocked until activation |
+| 35 | Granular finance permissions | LIVE | finance_view / finance_manage / finance_policy / reward_manage / payout_approve |
+| 36 | Management reports (modes, guests, activation, money by kind, settlements, exceptions, rewards, WhatsApp separate) | LIVE (S6) | Bounded aggregates |
+| — | Employee "my rewards" (own data only) | LIVE (S6) | |
+| — | Freelancer "my earnings" in AED + JOD with FX date | NOT IMPLEMENTED | Existing financial-claims screens unchanged (JOD); needs G2/G3 decisions |
+| — | Accountant notifications (payment/refund/dispute) | LIVE as exception queue + admin notification for inactive payments | |
+| — | Flutter parity (S2–S7 customer + freelancer) | LIVE in code; Play release EXTERNAL | Needs company Play Console access + phone USB authorization |

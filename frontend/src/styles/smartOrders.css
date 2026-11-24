@@ -565,3 +565,435 @@
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+
+/* ---------------------------------------------------------------------------
+ * S5/S6 finance — page tabs, cards, money blocks, tables (logical properties for RTL;
+ * tables scroll inside their own container, never the page).
+ * ------------------------------------------------------------------------- */
+.fin-page {
+  min-inline-size: 0;
+}
+
+.fin-tabs {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  border-block-end: 1px solid var(--fd-surface-divider, #e2e8f0);
+  margin-block-end: 16px;
+  scrollbar-width: thin;
+}
+
+.fin-tabs__tab {
+  flex: 0 0 auto;
+  background: none;
+  border: 0;
+  border-block-end: 3px solid transparent;
+  padding: 10px 14px;
+  font: inherit;
+  font-weight: 600;
+  color: var(--dash-text-muted, #5b6474);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.fin-tabs__tab:hover {
+  color: var(--dash-text, #172033);
+}
+
+.fin-tabs__tab:focus-visible {
+  outline: 2px solid var(--dash-primary, #2563eb);
+  outline-offset: -2px;
+}
+
+.fin-tabs__tab--active {
+  color: var(--dash-primary, #2563eb);
+  border-block-end-color: currentColor;
+}
+
+.fin-tab {
+  display: grid;
+  gap: 16px;
+  min-inline-size: 0;
+}
+
+.fin-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px 14px;
+}
+
+.fin-toolbar .field {
+  min-inline-size: min(100%, 170px);
+  margin: 0;
+}
+
+.fin-card {
+  border: 1px solid var(--fd-surface-divider, #e2e8f0);
+  border-radius: 12px;
+  padding: 14px;
+  display: grid;
+  gap: 10px;
+  min-inline-size: 0;
+  background: var(--dash-card, #fff);
+}
+
+.fin-card h3,
+.fin-card h4,
+.fin-card h5 {
+  margin: 0;
+}
+
+.fin-card__head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.fin-card__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.fin-card--quoted {
+  border-inline-start: 4px solid #94a3b8;
+}
+
+.fin-card--received {
+  border-inline-start: 4px solid #16a34a;
+}
+
+.fin-card--settled {
+  border-inline-start: 4px solid #2563eb;
+}
+
+.fin-card--separate {
+  border-style: dashed;
+}
+
+.fin-heading {
+  margin: 0;
+}
+
+.fin-grid-2,
+.fin-money-blocks {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+}
+
+.fin-stats {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 140px), 1fr));
+}
+
+.fin-stat {
+  display: grid;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--fd-surface-inset-bg, #f1f5f9);
+}
+
+.fin-stat__label {
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+
+.fin-list {
+  margin: 0;
+  padding-inline-start: 1.2em;
+  display: grid;
+  gap: 4px;
+}
+
+.fin-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+ul.fin-list {
+  list-style: none;
+  padding-inline-start: 0;
+}
+
+.fin-dl {
+  margin: 0;
+  display: grid;
+  gap: 6px 16px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr));
+}
+
+.fin-dl > div {
+  display: grid;
+  gap: 2px;
+}
+
+.fin-dl dt {
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+
+.fin-dl dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.fin-table-wrap {
+  max-inline-size: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--fd-surface-divider, #e2e8f0);
+  border-radius: 10px;
+}
+
+.fin-table-wrap:focus-visible {
+  outline: 2px solid var(--dash-primary, #2563eb);
+  outline-offset: 2px;
+}
+
+.fin-table {
+  inline-size: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.fin-table th,
+.fin-table td {
+  padding: 8px 10px;
+  text-align: start;
+  white-space: nowrap;
+  border-block-end: 1px solid var(--fd-surface-divider, #e2e8f0);
+  vertical-align: middle;
+}
+
+.fin-table thead th {
+  background: var(--fd-surface-inset-bg, #f1f5f9);
+  font-weight: 600;
+}
+
+.fin-table tbody tr:last-child th,
+.fin-table tbody tr:last-child td {
+  border-block-end: 0;
+}
+
+.fin-table tr[aria-selected="true"] td {
+  background: var(--fd-surface-inset-bg, #f1f5f9);
+}
+
+.fin-row--strong th,
+.fin-row--strong td {
+  font-weight: 700;
+}
+
+.fin-money {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  unicode-bidi: isolate;
+}
+
+.fin-money__ccy {
+  font-size: 0.85em;
+  opacity: 0.75;
+}
+
+.fin-money--negative {
+  color: #b42318;
+}
+
+.fin-notice {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid;
+  border-inline-start-width: 4px;
+}
+
+.fin-notice--info {
+  background: rgba(37, 99, 235, 0.07);
+  border-color: rgba(37, 99, 235, 0.35);
+}
+
+.fin-notice--warning {
+  background: rgba(240, 141, 57, 0.1);
+  border-color: rgba(240, 141, 57, 0.45);
+}
+
+.fin-notice--success {
+  background: rgba(22, 163, 74, 0.08);
+  border-color: rgba(22, 163, 74, 0.35);
+}
+
+.fin-notice--danger {
+  background: rgba(220, 38, 38, 0.08);
+  border-color: rgba(220, 38, 38, 0.4);
+}
+
+.fin-bullets {
+  margin: 0;
+  padding-inline-start: 1.2em;
+}
+
+.fin-form {
+  display: grid;
+  gap: 10px;
+  min-inline-size: 0;
+}
+
+.fin-form .field {
+  margin: 0;
+}
+
+.fin-field-error {
+  color: #b42318;
+  font-size: 0.85rem;
+}
+
+.fin-inline-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.fin-input-narrow {
+  inline-size: 7.5em;
+}
+
+.fin-total {
+  margin: 0;
+  font-weight: 600;
+}
+
+.fin-total--ok {
+  color: #15803d;
+}
+
+.fin-total--bad {
+  color: #b42318;
+}
+
+.fin-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.fin-row {
+  display: grid;
+  gap: 6px;
+  padding: 10px;
+  border: 1px solid var(--fd-surface-divider, #e2e8f0);
+  border-radius: 10px;
+  min-inline-size: 0;
+}
+
+.fin-row__main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+}
+
+.fin-row--voided {
+  opacity: 0.6;
+}
+
+.fin-row--voided .fin-money {
+  text-decoration: line-through;
+}
+
+.fin-chip--off {
+  opacity: 0.6;
+}
+
+.fin-actions {
+  display: grid;
+  gap: 12px;
+}
+
+.fin-panel {
+  min-inline-size: 0;
+}
+
+.smart-service-items {
+  display: grid;
+  gap: 10px;
+}
+
+.fin-sr-only {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 480px) {
+  .fin-card {
+    padding: 10px;
+  }
+
+  .fin-toolbar > .btn {
+    inline-size: 100%;
+  }
+}
+
+/* S7: repeater rows + conditional groups in dynamic service forms. */
+.smart-dyn-field[data-type="repeater"],
+.smart-dyn-field[data-type="conditional_group"] {
+  grid-column: 1 / -1;
+  border: 1px solid var(--fd-surface-divider, #e2e8f0);
+  border-radius: 12px;
+  padding: 12px;
+  margin: 0;
+  display: grid;
+  gap: 10px;
+  min-inline-size: 0;
+}
+
+.smart-repeater__row {
+  border: 1px dashed var(--fd-surface-divider, #e2e8f0);
+  border-radius: 10px;
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.smart-repeater__row-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.smart-repeater__fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 10px 14px;
+}
+
+.smart-snapshot__rows {
+  margin: 0;
+  padding-inline-start: 1.2em;
+}
+
+.smart-editor-subfields {
+  border-inline-start: 3px solid var(--fd-surface-divider, #e2e8f0);
+  padding-inline-start: 10px;
+  display: grid;
+  gap: 8px;
+}

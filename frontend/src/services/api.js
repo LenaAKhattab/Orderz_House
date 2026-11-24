@@ -4263,3 +4263,49 @@ export const freelancerRejectAssignmentOfferRequest = async (offerId, reasonCode
   (await api.post(`/freelancer/assignment-offers/${oid(offerId)}/reject`, { reasonCode })).data;
 export const freelancerRespondToChangeRequest = async (changeId, approve) =>
   (await api.post(`/freelancer/commercial-changes/${oid(changeId)}/respond`, { approve })).data;
+
+// ---------------------------------------------------------------------------
+// Smart Orders S5/S6 — finance engine, multi-service items, rewards, management report (Admin)
+// ---------------------------------------------------------------------------
+const fresh = (params = {}) => ({ params: { ...params, _ts: Date.now() }, ...noCache });
+export const adminFinancePoliciesRequest = async () => (await api.get("/admin/finance/policies", fresh())).data;
+export const adminFinancePolicyHistoryRequest = async (key) =>
+  (await api.get(`/admin/finance/policies/${oid(key)}/history`, fresh())).data;
+export const adminSetFinancePolicyRequest = async (key, input) => (await api.post(`/admin/finance/policies/${oid(key)}`, input)).data;
+export const adminListFxSnapshotsRequest = async (currency = "") =>
+  (await api.get("/admin/finance/fx-snapshots", fresh(currency ? { currency } : {}))).data;
+export const adminCreateFxSnapshotRequest = async (input) => (await api.post("/admin/finance/fx-snapshots", input)).data;
+export const adminListPaymentExceptionsRequest = async (status = "open") =>
+  (await api.get("/admin/finance/payment-exceptions", fresh({ status }))).data;
+export const adminResolvePaymentExceptionRequest = async (id, input) =>
+  (await api.post(`/admin/finance/payment-exceptions/${oid(id)}/resolve`, input)).data;
+export const adminGetOrderFinanceRequest = async (orderId, fxIds = []) =>
+  (await api.get(`/admin/orders/${oid(orderId)}/finance`, fresh(fxIds.length ? { fx: fxIds.join(",") } : {}))).data;
+export const adminRecordOrderCostRequest = async (orderId, input) => (await api.post(`/admin/orders/${oid(orderId)}/finance/costs`, input)).data;
+export const adminVoidOrderCostRequest = async (costId, reason) => (await api.post(`/admin/finance/costs/${oid(costId)}/void`, { reason })).data;
+export const adminRecordOrderAdjustmentRequest = async (orderId, input) =>
+  (await api.post(`/admin/orders/${oid(orderId)}/finance/adjustments`, input)).data;
+export const adminCloseSettlementRequest = async (orderId, input) =>
+  (await api.post(`/admin/orders/${oid(orderId)}/finance/settlements`, input)).data;
+export const adminQuoteSuggestionRequest = async (orderId) => (await api.get(`/admin/orders/${oid(orderId)}/quote-suggestion`, fresh())).data;
+export const adminListServiceItemsRequest = async (orderId) => (await api.get(`/admin/orders/${oid(orderId)}/service-items`, fresh())).data;
+export const adminAddServiceItemRequest = async (orderId, input) => (await api.post(`/admin/orders/${oid(orderId)}/service-items`, input)).data;
+export const adminRemoveServiceItemRequest = async (orderId, itemId) =>
+  (await api.post(`/admin/orders/${oid(orderId)}/service-items/${oid(itemId)}/remove`)).data;
+export const adminFinanceReportRequest = async ({ from, to, categoryId } = {}) =>
+  (await api.get("/admin/finance/reports/summary", fresh({ from, to, ...(categoryId ? { categoryId } : {}) }))).data;
+export const adminMyRewardsRequest = async () => (await api.get("/admin/finance/rewards/mine", fresh())).data;
+export const adminRewardStaffRequest = async () => (await api.get("/admin/finance/rewards/staff", fresh())).data;
+export const adminListRewardPeriodsRequest = async () => (await api.get("/admin/finance/rewards/periods", fresh())).data;
+export const adminCreateRewardPeriodRequest = async (month) => (await api.post("/admin/finance/rewards/periods", { month })).data;
+export const adminGetRewardPeriodRequest = async (id) => (await api.get(`/admin/finance/rewards/periods/${oid(id)}`, fresh())).data;
+export const adminSetRewardWeightsRequest = async (id, weights) =>
+  (await api.put(`/admin/finance/rewards/periods/${oid(id)}/weights`, { weights })).data;
+export const adminCopyPreviousRewardWeightsRequest = async (id) =>
+  (await api.post(`/admin/finance/rewards/periods/${oid(id)}/copy-previous-weights`)).data;
+export const adminApproveRewardPeriodRequest = async (id) => (await api.post(`/admin/finance/rewards/periods/${oid(id)}/approve`)).data;
+export const adminCloseRewardPeriodRequest = async (id) => (await api.post(`/admin/finance/rewards/periods/${oid(id)}/close`)).data;
+export const adminMarkRewardPeriodPaidRequest = async (id, paymentReference) =>
+  (await api.post(`/admin/finance/rewards/periods/${oid(id)}/mark-paid`, { paymentReference })).data;
+export const adminAddRewardAdjustmentRequest = async (id, input) =>
+  (await api.post(`/admin/finance/rewards/periods/${oid(id)}/adjustments`, input)).data;
