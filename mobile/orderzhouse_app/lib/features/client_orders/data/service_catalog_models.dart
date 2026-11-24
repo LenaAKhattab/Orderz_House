@@ -19,6 +19,9 @@ const List<String> kMobileSupportedFieldTypes = [
   'url',
   // S4: files picked in a field are uploaded with the order attachments and referenced by name.
   'file',
+  // S7: structured fields (one level of sub-fields).
+  'repeater',
+  'conditional_group',
 ];
 
 Map<String, String> _stringMap(dynamic raw) {
@@ -59,6 +62,11 @@ class CatalogField {
     this.options = const [],
     this.showIfField,
     this.showIfValues = const [],
+    this.subFields = const [],
+    this.minItems,
+    this.maxItems,
+    this.validationRegex,
+    this.validationMessage = const {},
   });
 
   final String key;
@@ -73,6 +81,13 @@ class CatalogField {
   final List<CatalogOption> options;
   final String? showIfField;
   final List<Object> showIfValues;
+  /// S7: sub-fields of a repeater row / conditional group.
+  final List<CatalogField> subFields;
+  final int? minItems;
+  final int? maxItems;
+  /// S7: server-vetted format rule (anchored); the server re-validates.
+  final String? validationRegex;
+  final Map<String, String> validationMessage;
 
   factory CatalogField.fromJson(Map<String, dynamic> j) {
     final showIf = j['showIf'];
@@ -91,6 +106,13 @@ class CatalogField {
           : const [],
       showIfField: showIf is Map ? showIf['field']?.toString() : null,
       showIfValues: showIf is Map && showIf['in'] is List ? List<Object>.from((showIf['in'] as List).whereType<Object>()) : const [],
+      subFields: (j['fields'] is List)
+          ? (j['fields'] as List).whereType<Map>().map((f) => CatalogField.fromJson(Map<String, dynamic>.from(f))).toList()
+          : const [],
+      minItems: _num(j['minItems'])?.toInt(),
+      maxItems: _num(j['maxItems'])?.toInt(),
+      validationRegex: j['validationRegex']?.toString(),
+      validationMessage: _stringMap(j['validationMessage']),
     );
   }
 }
@@ -137,7 +159,9 @@ class CatalogService {
   final CatalogQuantity quantity;
   final List<CatalogField> fields;
 
-  bool get mobileRenderable => fields.every((f) => kMobileSupportedFieldTypes.contains(f.type));
+  bool get mobileRenderable => fields.every(
+        (f) => kMobileSupportedFieldTypes.contains(f.type) && f.subFields.every((x) => kMobileSupportedFieldTypes.contains(x.type)),
+      );
 
   factory CatalogService.fromJson(Map<String, dynamic> j) => CatalogService(
         serviceCode: j['serviceCode']?.toString() ?? '',
@@ -212,6 +236,8 @@ const Map<String, Map<String, String>> kServiceFormErrors = {
   'too_long': {'ar': 'النص أطول من المسموح.', 'en': 'The text is too long.'},
   'invalid_option': {'ar': 'اختر خيارًا من القائمة.', 'en': 'Choose an option from the list.'},
   'invalid_date': {'ar': 'أدخل تاريخًا صالحًا.', 'en': 'Enter a valid date.'},
+  'invalid_format': {'ar': 'الصيغة غير صحيحة.', 'en': 'The format is not valid.'},
+  'unknown_field': {'ar': 'حقل غير معروف.', 'en': 'Unknown field.'},
   'invalid_file': {'ar': 'أرفق الملفات المطلوبة.', 'en': 'Attach the required files.'},
   'invalid_url': {'ar': 'أدخل رابطًا صالحًا يبدأ بـ https://', 'en': 'Enter a valid link starting with https://'},
   'unspecified_not_allowed': {'ar': 'حدد الكمية لهذه الخدمة.', 'en': 'Enter a quantity for this service.'},

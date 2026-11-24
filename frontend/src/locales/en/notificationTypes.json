@@ -315,6 +315,10 @@
       "title": "New assignment offer",
       "message": "You have a new assignment offer awaiting your response."
     },
+    "finance_reward_approved": {
+      "title": "Your reward was approved",
+      "message": "A monthly employee reward period was approved. See your amount in My rewards."
+    },
     "order_assignment_accepted": {
       "title": "Assignment accepted",
       "message": "The freelancer accepted the order."

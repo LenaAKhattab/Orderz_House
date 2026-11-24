@@ -88,6 +88,16 @@ export const SUPER_ADMIN_NAV_ITEM_DEFS = {
     matchPrefix: "/dashboard/super-admin/service-catalog",
     permission: ADMIN_PAGE_PERMISSIONS.serviceCatalog,
   },
+  /** S5/S6: finance report, policies, FX, payment exceptions, employee rewards. */
+  finance: {
+    key: "finance",
+    to: "/dashboard/super-admin/finance",
+    labelKey: "dashboard.nav.superAdmin.finance",
+    icon: "finance",
+    matchPrefix: "/dashboard/super-admin/finance",
+    end: true,
+    permission: ADMIN_PAGE_PERMISSIONS.financeView,
+  },
   articles: {
     key: "articles",
     to: "/dashboard/super-admin/articles",
@@ -306,7 +316,7 @@ export const SUPER_ADMIN_NAV_SECTION_DEFS = [
   {
     id: "financeAdmin",
     labelKey: "dashboard.nav.sections.financeAdmin",
-    itemKeys: ["financialCenter", "financialClaims", "fazatSettlements", "referrals"],
+    itemKeys: ["finance", "financialCenter", "financialClaims", "fazatSettlements", "referrals"],
   },
   {
     id: "usersSubscriptions",

@@ -28,6 +28,26 @@ function stableStringify(v) {
   return JSON.stringify(v);
 }
 
+/**
+ * Price modifiers / pricing are internal (Admin quote suggestions). Never sent to customers or
+ * freelancers: strip them from field definitions (incl. options and S7 sub-fields).
+ */
+function stripPricingFromFields(fields) {
+  return (fields || []).map((f) => {
+    const { priceModifier, ...rest } = f || {};
+    void priceModifier;
+    if (Array.isArray(rest.options)) {
+      rest.options = rest.options.map((o) => {
+        const { priceModifier: pm, ...ro } = o || {};
+        void pm;
+        return ro;
+      });
+    }
+    if (Array.isArray(rest.fields)) rest.fields = stripPricingFromFields(rest.fields);
+    return rest;
+  });
+}
+
 function mapServiceRow(r, { includeAdmin = false } = {}) {
   const schema = r.schema || {};
   return {
@@ -42,9 +62,11 @@ function mapServiceRow(r, { includeAdmin = false } = {}) {
     name: schema.name || {},
     description: schema.description || {},
     quantity: schema.quantity || null,
-    fields: schema.fields || [],
+    fields: includeAdmin ? schema.fields || [] : stripPricingFromFields(schema.fields),
     ...(includeAdmin
       ? {
+          // S5: the editor must load existing pricing, or a save would silently drop it.
+          pricing: schema.pricing || null,
           isActive: r.is_active,
           updatedAt: r.updated_at,
           versionCount: r.version_count != null ? Number(r.version_count) : undefined,
@@ -158,7 +180,7 @@ function mapSnapshotRow(r) {
       value: r.quantity != null ? String(r.quantity) : null,
       unspecified: Boolean(r.quantity_unspecified),
     },
-    fields: def.fields || [],
+    fields: stripPricingFromFields(def.fields),
     values: r.field_values || {},
     createdAt: r.created_at,
   };
@@ -330,6 +352,8 @@ module.exports = {
   getOrderFormSnapshot,
   getOrderFormSnapshotsMap,
   mapSnapshotRow,
+  mapServiceRow,
+  stripPricingFromFields,
   listAdminServices,
   getAdminService,
   createService,

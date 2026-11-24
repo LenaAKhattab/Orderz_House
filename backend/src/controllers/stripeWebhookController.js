@@ -239,8 +239,14 @@ async function handleStripeWebhook(req, res) {
       eventType === "charge.dispute.created" ||
       eventType === "charge.dispute.closed"
     ) {
+      // Smart Orders S5: quote payment refunds/disputes → adjustments + Admin exception (record only).
+      const quoteFin = await require("../services/finance/quotePaymentFinance").applyQuoteChargeRefundOrDispute(
+        event.data.object,
+        eventType,
+      );
       // Bid package: record only — Bid economic reversal is PRODUCT_DECISION_REQUIRED.
       applyResult = await applyBidPackageProviderRefundOrDisputeRecordOnly(event.data.object, eventType);
+      if (quoteFin.status === "applied" && applyResult?.status === "ignored") applyResult = quoteFin;
       const disputeLost = eventType === "charge.dispute.closed" && String(event.data.object?.status || "") === "lost";
       if (eventType === "charge.refunded" || disputeLost) {
         const referralBridge = require("../services/referralPaymentBridge");

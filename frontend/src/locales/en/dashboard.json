@@ -123,7 +123,13 @@
       "sidebarAria": "Super admin menu",
       "serviceCatalog": "Service catalog",
       "commercialOverride": "Work before payment",
-      "assignmentOffers": "Assignment offers"
+      "assignmentOffers": "Assignment offers",
+      "finance": "Finance & rewards",
+      "financeView": "Finance — view reports and settlements",
+      "financeManage": "Finance — record costs, rates and settlements",
+      "financePolicy": "Finance — change policies",
+      "rewardManage": "Employee rewards — manage periods",
+      "payoutApprove": "Employee rewards — approve and pay"
     }
   },
   "roles": {

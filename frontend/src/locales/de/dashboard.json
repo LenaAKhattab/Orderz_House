@@ -123,7 +123,13 @@
       "sidebarAria": "Super-Admin-Menü",
       "serviceCatalog": "Leistungskatalog",
       "commercialOverride": "Arbeit vor Zahlung",
-      "assignmentOffers": "Zuweisungsangebote"
+      "assignmentOffers": "Zuweisungsangebote",
+      "finance": "Finanzen & Prämien",
+      "financeView": "Finanzen — Berichte und Abrechnungen ansehen",
+      "financeManage": "Finanzen — Kosten, Kurse und Abrechnungen erfassen",
+      "financePolicy": "Finanzen — Richtlinien ändern",
+      "rewardManage": "Mitarbeiterprämien — Zeiträume verwalten",
+      "payoutApprove": "Mitarbeiterprämien — genehmigen und auszahlen"
     }
   },
   "roles": {

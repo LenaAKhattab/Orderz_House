@@ -22,7 +22,15 @@ const FIELD_TYPES = Object.freeze([
   "datetime",
   "file",
   "url",
+  // S7: structured fields (one level of sub-fields; never nested).
+  "repeater",
+  "conditional_group",
 ]);
+/** Types allowed inside a repeater row / conditional group. */
+const SUB_FIELD_TYPES = new Set(["text", "textarea", "number", "decimal", "select", "multiselect", "checkbox", "radio", "date", "datetime", "url"]);
+const MAX_SUB_FIELDS = 12;
+const MAX_REPEATER_ITEMS = 20;
+const MODIFIER_RE = /^\d{1,7}(\.\d{1,2})?$/;
 const OPTION_TYPES = new Set(["select", "multiselect", "radio"]);
 const QUANTITY_UNITS = Object.freeze([
   "pages",
@@ -103,8 +111,8 @@ function finiteOrNull(v) {
   return Number.isFinite(n) && Math.abs(n) <= MAX_NUMBER ? n : NaN;
 }
 
-function normalizeField(raw, idx, seenKeys) {
-  const path = `fields[${idx}]`;
+function normalizeField(raw, idx, seenKeys, { parentPath = null } = {}) {
+  const path = parentPath ? `${parentPath}.fields[${idx}]` : `fields[${idx}]`;
   if (!isPlainObject(raw)) throw schemaError("SERVICE_CATALOG_INVALID", "تعريف الحقل غير صالح.", { [path]: "invalid" });
   const key = String(raw.key || "").trim();
   if (!KEY_RE.test(key) || seenKeys.has(key)) {
@@ -112,7 +120,7 @@ function normalizeField(raw, idx, seenKeys) {
   }
   seenKeys.add(key);
   const type = String(raw.type || "").trim();
-  if (!FIELD_TYPES.includes(type)) {
+  if (!FIELD_TYPES.includes(type) || (parentPath && !SUB_FIELD_TYPES.has(type))) {
     throw schemaError("SERVICE_CATALOG_INVALID", "نوع الحقل غير مدعوم.", { [`${path}.type`]: "unsupported" });
   }
   const field = {
@@ -152,8 +160,41 @@ function normalizeField(raw, idx, seenKeys) {
         });
       }
       seen.add(value);
-      return { value, label: normalizeLocalized(o?.label, { max: MAX_LABEL, required: true, path: `${path}.options[${j}].label` }) };
+      const opt = { value, label: normalizeLocalized(o?.label, { max: MAX_LABEL, required: true, path: `${path}.options[${j}].label` }) };
+      const pm = normalizeModifier(o?.priceModifier, `${path}.options[${j}].priceModifier`);
+      if (pm !== null) opt.priceModifier = pm;
+      return opt;
     });
+  }
+  // S7: per-field price modifier (checkbox: added when ticked; number/decimal: per unit of the value).
+  if (type === "checkbox" || type === "number" || type === "decimal") {
+    const pm = normalizeModifier(raw.priceModifier, `${path}.priceModifier`);
+    if (pm !== null) field.priceModifier = pm;
+  }
+  // S7: optional format rule for free text (vetted against catastrophic backtracking).
+  if ((type === "text" || type === "textarea") && raw.validationRegex !== undefined && raw.validationRegex !== null && raw.validationRegex !== "") {
+    field.validationRegex = normalizeRegex(raw.validationRegex, `${path}.validationRegex`);
+    const msg = normalizeLocalized(raw.validationMessage, { max: MAX_LABEL, required: false, path: `${path}.validationMessage` });
+    if (Object.keys(msg).length) field.validationMessage = msg;
+  }
+  if (type === "repeater" || type === "conditional_group") {
+    const subs = Array.isArray(raw.fields) ? raw.fields : [];
+    if (!subs.length || subs.length > MAX_SUB_FIELDS) {
+      throw schemaError("SERVICE_CATALOG_INVALID", "الحقول الفرعية غير صالحة.", { [`${path}.fields`]: "count" });
+    }
+    const subKeys = new Set();
+    field.fields = subs.map((f, j) => normalizeField(f, j, subKeys, { parentPath: path }));
+    if (type === "repeater") {
+      const minI = finiteOrNull(raw.minItems);
+      const maxI = finiteOrNull(raw.maxItems);
+      const lo = minI === null ? null : Math.floor(minI);
+      const hi = maxI === null ? MAX_REPEATER_ITEMS : Math.floor(maxI);
+      if (Number.isNaN(minI) || Number.isNaN(maxI) || (lo !== null && lo < 0) || hi < 1 || hi > MAX_REPEATER_ITEMS || (lo !== null && lo > hi)) {
+        throw schemaError("SERVICE_CATALOG_INVALID", "حدود التكرار غير صالحة.", { [`${path}.maxItems`]: "invalid" });
+      }
+      if (lo !== null) field.minItems = lo;
+      field.maxItems = hi;
+    }
   }
   if (raw.showIf !== undefined && raw.showIf !== null) {
     const s = raw.showIf;
@@ -171,6 +212,46 @@ function normalizeField(raw, idx, seenKeys) {
     field.showIf = { field: ref, in: clean };
   }
   return field;
+}
+
+function normalizeModifier(v, path) {
+  if (v === undefined || v === null || v === "") return null;
+  const t = String(isPlainObject(v) ? v.amount ?? "" : v).trim();
+  if (!MODIFIER_RE.test(t)) throw schemaError("SERVICE_CATALOG_INVALID", "معدّل السعر غير صالح.", { [path]: "invalid" });
+  return t;
+}
+
+/**
+ * Admin-authored patterns run on customer input, so only "safe" shapes are accepted:
+ * ≤ 200 chars, no back-references / look-arounds, and no quantified group that itself contains a
+ * quantifier (the classic catastrophic-backtracking shape, e.g. (a+)+).
+ */
+function normalizeRegex(raw, path) {
+  const p = String(raw);
+  const bad = () => schemaError("SERVICE_CATALOG_INVALID", "نمط التحقق غير صالح أو غير آمن.", { [path]: "unsafe" });
+  if (p.length > 200) throw bad();
+  // Back-references (\1, \k<name>) and look-arounds ((?=, (?!, (?<=, (?<!).
+  if (/\\[1-9]|\\k<|\(\?[=!<]/.test(p)) throw bad();
+  // A group containing a quantifier that is itself quantified: (a+)+, (\d*)*, (x{2,})+ …
+  if (/\((?:[^()\\]|\\.)*[*+}](?:[^()\\]|\\.)*\)\s*[*+?{]/.test(p)) throw bad();
+  try {
+    // eslint-disable-next-line no-new
+    new RegExp(`^(?:${p})$`, "u");
+  } catch {
+    throw bad();
+  }
+  return p;
+}
+
+const regexCache = new Map();
+function safeRegexTest(pattern, value) {
+  let re = regexCache.get(pattern);
+  if (!re) {
+    re = new RegExp(`^(?:${pattern})$`, "u");
+    if (regexCache.size > 500) regexCache.clear();
+    regexCache.set(pattern, re);
+  }
+  return re.test(value);
 }
 
 /**
@@ -221,6 +302,8 @@ function normalizeServiceDefinition(raw) {
   const seenKeys = new Set();
   const fields = rawFields.map((f, i) => normalizeField(f, i, seenKeys));
 
+  const pricing = normalizePricing(priceMode, raw.pricing);
+
   return {
     meta: { serviceCode, categoryId, subSubcategoryId: subSub, visibility, priceMode, sortOrder },
     schema: {
@@ -228,8 +311,72 @@ function normalizeServiceDefinition(raw) {
       description: normalizeLocalized(raw.description, { max: 1000, required: false, path: "description" }),
       quantity,
       fields,
+      // S5: optional, only when configured (existing versions stay byte-identical → no new version).
+      ...(pricing ? { pricing } : {}),
     },
   };
+}
+
+const PRICE_AMOUNT_RE = /^\d{1,9}(\.\d{1,2})?$/;
+
+/** S5 pricing config per price mode. Amounts are decimal strings (never floats); currency JOD/AED. */
+function normalizePricing(priceMode, raw) {
+  if (priceMode === "manual_quote" || raw === undefined || raw === null) return null;
+  if (!isPlainObject(raw)) throw schemaError("SERVICE_CATALOG_INVALID", "إعدادات التسعير غير صالحة.", { pricing: "invalid" });
+  const currency = String(raw.currency || "").toUpperCase();
+  if (!["JOD", "AED"].includes(currency)) {
+    throw schemaError("SERVICE_CATALOG_INVALID", "عملة التسعير غير صالحة.", { "pricing.currency": "invalid" });
+  }
+  const amt = (v, path, { optional = false } = {}) => {
+    if (optional && (v === undefined || v === null || v === "")) return undefined;
+    const t = String(v ?? "").trim();
+    if (!PRICE_AMOUNT_RE.test(t) || /^0+(\.0+)?$/.test(t)) {
+      throw schemaError("SERVICE_CATALOG_INVALID", "مبلغ التسعير غير صالح.", { [path]: "invalid" });
+    }
+    return t;
+  };
+  const cents = (t) => {
+    const [w, f = ""] = t.split(".");
+    return Number(w) * 100 + Number(f.padEnd(2, "0"));
+  };
+  switch (priceMode) {
+    case "fixed":
+      return { currency, amount: amt(raw.amount, "pricing.amount") };
+    case "per_unit": {
+      const out = { currency, unitAmount: amt(raw.unitAmount, "pricing.unitAmount") };
+      const min = amt(raw.minAmount, "pricing.minAmount", { optional: true });
+      if (min !== undefined) out.minAmount = min;
+      return out;
+    }
+    case "range": {
+      const min = amt(raw.minAmount, "pricing.minAmount");
+      const max = amt(raw.maxAmount, "pricing.maxAmount");
+      if (cents(min) > cents(max)) throw schemaError("SERVICE_CATALOG_INVALID", "نطاق السعر غير صالح.", { "pricing.maxAmount": "invalid" });
+      return { currency, minAmount: min, maxAmount: max };
+    }
+    case "package": {
+      const list = Array.isArray(raw.packages) ? raw.packages : [];
+      if (!list.length || list.length > 10) {
+        throw schemaError("SERVICE_CATALOG_INVALID", "الباقات غير صالحة.", { "pricing.packages": "invalid" });
+      }
+      const seen = new Set();
+      const packages = list.map((p, i) => {
+        const code = String(p?.code || "").trim();
+        if (!/^[a-z][a-z0-9_]{0,39}$/.test(code) || seen.has(code)) {
+          throw schemaError("SERVICE_CATALOG_INVALID", "رمز الباقة غير صالح.", { [`pricing.packages[${i}].code`]: "invalid" });
+        }
+        seen.add(code);
+        return {
+          code,
+          label: normalizeLocalized(p.label, { max: MAX_LABEL, required: true, path: `pricing.packages[${i}].label` }),
+          amount: amt(p.amount, `pricing.packages[${i}].amount`),
+        };
+      });
+      return { currency, packages };
+    }
+    default:
+      return null;
+  }
 }
 
 /** Field types a client says it can render (Flutter sends its supported list). */
@@ -281,6 +428,132 @@ function fieldVisible(field, values) {
   return field.showIf.in.includes(v);
 }
 
+/** One scalar field value (shared by top-level fields, repeater rows and conditional groups). */
+function validateScalar(field, raw, uploaded) {
+  const out = {};
+  const errors = {};
+  switch (field.type) {
+    case "text":
+    case "textarea": {
+      if (typeof raw !== "string") {
+        errors[field.key] = "invalid";
+        break;
+      }
+      const v = cleanText(raw, MAX_TEXTAREA + 1);
+      if (!v) {
+        if (field.required) errors[field.key] = "required";
+      } else if (v.length > field.maxLength) errors[field.key] = "too_long";
+      else out[field.key] = v;
+      break;
+    }
+    case "number":
+    case "decimal": {
+      const n = parseDecimalText(raw, field.type === "decimal");
+      if (n === null) errors[field.key] = "invalid_number";
+      else if (field.min !== undefined && n < field.min) errors[field.key] = "below_min";
+      else if (field.max !== undefined && n > field.max) errors[field.key] = "above_max";
+      else out[field.key] = field.type === "decimal" ? n.toFixed(2) : n;
+      break;
+    }
+    case "select":
+    case "radio": {
+      const v = String(raw);
+      if (!field.options.some((o) => o.value === v)) errors[field.key] = "invalid_option";
+      else out[field.key] = v;
+      break;
+    }
+    case "multiselect": {
+      const arr = Array.isArray(raw) ? raw.map(String) : null;
+      if (!arr || new Set(arr).size !== arr.length || arr.some((v) => !field.options.some((o) => o.value === v))) {
+        errors[field.key] = "invalid_option";
+      } else if (field.min !== undefined && arr.length < field.min) errors[field.key] = "below_min";
+      else if (field.max !== undefined && arr.length > field.max) errors[field.key] = "above_max";
+      else out[field.key] = arr;
+      break;
+    }
+    case "checkbox":
+      if (raw === true || raw === "true") out[field.key] = true;
+      else if (raw === false || raw === "false") out[field.key] = false;
+      else errors[field.key] = "invalid";
+      break;
+    case "date":
+      if (typeof raw !== "string" || !isValidDate(raw)) errors[field.key] = "invalid_date";
+      else out[field.key] = raw;
+      break;
+    case "datetime": {
+      const d = typeof raw === "string" && raw.length <= 40 ? new Date(raw) : null;
+      if (!d || Number.isNaN(d.getTime())) errors[field.key] = "invalid_date";
+      else out[field.key] = d.toISOString();
+      break;
+    }
+    case "url": {
+      const u = typeof raw === "string" ? normalizeUrl(raw) : null;
+      if (!u) errors[field.key] = "invalid_url";
+      else out[field.key] = u;
+      break;
+    }
+    case "file": {
+      const names = Array.isArray(raw) ? raw.map((n) => String(n)) : null;
+      if (!names || names.some((n) => !uploaded.has(n)) || new Set(names).size !== names.length) {
+        errors[field.key] = "invalid_file";
+      } else if (field.max !== undefined && names.length > field.max) errors[field.key] = "above_max";
+      else out[field.key] = names.map((name) => ({ name }));
+      break;
+    }
+    default:
+      errors[field.key] = "unsupported";
+  }
+  if (errors[field.key]) return { error: errors[field.key] };
+  if (!Object.prototype.hasOwnProperty.call(out, field.key)) return { has: false };
+  // S7: optional per-field format rule (text/textarea only; compiled from a vetted pattern).
+  if (field.validationRegex && typeof out[field.key] === "string" && !safeRegexTest(field.validationRegex, out[field.key])) {
+    return { error: "invalid_format" };
+  }
+  return { has: true, value: out[field.key] };
+}
+
+/** Sub-fields of a group/row: required handling + scalar validation; errors keyed `parent.sub` / `parent[i].sub`. */
+function validateSubFields(subFields, src, uploaded, prefix) {
+  const errors = {};
+  const out = {};
+  const obj = isPlainObject(src) ? src : {};
+  const known = new Set(subFields.map((f) => f.key));
+  for (const k of Object.keys(obj)) if (!known.has(k)) errors[`${prefix}.${k}`] = "unknown_field";
+  for (const f of subFields) {
+    const raw = Object.prototype.hasOwnProperty.call(obj, f.key) ? obj[f.key] : undefined;
+    if (!fieldVisible(f, out)) continue;
+    if (isEmptyValue(raw) || (f.type === "checkbox" && raw === false && f.required)) {
+      if (f.required) errors[`${prefix}.${f.key}`] = "required";
+      else if (f.type === "checkbox" && raw === false) out[f.key] = false;
+      continue;
+    }
+    const r = validateScalar(f, raw, uploaded);
+    if (r.error) errors[`${prefix}.${f.key}`] = r.error;
+    else if (r.has) out[f.key] = r.value;
+  }
+  return Object.keys(errors).length ? { errors } : { value: out };
+}
+
+function validateRepeater(field, raw, uploaded) {
+  if (raw === undefined || raw === null) raw = [];
+  if (!Array.isArray(raw) || raw.length > (field.maxItems ?? MAX_REPEATER_ITEMS)) {
+    return { errors: { [field.key]: Array.isArray(raw) ? "above_max" : "invalid" } };
+  }
+  if (field.minItems !== undefined && raw.length < field.minItems) return { errors: { [field.key]: "below_min" } };
+  const rows = [];
+  const errors = {};
+  raw.forEach((row, i) => {
+    const r = validateSubFields(field.fields, row, uploaded, `${field.key}[${i}]`);
+    if (r.errors) Object.assign(errors, r.errors);
+    else rows.push(r.value);
+  });
+  return Object.keys(errors).length ? { errors } : { value: rows };
+}
+
+function validateGroup(field, raw, uploaded) {
+  return validateSubFields(field.fields, raw, uploaded, field.key);
+}
+
 /**
  * Validate submitted values against a service schema version.
  * @param {object} schema versioned service schema
@@ -300,82 +573,27 @@ function validateOrderForm(schema, input, ctx = {}) {
   for (const field of schema.fields || []) {
     const raw = Object.prototype.hasOwnProperty.call(src, field.key) ? src[field.key] : undefined;
     if (!fieldVisible(field, out)) continue; // hidden → dropped
-    if (isEmptyValue(raw) || (field.type === "checkbox" && raw === false && field.required)) {
+    const repeaterNeedsRows = field.type === "repeater" && (field.minItems || 0) > 0;
+    if (field.type !== "conditional_group" && !repeaterNeedsRows && (isEmptyValue(raw) || (field.type === "checkbox" && raw === false && field.required))) {
       if (field.required) errors[field.key] = "required";
       else if (field.type === "checkbox" && raw === false) out[field.key] = false;
       continue;
     }
-    switch (field.type) {
-      case "text":
-      case "textarea": {
-        if (typeof raw !== "string") {
-          errors[field.key] = "invalid";
-          break;
-        }
-        const v = cleanText(raw, MAX_TEXTAREA + 1);
-        if (!v) {
-          if (field.required) errors[field.key] = "required";
-        } else if (v.length > field.maxLength) errors[field.key] = "too_long";
-        else out[field.key] = v;
-        break;
-      }
-      case "number":
-      case "decimal": {
-        const n = parseDecimalText(raw, field.type === "decimal");
-        if (n === null) errors[field.key] = "invalid_number";
-        else if (field.min !== undefined && n < field.min) errors[field.key] = "below_min";
-        else if (field.max !== undefined && n > field.max) errors[field.key] = "above_max";
-        else out[field.key] = field.type === "decimal" ? n.toFixed(2) : n;
-        break;
-      }
-      case "select":
-      case "radio": {
-        const v = String(raw);
-        if (!field.options.some((o) => o.value === v)) errors[field.key] = "invalid_option";
-        else out[field.key] = v;
-        break;
-      }
-      case "multiselect": {
-        const arr = Array.isArray(raw) ? raw.map(String) : null;
-        if (!arr || new Set(arr).size !== arr.length || arr.some((v) => !field.options.some((o) => o.value === v))) {
-          errors[field.key] = "invalid_option";
-        } else if (field.min !== undefined && arr.length < field.min) errors[field.key] = "below_min";
-        else if (field.max !== undefined && arr.length > field.max) errors[field.key] = "above_max";
-        else out[field.key] = arr;
-        break;
-      }
-      case "checkbox":
-        if (raw === true || raw === "true") out[field.key] = true;
-        else if (raw === false || raw === "false") out[field.key] = false;
-        else errors[field.key] = "invalid";
-        break;
-      case "date":
-        if (typeof raw !== "string" || !isValidDate(raw)) errors[field.key] = "invalid_date";
-        else out[field.key] = raw;
-        break;
-      case "datetime": {
-        const d = typeof raw === "string" && raw.length <= 40 ? new Date(raw) : null;
-        if (!d || Number.isNaN(d.getTime())) errors[field.key] = "invalid_date";
-        else out[field.key] = d.toISOString();
-        break;
-      }
-      case "url": {
-        const u = typeof raw === "string" ? normalizeUrl(raw) : null;
-        if (!u) errors[field.key] = "invalid_url";
-        else out[field.key] = u;
-        break;
-      }
-      case "file": {
-        const names = Array.isArray(raw) ? raw.map((n) => String(n)) : null;
-        if (!names || names.some((n) => !uploaded.has(n)) || new Set(names).size !== names.length) {
-          errors[field.key] = "invalid_file";
-        } else if (field.max !== undefined && names.length > field.max) errors[field.key] = "above_max";
-        else out[field.key] = names.map((name) => ({ name }));
-        break;
-      }
-      default:
-        errors[field.key] = "unsupported";
+    if (field.type === "repeater") {
+      const r = validateRepeater(field, raw, uploaded);
+      if (r.errors) Object.assign(errors, r.errors);
+      else out[field.key] = r.value;
+      continue;
     }
+    if (field.type === "conditional_group") {
+      const r = validateGroup(field, raw, uploaded);
+      if (r.errors) Object.assign(errors, r.errors);
+      else if (Object.keys(r.value).length) out[field.key] = r.value;
+      continue;
+    }
+    const r = validateScalar(field, raw, uploaded);
+    if (r.error) errors[field.key] = r.error;
+    else if (r.has) out[field.key] = r.value;
   }
 
   const q = schema.quantity || {};
@@ -434,6 +652,7 @@ module.exports = {
   FIELD_TYPES,
   QUANTITY_UNITS,
   PRICE_MODES,
+  normalizePricing,
   VISIBILITIES,
   SERVICE_CODE_RE,
   normalizeServiceDefinition,

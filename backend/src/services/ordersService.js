@@ -543,6 +543,10 @@ async function getOrderById(orderId, client) {
           SELECT service_code, service_version, definition, field_values, quantity::text AS quantity, quantity_unit,
                  quantity_unspecified, created_at
             FROM order_form_snapshots WHERE order_id = o.id LIMIT 1) fs) AS form_snapshot,
+       (SELECT COALESCE(json_agg(si ORDER BY si.item_no), '[]'::json) FROM (
+          SELECT item_no, service_code, service_version, definition, field_values, quantity::text AS quantity, quantity_unit,
+                 quantity_unspecified, created_at
+            FROM order_service_items WHERE order_id = o.id AND removed_at IS NULL) si) AS service_items,
        ios.name AS institutional_storage_name,
        iso.released_at AS institutional_released_at,
        (
@@ -696,6 +700,12 @@ async function getOrderById(orderId, client) {
   // Smart Orders S2: immutable service form snapshot (null for legacy orders — never fabricated).
   // Loaded in the main order query (no extra round trip).
   const serviceForm = require("./serviceCatalogService").mapSnapshotRow(rows[0]?.form_snapshot || null);
+  // S5: additional service items (multi-service order), same snapshot shape as the primary service.
+  // Never carries item prices: this object reaches freelancers too (prices live in the quote / Admin API).
+  const serviceItems = (rows[0]?.service_items || []).map((it) => ({
+    ...require("./serviceCatalogService").mapSnapshotRow(it),
+    itemNo: it.item_no,
+  }));
 
   return {
     ...base,
@@ -704,6 +714,7 @@ async function getOrderById(orderId, client) {
     subSubcategory,
     extraCategories,
     serviceForm,
+    serviceItems,
     preferredSkills: skillRows.map((r) => ({ id: String(r.id), name: r.name })),
     files: fileRows.map((r) => ({
       id: String(r.id),

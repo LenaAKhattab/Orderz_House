@@ -12,13 +12,28 @@ import {
 import { getSafeApiErrorMessage } from "../../../utils/apiErrorMessage";
 import { formatLocaleDateTime } from "../../../i18n/formatLocale";
 import DynamicServiceForm from "./DynamicServiceForm";
-import { emptyServiceDraft } from "./catalogForm";
+import { MAX_REPEATER_ITEMS, MAX_SUB_FIELDS, SUB_FIELD_TYPES, emptyServiceDraft } from "./catalogForm";
+import {
+  MAX_PACKAGES,
+  PRICE_CURRENCIES,
+  buildPricingPayload,
+  fieldPayload,
+  isCompilablePattern,
+  isValidPriceModifier,
+  pricingDraftFrom,
+  validatePricing,
+} from "./catalogEditorUtils";
 
 const LOCALES = ["ar", "en", "de", "nl", "ro"];
 const LOCALE_NAMES = { ar: "العربية", en: "English", de: "Deutsch", nl: "Nederlands", ro: "Română" };
-const FIELD_TYPES = ["text", "textarea", "number", "decimal", "select", "multiselect", "checkbox", "radio", "date", "datetime", "file", "url"];
+const FIELD_TYPES = [
+  "text", "textarea", "number", "decimal", "select", "multiselect", "checkbox", "radio", "date", "datetime", "file", "url",
+  "repeater", "conditional_group",
+];
 const OPTION_TYPES = new Set(["select", "multiselect", "radio"]);
 const BOUND_TYPES = new Set(["number", "decimal", "multiselect", "file"]);
+const MODIFIER_TYPES = new Set(["checkbox", "number", "decimal"]);
+const STRUCTURED = new Set(["repeater", "conditional_group"]);
 const UNITS = [
   "pages", "words", "documents", "slides", "worksheets", "files", "dashboards", "concepts", "designs",
   "screens", "features", "projects", "minutes", "clips", "posts", "campaigns", "hours", "units",
@@ -38,6 +53,8 @@ function blankDefinition(categoryId) {
     fields: [],
   };
 }
+
+const newSubField = (n) => ({ key: `item_${n}`, type: "text", label: {}, required: false });
 
 function LocaleInputs({ value, onChange, label, multiline = false, required = false, testid }) {
   return (
@@ -72,6 +89,370 @@ function num(v) {
   return v === "" || v === null || v === undefined ? undefined : Number(v);
 }
 
+/** Inline error under an editor input (server field error or a local hint). */
+function FieldErr({ text }) {
+  return text ? (
+    <span className="field-error" role="alert">
+      {text}
+    </span>
+  ) : null;
+}
+
+/**
+ * One field definition. Used for top-level fields and (with `isSub`) for repeater / group sub-fields:
+ * sub-fields cannot be files or structured (one level only).
+ */
+function FieldEditor({ f, path, siblings, isSub = false, onChange, onRemove, onMove, errAt }) {
+  const { t } = useTranslation();
+  const e = (k) => t(`smartOrders.catalog.editor.${k}`);
+  const types = isSub ? SUB_FIELD_TYPES : FIELD_TYPES;
+  const regexLocalBad = (f.type === "text" || f.type === "textarea") && !isCompilablePattern(f.validationRegex);
+  const setSub = (j, patch) => onChange({ fields: (f.fields || []).map((x, k) => (k === j ? { ...x, ...patch } : x)) });
+  const moveSub = (j, dir) => {
+    const arr = [...(f.fields || [])];
+    const k = j + dir;
+    if (k < 0 || k >= arr.length) return;
+    [arr[j], arr[k]] = [arr[k], arr[j]];
+    onChange({ fields: arr });
+  };
+
+  return (
+    <div className="smart-editor-field" data-testid={`catalog-field-${path}`}>
+      <div className="smart-editor-field__head">
+        <strong dir="ltr">{f.key || "—"}</strong>
+        <div className="smart-catalog-row__actions">
+          <button type="button" className="btn btn-secondary btn-sm" onClick={() => onMove(-1)} aria-label={e("moveUp")}>
+            ↑
+          </button>
+          <button type="button" className="btn btn-secondary btn-sm" onClick={() => onMove(1)} aria-label={e("moveDown")}>
+            ↓
+          </button>
+          <button type="button" className="btn btn-secondary btn-sm" onClick={onRemove}>
+            {e("remove")}
+          </button>
+        </div>
+      </div>
+      <div className="smart-editor-grid">
+        <label className="field">
+          <span className="label">{e("fieldKey")}</span>
+          <input className="input" dir="ltr" value={f.key} onChange={(ev) => onChange({ key: ev.target.value.trim().toLowerCase() })} />
+          <FieldErr text={errAt(`${path}.key`)} />
+        </label>
+        <label className="field">
+          <span className="label">{e("fieldType")}</span>
+          <select
+            className="input"
+            value={f.type}
+            onChange={(ev) => {
+              const type = ev.target.value;
+              onChange({
+                type,
+                options: OPTION_TYPES.has(type) ? f.options || [{ value: "option_1", label: {} }] : undefined,
+                fields: STRUCTURED.has(type) ? (f.fields?.length ? f.fields : [newSubField(1)]) : undefined,
+              });
+            }}
+          >
+            {types.map((ft) => (
+              <option key={ft} value={ft}>
+                {t(`smartOrders.fieldTypes.${ft}`)}
+              </option>
+            ))}
+          </select>
+          <FieldErr text={errAt(`${path}.type`)} />
+        </label>
+        <label className="smart-check">
+          <input type="checkbox" checked={Boolean(f.required)} onChange={(ev) => onChange({ required: ev.target.checked })} />
+          <span>{e("fieldRequired")}</span>
+        </label>
+        {BOUND_TYPES.has(f.type) ? (
+          <>
+            <label className="field">
+              <span className="label">{e("min")}</span>
+              <input className="input" dir="ltr" value={f.min ?? ""} onChange={(ev) => onChange({ min: ev.target.value })} />
+              <FieldErr text={errAt(`${path}.min`)} />
+            </label>
+            <label className="field">
+              <span className="label">{e("max")}</span>
+              <input className="input" dir="ltr" value={f.max ?? ""} onChange={(ev) => onChange({ max: ev.target.value })} />
+            </label>
+          </>
+        ) : null}
+        {f.type === "text" || f.type === "textarea" ? (
+          <label className="field">
+            <span className="label">{e("maxLength")}</span>
+            <input className="input" dir="ltr" value={f.maxLength ?? ""} onChange={(ev) => onChange({ maxLength: ev.target.value })} />
+          </label>
+        ) : null}
+        {MODIFIER_TYPES.has(f.type) ? (
+          <label className="field">
+            <span className="label">{e("priceModifier")}</span>
+            <input
+              className="input"
+              dir="ltr"
+              inputMode="decimal"
+              value={f.priceModifier ?? ""}
+              onChange={(ev) => onChange({ priceModifier: ev.target.value })}
+              data-testid={`catalog-modifier-${path}`}
+            />
+            <span className="help">
+              {f.type === "checkbox" ? e("priceModifierHintCheckbox") : e("priceModifierHintNumber")} {e("modifierPrivate")}
+            </span>
+            <FieldErr text={errAt(`${path}.priceModifier`) || (!isValidPriceModifier(f.priceModifier) ? e("invalidValue") : "")} />
+          </label>
+        ) : null}
+        {f.type === "repeater" ? (
+          <>
+            <label className="field">
+              <span className="label">{e("minItems")}</span>
+              <input className="input" dir="ltr" inputMode="numeric" value={f.minItems ?? ""} onChange={(ev) => onChange({ minItems: ev.target.value })} />
+            </label>
+            <label className="field">
+              <span className="label">{e("maxItems")}</span>
+              <input
+                className="input"
+                dir="ltr"
+                inputMode="numeric"
+                placeholder={String(MAX_REPEATER_ITEMS)}
+                value={f.maxItems ?? ""}
+                onChange={(ev) => onChange({ maxItems: ev.target.value })}
+              />
+              <FieldErr text={errAt(`${path}.maxItems`)} />
+            </label>
+          </>
+        ) : null}
+        <label className="field">
+          <span className="label">{e("showIf")}</span>
+          <select
+            className="input"
+            value={f.showIf?.field || ""}
+            onChange={(ev) => onChange({ showIf: ev.target.value ? { field: ev.target.value, in: f.showIf?.in || [true] } : undefined })}
+          >
+            <option value="">{e("showIfAlways")}</option>
+            {siblings.map((p) => (
+              <option key={p.key} value={p.key}>
+                {p.key}
+              </option>
+            ))}
+          </select>
+          <FieldErr text={errAt(`${path}.showIf`)} />
+        </label>
+        {f.showIf ? (
+          <label className="field">
+            <span className="label">{e("showIfValue")}</span>
+            <input
+              className="input"
+              dir="ltr"
+              value={(f.showIf.in || []).map(String).join(",")}
+              onChange={(ev) =>
+                onChange({
+                  showIf: {
+                    field: f.showIf.field,
+                    in: ev.target.value
+                      .split(",")
+                      .map((x) => x.trim())
+                      .filter(Boolean)
+                      .map((x) => (x === "true" ? true : x === "false" ? false : x)),
+                  },
+                })
+              }
+            />
+          </label>
+        ) : null}
+      </div>
+      <LocaleInputs label={e("fieldLabel")} value={f.label} required onChange={(label) => onChange({ label })} />
+      <details>
+        <summary>{`${e("placeholder")} / ${e("help")}`}</summary>
+        <LocaleInputs label={e("placeholder")} value={f.placeholder} onChange={(placeholder) => onChange({ placeholder })} />
+        <LocaleInputs label={e("help")} value={f.help} multiline onChange={(help) => onChange({ help })} />
+      </details>
+
+      {f.type === "text" || f.type === "textarea" ? (
+        <details open={Boolean(f.validationRegex)}>
+          <summary>{e("validationRegex")}</summary>
+          <label className="field">
+            <span className="label">{e("validationRegex")}</span>
+            <input
+              className="input"
+              dir="ltr"
+              maxLength={200}
+              value={f.validationRegex ?? ""}
+              onChange={(ev) => onChange({ validationRegex: ev.target.value })}
+              data-testid={`catalog-regex-${path}`}
+            />
+            <span className="help">{e("validationRegexHint")}</span>
+            <FieldErr text={errAt(`${path}.validationRegex`) || (regexLocalBad ? e("regexUnsafe") : "")} />
+          </label>
+          <LocaleInputs label={e("validationMessage")} value={f.validationMessage} onChange={(validationMessage) => onChange({ validationMessage })} />
+        </details>
+      ) : null}
+
+      {OPTION_TYPES.has(f.type) ? (
+        <div className="field">
+          <span className="label">{e("options")}</span>
+          <FieldErr text={errAt(`${path}.options`)} />
+          {(f.options || []).map((o, j) => (
+            <div key={j} className="smart-editor-field">
+              <div className="smart-editor-field__head">
+                <label className="field" style={{ flex: 1 }}>
+                  <span className="help">{e("optionValue")}</span>
+                  <input
+                    className="input"
+                    dir="ltr"
+                    value={o.value}
+                    onChange={(ev) => onChange({ options: f.options.map((x, k) => (k === j ? { ...x, value: ev.target.value.trim().toLowerCase() } : x)) })}
+                  />
+                  <FieldErr text={errAt(`${path}.options[${j}].value`)} />
+                </label>
+                <label className="field" style={{ flex: 1 }}>
+                  <span className="help">{e("priceModifier")}</span>
+                  <input
+                    className="input"
+                    dir="ltr"
+                    inputMode="decimal"
+                    value={o.priceModifier ?? ""}
+                    onChange={(ev) => onChange({ options: f.options.map((x, k) => (k === j ? { ...x, priceModifier: ev.target.value } : x)) })}
+                  />
+                  <FieldErr text={errAt(`${path}.options[${j}].priceModifier`) || (!isValidPriceModifier(o.priceModifier) ? e("invalidValue") : "")} />
+                </label>
+                <button type="button" className="btn btn-secondary btn-sm" onClick={() => onChange({ options: f.options.filter((_, k) => k !== j) })}>
+                  {e("remove")}
+                </button>
+              </div>
+              <LocaleInputs
+                label={e("fieldLabel")}
+                value={o.label}
+                required
+                onChange={(label) => onChange({ options: f.options.map((x, k) => (k === j ? { ...x, label } : x)) })}
+              />
+            </div>
+          ))}
+          <span className="help">
+            {e("priceModifierHintOption")} {e("modifierPrivate")}
+          </span>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => onChange({ options: [...(f.options || []), { value: `option_${(f.options || []).length + 1}`, label: {} }] })}
+          >
+            {e("addOption")}
+          </button>
+        </div>
+      ) : null}
+
+      {STRUCTURED.has(f.type) && !isSub ? (
+        <div className="smart-editor-subfields" data-testid={`catalog-subfields-${path}`}>
+          <span className="label">{e("subFields")}</span>
+          <span className="help">{e("subFieldsHint")}</span>
+          <FieldErr text={errAt(`${path}.fields`)} />
+          {(f.fields || []).map((sf, j) => (
+            <FieldEditor
+              key={j}
+              f={sf}
+              path={`${path}.fields[${j}]`}
+              siblings={(f.fields || []).slice(0, j)}
+              isSub
+              onChange={(patch) => setSub(j, patch)}
+              onRemove={() => onChange({ fields: f.fields.filter((_, k) => k !== j) })}
+              onMove={(dir) => moveSub(j, dir)}
+              errAt={errAt}
+            />
+          ))}
+          <div>
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              disabled={(f.fields || []).length >= MAX_SUB_FIELDS}
+              onClick={() => onChange({ fields: [...(f.fields || []), newSubField((f.fields || []).length + 1)] })}
+            >
+              {e("addSubField")}
+            </button>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/** S5 catalog pricing for the chosen price mode (amounts are decimal strings). */
+function PricingEditor({ priceMode, value, onChange, errAt }) {
+  const { t } = useTranslation();
+  const e = (k) => t(`smartOrders.catalog.editor.${k}`);
+  if (priceMode === "manual_quote") return <p className="help">{e("pricingManual")}</p>;
+  const amountInput = (k, label) => (
+    <label className="field" key={k}>
+      <span className="label">{label}</span>
+      <input className="input" dir="ltr" inputMode="decimal" value={value[k] ?? ""} onChange={(ev) => onChange({ ...value, [k]: ev.target.value })} data-testid={`catalog-pricing-${k}`} />
+      <FieldErr text={errAt(`pricing.${k}`)} />
+    </label>
+  );
+  const setPkg = (i, patch) => onChange({ ...value, packages: value.packages.map((p, j) => (j === i ? { ...p, ...patch } : p)) });
+  return (
+    <fieldset className="field" data-testid="catalog-pricing" style={{ gridColumn: "1 / -1" }}>
+      <legend className="label">{e("pricingHeading")}</legend>
+      <p className="help">{e("pricingHint")}</p>
+      <div className="smart-editor-grid">
+        <label className="field">
+          <span className="label">{e("currency")}</span>
+          <select className="input" value={value.currency} onChange={(ev) => onChange({ ...value, currency: ev.target.value })}>
+            {PRICE_CURRENCIES.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+          <FieldErr text={errAt("pricing.currency")} />
+        </label>
+        {priceMode === "fixed" ? amountInput("amount", e("amount")) : null}
+        {priceMode === "per_unit" ? [amountInput("unitAmount", e("unitAmount")), amountInput("minAmount", e("minAmountOptional"))] : null}
+        {priceMode === "range" ? [amountInput("minAmount", e("minAmount")), amountInput("maxAmount", e("maxAmount"))] : null}
+      </div>
+      {priceMode === "package" ? (
+        <div className="field">
+          <span className="label">{e("packages")}</span>
+          <FieldErr text={errAt("pricing.packages")} />
+          {value.packages.map((p, i) => (
+            <div className="smart-editor-field" key={i}>
+              <div className="smart-editor-grid">
+                <label className="field">
+                  <span className="label">{e("packageCode")}</span>
+                  <input className="input" dir="ltr" value={p.code} onChange={(ev) => setPkg(i, { code: ev.target.value.trim().toLowerCase() })} />
+                  <FieldErr text={errAt(`pricing.packages[${i}].code`)} />
+                </label>
+                <label className="field">
+                  <span className="label">{e("packageAmount")}</span>
+                  <input className="input" dir="ltr" inputMode="decimal" value={p.amount} onChange={(ev) => setPkg(i, { amount: ev.target.value })} />
+                  <FieldErr text={errAt(`pricing.packages[${i}].amount`)} />
+                </label>
+                <div>
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    onClick={() => onChange({ ...value, packages: value.packages.filter((_, j) => j !== i) })}
+                  >
+                    {e("remove")}
+                  </button>
+                </div>
+              </div>
+              <LocaleInputs label={e("packageLabel")} value={p.label} required onChange={(label) => setPkg(i, { label })} />
+              <FieldErr text={errAt(`pricing.packages[${i}].label`)} />
+            </div>
+          ))}
+          <div>
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              disabled={value.packages.length >= MAX_PACKAGES}
+              onClick={() => onChange({ ...value, packages: [...value.packages, { code: `package_${value.packages.length + 1}`, label: {}, amount: "" }] })}
+            >
+              {e("addPackage")}
+            </button>
+          </div>
+        </div>
+      ) : null}
+    </fieldset>
+  );
+}
+
 /** Create / edit one catalog service. Saving a changed definition creates a new immutable version. */
 export default function ServiceEditorModal({ serviceId, categories, onClose, onSaved }) {
   const { t, locale } = useTranslation();
@@ -79,11 +460,13 @@ export default function ServiceEditorModal({ serviceId, categories, onClose, onS
   const isNew = !serviceId;
   const [tab, setTab] = useState("basics");
   const [def, setDef] = useState(() => blankDefinition(categories[0]?.id));
+  const [pricing, setPricing] = useState(() => pricingDraftFrom(null));
   const [versions, setVersions] = useState([]);
   const [changeNote, setChangeNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [loaded, setLoaded] = useState(isNew);
   const [previewDraft, setPreviewDraft] = useState(emptyServiceDraft);
+  const [serverErrors, setServerErrors] = useState({});
 
   useEffect(() => {
     if (isNew) return undefined;
@@ -104,6 +487,7 @@ export default function ServiceEditorModal({ serviceId, categories, onClose, onS
           quantity: s.quantity,
           fields: s.fields,
         });
+        setPricing(pricingDraftFrom(s.pricing));
         setVersions(res?.data?.versions || []);
         setLoaded(true);
       })
@@ -125,24 +509,34 @@ export default function ServiceEditorModal({ serviceId, categories, onClose, onS
       return { ...d, fields: arr };
     });
 
+  const pricingErrors = useMemo(() => validatePricing(def.priceMode, pricing), [def.priceMode, pricing]);
+  const errAt = (path) => {
+    const code = serverErrors[path] || pricingErrors[path];
+    if (!code) return "";
+    return code === "unsafe" ? t("smartOrders.catalog.editor.regexUnsafe") : t("smartOrders.catalog.editor.invalidValue");
+  };
+
   const previewService = useMemo(
     () => ({
       serviceCode: def.serviceCode || "preview",
       version: 0,
       name: def.name,
       quantity: { ...def.quantity, min: num(def.quantity?.min), max: num(def.quantity?.max) },
-      fields: def.fields.map((f) => ({ ...f, min: num(f.min), max: num(f.max), options: f.options || [] })),
+      fields: def.fields.map((f) => ({ ...fieldPayload(f), options: f.options || [] })),
     }),
     [def],
   );
 
   const save = async () => {
     setBusy(true);
+    setServerErrors({});
     try {
+      const pricingPayload = buildPricingPayload(def.priceMode, pricing);
       const payload = {
         ...def,
         quantity: { ...def.quantity, min: num(def.quantity?.min), max: num(def.quantity?.max) },
-        fields: def.fields.map((f) => ({ ...f, min: num(f.min), max: num(f.max), maxLength: num(f.maxLength) })),
+        fields: def.fields.map(fieldPayload),
+        ...(pricingPayload ? { pricing: pricingPayload } : {}),
       };
       const res = isNew
         ? await adminCreateCatalogServiceRequest(payload)
@@ -155,8 +549,14 @@ export default function ServiceEditorModal({ serviceId, categories, onClose, onS
       onSaved?.();
     } catch (e) {
       const fe = e?.response?.data?.fieldErrors;
+      if (fe && typeof fe === "object") setServerErrors(fe);
+      const unsafe = fe && Object.values(fe).includes("unsafe");
       const detail = fe ? ` (${Object.keys(fe).slice(0, 3).join(", ")})` : "";
-      push({ type: "error", title: t("smartOrders.catalog.saveFailed"), message: `${getSafeApiErrorMessage(e)}${detail}` });
+      push({
+        type: "error",
+        title: t("smartOrders.catalog.saveFailed"),
+        message: unsafe ? `${t("smartOrders.catalog.editor.regexUnsafe")}${detail}` : `${getSafeApiErrorMessage(e)}${detail}`,
+      });
     } finally {
       setBusy(false);
     }
@@ -233,7 +633,7 @@ export default function ServiceEditorModal({ serviceId, categories, onClose, onS
             </label>
             <label className="field">
               <span className="label">{t("smartOrders.catalog.editor.priceMode")}</span>
-              <select className="input" value={def.priceMode} onChange={(e) => set({ priceMode: e.target.value })}>
+              <select className="input" value={def.priceMode} onChange={(e) => set({ priceMode: e.target.value })} data-testid="catalog-price-mode">
                 {PRICE_MODES.map((m) => (
                   <option key={m} value={m}>
                     {t(`smartOrders.priceModes.${m}`)}
@@ -245,6 +645,7 @@ export default function ServiceEditorModal({ serviceId, categories, onClose, onS
               <span className="label">{t("smartOrders.catalog.editor.sortOrder")}</span>
               <input className="input" dir="ltr" inputMode="numeric" value={def.sortOrder} onChange={(e) => set({ sortOrder: e.target.value })} />
             </label>
+            <PricingEditor priceMode={def.priceMode} value={pricing} onChange={setPricing} errAt={errAt} />
             <div style={{ gridColumn: "1 / -1" }}>
               <p className="help">{t("smartOrders.catalog.editor.localeHint")}</p>
               <LocaleInputs
@@ -301,162 +702,16 @@ export default function ServiceEditorModal({ serviceId, categories, onClose, onS
           <div>
             {def.fields.length === 0 ? <p className="help">{t("smartOrders.catalog.editor.noFields")}</p> : null}
             {def.fields.map((f, i) => (
-              <div className="smart-editor-field" key={i} data-testid={`catalog-field-${i}`}>
-                <div className="smart-editor-field__head">
-                  <strong dir="ltr">{f.key || "—"}</strong>
-                  <div className="smart-catalog-row__actions">
-                    <button type="button" className="btn btn-secondary btn-sm" onClick={() => moveField(i, -1)} aria-label={t("smartOrders.catalog.editor.moveUp")}>
-                      ↑
-                    </button>
-                    <button type="button" className="btn btn-secondary btn-sm" onClick={() => moveField(i, 1)} aria-label={t("smartOrders.catalog.editor.moveDown")}>
-                      ↓
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn-secondary btn-sm"
-                      onClick={() => setDef((d) => ({ ...d, fields: d.fields.filter((_, j) => j !== i) }))}
-                    >
-                      {t("smartOrders.catalog.editor.remove")}
-                    </button>
-                  </div>
-                </div>
-                <div className="smart-editor-grid">
-                  <label className="field">
-                    <span className="label">{t("smartOrders.catalog.editor.fieldKey")}</span>
-                    <input className="input" dir="ltr" value={f.key} onChange={(e) => setField(i, { key: e.target.value.trim().toLowerCase() })} />
-                  </label>
-                  <label className="field">
-                    <span className="label">{t("smartOrders.catalog.editor.fieldType")}</span>
-                    <select
-                      className="input"
-                      value={f.type}
-                      onChange={(e) =>
-                        setField(i, {
-                          type: e.target.value,
-                          options: OPTION_TYPES.has(e.target.value) ? f.options || [{ value: "option_1", label: {} }] : undefined,
-                        })
-                      }
-                    >
-                      {FIELD_TYPES.map((ft) => (
-                        <option key={ft} value={ft}>
-                          {t(`smartOrders.fieldTypes.${ft}`)}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="smart-check">
-                    <input type="checkbox" checked={Boolean(f.required)} onChange={(e) => setField(i, { required: e.target.checked })} />
-                    <span>{t("smartOrders.catalog.editor.fieldRequired")}</span>
-                  </label>
-                  {BOUND_TYPES.has(f.type) ? (
-                    <>
-                      <label className="field">
-                        <span className="label">{t("smartOrders.catalog.editor.min")}</span>
-                        <input className="input" dir="ltr" value={f.min ?? ""} onChange={(e) => setField(i, { min: e.target.value })} />
-                      </label>
-                      <label className="field">
-                        <span className="label">{t("smartOrders.catalog.editor.max")}</span>
-                        <input className="input" dir="ltr" value={f.max ?? ""} onChange={(e) => setField(i, { max: e.target.value })} />
-                      </label>
-                    </>
-                  ) : null}
-                  {f.type === "text" || f.type === "textarea" ? (
-                    <label className="field">
-                      <span className="label">{t("smartOrders.catalog.editor.maxLength")}</span>
-                      <input className="input" dir="ltr" value={f.maxLength ?? ""} onChange={(e) => setField(i, { maxLength: e.target.value })} />
-                    </label>
-                  ) : null}
-                  <label className="field">
-                    <span className="label">{t("smartOrders.catalog.editor.showIf")}</span>
-                    <select
-                      className="input"
-                      value={f.showIf?.field || ""}
-                      onChange={(e) => setField(i, { showIf: e.target.value ? { field: e.target.value, in: f.showIf?.in || [true] } : undefined })}
-                    >
-                      <option value="">{t("smartOrders.catalog.editor.showIfAlways")}</option>
-                      {def.fields.slice(0, i).map((p) => (
-                        <option key={p.key} value={p.key}>
-                          {p.key}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  {f.showIf ? (
-                    <label className="field">
-                      <span className="label">{t("smartOrders.catalog.editor.showIfValue")}</span>
-                      <input
-                        className="input"
-                        dir="ltr"
-                        value={(f.showIf.in || []).map(String).join(",")}
-                        onChange={(e) =>
-                          setField(i, {
-                            showIf: {
-                              field: f.showIf.field,
-                              in: e.target.value
-                                .split(",")
-                                .map((x) => x.trim())
-                                .filter(Boolean)
-                                .map((x) => (x === "true" ? true : x === "false" ? false : x)),
-                            },
-                          })
-                        }
-                      />
-                    </label>
-                  ) : null}
-                </div>
-                <LocaleInputs label={t("smartOrders.catalog.editor.fieldLabel")} value={f.label} required onChange={(label) => setField(i, { label })} />
-                <details>
-                  <summary>{`${t("smartOrders.catalog.editor.placeholder")} / ${t("smartOrders.catalog.editor.help")}`}</summary>
-                  <LocaleInputs label={t("smartOrders.catalog.editor.placeholder")} value={f.placeholder} onChange={(placeholder) => setField(i, { placeholder })} />
-                  <LocaleInputs label={t("smartOrders.catalog.editor.help")} value={f.help} multiline onChange={(help) => setField(i, { help })} />
-                </details>
-                {OPTION_TYPES.has(f.type) ? (
-                  <div className="field">
-                    <span className="label">{t("smartOrders.catalog.editor.options")}</span>
-                    {(f.options || []).map((o, j) => (
-                      <div key={j} className="smart-editor-field">
-                        <div className="smart-editor-field__head">
-                          <label className="field" style={{ flex: 1 }}>
-                            <span className="help">{t("smartOrders.catalog.editor.optionValue")}</span>
-                            <input
-                              className="input"
-                              dir="ltr"
-                              value={o.value}
-                              onChange={(e) =>
-                                setField(i, {
-                                  options: f.options.map((x, k) => (k === j ? { ...x, value: e.target.value.trim().toLowerCase() } : x)),
-                                })
-                              }
-                            />
-                          </label>
-                          <button
-                            type="button"
-                            className="btn btn-secondary btn-sm"
-                            onClick={() => setField(i, { options: f.options.filter((_, k) => k !== j) })}
-                          >
-                            {t("smartOrders.catalog.editor.remove")}
-                          </button>
-                        </div>
-                        <LocaleInputs
-                          label={t("smartOrders.catalog.editor.fieldLabel")}
-                          value={o.label}
-                          required
-                          onChange={(label) => setField(i, { options: f.options.map((x, k) => (k === j ? { ...x, label } : x)) })}
-                        />
-                      </div>
-                    ))}
-                    <button
-                      type="button"
-                      className="btn btn-secondary"
-                      onClick={() =>
-                        setField(i, { options: [...(f.options || []), { value: `option_${(f.options || []).length + 1}`, label: {} }] })
-                      }
-                    >
-                      {t("smartOrders.catalog.editor.addOption")}
-                    </button>
-                  </div>
-                ) : null}
-              </div>
+              <FieldEditor
+                key={i}
+                f={f}
+                path={`fields[${i}]`}
+                siblings={def.fields.slice(0, i)}
+                onChange={(patch) => setField(i, patch)}
+                onRemove={() => setDef((d) => ({ ...d, fields: d.fields.filter((_, j) => j !== i) }))}
+                onMove={(dir) => moveField(i, dir)}
+                errAt={errAt}
+              />
             ))}
             <button
               type="button"

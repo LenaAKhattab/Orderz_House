@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import ServiceFormSnapshotView from "../../components/orders/smart/ServiceFormSnapshotView";
+import ServiceItemsSnapshotView from "../../components/orders/smart/ServiceItemsSnapshotView";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useToast } from "../../components/ui/toastContext";
 import { getMyAssignedOrderByIdRequest, submitFreelancerOrderDeliveryRequest } from "../../services/api";
@@ -288,6 +289,7 @@ export default function FreelancerMyOrderDetailsPage() {
               </div>
               <OrderDescriptionCard label={t("orders.details.skillsLabel")} text={skillsLine} />
               <ServiceFormSnapshotView serviceForm={order?.serviceForm} />
+              <ServiceItemsSnapshotView items={order?.serviceItems} />
             </div>
           </div>
 

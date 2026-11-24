@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import ServiceFormSnapshotView from "../../components/orders/smart/ServiceFormSnapshotView";
+import ServiceItemsSnapshotView from "../../components/orders/smart/ServiceItemsSnapshotView";
 import ManagedOrderPrice, { ManagedOrderNotice } from "../../components/orders/smart/ManagedOrderPrice";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useToast } from "../../components/ui/toastContext";
@@ -427,6 +428,7 @@ export default function FreelancerOrderDetailsPage() {
                   </div>
                   <OrderDescriptionCard label={t("orders.details.skillsLabel")} text={skillsLine} icon="skills" />
                   <ServiceFormSnapshotView serviceForm={order.serviceForm} />
+                  <ServiceItemsSnapshotView items={order.serviceItems} />
                   {renderFooter ? <div className="od-pool-primary-actions">{poolFooterButtons}</div> : null}
                   {planLocked && isFreelancer ? (
                     <PlanUpgradeRequiredCta

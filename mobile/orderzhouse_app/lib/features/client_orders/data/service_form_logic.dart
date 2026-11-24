@@ -51,15 +51,63 @@ final _int = RegExp(r'^-?\d{1,10}$');
 final _dec2 = RegExp(r'^-?\d{1,10}(\.\d{1,2})?$');
 final _date = RegExp(r'^\d{4}-\d{2}-\d{2}$');
 
+/// S7: anchored format check (pattern already vetted by the server; invalid → treated as pass).
+bool _matchesFormat(String pattern, String value) {
+  try {
+    return RegExp('^(?:$pattern)\$', unicode: true).hasMatch(value);
+  } catch (_) {
+    return true;
+  }
+}
+
+/// Validates a list of fields over [values]; error keys are prefixed (`group.sub`, `rows[0].sub`).
+Map<String, String> _validateFields(List<CatalogField> fields, Map<String, Object?> values, String prefix) {
+  final errors = <String, String>{};
+  String k(String key) => prefix.isEmpty ? key : '$prefix.$key';
+  for (final f in fields) {
+    if (!fieldVisible(f, values)) continue;
+    final v = values[f.key];
+    if (f.type == 'conditional_group') {
+      final group = v is Map ? Map<String, Object?>.from(v) : <String, Object?>{};
+      errors.addAll(_validateFields(f.subFields, group, k(f.key)));
+      continue;
+    }
+    if (f.type == 'repeater') {
+      final rows = v is List ? v.whereType<Map>().map((r) => Map<String, Object?>.from(r)).toList() : <Map<String, Object?>>[];
+      if (rows.isEmpty && (f.required || (f.minItems ?? 0) > 0)) {
+        errors[k(f.key)] = f.required && (f.minItems ?? 0) == 0 ? 'required' : 'below_min';
+      } else if (f.minItems != null && rows.length < f.minItems!) {
+        errors[k(f.key)] = 'below_min';
+      } else if (f.maxItems != null && rows.length > f.maxItems!) {
+        errors[k(f.key)] = 'above_max';
+      }
+      for (var i = 0; i < rows.length; i++) {
+        errors.addAll(_validateFields(f.subFields, rows[i], '${k(f.key)}[$i]'));
+      }
+      continue;
+    }
+    final single = _validateScalar(f, v);
+    if (single != null) errors[k(f.key)] = single;
+  }
+  return errors;
+}
+
 /// Returns field key → reason code (same codes as the server).
 Map<String, String> validateServiceForm(CatalogService service, ServiceFormDraft draft) {
+  final errors = _validateFields(service.fields, draft.values, '');
+  _validateQuantity(service, draft, errors);
+  return errors;
+}
+
+String? _validateScalar(CatalogField f, Object? v) {
   final errors = <String, String>{};
-  for (final f in service.fields) {
-    if (!fieldVisible(f, draft.values)) continue;
-    final v = draft.values[f.key];
+  {
     if (_isEmpty(v) || (f.type == 'checkbox' && f.required && v != true)) {
       if (f.required) errors[f.key] = 'required';
-      continue;
+      return errors[f.key];
+    }
+    if (f.validationRegex != null && (f.type == 'text' || f.type == 'textarea') && v is String && v.trim().isNotEmpty) {
+      if (!_matchesFormat(f.validationRegex!, v.trim())) return 'invalid_format';
     }
     switch (f.type) {
       case 'number':
@@ -101,6 +149,10 @@ Map<String, String> validateServiceForm(CatalogService service, ServiceFormDraft
         break;
     }
   }
+  return errors[f.key];
+}
+
+void _validateQuantity(CatalogService service, ServiceFormDraft draft, Map<String, String> errors) {
   final q = service.quantity;
   if (draft.quantityUnspecified) {
     if (!q.allowUnspecified) errors['quantity'] = 'unspecified_not_allowed';
@@ -116,7 +168,6 @@ Map<String, String> validateServiceForm(CatalogService service, ServiceFormDraft
   } else if (q.required) {
     errors['quantity'] = 'required';
   }
-  return errors;
 }
 
 /// `serviceForm` body for POST /client/orders (only visible, non-empty values; exact version).

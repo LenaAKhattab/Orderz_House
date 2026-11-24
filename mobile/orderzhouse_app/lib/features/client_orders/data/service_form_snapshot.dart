@@ -79,6 +79,14 @@ class ServiceFormSnapshot {
           text = v == true ? (isEn ? 'Yes' : 'نعم') : (isEn ? 'No' : 'لا');
         case 'file':
           text = (v is List ? v : [v]).map((x) => x is Map ? (x['name']?.toString() ?? '') : x.toString()).where((s) => s.isNotEmpty).join('، ');
+        case 'repeater':
+          text = (v is List ? v : const [])
+              .whereType<Map>()
+              .map((row) => _subText(f.subFields, Map<String, dynamic>.from(row), locale))
+              .where((t) => t.isNotEmpty)
+              .join(' | ');
+        case 'conditional_group':
+          text = v is Map ? _subText(f.subFields, Map<String, dynamic>.from(v), locale) : '';
         case 'datetime':
           final d = DateTime.tryParse(v.toString())?.toLocal();
           String two(int n) => n.toString().padLeft(2, '0');
@@ -91,5 +99,28 @@ class ServiceFormSnapshot {
       rows.add(MapEntry(label.isEmpty ? f.key : label, text));
     }
     return rows;
+  }
+
+  static String _subText(List<CatalogField> subs, Map<String, dynamic> row, String locale) {
+    final parts = <String>[];
+    for (final f in subs) {
+      final v = row[f.key];
+      if (v == null || (v is String && v.isEmpty)) continue;
+      String val;
+      if (f.options.isNotEmpty) {
+        final vs = v is List ? v : [v];
+        val = vs.map((x) {
+          final o = f.options.where((o) => o.value == x.toString()).firstOrNull;
+          return o == null ? x.toString() : pickLocalized(o.label, locale);
+        }).join('، ');
+      } else if (v is bool) {
+        val = v ? (locale == 'en' ? 'Yes' : 'نعم') : (locale == 'en' ? 'No' : 'لا');
+      } else {
+        val = v.toString();
+      }
+      final label = pickLocalized(f.label, locale);
+      parts.add('${label.isEmpty ? f.key : label}: $val');
+    }
+    return parts.join('، ');
   }
 }

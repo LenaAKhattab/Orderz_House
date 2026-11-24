@@ -17,6 +17,7 @@ class ServiceDynamicFields extends StatelessWidget {
     required this.onValue,
     required this.onQuantity,
     this.pickFiles,
+    this.showQuantity = true,
   });
 
   final CatalogService service;
@@ -27,6 +28,23 @@ class ServiceDynamicFields extends StatelessWidget {
 
   /// Injectable for tests; defaults to the platform file picker with the order attachment rules.
   final Future<List<SelectedOrderAttachment>> Function({required bool multiple})? pickFiles;
+
+  /// False for nested sub-field editors (repeater rows / conditional groups).
+  final bool showQuantity;
+
+  static Map<String, String> _subErrors(Map<String, String> errors, String prefix) => {
+        for (final e in errors.entries)
+          if (e.key.startsWith(prefix)) e.key.substring(prefix.length): e.value,
+      };
+
+  CatalogService _nested(String code, List<CatalogField> fields) => CatalogService(
+        serviceCode: code,
+        categoryId: service.categoryId,
+        version: service.version,
+        name: const {},
+        quantity: service.quantity,
+        fields: fields,
+      );
 
   static Future<List<SelectedOrderAttachment>> _platformPick({required bool multiple}) async {
     final result = await FilePicker.platform.pickFiles(
@@ -56,10 +74,19 @@ class ServiceDynamicFields extends StatelessWidget {
     final isEn = locale == 'en';
     final q = service.quantity;
     final unit = unitLabel(q.unit, locale);
-    String? err(String key) => errors[key] == null ? null : serviceFormErrorText(errors[key]!, locale);
+    String? err(String key) {
+      final code = errors[key];
+      if (code == null) return null;
+      if (code == 'invalid_format') {
+        final f = service.fields.where((x) => x.key == key).firstOrNull;
+        final custom = f == null ? '' : pickLocalized(f.validationMessage, locale);
+        if (custom.isNotEmpty) return custom;
+      }
+      return serviceFormErrorText(code, locale);
+    }
 
     final children = <Widget>[
-      TextFormField(
+      if (showQuantity) TextFormField(
         key: ValueKey('${service.serviceCode}-v${service.version}-quantity'),
         initialValue: draft.quantity,
         enabled: !draft.quantityUnspecified,
@@ -72,7 +99,7 @@ class ServiceDynamicFields extends StatelessWidget {
         ),
         onChanged: (v) => onQuantity(quantity: v),
       ),
-      if (q.allowUnspecified)
+      if (showQuantity && q.allowUnspecified)
         CheckboxListTile(
           contentPadding: EdgeInsets.zero,
           value: draft.quantityUnspecified,
@@ -156,6 +183,78 @@ class ServiceDynamicFields extends StatelessWidget {
             child: InputDecorator(
               decoration: InputDecoration(labelText: label, errorText: err(f.key), suffixIcon: const Icon(Icons.event)),
               child: Text(value?.toString() ?? ''),
+            ),
+          );
+        case 'conditional_group':
+          final group = value is Map ? Map<String, Object?>.from(value) : <String, Object?>{};
+          w = InputDecorator(
+            key: key,
+            decoration: InputDecoration(labelText: label, helperText: help.isEmpty ? null : help, errorText: err(f.key)),
+            child: ServiceDynamicFields(
+              service: _nested('${service.serviceCode}-${f.key}', f.subFields),
+              draft: ServiceFormDraft(serviceCode: service.serviceCode, version: service.version, values: group),
+              errors: _subErrors(errors, '${f.key}.'),
+              showQuantity: false,
+              onValue: (k, v) => onValue(f.key, {...group, k: v}),
+              onQuantity: ({quantity, unspecified}) {},
+            ),
+          );
+        case 'repeater':
+          final rows = value is List ? value.whereType<Map>().map((r) => Map<String, Object?>.from(r)).toList() : <Map<String, Object?>>[];
+          final maxRows = f.maxItems ?? 20;
+          w = InputDecorator(
+            key: key,
+            decoration: InputDecoration(labelText: label, helperText: help.isEmpty ? null : help, errorText: err(f.key)),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (var i = 0; i < rows.length; i++)
+                  Card(
+                    key: ValueKey('${f.key}-row-$i'),
+                    margin: const EdgeInsets.only(bottom: 8),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(child: Text('${isEn ? 'Item' : 'بند'} ${i + 1}', style: const TextStyle(fontWeight: FontWeight.w700))),
+                              IconButton(
+                                key: ValueKey('${f.key}-remove-row-$i'),
+                                tooltip: isEn ? 'Remove' : 'إزالة',
+                                icon: const Icon(Icons.delete_outline),
+                                onPressed: () => onValue(f.key, [...rows]..removeAt(i)),
+                              ),
+                            ],
+                          ),
+                          ServiceDynamicFields(
+                            service: _nested('${service.serviceCode}-${f.key}-$i', f.subFields),
+                            draft: ServiceFormDraft(serviceCode: service.serviceCode, version: service.version, values: rows[i]),
+                            errors: _subErrors(errors, '${f.key}[$i].'),
+                            showQuantity: false,
+                            onValue: (k, v) {
+                              final next = [...rows];
+                              next[i] = {...rows[i], k: v};
+                              onValue(f.key, next);
+                            },
+                            onQuantity: ({quantity, unspecified}) {},
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                if (rows.length < maxRows)
+                  Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: TextButton.icon(
+                      key: ValueKey('${f.key}-add-row'),
+                      icon: const Icon(Icons.add),
+                      label: Text(isEn ? 'Add item' : 'إضافة بند'),
+                      onPressed: () => onValue(f.key, [...rows, <String, Object?>{}]),
+                    ),
+                  ),
+              ],
             ),
           );
         case 'datetime':

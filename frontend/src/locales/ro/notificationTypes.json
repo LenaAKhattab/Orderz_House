@@ -315,6 +315,10 @@
       "title": "Ofertă nouă de atribuire",
       "message": "Aveți o ofertă nouă de atribuire care așteaptă răspunsul dvs."
     },
+    "finance_reward_approved": {
+      "title": "Recompensa ta a fost aprobată",
+      "message": "O perioadă lunară de recompense pentru angajați a fost aprobată. Vezi suma ta în Recompensele mele."
+    },
     "order_assignment_accepted": {
       "title": "Atribuire acceptată",
       "message": "Freelancerul a acceptat comanda."

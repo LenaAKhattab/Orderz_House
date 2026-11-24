@@ -330,12 +330,36 @@ async function issueQuote({ orderId, input, actorUserId, actorRole }) {
       [order.id],
     );
     const s = snapRows[0];
+    // S5: VAT is policy-gated (G4) — a taxable quote is refused while the VAT policy is disabled.
+    if (q.taxTreatment === "taxable") {
+      const policies = await require("./finance/orderFinanceService").getPolicies(client);
+      if (!policies.vat?.active) {
+        throw cErr(409, "FINANCE_POLICY_DISABLED", "ضريبة القيمة المضافة غير مفعّلة. لا يمكن إصدار عرض خاضع للضريبة.");
+      }
+    }
+    // S5: additional service items (multi-service order) are frozen into the quote snapshot too.
+    const { rows: itemRows } = await client.query(
+      `SELECT item_no, service_code, service_version, definition->'name' AS name, quantity::text AS quantity, quantity_unit,
+              quantity_unspecified, price_amount::text AS price_amount, price_currency
+         FROM order_service_items WHERE order_id = $1 AND removed_at IS NULL ORDER BY item_no`,
+      [order.id],
+    );
     const snapshot = {
       orderCode: order.order_code,
       title: order.title,
       service: s
         ? { code: s.service_code, version: s.service_version, name: s.name || {}, quantity: s.quantity, unit: s.quantity_unit, unspecified: s.quantity_unspecified }
         : null,
+      items: itemRows.map((r) => ({
+        itemNo: r.item_no,
+        code: r.service_code,
+        version: r.service_version,
+        name: r.name || {},
+        quantity: r.quantity,
+        unit: r.quantity_unit,
+        unspecified: r.quantity_unspecified,
+        price: r.price_amount ? { amount: r.price_amount, currency: r.price_currency } : null,
+      })),
     };
     const isGuest = order.customer_mode === "guest" && !order.customer_user_id;
     const token = isGuest ? crypto.randomBytes(32).toString("base64url") : null;
@@ -523,6 +547,8 @@ function mapCustomerQuote(q) {
     acceptedAt: q.accepted_at || null,
     paidAt: q.paid_at || null,
     service: q.snapshot?.service || null,
+    // S5: additional services frozen into this quote (customer price lines only).
+    items: Array.isArray(q.snapshot?.items) ? q.snapshot.items : [],
     orderCode: q.snapshot?.orderCode || null,
     canAccept: status === "issued",
     canPay: (status === "issued" || status === "accepted") && q.payment_status === "unpaid",
@@ -766,7 +792,17 @@ async function createQuoteCheckout({ orderId = null, clientUserId = null, guestT
  * Exactly one financial outcome per quote; a payment for a no-longer-live quote is recorded as
  * `paid_inactive` (no automatic refund, never applied to the newer version).
  */
-async function applyQuoteCheckoutCompleted(session, dbPool = pool) {
+async function applyQuoteCheckoutCompleted(session, dbPool = pool, deps = {}) {
+  const result = await applyQuoteCheckoutCompletedTx(session, dbPool);
+  if (result.status === "applied" && result.outcome === "paid") {
+    // S5: actual processor fee from the Stripe balance transaction (best-effort, idempotent, after COMMIT).
+    const stripe = deps.stripe !== undefined ? deps.stripe : getStripe();
+    await require("./finance/quotePaymentFinance").recordQuotePaymentFee(session, { stripe, db: dbPool });
+  }
+  return result;
+}
+
+async function applyQuoteCheckoutCompletedTx(session, dbPool) {
   const meta = session?.metadata || {};
   const quoteId = Number(meta.quoteId);
   if (!Number.isInteger(quoteId) || quoteId < 1) return { status: "ignored", reason: "quote_missing_id" };
@@ -792,6 +828,21 @@ async function applyQuoteCheckoutCompleted(session, dbPool = pool) {
       [String(session.id), session.payment_intent ? String(session.payment_intent) : null, q.id],
     );
     if (q.payment_status !== "unpaid") {
+      if (pay.length > 0) {
+        // S5: a DIFFERENT checkout session was paid for an already-settled quote → money collected twice.
+        await require("./finance/orderFinanceService").recordPaymentException(client, {
+          orderId: q.order_id,
+          quoteId: q.id,
+          paymentId: pay[0].id,
+          kind: "duplicate_payment",
+          amountMilli: require("./finance/money").stripeMinorToMilli(Number(session.amount_total) || 0, session.currency || q.currency),
+          currency: String(session.currency || q.currency).toUpperCase(),
+          detail: { sessionId: String(session.id), quoteVersion: q.version, quotePaymentStatus: q.payment_status },
+          sourceRef: String(session.id),
+        });
+        await client.query("COMMIT");
+        return { status: "applied", outcome: "duplicate_payment_recorded", duplicate: true };
+      }
       await client.query("COMMIT");
       return { status: "already_applied", duplicate: true };
     }
@@ -803,6 +854,17 @@ async function applyQuoteCheckoutCompleted(session, dbPool = pool) {
                 stripe_payment_intent_id = $3, updated_at = NOW() WHERE id = $1`,
         [q.id, Number(session.amount_total) || null, session.payment_intent ? String(session.payment_intent) : null],
       );
+      // S5: Admin exception queue (never auto-refunded, never applied to the newer version).
+      await require("./finance/orderFinanceService").recordPaymentException(client, {
+        orderId: q.order_id,
+        quoteId: q.id,
+        paymentId: pay[0]?.id ?? null,
+        kind: !amountOk ? "amount_mismatch" : q.status === "superseded" ? "superseded" : "paid_inactive",
+        amountMilli: require("./finance/money").stripeMinorToMilli(Number(session.amount_total) || 0, session.currency || q.currency),
+        currency: String(session.currency || q.currency).toUpperCase(),
+        detail: { sessionId: String(session.id), quoteVersion: q.version, quoteStatus: q.status, expectedMinor: expectedMinor, amountOk },
+        sourceRef: String(session.id),
+      });
       await event(client, {
         orderId: q.order_id,
         action: "payment_on_inactive_quote",

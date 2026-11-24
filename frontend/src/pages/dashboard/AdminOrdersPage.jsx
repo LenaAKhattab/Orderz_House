@@ -36,6 +36,9 @@ import "../../styles/smartOrders.css";
 import CustomerModeBadge from "../../components/orders/smart/CustomerModeBadge";
 import AdminOrderCustomerPanel from "../../components/orders/smart/AdminOrderCustomerPanel";
 import AdminOrderCommercialPanel from "../../components/orders/smart/AdminOrderCommercialPanel";
+import AdminOrderFinancePanel from "../../components/orders/smart/AdminOrderFinancePanel";
+import ServiceItemsSnapshotView from "../../components/orders/smart/ServiceItemsSnapshotView";
+import { ADMIN_PAGE_PERMISSIONS, userHasPermission } from "../../constants/dashboardPermissions";
 import { adminCustomerOrdersSummaryRequest } from "../../services/api";
 import ServiceFormSnapshotView from "../../components/orders/smart/ServiceFormSnapshotView";
 import { pickLocalized } from "../../components/orders/smart/catalogForm";
@@ -83,6 +86,9 @@ export default function AdminOrdersPage() {
   const [customerSummary, setCustomerSummary] = useState(null);
   const [serviceModalOrder, setServiceModalOrder] = useState(null);
   const [commercialOrderId, setCommercialOrderId] = useState(null);
+  // S5: per-order finance panel (finance_view; Super Admin always).
+  const [financeOrderId, setFinanceOrderId] = useState(null);
+  const canViewFinance = userHasPermission(user, ADMIN_PAGE_PERMISSIONS.financeView);
   const [bidsModalOrderId, setBidsModalOrderId] = useState(null);
   const [bidsByOrderId, setBidsByOrderId] = useState({});
   const [bidsBusyByOrderId, setBidsBusyByOrderId] = useState({});
@@ -302,6 +308,18 @@ export default function AdminOrdersPage() {
       </>
     ) : null;
 
+  const financeControls = (o) =>
+    canViewFinance ? (
+      <button
+        type="button"
+        className="btn btn-secondary oh-admin-orders-table__btn"
+        data-testid={`admin-order-finance-${o.id}`}
+        onClick={() => setFinanceOrderId(String(o.id))}
+      >
+        {t("smartOrders.finance.panel.open")}
+      </button>
+    ) : null;
+
   const attachmentsButton = (o) =>
     briefFilesOf(o).length ? (
       <button
@@ -445,6 +463,7 @@ export default function AdminOrdersPage() {
             onClose={() => setServiceModalOrder(null)}
           >
             <ServiceFormSnapshotView serviceForm={serviceModalOrder?.serviceForm} />
+            <ServiceItemsSnapshotView items={serviceModalOrder?.serviceItems} />
           </DashboardModal>
           <AdminOrderCommercialPanel
             orderId={commercialOrderId}
@@ -452,6 +471,14 @@ export default function AdminOrdersPage() {
             onClose={() => setCommercialOrderId(null)}
             onChanged={() => void reloadOrders()}
           />
+          {canViewFinance ? (
+            <AdminOrderFinancePanel
+              orderId={financeOrderId}
+              open={Boolean(financeOrderId)}
+              onClose={() => setFinanceOrderId(null)}
+              onChanged={() => void reloadOrders()}
+            />
+          ) : null}
           <AdminOrderCustomerPanel
             orderId={customerPanelOrderId}
             open={Boolean(customerPanelOrderId)}
@@ -526,6 +553,7 @@ export default function AdminOrdersPage() {
                     ) : null}
                     {serviceControls(o)}
                     {customerControls(o)}
+                    {financeControls(o)}
                     {attachmentsButton(o)}
                     {shouldShowApplicants ? (
                       <span className="help">{t("ordersAdmin.listPage.card.claimsNotForFixed")}</span>
@@ -648,6 +676,7 @@ export default function AdminOrdersPage() {
                         {deliveryButtons(o)}
                         {serviceControls(o)}
                         {customerControls(o)}
+                        {financeControls(o)}
                         {attachmentsButton(o)}
                         {tableShowBids ? (
                           <button

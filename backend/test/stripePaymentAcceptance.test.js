@@ -178,8 +178,13 @@ describe("JOD minor units (three-decimal currency)", () => {
   });
 
   it("every Checkout creation uses the shared helper and Stripe's canonical Checkout behaviour", () => {
+    // Recursive: sub-folders (e.g. services/finance) are scanned too.
+    const walk = (d) =>
+      fs.readdirSync(d, { withFileTypes: true }).flatMap((e) =>
+        e.isDirectory() ? walk(path.join(d, e.name)).map((x) => path.join(e.name, x)) : e.name.endsWith(".js") ? [e.name] : [],
+      );
     const dir = path.join(__dirname, "../src/services");
-    for (const f of fs.readdirSync(dir)) {
+    for (const f of walk(dir)) {
       const src = fs.readFileSync(path.join(dir, f), "utf8");
       if (!src.includes("checkout.sessions.create(")) continue;
       assert.ok(/amountMajorToStripeMinor|activationFeeMinorUnits/.test(src), `${f} uses the minor-unit helper`);

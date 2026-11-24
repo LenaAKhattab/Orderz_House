@@ -98,6 +98,18 @@ export const ADMIN_NAV_ITEM_DEFS = {
     matchPrefix: "/dashboard/admin/service-catalog",
     permission: ADMIN_PAGE_PERMISSIONS.serviceCatalog,
   },
+  /**
+   * S5/S6 finance. No page permission: every admin sees "My rewards"; report/policies/FX/exceptions need
+   * finance_view and the reward pool needs reward_manage (tabs are filtered on the page, backend enforces).
+   */
+  finance: {
+    key: "finance",
+    to: "/dashboard/admin/finance",
+    labelKey: "dashboard.nav.superAdmin.finance",
+    icon: "finance",
+    matchPrefix: "/dashboard/admin/finance",
+    permission: null,
+  },
   createOrder: {
     key: "createOrder",
     to: "/dashboard/admin/orders/create",
@@ -165,7 +177,7 @@ export const ADMIN_NAV_SECTION_DEFS = [
   {
     id: "financeAdmin",
     labelKey: "dashboard.nav.sections.financeAdmin",
-    itemKeys: ["financialCenter", "financialClaims", "fazatSettlements"],
+    itemKeys: ["finance", "financialCenter", "financialClaims", "fazatSettlements"],
   },
   {
     id: "contentTraining",
