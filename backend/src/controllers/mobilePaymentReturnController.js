@@ -23,6 +23,9 @@ function mobilePaymentReturnPage(req, res) {
   const deepPath = status === "success" ? "success" : "cancel";
   const params = new URLSearchParams();
   params.set("orderId", orderId);
+  if (String(req.query.kind || "").trim().toLowerCase() === "quote") {
+    params.set("kind", "quote");
+  }
   if (sessionId) {
     params.set("session_id", sessionId);
   }

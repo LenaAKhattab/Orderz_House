@@ -185,6 +185,9 @@ class _BottomActions extends ConsumerWidget {
                           final ok = await notifier.submit();
                           if (ok && context.mounted) {
                             ref.invalidate(clientOrdersControllerProvider);
+                            // Reload now: a mounted "My orders" screen would otherwise keep showing the reset (empty) list.
+                            // ignore: unawaited_futures
+                            ref.read(clientOrdersControllerProvider.notifier).load(refresh: true);
                           }
                         } else {
                           notifier.nextStep();

@@ -4,11 +4,16 @@ class PaymentReturnParams {
     required this.orderId,
     required this.isSuccess,
     this.sessionId,
+    this.isQuote = false,
   });
 
   final String orderId;
   final String? sessionId;
   final bool isSuccess;
+
+  /// Smart Orders S4: return from a managed-order quote checkout (`kind=quote`). The app then waits for
+  /// the server to mark the quote paid (webhook) instead of confirming a fixed-order payment.
+  final bool isQuote;
 
   bool get isCancel => !isSuccess;
 
@@ -29,6 +34,7 @@ class PaymentReturnParams {
       orderId: orderId,
       isSuccess: isSuccess,
       sessionId: _sessionIdFromQuery(uri.queryParameters),
+      isQuote: _isQuote(uri.queryParameters),
     );
   }
 
@@ -37,11 +43,13 @@ class PaymentReturnParams {
     final orderId = query['orderId']?.trim();
     if (orderId == null || orderId.isEmpty) return null;
     final sessionId = _sessionIdFromQuery(query);
+    final isQuote = _isQuote(query);
     if (status == 'success') {
       return PaymentReturnParams(
         orderId: orderId,
         isSuccess: true,
         sessionId: sessionId,
+        isQuote: isQuote,
       );
     }
     if (status == 'cancel') {
@@ -49,10 +57,13 @@ class PaymentReturnParams {
         orderId: orderId,
         isSuccess: false,
         sessionId: sessionId,
+        isQuote: isQuote,
       );
     }
     return null;
   }
+
+  static bool _isQuote(Map<String, String> query) => query['kind']?.trim().toLowerCase() == 'quote';
 
   static String? _sessionIdFromQuery(Map<String, String> query) {
     final fromSnake = query['session_id']?.trim();
@@ -65,6 +76,7 @@ class PaymentReturnParams {
   String toRouteLocation() {
     final status = isSuccess ? 'success' : 'cancel';
     final buffer = StringBuffer('/payment/return?status=$status&orderId=${Uri.encodeComponent(orderId)}');
+    if (isQuote) buffer.write('&kind=quote');
     final sid = sessionId;
     if (sid != null && sid.isNotEmpty) {
       buffer.write('&session_id=${Uri.encodeComponent(sid)}');

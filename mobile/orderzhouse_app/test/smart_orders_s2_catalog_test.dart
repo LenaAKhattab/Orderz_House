@@ -75,9 +75,9 @@ Map<String, dynamic> catalogJson({int pptVersion = 1, String catalogVersion = 'a
             'version': 1,
             'name': _l('Logo'),
             'quantity': {'unit': 'concepts', 'required': true},
-            // A file field is not renderable on mobile → the service must never be offered.
+            // A field type this app version cannot render → the service must never be offered.
             'fields': [
-              {'key': 'visual_references', 'type': 'file', 'label': _l('Refs')},
+              {'key': 'visual_references', 'type': 'signature', 'label': _l('Refs')},
             ],
           },
         ],
@@ -125,9 +125,10 @@ void main() {
       expect(catalog.services.firstWhere((s) => s.serviceCode == 'excel_data').quantity.unit, 'worksheets');
     });
 
-    test('mobile allowlist never includes file / datetime', () {
-      expect(kMobileSupportedFieldTypes.contains('file'), isFalse);
-      expect(kMobileSupportedFieldTypes.contains('datetime'), isFalse);
+    test('S4: mobile allowlist includes file / datetime; unknown future types stay excluded', () {
+      expect(kMobileSupportedFieldTypes.contains('file'), isTrue);
+      expect(kMobileSupportedFieldTypes.contains('datetime'), isTrue);
+      expect(kMobileSupportedFieldTypes.contains('signature'), isFalse);
     });
   });
 

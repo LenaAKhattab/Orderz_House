@@ -30,6 +30,9 @@ String clientOrderStatusLabel(String? status) {
   switch (status) {
     case 'pending_payment':
       return 'بانتظار الدفع';
+    // Smart Orders: managed order still being prepared / assigned by the team.
+    case 'draft':
+      return 'قيد الإعداد';
     case 'pending_admin_review':
       return 'بانتظار مراجعة الإدارة';
     case 'awaiting_payment_after_bid_selection':
@@ -88,6 +91,8 @@ String paymentStatusLabel(String? status) {
       return 'فشل الدفع';
     case 'skipped_by_admin':
       return 'تم التخطي (إداري)';
+    case 'not_required':
+      return 'غير مطلوب';
     default:
       return status ?? '—';
   }

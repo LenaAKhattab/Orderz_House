@@ -256,7 +256,9 @@ class CreateOrderController extends AutoDisposeNotifier<CreateOrderState> {
       return false;
     }
 
-    final attachmentValidation = validateOrderAttachments(state.attachments.map((f) => f.draft).toList());
+    // Files picked inside dynamic `file` fields travel with the general attachments (same limits).
+    final allAttachments = [...state.attachments, ...serviceFormFiles(state.selectedService, state.serviceDraft)];
+    final attachmentValidation = validateOrderAttachments(allAttachments.map((f) => f.draft).toList());
     if (!attachmentValidation.isValid) {
       state = state.copyWith(
         attachmentsError: attachmentValidation.message,
@@ -269,21 +271,27 @@ class CreateOrderController extends AutoDisposeNotifier<CreateOrderState> {
     try {
       final result = await ref.read(createOrderRepositoryProvider).createOrder(
             state.draft,
-            attachments: state.attachments,
+            attachments: allAttachments,
             serviceForm: buildServiceFormPayload(state.selectedService, state.serviceDraft),
           );
       state = state.copyWith(isSubmitting: false, result: result);
       return true;
     } catch (e) {
       if (isStaleServiceFormError(e)) {
-        // The catalog changed on the server: drop the cache, reload, and send the user back to the service.
+        // The catalog changed on the server: drop the cache, reload, keep every compatible value,
+        // and send the user back to review the refreshed form (the server validates the new version).
+        final oldService = state.selectedService;
+        final oldDraft = state.serviceDraft;
         ref.read(serviceCatalogRepositoryProvider).invalidate();
         await loadCatalog();
+        final newService = state.catalog.services.where((s) => s.serviceCode == oldDraft.serviceCode).firstOrNull;
+        final migration = migrateServiceDraft(oldService: oldService, newService: newService, draft: oldDraft);
         state = state.copyWith(
           isSubmitting: false,
           step: 1,
-          serviceDraft: const ServiceFormDraft(),
-          submitError: 'تم تحديث نموذج الخدمة. يرجى اختيار الخدمة وتعبئة الحقول من جديد.',
+          serviceDraft: migration.draft,
+          serviceErrors: const {},
+          submitError: staleServiceFormMessage(migration),
         );
         return false;
       }
@@ -300,6 +308,17 @@ class CreateOrderController extends AutoDisposeNotifier<CreateOrderState> {
     loadCategories();
     loadCatalog();
   }
+}
+
+/// User-facing explanation after a stale-form refresh (AR app copy).
+String staleServiceFormMessage(ServiceDraftMigration m) {
+  if (!m.serviceAvailable) {
+    return 'لم تعد هذه الخدمة متاحة. يرجى اختيار خدمة أخرى أو متابعة طلب عام.';
+  }
+  if (m.dropped.isEmpty) {
+    return 'تم تحديث نموذج الخدمة واحتفظنا بكل القيم التي أدخلتها. يرجى المراجعة ثم الإرسال.';
+  }
+  return 'تم تحديث نموذج الخدمة. احتفظنا بالقيم المتوافقة، ويرجى مراجعة الحقول التي تغيّرت وتعبئتها من جديد.';
 }
 
 final createOrderControllerProvider =

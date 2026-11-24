@@ -170,3 +170,30 @@ describe("freelancer subscription checkout URLs unchanged", () => {
     assert.ok(src.includes("/dashboard/freelancer/plans?freelancer_activation_fee_paid=1"));
   });
 });
+
+describe("Smart Orders S4 — mobile quote checkout return", () => {
+  it("quote kind is carried on the HTTPS bridge URLs; default fixed-order URLs unchanged", () => {
+    process.env.BACKEND_PUBLIC_URL = "https://orderzhouse.com";
+    const q = buildClientOrderCheckoutReturnUrls({ isMobile: true, orderId: 9, kind: "quote" });
+    assert.equal(q.successUrl, `${require("../src/config/backendPublicUrl").getBackendPublicUrl()}/mobile/payment-return?status=success&orderId=9&kind=quote&session_id={CHECKOUT_SESSION_ID}`);
+    assert.ok(q.cancelUrl.includes("status=cancel&orderId=9&kind=quote"));
+    const fixed = buildClientOrderCheckoutReturnUrls({ isMobile: true, orderId: 9 });
+    assert.ok(!fixed.successUrl.includes("kind="));
+    const bogus = buildClientOrderCheckoutReturnUrls({ isMobile: true, orderId: 9, kind: "evil" });
+    assert.ok(!bogus.successUrl.includes("kind="));
+    delete process.env.BACKEND_PUBLIC_URL;
+  });
+
+  it("bridge forwards only kind=quote into the deep link", () => {
+    const { mobilePaymentReturnPage } = require("../src/controllers/mobilePaymentReturnController");
+    const run = (query) => {
+      let body = "";
+      const res = { setHeader() {}, status() { return this; }, send(b) { body = b; return this; } };
+      mobilePaymentReturnPage({ query }, res);
+      return body;
+    };
+    assert.ok(run({ status: "success", orderId: "5", kind: "quote", session_id: "cs_test_1" }).includes("orderzhouse://payment/success?orderId=5&amp;kind=quote&amp;session_id=cs_test_1"));
+    assert.ok(!run({ status: "cancel", orderId: "5", kind: "<x>" }).includes("kind="));
+    assert.ok(!run({ status: "success", orderId: "5" }).includes("kind="));
+  });
+});

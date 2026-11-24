@@ -21,6 +21,7 @@ import 'client_order_review_sheet.dart';
 import 'client_orders_controller.dart';
 import 'order_payment_actions.dart';
 import 'request_delivery_revision_sheet.dart';
+import 'service_form_snapshot_view.dart';
 
 class ClientOrderDetailsScreen extends ConsumerWidget {
   const ClientOrderDetailsScreen({super.key, required this.orderId});
@@ -65,14 +66,17 @@ class _ClientOrderDetailBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isClient = auth.user?.usesClientExperience == true;
-    final showBids = isClient &&
+    // Smart Orders: Admin-managed orders are read-only for the customer (no bids, delivery approval or
+    // freelancer review — the team handles them); final delivery files appear once the order is completed.
+    final managed = order.managedByAdmin;
+    final showBids = isClient && !managed &&
         clientOrderShowsBidsSection(
           projectType: order.projectType,
           orderStatus: order.orderStatus,
           bidsCount: order.bidsCount,
         );
-    final showDeliveryReview = isClient && clientShowsDeliveryReviewSection(order);
-    final showFreelancerReview = clientCanShowFreelancerReviewSection(
+    final showDeliveryReview = isClient && !managed && clientShowsDeliveryReviewSection(order);
+    final showFreelancerReview = !managed && clientCanShowFreelancerReviewSection(
       isClient: isClient,
       orderStatus: order.orderStatus,
       hasAssignedFreelancer: order.hasAssignedFreelancer,
@@ -135,7 +139,8 @@ class _ClientOrderDetailBody extends ConsumerWidget {
                   value: formatOrderDateLabel(order.dueAt),
                   icon: Icons.event_outlined,
                 ),
-              if (order.paymentStatus != null)
+              // Managed orders: the quote card carries the payment state (no fixed-order payment).
+              if (order.paymentStatus != null && !managed)
                 OrderMetaItem(
                   label: 'حالة الدفع',
                   value: order.paymentStatusLabel,
@@ -176,6 +181,22 @@ class _ClientOrderDetailBody extends ConsumerWidget {
               textAlign: TextAlign.right,
             ),
           ],
+        ),
+      ],
+      if (order.serviceForm != null) ...[
+        const SizedBox(height: 12),
+        OrderSectionCard(
+          title: 'تفاصيل الخدمة',
+          icon: Icons.assignment_outlined,
+          children: [ServiceFormSnapshotView(snapshot: order.serviceForm!)],
+        ),
+      ],
+      if (isClient && managed) ...[
+        const SizedBox(height: 12),
+        OrderSectionCard(
+          title: 'الملفات',
+          icon: Icons.folder_open_outlined,
+          children: [_ManagedOrderFiles(orderId: orderId, order: order)],
         ),
       ],
       if (showBids) ...[
@@ -603,6 +624,48 @@ class _DeliverySummaryCard extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+/// Admin-managed order (customer view): brief files always; final delivery files only once completed
+/// (the server filters the same way — this widget never widens access).
+class _ManagedOrderFiles extends StatelessWidget {
+  const _ManagedOrderFiles({required this.orderId, required this.order});
+  final String orderId;
+  final ClientOrder order;
+
+  @override
+  Widget build(BuildContext context) {
+    final brief = order.files.where((f) => f.isBrief).toList();
+    final delivery = order.files.where((f) => f.isDelivery).toList();
+    final completed = order.orderStatus == 'completed';
+    return Column(
+      key: const ValueKey('managed-order-files'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (brief.isEmpty && delivery.isEmpty)
+          const Text('لا توجد ملفات بعد.', style: TextStyle(color: AppColors.textMuted), textAlign: TextAlign.right),
+        for (final f in brief) OrderFileDownloadTile(orderId: orderId, role: OrderFileDownloadRole.client, file: f),
+        if (delivery.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          const Text(
+            'التسليم النهائي',
+            key: ValueKey('managed-final-delivery'),
+            style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.primaryDeep, fontSize: 13),
+            textAlign: TextAlign.right,
+          ),
+          const SizedBox(height: 6),
+          for (final f in delivery) OrderFileDownloadTile(orderId: orderId, role: OrderFileDownloadRole.client, file: f),
+        ] else if (!completed) ...[
+          const SizedBox(height: 8),
+          const Text(
+            'ستظهر ملفات التسليم النهائي هنا بعد اكتمال الطلب.',
+            style: TextStyle(color: AppColors.textMuted, height: 1.5),
+            textAlign: TextAlign.right,
+          ),
+        ],
+      ],
     );
   }
 }

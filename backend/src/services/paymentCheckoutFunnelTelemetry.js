@@ -67,7 +67,7 @@ function normalizeFlow(raw) {
 function normalizeLocalRef(raw) {
   const s = String(raw || "").trim().slice(0, 96);
   if (!s) return null;
-  if (/^(mca|cop|tpp|bcp|fscs|sess):\S{1,80}$/.test(s)) return s;
+  if (/^(mca|cop|tpp|bcp|fscs|sess|gq):\S{1,80}$/.test(s)) return s;
   return null;
 }
 
@@ -213,7 +213,9 @@ async function authorizeSessionOwnership({ userId, sessionId, claimedFlow }, db 
     const flow =
       purpose === "selected_bid_payment" || purpose === "client_selected_bid"
         ? "client_selected_bid"
-        : "client_fixed";
+        : purpose === "quote_payment"
+          ? "client_quote"
+          : "client_fixed";
     return { ok: true, paymentFlow: flow, localRef: `cop:${cop[0].id}` };
   }
 

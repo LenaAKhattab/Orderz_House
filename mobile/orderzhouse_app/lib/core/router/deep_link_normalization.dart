@@ -3,7 +3,7 @@ import 'routes.dart';
 
 /// Converts `orderzhouse://payment/success|cancel` into an in-app go_router location.
 ///
-/// Only forwards whitelisted query keys: orderId, session_id / sessionId, status.
+/// Only forwards whitelisted query keys: orderId, session_id / sessionId, status, kind=quote (S4).
 /// Returns null when the URI is not an orderzhouse payment success/cancel link.
 String? normalizeOrderzhousePaymentDeepLink(Uri uri) {
   if (uri.scheme.toLowerCase() != 'orderzhouse') return null;
@@ -25,6 +25,7 @@ String? normalizeOrderzhousePaymentDeepLink(Uri uri) {
   final query = <String, String>{'status': status};
   if (orderId.isNotEmpty) query['orderId'] = orderId;
   if (sessionId.isNotEmpty) query['session_id'] = sessionId;
+  if ((uri.queryParameters['kind'] ?? '').trim().toLowerCase() == 'quote') query['kind'] = 'quote';
 
   return Uri(path: AppRoutes.paymentReturn, queryParameters: query).toString();
 }
