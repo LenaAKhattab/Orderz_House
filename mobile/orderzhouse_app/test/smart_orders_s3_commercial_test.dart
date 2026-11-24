@@ -20,8 +20,8 @@ Map<String, dynamic> offerJson({String status = 'pending', DateTime? expiresAt, 
       'durationValue': 3,
       'durationUnit': 'days',
       'expiresAt': (expiresAt ?? DateTime.now().add(const Duration(hours: 5))).toIso8601String(),
-      if (terms != null) 'terms': terms,
-      if (change != null) 'pendingChange': change,
+      'terms': ?terms,
+      'pendingChange': ?change,
     };
 
 Widget host(Widget child) => ProviderScope(

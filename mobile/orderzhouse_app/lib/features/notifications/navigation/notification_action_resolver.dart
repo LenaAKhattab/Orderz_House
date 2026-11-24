@@ -174,6 +174,15 @@ NotificationActionTarget? _resolveFromDashboardLink(
     );
   }
 
+  // Smart Orders S3/S4: assignment offers + compensation change requests.
+  if (path == '/dashboard/freelancer/assignment-offers') {
+    if (role != 'freelancer') return null;
+    return const NotificationActionTarget(
+      route: AppRoutes.freelancerAssignmentOffers,
+      buttonLabel: 'فتح عروض التكليف',
+    );
+  }
+
   final assignedMatch = RegExp(r'^/dashboard/freelancer/my-orders/(\d+)$').firstMatch(path);
   if (assignedMatch != null) {
     if (role != 'freelancer') return null;

@@ -14,6 +14,7 @@ const { pool } = require("../config/db");
 const { createPublicApiError } = require("../utils/publicApiError");
 const { getPrimaryClientUrl } = require("../config/clientUrl");
 const { amountMajorToStripeMinor } = require("../utils/stripeMoney");
+const { buildClientOrderCheckoutReturnUrls } = require("../utils/checkoutReturnUrls");
 
 const QUOTE_CURRENCIES = Object.freeze(["JOD", "AED"]);
 const TAX_TREATMENTS = Object.freeze(["not_applicable", "taxable", "zero_rated", "exempt", "out_of_scope"]);
@@ -674,12 +675,21 @@ async function createQuoteCheckout({ orderId = null, clientUserId = null, guestT
       currency: q.currency,
       payer: guestToken ? "guest" : "client",
     };
+    // Mobile app (S4): Stripe returns through the HTTPS bridge → orderzhouse://payment/... deep link (kind=quote).
+    const mobileUrls =
+      !guestToken && channel === "mobile"
+        ? buildClientOrderCheckoutReturnUrls({ isMobile: true, orderId: q.order_id, kind: "quote" })
+        : null;
     const success = guestToken
       ? guestQuoteUrl(guestToken, "success")
-      : `${baseUrl()}/dashboard/client/my-orders?orderId=${encodeURIComponent(String(q.order_id))}&quotePayment=success`;
+      : mobileUrls
+        ? mobileUrls.successUrl
+        : `${baseUrl()}/dashboard/client/my-orders?orderId=${encodeURIComponent(String(q.order_id))}&quotePayment=success`;
     const cancel = guestToken
       ? guestQuoteUrl(guestToken, "cancel")
-      : `${baseUrl()}/dashboard/client/my-orders?orderId=${encodeURIComponent(String(q.order_id))}&quotePayment=cancel`;
+      : mobileUrls
+        ? mobileUrls.cancelUrl
+        : `${baseUrl()}/dashboard/client/my-orders?orderId=${encodeURIComponent(String(q.order_id))}&quotePayment=cancel`;
     const session = await stripe.checkout.sessions.create(
       {
         mode: "payment",

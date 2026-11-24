@@ -1,3 +1,4 @@
+import 'order_attachment_models.dart';
 import 'service_catalog_models.dart';
 
 /// Selected service + entered values (UX validation only — the server re-validates the exact version).
@@ -83,10 +84,19 @@ Map<String, String> validateServiceForm(CatalogService service, ServiceFormDraft
         final s = v.toString();
         final parsed = _date.hasMatch(s) ? DateTime.tryParse(s) : null;
         if (parsed == null || parsed.toIso8601String().substring(0, 10) != s) errors[f.key] = 'invalid_date';
+      case 'datetime':
+        if (DateTime.tryParse(v.toString()) == null) errors[f.key] = 'invalid_date';
       case 'multiselect':
         final list = v as List;
         if (f.min != null && list.length < f.min!) errors[f.key] = 'below_min';
         if (f.max != null && list.length > f.max!) errors[f.key] = 'above_max';
+      case 'file':
+        final list = v is List ? v : const [];
+        if (f.min != null && list.length < f.min!) {
+          errors[f.key] = 'invalid_file';
+        } else if (f.max != null && list.length > f.max!) {
+          errors[f.key] = 'above_max';
+        }
       default:
         break;
     }
@@ -117,7 +127,8 @@ Map<String, dynamic>? buildServiceFormPayload(CatalogService? service, ServiceFo
     if (!fieldVisible(f, draft.values)) continue;
     final v = draft.values[f.key];
     if (_isEmpty(v) && v != false) continue;
-    values[f.key] = v;
+    // Files are uploaded as order attachments and referenced by their upload names (same as web).
+    values[f.key] = f.type == 'file' && v is List ? v.whereType<SelectedOrderAttachment>().map((a) => a.name).toList() : v;
   }
   return {
     'serviceCode': service.serviceCode,
@@ -126,4 +137,86 @@ Map<String, dynamic>? buildServiceFormPayload(CatalogService? service, ServiceFo
     'quantity': draft.quantityUnspecified ? null : (draft.quantity.trim().isEmpty ? null : draft.quantity.trim()),
     'quantityUnspecified': draft.quantityUnspecified,
   };
+}
+
+/// Files picked inside visible dynamic `file` fields (uploaded together with the order attachments).
+List<SelectedOrderAttachment> serviceFormFiles(CatalogService? service, ServiceFormDraft draft) {
+  if (service == null || !draft.hasService) return const [];
+  final out = <SelectedOrderAttachment>[];
+  for (final f in service.fields) {
+    if (f.type != 'file' || !fieldVisible(f, draft.values)) continue;
+    final v = draft.values[f.key];
+    if (v is List) out.addAll(v.whereType<SelectedOrderAttachment>());
+  }
+  return out;
+}
+
+/// Whether a value entered for [from] is still valid for the refreshed field [to].
+bool _compatibleValue(CatalogField from, CatalogField to, Object? v) {
+  if (from.type != to.type) return false;
+  if (v == null) return false;
+  switch (to.type) {
+    case 'select':
+    case 'radio':
+      return to.options.any((o) => o.value == v);
+    case 'multiselect':
+      return v is List && v.every((x) => to.options.any((o) => o.value == x));
+    case 'text':
+    case 'textarea':
+      return to.maxLength == null || v.toString().length <= to.maxLength!;
+    default:
+      return true;
+  }
+}
+
+/// Result of moving a draft to a refreshed (newer) service version after `SMART_ORDER_FORM_STALE`.
+class ServiceDraftMigration {
+  const ServiceDraftMigration({required this.draft, required this.kept, required this.dropped, required this.serviceAvailable});
+  final ServiceFormDraft draft;
+  final List<String> kept;
+  final List<String> dropped;
+  final bool serviceAvailable;
+}
+
+/// Keeps every compatible value (same key, same type, still-valid options); drops the rest.
+/// The server re-validates the exact new version, so this is only to avoid retyping.
+ServiceDraftMigration migrateServiceDraft({
+  required CatalogService? oldService,
+  required CatalogService? newService,
+  required ServiceFormDraft draft,
+}) {
+  if (newService == null || oldService == null) {
+    return ServiceDraftMigration(
+      draft: const ServiceFormDraft(),
+      kept: const [],
+      dropped: draft.values.keys.toList(),
+      serviceAvailable: newService != null,
+    );
+  }
+  final kept = <String>[];
+  final dropped = <String>[];
+  final values = <String, Object?>{};
+  for (final entry in draft.values.entries) {
+    final from = oldService.fields.where((f) => f.key == entry.key).firstOrNull;
+    final to = newService.fields.where((f) => f.key == entry.key).firstOrNull;
+    if (from != null && to != null && _compatibleValue(from, to, entry.value)) {
+      values[entry.key] = entry.value;
+      kept.add(entry.key);
+    } else {
+      dropped.add(entry.key);
+    }
+  }
+  final sameUnit = oldService.quantity.unit == newService.quantity.unit;
+  return ServiceDraftMigration(
+    draft: ServiceFormDraft(
+      serviceCode: newService.serviceCode,
+      version: newService.version,
+      values: values,
+      quantity: sameUnit ? draft.quantity : '',
+      quantityUnspecified: sameUnit && newService.quantity.allowUnspecified && draft.quantityUnspecified,
+    ),
+    kept: kept,
+    dropped: dropped,
+    serviceAvailable: true,
+  );
 }

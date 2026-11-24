@@ -1,5 +1,6 @@
 import '../../../core/network/json_helpers.dart';
 import 'customer_quote.dart';
+import 'service_form_snapshot.dart';
 import '../../orders/data/order_display_helpers.dart' as display;
 import '../../orders/data/pool_order_models.dart';
 import '../../orders/data/order_file_models.dart';
@@ -96,6 +97,7 @@ class ClientOrder {
     this.submissions = const [],
     this.managedByAdmin = false,
     this.quote,
+    this.serviceForm,
     this.bidsCount = 0,
     this.clientRevisionNote,
     this.files = const [],
@@ -131,6 +133,8 @@ class ClientOrder {
   final bool managedByAdmin;
   /// Smart Orders S3: the customer's own quote (never freelancer pay).
   final CustomerQuote? quote;
+  /// Smart Orders S2: immutable service form submitted with the order (null for legacy orders).
+  final ServiceFormSnapshot? serviceForm;
   final int bidsCount;
   final String? clientRevisionNote;
   final List<OrderFileDescriptor> files;
@@ -259,6 +263,7 @@ class ClientOrder {
       submissions: submissions,
       managedByAdmin: json['managedByAdmin'] == true,
       quote: CustomerQuote.tryParse(json['quote']),
+      serviceForm: ServiceFormSnapshot.tryParse(json['serviceForm']),
       bidsCount: readInt(json, 'bidsCount', 'bids_count') ?? bids.length,
       clientRevisionNote: readMapField<String>(json, 'clientRevisionNote', 'client_revision_note'),
       files: parseOrderFilesList(json['files']),

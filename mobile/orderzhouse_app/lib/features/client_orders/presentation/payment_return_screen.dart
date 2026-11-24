@@ -64,6 +64,7 @@ class _PaymentReturnScreenState extends ConsumerState<PaymentReturnScreen> {
             : 'checkout_success_returned',
         stripeCheckoutSessionId: sid,
         // Server derives canonical paymentFlow from session ownership.
+        paymentFlow: widget.params.isQuote ? 'client_quote' : null,
         locale: locale,
       );
     }
@@ -96,18 +97,22 @@ class _PaymentReturnScreenState extends ConsumerState<PaymentReturnScreen> {
 
     try {
       ClientOrder? order;
+      final isQuote = widget.params.isQuote;
       for (var i = 0; i < attempts; i++) {
-        try {
-          await repo.confirmFixedOrderPayment(orderId, sessionId: sessionId);
-        } on DioException catch (e) {
-          final status = e.response?.statusCode;
-          if (status != 402) {
-            rethrow;
+        if (!isQuote) {
+          try {
+            await repo.confirmFixedOrderPayment(orderId, sessionId: sessionId);
+          } on DioException catch (e) {
+            final status = e.response?.statusCode;
+            if (status != 402) {
+              rethrow;
+            }
           }
         }
 
+        // Quote payments are confirmed by the Stripe webhook only; the app just re-reads the order.
         order = await repo.fetchMyOrderById(orderId);
-        if (isOrderPaidFromBackend(order.paymentStatus)) {
+        if (isQuote ? isQuotePaidFromBackend(order.quote?.paymentStatus) : isOrderPaidFromBackend(order.paymentStatus)) {
           break;
         }
         if (i < attempts - 1) {
@@ -118,12 +123,15 @@ class _PaymentReturnScreenState extends ConsumerState<PaymentReturnScreen> {
 
       ref.invalidate(clientOrderDetailProvider(orderId));
       ref.invalidate(clientOrdersControllerProvider);
+      // Reload now: a mounted "My orders" screen would otherwise keep showing the reset (empty) list.
+      // ignore: unawaited_futures
+      ref.read(clientOrdersControllerProvider.notifier).load(refresh: true);
 
       if (!mounted) return;
       setState(() {
         _order = order;
         _state = paymentReturnStateAfterConfirmAttempts(
-          paymentStatus: order?.paymentStatus,
+          paymentStatus: widget.params.isQuote ? order?.quote?.paymentStatus : order?.paymentStatus,
         );
       });
     } catch (e) {
@@ -213,7 +221,7 @@ class _PaymentReturnScreenState extends ConsumerState<PaymentReturnScreen> {
           ],
         );
       case PaymentReturnUiState.paid:
-        final adminReview = _order?.requiresAdminReview == true;
+        final adminReview = !widget.params.isQuote && _order?.requiresAdminReview == true;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -230,9 +238,11 @@ class _PaymentReturnScreenState extends ConsumerState<PaymentReturnScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              adminReview
-                  ? 'تم استلام الدفع، وسيتم نشر الطلب بعد مراجعته من الإدارة.'
-                  : 'تم استلام الدفع وفتح الطلب للمستقلين.',
+              widget.params.isQuote
+                  ? 'تم تأكيد دفع عرض السعر. سيتابع فريقنا تنفيذ طلبك.'
+                  : adminReview
+                      ? 'تم استلام الدفع، وسيتم نشر الطلب بعد مراجعته من الإدارة.'
+                      : 'تم استلام الدفع وفتح الطلب للمستقلين.',
               textAlign: TextAlign.center,
               style: const TextStyle(color: AppColors.textMuted, height: 1.6),
             ),

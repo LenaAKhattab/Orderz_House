@@ -348,9 +348,15 @@ describe("Smart Orders S3 — commercial handoff (Postgres)", { skip: !ok }, () 
     assert.equal(view.budget, 75, "customer sees own price, never the freelancer pay");
     await commercial.customerAcceptQuote({ clientUserId: clientId, orderId: order.id });
     const stripe = fakeStripe();
-    await commercial.createQuoteCheckout({ orderId: order.id, clientUserId: clientId, deps: { stripe } });
+    await commercial.createQuoteCheckout({ orderId: order.id, clientUserId: clientId, channel: "mobile", deps: { stripe } });
     const s = [...stripe.sessions.values()][0];
     assert.equal(s.amount_total, 7500);
+    // S4: the mobile app returns through the HTTPS bridge → deep link with kind=quote.
+    assert.ok(s.success_url.includes("/mobile/payment-return?status=success&orderId=" + order.id + "&kind=quote"), s.success_url);
+    assert.ok(s.cancel_url.includes("/mobile/payment-return?status=cancel&orderId=" + order.id + "&kind=quote"), s.cancel_url);
+    const own = await require("../src/services/paymentCheckoutFunnelTelemetry").authorizeSessionOwnership({ userId: clientId, sessionId: s.id });
+    assert.equal(own.ok, true);
+    assert.equal(own.paymentFlow, "client_quote", "mobile return telemetry attributes the quote flow");
     assert.equal(s.currency, "aed");
     // Another client cannot pay / accept it (no IDOR).
     const other = await makeUser("client");

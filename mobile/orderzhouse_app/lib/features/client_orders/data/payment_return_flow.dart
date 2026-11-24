@@ -53,3 +53,6 @@ PaymentReturnUiState paymentReturnStateAfterConfirmAttempts({
   if (isOrderPaidFromBackend(paymentStatus)) return PaymentReturnUiState.paid;
   return PaymentReturnUiState.pending;
 }
+
+/// Smart Orders S4: a quote is paid only when the server says so (webhook truth) — never from the deep link.
+bool isQuotePaidFromBackend(String? quotePaymentStatus) => quotePaymentStatus == 'paid';

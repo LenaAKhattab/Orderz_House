@@ -15,7 +15,10 @@ const List<String> kMobileSupportedFieldTypes = [
   'checkbox',
   'radio',
   'date',
+  'datetime',
   'url',
+  // S4: files picked in a field are uploaded with the order attachments and referenced by name.
+  'file',
 ];
 
 Map<String, String> _stringMap(dynamic raw) {
@@ -209,6 +212,7 @@ const Map<String, Map<String, String>> kServiceFormErrors = {
   'too_long': {'ar': 'النص أطول من المسموح.', 'en': 'The text is too long.'},
   'invalid_option': {'ar': 'اختر خيارًا من القائمة.', 'en': 'Choose an option from the list.'},
   'invalid_date': {'ar': 'أدخل تاريخًا صالحًا.', 'en': 'Enter a valid date.'},
+  'invalid_file': {'ar': 'أرفق الملفات المطلوبة.', 'en': 'Attach the required files.'},
   'invalid_url': {'ar': 'أدخل رابطًا صالحًا يبدأ بـ https://', 'en': 'Enter a valid link starting with https://'},
   'unspecified_not_allowed': {'ar': 'حدد الكمية لهذه الخدمة.', 'en': 'Enter a quantity for this service.'},
 };

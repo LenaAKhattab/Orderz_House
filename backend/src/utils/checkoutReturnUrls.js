@@ -8,7 +8,7 @@ const {
  * Stripe success/cancel URLs for client fixed-order checkout only.
  * Web: SPA my-orders. Mobile: HTTPS bridge on backend public origin → custom scheme.
  */
-function buildClientOrderCheckoutReturnUrls({ isMobile, orderId, clientUrl }) {
+function buildClientOrderCheckoutReturnUrls({ isMobile, orderId, clientUrl, kind = null }) {
   const oid = encodeURIComponent(String(orderId));
   if (!isMobile) {
     const base = String(clientUrl || "").replace(/\/$/, "");
@@ -28,7 +28,9 @@ function buildClientOrderCheckoutReturnUrls({ isMobile, orderId, clientUrl }) {
     throw err;
   }
 
-  const q = `orderId=${oid}&session_id={CHECKOUT_SESSION_ID}`;
+  // `kind=quote` (Smart Orders S4): the app confirms the managed quote instead of the fixed-order payment.
+  const k = kind === "quote" ? "&kind=quote" : "";
+  const q = `orderId=${oid}${k}&session_id={CHECKOUT_SESSION_ID}`;
   return {
     successUrl: `${apiBase}/mobile/payment-return?status=success&${q}`,
     cancelUrl: `${apiBase}/mobile/payment-return?status=cancel&${q}`,
