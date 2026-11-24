@@ -121,7 +121,9 @@
       "createRequest": "Create request",
       "panelTitle": "Super admin dashboard",
       "sidebarAria": "Super admin menu",
-      "serviceCatalog": "Service catalog"
+      "serviceCatalog": "Service catalog",
+      "commercialOverride": "Work before payment",
+      "assignmentOffers": "Assignment offers"
     }
   },
   "roles": {

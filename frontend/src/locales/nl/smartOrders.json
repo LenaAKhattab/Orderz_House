@@ -383,5 +383,172 @@
       "previewHint": "Zo ziet het formulier eruit bij het aanmaken van een opdracht.",
       "noFields": "Nog geen velden."
     }
+  },
+  "commercial": {
+    "open": "Prijs & toewijzing",
+    "title": "Prijs & toewijzing — {{orderCode}}",
+    "loading": "Laden…",
+    "notApplicable": "Interne opdracht zonder klant – de huidige directe toewijzing blijft gelden.",
+    "readiness": "Klaar om te starten",
+    "readyPaid": "Betaald",
+    "readyAuthorized": "Goedgekeurd vóór betaling",
+    "notReady": "Wacht op betaling of goedkeuring",
+    "freelancerPay": "Huidige vergoeding freelancer",
+    "quote": {
+      "heading": "Offerte",
+      "none": "Nog geen offerte.",
+      "base": "Basisbedrag",
+      "currency": "Valuta",
+      "adjustments": "Toeslagen / kortingen",
+      "adjLabel": "Omschrijving",
+      "adjAmount": "Bedrag (negatief = korting)",
+      "addAdjustment": "Regel toevoegen",
+      "validDays": "Geldig (dagen)",
+      "tax": "Btw-behandeling (alleen informatie)",
+      "taxOptions": {
+        "not_applicable": "Niet toegepast",
+        "taxable": "Belast",
+        "zero_rated": "Nultarief",
+        "exempt": "Vrijgesteld",
+        "out_of_scope": "Buiten reikwijdte"
+      },
+      "terms": "Voorwaarden voor de klant (optioneel)",
+      "total": "Totaal",
+      "issue": "Offerte uitbrengen",
+      "revise": "Nieuwe versie uitbrengen",
+      "reviseHint": "De huidige versie blijft bewaard en wordt vervangen – nooit bewerkt.",
+      "cancel": "Offerte annuleren",
+      "guestLink": "Betaallink voor gast",
+      "newGuestLink": "Nieuwe link maken",
+      "linkOnce": "De link wordt alleen nu getoond; eerdere links werken niet meer.",
+      "recordAcceptance": "Akkoord van klant vastleggen",
+      "evidence": "Hoe heeft de klant akkoord gegeven?",
+      "history": "Versiegeschiedenis",
+      "status": {
+        "issued": "Uitgebracht",
+        "accepted": "Geaccepteerd",
+        "expired": "Verlopen",
+        "superseded": "Vervangen",
+        "cancelled": "Geannuleerd"
+      },
+      "payment": {
+        "unpaid": "Onbetaald",
+        "paid": "Betaald",
+        "paid_inactive": "Betaald op een inactieve versie – controle nodig"
+      }
+    },
+    "assign": {
+      "heading": "Toewijzing",
+      "offer": "Toewijzingsaanbod sturen",
+      "compensation": "Vergoeding freelancer (JOD)",
+      "deadline": "Aanvaardingstermijn (uren)",
+      "cancelOffer": "Aanbod intrekken",
+      "wizardNote": "Bij klantopdrachten krijgt de freelancer een aanbod om te accepteren of te weigeren; het werk start pas na betaling of goedkeuring door een admin.",
+      "status": {
+        "pending": "Wacht op antwoord",
+        "accepted": "Geaccepteerd",
+        "rejected": "Geweigerd",
+        "expired": "Verlopen",
+        "cancelled": "Ingetrokken"
+      }
+    },
+    "terms": {
+      "heading": "Overeengekomen voorwaarden",
+      "version": "Voorwaarden versie {{version}}",
+      "immutable": "Geaccepteerde voorwaarden worden nooit bewerkt; wijzigingen lopen via een wijzigingsverzoek.",
+      "change": "Wijziging vergoeding / deadline aanvragen",
+      "newAmount": "Nieuwe vergoeding (JOD)",
+      "newDue": "Nieuwe deadline (optioneel)",
+      "reason": "Reden",
+      "changeHint": "Verhogingen gelden direct (gelogd); verlagingen vereisen akkoord van de freelancer.",
+      "changeStatus": {
+        "pending_freelancer": "Wacht op freelancer",
+        "approved": "Goedgekeurd",
+        "rejected": "Geweigerd",
+        "applied": "Toegepast",
+        "cancelled": "Geannuleerd"
+      }
+    },
+    "override": {
+      "heading": "Werk vóór betaling goedkeuren",
+      "reason": "Reden (wordt gelogd)",
+      "submit": "Goedkeuren",
+      "hint": "Vereist een aparte bevoegdheid. Wijzigt de betaalstatus niet."
+    },
+    "history": "Geschiedenis",
+    "saved": "Opgeslagen",
+    "failed": "De actie kon niet worden uitgevoerd",
+    "events": {
+      "quote_issued": "Offerte uitgebracht",
+      "quote_superseded": "Offerte vervangen",
+      "quote_cancelled": "Offerte geannuleerd",
+      "quote_expired": "Offerte verlopen",
+      "quote_accepted": "Offerte geaccepteerd",
+      "guest_link_created": "Betaallink gemaakt",
+      "payment_checkout_created": "Betaling gestart",
+      "payment_confirmed": "Betaling bevestigd",
+      "payment_on_inactive_quote": "Betaling op inactieve versie",
+      "offer_created": "Aanbod verstuurd",
+      "offer_accepted": "Aanbod geaccepteerd",
+      "offer_rejected": "Aanbod geweigerd",
+      "offer_expired": "Aanbod verlopen",
+      "offer_cancelled": "Aanbod ingetrokken",
+      "terms_snapshot": "Voorwaarden vastgelegd",
+      "change_requested": "Wijziging aangevraagd",
+      "change_approved": "Wijziging goedgekeurd",
+      "change_rejected": "Wijziging geweigerd",
+      "change_applied": "Wijziging toegepast",
+      "work_authorized": "Werk goedgekeurd",
+      "work_started": "Werk gestart"
+    }
+  },
+  "customerQuote": {
+    "heading": "Uw offerte",
+    "version": "Versie {{version}}",
+    "validUntil": "Geldig tot {{date}}",
+    "accept": "Offerte accepteren",
+    "pay": "Nu betalen",
+    "paid": "Betaald",
+    "processing": "Betaling wordt bevestigd…",
+    "expired": "Deze offerte is verlopen. Neem contact op met ons team voor een nieuwe.",
+    "taxNote": "Op deze offerte wordt geen btw toegepast."
+  },
+  "guestPay": {
+    "title": "Offerte & betaling",
+    "loading": "Offerte laden…",
+    "invalid": "Deze link is ongeldig of verlopen. Vraag ons team om een nieuwe link.",
+    "order": "Opdrachtnummer",
+    "service": "Dienst",
+    "noAccount": "Geen account nodig. De betaling verloopt veilig via Stripe.",
+    "successPending": "Bedankt. We bevestigen uw betaling; dit kan even duren.",
+    "confirmed": "Betaling bevestigd. Ons team neemt contact op via WhatsApp.",
+    "cancelled": "De betaling is niet voltooid. U kunt het opnieuw proberen.",
+    "refresh": "Status vernieuwen"
+  },
+  "offers": {
+    "navLabel": "Toewijzingsaanbiedingen",
+    "title": "Toewijzingsaanbiedingen",
+    "description": "Bekijk eisen, vergoeding en termijn en accepteer of weiger. Het werk start pas na betaling of goedkeuring door een admin.",
+    "empty": "Geen toewijzingsaanbiedingen.",
+    "pay": "Vergoeding",
+    "duration": "Levertijd",
+    "respondBy": "Reageer vóór {{date}}",
+    "accept": "Accepteren",
+    "reject": "Weigeren",
+    "rejectReason": "Reden",
+    "reasons": {
+      "unavailable": "Niet beschikbaar",
+      "outside_skills": "Buiten mijn vaardigheden",
+      "deadline_too_short": "Termijn te kort",
+      "compensation": "Vergoeding niet passend",
+      "other": "Overig"
+    },
+    "acceptedTerms": "Overeengekomen voorwaarden",
+    "waitingStart": "Geaccepteerd – wacht op betaling of goedkeuring voordat u begint.",
+    "pendingChange": "Voorgestelde wijziging van uw voorwaarden",
+    "approveChange": "Akkoord",
+    "rejectChange": "Weigeren",
+    "accepted": "Geaccepteerd",
+    "rejected": "Geweigerd"
   }
 }

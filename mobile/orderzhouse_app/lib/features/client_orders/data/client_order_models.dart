@@ -1,4 +1,5 @@
 import '../../../core/network/json_helpers.dart';
+import 'customer_quote.dart';
 import '../../orders/data/order_display_helpers.dart' as display;
 import '../../orders/data/pool_order_models.dart';
 import '../../orders/data/order_file_models.dart';
@@ -93,6 +94,8 @@ class ClientOrder {
     this.hasAssignedFreelancer = false,
     this.bidSummaries = const [],
     this.submissions = const [],
+    this.managedByAdmin = false,
+    this.quote,
     this.bidsCount = 0,
     this.clientRevisionNote,
     this.files = const [],
@@ -124,6 +127,10 @@ class ClientOrder {
   final bool hasAssignedFreelancer;
   final List<ClientOrderBidSummary> bidSummaries;
   final List<ClientOrderSubmissionSummary> submissions;
+  /// Smart Orders: Admin-managed order linked to this customer (read-only for self-service actions).
+  final bool managedByAdmin;
+  /// Smart Orders S3: the customer's own quote (never freelancer pay).
+  final CustomerQuote? quote;
   final int bidsCount;
   final String? clientRevisionNote;
   final List<OrderFileDescriptor> files;
@@ -250,6 +257,8 @@ class ClientOrder {
       hasAssignedFreelancer: readBool(json, 'hasAssignedFreelancer', 'has_assigned_freelancer'),
       bidSummaries: bids,
       submissions: submissions,
+      managedByAdmin: json['managedByAdmin'] == true,
+      quote: CustomerQuote.tryParse(json['quote']),
       bidsCount: readInt(json, 'bidsCount', 'bids_count') ?? bids.length,
       clientRevisionNote: readMapField<String>(json, 'clientRevisionNote', 'client_revision_note'),
       files: parseOrderFilesList(json['files']),

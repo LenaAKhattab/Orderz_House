@@ -383,5 +383,172 @@
       "previewHint": "Așa va arăta formularul la crearea unei comenzi.",
       "noFields": "Încă nu există câmpuri."
     }
+  },
+  "commercial": {
+    "open": "Preț și atribuire",
+    "title": "Preț și atribuire — {{orderCode}}",
+    "loading": "Se încarcă…",
+    "notApplicable": "Comandă internă fără client – rămâne fluxul actual de atribuire directă.",
+    "readiness": "Gata de începere",
+    "readyPaid": "Plătit",
+    "readyAuthorized": "Autorizat înainte de plată",
+    "notReady": "Așteaptă plata sau autorizarea",
+    "freelancerPay": "Plata curentă a freelancerului",
+    "quote": {
+      "heading": "Ofertă",
+      "none": "Încă nu există ofertă.",
+      "base": "Sumă de bază",
+      "currency": "Monedă",
+      "adjustments": "Ajustări",
+      "adjLabel": "Descriere",
+      "adjAmount": "Sumă (negativ = reducere)",
+      "addAdjustment": "Adăugați rând",
+      "validDays": "Valabilă (zile)",
+      "tax": "Tratament fiscal (doar informativ)",
+      "taxOptions": {
+        "not_applicable": "Neaplicat",
+        "taxable": "Impozabil",
+        "zero_rated": "Cotă zero",
+        "exempt": "Scutit",
+        "out_of_scope": "În afara sferei"
+      },
+      "terms": "Condiții afișate clientului (opțional)",
+      "total": "Total",
+      "issue": "Emiteți oferta",
+      "revise": "Emiteți o versiune nouă",
+      "reviseHint": "Versiunea curentă se păstrează și este înlocuită – nu se editează.",
+      "cancel": "Anulați oferta",
+      "guestLink": "Link de plată pentru vizitator",
+      "newGuestLink": "Creați un link nou",
+      "linkOnce": "Linkul este afișat doar acum; linkurile anterioare nu mai funcționează.",
+      "recordAcceptance": "Înregistrați acordul clientului",
+      "evidence": "Cum și-a dat clientul acordul?",
+      "history": "Istoricul versiunilor",
+      "status": {
+        "issued": "Emisă",
+        "accepted": "Acceptată",
+        "expired": "Expirată",
+        "superseded": "Înlocuită",
+        "cancelled": "Anulată"
+      },
+      "payment": {
+        "unpaid": "Neplătită",
+        "paid": "Plătită",
+        "paid_inactive": "Plătită pe o versiune inactivă – necesită verificare"
+      }
+    },
+    "assign": {
+      "heading": "Atribuire",
+      "offer": "Trimiteți oferta de atribuire",
+      "compensation": "Plata freelancerului (JOD)",
+      "deadline": "Termen de acceptare (ore)",
+      "cancelOffer": "Retrageți oferta",
+      "wizardNote": "La comenzile clienților, freelancerul primește o ofertă pe care o acceptă sau o refuză; lucrul începe doar după plată sau autorizarea unui admin.",
+      "status": {
+        "pending": "Așteaptă răspuns",
+        "accepted": "Acceptată",
+        "rejected": "Refuzată",
+        "expired": "Expirată",
+        "cancelled": "Retrasă"
+      }
+    },
+    "terms": {
+      "heading": "Condiții convenite",
+      "version": "Condiții versiunea {{version}}",
+      "immutable": "Condițiile acceptate nu se modifică; schimbările se fac printr-o cerere de modificare.",
+      "change": "Cereți modificarea plății / termenului",
+      "newAmount": "Plată nouă (JOD)",
+      "newDue": "Termen nou (opțional)",
+      "reason": "Motiv",
+      "changeHint": "Majorările se aplică imediat (auditat); reducerile necesită acordul freelancerului.",
+      "changeStatus": {
+        "pending_freelancer": "Așteaptă freelancerul",
+        "approved": "Aprobată",
+        "rejected": "Respinsă",
+        "applied": "Aplicată",
+        "cancelled": "Anulată"
+      }
+    },
+    "override": {
+      "heading": "Autorizați lucrul înainte de plată",
+      "reason": "Motiv (păstrat în jurnal)",
+      "submit": "Autorizați",
+      "hint": "Necesită o permisiune dedicată. Nu schimbă starea plății."
+    },
+    "history": "Istoric",
+    "saved": "Salvat",
+    "failed": "Acțiunea nu a putut fi efectuată",
+    "events": {
+      "quote_issued": "Ofertă emisă",
+      "quote_superseded": "Ofertă înlocuită",
+      "quote_cancelled": "Ofertă anulată",
+      "quote_expired": "Ofertă expirată",
+      "quote_accepted": "Ofertă acceptată",
+      "guest_link_created": "Link de plată creat",
+      "payment_checkout_created": "Plată inițiată",
+      "payment_confirmed": "Plată confirmată",
+      "payment_on_inactive_quote": "Plată pe versiune inactivă",
+      "offer_created": "Ofertă trimisă",
+      "offer_accepted": "Ofertă acceptată",
+      "offer_rejected": "Ofertă refuzată",
+      "offer_expired": "Ofertă expirată",
+      "offer_cancelled": "Ofertă retrasă",
+      "terms_snapshot": "Condiții înregistrate",
+      "change_requested": "Modificare cerută",
+      "change_approved": "Modificare aprobată",
+      "change_rejected": "Modificare respinsă",
+      "change_applied": "Modificare aplicată",
+      "work_authorized": "Lucru autorizat",
+      "work_started": "Lucru început"
+    }
+  },
+  "customerQuote": {
+    "heading": "Oferta dvs.",
+    "version": "Versiunea {{version}}",
+    "validUntil": "Valabilă până la {{date}}",
+    "accept": "Acceptați oferta",
+    "pay": "Plătiți acum",
+    "paid": "Plătit",
+    "processing": "Se confirmă plata…",
+    "expired": "Oferta a expirat. Contactați echipa noastră pentru una nouă.",
+    "taxNote": "Nu se aplică taxe acestei oferte."
+  },
+  "guestPay": {
+    "title": "Ofertă și plată",
+    "loading": "Se încarcă oferta…",
+    "invalid": "Acest link este invalid sau expirat. Cereți echipei noastre un link nou.",
+    "order": "Numărul comenzii",
+    "service": "Serviciu",
+    "noAccount": "Nu este nevoie de cont. Plata este procesată în siguranță de Stripe.",
+    "successPending": "Vă mulțumim. Confirmăm plata; poate dura câteva momente.",
+    "confirmed": "Plată confirmată. Echipa noastră vă va contacta pe WhatsApp.",
+    "cancelled": "Plata nu a fost finalizată. Puteți încerca din nou.",
+    "refresh": "Actualizați starea"
+  },
+  "offers": {
+    "navLabel": "Oferte de atribuire",
+    "title": "Oferte de atribuire",
+    "description": "Verificați cerințele, plata și termenul, apoi acceptați sau refuzați. Lucrul începe doar după plată sau autorizare.",
+    "empty": "Nicio ofertă de atribuire.",
+    "pay": "Plată",
+    "duration": "Termen de livrare",
+    "respondBy": "Răspundeți până la {{date}}",
+    "accept": "Acceptați",
+    "reject": "Refuzați",
+    "rejectReason": "Motiv",
+    "reasons": {
+      "unavailable": "Indisponibil",
+      "outside_skills": "În afara competențelor mele",
+      "deadline_too_short": "Termen prea scurt",
+      "compensation": "Plata nu este potrivită",
+      "other": "Altul"
+    },
+    "acceptedTerms": "Condiții convenite",
+    "waitingStart": "Acceptată – așteptați plata sau autorizarea înainte de a începe.",
+    "pendingChange": "Modificare propusă a condițiilor",
+    "approveChange": "Aprob",
+    "rejectChange": "Refuz",
+    "accepted": "Acceptat",
+    "rejected": "Refuzat"
   }
 }

@@ -383,5 +383,172 @@
       "previewHint": "So sieht das Formular beim Erstellen eines Auftrags aus.",
       "noFields": "Noch keine Felder."
     }
+  },
+  "commercial": {
+    "open": "Preis & Zuweisung",
+    "title": "Preis & Zuweisung — {{orderCode}}",
+    "loading": "Wird geladen…",
+    "notApplicable": "Interner Auftrag ohne Kunde – es gilt weiterhin die direkte Zuweisung.",
+    "readiness": "Startbereit",
+    "readyPaid": "Bezahlt",
+    "readyAuthorized": "Vor Zahlung freigegeben",
+    "notReady": "Wartet auf Zahlung oder Freigabe",
+    "freelancerPay": "Aktuelle Freelancer-Vergütung",
+    "quote": {
+      "heading": "Angebot",
+      "none": "Noch kein Angebot.",
+      "base": "Grundbetrag",
+      "currency": "Währung",
+      "adjustments": "Zu- / Abschläge",
+      "adjLabel": "Beschreibung",
+      "adjAmount": "Betrag (negativ = Rabatt)",
+      "addAdjustment": "Zeile hinzufügen",
+      "validDays": "Gültig (Tage)",
+      "tax": "Steuerliche Behandlung (nur Information)",
+      "taxOptions": {
+        "not_applicable": "Nicht angewendet",
+        "taxable": "Steuerpflichtig",
+        "zero_rated": "Nullsatz",
+        "exempt": "Steuerfrei",
+        "out_of_scope": "Nicht steuerbar"
+      },
+      "terms": "Für den Kunden sichtbare Bedingungen (optional)",
+      "total": "Gesamt",
+      "issue": "Angebot ausstellen",
+      "revise": "Neue Version ausstellen",
+      "reviseHint": "Die aktuelle Version bleibt erhalten und wird ersetzt – nie bearbeitet.",
+      "cancel": "Angebot stornieren",
+      "guestLink": "Zahlungslink für Gast",
+      "newGuestLink": "Neuen Link erstellen",
+      "linkOnce": "Der Link wird nur jetzt angezeigt; frühere Links funktionieren nicht mehr.",
+      "recordAcceptance": "Kundenzustimmung erfassen",
+      "evidence": "Wie hat der Kunde zugestimmt?",
+      "history": "Versionsverlauf",
+      "status": {
+        "issued": "Ausgestellt",
+        "accepted": "Angenommen",
+        "expired": "Abgelaufen",
+        "superseded": "Ersetzt",
+        "cancelled": "Storniert"
+      },
+      "payment": {
+        "unpaid": "Unbezahlt",
+        "paid": "Bezahlt",
+        "paid_inactive": "Zahlung auf inaktive Version – Prüfung nötig"
+      }
+    },
+    "assign": {
+      "heading": "Zuweisung",
+      "offer": "Zuweisungsangebot senden",
+      "compensation": "Freelancer-Vergütung (JOD)",
+      "deadline": "Annahmefrist (Stunden)",
+      "cancelOffer": "Angebot zurückziehen",
+      "wizardNote": "Bei Kundenaufträgen erhält der Freelancer ein Angebot zum Annehmen oder Ablehnen; die Arbeit beginnt erst nach Zahlung oder Admin-Freigabe.",
+      "status": {
+        "pending": "Wartet auf Antwort",
+        "accepted": "Angenommen",
+        "rejected": "Abgelehnt",
+        "expired": "Abgelaufen",
+        "cancelled": "Zurückgezogen"
+      }
+    },
+    "terms": {
+      "heading": "Vereinbarte Bedingungen",
+      "version": "Bedingungen Version {{version}}",
+      "immutable": "Angenommene Bedingungen werden nie bearbeitet; Änderungen laufen über eine Änderungsanfrage.",
+      "change": "Vergütungs- / Terminänderung anfragen",
+      "newAmount": "Neue Vergütung (JOD)",
+      "newDue": "Neuer Abgabetermin (optional)",
+      "reason": "Grund",
+      "changeHint": "Erhöhungen gelten sofort (protokolliert); Kürzungen brauchen die Zustimmung des Freelancers.",
+      "changeStatus": {
+        "pending_freelancer": "Wartet auf Freelancer",
+        "approved": "Genehmigt",
+        "rejected": "Abgelehnt",
+        "applied": "Angewendet",
+        "cancelled": "Storniert"
+      }
+    },
+    "override": {
+      "heading": "Arbeit vor Zahlung freigeben",
+      "reason": "Grund (wird protokolliert)",
+      "submit": "Freigeben",
+      "hint": "Erfordert eine eigene Berechtigung. Ändert den Zahlungsstatus nicht."
+    },
+    "history": "Verlauf",
+    "saved": "Gespeichert",
+    "failed": "Die Aktion konnte nicht ausgeführt werden",
+    "events": {
+      "quote_issued": "Angebot ausgestellt",
+      "quote_superseded": "Angebot ersetzt",
+      "quote_cancelled": "Angebot storniert",
+      "quote_expired": "Angebot abgelaufen",
+      "quote_accepted": "Angebot angenommen",
+      "guest_link_created": "Zahlungslink erstellt",
+      "payment_checkout_created": "Zahlung gestartet",
+      "payment_confirmed": "Zahlung bestätigt",
+      "payment_on_inactive_quote": "Zahlung auf inaktive Version",
+      "offer_created": "Angebot gesendet",
+      "offer_accepted": "Angebot angenommen",
+      "offer_rejected": "Angebot abgelehnt",
+      "offer_expired": "Angebot abgelaufen",
+      "offer_cancelled": "Angebot zurückgezogen",
+      "terms_snapshot": "Bedingungen festgehalten",
+      "change_requested": "Änderung angefragt",
+      "change_approved": "Änderung angenommen",
+      "change_rejected": "Änderung abgelehnt",
+      "change_applied": "Änderung angewendet",
+      "work_authorized": "Arbeit freigegeben",
+      "work_started": "Arbeit begonnen"
+    }
+  },
+  "customerQuote": {
+    "heading": "Ihr Angebot",
+    "version": "Version {{version}}",
+    "validUntil": "Gültig bis {{date}}",
+    "accept": "Angebot annehmen",
+    "pay": "Jetzt bezahlen",
+    "paid": "Bezahlt",
+    "processing": "Zahlung wird bestätigt…",
+    "expired": "Dieses Angebot ist abgelaufen. Kontaktieren Sie unser Team für ein neues.",
+    "taxNote": "Auf dieses Angebot wird keine Steuer erhoben."
+  },
+  "guestPay": {
+    "title": "Angebot & Zahlung",
+    "loading": "Angebot wird geladen…",
+    "invalid": "Dieser Link ist ungültig oder abgelaufen. Bitten Sie unser Team um einen neuen Link.",
+    "order": "Auftragsnummer",
+    "service": "Leistung",
+    "noAccount": "Kein Konto nötig. Die Zahlung erfolgt sicher über Stripe.",
+    "successPending": "Danke. Wir bestätigen Ihre Zahlung; das kann einen Moment dauern.",
+    "confirmed": "Zahlung bestätigt. Unser Team meldet sich per WhatsApp.",
+    "cancelled": "Die Zahlung wurde nicht abgeschlossen. Sie können es erneut versuchen.",
+    "refresh": "Status aktualisieren"
+  },
+  "offers": {
+    "navLabel": "Zuweisungsangebote",
+    "title": "Zuweisungsangebote",
+    "description": "Prüfen Sie Anforderungen, Vergütung und Frist und nehmen Sie an oder lehnen Sie ab. Die Arbeit beginnt erst nach Zahlung oder Admin-Freigabe.",
+    "empty": "Keine Zuweisungsangebote.",
+    "pay": "Vergütung",
+    "duration": "Lieferzeit",
+    "respondBy": "Antwort bis {{date}}",
+    "accept": "Annehmen",
+    "reject": "Ablehnen",
+    "rejectReason": "Grund",
+    "reasons": {
+      "unavailable": "Nicht verfügbar",
+      "outside_skills": "Außerhalb meiner Fähigkeiten",
+      "deadline_too_short": "Frist zu kurz",
+      "compensation": "Vergütung unpassend",
+      "other": "Sonstiges"
+    },
+    "acceptedTerms": "Vereinbarte Bedingungen",
+    "waitingStart": "Angenommen – warten Sie vor dem Start auf Zahlung oder Admin-Freigabe.",
+    "pendingChange": "Vorgeschlagene Änderung Ihrer Bedingungen",
+    "approveChange": "Zustimmen",
+    "rejectChange": "Ablehnen",
+    "accepted": "Angenommen",
+    "rejected": "Abgelehnt"
   }
 }

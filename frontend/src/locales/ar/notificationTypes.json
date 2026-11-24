@@ -298,6 +298,38 @@
     "order_customer_account_linked": {
       "title": "تم ربط الطلب بحساب العميل",
       "message": "فعّل العميل حسابه وأصبح الطلب ظاهرًا له."
+    },
+    "order_quote_issued": {
+      "title": "عرض سعر جديد لطلبك",
+      "message": "تم إصدار عرض سعر لطلبك."
+    },
+    "order_quote_paid": {
+      "title": "تم تأكيد الدفع",
+      "message": "تم تأكيد دفع الطلب."
+    },
+    "order_quote_payment_review": {
+      "title": "دفعة تحتاج مراجعة",
+      "message": "وصلت دفعة لعرض سعر غير فعّال."
+    },
+    "order_assignment_offered": {
+      "title": "عرض إسناد جديد",
+      "message": "لديك عرض إسناد جديد بانتظار ردك."
+    },
+    "order_assignment_accepted": {
+      "title": "قبل المستقل عرض الإسناد",
+      "message": "قبل المستقل تنفيذ الطلب."
+    },
+    "order_assignment_rejected": {
+      "title": "رفض المستقل عرض الإسناد",
+      "message": "يمكنك إسناد الطلب لمستقل آخر."
+    },
+    "order_work_authorized": {
+      "title": "يمكنك بدء العمل",
+      "message": "تم تأكيد الدفع أو التصريح ويمكنك بدء التنفيذ."
+    },
+    "order_terms_change_requested": {
+      "title": "طلب تعديل على الشروط",
+      "message": "الشروط الحالية سارية حتى توافق."
     }
   }
 }

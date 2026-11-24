@@ -76,6 +76,8 @@ const createInternalOrder = async (req, res, next) => {
       customer: orderCustomerService.parseCustomerInput(req.body.customer),
       // Smart Orders S2: catalog service + dynamic values (absent → legacy free-form order).
       serviceForm: serviceCatalogSchema.parseServiceFormInput(req.body.serviceForm),
+      // Smart Orders S3: offer acceptance deadline (hours) when a freelancer is chosen for a customer order.
+      offerDeadlineHours: req.body.offerDeadlineHours ? Number(req.body.offerDeadlineHours) : null,
     };
 
     const order = await ordersService.createInternalOrder({

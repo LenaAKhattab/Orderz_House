@@ -5,6 +5,8 @@ export const ADMIN_PAGE_PERMISSIONS = {
   orders: "dashboard.admin.orders",
   createOrder: "dashboard.admin.create_order",
   serviceCatalog: "dashboard.admin.service_catalog",
+  /** S3: authorize work before payment (audited). Super Admin always. */
+  commercialOverride: "dashboard.admin.commercial_override",
   courses: "dashboard.admin.courses",
   ads: "dashboard.admin.ads",
   subscriptionActivation: "dashboard.admin.subscription_activation",
@@ -51,6 +53,7 @@ export const ASSIGNABLE_DASHBOARD_PERMISSIONS = [
   ADMIN_PAGE_PERMISSIONS.orders,
   ADMIN_PAGE_PERMISSIONS.createOrder,
   ADMIN_PAGE_PERMISSIONS.serviceCatalog,
+  ADMIN_PAGE_PERMISSIONS.commercialOverride,
   SUPER_ADMIN_PAGE_PERMISSIONS.trainingOrders,
   SUPER_ADMIN_PAGE_PERMISSIONS.pantry,
   SUPER_ADMIN_PAGE_PERMISSIONS.institutions,

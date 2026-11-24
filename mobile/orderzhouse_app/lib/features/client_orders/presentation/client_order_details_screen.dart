@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'customer_quote_card.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/errors/api_error_message.dart';
@@ -97,6 +98,14 @@ class _ClientOrderDetailBody extends ConsumerWidget {
         dateCaption: 'تاريخ الإنشاء',
       ),
       const SizedBox(height: 12),
+      if (isClient && order.quote != null) ...[
+        CustomerQuoteCard(
+          orderId: order.id,
+          quote: order.quote!,
+          onChanged: () => ref.invalidate(clientOrderDetailProvider(orderId)),
+        ),
+        const SizedBox(height: 12),
+      ],
       OrderSectionCard(
         title: 'معلومات الطلب',
         icon: Icons.info_outline_rounded,

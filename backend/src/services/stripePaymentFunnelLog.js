@@ -30,6 +30,7 @@ function paymentFlowOf(meta) {
   const m = meta || {};
   const purpose = String(m.purpose || "");
   if (purpose === "client_fixed_order") return "client_fixed";
+  if (purpose === "order_quote_payment") return m.payer === "guest" ? "guest_quote" : "client_quote";
   if (purpose === "client_selected_bid") return "client_selected_bid";
   if (purpose === "training_package_purchase") return "training";
   if (purpose === "bid_credit_package_purchase") return "bid_credit_package";

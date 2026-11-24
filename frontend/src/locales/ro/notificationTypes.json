@@ -298,6 +298,38 @@
     "order_customer_account_linked": {
       "title": "Comandă asociată contului clientului",
       "message": "Clientul și-a activat contul și poate vedea acum comanda."
+    },
+    "order_quote_issued": {
+      "title": "Ofertă nouă pentru comanda dvs.",
+      "message": "A fost emisă o ofertă pentru comanda dvs."
+    },
+    "order_quote_paid": {
+      "title": "Plată confirmată",
+      "message": "Plata comenzii a fost confirmată."
+    },
+    "order_quote_payment_review": {
+      "title": "Plată de verificat",
+      "message": "A sosit o plată pentru o versiune inactivă a ofertei."
+    },
+    "order_assignment_offered": {
+      "title": "Ofertă nouă de atribuire",
+      "message": "Aveți o ofertă nouă de atribuire care așteaptă răspunsul dvs."
+    },
+    "order_assignment_accepted": {
+      "title": "Atribuire acceptată",
+      "message": "Freelancerul a acceptat comanda."
+    },
+    "order_assignment_rejected": {
+      "title": "Atribuire refuzată",
+      "message": "Puteți atribui comanda altui freelancer."
+    },
+    "order_work_authorized": {
+      "title": "Puteți începe lucrul",
+      "message": "Plata sau autorizarea este confirmată; puteți începe."
+    },
+    "order_terms_change_requested": {
+      "title": "Modificare a condițiilor solicitată",
+      "message": "Condițiile actuale rămân valabile până când sunteți de acord."
     }
   }
 }

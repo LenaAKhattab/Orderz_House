@@ -121,7 +121,9 @@
       "createRequest": "إنشاء طلب",
       "panelTitle": "لوحة المدير الأعلى",
       "sidebarAria": "قائمة المدير الأعلى",
-      "serviceCatalog": "كتالوج الخدمات"
+      "serviceCatalog": "كتالوج الخدمات",
+      "commercialOverride": "تصريح العمل قبل الدفع",
+      "assignmentOffers": "عروض الإسناد"
     }
   },
   "roles": {

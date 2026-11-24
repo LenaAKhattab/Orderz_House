@@ -955,6 +955,8 @@ function projectManagedOrderForCustomer(order, row) {
     clientRevisionNote: null,
     revisionRequestedBy: null,
     serviceForm: order.serviceForm || null,
+    // S3: the customer's own commercial terms only (no freelancer pay / margin).
+    quote: order.customerQuote || null,
     managedByAdmin: true,
     customerActionsAllowed: false,
     linkedAt: row?.customer_account_linked_at || null,

@@ -298,6 +298,38 @@
     "order_customer_account_linked": {
       "title": "Order linked to the customer account",
       "message": "The customer activated an account and can now see the order."
+    },
+    "order_quote_issued": {
+      "title": "New quote for your order",
+      "message": "A quote was issued for your order."
+    },
+    "order_quote_paid": {
+      "title": "Payment confirmed",
+      "message": "The order payment was confirmed."
+    },
+    "order_quote_payment_review": {
+      "title": "Payment needs review",
+      "message": "A payment arrived for an inactive quote version."
+    },
+    "order_assignment_offered": {
+      "title": "New assignment offer",
+      "message": "You have a new assignment offer awaiting your response."
+    },
+    "order_assignment_accepted": {
+      "title": "Assignment accepted",
+      "message": "The freelancer accepted the order."
+    },
+    "order_assignment_rejected": {
+      "title": "Assignment rejected",
+      "message": "You can assign the order to another freelancer."
+    },
+    "order_work_authorized": {
+      "title": "You can start working",
+      "message": "Payment or authorization is confirmed; you can start."
+    },
+    "order_terms_change_requested": {
+      "title": "Change to your terms requested",
+      "message": "Your current terms stay valid until you agree."
     }
   }
 }

@@ -302,6 +302,25 @@
     "SMART_ORDER_FORM_STALE": "Het dienstformulier is bijgewerkt. Vernieuw en probeer opnieuw.",
     "SERVICE_CATALOG_INVALID": "De dienstdefinitie is ongeldig.",
     "SERVICE_CATALOG_NOT_FOUND": "Dienst niet gevonden.",
-    "SERVICE_CATALOG_CODE_TAKEN": "Deze dienstcode is al in gebruik."
+    "SERVICE_CATALOG_CODE_TAKEN": "Deze dienstcode is al in gebruik.",
+    "SMART_ORDER_COMMERCIAL_NOT_APPLICABLE": "Interne opdracht zonder klant; offertes zijn niet van toepassing.",
+    "SMART_ORDER_QUOTE_INVALID": "De offertegegevens zijn ongeldig.",
+    "SMART_ORDER_QUOTE_PAID_LOCKED": "De offerte is betaald; wijzigingen vereisen een goedgekeurd handmatig proces.",
+    "SMART_ORDER_QUOTE_NOT_ACTIVE": "De offerte is niet actief of verlopen.",
+    "SMART_ORDER_QUOTE_ALREADY_PAID": "Deze offerte is al betaald.",
+    "SMART_ORDER_QUOTE_LINK_INVALID": "De offertelink is ongeldig of verlopen.",
+    "SMART_ORDER_PAYMENT_UNAVAILABLE": "Online betalen is momenteel niet beschikbaar.",
+    "SMART_ORDER_PAYMENT_PROCESSING": "De betaling wordt bevestigd. Vernieuw zo meteen.",
+    "SMART_ORDER_OFFER_INVALID": "Het toewijzingsaanbod is ongeldig.",
+    "SMART_ORDER_OFFER_EXISTS": "Voor deze opdracht loopt al een aanbod.",
+    "SMART_ORDER_ALREADY_ASSIGNED": "De opdracht is al toegewezen.",
+    "SMART_ORDER_OFFER_NOT_FOUND": "Toewijzingsaanbod niet gevonden.",
+    "SMART_ORDER_OFFER_EXPIRED": "De aanvaardingstermijn is verstreken.",
+    "SMART_ORDER_OFFER_NOT_PENDING": "Dit aanbod is niet meer beschikbaar.",
+    "SMART_ORDER_WORK_NOT_AUTHORIZED": "Het werk kan pas starten na bevestigde betaling of goedkeuring door een admin.",
+    "SMART_ORDER_REASON_REQUIRED": "Geef een duidelijke reden op.",
+    "SMART_ORDER_CHANGE_INVALID": "Het wijzigingsverzoek is ongeldig.",
+    "SMART_ORDER_NO_TERMS": "Er zijn nog geen overeengekomen voorwaarden.",
+    "SMART_ORDER_CHANGE_NOT_FOUND": "Wijzigingsverzoek niet gevonden."
   }
 }

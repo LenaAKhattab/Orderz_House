@@ -753,7 +753,11 @@ async function createInternalOrderInTransaction(
 ) {
   const createdByRole = actorRole === "super_admin" ? "super_admin" : "admin";
   const sourceType = createdByRole === "super_admin" ? "super_admin_created" : "admin_created";
-  const assignedFreelancerId = payload.assignedFreelancerId ? Number(payload.assignedFreelancerId) : null;
+  const requestedFreelancerId = payload.assignedFreelancerId ? Number(payload.assignedFreelancerId) : null;
+  // Smart Orders S3: customer orders never auto-assign — the chosen freelancer receives an OFFER
+  // (accept / reject / deadline) and work starts only after payment or an audited authorization.
+  const isCustomerOrder = Boolean(payload.customer);
+  const assignedFreelancerId = isCustomerOrder ? null : requestedFreelancerId;
   const wantsArchive = Boolean(payload.archive);
   const visibilityScope = options.visibilityScope === "institution" ? "institution" : "public";
   const skipFreelancerBroadcast = Boolean(options.skipFreelancerBroadcast) || visibilityScope === "institution";
@@ -831,14 +835,17 @@ async function createInternalOrderInTransaction(
   const receivedAt = isAssigned ? new Date() : null;
   const startedAt = receivedAt;
   const dueAt = receivedAt ? computeDueAt(receivedAt, payload.durationValue, payload.durationUnit) : null;
-  const shouldArchive = !isAssigned && wantsArchive;
-  const isPublished = shouldArchive ? false : true;
-  const isOpenForPool = isAssigned ? false : !shouldArchive;
+  const shouldArchive = !isAssigned && wantsArchive && !isCustomerOrder;
+  // Customer orders are managed privately (no public pool / broadcast) until an offer is accepted.
+  const isPublished = shouldArchive || isCustomerOrder ? false : true;
+  const isOpenForPool = isAssigned || isCustomerOrder ? false : !shouldArchive;
   const isBidding = payload.projectType === "bidding";
   /** Internal pool: fixed → published (claim); bidding → open_for_bids (priced bids only; min/max validated). */
   let orderStatus;
   if (isAssigned) {
     orderStatus = ORDER_STATUSES.IN_PROGRESS;
+  } else if (isCustomerOrder) {
+    orderStatus = ORDER_STATUSES.DRAFT;
   } else if (shouldArchive) {
     orderStatus = ORDER_STATUSES.DRAFT;
   } else if (isBidding) {
@@ -986,6 +993,19 @@ async function createInternalOrderInTransaction(
       customer: payload.customer,
     });
     customerLink = linked.invitation || null;
+    if (requestedFreelancerId) {
+      const { rows: fresh } = await client.query(`SELECT * FROM orders WHERE id = $1 FOR UPDATE`, [orderRow.id]);
+      await require("./orderCommercialService").createOfferInTransaction(client, {
+        order: fresh[0],
+        input: {
+          freelancerUserId: requestedFreelancerId,
+          compensationAmount: payload.offerCompensation ?? null,
+          deadlineHours: payload.offerDeadlineHours ?? null,
+        },
+        actorUserId,
+        actorRole: createdByRole,
+      });
+    }
   } else if (orderChannelOpt) {
     await client.query(`UPDATE orders SET order_channel = $2 WHERE id = $1`, [orderRow.id, orderChannelOpt]);
   }
@@ -1082,7 +1102,7 @@ async function createInternalOrderInTransaction(
       ),
     );
   }
-  if (!assignedFreelancerId && !shouldArchive && !skipFreelancerBroadcast) {
+  if (!assignedFreelancerId && !shouldArchive && !skipFreelancerBroadcast && !isCustomerOrder) {
     await safeNotify(async () => {
       const freelancerIds = await notificationEventsService.getRoleUserIds(["freelancer"], client);
       await notificationEventsService.notifyUsers(
@@ -1784,6 +1804,10 @@ async function listClientOrders({ clientUserId, limit = 50, offset = 0 } = {}) {
   // Smart Orders S2: immutable service snapshots for the page (one batched query).
   const snapshots = await require("./serviceCatalogService").getOrderFormSnapshotsMap(orderIds);
   for (const o of out) o.serviceForm = snapshots.get(String(o.id)) || null;
+  // Smart Orders S3: latest customer quote for managed orders (one batched query).
+  const managedIds = out.filter((o) => o.sourceType !== "client_created").map((o) => o.id);
+  const quotes = managedIds.length ? await require("./orderCommercialService").loadCustomerQuotesMap(managedIds) : new Map();
+  for (const o of out) if (o.sourceType !== "client_created") o.customerQuote = quotes.get(String(o.id)) || null;
 
   // Smart Orders S1: Admin-managed orders linked to this customer use the read-only projection.
   const orderCustomerService = require("./orderCustomerService");
@@ -2418,6 +2442,8 @@ async function getClientOrderByIdForOwner({ clientUserId, orderId }) {
   if (!order) return null;
   if (access.managed) {
     // Admin-managed order linked to this customer: sanitized read-only projection.
+    const quotes = await require("./orderCommercialService").loadCustomerQuotesMap([order.id]);
+    order.customerQuote = quotes.get(String(order.id)) || null;
     return require("./orderCustomerService").projectManagedOrderForCustomer(order, access.order);
   }
   await enrichOrderWithSubmissionHistory(order, "client");
@@ -4174,6 +4200,8 @@ async function submitFreelancerOrderDelivery({ freelancerUserId, orderId, upload
       err.statusCode = 403;
       throw err;
     }
+    // Smart Orders S3: customer orders start only after payment / audited authorization + accepted offer.
+    await require("./orderCommercialService").assertWorkAllowed(client, order);
     if (!FREELANCER_DELIVERY_ALLOWED_STATUSES.has(order.order_status)) {
       const err = new Error("لا يمكن التسليم في الحالة الحالية للطلب.");
       err.statusCode = 409;

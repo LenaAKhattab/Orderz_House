@@ -13,6 +13,7 @@ import Unauthorized from "./pages/Unauthorized";
 
 const MainLayout = lazy(() => import("./layouts/MainLayout"));
 const ClaimOrderPage = lazy(() => import("./pages/ClaimOrderPage"));
+const GuestQuotePage = lazy(() => import("./pages/GuestQuotePage"));
 import PendingOrderClaimResume from "./components/routing/PendingOrderClaimResume";
 import { ClientCreateOrderModalProvider } from "./context/ClientCreateOrderModalContext.jsx";
 import {
@@ -101,6 +102,7 @@ import {
   AdminOrdersPage,
   AdminWhatsappOrdersPage,
   AdminServiceCatalogPage,
+  FreelancerAssignmentOffersPage,
   FreelancerWhatsappOrdersPage,
   AdminCreateOrderPage,
   AdminSubscriptionsActivationPage,
@@ -269,6 +271,14 @@ function App() {
                 }
               />
               <Route path="/ref/:code" element={<ReferralLanding />} />
+              <Route
+                path="/pay-quote"
+                element={
+                  <Suspense fallback={<RouteSuspenseFallback />}>
+                    <GuestQuotePage />
+                  </Suspense>
+                }
+              />
               <Route
                 path="/claim-order"
                 element={
@@ -1084,6 +1094,14 @@ function App() {
                   element={
                     <RequireRole allowedRoles={[ROLE.FREELANCER]}>
                       <FreelancerEliteOfferPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/dashboard/freelancer/assignment-offers"
+                  element={
+                    <RequireRole allowedRoles={[ROLE.FREELANCER]}>
+                      <FreelancerAssignmentOffersPage />
                     </RequireRole>
                   }
                 />

@@ -302,6 +302,25 @@
     "SMART_ORDER_FORM_STALE": "تم تحديث نموذج الخدمة. حدّث الصفحة وأعد المحاولة.",
     "SERVICE_CATALOG_INVALID": "تعريف الخدمة غير صالح.",
     "SERVICE_CATALOG_NOT_FOUND": "الخدمة غير موجودة.",
-    "SERVICE_CATALOG_CODE_TAKEN": "رمز الخدمة مستخدم."
+    "SERVICE_CATALOG_CODE_TAKEN": "رمز الخدمة مستخدم.",
+    "SMART_ORDER_COMMERCIAL_NOT_APPLICABLE": "هذا طلب داخلي بدون عميل؛ لا ينطبق عليه عرض السعر.",
+    "SMART_ORDER_QUOTE_INVALID": "بيانات عرض السعر غير صالحة.",
+    "SMART_ORDER_QUOTE_PAID_LOCKED": "تم دفع عرض السعر؛ أي تغيير يتطلب معالجة يدوية معتمدة.",
+    "SMART_ORDER_QUOTE_NOT_ACTIVE": "عرض السعر غير فعّال أو منتهي الصلاحية.",
+    "SMART_ORDER_QUOTE_ALREADY_PAID": "تم دفع عرض السعر بالفعل.",
+    "SMART_ORDER_QUOTE_LINK_INVALID": "رابط عرض السعر غير صالح أو منتهي.",
+    "SMART_ORDER_PAYMENT_UNAVAILABLE": "الدفع الإلكتروني غير متاح حاليًا.",
+    "SMART_ORDER_PAYMENT_PROCESSING": "جارٍ تأكيد الدفع. حدّث الصفحة بعد قليل.",
+    "SMART_ORDER_OFFER_INVALID": "بيانات عرض الإسناد غير صالحة.",
+    "SMART_ORDER_OFFER_EXISTS": "يوجد عرض إسناد قائم لهذا الطلب.",
+    "SMART_ORDER_ALREADY_ASSIGNED": "الطلب مُسند بالفعل.",
+    "SMART_ORDER_OFFER_NOT_FOUND": "عرض الإسناد غير موجود.",
+    "SMART_ORDER_OFFER_EXPIRED": "انتهت مهلة قبول عرض الإسناد.",
+    "SMART_ORDER_OFFER_NOT_PENDING": "لم يعد عرض الإسناد متاحًا.",
+    "SMART_ORDER_WORK_NOT_AUTHORIZED": "لا يمكن بدء التنفيذ قبل تأكيد الدفع أو تصريح الإدارة.",
+    "SMART_ORDER_REASON_REQUIRED": "اكتب سببًا واضحًا.",
+    "SMART_ORDER_CHANGE_INVALID": "بيانات طلب التعديل غير صالحة.",
+    "SMART_ORDER_NO_TERMS": "لا توجد شروط متفق عليها بعد.",
+    "SMART_ORDER_CHANGE_NOT_FOUND": "طلب التعديل غير موجود."
   }
 }

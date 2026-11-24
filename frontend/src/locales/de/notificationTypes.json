@@ -298,6 +298,38 @@
     "order_customer_account_linked": {
       "title": "Auftrag mit dem Kundenkonto verknüpft",
       "message": "Der Kunde hat ein Konto aktiviert und sieht den Auftrag jetzt."
+    },
+    "order_quote_issued": {
+      "title": "Neues Angebot für Ihren Auftrag",
+      "message": "Für Ihren Auftrag wurde ein Angebot erstellt."
+    },
+    "order_quote_paid": {
+      "title": "Zahlung bestätigt",
+      "message": "Die Zahlung für den Auftrag wurde bestätigt."
+    },
+    "order_quote_payment_review": {
+      "title": "Zahlung prüfen",
+      "message": "Eine Zahlung ist für eine inaktive Angebotsversion eingegangen."
+    },
+    "order_assignment_offered": {
+      "title": "Neues Zuweisungsangebot",
+      "message": "Ein neues Zuweisungsangebot wartet auf Ihre Antwort."
+    },
+    "order_assignment_accepted": {
+      "title": "Zuweisung angenommen",
+      "message": "Der Freelancer hat den Auftrag angenommen."
+    },
+    "order_assignment_rejected": {
+      "title": "Zuweisung abgelehnt",
+      "message": "Sie können den Auftrag einem anderen Freelancer zuweisen."
+    },
+    "order_work_authorized": {
+      "title": "Sie können beginnen",
+      "message": "Zahlung oder Freigabe ist bestätigt; Sie können starten."
+    },
+    "order_terms_change_requested": {
+      "title": "Änderung Ihrer Bedingungen angefragt",
+      "message": "Ihre aktuellen Bedingungen gelten, bis Sie zustimmen."
     }
   }
 }

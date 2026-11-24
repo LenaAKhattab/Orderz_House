@@ -383,5 +383,172 @@
       "previewHint": "This is how the form will look when creating an order.",
       "noFields": "No fields yet."
     }
+  },
+  "commercial": {
+    "open": "Pricing & assignment",
+    "title": "Pricing & assignment — {{orderCode}}",
+    "loading": "Loading…",
+    "notApplicable": "This is an internal order without a customer; it keeps the current direct-assignment flow.",
+    "readiness": "Ready to start",
+    "readyPaid": "Paid",
+    "readyAuthorized": "Authorized before payment",
+    "notReady": "Awaiting payment or authorization",
+    "freelancerPay": "Current freelancer pay",
+    "quote": {
+      "heading": "Quote",
+      "none": "No quote yet.",
+      "base": "Base amount",
+      "currency": "Currency",
+      "adjustments": "Adjustments",
+      "adjLabel": "Description",
+      "adjAmount": "Amount (negative = discount)",
+      "addAdjustment": "Add line",
+      "validDays": "Valid for (days)",
+      "tax": "Tax treatment (information only)",
+      "taxOptions": {
+        "not_applicable": "Not applied",
+        "taxable": "Taxable",
+        "zero_rated": "Zero-rated",
+        "exempt": "Exempt",
+        "out_of_scope": "Out of scope"
+      },
+      "terms": "Terms shown to the customer (optional)",
+      "total": "Total",
+      "issue": "Issue quote",
+      "revise": "Issue new version",
+      "reviseHint": "The current version is kept and superseded — never edited.",
+      "cancel": "Cancel quote",
+      "guestLink": "Guest payment link",
+      "newGuestLink": "Create new link",
+      "linkOnce": "The link is shown only now; any previous link stops working.",
+      "recordAcceptance": "Record customer approval",
+      "evidence": "How did the customer approve?",
+      "history": "Version history",
+      "status": {
+        "issued": "Issued",
+        "accepted": "Accepted",
+        "expired": "Expired",
+        "superseded": "Superseded",
+        "cancelled": "Cancelled"
+      },
+      "payment": {
+        "unpaid": "Unpaid",
+        "paid": "Paid",
+        "paid_inactive": "Paid on an inactive version — needs review"
+      }
+    },
+    "assign": {
+      "heading": "Assignment",
+      "offer": "Send assignment offer",
+      "compensation": "Freelancer pay (JOD)",
+      "deadline": "Acceptance deadline (hours)",
+      "cancelOffer": "Withdraw offer",
+      "wizardNote": "For customer orders the freelancer receives an offer to accept or reject; work starts only after payment or an Admin authorization.",
+      "status": {
+        "pending": "Awaiting response",
+        "accepted": "Accepted",
+        "rejected": "Rejected",
+        "expired": "Expired",
+        "cancelled": "Withdrawn"
+      }
+    },
+    "terms": {
+      "heading": "Agreed terms",
+      "version": "Terms version {{version}}",
+      "immutable": "Accepted terms are never edited; changes go through a change request.",
+      "change": "Request pay / deadline change",
+      "newAmount": "New pay (JOD)",
+      "newDue": "New due date (optional)",
+      "reason": "Reason",
+      "changeHint": "Increases apply immediately (audited); reductions need the freelancer's approval.",
+      "changeStatus": {
+        "pending_freelancer": "Awaiting freelancer",
+        "approved": "Approved",
+        "rejected": "Rejected",
+        "applied": "Applied",
+        "cancelled": "Cancelled"
+      }
+    },
+    "override": {
+      "heading": "Authorize work before payment",
+      "reason": "Reason (kept in the audit log)",
+      "submit": "Authorize",
+      "hint": "Requires a dedicated permission. Does not change the payment status."
+    },
+    "history": "History",
+    "saved": "Saved",
+    "failed": "The action could not be completed",
+    "events": {
+      "quote_issued": "Quote issued",
+      "quote_superseded": "Quote superseded",
+      "quote_cancelled": "Quote cancelled",
+      "quote_expired": "Quote expired",
+      "quote_accepted": "Quote accepted",
+      "guest_link_created": "Payment link created",
+      "payment_checkout_created": "Checkout started",
+      "payment_confirmed": "Payment confirmed",
+      "payment_on_inactive_quote": "Payment on inactive version",
+      "offer_created": "Offer sent",
+      "offer_accepted": "Offer accepted",
+      "offer_rejected": "Offer rejected",
+      "offer_expired": "Offer expired",
+      "offer_cancelled": "Offer withdrawn",
+      "terms_snapshot": "Terms recorded",
+      "change_requested": "Change requested",
+      "change_approved": "Change approved",
+      "change_rejected": "Change rejected",
+      "change_applied": "Change applied",
+      "work_authorized": "Work authorized",
+      "work_started": "Work started"
+    }
+  },
+  "customerQuote": {
+    "heading": "Your quote",
+    "version": "Version {{version}}",
+    "validUntil": "Valid until {{date}}",
+    "accept": "Accept quote",
+    "pay": "Pay now",
+    "paid": "Paid",
+    "processing": "Confirming payment…",
+    "expired": "This quote has expired. Contact our team for a new one.",
+    "taxNote": "No tax is applied to this quote."
+  },
+  "guestPay": {
+    "title": "Quote & payment",
+    "loading": "Loading the quote…",
+    "invalid": "This link is invalid or has expired. Ask our team for a new link.",
+    "order": "Order number",
+    "service": "Service",
+    "noAccount": "No account needed. Payment is processed securely by Stripe.",
+    "successPending": "Thank you. We are confirming your payment; this can take a moment.",
+    "confirmed": "Payment confirmed. Our team will follow up on WhatsApp.",
+    "cancelled": "The payment was not completed. You can try again.",
+    "refresh": "Refresh status"
+  },
+  "offers": {
+    "navLabel": "Assignment offers",
+    "title": "Assignment offers",
+    "description": "Review requirements, pay and deadline, then accept or reject. Work starts only after payment or Admin authorization.",
+    "empty": "No assignment offers.",
+    "pay": "Pay",
+    "duration": "Delivery time",
+    "respondBy": "Respond by {{date}}",
+    "accept": "Accept",
+    "reject": "Reject",
+    "rejectReason": "Reason",
+    "reasons": {
+      "unavailable": "Not available",
+      "outside_skills": "Outside my skills",
+      "deadline_too_short": "Deadline too short",
+      "compensation": "Pay not suitable",
+      "other": "Other"
+    },
+    "acceptedTerms": "Agreed terms",
+    "waitingStart": "Accepted — waiting for payment or Admin authorization before you start.",
+    "pendingChange": "Proposed change to your terms",
+    "approveChange": "Approve",
+    "rejectChange": "Decline",
+    "accepted": "Accepted",
+    "rejected": "Rejected"
   }
 }

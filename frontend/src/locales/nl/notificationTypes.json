@@ -298,6 +298,38 @@
     "order_customer_account_linked": {
       "title": "Opdracht gekoppeld aan het klantaccount",
       "message": "De klant heeft een account geactiveerd en ziet de opdracht nu."
+    },
+    "order_quote_issued": {
+      "title": "Nieuwe offerte voor uw opdracht",
+      "message": "Er is een offerte voor uw opdracht uitgebracht."
+    },
+    "order_quote_paid": {
+      "title": "Betaling bevestigd",
+      "message": "De betaling van de opdracht is bevestigd."
+    },
+    "order_quote_payment_review": {
+      "title": "Betaling controleren",
+      "message": "Er is een betaling binnengekomen voor een inactieve offerteversie."
+    },
+    "order_assignment_offered": {
+      "title": "Nieuw toewijzingsaanbod",
+      "message": "Er wacht een nieuw toewijzingsaanbod op uw antwoord."
+    },
+    "order_assignment_accepted": {
+      "title": "Toewijzing geaccepteerd",
+      "message": "De freelancer heeft de opdracht geaccepteerd."
+    },
+    "order_assignment_rejected": {
+      "title": "Toewijzing geweigerd",
+      "message": "U kunt de opdracht aan een andere freelancer toewijzen."
+    },
+    "order_work_authorized": {
+      "title": "U kunt beginnen",
+      "message": "Betaling of goedkeuring is bevestigd; u kunt starten."
+    },
+    "order_terms_change_requested": {
+      "title": "Wijziging van uw voorwaarden gevraagd",
+      "message": "Uw huidige voorwaarden blijven gelden tot u akkoord gaat."
     }
   }
 }

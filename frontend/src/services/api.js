@@ -4232,3 +4232,34 @@ export const adminSetCatalogServiceActiveRequest = async (id, active) => {
   const { data } = await api.patch(`/admin/service-catalog/${encodeURIComponent(id)}/active`, { active });
   return data;
 };
+
+// ---------------------------------------------------------------------------
+// Smart Orders S3 — quotes, payment, assignment offers, terms
+// ---------------------------------------------------------------------------
+const oid = (id) => encodeURIComponent(id);
+export const adminGetOrderCommercialRequest = async (orderId) =>
+  (await api.get(`/admin/orders/${oid(orderId)}/commercial`, { params: { _ts: Date.now() }, ...noCache })).data;
+export const adminIssueQuoteRequest = async (orderId, input) => (await api.post(`/admin/orders/${oid(orderId)}/quotes`, input)).data;
+export const adminCancelQuoteRequest = async (orderId, reason) => (await api.post(`/admin/orders/${oid(orderId)}/quotes/cancel`, { reason })).data;
+export const adminGuestQuoteLinkRequest = async (orderId) => (await api.post(`/admin/orders/${oid(orderId)}/quotes/guest-link`)).data;
+export const adminRecordQuoteAcceptanceRequest = async (orderId, evidence) =>
+  (await api.post(`/admin/orders/${oid(orderId)}/quotes/record-acceptance`, { evidence })).data;
+export const adminCreateAssignmentOfferRequest = async (orderId, input) =>
+  (await api.post(`/admin/orders/${oid(orderId)}/assignment-offers`, input)).data;
+export const adminCancelAssignmentOfferRequest = async (orderId, reason) =>
+  (await api.post(`/admin/orders/${oid(orderId)}/assignment-offers/cancel`, { reason })).data;
+export const adminAuthorizeWorkRequest = async (orderId, reason) =>
+  (await api.post(`/admin/orders/${oid(orderId)}/work-authorizations`, { reason })).data;
+export const adminRequestCompensationChangeRequest = async (orderId, input) =>
+  (await api.post(`/admin/orders/${oid(orderId)}/compensation-changes`, input)).data;
+export const clientAcceptQuoteRequest = async (orderId) => (await api.post(`/client/orders/${oid(orderId)}/quote/accept`, { channel: "customer_web" })).data;
+export const clientQuoteCheckoutRequest = async (orderId) => (await api.post(`/client/orders/${oid(orderId)}/quote/checkout`, { channel: "web" })).data;
+export const guestQuoteViewRequest = async (token, event = null) => (await api.post("/guest-quotes/view", { token, event })).data;
+export const guestQuoteCheckoutRequest = async (token) => (await api.post("/guest-quotes/checkout", { token })).data;
+export const freelancerListAssignmentOffersRequest = async () =>
+  (await api.get("/freelancer/assignment-offers", { params: { _ts: Date.now() }, ...noCache })).data;
+export const freelancerAcceptAssignmentOfferRequest = async (offerId) => (await api.post(`/freelancer/assignment-offers/${oid(offerId)}/accept`)).data;
+export const freelancerRejectAssignmentOfferRequest = async (offerId, reasonCode) =>
+  (await api.post(`/freelancer/assignment-offers/${oid(offerId)}/reject`, { reasonCode })).data;
+export const freelancerRespondToChangeRequest = async (changeId, approve) =>
+  (await api.post(`/freelancer/commercial-changes/${oid(changeId)}/respond`, { approve })).data;
