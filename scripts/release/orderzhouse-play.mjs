@@ -399,6 +399,10 @@ async function uploadBundle(editId, aab) {
         process.stdout.write(`\r[play] uploaded ${offset}/${size} bytes`);
         continue;
       }
+      // 4xx (other than 408/429) is a definitive rejection (e.g. Play refusing the bundle) — surface it, don't retry.
+      if (res && res.status >= 400 && res.status < 500 && res.status !== 408 && res.status !== 429) {
+        throw new Error(`upload rejected at byte ${offset} (${res.status}): ${(await res.text()).slice(0, 800)}`);
+      }
       if (++failures > 6) throw new Error(`upload failed at byte ${offset} (${res ? res.status : "network"})`);
       await sleep(1000 * 2 ** failures);
       // Ask the server how much it has, then resume from there.
