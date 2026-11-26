@@ -49,6 +49,16 @@ Google Play **production** promotion is deliberately not automated: `orderzhouse
 | GitHub | `gh` keyring login `orderzhouse1` (HTTPS) | |
 | Stripe test (Staging only) | `backend/.env.staging` via `backend/scripts/configureStagingStripeTest.js` | `--from-stripe-cli` or hidden prompt; refuses live keys |
 
+### Granting / re-granting Play access (no browser needed)
+
+Play developer account (Bat Techno Company): `5536364501610086872`. The SA grant was created on
+2026-11-26 through the Play Permissions API (`users.create`) by the company admin, app-level only:
+`CAN_VIEW_NON_FINANCIAL_DATA` + `CAN_MANAGE_TRACK_APKS` on `com.orderzhouse.app`, no account permissions.
+To redo it: `gcloud auth application-default login --scopes=https://www.googleapis.com/auth/androidpublisher,https://www.googleapis.com/auth/cloud-platform --disable-quota-project`
+(set `BROWSER` to Chrome `--profile-directory="Profile 15"`), then
+`node scripts/release/grant-play-sa.mjs --developer 5536364501610086872 [--apply]`, then
+`gcloud auth application-default revoke` so no admin-scoped credential stays on the PC.
+
 ### Revoking Play automation
 
 - Play Console → Users and permissions → remove the service account (instant).
