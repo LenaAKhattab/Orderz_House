@@ -456,21 +456,22 @@ async function cmdUpload(args) {
 
   const editId = await newEdit();
   let committed = false;
+  let failure = null;
   try {
     const state = await readState(editId);
     printState(state);
     const existing = state.bundles.find((b) => Number(b.versionCode) === v.versionCode);
     const maxCode = Math.max(0, ...state.bundles.map((b) => Number(b.versionCode)));
     if (existing && existing.sha256 && existing.sha256.toLowerCase() !== v.sha256) {
-      die(`versionCode ${v.versionCode} already exists on Play with a DIFFERENT artifact (sha256 ${existing.sha256}). Build a higher versionCode.`);
+      throw new Error(`versionCode ${v.versionCode} already exists on Play with a DIFFERENT artifact (sha256 ${existing.sha256}). Build a higher versionCode.`);
     }
     if (!existing && v.versionCode <= maxCode) {
-      die(`versionCode ${v.versionCode} is not higher than the highest uploaded (${maxCode}). Build a higher versionCode.`);
+      throw new Error(`versionCode ${v.versionCode} is not higher than the highest uploaded (${maxCode}). Build a higher versionCode.`);
     }
     const current = state.tracks.find((t) => t.track === track) || { track, releases: [] };
     const pending = (current.releases || []).filter((r) => ["draft", "inProgress", "halted"].includes(r.status));
     if (pending.length && !args["replace-pending"]) {
-      die(`track ${track} has pending release(s) ${pending.map((r) => `"${r.name}" (${r.status})`).join(", ")}; re-run with --replace-pending only if the owner approved discarding them.`);
+      throw new Error(`track ${track} has pending release(s) ${pending.map((r) => `"${r.name}" (${r.status})`).join(", ")}; re-run with --replace-pending only if the owner approved discarding them.`);
     }
     const notes = buildNotes(args, state.languages, state.defaultLanguage);
     const release = {
@@ -488,8 +489,8 @@ async function cmdUpload(args) {
     if (!existing) {
       const uploaded = await uploadBundle(editId, aab);
       log(`Play accepted bundle versionCode=${uploaded.versionCode} sha256=${uploaded.sha256}`);
-      if (Number(uploaded.versionCode) !== v.versionCode) die("Play reports a different versionCode than the local manifest");
-      if (uploaded.sha256 && uploaded.sha256.toLowerCase() !== v.sha256) die("Play-computed sha256 differs from the local artifact");
+      if (Number(uploaded.versionCode) !== v.versionCode) throw new Error("Play reports a different versionCode than the local manifest");
+      if (uploaded.sha256 && uploaded.sha256.toLowerCase() !== v.sha256) throw new Error("Play-computed sha256 differs from the local artifact");
     }
     await api("PUT", `${app}/edits/${editId}/tracks/${track}`, { body: { track, releases: [release] } });
     await api("POST", `${app}/edits/${editId}:validate`);
@@ -502,10 +503,12 @@ async function cmdUpload(args) {
     committed = true;
     log("edit COMMITTED");
   } catch (e) {
-    die(e.message);
+    failure = e;
   } finally {
     if (!committed) await deleteEdit(editId);
   }
+  if (failure) die(failure.message);
+  if (mode !== "commit") return;
 
   // Post-commit verification from a fresh edit.
   const check = await newEdit();
