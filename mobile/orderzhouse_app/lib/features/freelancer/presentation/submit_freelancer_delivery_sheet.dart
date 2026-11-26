@@ -137,9 +137,12 @@ class _SubmitFreelancerDeliverySheetState extends State<_SubmitFreelancerDeliver
                   style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.textInk),
                 ),
               ),
+              // expand: false — a full-width OhButton inside a Row fails layout and the
+              // whole sheet renders empty (8112 QA regression).
               OhButton(
                 label: 'إضافة ملفات',
                 outlined: true,
+                expand: false,
                 onPressed: widget.isSubmitting ? null : _pickFiles,
               ),
             ],

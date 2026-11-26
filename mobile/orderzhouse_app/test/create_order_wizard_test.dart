@@ -206,6 +206,13 @@ void main() {
       expect(afterBack.draft.description, 'وصف محفوظ بما يكفي هنا');
       expect(afterBack.draft.durationValue, '3');
     });
+
+    test('hasUserInput guards back-navigation discard', () {
+      expect(const CreateOrderState(draft: CreateOrderDraft(projectType: 'fixed')).hasUserInput, isFalse);
+      expect(const CreateOrderState(draft: CreateOrderDraft(categoryId: '2')).hasUserInput, isTrue);
+      expect(const CreateOrderState(draft: CreateOrderDraft(title: 'x')).hasUserInput, isTrue);
+      expect(const CreateOrderState(draft: CreateOrderDraft(title: '   ')).hasUserInput, isFalse);
+    });
   });
 
   group('Create order UI — details step', () {

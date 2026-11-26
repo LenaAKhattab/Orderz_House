@@ -53,6 +53,18 @@ class CreateOrderState {
 
   bool get isSuccess => result != null;
 
+  /// True once the customer entered anything beyond the initial order type — leaving the
+  /// wizard then would silently discard their work (fields, service answers, attachments).
+  bool get hasUserInput =>
+      draft.categoryId != null ||
+      draft.title.trim().isNotEmpty ||
+      draft.description.trim().isNotEmpty ||
+      draft.budget.trim().isNotEmpty ||
+      draft.bidBudgetMin.trim().isNotEmpty ||
+      draft.bidBudgetMax.trim().isNotEmpty ||
+      attachments.isNotEmpty ||
+      serviceDraft.serviceCode != null;
+
   CatalogService? get selectedService {
     final code = serviceDraft.serviceCode;
     if (code == null) return null;

@@ -176,6 +176,26 @@ rootDescribe("internal priced bidding lifecycle (Postgres integration)", () => {
         assert.strictEqual(Number(subA?.planId), planId, "freelancer A must have assigned paid plan before bidding");
         assert.strictEqual(Number(subB?.planId), planId, "freelancer B must have assigned paid plan before bidding");
 
+        // A plan alone is no longer enough to bid: company approval + identity verification are gates
+        // (2e5fe3c). Make both freelancers eligible exactly like a real company-approved freelancer
+        // (same fixture as externalOrderIntake.integration.test.js).
+        for (const fid of [freelancerA, freelancerB]) {
+          await pool.query(
+            `INSERT INTO freelancer_identity_manual_verifications
+               (freelancer_user_id, status, verification_method, verified_by_user_id, verified_at)
+             VALUES ($1, 'approved', 'whatsapp', $2, NOW())
+             ON CONFLICT (freelancer_user_id) DO UPDATE SET status = 'approved', revoked_at = NULL`,
+            [fid, adminId],
+          );
+          await pool.query(
+            `UPDATE freelancer_subscriptions SET activation_status = 'company_approved'
+              WHERE freelancer_user_id = $1 AND is_current = TRUE`,
+            [fid],
+          );
+          const elig = await subscriptionsService.canFreelancerTakeOrders(String(fid));
+          assert.strictEqual(elig.eligible, true, `freelancer ${fid} must be eligible before bidding (${elig.reason})`);
+        }
+
         const created = await ordersService.createInternalOrder({
           actorUserId: adminId,
           actorRole: "super_admin",
@@ -386,6 +406,10 @@ rootDescribe("internal priced bidding lifecycle (Postgres integration)", () => {
             ]);
             await cleanupState.pool.query(
               `DELETE FROM freelancer_subscriptions WHERE freelancer_user_id = ANY($1::bigint[])`,
+              [[cleanupState.userIds[1], cleanupState.userIds[2]]],
+            );
+            await cleanupState.pool.query(
+              `DELETE FROM freelancer_identity_manual_verifications WHERE freelancer_user_id = ANY($1::bigint[])`,
               [[cleanupState.userIds[1], cleanupState.userIds[2]]],
             );
             await cleanupState.pool.query(`DELETE FROM users WHERE id = ANY($1::bigint[])`, [cleanupState.userIds]);
