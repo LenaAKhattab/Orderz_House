@@ -68,3 +68,22 @@ backend/data/translation-cache.json
 mobile/orderzhouse_app/android/app/google-services.json
 mobile/orderzhouse_app/ios/Runner/GoogleService-Info.plist
 mobile/orderzhouse_app/lib/firebase_options.dart
+
+# --- Secrets / migration material guard (2026-11-26) ---
+# Firebase Admin SDK + generic service-account keys (backend credential lives on the VPS host only)
+*firebase-adminsdk*.json
+*service-account*.json
+*serviceAccount*.json
+# SSH private keys
+id_rsa
+id_ed25519
+id_ecdsa
+*_ed25519
+*_rsa
+*.pem
+*.p12
+# Build artifacts, migration archives and local logs
+/artifacts/
+/backend/logs/
+*.7z
+*.tar.gz

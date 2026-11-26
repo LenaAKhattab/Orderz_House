@@ -1,7 +1,7 @@
 name: orderzhouse_app
 description: Orderz House — client mobile app (Flutter MVP).
 publish_to: 'none'
-version: 8.2.1+8111
+version: 8.2.2+8112
 
 environment:
   sdk: ^3.11.0

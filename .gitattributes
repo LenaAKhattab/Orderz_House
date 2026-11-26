@@ -1,0 +1,2 @@
+# Shell scripts run on the Linux VPS: always LF, regardless of local core.autocrlf.
+*.sh text eol=lf
