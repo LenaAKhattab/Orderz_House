@@ -4,6 +4,9 @@
  *
  *   node scripts/configureStagingStripeTest.js            # prompt (hidden input) and save
  *   node scripts/configureStagingStripeTest.js --status   # names/modes only, no prompt
+ *   node scripts/configureStagingStripeTest.js --from-stripe-cli
+ *       # no typing: test key from the Stripe CLI login + `stripe listen --print-secret`
+ *       # (that secret only verifies events forwarded by `stripe listen`)
  *
  * Safety:
  * - Writes ONLY backend/.env.staging (git-ignored). Never touches backend/.env,
@@ -87,6 +90,31 @@ function promptHidden(label) {
   });
 }
 
+function readFromStripeCli() {
+  const { execFileSync } = require("child_process");
+  const run = (args) =>
+    execFileSync("stripe", args, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], shell: process.platform === "win32", timeout: 60000 });
+  let config;
+  try {
+    config = run(["config", "--list"]);
+  } catch {
+    fail("Stripe CLI not available or not logged in. Run `stripe login` first. Nothing was written.");
+  }
+  const keyMatch = config.match(/^test_mode_api_key\s*=\s*['"]?([A-Za-z0-9_]+)['"]?\s*$/m);
+  const expMatch = config.match(/^test_mode_key_expires_at\s*=\s*['"]?([0-9-]+)['"]?\s*$/m);
+  if (!keyMatch) fail("Stripe CLI has no test_mode_api_key. Run `stripe login`. Nothing was written.");
+  if (expMatch && Date.parse(expMatch[1]) < Date.now()) {
+    fail(`Stripe CLI test key expired on ${expMatch[1]}. Run \`stripe login\` again. Nothing was written.`);
+  }
+  let webhookSecret = "";
+  try {
+    webhookSecret = run(["listen", "--print-secret"]).trim();
+  } catch {
+    fail("`stripe listen --print-secret` failed. Nothing was written.");
+  }
+  return { secretKey: keyMatch[1], webhookSecret };
+}
+
 async function confirmTestModeWithStripe(secretKey) {
   const Stripe = require("stripe");
   const stripe = new Stripe(secretKey);
@@ -133,7 +161,8 @@ async function main() {
   if (process.argv.slice(2).some((a) => /^(sk|rk|pk)_|^whsec_/.test(a))) {
     fail("Never pass secrets as command-line arguments (shell history). Run without arguments.");
   }
-  if (!process.stdin.isTTY || typeof process.stdin.setRawMode !== "function") {
+  const fromCli = process.argv.includes("--from-stripe-cli");
+  if (!fromCli && (!process.stdin.isTTY || typeof process.stdin.setRawMode !== "function")) {
     fail("Run this in an interactive terminal (PowerShell / Windows Terminal) so input stays hidden.");
   }
 
@@ -142,13 +171,21 @@ async function main() {
   console.log("OrderzHouse — Stripe TEST credentials for local Staging QA");
   console.log(`Target file : ${filePath}`);
   console.log(`Staging DB  : ${target.maskedTarget}`);
-  console.log("Input is hidden. Use keys from the Stripe Dashboard in TEST mode only.\n");
 
-  const secretKey = await promptHidden("STRIPE_SECRET_KEY (sk_test_…)");
+  let secretKey;
+  let webhookSecret;
+  if (fromCli) {
+    // Uses the Stripe CLI's own `stripe login` session: its test-mode key and the
+    // `stripe listen` signing secret (correct for CLI-forwarded webhook delivery only).
+    console.log("Source      : Stripe CLI login (test mode) + `stripe listen --print-secret`\n");
+    ({ secretKey, webhookSecret } = readFromStripeCli());
+  } else {
+    console.log("Input is hidden. Use keys from the Stripe Dashboard in TEST mode only.\n");
+    secretKey = await promptHidden("STRIPE_SECRET_KEY (sk_test_…)");
+    webhookSecret = await promptHidden("STRIPE_WEBHOOK_SECRET (whsec_… from `stripe listen` or a TEST-mode endpoint)");
+  }
   if (/^(sk|rk)_live_/.test(secretKey)) fail("LIVE key refused. Nothing was written.");
   if (!/^sk_test_[A-Za-z0-9]{10,}$/.test(secretKey)) fail("Expected a key starting with sk_test_. Nothing was written.");
-
-  const webhookSecret = await promptHidden("STRIPE_WEBHOOK_SECRET (whsec_… from `stripe listen` or a TEST-mode endpoint)");
   if (!/^whsec_[A-Za-z0-9]{10,}$/.test(webhookSecret)) fail("Expected a value starting with whsec_. Nothing was written.");
 
   await confirmTestModeWithStripe(secretKey);
