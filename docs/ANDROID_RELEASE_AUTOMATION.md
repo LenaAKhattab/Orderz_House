@@ -41,7 +41,7 @@ Google Play **production** promotion is deliberately not automated: `orderzhouse
 |---|---|---|
 | Company Google account | `battechno2017@gmail.com` (Chrome profile "bat", `Profile 15`) | Play Console, Google Cloud, Firebase `orderz-house` |
 | gcloud login | `%APPDATA%\gcloud` (gcloud's own credential store) | `gcloud auth login battechno2017@gmail.com` |
-| Play publishing identity | service account in `play-release.config.json` (`serviceAccountEmail`) | **keyless**: the gcloud user impersonates it (IAM Credentials `generateAccessToken`); no JSON key exists |
+| Play publishing identity | service account in `play-release.config.json` (`serviceAccountEmail`) | `orderzhouse-release-automation@orderzhouse-play-publisher.iam.gserviceaccount.com` in dedicated Cloud project `orderzhouse-play-publisher` (APIs: androidpublisher, iamcredentials, iam; no project roles). **Keyless**: only `battechno2017@gmail.com` holds `roles/iam.serviceAccountTokenCreator` on it; no JSON key exists. Play Console access: app `com.orderzhouse.app` only — "View app information" + "Release apps to testing tracks" |
 | Android upload keystore | `mobile/orderzhouse_app/android/keystores/` + `android/key.properties` | git-ignored; cert SHA-256 pinned in `play-release.config.json` |
 | Firebase Android client config | `mobile/orderzhouse_app/android/app/google-services.json` | git-ignored, not secret but project-specific |
 | Firebase Admin (push sender) | VPS host file `/etc/orderzhouse/firebase-service-account.json`, mounted read-only | never copy to a PC or into the app |
