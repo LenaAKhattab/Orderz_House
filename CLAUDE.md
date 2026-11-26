@@ -13,6 +13,7 @@ node scripts/oh.mjs doctor            # first thing in a new session
 node scripts/oh.mjs test:backend | test:frontend | test:flutter | test:staging
 node scripts/oh.mjs android:build     # signed AAB + verification
 node scripts/oh.mjs play:status       # Google Play, read-only
+node scripts/release/orderzhouse-play.mjs testers   # internal-track Google Groups, read-only
 node scripts/oh.mjs play:internal --commit --notes-en "…" --notes-ar "…"
 node scripts/oh.mjs prod:health
 node scripts/oh.mjs prod:deploy --sha <full merged sha> --confirm-production [--migrations "…"]
@@ -28,7 +29,8 @@ access / USB-debugging authorization, legal declarations, and business decisions
 - GitHub: `gh` login `orderzhouse1`, HTTPS remote. Branch → PR → `git merge --no-ff`, keep branches.
 - NEVER use: HAZBER developer account / `com.hazber.*`, M1YAT service accounts or keys, other Chrome
   profiles, personal game credentials. Other projects on this PC (Bildazo etc.) own their emulators and
-  adb sessions — do not kill the adb server or touch their AVDs; OrderzHouse uses AVD `Medium_Phone`.
+  adb sessions — do not kill the adb server or touch their AVDs. OrderzHouse uses its own AVD
+  `OrderzHouse_QA` on emulator-5590 (always `adb -s emulator-5590`); `Medium_Phone`/5580 is shared — leave it.
 
 ## Production
 

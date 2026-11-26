@@ -432,6 +432,19 @@ async function cmdStatus() {
   log("read-only: temporary edit discarded, nothing changed");
 }
 
+// Read-only. The Testers API only exposes Google Groups; email-list testers configured in
+// Play Console are NOT returned, so an empty list does not mean "no testers".
+async function cmdTesters(track = "internal") {
+  const id = await newEdit();
+  try {
+    const t = await api("GET", `${app}/edits/${id}/testers/${track}`);
+    log(`testers on ${track}: googleGroups=${JSON.stringify(t.googleGroups || [])}`);
+    log("note: Play Console email-list testers are not visible through this API");
+  } finally {
+    await deleteEdit(id);
+  }
+}
+
 function buildNotes(args, languages, defaultLanguage) {
   const en = args["notes-en"];
   const ar = args["notes-ar"];
@@ -533,6 +546,7 @@ const args = parseArgs(process.argv.slice(2));
 const cmd = args._[0];
 try {
   if (cmd === "status") await cmdStatus();
+  else if (cmd === "testers") await cmdTesters(typeof args.track === "string" ? args.track : "internal");
   else if (cmd === "verify") {
     if (!args.aab || args.aab === true) die("--aab <file> is required");
     const r = verifyAab(args.aab, typeof args.sha256 === "string" ? args.sha256 : undefined);

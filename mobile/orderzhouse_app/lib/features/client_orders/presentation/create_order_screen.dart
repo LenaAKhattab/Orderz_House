@@ -62,20 +62,14 @@ class CreateClientOrderScreen extends ConsumerWidget {
       return CreateOrderSuccessView(result: state.result!);
     }
 
-    return Scaffold(
+    final scaffold = Scaffold(
       backgroundColor: AppColors.homeMobileBg,
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
         title: const Text('إنشاء طلب'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            if (state.step > 0) {
-              ref.read(createOrderControllerProvider.notifier).previousStep();
-            } else {
-              context.pop();
-            }
-          },
+          onPressed: () => handleCreateOrderBack(context, ref),
         ),
       ),
       body: Column(
@@ -108,6 +102,45 @@ class CreateClientOrderScreen extends ConsumerWidget {
         ],
       ),
     );
+
+    // System back (gesture / button) must behave like the AppBar arrow: step back inside the
+    // wizard, and never drop a filled draft without asking.
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) handleCreateOrderBack(context, ref);
+      },
+      child: scaffold,
+    );
+  }
+}
+
+/// Back handling for the create-order wizard (AppBar arrow and Android system back).
+Future<void> handleCreateOrderBack(BuildContext context, WidgetRef ref) async {
+  final state = ref.read(createOrderControllerProvider);
+  if (state.isSubmitting) return;
+  if (state.step > 0) {
+    ref.read(createOrderControllerProvider.notifier).previousStep();
+    return;
+  }
+  if (state.hasUserInput) {
+    final discard = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('تجاهل الطلب؟'),
+        content: const Text('ستفقد البيانات والمرفقات التي أدخلتها في هذا الطلب.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('متابعة التعديل')),
+          TextButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('تجاهل')),
+        ],
+      ),
+    );
+    if (discard != true || !context.mounted) return;
+  }
+  if (context.canPop()) {
+    context.pop();
+  } else {
+    context.go(AppRoutes.home);
   }
 }
 

@@ -288,6 +288,23 @@ class _FreelancerDeliverySectionState extends ConsumerState<_FreelancerDeliveryS
               style: const TextStyle(color: AppColors.textInk, height: 1.5, fontWeight: FontWeight.w600),
               textAlign: TextAlign.right,
             ),
+            const SizedBox(height: 6),
+            // Web parity: the freelancer must see what to change, not only that changes were requested.
+            Container(
+              key: const Key('freelancer-revision-note'),
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.iconChipBg,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.cardBorder),
+              ),
+              child: Text(
+                revisionNote,
+                style: const TextStyle(color: AppColors.textInk, height: 1.5),
+                textAlign: TextAlign.right,
+              ),
+            ),
             const SizedBox(height: 10),
           ],
           const Text(

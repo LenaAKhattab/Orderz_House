@@ -35,6 +35,26 @@ Google Play **production** promotion is deliberately not automated: `orderzhouse
 6. Install from the Play internal-testing link on a real device and run acceptance.
 7. Public production rollout: owner decision, done manually in Play Console.
 
+Testers: `node scripts/release/orderzhouse-play.mjs testers` (read-only) lists the internal track's
+Google Groups. Email-list testers and the internal-test opt-in link exist only in Play Console
+(Testing → Internal testing → Testers); an empty API list does not mean "no testers".
+
+## Emulator QA against Staging (isolated)
+
+- Dedicated AVD **`OrderzHouse_QA`** on `-port 5590` (emulator-5590). `Medium_Phone`/emulator-5580 is
+  shared with other projects' sessions — never install on or drive it. Always pass `adb -s emulator-5590`.
+- Port 5000 on this PC is another project's backend: run the Staging backend with
+  `PORT=5080 node server.js` (in `backend/`, `.env` = Staging) and build
+  `flutter build apk --debug --dart-define=API_BASE_URL=http://10.0.2.2:5080/api`.
+- QA accounts: `ALLOW_QA_SEED=true node scripts/seed-mobile-qa-users.js` (Staging; client + freelancer,
+  freelancer made eligible incl. identity + company approval). Credentials are in `docs/MOBILE_LOCAL_QA.md`.
+- Managed-order (Smart Orders) fixtures for c1/f1 are created ad hoc with official services
+  (`createInternalOrder`, `acceptOffer`, `issueQuote`, `authorizeWork`, `adminRequestInternalDeliveryRevision`)
+  in untracked `backend/scripts/_tmp*.js`. Payment stays untestable until Stripe TEST is configured.
+- The mobile app is Arabic-only (`locale: Locale('ar')` in `lib/app.dart`); there is no in-app English switch.
+- FCM: debug builds register real tokens with the backend; push *delivery* needs the Firebase Admin
+  credential, which exists only on the VPS — test receipt on a real device against Production.
+
 ## Identities and credentials (locations only)
 
 | What | Where | Notes |

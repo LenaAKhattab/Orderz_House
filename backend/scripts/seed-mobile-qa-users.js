@@ -283,7 +283,7 @@ async function upsertQaUser(
 
       "+962790000001",
 
-      "Ø°ÙƒØ±",
+      "ذكر",
 
       true,
 
@@ -368,6 +368,22 @@ async function ensureFreelancerEligible(freelancerUserId) {
     notes: "seed-mobile-qa-users.js (local QA activation fee)",
 
   });
+
+  // A plan + fee alone is not enough since the identity/company-approval gates (2e5fe3c):
+  // approve the QA freelancer exactly like a real company-approved freelancer.
+  await pool.query(
+    `INSERT INTO freelancer_identity_manual_verifications
+       (freelancer_user_id, status, verification_method, verified_by_user_id, verified_at)
+     VALUES ($1, 'approved', 'whatsapp', NULL, NOW())
+     ON CONFLICT (freelancer_user_id) DO UPDATE SET status = 'approved', revoked_at = NULL`,
+    [freelancerUserId],
+  );
+
+  await pool.query(
+    `UPDATE freelancer_subscriptions SET activation_status = 'company_approved'
+      WHERE freelancer_user_id = $1 AND is_current = TRUE`,
+    [freelancerUserId],
+  );
 
   return subscriptionsService.canFreelancerTakeOrders(String(freelancerUserId));
 
@@ -485,7 +501,7 @@ async function upsertPoolOrder(client, { clientUserId, projectType, title }) {
 
   const description =
 
-    "Ø·Ù„Ø¨ Ø§Ø®ØªØ¨Ø§Ø± QA-3A Ù„Ù„ØªØ·Ø¨ÙŠÙ‚ Ø§Ù„Ù…Ø­Ù…ÙˆÙ„. Ù…Ù…Ù„ÙˆÙƒ Ù„Ø¹Ù…ÙŠÙ„ QA â€” ÙŠÙ…ÙƒÙ† Ø­Ø°ÙÙ‡ Ø¨Ø¹Ø¯ Ø§Ù†ØªÙ‡Ø§Ø¡ Ø§Ù„Ø§Ø®ØªØ¨Ø§Ø±.";
+    "طلب اختبار QA-3A للتطبيق المحمول. مملوك لعميل QA — يمكن حذفه بعد انتهاء الاختبار.";
 
 
 
@@ -856,9 +872,9 @@ async function main() {
 
     role: "client",
 
-    firstName: "Ø¹Ù…ÙŠÙ„",
+    firstName: "عميل",
 
-    fatherName: "Ø§Ø®ØªØ¨Ø§Ø±",
+    fatherName: "اختبار",
 
     familyName: "QA",
 
@@ -874,9 +890,9 @@ async function main() {
 
     role: "freelancer",
 
-    firstName: "Ù…Ø³ØªÙ‚Ù„",
+    firstName: "مستقل",
 
-    fatherName: "Ø§Ø®ØªØ¨Ø§Ø±",
+    fatherName: "اختبار",
 
     familyName: "QA",
 
