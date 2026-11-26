@@ -1,0 +1,13 @@
+{
+  "_comment": "Non-secret identifiers for OrderzHouse Android publishing. No keys or tokens belong here.",
+  "packageName": "com.orderzhouse.app",
+  "gcloudAccount": "battechno2017@gmail.com",
+  "serviceAccountEmail": "orderzhouse-release-automation@REPLACE_PROJECT_ID.iam.gserviceaccount.com",
+  "allowedTracks": ["internal"],
+  "uploadCertSha256": "B4:0C:66:CF:38:8F:3B:8D:9D:47:2F:91:44:B2:7D:FE:7C:7C:0B:6E:AF:8C:62:30:4C:A8:D5:56:B1:C7:53:65",
+  "firebase": {
+    "projectId": "orderz-house",
+    "androidAppId": "1:727836829707:android:a867f0913e91e213843f0e"
+  },
+  "productionApiBaseUrl": "https://orderzhouse.com/api"
+}
