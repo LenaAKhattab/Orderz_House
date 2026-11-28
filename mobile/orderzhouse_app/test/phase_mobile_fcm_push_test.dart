@@ -96,6 +96,26 @@ void main() {
       expect(PushPendingNavigation.takeRoute(), '/client/orders/12');
       expect(PushPendingNavigation.peekRoute(), isNull);
     });
+
+    test('an authenticated session opens the order once', () {
+      PushPendingNavigation.setRoute('/client/orders/42522');
+      expect(
+        PushPendingNavigation.takeIfDifferent('/home'),
+        '/client/orders/42522',
+      );
+      expect(PushPendingNavigation.takeIfDifferent('/home'), isNull);
+      expect(PushPendingNavigation.peekRoute(), isNull);
+      expect(PushPendingNavigation.didNavigate, isTrue);
+    });
+
+    test('does not navigate again when that order is already open', () {
+      PushPendingNavigation.setRoute('/client/orders/42522');
+      expect(
+        PushPendingNavigation.takeIfDifferent('/client/orders/42522'),
+        isNull,
+      );
+      expect(PushPendingNavigation.peekRoute(), isNull);
+    });
   });
 
   group('notificationFromRemoteMessage + resolver', () {

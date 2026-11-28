@@ -20,6 +20,30 @@ class _PushBootstrapListenerState extends ConsumerState<PushBootstrapListener> {
   AuthStatus? _lastStatus;
 
   @override
+  void initState() {
+    super.initState();
+    PushPendingNavigation.addListener(_applyPendingPushRoute);
+  }
+
+  @override
+  void dispose() {
+    PushPendingNavigation.removeListener(_applyPendingPushRoute);
+    super.dispose();
+  }
+
+  /// Background tap: the session is already authenticated, so splash will not run again.
+  /// Cold start: if this runs before splash chooses a route, splash sees [PushPendingNavigation.didNavigate].
+  void _applyPendingPushRoute() {
+    if (!mounted) return;
+    final auth = ref.read(authControllerProvider);
+    if (!auth.isAuthenticated) return;
+    final router = ref.read(routerProvider);
+    final next = PushPendingNavigation.takeIfDifferent(router.state.uri.toString());
+    if (next == null) return;
+    router.go(next);
+  }
+
+  @override
   Widget build(BuildContext context) {
     ref.listen<AuthState>(authControllerProvider, (prev, next) {
       if (_lastStatus == next.status && prev?.user?.id == next.user?.id) return;
