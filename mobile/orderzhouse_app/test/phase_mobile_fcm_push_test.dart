@@ -138,6 +138,40 @@ void main() {
       expect(target?.route, AppRoutes.clientOrderPath('55'));
     });
 
+    test('defers navigation until the role is known, then opens the order once', () {
+      final message = RemoteMessage(
+        data: {
+          'type': 'order.delivery.submitted',
+          'entityType': 'order',
+          'entityId': '42522',
+          'actionUrl': '/dashboard/client/my-orders?orderId=42522&openReview=1',
+          'recipientRole': 'client',
+        },
+      );
+      final notification = notificationFromRemoteMessage(message);
+      expect(routeFromPushNotification(notification, currentUserRole: null), isNull);
+      expect(
+        routeFromPushNotification(notification, currentUserRole: 'client'),
+        AppRoutes.clientOrderPath('42522'),
+      );
+    });
+
+    test('a known role cannot open another role destination', () {
+      final message = RemoteMessage(
+        data: {
+          'entityType': 'order',
+          'entityId': '42522',
+          'actionUrl': '/dashboard/freelancer/assignment-offers',
+          'recipientRole': 'freelancer',
+        },
+      );
+      final notification = notificationFromRemoteMessage(message);
+      expect(
+        routeFromPushNotification(notification, currentUserRole: 'client'),
+        '/notifications',
+      );
+    });
+
     test('rejects raw https actionUrl', () {
       final message = RemoteMessage(
         data: {

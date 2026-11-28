@@ -105,6 +105,7 @@ class PushNotificationService {
   bool _firebaseReady = false;
   bool _permissionAskedThisSession = false;
   bool _registerInFlight = false;
+  RemoteMessage? _pendingMessage;
 
   bool get isReady => _firebaseReady;
 
@@ -151,6 +152,7 @@ class PushNotificationService {
 
   /// Call after successful login / session bootstrap. Never before auth.
   Future<void> onAuthenticated() async {
+    _flushPendingNavigation();
     if (!_firebaseReady || _messaging == null) return;
     final auth = _ref.read(authControllerProvider);
     if (!auth.isAuthenticated) return;
@@ -441,16 +443,26 @@ class PushNotificationService {
     _queueNavigationFromMessage(message);
   }
 
+  void _flushPendingNavigation() {
+    final message = _pendingMessage;
+    if (message == null) return;
+    final role = _ref.read(authControllerProvider).user?.effectiveRole;
+    if (role == null || role.trim().isEmpty) return;
+    _pendingMessage = null;
+    _queueNavigationFromMessage(message);
+  }
+
   void _queueNavigationFromMessage(RemoteMessage message) {
     final notification = notificationFromRemoteMessage(message);
     final role = _ref.read(authControllerProvider).user?.effectiveRole;
-    final target = resolveNotificationAction(notification, currentUserRole: role);
-    if (target == null) {
-      // Fallback: open notifications list when payload cannot be resolved safely.
-      PushPendingNavigation.setRoute('/notifications');
+    final route = routeFromPushNotification(notification, currentUserRole: role);
+    if (route == null) {
+      // Auth is not restored yet. Resolving now would fall through to the inbox
+      // and drop the order destination. Retry once the role is known.
+      _pendingMessage = message;
       return;
     }
-    PushPendingNavigation.setRoute(target.route);
+    PushPendingNavigation.setRoute(route);
   }
 
   static String _currentPlatform() {
@@ -504,6 +516,18 @@ bool _looksLikeToken(String value) {
   if (v.length > 40 && RegExp(r'^[A-Za-z0-9_\-:]+$').hasMatch(v)) return true;
   if (v.contains('-----BEGIN')) return true;
   return false;
+}
+
+/// Route for a tapped push. Null means the session role is not known yet — do not
+/// open the inbox in that case. A known role with an unsafe or unauthorized
+/// destination opens the inbox and never the protected screen.
+String? routeFromPushNotification(
+  AppNotification notification, {
+  required String? currentUserRole,
+}) {
+  if (currentUserRole == null || currentUserRole.trim().isEmpty) return null;
+  return resolveNotificationAction(notification, currentUserRole: currentUserRole)?.route ??
+      '/notifications';
 }
 
 /// Builds a minimal [AppNotification] from FCM data (no sensitive fields).
