@@ -4,9 +4,12 @@ process.env.DATABASE_URL =
 const { describe, it } = require("node:test");
 const assert = require("node:assert/strict");
 
+const fs = require("node:fs");
+const path = require("node:path");
 const deviceTokens = require("../src/services/deviceTokensService");
 const fcm = require("../src/services/fcmPushService");
 const { toEnglish } = require("../src/utils/serverTextEn");
+const { scanSqlForDangerousStatements } = require("../src/utils/databaseEnvironmentSafety");
 
 const AR = /[؀-ۿ]/;
 const TOKEN = "x".repeat(40);
@@ -53,6 +56,16 @@ describe("localized push payload", () => {
     const msg = { ...n, type: "order.message.received", message: "رسالة من المستخدم" };
     assert.ok(!fcm.buildPushPayload(msg, "en").body.includes("رسالة"));
     assert.ok(!AR.test(fcm.buildPushPayload(msg, "en").body));
+  });
+});
+
+describe("migration 221 production scan", () => {
+  it("contains no destructive statements, including inside comments", () => {
+    const sql = fs.readFileSync(path.join(__dirname, "../sql/migrations/221_device_token_locale.sql"), "utf8");
+    const scan = scanSqlForDangerousStatements(sql);
+    assert.equal(scan.dangerous, false);
+    assert.deepEqual(scan.findings, []);
+    assert.match(sql, /ADD COLUMN IF NOT EXISTS locale/);
   });
 });
 

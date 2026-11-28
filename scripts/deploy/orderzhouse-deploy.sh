@@ -52,8 +52,11 @@ LATEST="$(ls backend/sql/migrations/*.sql | sort -V | tail -1 | xargs -n1 basena
 if [[ -n "${MIGRATIONS:-}" ]]; then
   for m in $MIGRATIONS; do
     echo "=== MIGRATE $m"
-    "${COMPOSE[@]}" run --no-deps --rm "${MIGRATE_ENV[@]}" -e EXPECTED_MIGRATION_VERSION="$m" \
-      backend npm run -s db:migrate:production:next
+    if ! "${COMPOSE[@]}" run --no-deps --rm "${MIGRATE_ENV[@]}" -e EXPECTED_MIGRATION_VERSION="$m" \
+      backend npm run -s db:migrate:production:next; then
+      echo "DEPLOY_FAIL migration $m failed; containers NOT restarted"
+      exit 5
+    fi
   done
 fi
 echo "=== MIGRATION STATUS (dry-run, latest=$LATEST)"
