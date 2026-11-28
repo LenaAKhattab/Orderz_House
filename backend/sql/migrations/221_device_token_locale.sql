@@ -2,9 +2,8 @@
 -- Language of the app install that owns a push token ('ar' | 'en'), so FCM lock-screen text can be sent
 -- in the language the user chose in the Android app. NULL = unknown → Arabic (previous behaviour).
 --
--- Additive and reversible: rollback =
---   ALTER TABLE user_device_tokens DROP COLUMN IF EXISTS locale;
---   DELETE FROM schema_migrations WHERE version = '221_device_token_locale';
+-- Additive only. Rollback is an ops step outside this file: remove the locale column and clear
+-- schema_migrations row 221_device_token_locale.
 
 BEGIN;
 
