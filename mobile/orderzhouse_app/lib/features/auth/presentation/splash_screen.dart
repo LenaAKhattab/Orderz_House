@@ -45,12 +45,15 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     final pending = PushPendingNavigation.takeRoute();
     if (pending != null) {
       if (auth.isAuthenticated) {
+        PushPendingNavigation.didNavigate = true;
         context.go(pending);
       } else {
         context.go(AppRoutes.loginWithRedirect(pending));
       }
       return;
     }
+    // A background/cold-start listener may already have opened the notification destination.
+    if (PushPendingNavigation.didNavigate) return;
     context.go(auth.isAuthenticated ? AppRoutes.home : AppRoutes.login);
   }
 
