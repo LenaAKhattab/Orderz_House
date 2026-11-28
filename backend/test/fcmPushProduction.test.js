@@ -214,8 +214,130 @@ describe("queue — bounded fan-out for R1A summaries", () => {
   });
 });
 
-describe("payload — lock-screen safety, language, navigation", () => {
+describe("payload — launcher tap, lock-screen safety, language, navigation", () => {
   const fcm = () => loadFcm();
+
+  it("wire message uses the launcher activity and keeps navigation data in both languages", () => {
+    const f = fcm();
+    const cases = [
+      {
+        name: "delivery",
+        notification: {
+          id: 9,
+          type: "order.delivery.submitted",
+          title: "تم إرسال تسليم جديد",
+          message: "أُرسل تسليم جديد لهذا الطلب — يرجى المراجعة.",
+          entityType: "order",
+          entityId: "321",
+          link: "/dashboard/client/my-orders?orderId=321&openReview=1",
+          recipientRole: "client",
+        },
+        locale: "ar",
+        title: "تم إرسال تسليم جديد",
+        actionUrl: "/dashboard/client/my-orders?orderId=321&openReview=1",
+      },
+      {
+        name: "delivery-en",
+        notification: {
+          id: 9,
+          type: "order.delivery.submitted",
+          title: "تم إرسال تسليم جديد",
+          message: "أُرسل تسليم جديد لهذا الطلب — يرجى المراجعة.",
+          entityType: "order",
+          entityId: "321",
+          link: "/dashboard/client/my-orders?orderId=321&openReview=1",
+          recipientRole: "client",
+        },
+        locale: "en",
+        title: "New delivery submitted",
+        actionUrl: "/dashboard/client/my-orders?orderId=321&openReview=1",
+      },
+      {
+        name: "revision",
+        notification: {
+          id: 4,
+          type: "order.revision.requested",
+          title: "تم طلب تعديلات",
+          message: "غيّر الشعار في ملف client_logo_final.psd",
+          entityType: "order",
+          entityId: "44",
+          link: "/dashboard/freelancer/my-orders/44",
+          recipientRole: "freelancer",
+        },
+        locale: "en",
+        actionUrl: "/dashboard/freelancer/my-orders/44",
+      },
+      {
+        name: "assignment",
+        notification: {
+          id: 5,
+          type: "order.assignment.offered",
+          title: "عرض إسناد جديد",
+          message: "أجر 50 دينار",
+          entityType: "order",
+          entityId: "55",
+          link: "/dashboard/freelancer/assignment-offers",
+          recipientRole: "freelancer",
+        },
+        locale: "ar",
+        actionUrl: "/dashboard/freelancer/assignment-offers",
+      },
+      {
+        name: "customer-order",
+        notification: {
+          id: 6,
+          type: "order.created",
+          title: "تم إنشاء طلبك",
+          message: "طلبك بانتظار المعالجة.",
+          entityType: "order",
+          entityId: "66",
+          link: "/dashboard/client/my-orders?orderId=66",
+          recipientRole: "client",
+        },
+        locale: "ar",
+        actionUrl: "/dashboard/client/my-orders?orderId=66",
+      },
+      {
+        name: "general",
+        notification: {
+          id: 7,
+          type: "user.registered",
+          title: "تم إنشاء حسابك بنجاح",
+          message: "مرحباً بك في منصة أوردرز هاوس.",
+          recipientRole: "client",
+        },
+        locale: "en",
+        title: "Your account was created",
+      },
+      {
+        name: "marketplace-summary",
+        notification: {
+          id: 8,
+          type: "order.pool.summary",
+          title: "تمت إضافة مجموعة جديدة من الطلبات",
+          message: "يتوفر الآن 12 طلبًا جديدًا مناسبًا لك.",
+          entityType: "marketplace",
+          link: "/dashboard/freelancer/orders",
+          recipientRole: "freelancer",
+        },
+        locale: "ar",
+        actionUrl: "/dashboard/freelancer/orders",
+      },
+    ];
+    for (const c of cases) {
+      const payload = f.buildPushPayload(c.notification, c.locale);
+      const message = f.buildMessage("device-token-value", payload);
+      assert.equal(message.android.notification.clickAction, undefined, c.name);
+      assert.equal(message.android.notification.channelId, "orderzhouse_default", c.name);
+      assert.equal(message.notification.title, c.title || payload.title, c.name);
+      assert.equal(message.notification.body, payload.body, c.name);
+      assert.equal(message.data.type, c.notification.type, c.name);
+      if (c.actionUrl) assert.equal(message.data.actionUrl, c.actionUrl, c.name);
+      if (c.notification.entityId) assert.equal(message.data.orderId, String(c.notification.entityId), c.name);
+      assert.equal(JSON.stringify(message).includes("clickAction"), false, c.name);
+      assert.doesNotMatch(JSON.stringify(message), /submissionId|أجر 50|client_logo_final/);
+    }
+  });
 
   it("delivery push: static Arabic copy + canonical deep link (orderId, openReview) as data", () => {
     const p = fcm().buildPushPayload({
