@@ -1,5 +1,6 @@
 import '../../../core/network/json_helpers.dart';
 import 'freelancer_eligibility_models.dart';
+import '../../../core/i18n/i18n.dart';
 
 class PublicPlan {
   const PublicPlan({
@@ -39,7 +40,7 @@ class PublicPlan {
     if (t.isNotEmpty) return t;
     final n = name?.trim();
     if (n != null && n.isNotEmpty) return n;
-    return 'باقة';
+    return tr('باقة');
   }
 
   String get planRefId => checkoutPlanId.isNotEmpty ? checkoutPlanId : id;
@@ -111,7 +112,7 @@ class FreelancerPlanSummary {
     if (t != null && t.isNotEmpty) return t;
     final n = name?.trim();
     if (n != null && n.isNotEmpty) return n;
-    return 'باقة';
+    return tr('باقة');
   }
 
   factory FreelancerPlanSummary.fromJson(Map<String, dynamic> json) {
@@ -144,7 +145,7 @@ class FreelancerSubscriptionSnapshot {
   final String? expiryDate;
   final String? actualStartDate;
 
-  String get displayPlanTitle => plan?.displayTitle ?? 'باقة مجانية';
+  String get displayPlanTitle => plan?.displayTitle ?? tr('باقة مجانية');
 
   factory FreelancerSubscriptionSnapshot.fromJson(Map<String, dynamic> json) {
     final planRaw = json['plan'];
@@ -249,15 +250,15 @@ PublicPlan? findPlanForSubscription(List<PublicPlan> plans, FreelancerSubscripti
 String freelancerSubscriptionStatusLabelAr(String? status) {
   switch (status) {
     case 'active':
-      return 'نشط';
+      return tr('نشط');
     case 'assigned_not_started':
-      return 'مُعيَّن — لم يبدأ بعد';
+      return tr('مُعيَّن — لم يبدأ بعد');
     case 'expired':
-      return 'منتهٍ';
+      return tr('منتهٍ');
     case 'inactive':
-      return 'غير نشط';
+      return tr('غير نشط');
     case 'cancelled':
-      return 'ملغى';
+      return tr('ملغى');
     default:
       return status?.trim().isNotEmpty == true ? status! : '—';
   }
@@ -266,9 +267,9 @@ String freelancerSubscriptionStatusLabelAr(String? status) {
 String freelancerActivationStatusLabelAr(String? status) {
   switch (status) {
     case 'company_approved':
-      return 'موافقة الشركة';
+      return tr('موافقة الشركة');
     case 'company_pending':
-      return 'بانتظار موافقة الشركة';
+      return tr('بانتظار موافقة الشركة');
     default:
       return status?.trim().isNotEmpty == true ? status! : '—';
   }
@@ -276,16 +277,16 @@ String freelancerActivationStatusLabelAr(String? status) {
 
 String freelancerActivationFeeStatusLabelAr(ActivationFeeStatus? status) {
   if (status == null) return '—';
-  if (status.enabled == false) return 'غير مطلوبة حالياً';
-  if (status.isCurrent) return 'مدفوعة وسارية';
-  if (status.needsPayment) return 'مطلوبة — غير مدفوعة';
+  if (status.enabled == false) return tr('غير مطلوبة حالياً');
+  if (status.isCurrent) return tr('مدفوعة وسارية');
+  if (status.needsPayment) return tr('مطلوبة — غير مدفوعة');
   return '—';
 }
 
 String? formatPlanPriceLabel(PublicPlan plan) {
   final price = plan.displayPriceJod;
   if (price == null) return null;
-  if (price <= 0) return 'مجانية';
+  if (price <= 0) return tr('مجانية');
   final amount = price == price.roundToDouble() ? price.toStringAsFixed(0) : price.toStringAsFixed(2);
   return '$amount ${plan.currency}';
 }
@@ -295,7 +296,7 @@ String? formatPlanDurationLabel(PublicPlan plan) {
   if (billing != null && billing.isNotEmpty) return billing;
   final days = plan.durationDays;
   if (days == null || days <= 0) return null;
-  return '$days يوم';
+  return trf('{0} يوم', [days]);
 }
 
 String? formatPlanOrderValueRangeLabel({
@@ -303,20 +304,19 @@ String? formatPlanOrderValueRangeLabel({
   double? maxJod,
 }) {
   if (minJod != null && maxJod != null) {
-    return 'قيمة الطلب: ${minJod.toStringAsFixed(0)} – ${maxJod.toStringAsFixed(0)} دينار';
+    return trf('قيمة الطلب: {0} – {1} دينار', [minJod.toStringAsFixed(0), maxJod.toStringAsFixed(0)]);
   }
-  if (minJod != null) return 'قيمة الطلب من ${minJod.toStringAsFixed(0)} دينار';
-  if (maxJod != null) return 'حتى ${maxJod.toStringAsFixed(0)} دينار للطلب';
+  if (minJod != null) return trf('قيمة الطلب من {0} دينار', [minJod.toStringAsFixed(0)]);
+  if (maxJod != null) return trf('حتى {0} دينار للطلب', [maxJod.toStringAsFixed(0)]);
   return null;
 }
 
 String freelancerPlansEligibilityHeadlineAr(FreelancerEligibility? eligibility) {
-  if (eligibility == null) return 'حالة الأهلية غير متاحة حالياً.';
+  if (eligibility == null) return tr('حالة الأهلية غير متاحة حالياً.');
   return freelancerEligibilityMessageAr(eligibility);
 }
 
-const freelancerWebSubscriptionNoticeAr =
-    'سيتم فتح الموقع لإكمال الاشتراك. سجّل الدخول بنفس حسابك، ثم ارجع للتطبيق واضغط تحديث حالة الاشتراك.';
+String get freelancerWebSubscriptionNoticeAr => tr('سيتم فتح الموقع لإكمال الاشتراك. سجّل الدخول بنفس حسابك، ثم ارجع للتطبيق واضغط تحديث حالة الاشتراك.');
 
 /// Whether to show "complete subscription on web" for a plan card.
 bool shouldShowWebSubscriptionButton({

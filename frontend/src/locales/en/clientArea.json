@@ -230,6 +230,8 @@
     "next": {
       "pay": "Complete payment to publish your order in the marketplace.",
       "payAfterBid": "Complete payment for the selected offer so the Freelancer can start.",
+      "payQuote": "Pay the quote so the team can start your order.",
+      "awaitingAssignment": "The team is assigning a freelancer to your order.",
       "adminReview": "Paid — the team is reviewing your order before publishing.",
       "reviewDelivery": "The Freelancer delivered — review the files, then approve or request a revision.",
       "revisionSent": "Revision requested — waiting for an updated version from the Freelancer.",

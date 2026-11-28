@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 
 import '../../../core/network/json_helpers.dart';
 import 'course_models.dart';
+import '../../../core/i18n/i18n.dart';
 
 class FreelancerCoursesApi {
   FreelancerCoursesApi(this._dio);
@@ -26,7 +27,7 @@ class FreelancerCoursesApi {
     if (data is! Map) {
       throw DioException(
         requestOptions: res.requestOptions,
-        message: 'تعذر تحميل تفاصيل الدورة.',
+        message: tr('تعذر تحميل تفاصيل الدورة.'),
       );
     }
     return FreelancerCourseDetails.fromJson(Map<String, dynamic>.from(data));
@@ -63,7 +64,7 @@ class FreelancerCoursesApi {
     );
     final data = res.data?['data'];
     if (data is! Map) {
-      throw DioException(requestOptions: res.requestOptions, message: 'تعذر رفع ملف الاختبار.');
+      throw DioException(requestOptions: res.requestOptions, message: tr('تعذر رفع ملف الاختبار.'));
     }
     return FreelancerCourseDetails.fromJson(Map<String, dynamic>.from(data));
   }
@@ -102,7 +103,7 @@ class FreelancerCoursesApi {
       );
       final data = res.data?['data'];
       if (data is! Map) {
-        throw DioException(requestOptions: res.requestOptions, message: 'تعذر إرسال إكمال الدورة.');
+        throw DioException(requestOptions: res.requestOptions, message: tr('تعذر إرسال إكمال الدورة.'));
       }
       return FreelancerCourseDetails.fromJson(Map<String, dynamic>.from(data));
     }
@@ -120,7 +121,7 @@ class FreelancerCoursesApi {
     );
     final data = res.data?['data'];
     if (data is! Map) {
-      throw DioException(requestOptions: res.requestOptions, message: 'تعذر إرسال إكمال الدورة.');
+      throw DioException(requestOptions: res.requestOptions, message: tr('تعذر إرسال إكمال الدورة.'));
     }
     return FreelancerCourseDetails.fromJson(Map<String, dynamic>.from(data));
   }
@@ -142,7 +143,7 @@ class FreelancerCoursesApi {
     );
     final bytes = res.data;
     if (bytes == null || bytes.isEmpty) {
-      throw DioException(requestOptions: res.requestOptions, message: 'الملف فارغ أو غير متاح.');
+      throw DioException(requestOptions: res.requestOptions, message: tr('الملف فارغ أو غير متاح.'));
     }
     final dir = await getTemporaryDirectory();
     final localPath = '${dir.path}${Platform.pathSeparator}course_${courseId}_$fileKind.pdf';
@@ -150,7 +151,7 @@ class FreelancerCoursesApi {
     await file.writeAsBytes(bytes, flush: true);
     final openResult = await OpenFilex.open(localPath);
     if (openResult.type != ResultType.done) {
-      throw StateError(openResult.message.isNotEmpty ? openResult.message : 'تعذر فتح الملف.');
+      throw StateError(openResult.message.isNotEmpty ? openResult.message : tr('تعذر فتح الملف.'));
     }
     return localPath;
   }

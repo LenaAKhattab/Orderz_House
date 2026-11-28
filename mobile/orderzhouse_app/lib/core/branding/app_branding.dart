@@ -1,6 +1,7 @@
+import '../i18n/i18n.dart';
 /// User-facing app branding (Phase 5B). Package name stays `orderzhouse_app`.
 abstract final class AppBranding {
-  static const displayNameAr = 'أوردرز هاوس';
+  static String get displayNameAr => tr('أوردرز هاوس');
   static const displayNameEn = 'Orderz House';
   /// Wordmark under the logo on splash / auth headers.
   static const markWordmark = 'ORDERZHOUSE';
@@ -13,8 +14,7 @@ abstract final class AppBranding {
   /// Full vertical logo (mark + Arabic wordmark + tagline) from `frontend/public/hero/fullLogp.png`.
   static const fullLogoAsset = 'assets/branding/full_logo.png';
 
-  static const aboutBody =
-      '$displayNameAr\nالإصدار $versionLabel\n\nمنصة لإدارة الطلبات بين العملاء والمستقلين.';
+  static String get aboutBody => trf('{0}\nالإصدار {1}\n\nمنصة لإدارة الطلبات بين العملاء والمستقلين.', [displayNameAr, versionLabel]);
 
   /// Public marketing website (always production — not the local Vite URL).
   static const publicWebsiteUrl = 'https://orderzhouse.com/';

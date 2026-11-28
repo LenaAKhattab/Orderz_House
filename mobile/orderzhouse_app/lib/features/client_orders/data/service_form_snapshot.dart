@@ -1,4 +1,5 @@
 import 'service_catalog_models.dart';
+import '../../../core/i18n/i18n.dart';
 
 /// Smart Orders S2/S4 — immutable service form snapshot stored with the order (read-only on mobile).
 /// Rendered from the snapshot's own field definitions, never from the live catalog.
@@ -55,9 +56,9 @@ class ServiceFormSnapshot {
     final isEn = locale == 'en';
     final rows = <MapEntry<String, String>>[];
     if (quantityUnspecified) {
-      rows.add(MapEntry(isEn ? 'Quantity' : 'الكمية', isEn ? 'Not specified' : 'غير محددة'));
+      rows.add(MapEntry(isEn ? 'Quantity' : tr('الكمية'), isEn ? 'Not specified' : tr('غير محددة')));
     } else if (quantityValue != null && quantityValue!.isNotEmpty) {
-      rows.add(MapEntry(isEn ? 'Quantity' : 'الكمية', '$quantityValue ${unitLabel(quantityUnit ?? 'units', locale)}'));
+      rows.add(MapEntry(isEn ? 'Quantity' : tr('الكمية'), '$quantityValue ${unitLabel(quantityUnit ?? 'units', locale)}'));
     }
     for (final f in fields) {
       if (!values.containsKey(f.key)) continue;
@@ -74,11 +75,11 @@ class ServiceFormSnapshot {
         case 'radio':
           text = optionLabel(v);
         case 'multiselect':
-          text = (v is List ? v : [v]).map(optionLabel).join('، ');
+          text = (v is List ? v : [v]).map(optionLabel).join(tr('، '));
         case 'checkbox':
-          text = v == true ? (isEn ? 'Yes' : 'نعم') : (isEn ? 'No' : 'لا');
+          text = v == true ? (isEn ? 'Yes' : tr('نعم')) : (isEn ? 'No' : tr('لا'));
         case 'file':
-          text = (v is List ? v : [v]).map((x) => x is Map ? (x['name']?.toString() ?? '') : x.toString()).where((s) => s.isNotEmpty).join('، ');
+          text = (v is List ? v : [v]).map((x) => x is Map ? (x['name']?.toString() ?? '') : x.toString()).where((s) => s.isNotEmpty).join(tr('، '));
         case 'repeater':
           text = (v is List ? v : const [])
               .whereType<Map>()
@@ -92,7 +93,7 @@ class ServiceFormSnapshot {
           String two(int n) => n.toString().padLeft(2, '0');
           text = d == null ? v.toString() : '${d.year}-${two(d.month)}-${two(d.day)} ${two(d.hour)}:${two(d.minute)}';
         default:
-          text = v is List ? v.join('، ') : v.toString();
+          text = v is List ? v.join(tr('، ')) : v.toString();
       }
       if (text.trim().isEmpty) continue;
       final label = pickLocalized(f.label, locale);
@@ -112,15 +113,15 @@ class ServiceFormSnapshot {
         val = vs.map((x) {
           final o = f.options.where((o) => o.value == x.toString()).firstOrNull;
           return o == null ? x.toString() : pickLocalized(o.label, locale);
-        }).join('، ');
+        }).join(tr('، '));
       } else if (v is bool) {
-        val = v ? (locale == 'en' ? 'Yes' : 'نعم') : (locale == 'en' ? 'No' : 'لا');
+        val = v ? (locale == 'en' ? 'Yes' : tr('نعم')) : (locale == 'en' ? 'No' : tr('لا'));
       } else {
         val = v.toString();
       }
       final label = pickLocalized(f.label, locale);
       parts.add('${label.isEmpty ? f.key : label}: $val');
     }
-    return parts.join('، ');
+    return parts.join(tr('، '));
   }
 }

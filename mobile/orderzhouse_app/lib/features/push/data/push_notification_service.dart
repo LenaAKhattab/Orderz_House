@@ -15,6 +15,7 @@ import '../../notifications/navigation/notification_action_resolver.dart';
 import '../../notifications/presentation/unread_notifications_controller.dart';
 import 'device_token_repository.dart';
 import '../navigation/push_pending_navigation.dart';
+import '../../../core/i18n/i18n.dart';
 
 const kOrderzPushChannelId = 'orderzhouse_default';
 const kOrderzPushChannelName = 'Orderz House';
@@ -55,18 +56,18 @@ class PushRegistrationDiagnostics {
   /// Arabic summary for SnackBar / Dialog (TestFlight-readable).
   String toUserSummary() {
     final lines = <String>[
-      'المنصة: $platform',
-      'إذن الإشعارات: $permissionStatus',
-      'Firebase جاهز: ${firebaseReady ? 'نعم' : 'لا'}',
-      if (platform == 'ios') 'APNs موجود: ${apnsTokenPresent ? 'نعم' : 'لا'}',
-      'FCM موجود: ${fcmTokenPresent ? 'نعم' : 'لا'}',
-      'محاولة التسجيل: ${backendRegisterAttempted ? 'نعم' : 'لا'}',
-      'تسجيل السيرفر: ${backendRegisterSuccess ? 'نجح' : 'فشل/لم يتم'}',
-      if (backendStatusCode != null) 'رمز السيرفر: $backendStatusCode',
+      trf('المنصة: {0}', [platform]),
+      trf('إذن الإشعارات: {0}', [permissionStatus]),
+      trf('Firebase جاهز: {0}', [firebaseReady ? tr('نعم') : tr('لا')]),
+      if (platform == 'ios') trf('APNs موجود: {0}', [apnsTokenPresent ? tr('نعم') : tr('لا')]),
+      trf('FCM موجود: {0}', [fcmTokenPresent ? tr('نعم') : tr('لا')]),
+      trf('محاولة التسجيل: {0}', [backendRegisterAttempted ? tr('نعم') : tr('لا')]),
+      trf('تسجيل السيرفر: {0}', [backendRegisterSuccess ? tr('نجح') : tr('فشل/لم يتم')]),
+      if (backendStatusCode != null) trf('رمز السيرفر: {0}', [backendStatusCode]),
       'API: $apiHost',
       if (tokenMasked != null && tokenMasked!.isNotEmpty) 'Token: $tokenMasked',
-      if (errorCode != null && errorCode!.isNotEmpty) 'رمز الخطأ: $errorCode',
-      if (errorMessage != null && errorMessage!.isNotEmpty) 'الخطأ: $errorMessage',
+      if (errorCode != null && errorCode!.isNotEmpty) trf('رمز الخطأ: {0}', [errorCode]),
+      if (errorMessage != null && errorMessage!.isNotEmpty) trf('الخطأ: {0}', [errorMessage]),
     ];
     return lines.join('\n');
   }
@@ -207,7 +208,7 @@ class PushNotificationService {
         backendRegisterSuccess: false,
         apiHost: apiHost,
         errorCode: 'NOT_AUTHENTICATED',
-        errorMessage: 'يجب تسجيل الدخول أولًا',
+        errorMessage: tr('يجب تسجيل الدخول أولًا'),
       );
     }
 
@@ -222,7 +223,7 @@ class PushNotificationService {
         backendRegisterSuccess: false,
         apiHost: apiHost,
         errorCode: 'FIREBASE_UNAVAILABLE',
-        errorMessage: 'Firebase غير متاح على هذا الجهاز',
+        errorMessage: tr('Firebase غير متاح على هذا الجهاز'),
       );
     }
 
@@ -259,7 +260,7 @@ class PushNotificationService {
       apnsPresent = await _waitForApnsToken();
       if (!apnsPresent) {
         errorCode ??= 'APNS_MISSING';
-        errorMessage ??= 'APNs token غير متاح بعد المحاولات';
+        errorMessage ??= tr('APNs token غير متاح بعد المحاولات');
         final result = PushRegistrationDiagnostics(
           platform: platform,
           permissionStatus: permissionStatus,
@@ -285,7 +286,7 @@ class PushNotificationService {
       fcmPresent = token != null && token.isNotEmpty;
       if (!fcmPresent) {
         errorCode ??= 'FCM_MISSING';
-        errorMessage ??= 'FCM getToken رجع فارغًا';
+        errorMessage ??= tr('FCM getToken رجع فارغًا');
       } else {
         tokenMasked = _maskToken(token);
         registerAttempted = true;
@@ -355,10 +356,10 @@ class PushNotificationService {
     await _local.initialize(
       const InitializationSettings(android: android),
     );
-    const channel = AndroidNotificationChannel(
+    final channel = AndroidNotificationChannel(
       kOrderzPushChannelId,
       kOrderzPushChannelName,
-      description: 'تنبيهات Orderz House',
+      description: tr('تنبيهات Orderz House'),
       importance: Importance.high,
     );
     await _local

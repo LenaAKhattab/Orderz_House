@@ -105,7 +105,7 @@ class _ManuscriptSubmitScreenState extends ConsumerState<ManuscriptSubmitScreen>
           if (articleTitle.isNotEmpty) ...[
             Text(
               articleTitle,
-              textAlign: TextAlign.right,
+              textAlign: TextAlign.start,
               style: const TextStyle(
                 fontWeight: FontWeight.w800,
                 fontSize: 16,
@@ -118,7 +118,7 @@ class _ManuscriptSubmitScreenState extends ConsumerState<ManuscriptSubmitScreen>
           if ((widget.args.statusLabelAr ?? '').trim().isNotEmpty)
             Text(
               '$manuscriptStatusContextAr: ${widget.args.statusLabelAr}',
-              textAlign: TextAlign.right,
+              textAlign: TextAlign.start,
               style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
             ),
           if (_isRevision && note.isNotEmpty) ...[
@@ -133,9 +133,9 @@ class _ManuscriptSubmitScreenState extends ConsumerState<ManuscriptSubmitScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text(
+                  Text(
                     manuscriptRevisionNotesLabelAr,
-                    textAlign: TextAlign.right,
+                    textAlign: TextAlign.start,
                     style: TextStyle(
                       fontWeight: FontWeight.w800,
                       color: Color(0xFFB54708),
@@ -145,7 +145,7 @@ class _ManuscriptSubmitScreenState extends ConsumerState<ManuscriptSubmitScreen>
                   const SizedBox(height: 6),
                   Text(
                     note,
-                    textAlign: TextAlign.right,
+                    textAlign: TextAlign.start,
                     style: const TextStyle(height: 1.45, color: AppColors.textInk),
                   ),
                 ],
@@ -161,7 +161,7 @@ class _ManuscriptSubmitScreenState extends ConsumerState<ManuscriptSubmitScreen>
           const SizedBox(height: 12),
           Text(
             manuscriptContentLabelAr,
-            textAlign: TextAlign.right,
+            textAlign: TextAlign.start,
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
@@ -172,8 +172,8 @@ class _ManuscriptSubmitScreenState extends ConsumerState<ManuscriptSubmitScreen>
             controller: _contentCtrl,
             maxLines: 10,
             minLines: 6,
-            textAlign: TextAlign.right,
-            decoration: const InputDecoration(
+            textAlign: TextAlign.start,
+            decoration: InputDecoration(
               hintText: manuscriptContentPlaceholderAr,
               alignLabelWithHint: true,
               border: OutlineInputBorder(),
@@ -188,9 +188,9 @@ class _ManuscriptSubmitScreenState extends ConsumerState<ManuscriptSubmitScreen>
                 : (v) => setState(() => _termsAccepted = v ?? false),
             controlAffinity: ListTileControlAffinity.leading,
             contentPadding: EdgeInsets.zero,
-            title: const Text(
+            title: Text(
               manuscriptTermsCopyAr,
-              textAlign: TextAlign.right,
+              textAlign: TextAlign.start,
               style: TextStyle(fontSize: 13, height: 1.45),
             ),
           ),

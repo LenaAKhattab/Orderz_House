@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'client_order_bid_models.dart';
 import 'client_order_models.dart';
 import 'order_payment_models.dart';
+import '../../../core/i18n/i18n.dart';
 
 class ClientOrdersApi {
   ClientOrdersApi(this._dio);
@@ -20,7 +21,7 @@ class ClientOrdersApi {
     }
     throw DioException(
       requestOptions: response.requestOptions,
-      message: 'استجابة غير متوقعة من طلبات العميل.',
+      message: tr('استجابة غير متوقعة من طلبات العميل.'),
     );
   }
 
@@ -35,7 +36,7 @@ class ClientOrdersApi {
     }
     throw DioException(
       requestOptions: response.requestOptions,
-      message: 'استجابة غير متوقعة من تفاصيل طلب العميل.',
+      message: tr('استجابة غير متوقعة من تفاصيل طلب العميل.'),
     );
   }
 
@@ -50,7 +51,7 @@ class ClientOrdersApi {
     }
     throw DioException(
       requestOptions: response.requestOptions,
-      message: 'استجابة غير متوقعة من عروض الطلب.',
+      message: tr('استجابة غير متوقعة من عروض الطلب.'),
     );
   }
 
@@ -72,7 +73,7 @@ class ClientOrdersApi {
     }
     throw DioException(
       requestOptions: response.requestOptions,
-      message: 'استجابة غير متوقعة من قبول العرض.',
+      message: tr('استجابة غير متوقعة من قبول العرض.'),
     );
   }
 
@@ -98,7 +99,7 @@ class ClientOrdersApi {
     }
     throw DioException(
       requestOptions: response.requestOptions,
-      message: 'استجابة غير متوقعة من رابط الدفع.',
+      message: tr('استجابة غير متوقعة من رابط الدفع.'),
     );
   }
 

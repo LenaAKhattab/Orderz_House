@@ -3,10 +3,11 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/oh_widgets.dart';
 import '../data/super_admin_models.dart';
+import '../../../core/i18n/i18n.dart';
 
 void showSuperAdminComingSoonSnack(BuildContext context) {
   ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(content: Text(superAdminComingSoonMessageAr)),
+    SnackBar(content: Text(superAdminComingSoonMessageAr)),
   );
 }
 
@@ -184,12 +185,12 @@ class SuperAdminCountTile extends StatelessWidget {
     final available = card.available;
     final count = card.count;
     final resolvedHint = card.pending
-        ? 'جارٍ التحديث'
+        ? tr('جارٍ التحديث')
         : (hint ??
             (available
                 ? (webHandoff || comingSoon
                     ? superAdminOpenWebPanelAr
-                    : 'اضغط للعرض')
+                    : tr('اضغط للعرض'))
                 : superAdminUnavailableCardAr));
 
     VoidCallback? resolvedTap;

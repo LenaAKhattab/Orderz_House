@@ -878,9 +878,39 @@ const CUSTOMER_STATUS_PROJECTION = Object.freeze({
   pending_client_review: "in_progress",
   open_for_bids: "published",
   open_for_freelancers: "published",
-  assigned: "in_progress",
   ready_for_work: "in_progress",
+  // 'assigned' = offer sent/accepted but work NOT started (S3 start gate: accepted + paid or
+  // audited authorization). Without a payable quote it is still being prepared by the team.
+  assigned: "draft",
 });
+
+/** Execution has actually started (S3 `startWorkIfReady` moved the order past 'assigned'). */
+const CUSTOMER_STARTED_STATUSES = new Set(["in_progress", "ready_for_work", "pending_client_review"]);
+
+/**
+ * Customer execution + payment state for an Admin-managed order. Payment is reported separately from
+ * execution and is never shown as paid unless the latest quote is paid.
+ *   - started (in progress / team review)            → in_progress (payment may still be pending when
+ *                                                       an audited work authorization started it)
+ *   - payable quote unpaid, no work authorization    → awaiting_quote_payment
+ *   - paid or authorized, freelancer not yet engaged → awaiting_assignment
+ *   - otherwise                                      → static projection (draft / published / …)
+ */
+function deriveManagedCustomerState(order) {
+  const status = String(order?.orderStatus || "");
+  const quote = order?.customerQuote || null;
+  const paid = quote?.paymentStatus === "paid";
+  const paymentStatus = quote ? (paid ? "paid" : "pending") : "not_required";
+  const ready = paid || order?.workAuthorized === true;
+  const payable = Boolean(quote) && !paid && quote.status !== "expired";
+  let display;
+  if (status === "completed" || status === "cancelled") display = status;
+  else if (CUSTOMER_STARTED_STATUSES.has(status)) display = "in_progress";
+  else if (payable && !ready) display = "awaiting_quote_payment";
+  else if (ready) display = "awaiting_assignment";
+  else display = CUSTOMER_STATUS_PROJECTION[status] || status;
+  return { display, paymentStatus };
+}
 
 /**
  * Customer-facing projection of an Admin-managed order. NEVER exposes orders.budget (freelancer
@@ -905,7 +935,7 @@ function projectManagedOrderForCustomer(order, row) {
           unavailable: Boolean(f.unavailable),
         }))
     : [];
-  const projectedStatus = CUSTOMER_STATUS_PROJECTION[status] || status;
+  const { display: projectedStatus, paymentStatus } = deriveManagedCustomerState(order);
   return {
     id: order.id,
     orderCode: order.orderCode,
@@ -934,8 +964,9 @@ function projectManagedOrderForCustomer(order, row) {
     orderStatus: projectedStatus,
     clientDisplayStatus: projectedStatus,
     clientDisplayStatusLabelAr: null,
+    // Quote payments live on the quote card; the legacy order checkout must never be offered here.
     paymentRequired: false,
-    paymentStatus: "not_required",
+    paymentStatus,
     requiresPayment: false,
     canPayNow: false,
     requiresAdminReview: false,
@@ -1080,6 +1111,7 @@ module.exports = {
   previewClaim,
   claimOrder,
   projectManagedOrderForCustomer,
+  deriveManagedCustomerState,
   loadCustomerLinkRows,
   loadAdminListCustomerSummaries,
   getCustomerModeSummary,

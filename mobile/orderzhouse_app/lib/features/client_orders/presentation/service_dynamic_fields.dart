@@ -6,6 +6,7 @@ import '../data/order_attachment_limits.dart';
 import '../data/order_attachment_models.dart';
 import '../data/service_catalog_models.dart';
 import '../data/service_form_logic.dart';
+import '../../../core/i18n/i18n.dart';
 
 /// Renders a catalog service's quantity + supported dynamic fields (Smart Orders S2).
 class ServiceDynamicFields extends StatelessWidget {
@@ -92,9 +93,9 @@ class ServiceDynamicFields extends StatelessWidget {
         enabled: !draft.quantityUnspecified,
         keyboardType: TextInputType.numberWithOptions(decimal: q.decimals),
         decoration: InputDecoration(
-          labelText: '${isEn ? 'Quantity' : 'الكمية'} ($unit)${q.required ? ' *' : ''}',
+          labelText: '${isEn ? 'Quantity' : tr('الكمية')} ($unit)${q.required ? ' *' : ''}',
           suffixText: unit,
-          helperText: (q.min != null && q.max != null) ? (isEn ? 'From ${q.min} to ${q.max}' : 'من ${q.min} إلى ${q.max}') : null,
+          helperText: (q.min != null && q.max != null) ? (isEn ? 'From ${q.min} to ${q.max}' : trf('من {0} إلى {1}', [q.min, q.max])) : null,
           errorText: err('quantity'),
         ),
         onChanged: (v) => onQuantity(quantity: v),
@@ -103,7 +104,7 @@ class ServiceDynamicFields extends StatelessWidget {
         CheckboxListTile(
           contentPadding: EdgeInsets.zero,
           value: draft.quantityUnspecified,
-          title: Text(isEn ? 'Not specified / needs estimation' : 'غير محدد / بحاجة لتقدير'),
+          title: Text(isEn ? 'Not specified / needs estimation' : tr('غير محدد / بحاجة لتقدير')),
           onChanged: (v) => onQuantity(unspecified: v == true),
         ),
     ];
@@ -219,10 +220,10 @@ class ServiceDynamicFields extends StatelessWidget {
                         children: [
                           Row(
                             children: [
-                              Expanded(child: Text('${isEn ? 'Item' : 'بند'} ${i + 1}', style: const TextStyle(fontWeight: FontWeight.w700))),
+                              Expanded(child: Text('${isEn ? 'Item' : tr('بند')} ${i + 1}', style: const TextStyle(fontWeight: FontWeight.w700))),
                               IconButton(
                                 key: ValueKey('${f.key}-remove-row-$i'),
-                                tooltip: isEn ? 'Remove' : 'إزالة',
+                                tooltip: isEn ? 'Remove' : tr('إزالة'),
                                 icon: const Icon(Icons.delete_outline),
                                 onPressed: () => onValue(f.key, [...rows]..removeAt(i)),
                               ),
@@ -250,7 +251,7 @@ class ServiceDynamicFields extends StatelessWidget {
                     child: TextButton.icon(
                       key: ValueKey('${f.key}-add-row'),
                       icon: const Icon(Icons.add),
-                      label: Text(isEn ? 'Add item' : 'إضافة بند'),
+                      label: Text(isEn ? 'Add item' : tr('إضافة بند')),
                       onPressed: () => onValue(f.key, [...rows, <String, Object?>{}]),
                     ),
                   ),
@@ -294,7 +295,7 @@ class ServiceDynamicFields extends StatelessWidget {
             key: key,
             decoration: InputDecoration(
               labelText: label,
-              helperText: help.isEmpty ? (isEn ? 'Files are shared with the order attachments.' : 'تُرفع الملفات مع مرفقات الطلب.') : help,
+              helperText: help.isEmpty ? (isEn ? 'Files are shared with the order attachments.' : tr('تُرفع الملفات مع مرفقات الطلب.')) : help,
               errorText: err(f.key),
             ),
             child: Column(
@@ -308,7 +309,7 @@ class ServiceDynamicFields extends StatelessWidget {
                       Expanded(child: Text(file.name, overflow: TextOverflow.ellipsis)),
                       IconButton(
                         key: ValueKey('${f.key}-remove-${file.name}'),
-                        tooltip: isEn ? 'Remove' : 'إزالة',
+                        tooltip: isEn ? 'Remove' : tr('إزالة'),
                         icon: const Icon(Icons.close, size: 18),
                         onPressed: () => onValue(f.key, files.where((x) => x.id != file.id).toList()),
                       ),
@@ -320,7 +321,7 @@ class ServiceDynamicFields extends StatelessWidget {
                     child: TextButton.icon(
                       key: ValueKey('${f.key}-pick'),
                       icon: const Icon(Icons.attach_file),
-                      label: Text(isEn ? 'Choose files' : 'اختيار ملفات'),
+                      label: Text(isEn ? 'Choose files' : tr('اختيار ملفات')),
                       onPressed: () async {
                         final picked = await (pickFiles ?? _platformPick)(multiple: max == null || max - files.length > 1);
                         if (picked.isEmpty) return;

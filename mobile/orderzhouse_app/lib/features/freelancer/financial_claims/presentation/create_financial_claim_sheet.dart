@@ -7,6 +7,7 @@ import '../../../orders/data/order_display_helpers.dart';
 import '../data/create_financial_claim_models.dart';
 import '../data/done_project_models.dart';
 import 'create_financial_claim_controller.dart';
+import '../../../../core/i18n/i18n.dart';
 
 Future<bool?> showCreateFinancialClaimSheet(
   BuildContext context, {
@@ -81,14 +82,14 @@ class _CreateFinancialClaimSheetState extends ConsumerState<CreateFinancialClaim
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
-              'تأكيد إرسال المطالبة',
+            Text(
+              tr('تأكيد إرسال المطالبة'),
               style: TextStyle(
                 fontWeight: FontWeight.w800,
                 fontSize: 18,
                 color: AppColors.textInk,
               ),
-              textAlign: TextAlign.right,
+              textAlign: TextAlign.start,
             ),
             const SizedBox(height: 14),
             OhCard(
@@ -96,19 +97,19 @@ class _CreateFinancialClaimSheetState extends ConsumerState<CreateFinancialClaim
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   _SummaryRow(
-                    label: 'العنوان',
+                    label: tr('العنوان'),
                     value: project.requestTitle.trim().isNotEmpty ? project.requestTitle : '—',
                   ),
                   _SummaryRow(
-                    label: 'رقم الطلب',
+                    label: tr('رقم الطلب'),
                     value: project.orderNumber.trim().isNotEmpty ? project.orderNumber : '—',
                   ),
                   _SummaryRow(
-                    label: 'تاريخ الإكمال',
+                    label: tr('تاريخ الإكمال'),
                     value: formatOrderDate(project.actualCompletionDate),
                   ),
                   _SummaryRow(
-                    label: 'المبلغ',
+                    label: tr('المبلغ'),
                     value: formatDoneProjectAmount(project),
                   ),
                 ],
@@ -122,7 +123,7 @@ class _CreateFinancialClaimSheetState extends ConsumerState<CreateFinancialClaim
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(color: AppColors.primary.withValues(alpha: 0.15)),
               ),
-              child: const Text(
+              child: Text(
                 createFinancialClaimNoticeAr,
                 style: TextStyle(
                   color: AppColors.textInk,
@@ -130,7 +131,7 @@ class _CreateFinancialClaimSheetState extends ConsumerState<CreateFinancialClaim
                   height: 1.5,
                   fontSize: 13,
                 ),
-                textAlign: TextAlign.right,
+                textAlign: TextAlign.start,
               ),
             ),
             const SizedBox(height: 14),
@@ -139,8 +140,8 @@ class _CreateFinancialClaimSheetState extends ConsumerState<CreateFinancialClaim
               enabled: !isSubmitting,
               maxLines: 3,
               maxLength: maxFreelancerClaimNoteLength,
-              decoration: const InputDecoration(
-                labelText: 'ملاحظة للمحاسبة / الإدارة (اختياري)',
+              decoration: InputDecoration(
+                labelText: tr('ملاحظة للمحاسبة / الإدارة (اختياري)'),
                 alignLabelWithHint: true,
               ),
             ),
@@ -150,13 +151,13 @@ class _CreateFinancialClaimSheetState extends ConsumerState<CreateFinancialClaim
             ],
             const SizedBox(height: 14),
             OhButton(
-              label: 'إرسال المطالبة',
+              label: tr('إرسال المطالبة'),
               isLoading: isSubmitting,
               onPressed: isSubmitting ? null : _submit,
             ),
             const SizedBox(height: 8),
             OhButton(
-              label: 'إلغاء',
+              label: tr('إلغاء'),
               outlined: true,
               onPressed: isSubmitting ? null : () => Navigator.of(context).pop(false),
             ),
@@ -183,7 +184,7 @@ class _SummaryRow extends StatelessWidget {
           Expanded(
             child: Text(
               value,
-              textAlign: TextAlign.right,
+              textAlign: TextAlign.start,
               style: const TextStyle(
                 color: AppColors.textInk,
                 fontWeight: FontWeight.w600,

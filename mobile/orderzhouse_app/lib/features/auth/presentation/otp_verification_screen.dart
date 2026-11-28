@@ -8,6 +8,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/oh_widgets.dart';
 import 'auth_controller.dart';
 import 'auth_form_widgets.dart';
+import '../../../core/i18n/i18n.dart';
 
 class OtpVerificationScreen extends ConsumerStatefulWidget {
   const OtpVerificationScreen({super.key, required this.email});
@@ -26,7 +27,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
   Future<void> _submit() async {
     final otp = _otp.trim();
     if (otp.length != 6) {
-      setState(() => _error = 'أدخل رمز التحقق المكوّن من 6 أرقام.');
+      setState(() => _error = tr('أدخل رمز التحقق المكوّن من 6 أرقام.'));
       return;
     }
     setState(() {
@@ -41,7 +42,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
       if (!mounted) return;
       context.go(AppRoutes.home);
     } catch (e) {
-      setState(() => _error = apiErrorMessage(e, fallback: 'رمز التحقق غير صحيح.'));
+      setState(() => _error = apiErrorMessage(e, fallback: tr('رمز التحقق غير صحيح.')));
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -56,8 +57,8 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
         padding: const EdgeInsets.fromLTRB(24, 8, 24, 28),
         children: [
           AuthHeroHeader(
-            title: 'أدخل رمز التحقق',
-            subtitle: 'أرسلنا رمزًا مكوّنًا من 6 أرقام إلى\n${widget.email}',
+            title: tr('أدخل رمز التحقق'),
+            subtitle: trf('أرسلنا رمزًا مكوّنًا من 6 أرقام إلى\n{0}', [widget.email]),
           ),
           const SizedBox(height: 32),
           if (_error != null) ...[
@@ -70,13 +71,13 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
           ),
           const SizedBox(height: 28),
           AuthPrimaryButton(
-            label: 'تأكيد',
+            label: tr('تأكيد'),
             isLoading: _submitting,
             onPressed: _submit,
           ),
           const SizedBox(height: 18),
           Text(
-            'لم يصلك الرمز؟ تحقق من البريد الوارد أو مجلد الرسائل غير المرغوب فيها.',
+            tr('لم يصلك الرمز؟ تحقق من البريد الوارد أو مجلد الرسائل غير المرغوب فيها.'),
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: AppColors.textMuted,

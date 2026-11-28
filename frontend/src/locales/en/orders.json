@@ -40,6 +40,8 @@
     "open_for_freelancers": "Open to freelancers",
     "open_for_bids": "Open for offers",
     "awaiting_payment_after_bid_selection": "Waiting for payment after offer selection",
+    "awaiting_quote_payment": "Awaiting quote payment",
+    "awaiting_assignment": "Awaiting freelancer assignment",
     "pending_freelancer_acceptance": "Pending freelancer acceptance",
     "ready_for_work": "Ready to start",
     "archived": "Archived",

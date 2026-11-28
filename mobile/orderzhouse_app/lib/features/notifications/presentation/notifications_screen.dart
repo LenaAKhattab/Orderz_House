@@ -13,6 +13,7 @@ import 'notification_tile.dart';
 import 'notifications_controller.dart';
 import 'notifications_mark_read_controller.dart';
 import 'unread_notifications_controller.dart';
+import '../../../core/i18n/i18n.dart';
 
 class NotificationsScreen extends ConsumerStatefulWidget {
   const NotificationsScreen({super.key});
@@ -46,7 +47,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     final ok = await ref.read(notificationsMarkReadControllerProvider.notifier).markAsRead(item.id);
     if (!ok && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(notificationsMarkReadErrorMessageAr)),
+        SnackBar(content: Text(notificationsMarkReadErrorMessageAr)),
       );
     }
   }
@@ -55,11 +56,11 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('تعليم الكل كمقروء'),
-        content: const Text('هل تريد تعليم جميع الإشعارات كمقروءة؟'),
+        title: Text(tr('تعليم الكل كمقروء')),
+        content: Text(tr('هل تريد تعليم جميع الإشعارات كمقروءة؟')),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('إلغاء')),
-          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('تأكيد')),
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(tr('إلغاء'))),
+          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: Text(tr('تأكيد'))),
         ],
       ),
     );
@@ -71,11 +72,11 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
 
     if (ok) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تم تعليم جميع الإشعارات كمقروءة')),
+        SnackBar(content: Text(tr('تم تعليم جميع الإشعارات كمقروءة'))),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(notificationsMarkReadErrorMessageAr)),
+        SnackBar(content: Text(notificationsMarkReadErrorMessageAr)),
       );
     }
   }
@@ -85,11 +86,11 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('حذف الإشعارات'),
-        content: const Text('هل تريد حذف الإشعارات المحددة؟'),
+        title: Text(tr('حذف الإشعارات')),
+        content: Text(tr('هل تريد حذف الإشعارات المحددة؟')),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('إلغاء')),
-          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('حذف')),
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(tr('إلغاء'))),
+          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: Text(tr('حذف'))),
         ],
       ),
     );
@@ -102,12 +103,12 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
       setState(_selectedIds.clear);
       await _refresh();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تم حذف الإشعارات المحددة')),
+        SnackBar(content: Text(tr('تم حذف الإشعارات المحددة'))),
       );
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تعذر حذف الإشعارات المحددة')),
+        SnackBar(content: Text(tr('تعذر حذف الإشعارات المحددة'))),
       );
     } finally {
       if (mounted) setState(() => _deleting = false);
@@ -155,20 +156,20 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
 
     if (!auth.isAuthenticated) {
       return Scaffold(
-        appBar: AppBar(title: const Text('الإشعارات')),
+        appBar: AppBar(title: Text(tr('الإشعارات'))),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const OhEmptyBody(
-                  message: 'سجّل الدخول لعرض إشعاراتك.',
+                OhEmptyBody(
+                  message: tr('سجّل الدخول لعرض إشعاراتك.'),
                   icon: Icons.lock_outline,
                 ),
                 const SizedBox(height: 16),
                 OhButton(
-                  label: 'تسجيل الدخول',
+                  label: tr('تسجيل الدخول'),
                   onPressed: () => context.push(AppRoutes.loginWithRedirect(AppRoutes.notifications)),
                 ),
               ],
@@ -191,7 +192,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     return Scaffold(
       backgroundColor: AppColors.homeMobileBg,
       appBar: AppBar(
-        title: const Text('الإشعارات'),
+        title: Text(tr('الإشعارات')),
         actions: [
           if (showMarkAll)
             TextButton(
@@ -202,7 +203,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                       height: 18,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Text('تعليم الكل كمقروء'),
+                  : Text(tr('تعليم الكل كمقروء')),
             ),
         ],
       ),
@@ -216,11 +217,11 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   child: Row(
                     children: [
-                      Text('${_selectedIds.length} محدد'),
+                      Text(trf('{0} محدد', [_selectedIds.length])),
                       const Spacer(),
                       TextButton(
                         onPressed: _deleting ? null : () => setState(_selectedIds.clear),
-                        child: const Text('إلغاء'),
+                        child: Text(tr('إلغاء')),
                       ),
                       FilledButton(
                         onPressed: _deleting ? null : _confirmDeleteSelected,
@@ -230,7 +231,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                                 height: 18,
                                 child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                               )
-                            : const Text('حذف المحدد'),
+                            : Text(tr('حذف المحدد')),
                       ),
                     ],
                   ),
@@ -238,9 +239,9 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
               ),
             ),
       body: pageAsync.when(
-        loading: () => const OhLoadingBody(message: 'جاري تحميل الإشعارات...'),
+        loading: () => OhLoadingBody(message: tr('جاري تحميل الإشعارات...')),
         error: (error, _) => OhErrorBody(
-          message: 'تعذّر تحميل الإشعارات. حاول مرة أخرى.',
+          message: tr('تعذّر تحميل الإشعارات. حاول مرة أخرى.'),
           onRetry: () => ref.invalidate(notificationsControllerProvider),
         ),
         data: (page) {
@@ -249,10 +250,10 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
               onRefresh: _refresh,
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                children: const [
+                children: [
                   SizedBox(height: 120),
                   OhEmptyBody(
-                    message: 'لا توجد إشعارات حتى الآن',
+                    message: tr('لا توجد إشعارات حتى الآن'),
                     icon: Icons.notifications_none_outlined,
                   ),
                 ],
@@ -273,7 +274,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                       tristate: true,
                       onChanged: (v) => _toggleSelectAll(page.notifications, v),
                     ),
-                    const Text('تحديد الكل'),
+                    Text(tr('تحديد الكل')),
                   ],
                 ),
                 const SizedBox(height: 8),

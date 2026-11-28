@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import 'account_models.dart';
+import '../../../core/i18n/i18n.dart';
 
 class AccountApi {
   AccountApi(this._dio);
@@ -14,7 +15,7 @@ class AccountApi {
     if (user is! Map) {
       throw DioException(
         requestOptions: res.requestOptions,
-        message: 'تعذر تحميل بيانات الحساب.',
+        message: tr('تعذر تحميل بيانات الحساب.'),
       );
     }
     return AccountProfile.fromJson(Map<String, dynamic>.from(user));
@@ -30,7 +31,7 @@ class AccountApi {
     if (user is! Map) {
       throw DioException(
         requestOptions: res.requestOptions,
-        message: 'تعذر حفظ الملف الشخصي.',
+        message: tr('تعذر حفظ الملف الشخصي.'),
       );
     }
     return AccountProfile.fromJson(Map<String, dynamic>.from(user));

@@ -1,3 +1,4 @@
+import '../../../core/i18n/i18n.dart';
 enum PaymentReturnUiState {
   confirming,
   paid,
@@ -7,19 +8,15 @@ enum PaymentReturnUiState {
   guestNeedsLogin,
 }
 
-const paymentReturnGuestMessageAr =
-    'تم الرجوع من صفحة الدفع. لتأكيد حالة الطلب، سجّل الدخول بنفس الحساب.';
+String get paymentReturnGuestMessageAr => tr('تم الرجوع من صفحة الدفع. لتأكيد حالة الطلب، سجّل الدخول بنفس الحساب.');
 
-const paymentReturnPendingMessageAr =
-    'تم استلام عملية الدفع، وقد يستغرق تأكيدها لحظات. يمكنك تحديث الحالة.';
+String get paymentReturnPendingMessageAr => tr('تم استلام عملية الدفع، وقد يستغرق تأكيدها لحظات. يمكنك تحديث الحالة.');
 
-const paymentReturnCancelTitleAr = 'لم يتم إكمال الدفع';
+String get paymentReturnCancelTitleAr => tr('لم يتم إكمال الدفع');
 
-const paymentReturnCancelBodyAr =
-    'أُلغيت عملية الدفع أو رجعت قبل إتمامها. يمكنك المحاولة مرة أخرى من تفاصيل الطلب.';
+String get paymentReturnCancelBodyAr => tr('أُلغيت عملية الدفع أو رجعت قبل إتمامها. يمكنك المحاولة مرة أخرى من تفاصيل الطلب.');
 
-const paymentCheckoutOpenedNoteAr =
-    'تم فتح صفحة الدفع. بعد إتمام الدفع ستُعاد إلى التطبيق لتأكيد الحالة. إذا رجعت دون إكمال الدفع، يمكنك المحاولة لاحقًا.';
+String get paymentCheckoutOpenedNoteAr => tr('تم فتح صفحة الدفع. بعد إتمام الدفع ستُعاد إلى التطبيق لتأكيد الحالة. إذا رجعت دون إكمال الدفع، يمكنك المحاولة لاحقًا.');
 
 /// How long to poll pay-confirm after a success deep link (webhook lag).
 const paymentConfirmPollAttempts = 12;

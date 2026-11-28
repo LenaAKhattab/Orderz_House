@@ -1,5 +1,6 @@
 import '../../../core/network/json_helpers.dart';
 import 'super_admin_models.dart';
+import '../../../core/i18n/i18n.dart';
 
 class SuperAdminPantryFairRanking {
   const SuperAdminPantryFairRanking({
@@ -172,7 +173,7 @@ SuperAdminPantryRequestDetail parsePantryRequestDetail(dynamic body) {
 
   return SuperAdminPantryRequestDetail(
     id: readString(requestJson, 'id', 'id'),
-    title: _nullIfEmpty(readString(requestJson, 'title', 'title')) ?? 'طلب بيت المونة',
+    title: _nullIfEmpty(readString(requestJson, 'title', 'title')) ?? tr('طلب بيت المونة'),
     requestStatus: _nullIfEmpty(readString(requestJson, 'status', 'status')),
     collection: SuperAdminBidCollection.fromJson(collectionJson),
     relistCount: readInt(requestJson, 'relistCount', 'relist_count') ?? 0,

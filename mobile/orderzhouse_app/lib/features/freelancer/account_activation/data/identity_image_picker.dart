@@ -1,19 +1,16 @@
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
+import '../../../../core/i18n/i18n.dart';
 
 /// Backend-aligned identity image constraints (JPEG/PNG/WebP, ≤ 5 MB).
 const identityImageAllowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
 const identityImageMaxBytes = 5 * 1024 * 1024;
 
-const identityImagePickFailedAr =
-    'تعذر معالجة الصورة المختارة. يرجى اختيار صورة أخرى والمحاولة مجددًا.';
-const identityImagePermissionDeniedAr =
-    'تعذر الوصول إلى الصور. يرجى السماح بالوصول من إعدادات الجهاز.';
-const identityImageUnsupportedFormatAr =
-    'صيغة الصورة غير مدعومة. يُسمح بـ JPEG أو PNG أو WebP فقط.';
-const identityImageTooLargeAr =
-    'حجم صورة الهوية يتجاوز الحد المسموح (5 ميغابايت).';
+String get identityImagePickFailedAr => tr('تعذر معالجة الصورة المختارة. يرجى اختيار صورة أخرى والمحاولة مجددًا.');
+String get identityImagePermissionDeniedAr => tr('تعذر الوصول إلى الصور. يرجى السماح بالوصول من إعدادات الجهاز.');
+String get identityImageUnsupportedFormatAr => tr('صيغة الصورة غير مدعومة. يُسمح بـ JPEG أو PNG أو WebP فقط.');
+String get identityImageTooLargeAr => tr('حجم صورة الهوية يتجاوز الحد المسموح (5 ميغابايت).');
 
 class IdentityImagePickResult {
   const IdentityImagePickResult.success({
@@ -75,11 +72,11 @@ Future<IdentityImagePickResult> pickIdentityImageFile() async {
   } on Exception catch (e) {
     final msg = e.toString().toLowerCase();
     if (msg.contains('permission') || msg.contains('access')) {
-      return const IdentityImagePickResult.failure(identityImagePermissionDeniedAr);
+      return IdentityImagePickResult.failure(identityImagePermissionDeniedAr);
     }
-    return const IdentityImagePickResult.failure(identityImagePickFailedAr);
+    return IdentityImagePickResult.failure(identityImagePickFailedAr);
   } catch (_) {
-    return const IdentityImagePickResult.failure(identityImagePickFailedAr);
+    return IdentityImagePickResult.failure(identityImagePickFailedAr);
   }
 }
 
@@ -92,24 +89,24 @@ Future<IdentityImagePickResult> validateIdentityPickedFile({
   final trimmedName = (name ?? '').trim();
   final ext = _extensionOf(trimmedName.isNotEmpty ? trimmedName : (path ?? ''));
   if (!_isAllowedExtension(ext)) {
-    return const IdentityImagePickResult.failure(identityImageUnsupportedFormatAr);
+    return IdentityImagePickResult.failure(identityImageUnsupportedFormatAr);
   }
 
   if (path == null || path.isEmpty) {
-    return const IdentityImagePickResult.failure(identityImagePickFailedAr);
+    return IdentityImagePickResult.failure(identityImagePickFailedAr);
   }
 
   final file = File(path);
   if (!await file.exists()) {
-    return const IdentityImagePickResult.failure(identityImagePickFailedAr);
+    return IdentityImagePickResult.failure(identityImagePickFailedAr);
   }
 
   final size = reportedSize > 0 ? reportedSize : await file.length();
   if (size <= 0) {
-    return const IdentityImagePickResult.failure(identityImagePickFailedAr);
+    return IdentityImagePickResult.failure(identityImagePickFailedAr);
   }
   if (size > identityImageMaxBytes) {
-    return const IdentityImagePickResult.failure(identityImageTooLargeAr);
+    return IdentityImagePickResult.failure(identityImageTooLargeAr);
   }
 
   return IdentityImagePickResult.success(

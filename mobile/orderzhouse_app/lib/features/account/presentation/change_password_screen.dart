@@ -6,6 +6,7 @@ import '../../../core/errors/api_error_message.dart';
 import '../../../core/theme/app_colors.dart';
 import '../data/account_repository.dart';
 import '../domain/account_validators.dart';
+import '../../../core/i18n/i18n.dart';
 
 class ChangePasswordScreen extends ConsumerStatefulWidget {
   const ChangePasswordScreen({super.key});
@@ -43,7 +44,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
           );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تم تغيير كلمة المرور بنجاح')),
+        SnackBar(content: Text(tr('تم تغيير كلمة المرور بنجاح'))),
       );
       _current.clear();
       _next.clear();
@@ -52,7 +53,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(apiErrorMessage(e, fallback: 'تعذر تغيير كلمة المرور.'))),
+        SnackBar(content: Text(apiErrorMessage(e, fallback: tr('تعذر تغيير كلمة المرور.')))),
       );
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -63,7 +64,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.homeMobileBg,
-      appBar: AppBar(title: const Text('تغيير كلمة المرور')),
+      appBar: AppBar(title: Text(tr('تغيير كلمة المرور'))),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -80,7 +81,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                 children: [
                   _passwordField(
                     controller: _current,
-                    label: 'كلمة المرور الحالية',
+                    label: tr('كلمة المرور الحالية'),
                     obscure: _obscureCurrent,
                     onToggle: () => setState(() => _obscureCurrent = !_obscureCurrent),
                     validator: PasswordRules.validateCurrent,
@@ -88,7 +89,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                   const SizedBox(height: 12),
                   _passwordField(
                     controller: _next,
-                    label: 'كلمة المرور الجديدة',
+                    label: tr('كلمة المرور الجديدة'),
                     obscure: _obscureNext,
                     onToggle: () => setState(() => _obscureNext = !_obscureNext),
                     validator: PasswordRules.validateNewPassword,
@@ -96,7 +97,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                   const SizedBox(height: 12),
                   _passwordField(
                     controller: _confirm,
-                    label: 'تأكيد كلمة المرور الجديدة',
+                    label: tr('تأكيد كلمة المرور الجديدة'),
                     obscure: _obscureConfirm,
                     onToggle: () => setState(() => _obscureConfirm = !_obscureConfirm),
                     validator: (v) => PasswordRules.validateConfirm(_next.text, v),
@@ -107,7 +108,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
             const SizedBox(height: 20),
             FilledButton(
               onPressed: _saving ? null : _submit,
-              child: Text(_saving ? 'جاري الحفظ...' : 'حفظ التغييرات'),
+              child: Text(_saving ? tr('جاري الحفظ...') : tr('حفظ التغييرات')),
             ),
           ],
         ),

@@ -5,6 +5,7 @@
 /// hides any service that would need an unsupported field (no field is ever silently dropped).
 library;
 
+
 const List<String> kMobileSupportedFieldTypes = [
   'text',
   'textarea',
@@ -199,7 +200,7 @@ class ServiceCatalog {
 }
 
 /// Quantity unit labels (same codes as web `smartOrders.units.*`).
-const Map<String, Map<String, String>> kUnitLabels = {
+Map<String, Map<String, String>> get kUnitLabels => {
   'pages': {'ar': 'صفحات', 'en': 'pages'},
   'words': {'ar': 'كلمات', 'en': 'words'},
   'documents': {'ar': 'مستندات', 'en': 'documents'},
@@ -227,7 +228,7 @@ String unitLabel(String unit, String locale) {
 }
 
 /// Field error messages (server reason codes → AR/EN text).
-const Map<String, Map<String, String>> kServiceFormErrors = {
+Map<String, Map<String, String>> get kServiceFormErrors => {
   'required': {'ar': 'هذا الحقل مطلوب.', 'en': 'This field is required.'},
   'invalid': {'ar': 'القيمة غير صالحة.', 'en': 'Invalid value.'},
   'invalid_number': {'ar': 'أدخل رقمًا صالحًا.', 'en': 'Enter a valid number.'},

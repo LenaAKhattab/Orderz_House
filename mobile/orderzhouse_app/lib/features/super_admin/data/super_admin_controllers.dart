@@ -14,6 +14,7 @@ import 'super_admin_feedback_models.dart';
 import 'super_admin_package_models.dart';
 import 'super_admin_pantry_actions.dart';
 import 'super_admin_pantry_models.dart';
+import '../../../core/i18n/i18n.dart';
 
 final superAdminActivationBusyIdProvider = StateProvider<String?>((ref) => null);
 final superAdminClaimsBusyIdProvider = StateProvider<String?>((ref) => null);
@@ -25,7 +26,7 @@ String superAdminLoadErrorMessage(Object error) {
     final status = error.response?.statusCode;
     if (status == 401 || status == 403) return superAdminAccessDeniedAr;
   }
-  return apiErrorMessage(error, fallback: 'تعذر تحميل مركز المهام.');
+  return apiErrorMessage(error, fallback: tr('تعذر تحميل مركز المهام.'));
 }
 
 final superAdminActionCenterProvider =
@@ -68,7 +69,7 @@ class SuperAdminActionCenterNotifier extends AsyncNotifier<SuperAdminActionCente
     final api = ref.read(superAdminApiProvider);
     final homeRaw = await _tryFetch(api.fetchHomeFast);
     if (homeRaw == null) {
-      throw SuperAdminEndpointUnavailable('تعذر تحميل مركز المهام.');
+      throw SuperAdminEndpointUnavailable(tr('تعذر تحميل مركز المهام.'));
     }
     return parseHomeFastSnapshot(homeRaw);
   }
@@ -268,7 +269,7 @@ class SuperAdminActivationQueueNotifier extends AsyncNotifier<SuperAdminActivati
 
     if (kycLoadFailed && subscriptionLoadFailed) {
       Error.throwWithStackTrace(
-        fatalError ?? SuperAdminEndpointUnavailable('تعذر تحميل مركز المهام.'),
+        fatalError ?? SuperAdminEndpointUnavailable(tr('تعذر تحميل مركز المهام.')),
         StackTrace.current,
       );
     }
@@ -615,7 +616,7 @@ class SuperAdminPantryDeliveryDetailNotifier
       final found = parsePantryDeliveryById(raw, arg);
       if (found != null) return found;
     }
-    throw SuperAdminEndpointUnavailable('التسليم غير موجود.');
+    throw SuperAdminEndpointUnavailable(tr('التسليم غير موجود.'));
   }
 
   Future<void> refreshQuietly() async {
@@ -1005,7 +1006,7 @@ class SuperAdminFeedbackDetailNotifier
     final raw =
         await ref.read(superAdminApiProvider).fetchSuperAdminFeedbackDetail(arg).timeout(_fetchTimeout);
     final item = parseFeedbackDetail(raw);
-    if (item == null) throw SuperAdminEndpointUnavailable('الملاحظة غير موجودة.');
+    if (item == null) throw SuperAdminEndpointUnavailable(tr('الملاحظة غير موجودة.'));
     return item;
   }
 

@@ -1,4 +1,5 @@
 import '../../../core/network/json_helpers.dart';
+import '../../../core/i18n/i18n.dart';
 
 class CreateOrderDraft {
   const CreateOrderDraft({
@@ -84,41 +85,41 @@ CreateOrderValidation validateCreateOrderDraft(CreateOrderDraft draft) {
   final errors = <String, String>{};
 
   if (draft.projectType != 'fixed' && draft.projectType != 'bidding') {
-    errors['projectType'] = 'يرجى اختيار نوع الطلب.';
+    errors['projectType'] = tr('يرجى اختيار نوع الطلب.');
   }
 
   final categoryId = int.tryParse(draft.categoryId ?? '');
   if (categoryId == null || categoryId < 1) {
-    errors['categoryId'] = 'يرجى اختيار التصنيف.';
+    errors['categoryId'] = tr('يرجى اختيار التصنيف.');
   }
 
   final title = draft.title.trim();
   if (title.length < 2) {
-    errors['title'] = 'عنوان الطلب مطلوب (حرفان على الأقل).';
+    errors['title'] = tr('عنوان الطلب مطلوب (حرفان على الأقل).');
   } else if (title.length > 200) {
-    errors['title'] = 'العنوان طويل جداً.';
+    errors['title'] = tr('العنوان طويل جداً.');
   }
 
   final description = draft.description.trim();
   if (description.length < 10) {
-    errors['description'] = 'الوصف مطلوب (10 أحرف على الأقل).';
+    errors['description'] = tr('الوصف مطلوب (10 أحرف على الأقل).');
   } else if (description.length > 5000) {
-    errors['description'] = 'الوصف طويل جداً.';
+    errors['description'] = tr('الوصف طويل جداً.');
   }
 
   final duration = _parseDuration(draft.durationValue);
   if (duration == null || duration < 1) {
-    errors['durationValue'] = 'يرجى إدخال مدة تنفيذ صحيحة.';
+    errors['durationValue'] = tr('يرجى إدخال مدة تنفيذ صحيحة.');
   }
 
   if (!['days', 'hours', 'minutes'].contains(draft.durationUnit)) {
-    errors['durationUnit'] = 'وحدة المدة غير صالحة.';
+    errors['durationUnit'] = tr('وحدة المدة غير صالحة.');
   }
 
   if (draft.isFixed) {
     final budget = _parseAmount(draft.budget);
     if (budget == null || budget <= 0) {
-      errors['budget'] = 'الميزانية مطلوبة ويجب أن تكون أكبر من صفر.';
+      errors['budget'] = tr('الميزانية مطلوبة ويجب أن تكون أكبر من صفر.');
     }
   }
 
@@ -126,13 +127,13 @@ CreateOrderValidation validateCreateOrderDraft(CreateOrderDraft draft) {
     final min = _parseAmount(draft.bidBudgetMin);
     final max = _parseAmount(draft.bidBudgetMax);
     if (min == null || min <= 0) {
-      errors['bidBudgetMin'] = 'الحد الأدنى مطلوب ويجب أن يكون أكبر من صفر.';
+      errors['bidBudgetMin'] = tr('الحد الأدنى مطلوب ويجب أن يكون أكبر من صفر.');
     }
     if (max == null || max <= 0) {
-      errors['bidBudgetMax'] = 'الحد الأعلى مطلوب ويجب أن يكون أكبر من صفر.';
+      errors['bidBudgetMax'] = tr('الحد الأعلى مطلوب ويجب أن يكون أكبر من صفر.');
     }
     if (min != null && max != null && max < min) {
-      errors['bidBudgetMax'] = 'الحد الأعلى يجب أن يكون أكبر من أو يساوي الحد الأدنى.';
+      errors['bidBudgetMax'] = tr('الحد الأعلى يجب أن يكون أكبر من أو يساوي الحد الأدنى.');
     }
   }
 
@@ -143,38 +144,38 @@ CreateOrderValidation validateCreateOrderStep(int step, CreateOrderDraft draft) 
   switch (step) {
     case 0:
       if (draft.projectType != 'fixed' && draft.projectType != 'bidding') {
-        return const CreateOrderValidation(fieldErrors: {'projectType': 'يرجى اختيار نوع الطلب.'});
+        return CreateOrderValidation(fieldErrors: {'projectType': tr('يرجى اختيار نوع الطلب.')});
       }
       return const CreateOrderValidation();
     case 1:
       final categoryId = int.tryParse(draft.categoryId ?? '');
       if (categoryId == null || categoryId < 1) {
-        return const CreateOrderValidation(fieldErrors: {'categoryId': 'يرجى اختيار التصنيف.'});
+        return CreateOrderValidation(fieldErrors: {'categoryId': tr('يرجى اختيار التصنيف.')});
       }
       return const CreateOrderValidation();
     case 2:
       final errors = <String, String>{};
       final title = draft.title.trim();
-      if (title.length < 2) errors['title'] = 'عنوان الطلب مطلوب.';
+      if (title.length < 2) errors['title'] = tr('عنوان الطلب مطلوب.');
       final description = draft.description.trim();
-      if (description.length < 10) errors['description'] = 'الوصف مطلوب (10 أحرف على الأقل).';
+      if (description.length < 10) errors['description'] = tr('الوصف مطلوب (10 أحرف على الأقل).');
       final duration = _parseDuration(draft.durationValue);
-      if (duration == null || duration < 1) errors['durationValue'] = 'مدة التنفيذ مطلوبة.';
+      if (duration == null || duration < 1) errors['durationValue'] = tr('مدة التنفيذ مطلوبة.');
       return CreateOrderValidation(fieldErrors: errors);
     case 3:
       if (draft.isFixed) {
         final budget = _parseAmount(draft.budget);
         if (budget == null || budget <= 0) {
-          return const CreateOrderValidation(fieldErrors: {'budget': 'الميزانية مطلوبة.'});
+          return CreateOrderValidation(fieldErrors: {'budget': tr('الميزانية مطلوبة.')});
         }
       } else if (draft.isBidding) {
         final min = _parseAmount(draft.bidBudgetMin);
         final max = _parseAmount(draft.bidBudgetMax);
         final errors = <String, String>{};
-        if (min == null || min <= 0) errors['bidBudgetMin'] = 'الحد الأدنى مطلوب.';
-        if (max == null || max <= 0) errors['bidBudgetMax'] = 'الحد الأعلى مطلوب.';
+        if (min == null || min <= 0) errors['bidBudgetMin'] = tr('الحد الأدنى مطلوب.');
+        if (max == null || max <= 0) errors['bidBudgetMax'] = tr('الحد الأعلى مطلوب.');
         if (min != null && max != null && max < min) {
-          errors['bidBudgetMax'] = 'الحد الأعلى يجب أن يكون >= الحد الأدنى.';
+          errors['bidBudgetMax'] = tr('الحد الأعلى يجب أن يكون >= الحد الأدنى.');
         }
         return CreateOrderValidation(fieldErrors: errors);
       }
@@ -242,12 +243,12 @@ class CreateOrderResult {
   factory CreateOrderResult.fromResponse(Map<String, dynamic> json) {
     final data = json['data'];
     if (data is! Map) {
-      throw FormatException('استجابة إنشاء الطلب غير متوقعة.');
+      throw FormatException(tr('استجابة إنشاء الطلب غير متوقعة.'));
     }
     final map = Map<String, dynamic>.from(data);
     final order = map['order'];
     if (order is! Map) {
-      throw FormatException('استجابة إنشاء الطلب بدون order.');
+      throw FormatException(tr('استجابة إنشاء الطلب بدون order.'));
     }
     final orderMap = Map<String, dynamic>.from(order);
     final requiresPayment = map['requiresPayment'] == true;

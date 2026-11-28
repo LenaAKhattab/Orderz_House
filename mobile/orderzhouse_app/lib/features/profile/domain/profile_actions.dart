@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/router/routes.dart';
 import '../../auth/domain/auth_user.dart';
+import '../../../core/i18n/i18n.dart';
 
 enum ProfileActionId {
   myOrders,
@@ -64,47 +65,46 @@ class ProfileSettingsItem {
 String profileRoleLabelAr(AuthUser user) {
   switch (user.effectiveRole) {
     case 'client':
-      return 'عميل';
+      return tr('عميل');
     case 'freelancer':
-      return 'مستقل';
+      return tr('مستقل');
     case 'admin':
-      return 'مدير';
+      return tr('مدير');
     case 'super_admin':
-      return 'مدير عام';
+      return tr('مدير عام');
     default:
       return user.effectiveRole;
   }
 }
 
 /// Shown when staff `admin` lands on the generic client-like home (no SA tools).
-const regularAdminMobileDisabledMessageAr =
-    'تجربة الأدمن على التطبيق غير مفعلة لهذا الدور حالياً. استخدم لوحة الويب.';
+String get regularAdminMobileDisabledMessageAr => tr('تجربة الأدمن على التطبيق غير مفعلة لهذا الدور حالياً. استخدم لوحة الويب.');
 
 
 String? profileStatusLabelAr(AuthUser user) {
-  if (!user.isActive) return 'الحساب غير نشط';
-  return 'الحساب نشط';
+  if (!user.isActive) return tr('الحساب غير نشط');
+  return tr('الحساب نشط');
 }
 
 String profileInitials(AuthUser user) {
   final name = user.displayName.trim();
-  if (name.isEmpty) return 'م';
+  if (name.isEmpty) return tr('م');
   return name.substring(0, 1).toUpperCase();
 }
 
 /// Quick actions for authenticated users (role-specific).
 List<ProfileActionItem> profileQuickActionsForUser(AuthUser user) {
   if (user.usesSuperAdminExperience) {
-    return const [
+    return [
       ProfileActionItem(
         id: ProfileActionId.superAdminHome,
-        label: 'مركز المهام',
+        label: tr('مركز المهام'),
         icon: Icons.dashboard_outlined,
         route: AppRoutes.home,
       ),
       ProfileActionItem(
         id: ProfileActionId.notifications,
-        label: 'الإشعارات',
+        label: tr('الإشعارات'),
         icon: Icons.notifications_outlined,
         route: AppRoutes.notifications,
       ),
@@ -112,92 +112,92 @@ List<ProfileActionItem> profileQuickActionsForUser(AuthUser user) {
   }
 
   if (user.usesFreelancerExperience) {
-    return const [
+    return [
       ProfileActionItem(
         id: ProfileActionId.myOrders,
-        label: 'طلباتي كمستقل',
+        label: tr('طلباتي كمستقل'),
         icon: Icons.receipt_long_outlined,
         route: AppRoutes.myOrders,
       ),
       ProfileActionItem(
         id: ProfileActionId.accountActivation,
-        label: 'توثيق الهوية',
+        label: tr('توثيق الهوية'),
         icon: Icons.verified_user_outlined,
         route: AppRoutes.freelancerAccountActivation,
       ),
       ProfileActionItem(
         id: ProfileActionId.miniArticles,
-        label: 'المقالات المصغّرة',
+        label: tr('المقالات المصغّرة'),
         icon: Icons.article_outlined,
         route: AppRoutes.freelancerMiniArticles,
       ),
       ProfileActionItem(
         id: ProfileActionId.myArticles,
-        label: 'مقالاتي',
+        label: tr('مقالاتي'),
         icon: Icons.library_books_outlined,
         route: AppRoutes.freelancerMyArticles,
       ),
       ProfileActionItem(
         id: ProfileActionId.courses,
-        label: 'دوراتي التدريبية',
+        label: tr('دوراتي التدريبية'),
         icon: Icons.school_outlined,
         route: AppRoutes.courses,
       ),
       ProfileActionItem(
         id: ProfileActionId.services,
-        label: 'الخدمات والتصنيفات',
+        label: tr('الخدمات والتصنيفات'),
         icon: Icons.grid_view_rounded,
         route: AppRoutes.services,
       ),
       ProfileActionItem(
         id: ProfileActionId.financialClaims,
-        label: 'المطالبات المالية',
+        label: tr('المطالبات المالية'),
         icon: Icons.payments_outlined,
         route: AppRoutes.freelancerFinancialClaims,
       ),
       ProfileActionItem(
         id: ProfileActionId.notifications,
-        label: 'الإشعارات',
+        label: tr('الإشعارات'),
         icon: Icons.notifications_outlined,
         route: AppRoutes.notifications,
       ),
       ProfileActionItem(
         id: ProfileActionId.marketplace,
-        label: 'السوق',
+        label: tr('السوق'),
         icon: Icons.storefront_outlined,
         route: AppRoutes.marketplace,
       ),
     ];
   }
 
-  return const [
+  return [
     ProfileActionItem(
       id: ProfileActionId.myOrders,
-      label: 'طلباتي',
+      label: tr('طلباتي'),
       icon: Icons.receipt_long_outlined,
       route: AppRoutes.myOrders,
     ),
     ProfileActionItem(
       id: ProfileActionId.createOrder,
-      label: 'إنشاء طلب',
+      label: tr('إنشاء طلب'),
       icon: Icons.add_circle_outline,
       route: AppRoutes.clientCreateOrder,
     ),
     ProfileActionItem(
       id: ProfileActionId.services,
-      label: 'الخدمات والتصنيفات',
+      label: tr('الخدمات والتصنيفات'),
       icon: Icons.grid_view_rounded,
       route: AppRoutes.services,
     ),
     ProfileActionItem(
       id: ProfileActionId.notifications,
-      label: 'الإشعارات',
+      label: tr('الإشعارات'),
       icon: Icons.notifications_outlined,
       route: AppRoutes.notifications,
     ),
     ProfileActionItem(
       id: ProfileActionId.legalHelp,
-      label: 'الصفحات القانونية والمساعدة',
+      label: tr('الصفحات القانونية والمساعدة'),
       icon: Icons.help_outline,
       route: AppRoutes.helpCenterPublicRoute,
     ),
@@ -207,22 +207,22 @@ List<ProfileActionItem> profileQuickActionsForUser(AuthUser user) {
 /// Legacy guest quick actions — unused in auth-first shell (profile is protected).
 /// Kept for tests that assert guest marketplace CTA is not offered for browsing.
 List<ProfileActionItem> profileGuestQuickActions() {
-  return const [
+  return [
     ProfileActionItem(
       id: ProfileActionId.login,
-      label: 'تسجيل الدخول',
+      label: tr('تسجيل الدخول'),
       icon: Icons.login_rounded,
       route: AppRoutes.login,
     ),
     ProfileActionItem(
       id: ProfileActionId.register,
-      label: 'إنشاء حساب',
+      label: tr('إنشاء حساب'),
       icon: Icons.person_add_outlined,
       route: AppRoutes.register,
     ),
     ProfileActionItem(
       id: ProfileActionId.legalHelp,
-      label: 'مركز المساعدة والسياسات',
+      label: tr('مركز المساعدة والسياسات'),
       icon: Icons.help_outline,
       route: AppRoutes.helpCenterPublicRoute,
     ),
@@ -230,10 +230,10 @@ List<ProfileActionItem> profileGuestQuickActions() {
 }
 
 List<ProfileSettingsItem> profileAccountManagementItems() {
-  return const [
+  return [
     ProfileSettingsItem(
       id: ProfileSettingsId.accountSettings,
-      label: 'إعدادات الحساب',
+      label: tr('إعدادات الحساب'),
       icon: Icons.manage_accounts_outlined,
       route: AppRoutes.accountSettings,
     ),
@@ -242,31 +242,31 @@ List<ProfileSettingsItem> profileAccountManagementItems() {
 
 List<ProfileSettingsItem> profileSettingsItems() {
   return [
-    const ProfileSettingsItem(
+    ProfileSettingsItem(
       id: ProfileSettingsId.openWebsite,
-      label: 'فتح الموقع',
+      label: tr('فتح الموقع'),
       icon: Icons.open_in_new_rounded,
     ),
-    const ProfileSettingsItem(
+    ProfileSettingsItem(
       id: ProfileSettingsId.aboutApp,
-      label: 'عن التطبيق',
+      label: tr('عن التطبيق'),
       icon: Icons.info_outline_rounded,
     ),
     ProfileSettingsItem(
       id: ProfileSettingsId.terms,
-      label: 'الشروط والأحكام',
+      label: tr('الشروط والأحكام'),
       icon: Icons.gavel_outlined,
       route: AppRoutes.publicPagePath(AppRoutes.termsConditions),
     ),
     ProfileSettingsItem(
       id: ProfileSettingsId.privacy,
-      label: 'سياسة الخصوصية',
+      label: tr('سياسة الخصوصية'),
       icon: Icons.privacy_tip_outlined,
       route: AppRoutes.publicPagePath(AppRoutes.privacyPolicy),
     ),
-    const ProfileSettingsItem(
+    ProfileSettingsItem(
       id: ProfileSettingsId.contactUs,
-      label: 'تواصل معنا',
+      label: tr('تواصل معنا'),
       icon: Icons.chat_outlined,
     ),
   ];

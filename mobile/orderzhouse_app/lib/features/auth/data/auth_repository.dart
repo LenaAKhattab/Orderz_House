@@ -5,6 +5,7 @@ import '../../../core/network/dio_provider.dart';
 import '../../../core/storage/secure_token_storage.dart';
 import '../domain/auth_user.dart';
 import 'auth_api.dart';
+import '../../../core/i18n/i18n.dart';
 
 final authApiProvider = Provider<AuthApi>((ref) {
   return AuthApi(ref.watch(dioProvider));
@@ -96,7 +97,7 @@ class AuthRepository {
     if (token == null || token.isEmpty) {
       throw DioException(
         requestOptions: RequestOptions(path: '/auth'),
-        message: 'لم يُرجع الخادم رمز الدخول للموبايل.',
+        message: tr('لم يُرجع الخادم رمز الدخول للموبايل.'),
       );
     }
     await _tokenStorage.writeAccessToken(token);

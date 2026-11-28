@@ -1,5 +1,6 @@
 import '../../../core/network/json_helpers.dart';
 import 'super_admin_models.dart';
+import '../../../core/i18n/i18n.dart';
 
 class SuperAdminArticleFairRanking {
   const SuperAdminArticleFairRanking({
@@ -106,32 +107,32 @@ class SuperAdminArticleDetail {
 String articleStatusLabelAr(String? status) {
   switch ((status ?? '').trim().toLowerCase()) {
     case 'published':
-      return 'منشور';
+      return tr('منشور');
     case 'draft':
-      return 'مسودة';
+      return tr('مسودة');
     case 'closed':
-      return 'مغلق';
+      return tr('مغلق');
     case 'cancelled':
-      return 'ملغى';
+      return tr('ملغى');
     default:
-      return status?.trim().isNotEmpty == true ? status!.trim() : 'مقال';
+      return status?.trim().isNotEmpty == true ? status!.trim() : tr('مقال');
   }
 }
 
 String articleApplicationStatusLabelAr(String? status) {
   switch ((status ?? '').trim().toLowerCase()) {
     case 'pending':
-      return 'قيد المراجعة';
+      return tr('قيد المراجعة');
     case 'selected':
       return superAdminAssignedApplicantLabelAr;
     case 'rejected':
-      return 'مرفوض';
+      return tr('مرفوض');
     case 'withdrawn':
-      return 'منسحب';
+      return tr('منسحب');
     case 'cancelled':
-      return 'ملغى';
+      return tr('ملغى');
     default:
-      return status?.trim().isNotEmpty == true ? status!.trim() : 'طلب';
+      return status?.trim().isNotEmpty == true ? status!.trim() : tr('طلب');
   }
 }
 
@@ -204,7 +205,7 @@ SuperAdminArticleDetail parseArticleDetail({
     id: articleIdResolved,
     title: _nullIfEmpty(articleJson == null ? '' : readString(articleJson, 'title', 'title')) ??
         firstAppTitle ??
-        'مقال',
+        tr('مقال'),
     articleStatus: articleJson == null
         ? null
         : _nullIfEmpty(readString(articleJson, 'status', 'status')),

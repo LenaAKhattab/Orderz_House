@@ -3,11 +3,13 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/branding/app_branding.dart';
+import 'core/i18n/language_controller.dart';
 import 'core/router/deep_link_listener.dart';
 import 'core/router/push_bootstrap_listener.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'features/currency/presentation/currency_display_provider.dart';
+import 'features/push/data/push_notification_service.dart';
 
 class OrderzHouseApp extends ConsumerWidget {
   const OrderzHouseApp({super.key});
@@ -16,6 +18,11 @@ class OrderzHouseApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
     ref.watch(currencyDisplaySettingsProvider);
+    final language = ref.watch(languageControllerProvider);
+    // Re-register the push token so lock-screen notifications follow the new language.
+    ref.listen(languageControllerProvider, (previous, next) {
+      if (previous != next) ref.read(pushNotificationServiceProvider).onAuthenticated();
+    });
 
     return PushBootstrapListener(
       child: DeepLinkListener(
@@ -23,7 +30,7 @@ class OrderzHouseApp extends ConsumerWidget {
           title: AppBranding.displayNameEn,
           debugShowCheckedModeBanner: false,
           theme: AppTheme.light(),
-          locale: const Locale('ar'),
+          locale: Locale(language.code),
           supportedLocales: const [Locale('ar'), Locale('en')],
           localizationsDelegates: const [
             GlobalMaterialLocalizations.delegate,
@@ -31,9 +38,11 @@ class OrderzHouseApp extends ConsumerWidget {
             GlobalCupertinoLocalizations.delegate,
           ],
           routerConfig: router,
+          // Direction follows the locale (RTL for Arabic, LTR for English). Re-keying the subtree on a
+          // language switch rebuilds every screen, so no widget keeps text from the previous language.
           builder: (context, child) {
-            return Directionality(
-              textDirection: TextDirection.rtl,
+            return KeyedSubtree(
+              key: ValueKey('lang-${language.code}'),
               child: child ?? const SizedBox.shrink(),
             );
           },

@@ -610,10 +610,12 @@ async function getOrderById(orderId, client) {
     ));
   }
 
-  const { rows: catRows } = await runner.query(`SELECT id, slug, name FROM categories WHERE id = $1 LIMIT 1`, [
+  const { rows: catRows } = await runner.query(`SELECT id, slug, name, name_en FROM categories WHERE id = $1 LIMIT 1`, [
     Number(base.categoryId),
   ]);
-  const category = catRows[0] ? { id: String(catRows[0].id), slug: catRows[0].slug, name: catRows[0].name } : null;
+  const category = catRows[0]
+    ? { id: String(catRows[0].id), slug: catRows[0].slug, name: catRows[0].name, name_en: catRows[0].name_en || null }
+    : null;
 
   // Extra categories + their optional detailed selections (if provided)
   const extraCategories = [];
@@ -621,7 +623,7 @@ async function getOrderById(orderId, client) {
   const extraDetails = base.extraCategoryDetails && typeof base.extraCategoryDetails === "object" ? base.extraCategoryDetails : {};
   if (extraCatIds.length) {
     const { rows: extraCatRows } = await runner.query(
-      `SELECT id, slug, name
+      `SELECT id, slug, name, name_en
        FROM categories
        WHERE id = ANY($1::bigint[])
        ORDER BY id ASC`,
@@ -639,7 +641,7 @@ async function getOrderById(orderId, client) {
     let ssById = new Map();
     if (ssIds.length) {
       const { rows: ssRows2 } = await runner.query(
-        `SELECT id, slug, name, subcategory_id
+        `SELECT id, slug, name, name_en, subcategory_id
          FROM sub_subcategories
          WHERE id = ANY($1::bigint[])
          ORDER BY id ASC`,
@@ -654,9 +656,11 @@ async function getOrderById(orderId, client) {
       const ssId = raw ? Number(raw) : null;
       const ssRow = ssId && Number.isInteger(ssId) ? ssById.get(ssId) : null;
       extraCategories.push({
-        category: cRow ? { id: String(cRow.id), slug: cRow.slug, name: cRow.name } : { id: String(cid), slug: null, name: String(cid) },
+        category: cRow
+          ? { id: String(cRow.id), slug: cRow.slug, name: cRow.name, name_en: cRow.name_en || null }
+          : { id: String(cid), slug: null, name: String(cid) },
         subSubcategory: ssRow
-          ? { id: String(ssRow.id), slug: ssRow.slug, name: ssRow.name, subcategoryId: String(ssRow.subcategory_id) }
+          ? { id: String(ssRow.id), slug: ssRow.slug, name: ssRow.name, name_en: ssRow.name_en || null, subcategoryId: String(ssRow.subcategory_id) }
           : null,
       });
     }
@@ -665,7 +669,7 @@ async function getOrderById(orderId, client) {
   let subcategory = null;
   if (base.subcategoryId) {
     const { rows: subRows } = await runner.query(
-      `SELECT id, slug, name, category_id FROM subcategories WHERE id = $1 LIMIT 1`,
+      `SELECT id, slug, name, name_en, category_id FROM subcategories WHERE id = $1 LIMIT 1`,
       [Number(base.subcategoryId)],
     );
     if (subRows[0]) {
@@ -673,6 +677,7 @@ async function getOrderById(orderId, client) {
         id: String(subRows[0].id),
         slug: subRows[0].slug,
         name: subRows[0].name,
+        name_en: subRows[0].name_en || null,
         categoryId: String(subRows[0].category_id),
       };
     }
@@ -681,7 +686,7 @@ async function getOrderById(orderId, client) {
   let subSubcategory = null;
   if (base.subSubcategoryId) {
     const { rows: ssRows } = await runner.query(
-      `SELECT id, slug, name, subcategory_id
+      `SELECT id, slug, name, name_en, subcategory_id
        FROM sub_subcategories
        WHERE id = $1
        LIMIT 1`,
@@ -692,6 +697,7 @@ async function getOrderById(orderId, client) {
         id: String(ssRows[0].id),
         slug: ssRows[0].slug,
         name: ssRows[0].name,
+        name_en: ssRows[0].name_en || null,
         subcategoryId: String(ssRows[0].subcategory_id),
       };
     }
@@ -1715,18 +1721,18 @@ async function listClientOrders({ clientUserId, limit = 50, offset = 0 } = {}) {
 
   const queries = [];
   if (catIdList.length) {
-    queries.push(pool.query(`SELECT id, slug, name FROM categories WHERE id = ANY($1::bigint[])`, [catIdList]));
+    queries.push(pool.query(`SELECT id, slug, name, name_en FROM categories WHERE id = ANY($1::bigint[])`, [catIdList]));
   } else {
     queries.push(Promise.resolve({ rows: [] }));
   }
   if (subIdList.length) {
-    queries.push(pool.query(`SELECT id, slug, name, category_id FROM subcategories WHERE id = ANY($1::bigint[])`, [subIdList]));
+    queries.push(pool.query(`SELECT id, slug, name, name_en, category_id FROM subcategories WHERE id = ANY($1::bigint[])`, [subIdList]));
   } else {
     queries.push(Promise.resolve({ rows: [] }));
   }
   if (ssIdList.length) {
     queries.push(
-      pool.query(`SELECT id, slug, name, subcategory_id FROM sub_subcategories WHERE id = ANY($1::bigint[])`, [ssIdList]),
+      pool.query(`SELECT id, slug, name, name_en, subcategory_id FROM sub_subcategories WHERE id = ANY($1::bigint[])`, [ssIdList]),
     );
   } else {
     queries.push(Promise.resolve({ rows: [] }));
@@ -1743,7 +1749,7 @@ async function listClientOrders({ clientUserId, limit = 50, offset = 0 } = {}) {
     if (!base) continue;
 
     const cRow = catById.get(Number(base.categoryId));
-    const category = cRow ? { id: String(cRow.id), slug: cRow.slug, name: cRow.name } : null;
+    const category = cRow ? { id: String(cRow.id), slug: cRow.slug, name: cRow.name, name_en: cRow.name_en || null } : null;
 
     let subcategory = null;
     if (base.subcategoryId) {
@@ -1753,6 +1759,7 @@ async function listClientOrders({ clientUserId, limit = 50, offset = 0 } = {}) {
           id: String(sRow.id),
           slug: sRow.slug,
           name: sRow.name,
+        name_en: sRow.name_en || null,
           categoryId: String(sRow.category_id),
         };
       }
@@ -1766,6 +1773,7 @@ async function listClientOrders({ clientUserId, limit = 50, offset = 0 } = {}) {
           id: String(ssRow.id),
           slug: ssRow.slug,
           name: ssRow.name,
+        name_en: ssRow.name_en || null,
           subcategoryId: String(ssRow.subcategory_id),
         };
       }
@@ -1780,9 +1788,9 @@ async function listClientOrders({ clientUserId, limit = 50, offset = 0 } = {}) {
       const ssId = raw ? Number(raw) : null;
       const ssR = ssId && Number.isInteger(ssId) ? ssById.get(ssId) : null;
       extraCategories.push({
-        category: cR ? { id: String(cR.id), slug: cR.slug, name: cR.name } : { id: String(cid), slug: null, name: String(cid) },
+        category: cR ? { id: String(cR.id), slug: cR.slug, name: cR.name, name_en: cR.name_en || null } : { id: String(cid), slug: null, name: String(cid) },
         subSubcategory: ssR
-          ? { id: String(ssR.id), slug: ssR.slug, name: ssR.name, subcategoryId: String(ssR.subcategory_id) }
+          ? { id: String(ssR.id), slug: ssR.slug, name: ssR.name, name_en: ssR.name_en || null, subcategoryId: String(ssR.subcategory_id) }
           : null,
       });
     }
@@ -1817,8 +1825,15 @@ async function listClientOrders({ clientUserId, limit = 50, offset = 0 } = {}) {
   for (const o of out) o.serviceForm = snapshots.get(String(o.id)) || null;
   // Smart Orders S3: latest customer quote for managed orders (one batched query).
   const managedIds = out.filter((o) => o.sourceType !== "client_created").map((o) => o.id);
-  const quotes = managedIds.length ? await require("./orderCommercialService").loadCustomerQuotesMap(managedIds) : new Map();
-  for (const o of out) if (o.sourceType !== "client_created") o.customerQuote = quotes.get(String(o.id)) || null;
+  const commercial = require("./orderCommercialService");
+  const [quotes, authorized] = managedIds.length
+    ? await Promise.all([commercial.loadCustomerQuotesMap(managedIds), commercial.loadWorkAuthorizedOrderIds(managedIds)])
+    : [new Map(), new Set()];
+  for (const o of out) {
+    if (o.sourceType === "client_created") continue;
+    o.customerQuote = quotes.get(String(o.id)) || null;
+    o.workAuthorized = authorized.has(String(o.id));
+  }
 
   // Smart Orders S1: Admin-managed orders linked to this customer use the read-only projection.
   const orderCustomerService = require("./orderCustomerService");
@@ -2453,8 +2468,13 @@ async function getClientOrderByIdForOwner({ clientUserId, orderId }) {
   if (!order) return null;
   if (access.managed) {
     // Admin-managed order linked to this customer: sanitized read-only projection.
-    const quotes = await require("./orderCommercialService").loadCustomerQuotesMap([order.id]);
+    const commercial = require("./orderCommercialService");
+    const [quotes, authorized] = await Promise.all([
+      commercial.loadCustomerQuotesMap([order.id]),
+      commercial.loadWorkAuthorizedOrderIds([order.id]),
+    ]);
     order.customerQuote = quotes.get(String(order.id)) || null;
+    order.workAuthorized = authorized.has(String(order.id));
     return require("./orderCustomerService").projectManagedOrderForCustomer(order, access.order);
   }
   await enrichOrderWithSubmissionHistory(order, "client");

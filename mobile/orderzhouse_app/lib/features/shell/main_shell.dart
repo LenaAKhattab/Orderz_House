@@ -6,6 +6,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/router/super_admin_access.dart';
 import '../ads/presentation/popup_ads_host.dart';
 import '../auth/presentation/auth_controller.dart';
+import '../../core/i18n/i18n.dart';
 
 class MainShell extends ConsumerWidget {
   const MainShell({super.key, required this.navigationShell});
@@ -40,39 +41,39 @@ class MainShell extends ConsumerWidget {
 
   static List<_ShellDestination> _destinationsFor({required bool isClient}) {
     return [
-      const _ShellDestination(
-        label: 'الرئيسية',
+      _ShellDestination(
+        label: tr('الرئيسية'),
         icon: Icons.home_outlined,
         selectedIcon: Icons.home_rounded,
         wellShape: _NavWellShape.rounded,
       ),
-      const _ShellDestination(
-        label: 'طلباتي',
+      _ShellDestination(
+        label: tr('طلباتي'),
         icon: Icons.receipt_long_outlined,
         selectedIcon: Icons.receipt_long_rounded,
         wellShape: _NavWellShape.circle,
       ),
-      const _ShellDestination(
-        label: 'الطلبات',
+      _ShellDestination(
+        label: tr('الطلبات'),
         icon: Icons.storefront_outlined,
         selectedIcon: Icons.storefront_rounded,
         wellShape: _NavWellShape.rounded,
       ),
       isClient
-          ? const _ShellDestination(
-              label: 'الخدمات',
+          ? _ShellDestination(
+              label: tr('الخدمات'),
               icon: Icons.grid_view_outlined,
               selectedIcon: Icons.grid_view_rounded,
               wellShape: _NavWellShape.rounded,
             )
-          : const _ShellDestination(
-              label: 'الدورات',
+          : _ShellDestination(
+              label: tr('الدورات'),
               icon: Icons.school_outlined,
               selectedIcon: Icons.school_rounded,
               wellShape: _NavWellShape.rounded,
             ),
-      const _ShellDestination(
-        label: 'حسابي',
+      _ShellDestination(
+        label: tr('حسابي'),
         icon: Icons.person_outline_rounded,
         selectedIcon: Icons.person_rounded,
         wellShape: _NavWellShape.circle,

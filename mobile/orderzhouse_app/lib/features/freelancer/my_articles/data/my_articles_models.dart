@@ -1,4 +1,5 @@
 import '../../../../core/network/json_helpers.dart';
+import '../../../../core/i18n/server_text.dart';
 import 'my_articles_copy.dart';
 
 const myArticlesPortfolioFilterKeys = <String>[
@@ -38,7 +39,11 @@ String myArticlesFilterLabelAr(String key) {
 /// Maps portfolio / raw application statuses to Arabic (web ord20).
 String myArticlesPortfolioStatusLabelAr(String? status, {String? apiLabel}) {
   final fromApi = apiLabel?.trim();
-  if (fromApi != null && fromApi.isNotEmpty) return fromApi;
+  // Server label is Arabic-only: English uses it only when it has a translation, else the code mapping.
+  if (fromApi != null && fromApi.isNotEmpty) {
+    final localized = tryLocalizeServerText(fromApi);
+    if (localized != null) return localized;
+  }
 
   final key = (status ?? '').trim().toLowerCase();
   switch (key) {

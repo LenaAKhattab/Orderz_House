@@ -10,6 +10,7 @@ import '../../ads/presentation/home_promo_ads_section.dart';
 import '../../notifications/presentation/unread_notifications_controller.dart';
 import '../../profile/domain/profile_actions.dart';
 import 'home_dashboard_chrome.dart';
+import '../../../core/i18n/i18n.dart';
 
 /// Client home — same chrome & layout patterns as freelancer home.
 class ClientHomeScreen extends ConsumerWidget {
@@ -19,10 +20,10 @@ class ClientHomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authControllerProvider).user;
     final name = user?.displayName.trim();
-    final greetingName = (name != null && name.isNotEmpty) ? name : 'عميلنا';
+    final greetingName = (name != null && name.isNotEmpty) ? name : tr('عميلنا');
     final unreadAsync = ref.watch(unreadNotificationsControllerProvider);
     final unread = unreadAsync.maybeWhen(data: (v) => v, orElse: () => 0);
-    final initials = user != null ? profileInitials(user) : 'ع';
+    final initials = user != null ? profileInitials(user) : tr('ع');
 
     return Scaffold(
       backgroundColor: AppColors.homeMobileBg,
@@ -48,17 +49,17 @@ class ClientHomeScreen extends ConsumerWidget {
                               fontWeight: FontWeight.w800,
                               height: 1.2,
                             ),
-                            textAlign: TextAlign.right,
+                            textAlign: TextAlign.start,
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'أهلاً، $greetingName',
+                            trf('أهلاً، {0}', [greetingName]),
                             style: const TextStyle(
                               color: AppColors.textMuted,
                               fontSize: 14,
                               height: 1.4,
                             ),
-                            textAlign: TextAlign.right,
+                            textAlign: TextAlign.start,
                           ),
                         ],
                       ),
@@ -83,9 +84,9 @@ class ClientHomeScreen extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.45)),
                     ),
-                    child: const Text(
+                    child: Text(
                       regularAdminMobileDisabledMessageAr,
-                      textAlign: TextAlign.right,
+                      textAlign: TextAlign.start,
                       style: TextStyle(
                         height: 1.45,
                         fontWeight: FontWeight.w700,
@@ -95,8 +96,8 @@ class ClientHomeScreen extends ConsumerWidget {
                   ),
                 ],
                 const SizedBox(height: 22),
-                const Text(
-                  'أنجز طلباتك باحتراف\nمن مكان واحد',
+                Text(
+                  tr('أنجز طلباتك باحتراف\nمن مكان واحد'),
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: AppColors.primaryDeep,
@@ -107,7 +108,7 @@ class ClientHomeScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  'أنشئ طلبك، تابع التنفيذ مع المستقلين، وادفع بأمان بسهولة.',
+                  tr('أنشئ طلبك، تابع التنفيذ مع المستقلين، وادفع بأمان بسهولة.'),
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: AppColors.textMuted.withValues(alpha: 0.95),
@@ -117,7 +118,7 @@ class ClientHomeScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 18),
                 HomePrimaryCta(
-                  label: 'إنشاء طلب جديد',
+                  label: tr('إنشاء طلب جديد'),
                   onPressed: () => context.push(AppRoutes.clientCreateOrder),
                 ),
                 const SizedBox(height: 12),
@@ -126,8 +127,8 @@ class ClientHomeScreen extends ConsumerWidget {
                   children: [
                     Expanded(
                       child: HomeActionTile(
-                        title: 'طلباتي\nكعميل',
-                        badge: 'متابعة',
+                        title: tr('طلباتي\nكعميل'),
+                        badge: tr('متابعة'),
                         icon: Icons.receipt_long_outlined,
                         onTap: () => context.go(AppRoutes.myOrders),
                       ),
@@ -135,8 +136,8 @@ class ClientHomeScreen extends ConsumerWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: HomeActionTile(
-                        title: 'الخدمات\nوالتصنيفات',
-                        badge: 'تصفح',
+                        title: tr('الخدمات\nوالتصنيفات'),
+                        badge: tr('تصفح'),
                         icon: Icons.grid_view_rounded,
                         onTap: () => context.push(AppRoutes.services),
                       ),
@@ -145,45 +146,45 @@ class ClientHomeScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 12),
                 HomeWideActionTile(
-                  title: 'من نحن',
-                  subtitle: 'تعرّف على أوردرز هاوس وكيف نعمل',
+                  title: tr('من نحن'),
+                  subtitle: tr('تعرّف على أوردرز هاوس وكيف نعمل'),
                   icon: Icons.article_outlined,
                   onTap: () => context.push(AppRoutes.publicPagePath('about')),
                 ),
                 const SizedBox(height: 22),
-                const Text(
-                  'اختصارات سريعة',
+                Text(
+                  tr('اختصارات سريعة'),
                   style: TextStyle(
                     color: AppColors.primaryDeep,
                     fontWeight: FontWeight.w800,
                     fontSize: 16,
                   ),
-                  textAlign: TextAlign.right,
+                  textAlign: TextAlign.start,
                 ),
                 const SizedBox(height: 12),
                 HomeCircleShortcutsRow(
                   items: [
                     HomeCircleShortcut(
                       icon: Icons.add_circle_outline_rounded,
-                      label: 'طلب جديد',
+                      label: tr('طلب جديد'),
                       accent: AppColors.primary,
                       onTap: () => context.push(AppRoutes.clientCreateOrder),
                     ),
                     HomeCircleShortcut(
                       icon: Icons.notifications_active_outlined,
-                      label: 'الإشعارات',
+                      label: tr('الإشعارات'),
                       accent: AppColors.primaryMid,
                       onTap: () => context.push(AppRoutes.notifications),
                     ),
                     HomeCircleShortcut(
                       icon: Icons.receipt_long_outlined,
-                      label: 'طلباتي',
+                      label: tr('طلباتي'),
                       accent: const Color(0xFF027A48),
                       onTap: () => context.go(AppRoutes.myOrders),
                     ),
                     HomeCircleShortcut(
                       icon: Icons.person_outline_rounded,
-                      label: 'حسابي',
+                      label: tr('حسابي'),
                       accent: AppColors.primaryDeep,
                       onTap: () => context.go(AppRoutes.profile),
                     ),

@@ -12,6 +12,7 @@ import '../data/super_admin_pantry_models.dart';
 import 'super_admin_action_dialogs.dart';
 import 'super_admin_queue_screens.dart';
 import 'super_admin_ui.dart';
+import '../../../core/i18n/i18n.dart';
 
 class SuperAdminArticleDetailScreen extends ConsumerStatefulWidget {
   const SuperAdminArticleDetailScreen({super.key, required this.articleId});
@@ -64,7 +65,7 @@ class _SuperAdminArticleDetailScreenState extends ConsumerState<SuperAdminArticl
           );
       if (!started || !mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(superAdminActionSuccessAr)),
+        SnackBar(content: Text(superAdminActionSuccessAr)),
       );
     } catch (error) {
       if (!mounted) return;
@@ -91,7 +92,7 @@ class _SuperAdminArticleDetailScreenState extends ConsumerState<SuperAdminArticl
           await ref.read(superAdminArticleDetailProvider(widget.articleId).notifier).relistBidCollection();
       if (!started || !mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(superAdminActionSuccessAr)),
+        SnackBar(content: Text(superAdminActionSuccessAr)),
       );
     } catch (error) {
       if (!mounted) return;
@@ -119,7 +120,7 @@ class _SuperAdminArticleDetailScreenState extends ConsumerState<SuperAdminArticl
           .finalizeSelectedApplicationApproval();
       if (!started || !mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(superAdminArticleApproveSuccessAr)),
+        SnackBar(content: Text(superAdminArticleApproveSuccessAr)),
       );
     } catch (error) {
       if (!mounted) return;
@@ -137,7 +138,7 @@ class _SuperAdminArticleDetailScreenState extends ConsumerState<SuperAdminArticl
       notes = await showSuperAdminNoteDialog(
         context: context,
         title: superAdminRequestArticleRevisionLabelAr,
-        label: 'ملاحظات التعديل',
+        label: tr('ملاحظات التعديل'),
         helper: superAdminArticleRevisionNoteRequiredAr,
         confirmLabel: superAdminRequestArticleRevisionLabelAr,
         minChars: 3,
@@ -160,7 +161,7 @@ class _SuperAdminArticleDetailScreenState extends ConsumerState<SuperAdminArticl
           .requestSelectedApplicationRevision(notes);
       if (!started || !mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(superAdminArticleRevisionSuccessAr)),
+        SnackBar(content: Text(superAdminArticleRevisionSuccessAr)),
       );
     } catch (error) {
       if (!mounted) return;
@@ -178,7 +179,7 @@ class _SuperAdminArticleDetailScreenState extends ConsumerState<SuperAdminArticl
       reason = await showSuperAdminNoteDialog(
         context: context,
         title: superAdminRejectArticleLabelAr,
-        label: 'سبب الرفض',
+        label: tr('سبب الرفض'),
         helper: superAdminArticleRejectReasonRequiredAr,
         confirmLabel: superAdminRejectArticleLabelAr,
         minChars: 3,
@@ -201,7 +202,7 @@ class _SuperAdminArticleDetailScreenState extends ConsumerState<SuperAdminArticl
           .rejectSelectedApplication(rejectionReason: reason);
       if (!started || !mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(superAdminArticleRejectSuccessAr)),
+        SnackBar(content: Text(superAdminArticleRejectSuccessAr)),
       );
     } catch (error) {
       if (!mounted) return;
@@ -260,7 +261,7 @@ class _SuperAdminArticleDetailScreenState extends ConsumerState<SuperAdminArticl
     final async = ref.watch(superAdminArticleDetailProvider(widget.articleId));
     final busyId = ref.watch(superAdminArticlesBusyIdProvider);
     return SuperAdminQueueScaffold(
-      title: 'مراجعة طلبات المقال',
+      title: tr('مراجعة طلبات المقال'),
       onRefresh: () =>
           ref.read(superAdminArticleDetailProvider(widget.articleId).notifier).refreshQuietly(),
       body: async.when(
@@ -318,18 +319,18 @@ class _SuperAdminArticleDetailScreenState extends ConsumerState<SuperAdminArticl
                 reviewActions,
               ],
               const SizedBox(height: 16),
-              const Text(
-                'المتقدمون',
+              Text(
+                tr('المتقدمون'),
                 style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: AppColors.primaryDeep),
               ),
               const SizedBox(height: 10),
               if (detail.applications.isEmpty)
-                const SuperAdminQueueCard(title: 'لا توجد طلبات بعد.'),
+                SuperAdminQueueCard(title: tr('لا توجد طلبات بعد.')),
               for (final application in detail.applications) ...[
                 SuperAdminQueueCard(
-                  title: application.freelancerName ?? 'مستقل',
+                  title: application.freelancerName ?? tr('مستقل'),
                   subtitle: [
-                    if (application.rank != null) 'الترتيب: ${application.rank}',
+                    if (application.rank != null) trf('الترتيب: {0}', [application.rank]),
                     articleApplicationStatusLabelAr(application.status),
                     if (application.submittedAt != null) formatSuperAdminDate(application.submittedAt),
                   ].where((e) => e.trim().isNotEmpty).join(' · '),

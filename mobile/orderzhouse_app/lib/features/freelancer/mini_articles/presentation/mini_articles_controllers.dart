@@ -5,6 +5,7 @@ import '../data/mini_articles_copy.dart';
 import '../data/mini_articles_models.dart';
 import '../data/mini_articles_repository.dart';
 import '../data/mini_articles_side_models.dart';
+import '../../../../core/i18n/i18n.dart';
 
 class MiniArticlesHubState {
   const MiniArticlesHubState({
@@ -114,7 +115,7 @@ class MiniArticlesHubController extends StateNotifier<MiniArticlesHubState> {
       state = state.copyWith(
         loading: false,
         refreshing: false,
-        error: apiErrorMessage(e, fallback: 'تعذر تحميل المقالات.'),
+        error: apiErrorMessage(e, fallback: tr('تعذر تحميل المقالات.')),
       );
     }
   }
@@ -129,7 +130,7 @@ class MiniArticlesHubController extends StateNotifier<MiniArticlesHubState> {
     } catch (e) {
       state = state.copyWith(
         trialBusy: false,
-        trialError: mapMiniArticleApplyErrorMessage(e, fallback: 'تعذر تفعيل التجربة.'),
+        trialError: mapMiniArticleApplyErrorMessage(e, fallback: tr('تعذر تفعيل التجربة.')),
       );
     }
   }
@@ -141,14 +142,14 @@ class MiniArticlesHubController extends StateNotifier<MiniArticlesHubState> {
       final result = await _ref.read(miniArticlesRepositoryProvider).startSilverCheckout();
       state = state.copyWith(
         silverBusy: false,
-        silverMessage: result.checkoutUrl == null ? 'تم تجهيز طلب الترقية إلى Silver.' : null,
+        silverMessage: result.checkoutUrl == null ? tr('تم تجهيز طلب الترقية إلى Silver.') : null,
         conversion: result.shouldShowSilverCta ? result : state.conversion,
       );
       return result.checkoutUrl;
     } catch (e) {
       state = state.copyWith(
         silverBusy: false,
-        silverError: apiErrorMessage(e, fallback: 'تعذر بدء ترقية Silver.'),
+        silverError: apiErrorMessage(e, fallback: tr('تعذر بدء ترقية Silver.')),
       );
       return null;
     }
@@ -208,7 +209,7 @@ class MiniArticleDetailController extends StateNotifier<MiniArticleDetailState> 
     } catch (e) {
       state = state.copyWith(
         loading: false,
-        error: apiErrorMessage(e, fallback: 'تعذر تحميل المقال.'),
+        error: apiErrorMessage(e, fallback: tr('تعذر تحميل المقال.')),
       );
     }
   }

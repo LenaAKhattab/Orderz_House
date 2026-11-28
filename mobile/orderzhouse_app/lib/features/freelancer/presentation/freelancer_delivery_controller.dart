@@ -5,6 +5,7 @@ import '../../client_orders/data/order_attachment_limits.dart';
 import '../../client_orders/data/order_attachment_models.dart';
 import '../data/freelancer_delivery_repository.dart';
 import '../data/freelancer_my_order_models.dart';
+import '../../../core/i18n/i18n.dart';
 
 class FreelancerDeliveryState {
   const FreelancerDeliveryState({
@@ -48,7 +49,7 @@ class FreelancerDeliveryController extends AutoDisposeFamilyNotifier<FreelancerD
     } catch (e) {
       state = state.copyWith(
         isSubmitting: false,
-        error: apiErrorMessage(e, fallback: 'تعذر إرسال التسليم.'),
+        error: apiErrorMessage(e, fallback: tr('تعذر إرسال التسليم.')),
       );
       rethrow;
     }

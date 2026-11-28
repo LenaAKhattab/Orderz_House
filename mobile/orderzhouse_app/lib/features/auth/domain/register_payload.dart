@@ -1,4 +1,5 @@
 import '../../account/domain/account_validators.dart';
+import '../../../core/i18n/i18n.dart';
 
 /// Public mobile/web signup may only create these account types.
 abstract final class PublicSignupAccountType {
@@ -24,23 +25,23 @@ abstract final class FreelancerSignupCategory {
 
   static const slugs = <String>[design, contentWriting, development];
 
-  static const labelsAr = <String, String>{
-    design: 'تصميم',
-    contentWriting: 'كتابة محتوى',
-    development: 'تطوير',
+  static Map<String, String> get labelsAr => <String, String>{
+    design: tr('تصميم'),
+    contentWriting: tr('كتابة محتوى'),
+    development: tr('تطوير'),
   };
 }
 
 String? validateRegisterPassword(String? value) {
   final p = value ?? '';
-  if (p.isEmpty) return 'مطلوب';
+  if (p.isEmpty) return tr('مطلوب');
   return PasswordRules.validateNewPassword(p);
 }
 
 String? validatePublicAccountType(String accountType) {
   final type = accountType.trim().toLowerCase();
   if (!PublicSignupAccountType.allowed.contains(type)) {
-    return 'اختر نوع الحساب: عميل أو مستقل.';
+    return tr('اختر نوع الحساب: عميل أو مستقل.');
   }
   return null;
 }
@@ -57,7 +58,7 @@ String? validateFreelancerCategories({
       .where((e) => FreelancerSignupCategory.slugs.contains(e))
       .toList();
   if (selected.isEmpty) {
-    return 'اختر تخصصًا واحدًا على الأقل.';
+    return tr('اختر تخصصًا واحدًا على الأقل.');
   }
   return null;
 }

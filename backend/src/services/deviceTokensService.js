@@ -18,6 +18,9 @@ function normalizeUpsertInput(body = {}) {
   const platform = String(body.platform || "android").trim().toLowerCase();
   const deviceId = body.deviceId != null ? String(body.deviceId).trim().slice(0, 120) : null;
   const appVersion = body.appVersion != null ? String(body.appVersion).trim().slice(0, 40) : null;
+  // App language of this install (push lock-screen text). Unknown values → null (Arabic).
+  const rawLocale = String(body.locale || "").trim().toLowerCase();
+  const locale = rawLocale === "en" || rawLocale === "ar" ? rawLocale : null;
 
   if (!token || token.length < 20 || token.length > MAX_TOKEN_LEN) {
     const err = new Error("رمز جهاز الإشعارات غير صالح.");
@@ -37,6 +40,7 @@ function normalizeUpsertInput(body = {}) {
     platform,
     deviceId: deviceId || null,
     appVersion: appVersion || null,
+    locale,
   };
 }
 
@@ -56,19 +60,20 @@ async function upsertPushToken(userId, body, client) {
 
   const { rows } = await runner.query(
     `INSERT INTO user_device_tokens (
-       user_id, token, platform, device_id, app_version, is_active, last_seen_at, revoked_at, created_at, updated_at
-     ) VALUES ($1, $2, $3, $4, $5, TRUE, NOW(), NULL, NOW(), NOW())
+       user_id, token, platform, device_id, app_version, locale, is_active, last_seen_at, revoked_at, created_at, updated_at
+     ) VALUES ($1, $2, $3, $4, $5, $6, TRUE, NOW(), NULL, NOW(), NOW())
      ON CONFLICT (token) DO UPDATE SET
        user_id = EXCLUDED.user_id,
        platform = EXCLUDED.platform,
        device_id = COALESCE(EXCLUDED.device_id, user_device_tokens.device_id),
        app_version = COALESCE(EXCLUDED.app_version, user_device_tokens.app_version),
+       locale = COALESCE(EXCLUDED.locale, user_device_tokens.locale),
        is_active = TRUE,
        last_seen_at = NOW(),
        revoked_at = NULL,
        updated_at = NOW()
      RETURNING id, user_id, platform, device_id, app_version, is_active, last_seen_at, created_at, updated_at`,
-    [uid, input.token, input.platform, input.deviceId, input.appVersion],
+    [uid, input.token, input.platform, input.deviceId, input.appVersion, input.locale],
   );
 
   // One install = one live token: older tokens of this install (rotated, or left by the account that
@@ -157,7 +162,7 @@ async function listActiveTokensForUsers(userIds, client) {
   if (!ids.length) return [];
   const runner = getRunner(client);
   const { rows } = await runner.query(
-    `SELECT DISTINCT ON (user_id, COALESCE(device_id, token)) id, user_id, token, platform
+    `SELECT DISTINCT ON (user_id, COALESCE(device_id, token)) id, user_id, token, platform, locale
      FROM user_device_tokens
      WHERE user_id = ANY($1::bigint[]) AND is_active = TRUE
      ORDER BY user_id, COALESCE(device_id, token), last_seen_at DESC, id DESC`,
@@ -168,6 +173,7 @@ async function listActiveTokensForUsers(userIds, client) {
     userId: Number(r.user_id),
     token: r.token,
     platform: r.platform,
+    locale: r.locale === "en" ? "en" : "ar",
   }));
 }
 

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/pool_order_models.dart';
 import '../../../core/errors/api_error_message.dart';
 import '../data/pool_orders_repository.dart';
+import '../../../core/i18n/i18n.dart';
 
 class PoolOrdersState {
   const PoolOrdersState({
@@ -71,7 +72,7 @@ class PoolOrdersController extends Notifier<PoolOrdersState> {
       state = state.copyWith(
         isLoading: false,
         isLoadingMore: false,
-        error: apiErrorMessage(e, fallback: 'تعذر تحميل الطلبات.'),
+        error: apiErrorMessage(e, fallback: tr('تعذر تحميل الطلبات.')),
       );
     }
   }

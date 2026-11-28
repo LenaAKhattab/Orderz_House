@@ -1,7 +1,8 @@
 import '../../../../core/network/json_helpers.dart';
 import '../../../orders/data/order_display_helpers.dart';
+import '../../../../core/i18n/i18n.dart';
 
-const financialClaimUnpricedMessageAr = 'لم يتم تسعير المطالبة بعد من الإدارة';
+String get financialClaimUnpricedMessageAr => tr('لم يتم تسعير المطالبة بعد من الإدارة');
 
 /// Client-side grouping keys (matches web `groupClaims`).
 enum FinancialClaimGroup {
@@ -186,17 +187,17 @@ class FinancialClaimsSummary {
 String financialClaimStatusLabelAr(String? status) {
   switch (status) {
     case 'pending':
-      return 'قيد المراجعة';
+      return tr('قيد المراجعة');
     case 'accepted':
-      return 'مقبولة';
+      return tr('مقبولة');
     case 'rejected':
-      return 'مرفوضة';
+      return tr('مرفوضة');
     case 'frozen':
-      return 'مجمدة';
+      return tr('مجمدة');
     case 'requires_in_person_review':
-      return 'تتطلب مراجعة حضورية';
+      return tr('تتطلب مراجعة حضورية');
     case 'paid':
-      return 'مدفوعة';
+      return tr('مدفوعة');
     default:
       return status?.trim().isNotEmpty == true ? status! : '—';
   }
@@ -205,15 +206,15 @@ String financialClaimStatusLabelAr(String? status) {
 String financialClaimPayoutStatusLabelAr(String? status) {
   switch (status) {
     case 'missing_completion_date':
-      return 'تاريخ إنجاز غير متوفر';
+      return tr('تاريخ إنجاز غير متوفر');
     case 'not_due_yet':
-      return 'غير مستحقة بعد';
+      return tr('غير مستحقة بعد');
     case 'within_payout_window':
-      return 'ضمن نافذة الدفع';
+      return tr('ضمن نافذة الدفع');
     case 'late_after_payout_window':
-      return 'متأخرة بعد نافذة الدفع';
+      return tr('متأخرة بعد نافذة الدفع');
     case 'paid':
-      return 'مدفوعة';
+      return tr('مدفوعة');
     default:
       return status?.trim().isNotEmpty == true ? status! : '—';
   }
@@ -222,30 +223,30 @@ String financialClaimPayoutStatusLabelAr(String? status) {
 String financialClaimGroupLabelAr(FinancialClaimGroup group) {
   switch (group) {
     case FinancialClaimGroup.underReview:
-      return 'قيد المراجعة';
+      return tr('قيد المراجعة');
     case FinancialClaimGroup.blocked:
-      return 'محظورة / مرفوضة';
+      return tr('محظورة / مرفوضة');
     case FinancialClaimGroup.paid:
-      return 'مدفوعة';
+      return tr('مدفوعة');
     case FinancialClaimGroup.notDue:
-      return 'غير مستحقة بعد';
+      return tr('غير مستحقة بعد');
     case FinancialClaimGroup.due:
-      return 'مستحقة / قابلة للمتابعة';
+      return tr('مستحقة / قابلة للمتابعة');
   }
 }
 
 String financialClaimFilterLabelAr(FinancialClaimFilter filter) {
   switch (filter) {
     case FinancialClaimFilter.all:
-      return 'الكل';
+      return tr('الكل');
     case FinancialClaimFilter.underReview:
-      return 'قيد المراجعة';
+      return tr('قيد المراجعة');
     case FinancialClaimFilter.due:
-      return 'مستحقة';
+      return tr('مستحقة');
     case FinancialClaimFilter.paid:
-      return 'مدفوعة';
+      return tr('مدفوعة');
     case FinancialClaimFilter.blocked:
-      return 'محظورة/مرفوضة';
+      return tr('محظورة/مرفوضة');
   }
 }
 

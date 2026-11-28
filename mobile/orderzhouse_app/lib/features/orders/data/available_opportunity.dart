@@ -2,6 +2,7 @@ import '../../orders/data/order_display_helpers.dart' as display;
 import '../../orders/data/pool_order_models.dart';
 import '../../pantry/data/pantry_models.dart';
 import '../../pantry/presentation/pantry_display.dart';
+import '../../../core/i18n/i18n.dart';
 
 enum OpportunitySource { normalOrder, pantryRequest }
 
@@ -81,7 +82,7 @@ class AvailableOpportunity {
     return AvailableOpportunity(
       id: request.id,
       source: OpportunitySource.pantryRequest,
-      title: request.title.trim().isEmpty ? 'طلب' : request.title,
+      title: request.title.trim().isEmpty ? tr('طلب') : request.title,
       description: request.description,
       budgetLabel: budget == '—' ? null : budget,
       deliveryDaysLabel: duration == '—' ? null : duration,

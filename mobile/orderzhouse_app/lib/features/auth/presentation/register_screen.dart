@@ -9,6 +9,7 @@ import '../../../core/widgets/oh_widgets.dart';
 import '../domain/register_payload.dart';
 import 'auth_controller.dart';
 import 'auth_form_widgets.dart';
+import '../../../core/i18n/i18n.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -101,7 +102,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       if (!mounted) return;
       context.go('${AppRoutes.otp}?email=${Uri.encodeComponent(_email.text.trim())}');
     } catch (e) {
-      setState(() => _error = apiErrorMessage(e, fallback: 'تعذر إنشاء الحساب.'));
+      setState(() => _error = apiErrorMessage(e, fallback: tr('تعذر إنشاء الحساب.')));
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -118,16 +119,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.fromLTRB(24, 8, 24, 28),
           children: [
-            const AuthHeroHeader(
-              title: 'إنشاء حساب',
-              subtitle: 'اختر نوع الحساب ثم أدخل بياناتك وأكّد بريدك برمز التحقق.',
+            AuthHeroHeader(
+              title: tr('إنشاء حساب'),
+              subtitle: tr('اختر نوع الحساب ثم أدخل بياناتك وأكّد بريدك برمز التحقق.'),
               showLogo: false,
             ),
             const SizedBox(height: 20),
-            const Text(
-              'نوع الحساب',
+            Text(
+              tr('نوع الحساب'),
               key: Key('register_account_type_label'),
-              textAlign: TextAlign.right,
+              textAlign: TextAlign.start,
               style: TextStyle(
                 fontWeight: FontWeight.w800,
                 fontSize: 15,
@@ -143,13 +144,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               children: [
                 _AccountTypeChip(
                   key: const Key('register_account_type_client'),
-                  label: 'عميل',
+                  label: tr('عميل'),
                   selected: _accountType == PublicSignupAccountType.client,
                   onTap: () => _selectAccountType(PublicSignupAccountType.client),
                 ),
                 _AccountTypeChip(
                   key: const Key('register_account_type_freelancer'),
-                  label: 'مستقل',
+                  label: tr('مستقل'),
                   selected: _accountType == PublicSignupAccountType.freelancer,
                   onTap: () => _selectAccountType(PublicSignupAccountType.freelancer),
                 ),
@@ -157,9 +158,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             ),
             if (isFreelancer) ...[
               const SizedBox(height: 16),
-              const Text(
-                'التخصصات',
-                textAlign: TextAlign.right,
+              Text(
+                tr('التخصصات'),
+                textAlign: TextAlign.start,
                 style: TextStyle(
                   fontWeight: FontWeight.w800,
                   fontSize: 15,
@@ -189,41 +190,41 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             ],
             AuthPillField(
               controller: _firstName,
-              hint: 'الاسم الأول',
+              hint: tr('الاسم الأول'),
               prefixIcon: Icons.person_outline_rounded,
               textInputAction: TextInputAction.next,
-              validator: (v) => v == null || v.trim().isEmpty ? 'مطلوب' : null,
+              validator: (v) => v == null || v.trim().isEmpty ? tr('مطلوب') : null,
             ),
             const SizedBox(height: 12),
             AuthPillField(
               controller: _fatherName,
-              hint: 'اسم الأب',
+              hint: tr('اسم الأب'),
               prefixIcon: Icons.badge_outlined,
               textInputAction: TextInputAction.next,
-              validator: (v) => v == null || v.trim().isEmpty ? 'مطلوب' : null,
+              validator: (v) => v == null || v.trim().isEmpty ? tr('مطلوب') : null,
             ),
             const SizedBox(height: 12),
             AuthPillField(
               controller: _familyName,
-              hint: 'اسم العائلة',
+              hint: tr('اسم العائلة'),
               prefixIcon: Icons.groups_outlined,
               textInputAction: TextInputAction.next,
-              validator: (v) => v == null || v.trim().isEmpty ? 'مطلوب' : null,
+              validator: (v) => v == null || v.trim().isEmpty ? tr('مطلوب') : null,
             ),
             const SizedBox(height: 12),
             AuthPillField(
               controller: _email,
-              hint: 'البريد الإلكتروني',
+              hint: tr('البريد الإلكتروني'),
               prefixIcon: Icons.mail_outline_rounded,
               keyboardType: TextInputType.emailAddress,
               textInputAction: TextInputAction.next,
               textDirection: TextDirection.ltr,
-              validator: (v) => v == null || !v.contains('@') ? 'بريد غير صالح' : null,
+              validator: (v) => v == null || !v.contains('@') ? tr('بريد غير صالح') : null,
             ),
             const SizedBox(height: 12),
             AuthPillField(
               controller: _phoneNumber,
-              hint: 'رقم الجوال (بدون +962)',
+              hint: tr('رقم الجوال (بدون +962)'),
               prefixIcon: Icons.phone_iphone_rounded,
               keyboardType: TextInputType.phone,
               textInputAction: TextInputAction.next,
@@ -232,7 +233,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             const SizedBox(height: 12),
             AuthPillField(
               controller: _password,
-              hint: 'كلمة المرور',
+              hint: tr('كلمة المرور'),
               prefixIcon: Icons.lock_outline_rounded,
               obscureText: _obscurePassword,
               textInputAction: TextInputAction.next,
@@ -249,7 +250,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             const SizedBox(height: 12),
             AuthPillField(
               controller: _confirmPassword,
-              hint: 'تأكيد كلمة المرور',
+              hint: tr('تأكيد كلمة المرور'),
               prefixIcon: Icons.lock_outline_rounded,
               obscureText: _obscureConfirm,
               textInputAction: TextInputAction.done,
@@ -262,18 +263,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   color: AppColors.textMuted,
                 ),
               ),
-              validator: (v) => v != _password.text ? 'غير مطابق' : null,
+              validator: (v) => v != _password.text ? tr('غير مطابق') : null,
             ),
             const SizedBox(height: 28),
             AuthPrimaryButton(
-              label: 'إنشاء حساب',
+              label: tr('إنشاء حساب'),
               isLoading: _submitting,
               onPressed: _submit,
             ),
             const SizedBox(height: 24),
             AuthFooterLink(
-              prompt: 'لديك حساب بالفعل؟',
-              actionLabel: 'تسجيل الدخول',
+              prompt: tr('لديك حساب بالفعل؟'),
+              actionLabel: tr('تسجيل الدخول'),
               onTap: () => context.go(AppRoutes.login),
             ),
           ],

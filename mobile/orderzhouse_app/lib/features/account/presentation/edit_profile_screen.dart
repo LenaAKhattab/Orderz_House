@@ -9,6 +9,7 @@ import '../../auth/presentation/auth_controller.dart';
 import '../data/account_models.dart';
 import '../data/account_repository.dart';
 import 'account_settings_screen.dart';
+import '../../../core/i18n/i18n.dart';
 
 class EditProfileScreen extends ConsumerStatefulWidget {
   const EditProfileScreen({super.key});
@@ -73,7 +74,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _loadError = apiErrorMessage(e, fallback: 'تعذر تحميل الملف الشخصي.');
+        _loadError = apiErrorMessage(e, fallback: tr('تعذر تحميل الملف الشخصي.'));
       });
     }
   }
@@ -92,7 +93,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   }
 
   String? _requiredName(String? v) {
-    if ((v ?? '').trim().length < 2) return 'أدخل اسماً صالحاً (حرفان على الأقل).';
+    if ((v ?? '').trim().length < 2) return tr('أدخل اسماً صالحاً (حرفان على الأقل).');
     return null;
   }
 
@@ -100,7 +101,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     final t = (v ?? '').trim();
     if (t.isEmpty) return null;
     if (!RegExp(r'^\+[1-9]\d{7,14}$').hasMatch(t)) {
-      return 'استخدم صيغة دولية مثل +9627xxxxxxxx';
+      return tr('استخدم صيغة دولية مثل +9627xxxxxxxx');
     }
     return null;
   }
@@ -127,13 +128,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       ref.invalidate(accountProfileProvider);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تم تحديث الملف الشخصي بنجاح')),
+        SnackBar(content: Text(tr('تم تحديث الملف الشخصي بنجاح'))),
       );
       context.pop(updated);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(apiErrorMessage(e, fallback: 'تعذر حفظ التغييرات.'))),
+        SnackBar(content: Text(apiErrorMessage(e, fallback: tr('تعذر حفظ التغييرات.')))),
       );
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -144,9 +145,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.homeMobileBg,
-      appBar: AppBar(title: const Text('تعديل الملف الشخصي')),
+      appBar: AppBar(title: Text(tr('تعديل الملف الشخصي'))),
       body: _loading
-          ? const OhLoadingBody(message: 'جاري التحميل...')
+          ? OhLoadingBody(message: tr('جاري التحميل...'))
           : _loadError != null
               ? OhErrorBody(message: _loadError!, onRetry: _load)
               : Form(
@@ -156,65 +157,65 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     children: [
                       _field(
                         controller: _firstName,
-                        label: 'الاسم الأول',
+                        label: tr('الاسم الأول'),
                         validator: _requiredName,
                       ),
                       _field(
                         controller: _fatherName,
-                        label: 'اسم الأب',
+                        label: tr('اسم الأب'),
                         validator: _requiredName,
                       ),
                       _field(
                         controller: _familyName,
-                        label: 'اسم العائلة',
+                        label: tr('اسم العائلة'),
                         validator: _requiredName,
                       ),
                       const SizedBox(height: 8),
                       TextFormField(
                         initialValue: _profile?.email ?? '',
                         enabled: false,
-                        decoration: const InputDecoration(
-                          labelText: 'البريد الإلكتروني',
-                          helperText: 'لا يمكن تغيير البريد من التطبيق.',
+                        decoration: InputDecoration(
+                          labelText: tr('البريد الإلكتروني'),
+                          helperText: tr('لا يمكن تغيير البريد من التطبيق.'),
                         ),
                       ),
                       const SizedBox(height: 12),
                       _field(
                         controller: _phone,
-                        label: 'رقم الهاتف',
+                        label: tr('رقم الهاتف'),
                         keyboardType: TextInputType.phone,
                         validator: _optionalE164,
-                        helperText: 'اختياري — بصيغة دولية (+962...)',
+                        helperText: tr('اختياري — بصيغة دولية (+962...)'),
                       ),
                       _field(
                         controller: _whatsApp,
-                        label: 'واتساب',
+                        label: tr('واتساب'),
                         keyboardType: TextInputType.phone,
                         validator: _optionalE164,
-                        helperText: 'اختياري — بصيغة دولية',
+                        helperText: tr('اختياري — بصيغة دولية'),
                       ),
                       if (_profile?.isFreelancer == true) ...[
                         const SizedBox(height: 8),
-                        _field(controller: _professionalTitle, label: 'المسمى المهني'),
+                        _field(controller: _professionalTitle, label: tr('المسمى المهني')),
                         _field(
                           controller: _bio,
-                          label: 'نبذة',
+                          label: tr('نبذة'),
                           maxLines: 4,
                         ),
                       ],
                       if (_profile?.isClient == true) ...[
                         const SizedBox(height: 8),
-                        _field(controller: _companyName, label: 'اسم الشركة'),
-                        _field(controller: _billingCity, label: 'مدينة الفوترة'),
+                        _field(controller: _companyName, label: tr('اسم الشركة')),
+                        _field(controller: _billingCity, label: tr('مدينة الفوترة')),
                         _field(
                           controller: _billingCountry,
-                          label: 'بلد الفوترة (رمز ISO مثل JO)',
+                          label: tr('بلد الفوترة (رمز ISO مثل JO)'),
                         ),
                       ],
                       const SizedBox(height: 20),
                       FilledButton(
                         onPressed: _saving ? null : _save,
-                        child: Text(_saving ? 'جاري الحفظ...' : 'حفظ التغييرات'),
+                        child: Text(_saving ? tr('جاري الحفظ...') : tr('حفظ التغييرات')),
                       ),
                     ],
                   ),

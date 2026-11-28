@@ -1,10 +1,12 @@
 import '../../../core/network/json_helpers.dart';
+import '../../../core/i18n/server_text.dart';
 import 'customer_quote.dart';
 import 'service_form_snapshot.dart';
 import '../../orders/data/order_display_helpers.dart' as display;
 import '../../orders/data/pool_order_models.dart';
 import '../../orders/data/order_file_models.dart';
 import 'order_payment_models.dart';
+import '../../../core/i18n/i18n.dart';
 
 class ClientOrderBidSummary {
   const ClientOrderBidSummary({
@@ -55,7 +57,8 @@ class ClientOrderSubmissionSummary {
 
   List<String> get fileNames => files.map((f) => f.displayName).toList();
 
-  String get displayStatus => statusBadgeAr ?? status ?? '—';
+  String get displayStatus =>
+      statusBadgeAr == null ? (status ?? '—') : localizeServerText(statusBadgeAr!, fallback: status ?? '—');
 
   String? get displayDate => submittedAt ?? createdAt;
 
@@ -152,14 +155,18 @@ class ClientOrder {
   String get projectTypeLabel => display.projectTypeLabel(projectType);
 
   String get statusLabel {
+    // The server label is Arabic-only: use it in Arabic, derive the label from the status code in English.
     final fromApi = clientDisplayStatusLabelAr?.trim();
-    if (fromApi != null && fromApi.isNotEmpty) return fromApi;
-    if (requiresAdminReview) return 'بانتظار مراجعة الإدارة';
-    if (needsPayment) return 'بانتظار الدفع';
+    if (!AppI18n.isEnglish && fromApi != null && fromApi.isNotEmpty) return fromApi;
+    if (requiresAdminReview) return tr('بانتظار مراجعة الإدارة');
+    if (needsPayment) return tr('بانتظار الدفع');
     return display.clientOrderStatusLabel(orderStatus);
   }
 
   String get paymentStatusLabel => display.paymentStatusLabel(paymentStatus);
+
+  /// Smart Orders: work started under an audited authorization while the quote is still unpaid.
+  bool get managedPaymentPending => managedByAdmin && paymentStatus == 'pending';
 
   String? get budgetLabel => display.budgetLabel(
         projectType: projectType,
@@ -193,9 +200,9 @@ class ClientOrder {
       );
 
   String? get statusHintAr {
-    if (needsPayment) return 'أكمل الدفع حتى يبدأ معالجة الطلب';
+    if (needsPayment) return tr('أكمل الدفع حتى يبدأ معالجة الطلب');
     if (requiresAdminReview) {
-      return 'تم استلام الدفع، وسيتم نشر الطلب بعد مراجعته من الإدارة';
+      return tr('تم استلام الدفع، وسيتم نشر الطلب بعد مراجعته من الإدارة');
     }
     return null;
   }
@@ -213,7 +220,7 @@ class ClientOrder {
       }
       return null;
     }();
-    return anyName ?? 'مستقل معيّن';
+    return anyName ?? tr('مستقل معيّن');
   }
 
   factory ClientOrder.fromJson(Map<String, dynamic> json) {
@@ -293,7 +300,7 @@ class ClientOrder {
         return ClientOrder.fromJson(Map<String, dynamic>.from(order));
       }
     }
-    throw FormatException('استجابة تفاصيل طلب العميل غير متوقعة.');
+    throw FormatException(tr('استجابة تفاصيل طلب العميل غير متوقعة.'));
   }
 
   static List<ClientOrder> parseList(dynamic response) {

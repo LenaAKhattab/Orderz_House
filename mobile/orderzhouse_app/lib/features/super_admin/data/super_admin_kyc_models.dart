@@ -1,41 +1,41 @@
 import '../../../core/network/json_helpers.dart';
+import '../../../core/i18n/i18n.dart';
 
-const superAdminActivationApproveSuccessAr = 'تم اعتماد الطلب بنجاح.';
-const superAdminActivationRejectSuccessAr = 'تم رفض الطلب بنجاح.';
-const superAdminActivationConfirmApproveTitleAr = 'تأكيد الاعتماد';
-const superAdminActivationConfirmApproveBodyAr = 'هل أنت متأكد من اعتماد هذا الطلب؟';
-const superAdminActivationRejectTitleAr = 'رفض الطلب';
-const superAdminActivationRejectReasonLabelAr = 'سبب الرفض';
-const superAdminActivationRejectReasonRequiredAr = 'يرجى كتابة سبب الرفض.';
-const superAdminActivationRejectButtonAr = 'رفض الطلب';
-const superAdminActivationRejectSubmitAr = 'إرسال سبب الرفض';
-const superAdminActivationAdminNotesLabelAr = 'ملاحظات داخلية (اختياري)';
-const superAdminActivationKycSectionAr = 'طلبات مراجعة الهوية';
-const superAdminActivationSubscriptionSectionAr = 'تفعيل اشتراك';
-const superAdminActivationNoDocumentsAr = 'لا توجد وثائق مرفقة';
-const superAdminActivationDocumentsAvailableAr = 'الوثائق متاحة للمعاينة';
-const superAdminActivationOverrideReasonLabelAr = 'سبب تجاوز مراجعة الهوية';
-const superAdminActivationOverrideHelperAr =
-    'التفعيل المباشر يتطلب موافقة KYC أو تجاوز موثّق من مدير أعلى.';
-const superAdminActivationOverrideRequiredAr = 'سبب التجاوز مطلوب.';
-const superAdminActivationRefreshLabelAr = 'تحديث';
-const superAdminActivationDetailTitleAr = 'تفاصيل طلب التفعيل';
-const superAdminActivationIdFrontLabelAr = 'صورة الهوية الأمامية';
-const superAdminActivationIdBackLabelAr = 'صورة الهوية الخلفية';
-const superAdminActivationImageLoadFailedAr = 'تعذر تحميل الصورة.';
+String get superAdminActivationApproveSuccessAr => tr('تم اعتماد الطلب بنجاح.');
+String get superAdminActivationRejectSuccessAr => tr('تم رفض الطلب بنجاح.');
+String get superAdminActivationConfirmApproveTitleAr => tr('تأكيد الاعتماد');
+String get superAdminActivationConfirmApproveBodyAr => tr('هل أنت متأكد من اعتماد هذا الطلب؟');
+String get superAdminActivationRejectTitleAr => tr('رفض الطلب');
+String get superAdminActivationRejectReasonLabelAr => tr('سبب الرفض');
+String get superAdminActivationRejectReasonRequiredAr => tr('يرجى كتابة سبب الرفض.');
+String get superAdminActivationRejectButtonAr => tr('رفض الطلب');
+String get superAdminActivationRejectSubmitAr => tr('إرسال سبب الرفض');
+String get superAdminActivationAdminNotesLabelAr => tr('ملاحظات داخلية (اختياري)');
+String get superAdminActivationKycSectionAr => tr('طلبات مراجعة الهوية');
+String get superAdminActivationSubscriptionSectionAr => tr('تفعيل اشتراك');
+String get superAdminActivationNoDocumentsAr => tr('لا توجد وثائق مرفقة');
+String get superAdminActivationDocumentsAvailableAr => tr('الوثائق متاحة للمعاينة');
+String get superAdminActivationOverrideReasonLabelAr => tr('سبب تجاوز مراجعة الهوية');
+String get superAdminActivationOverrideHelperAr => tr('التفعيل المباشر يتطلب موافقة KYC أو تجاوز موثّق من مدير أعلى.');
+String get superAdminActivationOverrideRequiredAr => tr('سبب التجاوز مطلوب.');
+String get superAdminActivationRefreshLabelAr => tr('تحديث');
+String get superAdminActivationDetailTitleAr => tr('تفاصيل طلب التفعيل');
+String get superAdminActivationIdFrontLabelAr => tr('صورة الهوية الأمامية');
+String get superAdminActivationIdBackLabelAr => tr('صورة الهوية الخلفية');
+String get superAdminActivationImageLoadFailedAr => tr('تعذر تحميل الصورة.');
 
 String kycStatusLabelAr(String? status) {
   switch ((status ?? '').trim().toLowerCase()) {
     case 'pending_review':
-      return 'قيد المراجعة';
+      return tr('قيد المراجعة');
     case 'approved':
-      return 'مقبول';
+      return tr('مقبول');
     case 'rejected':
-      return 'مرفوض';
+      return tr('مرفوض');
     case 'draft':
-      return 'مسودة';
+      return tr('مسودة');
     case 'cancelled':
-      return 'ملغى';
+      return tr('ملغى');
     default:
       return status?.trim().isNotEmpty == true ? status!.trim() : '—';
   }

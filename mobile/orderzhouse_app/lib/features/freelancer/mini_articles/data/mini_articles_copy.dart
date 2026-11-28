@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import '../../data/plan_upgrade_cta.dart';
 import 'bildazo_copy.dart';
 import 'mini_articles_models.dart';
+import '../../../../core/i18n/i18n.dart';
 
 export 'bildazo_copy.dart';
 export 'earned_balance_copy.dart'
@@ -28,16 +29,14 @@ export 'earned_balance_copy.dart'
         EarnedBalanceUiKind,
         EarnedBalanceUiState;
 
-const applyBidUsesBidAr = 'سيتم استخدام Bid عند التقديم على هذا المقال.';
-const applyBidMayNotReturnAr =
-    'في حال عدم اختيارك قد لا يعود رصيد التقديم حسب سياسة الفرصة.';
-const applyInsufficientBidsAr = 'لا تملك رصيد Bids كافياً للتقديم.';
+String get applyBidUsesBidAr => tr('سيتم استخدام Bid عند التقديم على هذا المقال.');
+String get applyBidMayNotReturnAr => tr('في حال عدم اختيارك قد لا يعود رصيد التقديم حسب سياسة الفرصة.');
+String get applyInsufficientBidsAr => tr('لا تملك رصيد Bids كافياً للتقديم.');
 
 /// Legacy aliases for older tests/call sites (M2).
-const earnedBalanceNotWithdrawableAr =
-    'يعرض هذا الرصيد صافي أجر الكاتب من المقالات المقبولة فقط. الأرباح المعلّقة غير قابلة للسحب حتى تفعيل Silver.';
-const earnedBalancePendingAr = 'معلّق';
-const earnedBalanceRecordedAr = 'قابل للسحب';
+String get earnedBalanceNotWithdrawableAr => tr('يعرض هذا الرصيد صافي أجر الكاتب من المقالات المقبولة فقط. الأرباح المعلّقة غير قابلة للسحب حتى تفعيل Silver.');
+String get earnedBalancePendingAr => tr('معلّق');
+String get earnedBalanceRecordedAr => tr('قابل للسحب');
 
 String? extractApiErrorCode(Object error) {
   if (error is! DioException) return null;
@@ -65,35 +64,35 @@ String mapMiniArticleApplyErrorMessage(Object error, {String? fallback}) {
       return bildazoIncompleteProfileErrorAr;
     case 'ARTICLE_ACCESS_LEVEL_INSUFFICIENT':
     case 'ARTICLE_NO_USABLE_MEMBERSHIP':
-      return 'هذا المقال يحتاج خطة أعلى.';
+      return tr('هذا المقال يحتاج خطة أعلى.');
     case 'ARTICLE_BID_COLLECTION_THRESHOLD_REACHED':
     case 'ARTICLE_BID_COLLECTION_MINIMUM_NOT_MET':
     case 'ARTICLE_BID_COLLECTION_DEADLINE_PASSED':
-      return 'أُغلق باب التقديم على هذا المقال.';
+      return tr('أُغلق باب التقديم على هذا المقال.');
     case 'ACTIVATION_CAMPAIGN_PAUSED':
     case 'ACTIVATION_WAVE_PAUSED':
     case 'ACTIVATION_CAMPAIGN_NOT_ACTIVE':
     case 'ACTIVATION_WAVE_NOT_ACTIVE':
     case 'ACTIVATION_CAMPAIGN_EMERGENCY_STOPPED':
-      return 'تم إيقاف استقبال التقديمات لهذه الفرصة مؤقتًا.';
+      return tr('تم إيقاف استقبال التقديمات لهذه الفرصة مؤقتًا.');
     case 'FREELANCER_TRIAL_REQUIRED':
-      return 'يلزم تفعيل تجربة العمل قبل التقديم على مقالات Mini Article.';
+      return tr('يلزم تفعيل تجربة العمل قبل التقديم على مقالات Mini Article.');
     case 'FREELANCER_TRIAL_EXPIRED':
-      return 'انتهت تجربة العمل. للمتابعة، انتقل إلى Silver.';
+      return tr('انتهت تجربة العمل. للمتابعة، انتقل إلى Silver.');
     case 'FREELANCER_TRIAL_DAILY_BID_LIMIT_REACHED':
-      return 'وصلت للحد اليومي من عروض التجربة.';
+      return tr('وصلت للحد اليومي من عروض التجربة.');
     case 'FREELANCER_TRIAL_BID_LIMIT_REACHED':
-      return 'وصلت للحد الأقصى من عروض التجربة.';
+      return tr('وصلت للحد الأقصى من عروض التجربة.');
     case 'FREELANCER_TRIAL_WORK_CAP_REACHED':
-      return 'وصلت للحد الأقصى من المقالات المقبولة في التجربة.';
+      return tr('وصلت للحد الأقصى من المقالات المقبولة في التجربة.');
     case 'FREELANCER_KYC_REQUIRED':
-      return 'لا يمكن التقديم قبل تفعيل الحساب.';
+      return tr('لا يمكن التقديم قبل تفعيل الحساب.');
     case 'FREELANCER_KYC_PENDING_REVIEW':
-      return 'طلب تفعيل حسابك قيد المراجعة.';
+      return tr('طلب تفعيل حسابك قيد المراجعة.');
     case 'FREELANCER_KYC_REJECTED':
-      return 'تم رفض طلب تفعيل حسابك. يرجى مراجعة السبب وإعادة إرسال الطلب.';
+      return tr('تم رفض طلب تفعيل حسابك. يرجى مراجعة السبب وإعادة إرسال الطلب.');
     case 'ARTICLE_NOT_OPEN_FOR_APPLICATIONS':
-      return 'هذا المقال غير مفتوح للتقديم حالياً.';
+      return tr('هذا المقال غير مفتوح للتقديم حالياً.');
   }
 
   if (error is DioException) {
@@ -110,7 +109,7 @@ String mapMiniArticleApplyErrorMessage(Object error, {String? fallback}) {
       }
     }
   }
-  return fallback ?? 'تعذر تقديم الطلب.';
+  return fallback ?? tr('تعذر تقديم الطلب.');
 }
 
 String? eligibilityMessageAr(ArticleApplicationEligibility? eligibility) {
@@ -123,27 +122,27 @@ String? eligibilityMessageAr(ArticleApplicationEligibility? eligibility) {
     case 'BILDAZO_AUTHOR_LINK_REQUIRED':
       return bildazoRequiredAr;
     case 'ARTICLE_ACCESS_LEVEL_INSUFFICIENT':
-      return 'مستوى وصولك للمقالات أقل من مستوى هذا المقال.';
+      return tr('مستوى وصولك للمقالات أقل من مستوى هذا المقال.');
     case 'ARTICLE_NO_USABLE_MEMBERSHIP':
-      return 'لا توجد عضوية صالحة للوصول إلى هذا المقال.';
+      return tr('لا توجد عضوية صالحة للوصول إلى هذا المقال.');
     case 'ARTICLE_BID_COLLECTION_THRESHOLD_REACHED':
     case 'ARTICLE_BID_COLLECTION_MINIMUM_NOT_MET':
     case 'ARTICLE_BID_COLLECTION_DEADLINE_PASSED':
-      return 'أُغلق باب التقديم على هذا المقال.';
+      return tr('أُغلق باب التقديم على هذا المقال.');
     case 'ACTIVATION_CAMPAIGN_PAUSED':
     case 'ACTIVATION_WAVE_PAUSED':
     case 'ACTIVATION_CAMPAIGN_NOT_ACTIVE':
     case 'ACTIVATION_WAVE_NOT_ACTIVE':
     case 'ACTIVATION_CAMPAIGN_EMERGENCY_STOPPED':
-      return 'تم إيقاف استقبال التقديمات لهذه الفرصة مؤقتًا.';
+      return tr('تم إيقاف استقبال التقديمات لهذه الفرصة مؤقتًا.');
     case 'ARTICLE_APPLICATIONS_ENGINE_OFF':
     case 'ARTICLE_BID_ECONOMY_DISABLED':
-      return 'التقديم على المقالات غير متاح حالياً.';
+      return tr('التقديم على المقالات غير متاح حالياً.');
     case 'ARTICLE_NOT_OPEN_FOR_APPLICATIONS':
-      return 'هذا المقال غير مفتوح للتقديم حالياً.';
+      return tr('هذا المقال غير مفتوح للتقديم حالياً.');
     default:
       // Do not surface raw enum/code to the user.
-      return 'غير مؤهل للتقديم.';
+      return tr('غير مؤهل للتقديم.');
   }
 }
 

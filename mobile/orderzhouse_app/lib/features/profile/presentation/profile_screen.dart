@@ -10,6 +10,7 @@ import '../../auth/domain/auth_user.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../notifications/presentation/unread_notifications_controller.dart';
 import '../domain/profile_actions.dart';
+import '../../../core/i18n/i18n.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -69,10 +70,10 @@ class _AuthenticatedProfileBody extends ConsumerWidget {
                 ],
               ),
               const SizedBox(height: 14),
-              const Padding(
+              Padding(
                 padding: EdgeInsetsDirectional.only(start: 4, bottom: 8),
                 child: Text(
-                  'إدارة الحساب',
+                  tr('إدارة الحساب'),
                   style: TextStyle(
                     color: AppColors.primaryDeep,
                     fontWeight: FontWeight.w800,
@@ -93,7 +94,7 @@ class _AuthenticatedProfileBody extends ConsumerWidget {
                   const _SoftDivider(),
                   _SoftMenuTile(
                     icon: Icons.logout_rounded,
-                    label: 'تسجيل الخروج',
+                    label: tr('تسجيل الخروج'),
                     accent: AppColors.error,
                     onTap: () => _confirmLogout(context, ref),
                   ),
@@ -107,7 +108,7 @@ class _AuthenticatedProfileBody extends ConsumerWidget {
                       icon: settings[i].icon,
                       label: settings[i].label,
                       subtitle: settings[i].isPlaceholder ? settings[i].placeholderHint : null,
-                      trailingHint: settings[i].isPlaceholder ? 'قريباً' : null,
+                      trailingHint: settings[i].isPlaceholder ? tr('قريباً') : null,
                       enabled: !settings[i].isPlaceholder,
                       onTap: () => _handleSettingsTap(context, settings[i]),
                     ),
@@ -141,11 +142,11 @@ class _AuthenticatedProfileBody extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('تسجيل الخروج'),
-        content: const Text('هل تريد تسجيل الخروج؟'),
+        title: Text(tr('تسجيل الخروج')),
+        content: Text(tr('هل تريد تسجيل الخروج؟')),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('إلغاء')),
-          FilledButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('تسجيل الخروج')),
+          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: Text(tr('إلغاء'))),
+          FilledButton(onPressed: () => Navigator.of(ctx).pop(true), child: Text(tr('تسجيل الخروج'))),
         ],
       ),
     );
@@ -192,16 +193,16 @@ class _ProfileHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        const Expanded(
+        Expanded(
           child: Text(
-            'حسابي',
+            tr('حسابي'),
             style: TextStyle(
               color: AppColors.primaryDeep,
               fontSize: 30,
               fontWeight: FontWeight.w800,
               height: 1.15,
             ),
-            textAlign: TextAlign.right,
+            textAlign: TextAlign.start,
           ),
         ),
         const SizedBox(width: 12),
@@ -261,7 +262,7 @@ class _ProfileHeroCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final role = profileRoleLabelAr(user);
-    final status = profileStatusLabelAr(user) ?? 'الحساب نشط';
+    final status = profileStatusLabelAr(user) ?? tr('الحساب نشط');
     final isFreelancer = user.usesFreelancerExperience;
     final isSuperAdmin = user.usesSuperAdminExperience;
 
@@ -356,17 +357,17 @@ class _ProfileHeroCard extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: _StatBox(value: role, label: 'الدور'),
+                child: _StatBox(value: role, label: tr('الدور')),
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: _StatBox(value: unread > 0 ? '$unread' : '0', label: 'إشعارات'),
+                child: _StatBox(value: unread > 0 ? '$unread' : '0', label: tr('إشعارات')),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: _StatBox(
-                  value: user.isActive ? 'نشط' : 'موقوف',
-                  label: 'الحالة',
+                  value: user.isActive ? tr('نشط') : tr('موقوف'),
+                  label: tr('الحالة'),
                 ),
               ),
             ],
@@ -374,8 +375,8 @@ class _ProfileHeroCard extends StatelessWidget {
           const SizedBox(height: 14),
           if (!isSuperAdmin)
             _ProfileCtaBanner(
-              title: isFreelancer ? 'تابع أعمالك ومستحقاتك من مكان واحد' : 'أنشئ طلبك التالي بسهولة',
-              actionLabel: isFreelancer ? 'طلباتي' : 'طلب جديد',
+              title: isFreelancer ? tr('تابع أعمالك ومستحقاتك من مكان واحد') : tr('أنشئ طلبك التالي بسهولة'),
+              actionLabel: isFreelancer ? tr('طلباتي') : tr('طلب جديد'),
               onPressed: () {
                 if (isFreelancer) {
                   context.go(AppRoutes.myOrders);
@@ -386,8 +387,8 @@ class _ProfileHeroCard extends StatelessWidget {
             ),
           if (isSuperAdmin)
             _ProfileCtaBanner(
-              title: 'راجع المهام العاجلة من مركز المشرف الأعلى',
-              actionLabel: 'مركز المهام',
+              title: tr('راجع المهام العاجلة من مركز المشرف الأعلى'),
+              actionLabel: tr('مركز المهام'),
               onPressed: () => GoRouter.of(context).go(AppRoutes.home),
             ),
           if (status.isNotEmpty && !user.isActive) ...[
@@ -575,7 +576,7 @@ class _SoftMenuTile extends StatelessWidget {
                 children: [
                   Text(
                     label,
-                    textAlign: TextAlign.right,
+                    textAlign: TextAlign.start,
                     style: TextStyle(
                       color: enabled ? color : AppColors.textMuted,
                       fontWeight: FontWeight.w700,
@@ -586,7 +587,7 @@ class _SoftMenuTile extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       subtitle!,
-                      textAlign: TextAlign.right,
+                      textAlign: TextAlign.start,
                       style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
                     ),
                   ],
@@ -620,7 +621,7 @@ class _SoftMenuTile extends StatelessWidget {
             ] else if (enabled) ...[
               const SizedBox(width: 6),
               Icon(
-                Icons.chevron_left_rounded,
+                AppI18n.isEnglish ? Icons.chevron_right_rounded : Icons.chevron_left_rounded,
                 color: AppColors.textMuted.withValues(alpha: 0.7),
                 size: 20,
               ),
@@ -646,13 +647,13 @@ Future<void> _handleSettingsTap(BuildContext context, ProfileSettingsItem item) 
       await showDialog<void>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('عن التطبيق'),
+          title: Text(tr('عن التطبيق')),
           content: Text(
             AppBranding.aboutBody,
-            textAlign: TextAlign.right,
+            textAlign: TextAlign.start,
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('حسنًا')),
+            TextButton(onPressed: () => Navigator.of(ctx).pop(), child: Text(tr('حسنًا'))),
           ],
         ),
       );
@@ -666,14 +667,14 @@ Future<void> _handleSettingsTap(BuildContext context, ProfileSettingsItem item) 
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('تواصل معنا'),
-          content: const Text(
-            'هل تريد الانتقال إلى واتساب للتواصل مع فريق Orderz House؟',
-            textAlign: TextAlign.right,
+          title: Text(tr('تواصل معنا')),
+          content: Text(
+            tr('هل تريد الانتقال إلى واتساب للتواصل مع فريق Orderz House؟'),
+            textAlign: TextAlign.start,
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('إلغاء')),
-            FilledButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('فتح واتساب')),
+            TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: Text(tr('إلغاء'))),
+            FilledButton(onPressed: () => Navigator.of(ctx).pop(true), child: Text(tr('فتح واتساب'))),
           ],
         ),
       );
@@ -682,7 +683,7 @@ Future<void> _handleSettingsTap(BuildContext context, ProfileSettingsItem item) 
       final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
       if (!launched && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('تعذر فتح واتساب. تأكد من تثبيته على الجهاز.')),
+          SnackBar(content: Text(tr('تعذر فتح واتساب. تأكد من تثبيته على الجهاز.'))),
         );
       }
       return;

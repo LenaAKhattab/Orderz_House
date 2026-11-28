@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../data/super_admin_actions.dart';
 import '../data/super_admin_kyc_models.dart';
 import '../data/super_admin_models.dart';
+import '../../../core/i18n/i18n.dart';
 
 const superAdminConfirmActivationButtonKey = Key('sa-confirm-activation');
 const superAdminConfirmClaimStatusButtonKey = Key('sa-confirm-claim-status');
@@ -17,17 +18,17 @@ Future<bool> showSuperAdminKycApproveDialog(BuildContext context) async {
     context: context,
     barrierDismissible: false,
     builder: (ctx) => AlertDialog(
-      title: const Text(superAdminActivationConfirmApproveTitleAr),
-      content: const Text(superAdminActivationConfirmApproveBodyAr),
+      title: Text(superAdminActivationConfirmApproveTitleAr),
+      content: Text(superAdminActivationConfirmApproveBodyAr),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(ctx).pop(false),
-          child: const Text(superAdminCancelActionLabelAr),
+          child: Text(superAdminCancelActionLabelAr),
         ),
         FilledButton(
           key: superAdminConfirmKycActivationButtonKey,
           onPressed: () => Navigator.of(ctx).pop(true),
-          child: const Text(superAdminApproveActivationLabelAr),
+          child: Text(superAdminApproveActivationLabelAr),
         ),
       ],
     ),
@@ -105,7 +106,7 @@ class _SuperAdminKycRejectDialogState extends State<_SuperAdminKycRejectDialog> 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text(superAdminActivationRejectTitleAr),
+      title: Text(superAdminActivationRejectTitleAr),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -129,7 +130,7 @@ class _SuperAdminKycRejectDialogState extends State<_SuperAdminKycRejectDialog> 
               enabled: !_submitted,
               minLines: 2,
               maxLines: 3,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: superAdminActivationAdminNotesLabelAr,
               ),
             ),
@@ -139,12 +140,12 @@ class _SuperAdminKycRejectDialogState extends State<_SuperAdminKycRejectDialog> 
       actions: [
         TextButton(
           onPressed: _submitted ? null : () => Navigator.of(context).pop(),
-          child: const Text(superAdminCancelActionLabelAr),
+          child: Text(superAdminCancelActionLabelAr),
         ),
         FilledButton(
           key: superAdminKycRejectSubmitButtonKey,
           onPressed: _canSubmit ? _submit : null,
-          child: const Text(superAdminActivationRejectSubmitAr),
+          child: Text(superAdminActivationRejectSubmitAr),
         ),
       ],
     );
@@ -156,17 +157,17 @@ Future<bool> showSuperAdminApproveActivationDialog(BuildContext context) async {
     context: context,
     barrierDismissible: false,
     builder: (ctx) => AlertDialog(
-      title: const Text(superAdminConfirmApprovalTitleAr),
-      content: const Text(superAdminConfirmApprovalBodyAr),
+      title: Text(superAdminConfirmApprovalTitleAr),
+      content: Text(superAdminConfirmApprovalBodyAr),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(ctx).pop(false),
-          child: const Text(superAdminCancelActionLabelAr),
+          child: Text(superAdminCancelActionLabelAr),
         ),
         FilledButton(
           key: superAdminConfirmActivationButtonKey,
           onPressed: () => Navigator.of(ctx).pop(true),
-          child: const Text(superAdminApproveActivationLabelAr),
+          child: Text(superAdminApproveActivationLabelAr),
         ),
       ],
     ),
@@ -242,7 +243,7 @@ class _SuperAdminClaimStatusDialogState extends State<SuperAdminClaimStatusDialo
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text(superAdminUpdateClaimStatusLabelAr),
+      title: Text(superAdminUpdateClaimStatusLabelAr),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -285,12 +286,12 @@ class _SuperAdminClaimStatusDialogState extends State<SuperAdminClaimStatusDialo
       actions: [
         TextButton(
           onPressed: _submitted ? null : () => Navigator.of(context).pop(),
-          child: const Text(superAdminCancelActionLabelAr),
+          child: Text(superAdminCancelActionLabelAr),
         ),
         FilledButton(
           key: superAdminConfirmClaimStatusButtonKey,
           onPressed: _canSubmit ? _submit : null,
-          child: const Text(superAdminConfirmActionLabelAr),
+          child: Text(superAdminConfirmActionLabelAr),
         ),
       ],
     );
@@ -313,7 +314,7 @@ Future<bool> showSuperAdminConfirmDialog({
       actions: [
         TextButton(
           onPressed: () => Navigator.of(ctx).pop(false),
-          child: const Text(superAdminCancelActionLabelAr),
+          child: Text(superAdminCancelActionLabelAr),
         ),
         FilledButton(
           key: confirmKey,
@@ -409,8 +410,8 @@ class _SuperAdminNoteDialogState extends State<_SuperAdminNoteDialog> {
   Widget build(BuildContext context) {
     final len = _controller.text.trim().length;
     final error = len > 0 && len < widget.minChars
-        ? 'أدخل ${widget.minChars} أحرف على الأقل.'
-        : (len > widget.maxChars ? 'الحد الأقصى ${widget.maxChars} حرفاً.' : null);
+        ? trf('أدخل {0} أحرف على الأقل.', [widget.minChars])
+        : (len > widget.maxChars ? trf('الحد الأقصى {0} حرفاً.', [widget.maxChars]) : null);
     return AlertDialog(
       title: Text(widget.title),
       content: SingleChildScrollView(
@@ -438,7 +439,7 @@ class _SuperAdminNoteDialogState extends State<_SuperAdminNoteDialog> {
       actions: [
         TextButton(
           onPressed: _submitted ? null : () => Navigator.of(context).pop(),
-          child: const Text(superAdminCancelActionLabelAr),
+          child: Text(superAdminCancelActionLabelAr),
         ),
         FilledButton(
           key: widget.confirmKey,

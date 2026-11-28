@@ -12,6 +12,7 @@ import '../../notifications/presentation/unread_notifications_controller.dart';
 import '../../profile/domain/profile_actions.dart';
 import '../../special_offer/presentation/freelancer_special_offer_section.dart';
 import 'freelancer_eligibility_banner.dart';
+import '../../../core/i18n/i18n.dart';
 
 /// Freelancer home — layout inspired by the marketing home composition,
 /// with in-app actions (orders / my orders / plans) instead of guest CTAs.
@@ -22,10 +23,10 @@ class FreelancerHomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authControllerProvider).user;
     final name = user?.displayName.trim();
-    final greetingName = (name != null && name.isNotEmpty) ? name : 'مستقلنا';
+    final greetingName = (name != null && name.isNotEmpty) ? name : tr('مستقلنا');
     final unreadAsync = ref.watch(unreadNotificationsControllerProvider);
     final unread = unreadAsync.maybeWhen(data: (v) => v, orElse: () => 0);
-    final initials = user != null ? profileInitials(user) : 'م';
+    final initials = user != null ? profileInitials(user) : tr('م');
 
     return Scaffold(
       backgroundColor: AppColors.homeMobileBg,
@@ -51,17 +52,17 @@ class FreelancerHomeScreen extends ConsumerWidget {
                               fontWeight: FontWeight.w800,
                               height: 1.2,
                             ),
-                            textAlign: TextAlign.right,
+                            textAlign: TextAlign.start,
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'أهلاً، $greetingName',
+                            trf('أهلاً، {0}', [greetingName]),
                             style: const TextStyle(
                               color: AppColors.textMuted,
                               fontSize: 14,
                               height: 1.4,
                             ),
-                            textAlign: TextAlign.right,
+                            textAlign: TextAlign.start,
                           ),
                         ],
                       ),
@@ -76,8 +77,8 @@ class FreelancerHomeScreen extends ConsumerWidget {
                   ],
                 ),
                 const SizedBox(height: 22),
-                const Text(
-                  'فرص جديدة بانتظارك\nفي سوق الطلبات',
+                Text(
+                  tr('فرص جديدة بانتظارك\nفي سوق الطلبات'),
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: AppColors.primaryDeep,
@@ -88,7 +89,7 @@ class FreelancerHomeScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  'تصفّح الطلبات المتاحة، قدّم عروضك، وتابع أعمالك من مكان واحد.',
+                  tr('تصفّح الطلبات المتاحة، قدّم عروضك، وتابع أعمالك من مكان واحد.'),
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: AppColors.textMuted.withValues(alpha: 0.95),
@@ -98,7 +99,7 @@ class FreelancerHomeScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 18),
                 HomePrimaryCta(
-                  label: 'تصفح الطلبات الآن',
+                  label: tr('تصفح الطلبات الآن'),
                   onPressed: () => context.go(AppRoutes.marketplace),
                 ),
                 const SizedBox(height: 12),
@@ -109,8 +110,8 @@ class FreelancerHomeScreen extends ConsumerWidget {
                   children: [
                     Expanded(
                       child: HomeActionTile(
-                        title: 'طلباتي\nكمستقل',
-                        badge: 'أعمالي',
+                        title: tr('طلباتي\nكمستقل'),
+                        badge: tr('أعمالي'),
                         icon: Icons.work_outline_rounded,
                         onTap: () => context.go(AppRoutes.myOrders),
                       ),
@@ -118,8 +119,8 @@ class FreelancerHomeScreen extends ConsumerWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: HomeActionTile(
-                        title: 'الخدمات\nوالتصنيفات',
-                        badge: 'مجالات',
+                        title: tr('الخدمات\nوالتصنيفات'),
+                        badge: tr('مجالات'),
                         icon: Icons.grid_view_rounded,
                         onTap: () => context.push(AppRoutes.services),
                       ),
@@ -128,73 +129,73 @@ class FreelancerHomeScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 12),
                 HomeWideActionTile(
-                  title: 'عروض الإسناد',
-                  subtitle: 'اقبل أو ارفض المهام المرسلة لك قبل انتهاء المهلة',
+                  title: tr('عروض الإسناد'),
+                  subtitle: tr('اقبل أو ارفض المهام المرسلة لك قبل انتهاء المهلة'),
                   icon: Icons.assignment_turned_in_outlined,
                   onTap: () => context.push(AppRoutes.freelancerAssignmentOffers),
                 ),
                 const SizedBox(height: 12),
                 HomeWideActionTile(
-                  title: 'المطالبات المالية',
-                  subtitle: 'تابع مستحقاتك وحالة الصرف',
+                  title: tr('المطالبات المالية'),
+                  subtitle: tr('تابع مستحقاتك وحالة الصرف'),
                   icon: Icons.account_balance_wallet_outlined,
                   onTap: () => context.push(AppRoutes.freelancerFinancialClaims),
                 ),
                 const SizedBox(height: 12),
                 HomeWideActionTile(
-                  title: 'المقالات المصغّرة',
-                  subtitle: 'قدّم على المقالات · الرصيد المعلّق غير قابل للسحب مباشرة',
+                  title: tr('المقالات المصغّرة'),
+                  subtitle: tr('قدّم على المقالات · الرصيد المعلّق غير قابل للسحب مباشرة'),
                   icon: Icons.article_outlined,
                   onTap: () => context.push(AppRoutes.freelancerMiniArticles),
                 ),
                 const SizedBox(height: 12),
                 HomeWideActionTile(
-                  title: 'مقالاتي',
-                  subtitle: 'حالة التدقيق والنشر على Bildazo',
+                  title: tr('مقالاتي'),
+                  subtitle: tr('حالة التدقيق والنشر على Bildazo'),
                   icon: Icons.library_books_outlined,
                   onTap: () => context.push(AppRoutes.freelancerMyArticles),
                 ),
                 const SizedBox(height: 12),
                 HomeWideActionTile(
-                  title: 'الدورات التدريبية',
-                  subtitle: 'أكمل دوراتك المطلوبة للعمل على المنصة',
+                  title: tr('الدورات التدريبية'),
+                  subtitle: tr('أكمل دوراتك المطلوبة للعمل على المنصة'),
                   icon: Icons.school_rounded,
                   onTap: () => context.go(AppRoutes.courses),
                 ),
                 const SizedBox(height: 22),
-                const Text(
-                  'اختصارات سريعة',
+                Text(
+                  tr('اختصارات سريعة'),
                   style: TextStyle(
                     color: AppColors.primaryDeep,
                     fontWeight: FontWeight.w800,
                     fontSize: 16,
                   ),
-                  textAlign: TextAlign.right,
+                  textAlign: TextAlign.start,
                 ),
                 const SizedBox(height: 12),
                 HomeCircleShortcutsRow(
                   items: [
                     HomeCircleShortcut(
                       icon: Icons.travel_explore_rounded,
-                      label: 'استكشف',
+                      label: tr('استكشف'),
                       accent: AppColors.primary,
                       onTap: () => context.go(AppRoutes.marketplace),
                     ),
                     HomeCircleShortcut(
                       icon: Icons.notifications_active_outlined,
-                      label: 'الإشعارات',
+                      label: tr('الإشعارات'),
                       accent: AppColors.primaryMid,
                       onTap: () => context.push(AppRoutes.notifications),
                     ),
                     HomeCircleShortcut(
                       icon: Icons.school_rounded,
-                      label: 'الدورات',
+                      label: tr('الدورات'),
                       accent: const Color(0xFF027A48),
                       onTap: () => context.go(AppRoutes.courses),
                     ),
                     HomeCircleShortcut(
                       icon: Icons.person_outline_rounded,
-                      label: 'حسابي',
+                      label: tr('حسابي'),
                       accent: AppColors.primaryDeep,
                       onTap: () => context.go(AppRoutes.profile),
                     ),

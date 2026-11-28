@@ -5,6 +5,7 @@ import '../../../core/errors/api_error_message.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/oh_widgets.dart';
 import '../data/public_pages_repository.dart';
+import '../../../core/i18n/i18n.dart';
 
 class PublicPageScreen extends ConsumerWidget {
   const PublicPageScreen({super.key, required this.slug});
@@ -20,18 +21,18 @@ class PublicPageScreen extends ConsumerWidget {
       appBar: AppBar(
         title: pageAsync.maybeWhen(
           data: (page) => Text(page.menuLabel ?? page.title),
-          orElse: () => const Text('صفحة'),
+          orElse: () => Text(tr('صفحة')),
         ),
       ),
       body: pageAsync.when(
         loading: () => const OhLoadingBody(),
         error: (e, _) => OhErrorBody(
-          message: apiErrorMessage(e, fallback: 'تعذر تحميل الصفحة.'),
+          message: apiErrorMessage(e, fallback: tr('تعذر تحميل الصفحة.')),
           onRetry: () => ref.invalidate(publicPageProvider(slug)),
         ),
         data: (page) {
           if (page.content.trim().isEmpty) {
-            return const OhEmptyBody(message: 'لا يوجد محتوى لهذه الصفحة.');
+            return OhEmptyBody(message: tr('لا يوجد محتوى لهذه الصفحة.'));
           }
           final paragraphs = page.paragraphs;
           return ListView(
@@ -43,7 +44,7 @@ class PublicPageScreen extends ConsumerWidget {
                       fontWeight: FontWeight.w800,
                       color: AppColors.textInk,
                     ),
-                textAlign: TextAlign.right,
+                textAlign: TextAlign.start,
               ),
               const SizedBox(height: 16),
               OhCard(
@@ -54,7 +55,7 @@ class PublicPageScreen extends ConsumerWidget {
                       Text(
                         p,
                         style: const TextStyle(height: 1.8, color: AppColors.textMain),
-                        textAlign: TextAlign.right,
+                        textAlign: TextAlign.start,
                       ),
                       const SizedBox(height: 14),
                     ],

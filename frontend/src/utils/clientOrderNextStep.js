@@ -18,6 +18,9 @@ export function getClientOrderNextStep(order) {
   if (s === "completed") return { key: "completed", tone: "success", attention: false };
   if (s === "awaiting_payment_after_bid_selection") return { key: "payAfterBid", tone: "warning", attention: true };
   if (order?.requiresPayment || s === "pending_payment") return { key: "pay", tone: "warning", attention: true };
+  // Smart Orders (managed): checked before the assignment branch, which would claim "in progress".
+  if (s === "awaiting_quote_payment") return { key: "payQuote", tone: "warning", attention: true };
+  if (s === "awaiting_assignment") return { key: "awaitingAssignment", tone: "info", attention: false };
   if (order?.requiresAdminReview) return { key: "adminReview", tone: "info", attention: false };
   if (s === "pending_client_review") return { key: "reviewDelivery", tone: "success", attention: true };
   if (orderHasAssignment(order)) {
@@ -41,8 +44,8 @@ export function clientOrderMatchesFilter(order, filter) {
   if (filter === "all") return true;
   const step = getClientOrderNextStep(order);
   if (filter === "attention") return step.attention;
-  if (filter === "active") return ["inProgress", "revisionSent", "reviewDelivery"].includes(step.key);
-  if (filter === "open") return ["published", "waitingBids", "reviewBids", "pay", "payAfterBid", "adminReview"].includes(step.key);
+  if (filter === "active") return ["inProgress", "revisionSent", "reviewDelivery", "awaitingAssignment"].includes(step.key);
+  if (filter === "open") return ["published", "waitingBids", "reviewBids", "pay", "payAfterBid", "payQuote", "adminReview"].includes(step.key);
   if (filter === "done") return ["completed", "cancelled", "archived"].includes(step.key);
   return true;
 }

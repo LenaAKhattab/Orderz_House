@@ -19,6 +19,8 @@ const ORDER_STATUS_BADGE_CLASS = {
   open_for_freelancers: "oh-badge oh-badge--warning",
   open_for_bids: "oh-badge oh-badge--warning",
   awaiting_payment_after_bid_selection: "oh-badge oh-badge--warning",
+  awaiting_quote_payment: "oh-badge oh-badge--warning",
+  awaiting_assignment: "oh-badge oh-badge--info",
   pending_freelancer_acceptance: "oh-badge oh-badge--info",
   ready_for_work: "oh-badge oh-badge--success",
 };

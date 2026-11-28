@@ -3,18 +3,19 @@ import 'package:flutter/material.dart';
 import '../../currency/presentation/jod_money_display.dart';
 import '../data/pantry_models.dart';
 import '../data/pantry_status.dart';
+import '../../../core/i18n/i18n.dart';
 
 String pantryBudgetLabel(PantryRequest request) {
   final accepted = request.acceptedBid?.amount ?? request.myBid?.amount;
-  if (accepted != null) return '${_fmt(accepted)} د.أ';
+  if (accepted != null) return trf('{0} د.أ', [_fmt(accepted)]);
   if ((request.pricingType ?? '').toLowerCase() == 'bidding') {
     final min = request.budgetMin;
     final max = request.budgetMax;
-    if (min != null && max != null) return '${_fmt(min)} – ${_fmt(max)} د.أ';
-    if (min != null) return 'من ${_fmt(min)} د.أ';
-    if (max != null) return 'حتى ${_fmt(max)} د.أ';
+    if (min != null && max != null) return trf('{0} – {1} د.أ', [_fmt(min), _fmt(max)]);
+    if (min != null) return trf('من {0} د.أ', [_fmt(min)]);
+    if (max != null) return trf('حتى {0} د.أ', [_fmt(max)]);
   }
-  if (request.fixedBudget != null) return '${_fmt(request.fixedBudget!)} د.أ';
+  if (request.fixedBudget != null) return trf('{0} د.أ', [_fmt(request.fixedBudget!)]);
   return '—';
 }
 
@@ -34,9 +35,9 @@ String pantryDurationLabel(PantryRequest request) {
   final days = request.deliveryDays;
   if (days == null) return '—';
   final unit = (request.durationUnit ?? 'days').toLowerCase();
-  if (unit == 'hours') return '$days ساعة';
-  if (unit == 'weeks') return '$days أسبوع';
-  return '$days يوم';
+  if (unit == 'hours') return trf('{0} ساعة', [days]);
+  if (unit == 'weeks') return trf('{0} أسبوع', [days]);
+  return trf('{0} يوم', [days]);
 }
 
 String pantryShortDescription(String? description, {int max = 140}) {
@@ -51,11 +52,11 @@ String pantryPricingLabel(PantryRequest request) => pantryPricingTypeLabelAr(req
 String? pantryPublicBidProgressLabel(PantryRequest request) {
   final progress = request.bidCollection;
   if (progress == null) return null;
-  if (progress.isMinimumNotMet) return 'لم يكتمل الحد الأدنى من المتقدمين';
-  if (progress.isClosedAtThreshold) return 'مغلق بعد اكتمال الحد الأدنى';
+  if (progress.isMinimumNotMet) return tr('لم يكتمل الحد الأدنى من المتقدمين');
+  if (progress.isClosedAtThreshold) return tr('مغلق بعد اكتمال الحد الأدنى');
   if (progress.hasRequired) {
     final current = progress.currentBidCount ?? request.bidsCount ?? 0;
-    return 'المتقدمون $current / ${progress.requiredBidCount}';
+    return trf('المتقدمون {0} / {1}', [current, progress.requiredBidCount]);
   }
   final label = progress.label?.trim();
   if (label != null && label.isNotEmpty) return label;

@@ -10,6 +10,7 @@ import '../data/mobile_ads_path.dart';
 import '../data/popup_ad_dismiss_store.dart';
 import '../data/popup_ad_models.dart';
 import '../data/public_ads_api.dart';
+import '../../../core/i18n/i18n.dart';
 
 final popupAdsApiProvider = Provider<PopupAdsApi>((ref) {
   return PopupAdsApi(ref.watch(dioProvider));
@@ -97,7 +98,8 @@ class _PopupAdsHostState extends ConsumerState<PopupAdsHost> with WidgetsBinding
       final api = ref.read(popupAdsApiProvider);
       final store = ref.read(popupAdDismissStoreProvider);
       final list = await api.listPopupAds(pathname: webPath);
-      final pick = await store.pickToShow(list, webPath);
+      // Only ads with copy in the active language (English UI never shows Arabic-only ads).
+      final pick = await store.pickToShow(list.where((a) => a.hasContentForLanguage).toList(), webPath);
       if (!mounted) return;
       _lastFetchKey = fetchKey;
 
@@ -246,8 +248,8 @@ class PopupAdSheet extends StatelessWidget {
                               color: Colors.white.withValues(alpha: 0.92),
                               borderRadius: BorderRadius.circular(999),
                             ),
-                            child: const Text(
-                              'إعلان',
+                            child: Text(
+                              tr('إعلان'),
                               style: TextStyle(
                                 color: AppColors.primaryDeep,
                                 fontWeight: FontWeight.w800,
@@ -270,8 +272,8 @@ class PopupAdSheet extends StatelessWidget {
                             color: AppColors.secondary.withValues(alpha: 0.25),
                             borderRadius: BorderRadius.circular(999),
                           ),
-                          child: const Text(
-                            'إعلان',
+                          child: Text(
+                            tr('إعلان'),
                             style: TextStyle(
                               color: AppColors.primaryDeep,
                               fontWeight: FontWeight.w800,
@@ -292,7 +294,7 @@ class PopupAdSheet extends StatelessWidget {
                       if (title.isNotEmpty)
                         Text(
                           title,
-                          textAlign: TextAlign.right,
+                          textAlign: TextAlign.start,
                           style: const TextStyle(
                             color: AppColors.primaryDeep,
                             fontSize: 18,
@@ -304,7 +306,7 @@ class PopupAdSheet extends StatelessWidget {
                         const SizedBox(height: 10),
                         Text(
                           body,
-                          textAlign: TextAlign.right,
+                          textAlign: TextAlign.start,
                           style: const TextStyle(
                             color: AppColors.textMuted,
                             fontSize: 14,

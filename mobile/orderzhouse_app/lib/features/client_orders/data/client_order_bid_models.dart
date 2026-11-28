@@ -1,4 +1,5 @@
 import '../../../core/network/json_helpers.dart';
+import '../../../core/i18n/i18n.dart';
 
 /// Bid row from `GET /client/orders/:id/bids` (sanitized for client).
 class ClientOrderBid {
@@ -25,20 +26,20 @@ class ClientOrderBid {
   String get freelancerLabel {
     final name = displayName?.trim();
     if (name != null && name.isNotEmpty) return name;
-    return 'مستقل';
+    return tr('مستقل');
   }
 
   String get statusLabel {
     switch ((status ?? '').trim().toLowerCase()) {
       case 'pending':
-        return 'قيد الانتظار';
+        return tr('قيد الانتظار');
       case 'selected_pending_payment':
-        return 'مختار — بانتظار الدفع';
+        return tr('مختار — بانتظار الدفع');
       case 'accepted':
       case 'selected':
-        return 'مقبول';
+        return tr('مقبول');
       case 'rejected':
-        return 'مرفوض';
+        return tr('مرفوض');
       default:
         return status?.trim().isNotEmpty == true ? status!.trim() : '—';
     }

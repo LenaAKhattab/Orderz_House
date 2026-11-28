@@ -2,12 +2,12 @@ import 'package:dio/dio.dart';
 
 import '../../../../core/errors/api_error_message.dart';
 import 'financial_claim_models.dart';
+import '../../../../core/i18n/i18n.dart';
 
 const int maxFreelancerClaimNoteLength = 5000;
 const String doneProjectClaimMode = 'done_project';
 
-const createFinancialClaimNoticeAr =
-    'سيتم إرسال مطالبة مالية لهذا المشروع. ستقوم الإدارة بمراجعتها وتسعيرها قبل الدفع.';
+String get createFinancialClaimNoticeAr => tr('سيتم إرسال مطالبة مالية لهذا المشروع. ستقوم الإدارة بمراجعتها وتسعيرها قبل الدفع.');
 
 class CreateDoneProjectClaimPayload {
   const CreateDoneProjectClaimPayload({
@@ -24,7 +24,7 @@ class CreateDoneProjectClaimPayload {
   }) {
     final id = int.tryParse(projectId.trim());
     if (id == null || id < 1) {
-      throw ArgumentError('projectId غير صالح.');
+      throw ArgumentError(tr('projectId غير صالح.'));
     }
     return CreateDoneProjectClaimPayload(
       projectId: id,
@@ -49,7 +49,7 @@ String? validateFreelancerClaimNote(String? raw) {
   final trimmed = raw?.trim() ?? '';
   if (trimmed.isEmpty) return null;
   if (trimmed.length > maxFreelancerClaimNoteLength) {
-    return 'الملاحظة طويلة جداً (الحد الأقصى $maxFreelancerClaimNoteLength حرف).';
+    return trf('الملاحظة طويلة جداً (الحد الأقصى {0} حرف).', [maxFreelancerClaimNoteLength]);
   }
   return null;
 }
@@ -92,23 +92,24 @@ bool isSafeCreateDoneProjectClaimPayload(Map<String, dynamic> json) {
 
 FinancialClaim parseCreateClaimResponse(dynamic body) {
   if (body is! Map) {
-    throw ArgumentError('استجابة غير متوقعة من إنشاء المطالبة.');
+    throw ArgumentError(tr('استجابة غير متوقعة من إنشاء المطالبة.'));
   }
   final data = body['data'];
   if (data is! Map) {
-    throw ArgumentError('استجابة غير متوقعة من إنشاء المطالبة.');
+    throw ArgumentError(tr('استجابة غير متوقعة من إنشاء المطالبة.'));
   }
   final claim = data['claim'];
   if (claim is! Map) {
-    throw ArgumentError('استجابة غير متوقعة من إنشاء المطالبة.');
+    throw ArgumentError(tr('استجابة غير متوقعة من إنشاء المطالبة.'));
   }
   return FinancialClaim.fromJson(Map<String, dynamic>.from(claim));
 }
 
 String mapFinancialClaimCreateErrorMessage(
   Object error, {
-  String fallback = 'تعذر إرسال المطالبة المالية.',
+  String? fallback,
 }) {
+  final fb = fallback ?? tr('تعذر إرسال المطالبة المالية.');
   if (error is DioException) {
     final status = error.response?.statusCode;
     final data = error.response?.data;
@@ -121,41 +122,41 @@ String mapFinancialClaimCreateErrorMessage(
 
     switch (code) {
       case 'FREELANCER_KYC_REQUIRED':
-        return 'لا يمكن إنشاء مطالبة مالية قبل تفعيل الحساب.';
+        return tr('لا يمكن إنشاء مطالبة مالية قبل تفعيل الحساب.');
       case 'FREELANCER_KYC_PENDING_REVIEW':
-        return 'طلب تفعيل حسابك قيد المراجعة.';
+        return tr('طلب تفعيل حسابك قيد المراجعة.');
       case 'FREELANCER_KYC_REJECTED':
-        return 'تم رفض طلب تفعيل حسابك. يرجى مراجعة السبب وإعادة إرسال الطلب.';
+        return tr('تم رفض طلب تفعيل حسابك. يرجى مراجعة السبب وإعادة إرسال الطلب.');
       case 'FINANCIAL_CLAIM_PRICING_NOT_ALLOWED':
-        return 'لا يمكن إرسال مبالغ أو أسعار من التطبيق عند إنشاء المطالبة.';
+        return tr('لا يمكن إرسال مبالغ أو أسعار من التطبيق عند إنشاء المطالبة.');
       case 'FINANCIAL_CLAIM_PAYMENT_LEDGER_REQUIRED':
-        return 'لا يمكن تعليم المطالبة كمدفوعة من هنا. يجب تسجيل دفعة مالية.';
+        return tr('لا يمكن تعليم المطالبة كمدفوعة من هنا. يجب تسجيل دفعة مالية.');
       case 'COURSE_SUBSCRIPTION_REQUIRED':
-        return 'يجب الاشتراك بإحدى الخطط للوصول إلى هذه الدورة.';
+        return tr('يجب الاشتراك بإحدى الخطط للوصول إلى هذه الدورة.');
       case 'STARTER_PENDING_EARNINGS_LOCKED':
       case 'TRIAL_PENDING_EARNINGS_LOCKED':
       case 'EARNINGS_LOCKED_PENDING_SILVER':
-        return 'رصيدك مسجّل لكنه غير قابل للسحب حالياً. اشترك بإحدى الخطط لتفعيل الرصيد.';
+        return tr('رصيدك مسجّل لكنه غير قابل للسحب حالياً. اشترك بإحدى الخطط لتفعيل الرصيد.');
       case 'TRIAL_PENDING_EARNINGS_FORFEITED':
       case 'EARNINGS_FORFEITED':
       case 'EARNINGS_CLOSED':
-        return 'انتهت مهلة تفعيل هذا الرصيد. هذا الرصيد لم يعد قابلاً للسحب.';
+        return tr('انتهت مهلة تفعيل هذا الرصيد. هذا الرصيد لم يعد قابلاً للسحب.');
       case 'NO_WITHDRAWABLE_BALANCE':
-        return 'لا يوجد رصيد قابل للسحب حالياً.';
+        return tr('لا يوجد رصيد قابل للسحب حالياً.');
     }
 
     if (status == 409) {
       if (backend.contains('مسبق') || backend.contains('مسبقاً')) {
-        return 'تم إرسال مطالبة لهذا المشروع مسبقًا';
+        return tr('تم إرسال مطالبة لهذا المشروع مسبقًا');
       }
       if (backend.contains('غير مكتمل')) {
-        return 'هذا المشروع غير مؤهل للمطالبة';
+        return tr('هذا المشروع غير مؤهل للمطالبة');
       }
     }
     if (status == 403) {
-      return 'لا تملك صلاحية على هذا المشروع';
+      return tr('لا تملك صلاحية على هذا المشروع');
     }
     if (backend.isNotEmpty) return backend;
   }
-  return apiErrorMessage(error, fallback: fallback);
+  return apiErrorMessage(error, fallback: fb);
 }

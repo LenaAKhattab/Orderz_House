@@ -1,4 +1,5 @@
 import '../../../../core/network/json_helpers.dart';
+import '../../../../core/i18n/i18n.dart';
 
 num? _num(dynamic v) {
   if (v == null) return null;
@@ -7,8 +8,8 @@ num? _num(dynamic v) {
 }
 
 String formatArticleValueJodLabel(num? amount) {
-  if (amount == null) return 'قيمة المقال: —';
-  return 'قيمة المقال: ${amount.toStringAsFixed(3)} JOD';
+  if (amount == null) return tr('قيمة المقال: —');
+  return trf('قيمة المقال: {0} JOD', [amount.toStringAsFixed(3)]);
 }
 
 class ArticleBidCollection {
@@ -45,8 +46,8 @@ class ArticleBidCollection {
     if (requiredBidCount == null && currentBidCount == null) return null;
     final cur = currentBidCount ?? 0;
     final req = requiredBidCount;
-    if (req == null) return '$cur متقدم';
-    return '$cur / $req متقدم';
+    if (req == null) return trf('{0} متقدم', [cur]);
+    return trf('{0} / {1} متقدم', [cur, req]);
   }
 
   bool get isClosedForApply {
@@ -199,28 +200,28 @@ class ArticleApplication {
     switch (statusKey) {
       case 'pending':
       case 'submitted':
-        return 'تم التقديم';
+        return tr('تم التقديم');
       case 'selected':
       case 'assigned':
       case 'writing':
-        return 'تم اختيارك';
+        return tr('تم اختيارك');
       case 'lost':
       case 'not_selected':
-        return 'لم يتم اختيارك';
+        return tr('لم يتم اختيارك');
       case 'rejected':
-        return 'مرفوض';
+        return tr('مرفوض');
       case 'withdrawn':
-        return 'تم السحب';
+        return tr('تم السحب');
       case 'under_review':
-        return 'قيد المراجعة';
+        return tr('قيد المراجعة');
       case 'revision_requested':
-        return 'مطلوب تعديل';
+        return tr('مطلوب تعديل');
       case 'approved':
-        return 'مقبول';
+        return tr('مقبول');
       case 'published':
-        return 'منشور';
+        return tr('منشور');
       default:
-        return status?.trim().isNotEmpty == true ? status!.trim() : 'حالة غير معروفة';
+        return status?.trim().isNotEmpty == true ? status!.trim() : tr('حالة غير معروفة');
     }
   }
 
@@ -247,12 +248,12 @@ class MiniArticleDetailContext {
   final ArticleApplicationEligibility? eligibility;
 
   factory MiniArticleDetailContext.fromResponse(dynamic body) {
-    if (body is! Map) throw FormatException('استجابة المقال غير متوقعة.');
+    if (body is! Map) throw FormatException(tr('استجابة المقال غير متوقعة.'));
     final data = body['data'];
-    if (data is! Map) throw FormatException('استجابة المقال غير متوقعة.');
+    if (data is! Map) throw FormatException(tr('استجابة المقال غير متوقعة.'));
     final map = Map<String, dynamic>.from(data);
     final articleRaw = map['article'];
-    if (articleRaw is! Map) throw FormatException('المقال غير موجود.');
+    if (articleRaw is! Map) throw FormatException(tr('المقال غير موجود.'));
     final appRaw = map['application'];
     return MiniArticleDetailContext(
       article: MiniArticle.fromJson(Map<String, dynamic>.from(articleRaw)),

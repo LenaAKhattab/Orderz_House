@@ -568,6 +568,17 @@ async function loadCustomerQuotesMap(orderIds) {
   return new Map(rows.map((r) => [String(r.order_id), mapCustomerQuote(r)]));
 }
 
+/** Orders that carry an audited work authorization (S3 start-gate override), one batched query. */
+async function loadWorkAuthorizedOrderIds(orderIds) {
+  const ids = (orderIds || []).map(Number).filter((n) => Number.isInteger(n) && n > 0);
+  if (!ids.length) return new Set();
+  const { rows } = await pool.query(
+    `SELECT DISTINCT order_id FROM order_work_authorizations WHERE order_id = ANY($1::bigint[])`,
+    [ids],
+  );
+  return new Set(rows.map((r) => String(r.order_id)));
+}
+
 // ---------------------------------------------------------------------------
 // Guest quote page (token only — no account)
 // ---------------------------------------------------------------------------
@@ -1480,6 +1491,7 @@ module.exports = {
   customerAcceptQuote,
   mapCustomerQuote,
   loadCustomerQuotesMap,
+  loadWorkAuthorizedOrderIds,
   guestQuoteView,
   createQuoteCheckout,
   applyQuoteCheckoutCompleted,

@@ -10,6 +10,7 @@ import '../data/order_attachment_models.dart';
 import '../data/service_catalog_models.dart';
 import '../data/service_catalog_repository.dart';
 import '../data/service_form_logic.dart';
+import '../../../core/i18n/i18n.dart';
 
 class CreateOrderState {
   const CreateOrderState({
@@ -163,7 +164,7 @@ class CreateOrderController extends AutoDisposeNotifier<CreateOrderState> {
     } catch (e) {
       state = state.copyWith(
         categoriesLoading: false,
-        categoriesError: apiErrorMessage(e, fallback: 'تعذر تحميل التصنيفات.'),
+        categoriesError: apiErrorMessage(e, fallback: tr('تعذر تحميل التصنيفات.')),
       );
     }
   }
@@ -309,7 +310,7 @@ class CreateOrderController extends AutoDisposeNotifier<CreateOrderState> {
       }
       state = state.copyWith(
         isSubmitting: false,
-        submitError: apiErrorMessage(e, fallback: 'تعذر إنشاء الطلب.'),
+        submitError: apiErrorMessage(e, fallback: tr('تعذر إنشاء الطلب.')),
       );
       return false;
     }
@@ -325,12 +326,12 @@ class CreateOrderController extends AutoDisposeNotifier<CreateOrderState> {
 /// User-facing explanation after a stale-form refresh (AR app copy).
 String staleServiceFormMessage(ServiceDraftMigration m) {
   if (!m.serviceAvailable) {
-    return 'لم تعد هذه الخدمة متاحة. يرجى اختيار خدمة أخرى أو متابعة طلب عام.';
+    return tr('لم تعد هذه الخدمة متاحة. يرجى اختيار خدمة أخرى أو متابعة طلب عام.');
   }
   if (m.dropped.isEmpty) {
-    return 'تم تحديث نموذج الخدمة واحتفظنا بكل القيم التي أدخلتها. يرجى المراجعة ثم الإرسال.';
+    return tr('تم تحديث نموذج الخدمة واحتفظنا بكل القيم التي أدخلتها. يرجى المراجعة ثم الإرسال.');
   }
-  return 'تم تحديث نموذج الخدمة. احتفظنا بالقيم المتوافقة، ويرجى مراجعة الحقول التي تغيّرت وتعبئتها من جديد.';
+  return tr('تم تحديث نموذج الخدمة. احتفظنا بالقيم المتوافقة، ويرجى مراجعة الحقول التي تغيّرت وتعبئتها من جديد.');
 }
 
 final createOrderControllerProvider =

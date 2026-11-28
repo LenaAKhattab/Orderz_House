@@ -1,3 +1,4 @@
+import '../../../core/i18n/i18n.dart';
 class SubmitPoolBidPayload {
   const SubmitPoolBidPayload({
     required this.amount,
@@ -23,12 +24,12 @@ String? validatePoolBidAmount({
   double? bidBudgetMax,
 }) {
   final normalized = rawAmount.trim().replaceAll(',', '.');
-  if (normalized.isEmpty) return 'مبلغ العرض مطلوب.';
+  if (normalized.isEmpty) return tr('مبلغ العرض مطلوب.');
   final amount = double.tryParse(normalized);
-  if (amount == null || amount <= 0) return 'أدخل مبلغاً صحيحاً أكبر من صفر.';
+  if (amount == null || amount <= 0) return tr('أدخل مبلغاً صحيحاً أكبر من صفر.');
   if (bidBudgetMin != null && bidBudgetMax != null) {
     if (amount < bidBudgetMin || amount > bidBudgetMax) {
-      return 'المبلغ يجب أن يكون ضمن نطاق الميزانية المحدد للطلب.';
+      return tr('المبلغ يجب أن يكون ضمن نطاق الميزانية المحدد للطلب.');
     }
   }
   return null;

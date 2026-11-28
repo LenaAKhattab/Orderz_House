@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/dio_provider.dart';
+import '../../../core/i18n/i18n.dart';
 
 /// Smart Orders S3 — freelancer assignment offers (task + pay + deadline; no customer identity).
 class AssignmentOffer {
@@ -74,20 +75,20 @@ class AssignmentOffer {
 
 const List<String> kOfferRejectReasons = ['unavailable', 'outside_skills', 'deadline_too_short', 'compensation', 'other'];
 
-const Map<String, String> kOfferRejectReasonLabelsAr = {
-  'unavailable': 'غير متاح حاليًا',
-  'outside_skills': 'خارج تخصصي',
-  'deadline_too_short': 'المهلة قصيرة',
-  'compensation': 'الأجر غير مناسب',
-  'other': 'سبب آخر',
+Map<String, String> get kOfferRejectReasonLabelsAr => {
+  'unavailable': tr('غير متاح حاليًا'),
+  'outside_skills': tr('خارج تخصصي'),
+  'deadline_too_short': tr('المهلة قصيرة'),
+  'compensation': tr('الأجر غير مناسب'),
+  'other': tr('سبب آخر'),
 };
 
-const Map<String, String> kOfferStatusLabelsAr = {
-  'pending': 'بانتظار ردك',
-  'accepted': 'مقبول',
-  'rejected': 'مرفوض',
-  'expired': 'منتهي',
-  'cancelled': 'مسحوب',
+Map<String, String> get kOfferStatusLabelsAr => {
+  'pending': tr('بانتظار ردك'),
+  'accepted': tr('مقبول'),
+  'rejected': tr('مرفوض'),
+  'expired': tr('منتهي'),
+  'cancelled': tr('مسحوب'),
 };
 
 class AssignmentOffersApi {

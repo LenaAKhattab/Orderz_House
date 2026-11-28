@@ -47,6 +47,7 @@ import 'auth_redirect_policy.dart';
 import 'deep_link_normalization.dart';
 import 'routes.dart';
 import 'super_admin_access.dart';
+import '../i18n/i18n.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 final _shellNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'shell');
@@ -214,8 +215,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final params = PaymentReturnParams.fromRouteQuery(state.uri.queryParameters);
           if (params == null) {
-            return const Scaffold(
-              body: Center(child: Text('رابط العودة غير صالح.')),
+            return Scaffold(
+              body: Center(child: Text(tr('رابط العودة غير صالح.'))),
             );
           }
           return PaymentReturnScreen(params: params);

@@ -8,6 +8,7 @@ import '../data/financial_claim_models.dart';
 import 'done_projects_section.dart';
 import 'financial_claim_card.dart';
 import 'financial_claims_controller.dart';
+import '../../../../core/i18n/i18n.dart';
 
 class FinancialClaimsScreen extends ConsumerStatefulWidget {
   const FinancialClaimsScreen({super.key});
@@ -52,9 +53,9 @@ class _FinancialClaimsScreenState extends ConsumerState<FinancialClaimsScreen>
     if (!auth.isAuthenticated) {
       return Scaffold(
         backgroundColor: AppColors.homeMobileBg,
-        appBar: AppBar(title: const Text('مطالباتي المالية')),
-        body: const OhEmptyBody(
-          message: 'سجّل الدخول كمستقل لعرض مطالباتك المالية.',
+        appBar: AppBar(title: Text(tr('مطالباتي المالية'))),
+        body: OhEmptyBody(
+          message: tr('سجّل الدخول كمستقل لعرض مطالباتك المالية.'),
           icon: Icons.lock_outline,
         ),
       );
@@ -63,9 +64,9 @@ class _FinancialClaimsScreenState extends ConsumerState<FinancialClaimsScreen>
     if (auth.user?.isFreelancerAccount != true) {
       return Scaffold(
         backgroundColor: AppColors.homeMobileBg,
-        appBar: AppBar(title: const Text('مطالباتي المالية')),
-        body: const OhEmptyBody(
-          message: 'هذه الصفحة متاحة للمستقلين فقط.',
+        appBar: AppBar(title: Text(tr('مطالباتي المالية'))),
+        body: OhEmptyBody(
+          message: tr('هذه الصفحة متاحة للمستقلين فقط.'),
           icon: Icons.person_off_outlined,
         ),
       );
@@ -74,12 +75,12 @@ class _FinancialClaimsScreenState extends ConsumerState<FinancialClaimsScreen>
     return Scaffold(
       backgroundColor: AppColors.homeMobileBg,
       appBar: AppBar(
-        title: const Text('مطالباتي المالية'),
+        title: Text(tr('مطالباتي المالية')),
         bottom: TabBar(
           controller: _tabController,
-          tabs: const [
-            Tab(text: 'مطالباتي'),
-            Tab(text: 'مشاريع قابلة للمطالبة'),
+          tabs: [
+            Tab(text: tr('مطالباتي')),
+            Tab(text: tr('مشاريع قابلة للمطالبة')),
           ],
         ),
       ),
@@ -87,9 +88,9 @@ class _FinancialClaimsScreenState extends ConsumerState<FinancialClaimsScreen>
         controller: _tabController,
         children: [
           snapshotAsync.when(
-            loading: () => const OhLoadingBody(message: 'جارٍ تحميل المطالبات...'),
+            loading: () => OhLoadingBody(message: tr('جارٍ تحميل المطالبات...')),
             error: (error, _) => OhErrorBody(
-              message: 'تعذر تحميل المطالبات. حاول مرة أخرى.',
+              message: tr('تعذر تحميل المطالبات. حاول مرة أخرى.'),
               onRetry: _refreshClaims,
             ),
             data: (snapshot) => RefreshIndicator(
@@ -127,13 +128,13 @@ class _FinancialClaimsBody extends StatelessWidget {
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-        children: const [
+        children: [
           _SummarySection(
             summary: FinancialClaimsSummary(total: 0, underReview: 0, paid: 0, due: 0),
           ),
           SizedBox(height: 16),
           OhEmptyBody(
-            message: 'لا توجد مطالبات مالية حتى الآن',
+            message: tr('لا توجد مطالبات مالية حتى الآن'),
             icon: Icons.receipt_long_outlined,
           ),
         ],
@@ -149,10 +150,10 @@ class _FinancialClaimsBody extends StatelessWidget {
         _FilterChips(filter: filter, onChanged: onFilterChanged),
         const SizedBox(height: 14),
         if (filtered.isEmpty)
-          const Padding(
+          Padding(
             padding: EdgeInsets.symmetric(vertical: 32),
             child: OhEmptyBody(
-              message: 'لا توجد مطالبات في هذا التصنيف.',
+              message: tr('لا توجد مطالبات في هذا التصنيف.'),
               icon: Icons.filter_list_off_outlined,
             ),
           )
@@ -179,20 +180,20 @@ class _SummarySection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text(
-            'ملخص المطالبات',
+          Text(
+            tr('ملخص المطالبات'),
             style: TextStyle(
               fontWeight: FontWeight.w800,
               fontSize: 17,
               color: AppColors.textInk,
             ),
-            textAlign: TextAlign.right,
+            textAlign: TextAlign.start,
           ),
           const SizedBox(height: 12),
-          _SummaryRow(label: 'إجمالي المطالبات', value: '${summary.total}'),
-          _SummaryRow(label: 'قيد المراجعة', value: '${summary.underReview}'),
-          _SummaryRow(label: 'مدفوعة', value: '${summary.paid}'),
-          _SummaryRow(label: 'مستحقة / قابلة للمتابعة', value: '${summary.due}'),
+          _SummaryRow(label: tr('إجمالي المطالبات'), value: '${summary.total}'),
+          _SummaryRow(label: tr('قيد المراجعة'), value: '${summary.underReview}'),
+          _SummaryRow(label: tr('مدفوعة'), value: '${summary.paid}'),
+          _SummaryRow(label: tr('مستحقة / قابلة للمتابعة'), value: '${summary.due}'),
         ],
       ),
     );

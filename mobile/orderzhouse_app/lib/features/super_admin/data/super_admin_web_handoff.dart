@@ -23,7 +23,7 @@ Future<void> openSuperAdminWebOrSnack(BuildContext context, Future<bool> Functio
   final ok = await open();
   if (!ok && context.mounted) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text(superAdminWebHandoffFailedAr)),
+      SnackBar(content: Text(superAdminWebHandoffFailedAr)),
     );
   }
 }

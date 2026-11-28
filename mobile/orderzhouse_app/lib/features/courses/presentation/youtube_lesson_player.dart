@@ -5,6 +5,7 @@ import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
 
 import '../../../core/config/environment_config.dart';
+import '../../../core/i18n/i18n.dart';
 
 /// In-app YouTube embed — same nocookie URL pattern as the web course player.
 ///
@@ -56,7 +57,7 @@ class _YoutubeLessonPlayerState extends State<YoutubeLessonPlayer> {
             if (!mounted || !_loading) return;
             setState(() {
               _loading = false;
-              _error = 'تعذر تحميل الفيديو.';
+              _error = tr('تعذر تحميل الفيديو.');
             });
           },
           onNavigationRequest: (request) {

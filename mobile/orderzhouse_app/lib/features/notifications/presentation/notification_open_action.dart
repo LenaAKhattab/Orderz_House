@@ -23,7 +23,7 @@ void openNotificationActionTarget(BuildContext context, NotificationActionTarget
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(superAdminComingSoonMessageAr)),
+        SnackBar(content: Text(superAdminComingSoonMessageAr)),
       );
     });
   }

@@ -11,6 +11,7 @@ import '../data/pantry_status.dart';
 import 'pantry_controllers.dart';
 import 'pantry_request_card.dart';
 import 'pantry_sheets.dart';
+import '../../../core/i18n/i18n.dart';
 
 class PantryHubScreen extends ConsumerStatefulWidget {
   const PantryHubScreen({super.key, this.initialTab = 0});
@@ -51,9 +52,9 @@ class _PantryHubScreenState extends ConsumerState<PantryHubScreen> with SingleTi
     if (!auth.isAuthenticated || auth.user?.usesFreelancerExperience != true) {
       return Scaffold(
         backgroundColor: AppColors.homeMobileBg,
-        appBar: AppBar(title: const Text('الطلبات المتاحة')),
-        body: const OhEmptyBody(
-          message: 'هذه الصفحة مخصصة لحسابات المستقلين.',
+        appBar: AppBar(title: Text(tr('الطلبات المتاحة'))),
+        body: OhEmptyBody(
+          message: tr('هذه الصفحة مخصصة لحسابات المستقلين.'),
           icon: Icons.lock_outline,
         ),
       );
@@ -62,12 +63,12 @@ class _PantryHubScreenState extends ConsumerState<PantryHubScreen> with SingleTi
     return Scaffold(
       backgroundColor: AppColors.homeMobileBg,
       appBar: AppBar(
-        title: const Text('الطلبات المتاحة'),
+        title: Text(tr('الطلبات المتاحة')),
         bottom: TabBar(
           controller: _tabs,
-          tabs: const [
-            Tab(text: 'الطلبات المفتوحة'),
-            Tab(text: 'أعمالي'),
+          tabs: [
+            Tab(text: tr('الطلبات المفتوحة')),
+            Tab(text: tr('أعمالي')),
           ],
         ),
       ),
@@ -91,9 +92,9 @@ class _OpenList extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(pantryOpenRequestsProvider);
     return async.when(
-      loading: () => const OhLoadingBody(message: 'جاري تحميل الطلبات...'),
+      loading: () => OhLoadingBody(message: tr('جاري تحميل الطلبات...')),
       error: (error, _) => OhErrorBody(
-        message: apiErrorMessage(error, fallback: 'تعذر تحميل الطلبات. حاول مجددًا.'),
+        message: apiErrorMessage(error, fallback: tr('تعذر تحميل الطلبات. حاول مجددًا.')),
         onRetry: onRefresh,
       ),
       data: (items) {
@@ -101,9 +102,9 @@ class _OpenList extends ConsumerWidget {
           return RefreshIndicator(
             onRefresh: onRefresh,
             child: ListView(
-              children: const [
+              children: [
                 SizedBox(height: 80),
-                OhEmptyBody(message: 'لا توجد طلبات متاحة حالياً.', icon: Icons.storefront_outlined),
+                OhEmptyBody(message: tr('لا توجد طلبات متاحة حالياً.'), icon: Icons.storefront_outlined),
               ],
             ),
           );
@@ -125,7 +126,7 @@ class _OpenList extends ConsumerWidget {
                         final ok = await showPantryBidSheet(context, ref, requestId: request.id);
                         if (ok && context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('تم تقديم العرض بنجاح')),
+                            SnackBar(content: Text(tr('تم تقديم العرض بنجاح'))),
                           );
                           ref.invalidate(pantryOpenRequestsProvider);
                         }
@@ -149,9 +150,9 @@ class _MyWorkList extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(pantryMyWorkProvider);
     return async.when(
-      loading: () => const OhLoadingBody(message: 'جارٍ تحميل أعمالك...'),
+      loading: () => OhLoadingBody(message: tr('جارٍ تحميل أعمالك...')),
       error: (error, _) => OhErrorBody(
-        message: apiErrorMessage(error, fallback: 'تعذر تحميل أعمالك. حاول مجددًا.'),
+        message: apiErrorMessage(error, fallback: tr('تعذر تحميل أعمالك. حاول مجددًا.')),
         onRetry: onRefresh,
       ),
       data: (items) {
@@ -162,10 +163,10 @@ class _MyWorkList extends ConsumerWidget {
           return RefreshIndicator(
             onRefresh: onRefresh,
             child: ListView(
-              children: const [
+              children: [
                 SizedBox(height: 80),
                 OhEmptyBody(
-                  message: 'لا توجد طلبات مسندة إليك حالياً.',
+                  message: tr('لا توجد طلبات مسندة إليك حالياً.'),
                   icon: Icons.work_outline,
                 ),
               ],
@@ -189,7 +190,7 @@ class _MyWorkList extends ConsumerWidget {
                         final ok = await showPantryDeliverySheet(context, ref, requestId: request.id);
                         if (ok && context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('تم إرسال التسليم')),
+                            SnackBar(content: Text(tr('تم إرسال التسليم'))),
                           );
                           ref.invalidate(pantryMyWorkProvider);
                         }

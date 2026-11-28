@@ -26,14 +26,14 @@ class PlanUpgradeRequiredCta extends StatelessWidget {
     if (uri == null) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(planUpgradeOpenFailedAr)),
+        SnackBar(content: Text(planUpgradeOpenFailedAr)),
       );
       return;
     }
     final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!launched && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(planUpgradeOpenFailedAr)),
+        SnackBar(content: Text(planUpgradeOpenFailedAr)),
       );
     }
   }
@@ -56,7 +56,7 @@ class PlanUpgradeRequiredCta extends StatelessWidget {
         ),
         child: Text(
           copy.headline,
-          textAlign: TextAlign.right,
+          textAlign: TextAlign.start,
           style: TextStyle(
             color: AppColors.textInk,
             fontWeight: FontWeight.w700,
@@ -79,7 +79,7 @@ class PlanUpgradeRequiredCta extends StatelessWidget {
         children: [
           Text(
             copy.headline,
-            textAlign: TextAlign.right,
+            textAlign: TextAlign.start,
             style: TextStyle(
               color: AppColors.textInk,
               fontWeight: FontWeight.w800,
@@ -91,7 +91,7 @@ class PlanUpgradeRequiredCta extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               copy.action!,
-              textAlign: TextAlign.right,
+              textAlign: TextAlign.start,
               style: TextStyle(
                 color: AppColors.textMuted,
                 fontWeight: FontWeight.w600,
@@ -104,7 +104,7 @@ class PlanUpgradeRequiredCta extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               copy.tierHint!,
-              textAlign: TextAlign.right,
+              textAlign: TextAlign.start,
               style: TextStyle(
                 color: AppColors.primaryDeep,
                 fontWeight: FontWeight.w700,

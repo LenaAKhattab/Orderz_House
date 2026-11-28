@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import '../constants/api_constants.dart';
+import '../i18n/i18n.dart';
 import '../storage/secure_token_storage.dart';
 
 class MobileClientInterceptor extends Interceptor {
@@ -8,6 +9,8 @@ class MobileClientInterceptor extends Interceptor {
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
     options.headers[ApiConstants.mobileClientTypeHeader] =
         ApiConstants.mobileClientTypeValue;
+    // Opt-in server-side localization of system messages (web is unaffected by this header).
+    options.headers['X-Client-Language'] = AppI18n.language.code;
     handler.next(options);
   }
 }

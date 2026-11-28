@@ -10,6 +10,7 @@ import 'create_financial_claim_controller.dart';
 import 'create_financial_claim_sheet.dart';
 import 'done_projects_controller.dart';
 import 'financial_claims_controller.dart';
+import '../../../../core/i18n/i18n.dart';
 
 class DoneProjectsSection extends ConsumerStatefulWidget {
   const DoneProjectsSection({
@@ -52,7 +53,7 @@ class _DoneProjectsSectionState extends ConsumerState<DoneProjectsSection> {
     if (!mounted || created != true) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('تم إرسال المطالبة المالية بنجاح')),
+      SnackBar(content: Text(tr('تم إرسال المطالبة المالية بنجاح'))),
     );
     await _refreshAfterClaimCreated();
   }
@@ -72,9 +73,9 @@ class _DoneProjectsSectionState extends ConsumerState<DoneProjectsSection> {
     final activeQuery = ref.watch(doneProjectsSearchQueryProvider);
 
     return projectsAsync.when(
-      loading: () => const OhLoadingBody(message: 'جارٍ تحميل المشاريع...'),
+      loading: () => OhLoadingBody(message: tr('جارٍ تحميل المشاريع...')),
       error: (error, _) => OhErrorBody(
-        message: 'تعذر تحميل المشاريع القابلة للمطالبة. حاول مرة أخرى.',
+        message: tr('تعذر تحميل المشاريع القابلة للمطالبة. حاول مرة أخرى.'),
         onRetry: _refresh,
       ),
       data: (projects) => RefreshIndicator(
@@ -91,7 +92,7 @@ class _DoneProjectsSectionState extends ConsumerState<DoneProjectsSection> {
             ),
             const SizedBox(height: 14),
             if (projects.isEmpty)
-              const Padding(
+              Padding(
                 padding: EdgeInsets.symmetric(vertical: 32),
                 child: OhEmptyBody(
                   message: doneProjectsEmptyMessageAr,
@@ -139,7 +140,7 @@ class _SearchBar extends StatelessWidget {
             textInputAction: TextInputAction.search,
             onSubmitted: (_) => onSearch(),
             decoration: InputDecoration(
-              hintText: 'ابحث برقم الطلب أو العنوان',
+              hintText: tr('ابحث برقم الطلب أو العنوان'),
               prefixIcon: const Icon(Icons.search),
               suffixIcon: activeQuery.isNotEmpty
                   ? IconButton(
@@ -151,7 +152,7 @@ class _SearchBar extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           OhButton(
-            label: 'بحث',
+            label: tr('بحث'),
             outlined: true,
             onPressed: onSearch,
           ),
@@ -181,14 +182,14 @@ class DoneProjectCard extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            project.requestTitle.trim().isNotEmpty ? project.requestTitle : 'مشروع مكتمل',
+            project.requestTitle.trim().isNotEmpty ? project.requestTitle : tr('مشروع مكتمل'),
             style: const TextStyle(
               fontWeight: FontWeight.w800,
               fontSize: 16,
               color: AppColors.textInk,
               height: 1.35,
             ),
-            textAlign: TextAlign.right,
+            textAlign: TextAlign.start,
           ),
           if (project.hasMissingCompletionDate) ...[
             const SizedBox(height: 10),
@@ -199,7 +200,7 @@ class DoneProjectCard extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: AppColors.error.withValues(alpha: 0.2)),
               ),
-              child: const Row(
+              child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Icon(Icons.warning_amber_rounded, color: AppColors.error, size: 18),
@@ -213,7 +214,7 @@ class DoneProjectCard extends ConsumerWidget {
                         fontSize: 12,
                         height: 1.45,
                       ),
-                      textAlign: TextAlign.right,
+                      textAlign: TextAlign.start,
                     ),
                   ),
                 ],
@@ -221,21 +222,21 @@ class DoneProjectCard extends ConsumerWidget {
             ),
           ],
           const SizedBox(height: 12),
-          _InfoRow(label: 'رقم الطلب', value: project.orderNumber.trim().isNotEmpty ? project.orderNumber : '—'),
-          _InfoRow(label: 'التصنيفات', value: formatDoneProjectCategories(project.categories)),
-          _InfoRow(label: 'تاريخ الإكمال', value: formatOrderDate(project.actualCompletionDate)),
-          _InfoRow(label: 'مدة العمل', value: formatDurationMinutesLabel(project.durationMinutes)),
+          _InfoRow(label: tr('رقم الطلب'), value: project.orderNumber.trim().isNotEmpty ? project.orderNumber : '—'),
+          _InfoRow(label: tr('التصنيفات'), value: formatDoneProjectCategories(project.categories)),
+          _InfoRow(label: tr('تاريخ الإكمال'), value: formatOrderDate(project.actualCompletionDate)),
+          _InfoRow(label: tr('مدة العمل'), value: formatDurationMinutesLabel(project.durationMinutes)),
           _InfoRow(
-            label: 'المبلغ',
+            label: tr('المبلغ'),
             valueWidget: JodMoneyDisplay(amount: project.totalPriceSnapshot),
           ),
           _InfoRow(
-            label: 'حالة الدفع',
+            label: tr('حالة الدفع'),
             value: doneProjectPaymentStatusLabelAr(project.paymentStatus),
           ),
           const SizedBox(height: 12),
           OhButton(
-            label: 'إنشاء مطالبة',
+            label: tr('إنشاء مطالبة'),
             isLoading: isSubmitting,
             onPressed: isSubmitting ? null : onCreateClaim,
           ),
@@ -263,7 +264,7 @@ class _InfoRow extends StatelessWidget {
             child: valueWidget ??
                 Text(
                   value ?? '—',
-                  textAlign: TextAlign.right,
+                  textAlign: TextAlign.start,
                   style: const TextStyle(
                     color: AppColors.textInk,
                     fontWeight: FontWeight.w600,

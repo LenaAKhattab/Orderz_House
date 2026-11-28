@@ -11,6 +11,7 @@ import '../data/client_orders_repository.dart';
 import '../data/create_order_models.dart';
 import '../data/payment_return_flow.dart';
 import 'client_orders_controller.dart';
+import '../../../core/i18n/i18n.dart';
 
 class CreateOrderSuccessView extends ConsumerStatefulWidget {
   const CreateOrderSuccessView({super.key, required this.result});
@@ -48,7 +49,7 @@ class _CreateOrderSuccessViewState extends ConsumerState<CreateOrderSuccessView>
       if (launch.blockedLiveCheckout) {
         _payError = launch.message ?? StripeCheckoutLaunchResult.liveBlockedAr;
       } else if (!launch.launched) {
-        _payError = 'تعذر فتح صفحة الدفع. تحقق من الاتصال وحاول مرة أخرى.';
+        _payError = tr('تعذر فتح صفحة الدفع. تحقق من الاتصال وحاول مرة أخرى.');
       }
     });
   }
@@ -56,7 +57,7 @@ class _CreateOrderSuccessViewState extends ConsumerState<CreateOrderSuccessView>
   Future<void> _payNowFromCreateResult() async {
     final url = result.checkoutUrl;
     if (url == null || url.trim().isEmpty) {
-      setState(() => _payError = 'رابط الدفع غير متوفر.');
+      setState(() => _payError = tr('رابط الدفع غير متوفر.'));
       return;
     }
     await _openCheckout(url);
@@ -116,7 +117,7 @@ class _PaymentPendingSuccessBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.homeMobileBg,
-      appBar: AppBar(title: const Text('تجهيز الطلب')),
+      appBar: AppBar(title: Text(tr('تجهيز الطلب'))),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
@@ -126,14 +127,14 @@ class _PaymentPendingSuccessBody extends StatelessWidget {
               children: [
                 const Icon(Icons.payments_outlined, color: AppColors.primary, size: 56),
                 const SizedBox(height: 12),
-                const Text(
-                  'تم تجهيز الطلب بنجاح',
+                Text(
+                  tr('تم تجهيز الطلب بنجاح'),
                   textAlign: TextAlign.center,
                   style: TextStyle(fontWeight: FontWeight.w800, fontSize: 20, color: AppColors.textInk),
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  'هذا الطلب يحتاج دفعًا قبل نشره أو تفعيله.',
+                Text(
+                  tr('هذا الطلب يحتاج دفعًا قبل نشره أو تفعيله.'),
                   textAlign: TextAlign.center,
                   style: TextStyle(color: AppColors.textMuted, height: 1.6),
                 ),
@@ -145,9 +146,9 @@ class _PaymentPendingSuccessBody extends StatelessWidget {
                       color: AppColors.iconChipBg,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Text(
+                    child: Text(
                       paymentCheckoutOpenedNoteAr,
-                      textAlign: TextAlign.right,
+                      textAlign: TextAlign.start,
                       style: TextStyle(color: AppColors.textMuted, height: 1.5, fontSize: 13),
                     ),
                   ),
@@ -160,17 +161,17 @@ class _PaymentPendingSuccessBody extends StatelessWidget {
                 const PaymentConfirmationNote(),
                 const SizedBox(height: 20),
                 OhButton(
-                  label: 'الدفع الآن',
+                  label: tr('الدفع الآن'),
                   isLoading: payLoading,
                   onPressed: payLoading ? null : onPayNow,
                 ),
                 const SizedBox(height: 10),
-                OhButton(label: 'الدفع لاحقًا', outlined: true, onPressed: onPayLater),
+                OhButton(label: tr('الدفع لاحقًا'), outlined: true, onPressed: onPayLater),
                 const SizedBox(height: 10),
-                OhButton(label: 'عرض طلباتي', outlined: true, onPressed: onMyOrders),
+                OhButton(label: tr('عرض طلباتي'), outlined: true, onPressed: onMyOrders),
                 const SizedBox(height: 10),
                 OhButton(
-                  label: 'تحديث حالة الطلب',
+                  label: tr('تحديث حالة الطلب'),
                   outlined: true,
                   onPressed: onRefreshStatus,
                 ),
@@ -198,7 +199,7 @@ class _BiddingSuccessBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.homeMobileBg,
-      appBar: AppBar(title: const Text('تم إنشاء الطلب')),
+      appBar: AppBar(title: Text(tr('تم إنشاء الطلب'))),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
@@ -208,21 +209,21 @@ class _BiddingSuccessBody extends StatelessWidget {
               children: [
                 const Icon(Icons.check_circle_outline, color: AppColors.primary, size: 56),
                 const SizedBox(height: 12),
-                const Text(
-                  'تم إنشاء الطلب بنجاح',
+                Text(
+                  tr('تم إنشاء الطلب بنجاح'),
                   textAlign: TextAlign.center,
                   style: TextStyle(fontWeight: FontWeight.w800, fontSize: 20, color: AppColors.textInk),
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  'طلبك متاح الآن لاستقبال العروض من المستقلين.',
+                Text(
+                  tr('طلبك متاح الآن لاستقبال العروض من المستقلين.'),
                   textAlign: TextAlign.center,
                   style: TextStyle(color: AppColors.textMuted, height: 1.6),
                 ),
                 const SizedBox(height: 20),
-                OhButton(label: 'عرض طلباتي', onPressed: onMyOrders),
+                OhButton(label: tr('عرض طلباتي'), onPressed: onMyOrders),
                 const SizedBox(height: 10),
-                OhButton(label: 'عرض تفاصيل الطلب', outlined: true, onPressed: onDetails),
+                OhButton(label: tr('عرض تفاصيل الطلب'), outlined: true, onPressed: onDetails),
               ],
             ),
           ),
@@ -243,9 +244,9 @@ class PaymentConfirmationNote extends StatelessWidget {
         color: AppColors.iconChipBg,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: const Text(
-        'قد يستغرق تأكيد الدفع لحظات بعد إتمام العملية. استخدم «تحديث حالة الطلب» بعد العودة للتطبيق.',
-        textAlign: TextAlign.right,
+      child: Text(
+        tr('قد يستغرق تأكيد الدفع لحظات بعد إتمام العملية. استخدم «تحديث حالة الطلب» بعد العودة للتطبيق.'),
+        textAlign: TextAlign.start,
         style: TextStyle(color: AppColors.textMuted, height: 1.5, fontSize: 13),
       ),
     );
@@ -301,7 +302,7 @@ class _ClientOrderPaymentSectionState extends ConsumerState<ClientOrderPaymentSe
       if (url.isEmpty) {
         setState(() {
           _payLoading = false;
-          _payError = 'رابط الدفع غير متوفر.';
+          _payError = tr('رابط الدفع غير متوفر.');
         });
         return;
       }
@@ -318,14 +319,14 @@ class _ClientOrderPaymentSectionState extends ConsumerState<ClientOrderPaymentSe
         if (launch.blockedLiveCheckout) {
           _payError = launch.message ?? StripeCheckoutLaunchResult.liveBlockedAr;
         } else if (!launch.launched) {
-          _payError = 'تعذر فتح صفحة الدفع.';
+          _payError = tr('تعذر فتح صفحة الدفع.');
         }
       });
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _payLoading = false;
-        _payError = apiErrorMessage(e, fallback: 'تعذر تجهيز الدفع.');
+        _payError = apiErrorMessage(e, fallback: tr('تعذر تجهيز الدفع.'));
       });
     }
   }
@@ -351,9 +352,9 @@ class _ClientOrderPaymentSectionState extends ConsumerState<ClientOrderPaymentSe
               color: AppColors.iconChipBg,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Text(
+            child: Text(
               paymentCheckoutOpenedNoteAr,
-              textAlign: TextAlign.right,
+              textAlign: TextAlign.start,
               style: TextStyle(color: AppColors.textMuted, height: 1.5, fontSize: 13),
             ),
           ),
@@ -366,13 +367,13 @@ class _ClientOrderPaymentSectionState extends ConsumerState<ClientOrderPaymentSe
         const PaymentConfirmationNote(),
         const SizedBox(height: 12),
         OhButton(
-          label: 'الدفع الآن',
+          label: tr('الدفع الآن'),
           isLoading: _payLoading,
           onPressed: _payLoading ? null : _payNow,
         ),
         const SizedBox(height: 8),
         OhButton(
-          label: 'تحديث حالة الطلب',
+          label: tr('تحديث حالة الطلب'),
           outlined: true,
           onPressed: _refreshStatus,
         ),

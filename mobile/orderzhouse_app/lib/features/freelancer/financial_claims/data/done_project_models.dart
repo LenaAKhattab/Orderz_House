@@ -1,5 +1,6 @@
 import '../../../../core/network/json_helpers.dart';
 import '../../../orders/data/order_display_helpers.dart';
+import '../../../../core/i18n/i18n.dart';
 
 class DoneProject {
   const DoneProject({
@@ -72,12 +73,12 @@ class DoneProject {
 
 String formatDurationMinutesLabel(int? minutes) {
   if (minutes == null) return '—';
-  if (minutes <= 0) return '0 دقيقة';
-  if (minutes < 60) return '$minutes دقيقة';
+  if (minutes <= 0) return tr('0 دقيقة');
+  if (minutes < 60) return trf('{0} دقيقة', [minutes]);
   final hours = minutes ~/ 60;
   final mins = minutes % 60;
-  if (mins == 0) return '$hours ساعة';
-  return '$hours ساعة و $mins دقيقة';
+  if (mins == 0) return trf('{0} ساعة', [hours]);
+  return trf('{0} ساعة و {1} دقيقة', [hours, mins]);
 }
 
 String doneProjectPaymentStatusLabelAr(String? status) {
@@ -96,10 +97,9 @@ String formatDoneProjectAmount(DoneProject project) {
 
 String formatDoneProjectCategories(List<String> categories) {
   if (categories.isEmpty) return '—';
-  return categories.join('، ');
+  return categories.join(tr('، '));
 }
 
-const doneProjectsEmptyMessageAr = 'لا توجد مشاريع مكتملة قابلة للمطالبة حاليًا';
+String get doneProjectsEmptyMessageAr => tr('لا توجد مشاريع مكتملة قابلة للمطالبة حاليًا');
 
-const doneProjectMissingCompletionDateWarningAr =
-    'تاريخ الإنجاز الفعلي غير متوفر — قد تحتاج مراجعة الإدارة قبل المطالبة.';
+String get doneProjectMissingCompletionDateWarningAr => tr('تاريخ الإنجاز الفعلي غير متوفر — قد تحتاج مراجعة الإدارة قبل المطالبة.');

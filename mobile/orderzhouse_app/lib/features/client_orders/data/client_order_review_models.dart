@@ -1,4 +1,5 @@
 import '../../../core/network/json_helpers.dart';
+import '../../../core/i18n/i18n.dart';
 
 const int minClientReviewTextLength = 10;
 const int maxClientReviewTextLength = 2000;
@@ -118,25 +119,25 @@ String clientFreelancerReviewHeadlineAr({
   required ClientOrderReviewStatus? status,
 }) {
   if (orderStatus != 'completed') {
-    return 'يمكنك تقييم المستقل بعد إكمال الطلب.';
+    return tr('يمكنك تقييم المستقل بعد إكمال الطلب.');
   }
   final review = status?.existingReview;
   if (review != null) {
-    return review.canEdit ? 'تم إرسال تقييمك — يمكنك تعديله خلال 48 ساعة.' : 'تم إرسال تقييمك لهذا الطلب.';
+    return review.canEdit ? tr('تم إرسال تقييمك — يمكنك تعديله خلال 48 ساعة.') : tr('تم إرسال تقييمك لهذا الطلب.');
   }
   if (status?.canSubmit == true) {
     final name = status?.freelancerName?.trim();
     if (name != null && name.isNotEmpty) {
-      return 'كيف كانت تجربتك مع $name؟';
+      return trf('كيف كانت تجربتك مع {0}؟', [name]);
     }
-    return 'شاركنا تقييمك للمستقل.';
+    return tr('شاركنا تقييمك للمستقل.');
   }
-  return 'تقييم المستقل';
+  return tr('تقييم المستقل');
 }
 
 String? validateClientReviewRating(int? rating) {
   if (rating == null || rating < 1 || rating > 5) {
-    return 'اختر تقييماً من 1 إلى 5 نجوم.';
+    return tr('اختر تقييماً من 1 إلى 5 نجوم.');
   }
   return null;
 }
@@ -145,10 +146,10 @@ String? validateClientReviewText(String? raw) {
   final trimmed = raw?.trim() ?? '';
   if (trimmed.isEmpty) return null;
   if (trimmed.length < minClientReviewTextLength) {
-    return 'الملاحظة يجب ألا تقل عن $minClientReviewTextLength أحرف.';
+    return trf('الملاحظة يجب ألا تقل عن {0} أحرف.', [minClientReviewTextLength]);
   }
   if (trimmed.length > maxClientReviewTextLength) {
-    return 'الملاحظة طويلة جداً.';
+    return tr('الملاحظة طويلة جداً.');
   }
   return null;
 }

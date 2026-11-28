@@ -13,6 +13,7 @@ import '../data/course_access.dart';
 import '../data/course_models.dart';
 import 'courses_controllers.dart';
 import 'youtube_lesson_player.dart';
+import '../../../core/i18n/i18n.dart';
 
 class CourseDetailsScreen extends ConsumerStatefulWidget {
   const CourseDetailsScreen({super.key, required this.courseId});
@@ -57,7 +58,7 @@ class _CourseDetailsScreenState extends ConsumerState<CourseDetailsScreen> {
         SnackBar(
           content: Text(
             mapCourseAccessErrorMessage(e) ??
-                apiErrorMessage(e, fallback: 'تعذر إتمام العملية.'),
+                apiErrorMessage(e, fallback: tr('تعذر إتمام العملية.')),
           ),
         ),
       );
@@ -71,14 +72,14 @@ class _CourseDetailsScreenState extends ConsumerState<CourseDetailsScreen> {
     if (uri == null) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(courseLockOpenPlansFailedAr)),
+        SnackBar(content: Text(courseLockOpenPlansFailedAr)),
       );
       return;
     }
     final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!ok && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(courseLockOpenPlansFailedAr)),
+        SnackBar(content: Text(courseLockOpenPlansFailedAr)),
       );
     }
   }
@@ -109,7 +110,7 @@ class _CourseDetailsScreenState extends ConsumerState<CourseDetailsScreen> {
     if (path == null) return;
     await _run(
       () => ref.read(freelancerCourseDetailsProvider(widget.courseId).notifier).uploadCompletedExam(File(path)),
-      okMessage: 'تم رفع ملف الاختبار.',
+      okMessage: tr('تم رفع ملف الاختبار.'),
     );
   }
 
@@ -122,7 +123,7 @@ class _CourseDetailsScreenState extends ConsumerState<CourseDetailsScreen> {
         final value = num.tryParse(raw);
         if (value == null) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('أدخل درجة صحيحة للسؤال ${q.number}.')),
+            SnackBar(content: Text(trf('أدخل درجة صحيحة للسؤال {0}.', [q.number]))),
           );
           return;
         }
@@ -133,7 +134,7 @@ class _CourseDetailsScreenState extends ConsumerState<CourseDetailsScreen> {
     final auditText = _auditController.text.trim();
     if (details.completion.needsAuditStep && details.completion.testingEnabled && auditText.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('أدخل نص مراجعة ChatGPT أو ملاحظات الإكمال.')),
+        SnackBar(content: Text(tr('أدخل نص مراجعة ChatGPT أو ملاحظات الإكمال.'))),
       );
       return;
     }
@@ -143,7 +144,7 @@ class _CourseDetailsScreenState extends ConsumerState<CourseDetailsScreen> {
             auditResponseText: auditText.isEmpty ? null : auditText,
             questionMarks: marks,
           ),
-      okMessage: 'تم إكمال الدورة بنجاح.',
+      okMessage: tr('تم إكمال الدورة بنجاح.'),
     );
   }
 
@@ -153,9 +154,9 @@ class _CourseDetailsScreenState extends ConsumerState<CourseDetailsScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.homeMobileBg,
-      appBar: AppBar(title: const Text('تفاصيل الدورة')),
+      appBar: AppBar(title: Text(tr('تفاصيل الدورة'))),
       body: async.when(
-        loading: () => const OhLoadingBody(message: 'جاري التحميل...'),
+        loading: () => OhLoadingBody(message: tr('جاري التحميل...')),
         error: (e, _) {
           if (isCoursePlanUpgradeError(e)) {
             return CourseLockedAccessBody(
@@ -168,7 +169,7 @@ class _CourseDetailsScreenState extends ConsumerState<CourseDetailsScreen> {
             );
           }
           return OhErrorBody(
-            message: apiErrorMessage(e, fallback: 'تعذر تحميل الدورة.'),
+            message: apiErrorMessage(e, fallback: tr('تعذر تحميل الدورة.')),
             onRetry: () => ref.read(freelancerCourseDetailsProvider(widget.courseId).notifier).reload(),
           );
         },
@@ -207,8 +208,8 @@ class _CourseDetailsScreenState extends ConsumerState<CourseDetailsScreen> {
                 const SizedBox(height: 14),
                 _ProgressHeader(details: details),
                 const SizedBox(height: 18),
-                const Text(
-                  'الدروس',
+                Text(
+                  tr('الدروس'),
                   style: TextStyle(
                     color: AppColors.primaryDeep,
                     fontWeight: FontWeight.w800,
@@ -228,7 +229,7 @@ class _CourseDetailsScreenState extends ConsumerState<CourseDetailsScreen> {
                               () => ref
                                   .read(freelancerCourseDetailsProvider(widget.courseId).notifier)
                                   .markLessonComplete(lesson.id),
-                              okMessage: 'تم تعليم الدرس كمكتمل.',
+                              okMessage: tr('تم تعليم الدرس كمكتمل.'),
                             ),
                   ),
                   const SizedBox(height: 10),
@@ -248,7 +249,7 @@ class _CourseDetailsScreenState extends ConsumerState<CourseDetailsScreen> {
                   const SizedBox(height: 12),
                   FilledButton(
                     onPressed: _busy ? null : () => _submitCompletion(details),
-                    child: const Text('إنهاء الدورة'),
+                    child: Text(tr('إنهاء الدورة')),
                   ),
                 ],
                 if (details.completion.courseCompleted) ...[
@@ -260,13 +261,13 @@ class _CourseDetailsScreenState extends ConsumerState<CourseDetailsScreen> {
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
                     ),
-                    child: const Row(
+                    child: Row(
                       children: [
                         Icon(Icons.verified_rounded, color: AppColors.success),
                         SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            'أحسنت! تم إكمال هذه الدورة.',
+                            tr('أحسنت! تم إكمال هذه الدورة.'),
                             style: TextStyle(
                               color: AppColors.success,
                               fontWeight: FontWeight.w800,
@@ -354,7 +355,7 @@ class CourseLockedAccessBody extends StatelessWidget {
             ),
             if (onRetry != null) ...[
               const SizedBox(height: 10),
-              TextButton(onPressed: onRetry, child: const Text('إعادة المحاولة')),
+              TextButton(onPressed: onRetry, child: Text(tr('إعادة المحاولة'))),
             ],
           ],
         ),
@@ -393,7 +394,7 @@ class _ProgressHeader extends StatelessWidget {
               ),
               const Spacer(),
               Text(
-                '${p.completedLessons}/${p.totalLessons} دروس',
+                trf('{0}/{1} دروس', [p.completedLessons, p.totalLessons]),
                 style: const TextStyle(color: AppColors.textMuted, fontWeight: FontWeight.w600),
               ),
             ],
@@ -483,7 +484,7 @@ class _LessonTile extends StatelessWidget {
                       showPlayer ? Icons.close_rounded : Icons.ondemand_video_rounded,
                       size: 18,
                     ),
-                    label: Text(showPlayer ? 'إخفاء' : 'مشاهدة'),
+                    label: Text(showPlayer ? tr('إخفاء') : tr('مشاهدة')),
                   ),
                 ),
               if (embedUrl != null && onComplete != null) const SizedBox(width: 8),
@@ -491,14 +492,14 @@ class _LessonTile extends StatelessWidget {
                 Expanded(
                   child: FilledButton(
                     onPressed: busy ? null : onComplete,
-                    child: const Text('تم كمكتمل'),
+                    child: Text(tr('تم كمكتمل')),
                   ),
                 ),
               if (onComplete == null && lesson.isCompleted)
-                const Expanded(
+                Expanded(
                   child: Text(
-                    'مكتمل',
-                    textAlign: TextAlign.left,
+                    tr('مكتمل'),
+                    textAlign: TextAlign.end,
                     style: TextStyle(color: AppColors.success, fontWeight: FontWeight.w800),
                   ),
                 ),
@@ -544,8 +545,8 @@ class _FinalTestSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text(
-            'الاختبار النهائي',
+          Text(
+            tr('الاختبار النهائي'),
             style: TextStyle(
               color: AppColors.primaryDeep,
               fontWeight: FontWeight.w800,
@@ -555,8 +556,8 @@ class _FinalTestSection extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             unlocked
-                ? 'أكملت الدروس — يمكنك الآن تنزيل الاختبار ورفعه ثم الإرسال.'
-                : 'أكمل جميع الدروس أولاً لفتح الاختبار النهائي.',
+                ? tr('أكملت الدروس — يمكنك الآن تنزيل الاختبار ورفعه ثم الإرسال.')
+                : tr('أكمل جميع الدروس أولاً لفتح الاختبار النهائي.'),
             style: const TextStyle(color: AppColors.textMuted, height: 1.5),
           ),
           if (unlocked) ...[
@@ -565,51 +566,51 @@ class _FinalTestSection extends StatelessWidget {
               OutlinedButton.icon(
                 onPressed: busy ? null : () => onOpenFile('test'),
                 icon: const Icon(Icons.picture_as_pdf_outlined),
-                label: const Text('عرض ملف الاختبار'),
+                label: Text(tr('عرض ملف الاختبار')),
               ),
             if (details.testPromptFileUrl != null)
               OutlinedButton.icon(
                 onPressed: busy ? null : () => onOpenFile('prompt'),
                 icon: const Icon(Icons.description_outlined),
-                label: const Text('عرض ملف الـ Prompt'),
+                label: Text(tr('عرض ملف الـ Prompt')),
               ),
             if (details.testModelAnswerFileUrl != null)
               OutlinedButton.icon(
                 onPressed: busy ? null : () => onOpenFile('model-answer'),
                 icon: const Icon(Icons.fact_check_outlined),
-                label: const Text('عرض نموذج الإجابة'),
+                label: Text(tr('عرض نموذج الإجابة')),
               ),
             const SizedBox(height: 8),
             FilledButton.tonalIcon(
               onPressed: busy ? null : onUploadExam,
               icon: const Icon(Icons.upload_file_rounded),
               label: Text(
-                details.assignment.hasCompletedExamFile ? 'استبدال ملف الاختبار المرفوع' : 'رفع ملف الاختبار (PDF)',
+                details.assignment.hasCompletedExamFile ? tr('استبدال ملف الاختبار المرفوع') : tr('رفع ملف الاختبار (PDF)'),
               ),
             ),
             if (details.assignment.hasCompletedExamFile)
-              const Padding(
+              Padding(
                 padding: EdgeInsets.only(top: 8),
                 child: Text(
-                  '✓ تم رفع ملف الاختبار',
+                  tr('✓ تم رفع ملف الاختبار'),
                   style: TextStyle(color: AppColors.success, fontWeight: FontWeight.w700),
                 ),
               ),
             if (details.examQuestions.isNotEmpty) ...[
               const SizedBox(height: 14),
-              const Text(
-                'درجات الأسئلة',
+              Text(
+                tr('درجات الأسئلة'),
                 style: TextStyle(fontWeight: FontWeight.w800, color: AppColors.primaryDeep),
               ),
               const SizedBox(height: 8),
               for (final q in details.examQuestions) ...[
-                Text('س${q.number}: ${q.text}', style: const TextStyle(fontWeight: FontWeight.w600)),
+                Text(trf('س{0}: {1}', [q.number, q.text]), style: const TextStyle(fontWeight: FontWeight.w600)),
                 const SizedBox(height: 6),
                 TextField(
                   controller: markControllerFor(q.number),
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   decoration: InputDecoration(
-                    labelText: q.maxMark != null ? 'الدرجة (حد أقصى ${q.maxMark})' : 'الدرجة',
+                    labelText: q.maxMark != null ? trf('الدرجة (حد أقصى {0})', [q.maxMark]) : tr('الدرجة'),
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -620,8 +621,8 @@ class _FinalTestSection extends StatelessWidget {
               controller: auditController,
               minLines: 3,
               maxLines: 6,
-              decoration: const InputDecoration(
-                labelText: 'نص مراجعة ChatGPT / ملاحظات الإكمال',
+              decoration: InputDecoration(
+                labelText: tr('نص مراجعة ChatGPT / ملاحظات الإكمال'),
                 alignLabelWithHint: true,
               ),
             ),
@@ -629,7 +630,7 @@ class _FinalTestSection extends StatelessWidget {
             if (!completed)
               FilledButton(
                 onPressed: busy || !details.assignment.hasCompletedExamFile ? null : onSubmit,
-                child: const Text('إرسال وإكمال الدورة'),
+                child: Text(tr('إرسال وإكمال الدورة')),
               ),
           ],
         ],

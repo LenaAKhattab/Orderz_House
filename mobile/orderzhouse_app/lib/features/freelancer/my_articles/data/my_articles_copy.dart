@@ -2,6 +2,7 @@
 library;
 
 import '../../mini_articles/data/bildazo_copy.dart';
+import '../../../../core/i18n/i18n.dart';
 
 export '../../mini_articles/data/bildazo_copy.dart'
     show
@@ -12,35 +13,35 @@ export '../../mini_articles/data/bildazo_copy.dart'
         bildazoActivateCtaAr,
         bildazoRequiredAr;
 
-const myArticlesTitleAr = 'مقالاتي';
-const myArticlesSubtitleAr = 'أعمالك من Mini Article وحالة التدقيق والنشر على Bildazo.';
-const myArticlesEmptyTitleAr = 'لم تبدأ بعد في تنفيذ أي مقالات.';
-const myArticlesEmptyDescAr = 'عند الفوز بمقال، سيظهر هنا مع حالة التدقيق والنشر.';
-const myArticlesLoadErrorAr = 'تعذر تحميل مقالاتك.';
-const myArticlesUnauthorizedAr = 'يلزم تسجيل الدخول كمستقل لعرض مقالاتك.';
-const myArticlesForbiddenAr = 'لا تملك صلاحية عرض هذه الصفحة.';
-const myArticlesAssignedAtAr = 'تاريخ التعيين';
-const myArticlesSubmittedAtAr = 'تاريخ التسليم';
-const myArticlesGrossLabelAr = 'قيمة المقال';
-const myArticlesNetLabelAr = 'صافي أجرك';
-const myArticlesReviewLabelAr = 'حالة المراجعة';
-const myArticlesPublishLabelAr = 'حالة النشر';
-const myArticlesRevisionNoteAr = 'ملاحظة التعديل';
+String get myArticlesTitleAr => tr('مقالاتي');
+String get myArticlesSubtitleAr => tr('أعمالك من Mini Article وحالة التدقيق والنشر على Bildazo.');
+String get myArticlesEmptyTitleAr => tr('لم تبدأ بعد في تنفيذ أي مقالات.');
+String get myArticlesEmptyDescAr => tr('عند الفوز بمقال، سيظهر هنا مع حالة التدقيق والنشر.');
+String get myArticlesLoadErrorAr => tr('تعذر تحميل مقالاتك.');
+String get myArticlesUnauthorizedAr => tr('يلزم تسجيل الدخول كمستقل لعرض مقالاتك.');
+String get myArticlesForbiddenAr => tr('لا تملك صلاحية عرض هذه الصفحة.');
+String get myArticlesAssignedAtAr => tr('تاريخ التعيين');
+String get myArticlesSubmittedAtAr => tr('تاريخ التسليم');
+String get myArticlesGrossLabelAr => tr('قيمة المقال');
+String get myArticlesNetLabelAr => tr('صافي أجرك');
+String get myArticlesReviewLabelAr => tr('حالة المراجعة');
+String get myArticlesPublishLabelAr => tr('حالة النشر');
+String get myArticlesRevisionNoteAr => tr('ملاحظة التعديل');
 
 /// Aliases kept for M5 call sites — same strings as shared Bildazo copy.
-const myArticlesPublishSuccessAr = bildazoPublishSuccessAr;
-const myArticlesViewArticleAr = bildazoViewArticleAr;
-const myArticlesViewProfileAr = bildazoViewWriterProfileAr;
+final myArticlesPublishSuccessAr = bildazoPublishSuccessAr;
+final myArticlesViewArticleAr = bildazoViewArticleAr;
+final myArticlesViewProfileAr = bildazoViewWriterProfileAr;
 
-const myArticlesOpenLinkFailedAr = 'تعذر فتح الرابط.';
-const myArticlesFilterAllAr = 'الكل';
-const myArticlesPassiveSubmitHintAr = 'تسليم المقال سيكون متاحاً من خلال تحديث قادم.';
-const myArticlesUnknownStatusAr = 'قيد المتابعة';
+String get myArticlesOpenLinkFailedAr => tr('تعذر فتح الرابط.');
+String get myArticlesFilterAllAr => tr('الكل');
+String get myArticlesPassiveSubmitHintAr => tr('تسليم المقال سيكون متاحاً من خلال تحديث قادم.');
+String get myArticlesUnknownStatusAr => tr('قيد المتابعة');
 
-const myArticlesStatusAwaitingSelectionAr = 'بانتظار الاختيار';
-const myArticlesStatusAwaitingExecutionAr = 'بانتظار التنفيذ';
-const myArticlesStatusUnderReviewAr = 'تحت التدقيق';
-const myArticlesStatusRevisionRequestedAr = 'مطلوب تعديل';
-const myArticlesStatusAcceptedAr = 'مقبولة';
-const myArticlesStatusPublishedAr = 'منشورة على Bildazo';
-const myArticlesStatusRejectedAr = 'مرفوضة';
+String get myArticlesStatusAwaitingSelectionAr => tr('بانتظار الاختيار');
+String get myArticlesStatusAwaitingExecutionAr => tr('بانتظار التنفيذ');
+String get myArticlesStatusUnderReviewAr => tr('تحت التدقيق');
+String get myArticlesStatusRevisionRequestedAr => tr('مطلوب تعديل');
+String get myArticlesStatusAcceptedAr => tr('مقبولة');
+String get myArticlesStatusPublishedAr => tr('منشورة على Bildazo');
+String get myArticlesStatusRejectedAr => tr('مرفوضة');

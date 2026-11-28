@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
+import '../i18n/i18n.dart';
 
 class OhButton extends StatelessWidget {
   const OhButton({
@@ -149,16 +150,18 @@ class OhErrorBanner extends StatelessWidget {
       child: Text(
         message,
         style: const TextStyle(color: AppColors.error, fontWeight: FontWeight.w600),
-        textAlign: TextAlign.right,
+        textAlign: TextAlign.start,
       ),
     );
   }
 }
 
 class OhLoadingBody extends StatelessWidget {
-  const OhLoadingBody({super.key, this.message = 'جاري التحميل...'});
+  const OhLoadingBody({super.key, String? message}) : _message = message;
 
-  final String message;
+  final String? _message;
+
+  String get message => _message ?? tr('جاري التحميل...');
 
   @override
   Widget build(BuildContext context) {
@@ -226,7 +229,7 @@ class OhErrorBody extends StatelessWidget {
           children: [
             OhErrorBanner(message: message),
             const SizedBox(height: 16),
-            OhButton(label: 'إعادة المحاولة', onPressed: onRetry, outlined: true),
+            OhButton(label: tr('إعادة المحاولة'), onPressed: onRetry, outlined: true),
           ],
         ),
       ),
@@ -240,13 +243,15 @@ class PlaceholderFeatureScreen extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.icon,
-    this.comingSoonLabel = 'قريباً في المرحلة التالية',
-  });
+    String? comingSoonLabel,
+  }) : _comingSoonLabel = comingSoonLabel;
 
   final String title;
   final String subtitle;
   final IconData icon;
-  final String comingSoonLabel;
+  final String? _comingSoonLabel;
+
+  String get comingSoonLabel => _comingSoonLabel ?? tr('قريباً في المرحلة التالية');
 
   @override
   Widget build(BuildContext context) {
@@ -274,7 +279,7 @@ class PlaceholderFeatureScreen extends StatelessWidget {
                       fontWeight: FontWeight.w800,
                       color: AppColors.textInk,
                     ),
-                textAlign: TextAlign.right,
+                textAlign: TextAlign.start,
               ),
               const SizedBox(height: 8),
               Text(
@@ -283,7 +288,7 @@ class PlaceholderFeatureScreen extends StatelessWidget {
                       color: AppColors.textMuted,
                       height: 1.6,
                     ),
-                textAlign: TextAlign.right,
+                textAlign: TextAlign.start,
               ),
               const SizedBox(height: 16),
               Container(

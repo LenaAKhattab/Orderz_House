@@ -10,6 +10,7 @@
  */
 
 const deviceTokensService = require("./deviceTokensService");
+const serverTextEn = require("../utils/serverTextEn");
 
 let messaging = null;
 let initAttempted = false;
@@ -21,6 +22,7 @@ const QUEUE_MAX = 50000;
 
 const GENERIC_TITLE = "Orderz House";
 const GENERIC_BODY = "لديك إشعار جديد — افتح التطبيق لعرض التفاصيل.";
+const GENERIC_BODY_EN = "You have a new notification — open the app for details.";
 
 /** Title and body are fixed copy (or a count) — safe on a lock screen. */
 const STATIC_TEXT_TYPES = new Set([
@@ -129,15 +131,23 @@ function isPushConfigured() {
   return Boolean(getMessaging());
 }
 
-function buildPushPayload(notification) {
+/**
+ * @param {object} notification
+ * @param {"ar"|"en"} [locale] app language of the target install. English devices get the English
+ *   rendering of the (Arabic, system-authored) copy, or generic English — never mixed-language text.
+ */
+function buildPushPayload(notification, locale = "ar") {
   const type = String(notification?.type || "");
+  const en = locale === "en";
+  const genericBody = en ? GENERIC_BODY_EN : GENERIC_BODY;
+  const localized = (text) => (en ? serverTextEn.toEnglish(text) : text || null);
   let title = GENERIC_TITLE;
-  let body = GENERIC_BODY;
+  let body = genericBody;
   if (STATIC_TEXT_TYPES.has(type)) {
-    title = truncate(notification?.title || GENERIC_TITLE, 80);
-    body = truncate(notification?.message || GENERIC_BODY, 140);
+    title = truncate(localized(notification?.title) || GENERIC_TITLE, 80);
+    body = truncate(localized(notification?.message) || genericBody, 140);
   } else if (STATIC_TITLE_ONLY_TYPES.has(type)) {
-    title = truncate(notification?.title || GENERIC_TITLE, 80);
+    title = truncate(localized(notification?.title) || GENERIC_TITLE, 80);
   }
   const data = {
     notificationId: String(notification?.id || ""),
@@ -210,8 +220,12 @@ async function sendPushBatch(notifications) {
         result.noDevice += 1;
         continue;
       }
-      const payload = buildPushPayload(n);
-      for (const d of targets) messages.push({ token: d.token, message: buildMessage(d.token, payload) });
+      const payloads = {};
+      for (const d of targets) {
+        const loc = d.locale === "en" ? "en" : "ar";
+        payloads[loc] = payloads[loc] || buildPushPayload(n, loc);
+        messages.push({ token: d.token, message: buildMessage(d.token, payloads[loc]) });
+      }
     }
     result.messages = messages.length;
     const invalid = [];

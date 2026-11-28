@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/errors/api_error_message.dart';
 import '../data/client_order_review_models.dart';
 import '../data/client_order_review_repository.dart';
+import '../../../core/i18n/i18n.dart';
 
 class ClientOrderReviewState {
   const ClientOrderReviewState({
@@ -56,7 +57,7 @@ class ClientOrderReviewController extends AutoDisposeFamilyNotifier<ClientOrderR
     } catch (e) {
       state = state.copyWith(
         isSubmitting: false,
-        error: apiErrorMessage(e, fallback: 'تعذر إرسال التقييم.'),
+        error: apiErrorMessage(e, fallback: tr('تعذر إرسال التقييم.')),
       );
       rethrow;
     }

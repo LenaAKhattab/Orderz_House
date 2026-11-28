@@ -14,6 +14,7 @@ import 'client_orders_controller.dart';
 import 'create_order_controller.dart';
 import 'order_attachments_section.dart';
 import 'order_payment_actions.dart';
+import '../../../core/i18n/i18n.dart';
 
 class CreateClientOrderScreen extends ConsumerWidget {
   const CreateClientOrderScreen({super.key});
@@ -24,7 +25,7 @@ class CreateClientOrderScreen extends ConsumerWidget {
 
     if (!auth.isAuthenticated) {
       return Scaffold(
-        appBar: AppBar(title: const Text('إنشاء طلب')),
+        appBar: AppBar(title: Text(tr('إنشاء طلب'))),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -33,13 +34,13 @@ class CreateClientOrderScreen extends ConsumerWidget {
               children: [
                 const Icon(Icons.lock_outline, size: 48, color: AppColors.textMuted),
                 const SizedBox(height: 12),
-                const Text(
-                  'سجّل الدخول لإنشاء طلب جديد.',
+                Text(
+                  tr('سجّل الدخول لإنشاء طلب جديد.'),
                   textAlign: TextAlign.center,
                   style: TextStyle(color: AppColors.textMuted, height: 1.6),
                 ),
                 const SizedBox(height: 16),
-                OhButton(label: 'تسجيل الدخول', onPressed: () => context.push(AppRoutes.login)),
+                OhButton(label: tr('تسجيل الدخول'), onPressed: () => context.push(AppRoutes.login)),
               ],
             ),
           ),
@@ -49,9 +50,9 @@ class CreateClientOrderScreen extends ConsumerWidget {
 
     if (auth.user?.usesClientExperience != true) {
       return Scaffold(
-        appBar: AppBar(title: const Text('إنشاء طلب')),
-        body: const OhEmptyBody(
-          message: 'إنشاء الطلبات متاح لحسابات العملاء فقط.',
+        appBar: AppBar(title: Text(tr('إنشاء طلب'))),
+        body: OhEmptyBody(
+          message: tr('إنشاء الطلبات متاح لحسابات العملاء فقط.'),
           icon: Icons.person_off_outlined,
         ),
       );
@@ -66,7 +67,7 @@ class CreateClientOrderScreen extends ConsumerWidget {
       backgroundColor: AppColors.homeMobileBg,
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
-        title: const Text('إنشاء طلب'),
+        title: Text(tr('إنشاء طلب')),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => handleCreateOrderBack(context, ref),
@@ -127,11 +128,11 @@ Future<void> handleCreateOrderBack(BuildContext context, WidgetRef ref) async {
     final discard = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('تجاهل الطلب؟'),
-        content: const Text('ستفقد البيانات والمرفقات التي أدخلتها في هذا الطلب.'),
+        title: Text(tr('تجاهل الطلب؟')),
+        content: Text(tr('ستفقد البيانات والمرفقات التي أدخلتها في هذا الطلب.')),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('متابعة التعديل')),
-          TextButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('تجاهل')),
+          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: Text(tr('متابعة التعديل'))),
+          TextButton(onPressed: () => Navigator.of(ctx).pop(true), child: Text(tr('تجاهل'))),
         ],
       ),
     );
@@ -150,12 +151,12 @@ class _StepProgress extends StatelessWidget {
   final int current;
   final int total;
 
-  static const _labels = [
-    'نوع الطلب',
-    'التصنيف',
-    'التفاصيل',
-    'الميزانية',
-    'المراجعة',
+  static List<String> get _labels => [
+    tr('نوع الطلب'),
+    tr('التصنيف'),
+    tr('التفاصيل'),
+    tr('الميزانية'),
+    tr('المراجعة'),
   ];
 
   @override
@@ -172,9 +173,9 @@ class _StepProgress extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'الخطوة ${current + 1} من $total — ${_labels[current]}',
+            trf('الخطوة {0} من {1} — {2}', [current + 1, total, _labels[current]]),
             style: const TextStyle(color: AppColors.textMuted, fontWeight: FontWeight.w600),
-            textAlign: TextAlign.right,
+            textAlign: TextAlign.start,
           ),
         ],
       ),
@@ -200,7 +201,7 @@ class _BottomActions extends ConsumerWidget {
             if (state.step > 0)
               Expanded(
                 child: OhButton(
-                  label: 'السابق',
+                  label: tr('السابق'),
                   outlined: true,
                   onPressed: state.isSubmitting ? null : notifier.previousStep,
                 ),
@@ -209,7 +210,7 @@ class _BottomActions extends ConsumerWidget {
             Expanded(
               flex: 2,
               child: OhButton(
-                label: isLast ? 'إنشاء الطلب' : 'التالي',
+                label: isLast ? tr('إنشاء الطلب') : tr('التالي'),
                 isLoading: isLast && state.isSubmitting,
                 onPressed: state.isSubmitting
                     ? null
@@ -249,22 +250,22 @@ class _StepProjectType extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text(
-            'اختر نوع الطلب',
+          Text(
+            tr('اختر نوع الطلب'),
             style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.textInk),
           ),
           const SizedBox(height: 12),
           _TypeOptionCard(
-            title: 'ثابت السعر',
-            subtitle: 'حدد ميزانية ثابتة للمشروع.',
+            title: tr('ثابت السعر'),
+            subtitle: tr('حدد ميزانية ثابتة للمشروع.'),
             icon: Icons.price_check_outlined,
             selected: state.draft.projectType == 'fixed',
             onTap: () => notifier.setProjectType('fixed'),
           ),
           const SizedBox(height: 10),
           _TypeOptionCard(
-            title: 'مناقصة / استقبال عروض',
-            subtitle: 'حدد نطاق ميزانية واستقبل عروض المستقلين.',
+            title: tr('مناقصة / استقبال عروض'),
+            subtitle: tr('حدد نطاق ميزانية واستقبل عروض المستقلين.'),
             icon: Icons.gavel_outlined,
             selected: state.draft.projectType == 'bidding',
             onTap: () => notifier.setProjectType('bidding'),
@@ -341,7 +342,7 @@ class _StepCategory extends ConsumerWidget {
     final error = state.stepErrors['categoryId'];
 
     if (state.categoriesLoading) {
-      return const Padding(
+      return Padding(
         padding: EdgeInsets.symmetric(vertical: 48),
         child: Center(
           child: Column(
@@ -349,7 +350,7 @@ class _StepCategory extends ConsumerWidget {
             children: [
               CircularProgressIndicator(),
               SizedBox(height: 12),
-              Text('جاري تحميل التصنيفات...', style: TextStyle(color: AppColors.textMuted)),
+              Text(tr('جاري تحميل التصنيفات...'), style: TextStyle(color: AppColors.textMuted)),
             ],
           ),
         ),
@@ -366,8 +367,8 @@ class _StepCategory extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text(
-                'التصنيف الرئيسي',
+              Text(
+                tr('التصنيف الرئيسي'),
                 style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: AppColors.textInk),
               ),
               const SizedBox(height: 12),
@@ -392,8 +393,8 @@ class _StepCategory extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Text(
-                  'التصنيف الفرعي (اختياري)',
+                Text(
+                  tr('التصنيف الفرعي (اختياري)'),
                   style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: AppColors.textInk),
                 ),
                 const SizedBox(height: 8),
@@ -403,13 +404,13 @@ class _StepCategory extends ConsumerWidget {
                     child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
                   )
                 else if (state.subSubcategories.isEmpty)
-                  const Text(
-                    'لا توجد تصنيفات فرعية — يمكنك المتابعة.',
+                  Text(
+                    tr('لا توجد تصنيفات فرعية — يمكنك المتابعة.'),
                     style: TextStyle(color: AppColors.textMuted),
                   )
                 else ...[
                   _SelectableTile(
-                    label: 'بدون تصنيف فرعي',
+                    label: tr('بدون تصنيف فرعي'),
                     selected: state.draft.subSubcategoryId == null,
                     onTap: () => notifier.selectSubSubcategory(null),
                   ),
@@ -447,13 +448,13 @@ class _StepCategory extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
-              'الخدمة (اختياري)',
+            Text(
+              tr('الخدمة (اختياري)'),
               style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: AppColors.textInk),
             ),
             const SizedBox(height: 8),
             _SelectableTile(
-              label: 'طلب عام (بدون خدمة محددة)',
+              label: tr('طلب عام (بدون خدمة محددة)'),
               selected: selected == null,
               onTap: () => notifier.selectService(null),
             ),
@@ -565,15 +566,15 @@ class _StepDetailsState extends ConsumerState<_StepDetails> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text(
-            'تفاصيل الطلب',
+          Text(
+            tr('تفاصيل الطلب'),
             style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: AppColors.textInk),
           ),
           const SizedBox(height: 12),
           OhTextField(
             controller: _title,
-            label: 'عنوان الطلب',
-            hint: 'مثال: تصميم شعار احترافي',
+            label: tr('عنوان الطلب'),
+            hint: tr('مثال: تصميم شعار احترافي'),
             textInputAction: TextInputAction.next,
             onChanged: (_) => _sync(),
           ),
@@ -585,8 +586,8 @@ class _StepDetailsState extends ConsumerState<_StepDetails> {
           const SizedBox(height: 12),
           OhTextField(
             controller: _description,
-            label: 'وصف الطلب',
-            hint: 'اشرح المطلوب بوضوح...',
+            label: tr('وصف الطلب'),
+            hint: tr('اشرح المطلوب بوضوح...'),
             keyboardType: TextInputType.multiline,
             textInputAction: TextInputAction.newline,
             minLines: 4,
@@ -601,8 +602,8 @@ class _StepDetailsState extends ConsumerState<_StepDetails> {
           const SizedBox(height: 12),
           OhTextField(
             controller: _duration,
-            label: 'مدة التنفيذ (بالأيام)',
-            hint: 'مثال: 5',
+            label: tr('مدة التنفيذ (بالأيام)'),
+            hint: tr('مثال: 5'),
             keyboardType: TextInputType.number,
             textInputAction: TextInputAction.done,
             onChanged: (_) => _sync(),
@@ -672,14 +673,14 @@ class _StepBudgetState extends ConsumerState<_StepBudget> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            isFixed ? 'الميزانية' : 'نطاق الميزانية',
+            isFixed ? tr('الميزانية') : tr('نطاق الميزانية'),
             style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: AppColors.textInk),
           ),
           const SizedBox(height: 12),
           if (isFixed) ...[
             OhTextField(
               controller: _budget,
-              label: 'الميزانية (JOD)',
+              label: tr('الميزانية (JOD)'),
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               onChanged: (_) => _sync(),
             ),
@@ -688,7 +689,7 @@ class _StepBudgetState extends ConsumerState<_StepBudget> {
           ] else ...[
             OhTextField(
               controller: _min,
-              label: 'الحد الأدنى (JOD)',
+              label: tr('الحد الأدنى (JOD)'),
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               onChanged: (_) => _sync(),
             ),
@@ -697,7 +698,7 @@ class _StepBudgetState extends ConsumerState<_StepBudget> {
             const SizedBox(height: 12),
             OhTextField(
               controller: _max,
-              label: 'الحد الأعلى (JOD)',
+              label: tr('الحد الأعلى (JOD)'),
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               onChanged: (_) => _sync(),
             ),
@@ -741,24 +742,24 @@ class _StepReview extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text(
-            'مراجعة الطلب',
+          Text(
+            tr('مراجعة الطلب'),
             style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: AppColors.textInk),
           ),
           const SizedBox(height: 12),
-          _ReviewRow('نوع الطلب', display.projectTypeLabel(draft.projectType)),
-          _ReviewRow('التصنيف', _categoryName() ?? '—'),
-          if (_subSubName() != null) _ReviewRow('التصنيف الفرعي', _subSubName()!),
-          _ReviewRow('العنوان', draft.title.trim().isEmpty ? '—' : draft.title.trim()),
-          _ReviewRow('المدة', '${draft.durationValue} يوم'),
+          _ReviewRow(tr('نوع الطلب'), display.projectTypeLabel(draft.projectType)),
+          _ReviewRow(tr('التصنيف'), _categoryName() ?? '—'),
+          if (_subSubName() != null) _ReviewRow(tr('التصنيف الفرعي'), _subSubName()!),
+          _ReviewRow(tr('العنوان'), draft.title.trim().isEmpty ? '—' : draft.title.trim()),
+          _ReviewRow(tr('المدة'), trf('{0} يوم', [draft.durationValue])),
           if (draft.isFixed)
             _ReviewMoneyRow(
-              'الميزانية',
+              tr('الميزانية'),
               JodMoneyDisplay(amount: double.tryParse(draft.budget.replaceAll(',', '.'))),
             )
           else
             _ReviewMoneyRow(
-              'الميزانية',
+              tr('الميزانية'),
               JodMoneyDisplay(
                 amount: double.tryParse(draft.bidBudgetMin.replaceAll(',', '.')),
                 amountMax: double.tryParse(draft.bidBudgetMax.replaceAll(',', '.')),
@@ -766,25 +767,25 @@ class _StepReview extends ConsumerWidget {
             ),
           if (state.selectedService != null) ...[
             _ReviewRow(
-              'الخدمة',
+              tr('الخدمة'),
               pickLocalized(state.selectedService!.name, Localizations.localeOf(context).languageCode == 'en' ? 'en' : 'ar'),
             ),
             _ReviewRow(
-              'الكمية',
+              tr('الكمية'),
               state.serviceDraft.quantityUnspecified
-                  ? 'غير محدد / بحاجة لتقدير'
+                  ? tr('غير محدد / بحاجة لتقدير')
                   : '${state.serviceDraft.quantity} ${unitLabel(state.selectedService!.quantity.unit, 'ar')}',
             ),
           ],
           _ReviewRow(
-            'المرفقات',
-            state.attachments.isEmpty ? 'لا توجد مرفقات' : '${state.attachments.length} ملف',
+            tr('المرفقات'),
+            state.attachments.isEmpty ? tr('لا توجد مرفقات') : trf('{0} ملف', [state.attachments.length]),
           ),
           const SizedBox(height: 8),
           Text(
             draft.isFixed
-                ? 'بعد الإنشاء ستنتقل لخطوة الدفع عبر Stripe.'
-                : 'بعد الإنشاء سيكون طلبك متاحًا لاستقبال العروض.',
+                ? tr('بعد الإنشاء ستنتقل لخطوة الدفع عبر Stripe.')
+                : tr('بعد الإنشاء سيكون طلبك متاحًا لاستقبال العروض.'),
             style: const TextStyle(color: AppColors.textMuted, height: 1.5),
           ),
           const SizedBox(height: 16),

@@ -9,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 import '../errors/api_error_message.dart';
 import '../network/dio_provider.dart';
 import 'order_file_download_paths.dart';
+import '../i18n/i18n.dart';
 
 final fileDownloadServiceProvider = Provider<FileDownloadService>((ref) {
   return FileDownloadService(ref.watch(dioProvider));
@@ -42,7 +43,7 @@ class FileDownloadService {
       if (bytes == null || bytes.isEmpty) {
         throw DioException(
           requestOptions: response.requestOptions,
-          message: 'الملف فارغ أو غير متاح.',
+          message: tr('الملف فارغ أو غير متاح.'),
         );
       }
 
@@ -54,7 +55,7 @@ class FileDownloadService {
 
       final openResult = await OpenFilex.open(localPath);
       if (openResult.type != ResultType.done) {
-        throw StateError(openResult.message.isNotEmpty ? openResult.message : 'تعذر فتح الملف على الجهاز.');
+        throw StateError(openResult.message.isNotEmpty ? openResult.message : tr('تعذر فتح الملف على الجهاز.'));
       }
 
       return localPath;
@@ -72,8 +73,8 @@ class FileDownloadService {
 
 String orderFileDownloadErrorMessage(DioException error) {
   final status = error.response?.statusCode;
-  if (status == 403) return 'لا تملك صلاحية الوصول لهذا الملف.';
-  if (status == 404) return 'الملف غير متاح.';
+  if (status == 403) return tr('لا تملك صلاحية الوصول لهذا الملف.');
+  if (status == 404) return tr('الملف غير متاح.');
 
   final data = error.response?.data;
   if (data is List<int> && data.isNotEmpty) {
@@ -91,5 +92,5 @@ String orderFileDownloadErrorMessage(DioException error) {
     }
   }
 
-  return apiErrorMessage(error, fallback: 'تعذر تحميل الملف.');
+  return apiErrorMessage(error, fallback: tr('تعذر تحميل الملف.'));
 }

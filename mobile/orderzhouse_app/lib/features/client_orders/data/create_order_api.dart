@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import 'create_order_models.dart';
+import '../../../core/i18n/i18n.dart';
 
 class CreateOrderApi {
   CreateOrderApi(this._dio);
@@ -37,7 +38,7 @@ class CreateOrderApi {
     }
     throw DioException(
       requestOptions: response.requestOptions,
-      message: 'استجابة غير متوقعة من إنشاء الطلب.',
+      message: tr('استجابة غير متوقعة من إنشاء الطلب.'),
     );
   }
 }

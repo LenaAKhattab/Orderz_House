@@ -12,6 +12,7 @@ import '../data/my_articles_copy.dart';
 import '../data/my_articles_models.dart';
 import 'manuscript_submit_args.dart';
 import 'my_articles_controllers.dart';
+import '../../../../core/i18n/i18n.dart';
 
 class MyArticlesScreen extends ConsumerWidget {
   const MyArticlesScreen({super.key});
@@ -24,7 +25,7 @@ class MyArticlesScreen extends ConsumerWidget {
     if (!auth.isAuthenticated) {
       return Scaffold(
         backgroundColor: AppColors.homeMobileBg,
-        appBar: AppBar(title: const Text(myArticlesTitleAr)),
+        appBar: AppBar(title: Text(myArticlesTitleAr)),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -33,14 +34,14 @@ class MyArticlesScreen extends ConsumerWidget {
               children: [
                 const Icon(Icons.lock_outline, size: 48, color: AppColors.textMuted),
                 const SizedBox(height: 12),
-                const Text(
+                Text(
                   myArticlesUnauthorizedAr,
                   textAlign: TextAlign.center,
                   style: TextStyle(color: AppColors.textMuted, height: 1.6),
                 ),
                 const SizedBox(height: 16),
                 OhButton(
-                  label: 'تسجيل الدخول',
+                  label: tr('تسجيل الدخول'),
                   onPressed: () => context.push(AppRoutes.login),
                 ),
               ],
@@ -53,9 +54,9 @@ class MyArticlesScreen extends ConsumerWidget {
     if (auth.user?.isFreelancerAccount != true) {
       return Scaffold(
         backgroundColor: AppColors.homeMobileBg,
-        appBar: AppBar(title: const Text(myArticlesTitleAr)),
-        body: const OhEmptyBody(
-          message: 'هذه الصفحة متاحة للمستقلين فقط.',
+        appBar: AppBar(title: Text(myArticlesTitleAr)),
+        body: OhEmptyBody(
+          message: tr('هذه الصفحة متاحة للمستقلين فقط.'),
           icon: Icons.person_off_outlined,
         ),
       );
@@ -63,16 +64,16 @@ class MyArticlesScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.homeMobileBg,
-      appBar: AppBar(title: const Text(myArticlesTitleAr)),
+      appBar: AppBar(title: Text(myArticlesTitleAr)),
       body: RefreshIndicator(
         onRefresh: () => ref.read(myArticlesControllerProvider.notifier).refresh(),
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
           children: [
-            const Text(
+            Text(
               myArticlesSubtitleAr,
-              textAlign: TextAlign.right,
+              textAlign: TextAlign.start,
               style: TextStyle(color: AppColors.textMuted, height: 1.5),
             ),
             const SizedBox(height: 12),
@@ -93,7 +94,7 @@ class MyArticlesScreen extends ConsumerWidget {
                 onRetry: () => ref.read(myArticlesControllerProvider.notifier).refresh(),
               )
             else if (ui.snapshot.items.isEmpty)
-              const OhEmptyBody(
+              OhEmptyBody(
                 message: '$myArticlesEmptyTitleAr\n$myArticlesEmptyDescAr',
                 icon: Icons.article_outlined,
               )
@@ -203,7 +204,7 @@ class MyArticleCard extends StatelessWidget {
     if (!context.mounted) return;
     if (!ok) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(myArticlesOpenLinkFailedAr)),
+        SnackBar(content: Text(myArticlesOpenLinkFailedAr)),
       );
     }
   }
@@ -226,7 +227,7 @@ class MyArticleCard extends StatelessWidget {
         children: [
           Text(
             (item.title?.trim().isNotEmpty == true) ? item.title!.trim() : '—',
-            textAlign: TextAlign.right,
+            textAlign: TextAlign.start,
             style: const TextStyle(
               fontWeight: FontWeight.w800,
               fontSize: 15,
@@ -236,7 +237,7 @@ class MyArticleCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Align(
-            alignment: Alignment.centerRight,
+            alignment: AlignmentDirectional.centerStart,
             child: _StatusBadge(
               label: item.statusLabelAr,
               status: item.portfolioStatus,
@@ -250,12 +251,12 @@ class MyArticleCard extends StatelessWidget {
           if (item.grossAmountJod != null && item.grossAmountJod!.trim().isNotEmpty)
             _MetaRow(
               label: myArticlesGrossLabelAr,
-              value: '${item.grossAmountJod} د.أ (قيمة المقال — ليست للسحب)',
+              value: trf('{0} د.أ (قيمة المقال — ليست للسحب)', [item.grossAmountJod]),
             ),
           if (item.freelancerNetJod != null && item.freelancerNetJod!.trim().isNotEmpty)
             _MetaRow(
               label: myArticlesNetLabelAr,
-              value: '${item.freelancerNetJod} د.أ',
+              value: trf('{0} د.أ', [item.freelancerNetJod]),
               emphasize: true,
             ),
           if (item.reviewStatus != null && item.reviewStatus!.trim().isNotEmpty)
@@ -274,7 +275,7 @@ class MyArticleCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               manuscriptRevisionNotesLabelAr,
-              textAlign: TextAlign.right,
+              textAlign: TextAlign.start,
               style: const TextStyle(
                 fontWeight: FontWeight.w700,
                 fontSize: 12,
@@ -284,7 +285,7 @@ class MyArticleCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               item.revisionNote!.trim(),
-              textAlign: TextAlign.right,
+              textAlign: TextAlign.start,
               style: const TextStyle(height: 1.45, color: AppColors.textInk),
             ),
           ],
@@ -300,9 +301,9 @@ class MyArticleCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text(
+                  Text(
                     myArticlesPublishSuccessAr,
-                    textAlign: TextAlign.right,
+                    textAlign: TextAlign.start,
                     style: TextStyle(
                       fontWeight: FontWeight.w700,
                       color: Color(0xFF027A48),
@@ -396,7 +397,7 @@ class _MetaRow extends StatelessWidget {
             ),
           ],
         ),
-        textAlign: TextAlign.right,
+        textAlign: TextAlign.start,
       ),
     );
   }

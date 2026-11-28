@@ -110,3 +110,54 @@ describe("projectManagedOrderForCustomer", () => {
     assert.equal(p.currencyCode, "AED");
   });
 });
+
+describe("deriveManagedCustomerState (execution separate from payment)", () => {
+  const unpaid = { status: "accepted", paymentStatus: "unpaid" };
+  const paid = { status: "accepted", paymentStatus: "paid" };
+  const st = (orderStatus, customerQuote = null, workAuthorized = false) =>
+    svc.deriveManagedCustomerState({ orderStatus, customerQuote, workAuthorized });
+
+  it("accepted offer + unpaid quote without override → awaiting quote payment (never in progress)", () => {
+    assert.deepEqual(st("assigned", unpaid), { display: "awaiting_quote_payment", paymentStatus: "pending" });
+    assert.deepEqual(st("draft", { status: "issued", paymentStatus: "unpaid" }), {
+      display: "awaiting_quote_payment",
+      paymentStatus: "pending",
+    });
+  });
+  it("paid but freelancer not yet engaged → awaiting assignment", () => {
+    assert.deepEqual(st("draft", paid), { display: "awaiting_assignment", paymentStatus: "paid" });
+    assert.deepEqual(st("assigned", paid), { display: "awaiting_assignment", paymentStatus: "paid" });
+  });
+  it("work started → in progress; an override keeps payment visibly pending", () => {
+    assert.deepEqual(st("in_progress", paid), { display: "in_progress", paymentStatus: "paid" });
+    assert.deepEqual(st("in_progress", unpaid, true), { display: "in_progress", paymentStatus: "pending" });
+    assert.deepEqual(st("pending_client_review", unpaid, true), { display: "in_progress", paymentStatus: "pending" });
+  });
+  it("authorized but not yet started → awaiting assignment, payment still pending", () => {
+    assert.deepEqual(st("assigned", unpaid, true), { display: "awaiting_assignment", paymentStatus: "pending" });
+  });
+  it("no quote: assigned is still being prepared; payment not required; never 'paid'", () => {
+    assert.deepEqual(st("assigned"), { display: "draft", paymentStatus: "not_required" });
+    assert.deepEqual(st("published"), { display: "published", paymentStatus: "not_required" });
+  });
+  it("expired unpaid quote is not payable → preparing, payment pending (not paid)", () => {
+    assert.deepEqual(st("assigned", { status: "expired", paymentStatus: "unpaid" }), {
+      display: "draft",
+      paymentStatus: "pending",
+    });
+  });
+  it("completed / cancelled pass through", () => {
+    assert.equal(st("completed", paid).display, "completed");
+    assert.equal(st("cancelled", unpaid).display, "cancelled");
+  });
+  it("projection never offers the legacy checkout", () => {
+    const p = svc.projectManagedOrderForCustomer(
+      { id: "1", orderStatus: "assigned", customerQuote: unpaid, files: [] },
+      { customer_pricing_status: "priced", customer_price_amount: "10", customer_price_currency: "JOD" },
+    );
+    assert.equal(p.orderStatus, "awaiting_quote_payment");
+    assert.equal(p.paymentStatus, "pending");
+    assert.equal(p.requiresPayment, false);
+    assert.equal(p.canPayNow, false);
+  });
+});

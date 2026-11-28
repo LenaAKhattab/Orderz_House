@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/oh_widgets.dart';
 import '../data/order_display_helpers.dart';
+import '../../../core/i18n/i18n.dart';
 
 /// Soft premium section card with optional leading icon.
 class OrderSectionCard extends StatelessWidget {
@@ -56,7 +57,7 @@ class OrderSectionCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   title,
-                  textAlign: TextAlign.right,
+                  textAlign: TextAlign.start,
                   style: const TextStyle(
                     fontWeight: FontWeight.w800,
                     fontSize: 15,
@@ -109,7 +110,7 @@ class OrderInfoRow extends StatelessWidget {
             flex: 3,
             child: Text(
               value,
-              textAlign: TextAlign.left,
+              textAlign: TextAlign.end,
               style: const TextStyle(
                 color: AppColors.textInk,
                 fontWeight: FontWeight.w700,
@@ -290,28 +291,28 @@ class OrderStatusBadgeStyle {
 
 OrderStatusBadgeStyle orderStatusBadgeStyle(String? key) {
   final k = (key ?? '').toLowerCase();
-  if (k.contains('open_for_bids') || k.contains('مفتوح للعروض')) {
+  if (k.contains('open_for_bids') || k.contains('مفتوح للعروض') || k.contains('open for')) {
     return OrderStatusBadgeStyle(
       background: AppColors.secondary.withValues(alpha: 0.2),
       foreground: AppColors.primary,
       icon: Icons.gavel_outlined,
     );
   }
-  if (k.contains('open_for_freelancers') || k.contains('مفتوح للمستقلين') || k.contains('متاح')) {
+  if (k.contains('open_for_freelancers') || k.contains('مفتوح للمستقلين') || k.contains('متاح') || k.contains('available')) {
     return OrderStatusBadgeStyle(
       background: AppColors.secondary.withValues(alpha: 0.18),
       foreground: AppColors.primaryMid,
       icon: Icons.storefront_outlined,
     );
   }
-  if (k.contains('in_progress') || k.contains('قيد التنفيذ') || k.contains('ready_for_work') || k.contains('assigned')) {
+  if (k.contains('in_progress') || k.contains('قيد التنفيذ') || k.contains('in progress') || k.contains('ready_for_work') || k.contains('assigned')) {
     return OrderStatusBadgeStyle(
       background: const Color(0xFFE8F1FF),
       foreground: AppColors.primaryDeep,
       icon: Icons.play_circle_outline,
     );
   }
-  if (k.contains('pending_client_review') || k.contains('submitted') || k.contains('بانتظار')) {
+  if (k.contains('pending_client_review') || k.contains('submitted') || (k.contains('بانتظار') && !k.contains('دفع')) || k.contains('awaiting_assignment') || k.contains('pending review') || k.contains('assignment')) {
     return OrderStatusBadgeStyle(
       background: const Color(0xFFFFF4E5),
       foreground: const Color(0xFFB54708),
@@ -327,8 +328,8 @@ OrderStatusBadgeStyle orderStatusBadgeStyle(String? key) {
   }
   if (k.contains('completed') || k.contains('مكتمل')) {
     return OrderStatusBadgeStyle(
-      background: AppColors.success.withValues(alpha: 0.12),
-      foreground: AppColors.success,
+      background: const Color(0xFFE7F6EC),
+      foreground: const Color(0xFF1E7A3E),
       icon: Icons.check_circle_outline,
     );
   }
@@ -339,7 +340,7 @@ OrderStatusBadgeStyle orderStatusBadgeStyle(String? key) {
       icon: Icons.cancel_outlined,
     );
   }
-  if (k.contains('pending_payment') || k.contains('دفع')) {
+  if (k.contains('pending_payment') || k.contains('دفع') || k.contains('payment')) {
     return OrderStatusBadgeStyle(
       background: const Color(0xFFFFF4E5),
       foreground: const Color(0xFFB54708),
@@ -365,8 +366,8 @@ class OrderDetailHeroCard extends StatelessWidget {
     this.budgetLabel,
     this.budgetDisplay,
     this.dateLabel,
-    this.dateCaption = 'التاريخ',
-  });
+    String? dateCaption,
+  }) : _dateCaption = dateCaption;
 
   final String title;
   final String? orderId;
@@ -376,7 +377,9 @@ class OrderDetailHeroCard extends StatelessWidget {
   final String? budgetLabel;
   final Widget? budgetDisplay;
   final String? dateLabel;
-  final String dateCaption;
+  final String? _dateCaption;
+
+  String get dateCaption => _dateCaption ?? tr('التاريخ');
 
   @override
   Widget build(BuildContext context) {
@@ -403,8 +406,8 @@ class OrderDetailHeroCard extends StatelessWidget {
         children: [
           if (orderId != null && orderId!.trim().isNotEmpty)
             Text(
-              'طلب #$orderId',
-              textAlign: TextAlign.right,
+              trf('طلب #{0}', [orderId]),
+              textAlign: TextAlign.start,
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.75),
                 fontSize: 12,
@@ -414,7 +417,7 @@ class OrderDetailHeroCard extends StatelessWidget {
           if (orderId != null && orderId!.trim().isNotEmpty) const SizedBox(height: 6),
           Text(
             title,
-            textAlign: TextAlign.right,
+            textAlign: TextAlign.start,
             style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.w800,
@@ -448,7 +451,7 @@ class OrderDetailHeroCard extends StatelessWidget {
                     Expanded(
                       child: _HeroStat(
                         icon: Icons.payments_outlined,
-                        label: 'الميزانية',
+                        label: tr('الميزانية'),
                         value: budgetLabel ?? '',
                         valueWidget: budgetDisplay,
                       ),

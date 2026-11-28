@@ -230,6 +230,8 @@
     "next": {
       "pay": "Voltooi de betaling om uw opdracht op de marktplaats te publiceren.",
       "payAfterBid": "Voltooi de betaling voor het gekozen bod, zodat de freelancer kan beginnen.",
+      "payQuote": "Betaal de offerte zodat het team met je opdracht kan beginnen.",
+      "awaitingAssignment": "Het team wijst een freelancer toe aan je opdracht.",
       "adminReview": "Betaald — het team beoordeelt uw opdracht vóór publicatie.",
       "reviewDelivery": "De freelancer heeft opgeleverd — bekijk de bestanden en keur de oplevering goed of vraag een revisie aan.",
       "revisionSent": "Revisie aangevraagd — wacht op een bijgewerkte versie van de freelancer.",

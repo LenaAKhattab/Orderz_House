@@ -7,6 +7,7 @@ import '../../../core/router/routes.dart';
 import '../../../core/widgets/oh_widgets.dart';
 import 'auth_controller.dart';
 import 'auth_form_widgets.dart';
+import '../../../core/i18n/i18n.dart';
 
 class ForgotPasswordEmailScreen extends ConsumerStatefulWidget {
   const ForgotPasswordEmailScreen({super.key});
@@ -37,14 +38,14 @@ class _ForgotPasswordEmailScreenState extends ConsumerState<ForgotPasswordEmailS
       await ref.read(authControllerProvider.notifier).requestForgotPasswordOtp(_email.text);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تم إرسال رمز التحقق')),
+        SnackBar(content: Text(tr('تم إرسال رمز التحقق'))),
       );
       context.push(
         '${AppRoutes.forgotPasswordOtp}?email=${Uri.encodeComponent(_email.text.trim())}',
       );
     } catch (e) {
       setState(() {
-        _error = apiErrorMessage(e, fallback: 'البريد غير موجود أو لا يمكن تنفيذ العملية');
+        _error = apiErrorMessage(e, fallback: tr('البريد غير موجود أو لا يمكن تنفيذ العملية'));
       });
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -61,9 +62,9 @@ class _ForgotPasswordEmailScreenState extends ConsumerState<ForgotPasswordEmailS
         child: ListView(
           padding: const EdgeInsets.fromLTRB(24, 8, 24, 28),
           children: [
-            const AuthHeroHeader(
-              title: 'نسيت كلمة المرور؟',
-              subtitle: 'أدخل بريدك الإلكتروني لإرسال رمز التحقق.',
+            AuthHeroHeader(
+              title: tr('نسيت كلمة المرور؟'),
+              subtitle: tr('أدخل بريدك الإلكتروني لإرسال رمز التحقق.'),
             ),
             const SizedBox(height: 32),
             if (_error != null) ...[
@@ -72,19 +73,19 @@ class _ForgotPasswordEmailScreenState extends ConsumerState<ForgotPasswordEmailS
             ],
             AuthPillField(
               controller: _email,
-              hint: 'البريد الإلكتروني',
+              hint: tr('البريد الإلكتروني'),
               prefixIcon: Icons.mail_outline_rounded,
               keyboardType: TextInputType.emailAddress,
               textDirection: TextDirection.ltr,
               validator: (v) {
-                if (v == null || v.trim().isEmpty) return 'البريد الإلكتروني مطلوب.';
-                if (!v.contains('@')) return 'صيغة البريد غير صالحة.';
+                if (v == null || v.trim().isEmpty) return tr('البريد الإلكتروني مطلوب.');
+                if (!v.contains('@')) return tr('صيغة البريد غير صالحة.');
                 return null;
               },
             ),
             const SizedBox(height: 28),
             AuthPrimaryButton(
-              label: 'إرسال الرمز',
+              label: tr('إرسال الرمز'),
               isLoading: _submitting,
               onPressed: _submit,
             ),
@@ -111,7 +112,7 @@ class _ForgotPasswordOtpScreenState extends ConsumerState<ForgotPasswordOtpScree
 
   Future<void> _submit() async {
     if (_otp.trim().length != 6) {
-      setState(() => _error = 'أدخل رمز التحقق المكوّن من 6 أرقام.');
+      setState(() => _error = tr('أدخل رمز التحقق المكوّن من 6 أرقام.'));
       return;
     }
     setState(() {
@@ -129,7 +130,7 @@ class _ForgotPasswordOtpScreenState extends ConsumerState<ForgotPasswordOtpScree
         extra: {'email': widget.email, 'resetToken': token},
       );
     } catch (e) {
-      setState(() => _error = apiErrorMessage(e, fallback: 'الرمز غير صحيح'));
+      setState(() => _error = apiErrorMessage(e, fallback: tr('الرمز غير صحيح')));
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -144,8 +145,8 @@ class _ForgotPasswordOtpScreenState extends ConsumerState<ForgotPasswordOtpScree
         padding: const EdgeInsets.fromLTRB(24, 8, 24, 28),
         children: [
           AuthHeroHeader(
-            title: 'أدخل رمز التحقق',
-            subtitle: 'أرسلنا رمزًا مكوّنًا من 6 أرقام إلى\n${widget.email}',
+            title: tr('أدخل رمز التحقق'),
+            subtitle: trf('أرسلنا رمزًا مكوّنًا من 6 أرقام إلى\n{0}', [widget.email]),
           ),
           const SizedBox(height: 32),
           if (_error != null) ...[
@@ -155,7 +156,7 @@ class _ForgotPasswordOtpScreenState extends ConsumerState<ForgotPasswordOtpScree
           AuthOtpBoxes(length: 6, onChanged: (value) => setState(() => _otp = value)),
           const SizedBox(height: 28),
           AuthPrimaryButton(
-            label: 'تأكيد الرمز',
+            label: tr('تأكيد الرمز'),
             isLoading: _submitting,
             onPressed: _submit,
           ),
@@ -197,7 +198,7 @@ class _ForgotPasswordResetScreenState extends ConsumerState<ForgotPasswordResetS
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (widget.resetToken.isEmpty) {
-      setState(() => _error = 'رمز إعادة التعيين غير صالح. أعد المحاولة.');
+      setState(() => _error = tr('رمز إعادة التعيين غير صالح. أعد المحاولة.'));
       return;
     }
     setState(() {
@@ -212,11 +213,11 @@ class _ForgotPasswordResetScreenState extends ConsumerState<ForgotPasswordResetS
           );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تم تغيير كلمة المرور بنجاح')),
+        SnackBar(content: Text(tr('تم تغيير كلمة المرور بنجاح'))),
       );
       context.go(AppRoutes.login);
     } catch (e) {
-      setState(() => _error = apiErrorMessage(e, fallback: 'البريد غير موجود أو لا يمكن تنفيذ العملية'));
+      setState(() => _error = apiErrorMessage(e, fallback: tr('البريد غير موجود أو لا يمكن تنفيذ العملية')));
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -232,9 +233,9 @@ class _ForgotPasswordResetScreenState extends ConsumerState<ForgotPasswordResetS
         child: ListView(
           padding: const EdgeInsets.fromLTRB(24, 8, 24, 28),
           children: [
-            const AuthHeroHeader(
-              title: 'كلمة مرور جديدة',
-              subtitle: 'اختر كلمة مرور تحتوي حرفاً إنجليزياً ورقماً، وطولها 8 أحرف على الأقل.',
+            AuthHeroHeader(
+              title: tr('كلمة مرور جديدة'),
+              subtitle: tr('اختر كلمة مرور تحتوي حرفاً إنجليزياً ورقماً، وطولها 8 أحرف على الأقل.'),
             ),
             const SizedBox(height: 32),
             if (_error != null) ...[
@@ -243,15 +244,15 @@ class _ForgotPasswordResetScreenState extends ConsumerState<ForgotPasswordResetS
             ],
             AuthPillField(
               controller: _password,
-              hint: 'كلمة المرور الجديدة',
+              hint: tr('كلمة المرور الجديدة'),
               prefixIcon: Icons.lock_outline_rounded,
               obscureText: _obscure,
               textDirection: TextDirection.ltr,
               validator: (v) {
                 final value = v ?? '';
-                if (value.length < 8) return 'كلمة المرور يجب أن تكون 8 أحرف على الأقل.';
+                if (value.length < 8) return tr('كلمة المرور يجب أن تكون 8 أحرف على الأقل.');
                 if (!RegExp(r'[A-Za-z]').hasMatch(value) || !RegExp(r'[0-9]').hasMatch(value)) {
-                  return 'يجب أن تحتوي حرفاً إنجليزياً ورقماً.';
+                  return tr('يجب أن تحتوي حرفاً إنجليزياً ورقماً.');
                 }
                 return null;
               },
@@ -259,7 +260,7 @@ class _ForgotPasswordResetScreenState extends ConsumerState<ForgotPasswordResetS
             const SizedBox(height: 14),
             AuthPillField(
               controller: _confirm,
-              hint: 'تأكيد كلمة المرور',
+              hint: tr('تأكيد كلمة المرور'),
               prefixIcon: Icons.lock_outline_rounded,
               obscureText: _obscure,
               textDirection: TextDirection.ltr,
@@ -268,13 +269,13 @@ class _ForgotPasswordResetScreenState extends ConsumerState<ForgotPasswordResetS
                 icon: Icon(_obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined),
               ),
               validator: (v) {
-                if (v != _password.text) return 'كلمتا المرور غير متطابقتين.';
+                if (v != _password.text) return tr('كلمتا المرور غير متطابقتين.');
                 return null;
               },
             ),
             const SizedBox(height: 28),
             AuthPrimaryButton(
-              label: 'حفظ كلمة المرور',
+              label: tr('حفظ كلمة المرور'),
               isLoading: _submitting,
               onPressed: _submit,
             ),

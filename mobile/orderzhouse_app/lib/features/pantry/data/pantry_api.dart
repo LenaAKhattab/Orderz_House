@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import 'pantry_models.dart';
+import '../../../core/i18n/i18n.dart';
 
 class PantryApi {
   PantryApi(this._dio);
@@ -19,7 +20,7 @@ class PantryApi {
     if (requestJson is! Map) {
       throw DioException(
         requestOptions: response.requestOptions,
-        message: 'تعذر قراءة تفاصيل الطلب.',
+        message: tr('تعذر قراءة تفاصيل الطلب.'),
       );
     }
     var request = PantryRequest.fromJson(Map<String, dynamic>.from(requestJson));
@@ -88,7 +89,7 @@ class PantryApi {
     if (delivery is Map) return PantryDelivery.fromJson(Map<String, dynamic>.from(delivery));
     throw DioException(
       requestOptions: response.requestOptions,
-      message: 'تم إرسال التسليم.',
+      message: tr('تم إرسال التسليم.'),
     );
   }
 }

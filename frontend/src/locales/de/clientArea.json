@@ -230,6 +230,8 @@
     "next": {
       "pay": "Schließen Sie die Zahlung ab, um Ihren Auftrag auf dem Marktplatz zu veröffentlichen.",
       "payAfterBid": "Schließen Sie die Zahlung für das ausgewählte Angebot ab, damit der Freelancer beginnen kann.",
+      "payQuote": "Bezahlen Sie das Angebot, damit das Team mit Ihrem Auftrag beginnen kann.",
+      "awaitingAssignment": "Das Team weist Ihrem Auftrag einen Freelancer zu.",
       "adminReview": "Bezahlt – das Team prüft Ihren Auftrag vor der Veröffentlichung.",
       "reviewDelivery": "Der Freelancer hat geliefert – prüfen Sie die Dateien und genehmigen Sie die Lieferung oder fordern Sie eine Überarbeitung an.",
       "revisionSent": "Überarbeitung angefordert – wartet auf eine aktualisierte Version vom Freelancer.",

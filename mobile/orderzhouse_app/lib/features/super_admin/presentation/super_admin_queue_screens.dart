@@ -13,6 +13,7 @@ import '../data/super_admin_models.dart';
 import '../data/super_admin_pantry_models.dart';
 import 'super_admin_action_dialogs.dart';
 import 'super_admin_ui.dart';
+import '../../../core/i18n/i18n.dart';
 
 class SuperAdminIdentityQueueScreen extends ConsumerWidget {
   const SuperAdminIdentityQueueScreen({super.key});
@@ -37,13 +38,13 @@ class SuperAdminIdentityQueueScreen extends ConsumerWidget {
           if (snapshot.loadFailed && snapshot.pendingItems.isEmpty) {
             return SuperAdminQueueErrorOrEmpty(
               isError: true,
-              message: 'تعذّر تحميل طلبات التوثيق. حاول مرة أخرى.',
+              message: tr('تعذّر تحميل طلبات التوثيق. حاول مرة أخرى.'),
               onRetry: () => ref.read(superAdminIdentityQueueProvider.notifier).refresh(),
             );
           }
           final kycItems = snapshot.pendingItems;
           if (kycItems.isEmpty) {
-            return const SuperAdminQueueErrorOrEmpty(
+            return SuperAdminQueueErrorOrEmpty(
               isError: false,
               message: superAdminActivationEmptyAr,
             );
@@ -84,28 +85,28 @@ class SuperAdminSubscriptionActivationQueueScreen extends ConsumerWidget {
           if (snapshot.subscriptionLoadFailed) {
             return SuperAdminQueueErrorOrEmpty(
               isError: true,
-              message: 'تعذّر تحميل طلبات تفعيل الاشتراك. حاول مرة أخرى.',
+              message: tr('تعذّر تحميل طلبات تفعيل الاشتراك. حاول مرة أخرى.'),
               onRetry: () => ref.read(superAdminActivationQueueProvider.notifier).refresh(),
             );
           }
           final classified = snapshot.subscriptionClassification;
           if (classified.paidActionable.isEmpty && classified.legacyFree.isEmpty) {
-            return const SuperAdminQueueErrorOrEmpty(
+            return SuperAdminQueueErrorOrEmpty(
               isError: false,
               message: superAdminPaidSubscriptionActivationEmptyAr,
             );
           }
           final sections = <Widget>[];
           if (classified.paidActionable.isNotEmpty) {
-            sections.add(const _SectionHeader(title: 'طلبات مدفوعة'));
+            sections.add(_SectionHeader(title: tr('طلبات مدفوعة')));
             sections.addAll(classified.paidActionable.map((e) => _SubscriptionQueueCard(item: e)));
           } else {
             sections.add(
-              const Padding(
+              Padding(
                 padding: EdgeInsets.only(bottom: 8),
                 child: Text(
                   superAdminPaidSubscriptionActivationEmptyAr,
-                  textAlign: TextAlign.right,
+                  textAlign: TextAlign.start,
                   style: TextStyle(color: AppColors.textMuted, fontSize: 13, height: 1.4),
                 ),
               ),
@@ -113,13 +114,13 @@ class SuperAdminSubscriptionActivationQueueScreen extends ConsumerWidget {
           }
           if (classified.legacyFree.isNotEmpty) {
             if (sections.isNotEmpty) sections.add(const SizedBox(height: 8));
-            sections.add(const _SectionHeader(title: superAdminLegacyFreeActivationSectionAr));
+            sections.add(_SectionHeader(title: superAdminLegacyFreeActivationSectionAr));
             sections.add(
-              const Padding(
+              Padding(
                 padding: EdgeInsets.only(bottom: 8),
                 child: Text(
-                  'هذه الطلبات ليست تفعيل اشتراك مدفوع — راجعها يدوياً أو عالجها من الويب.',
-                  textAlign: TextAlign.right,
+                  tr('هذه الطلبات ليست تفعيل اشتراك مدفوع — راجعها يدوياً أو عالجها من الويب.'),
+                  textAlign: TextAlign.start,
                   style: TextStyle(color: AppColors.textMuted, fontSize: 12, height: 1.4),
                 ),
               ),
@@ -172,7 +173,7 @@ class _SuperAdminActivationQueueScreenState extends ConsumerState<SuperAdminActi
           final kycItems = snapshot.kycItems.where((e) => e.isPendingReview).toList();
           final subItems = snapshot.subscriptionClassification.paidActionable;
           if (kycItems.isEmpty && subItems.isEmpty) {
-            return const SuperAdminQueueErrorOrEmpty(
+            return SuperAdminQueueErrorOrEmpty(
               isError: false,
               message: superAdminActivationEmptyAr,
             );
@@ -187,7 +188,7 @@ class _SuperAdminActivationQueueScreenState extends ConsumerState<SuperAdminActi
               var cursor = index;
               if (kycItems.isNotEmpty) {
                 if (cursor == 0) {
-                  return const _SectionHeader(title: superAdminActivationKycSectionAr);
+                  return _SectionHeader(title: superAdminActivationKycSectionAr);
                 }
                 cursor -= 1;
                 if (cursor < kycItems.length) {
@@ -197,7 +198,7 @@ class _SuperAdminActivationQueueScreenState extends ConsumerState<SuperAdminActi
               }
               if (subItems.isNotEmpty) {
                 if (cursor == 0) {
-                  return const _SectionHeader(title: superAdminActivationSubscriptionSectionAr);
+                  return _SectionHeader(title: superAdminActivationSubscriptionSectionAr);
                 }
                 cursor -= 1;
                 return _SubscriptionQueueCard(item: subItems[cursor]);
@@ -222,7 +223,7 @@ class _SectionHeader extends StatelessWidget {
       padding: const EdgeInsets.only(top: 4, bottom: 2),
       child: Text(
         title,
-        textAlign: TextAlign.right,
+        textAlign: TextAlign.start,
         style: const TextStyle(
           fontWeight: FontWeight.w800,
           fontSize: 15,
@@ -245,7 +246,7 @@ class _KycQueueCard extends StatelessWidget {
         : superAdminActivationNoDocumentsAr;
     return SuperAdminQueueCard(
       key: Key('sa-kyc-queue-${item.id}'),
-      title: item.freelancerName ?? item.freelancerEmail ?? 'مستقل',
+      title: item.freelancerName ?? item.freelancerEmail ?? tr('مستقل'),
       subtitle: [
         if (item.freelancerEmail != null) item.freelancerEmail,
         docsLabel,
@@ -270,7 +271,7 @@ class _SubscriptionQueueCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return SuperAdminQueueCard(
       key: Key('sa-subscription-queue-${item.id}'),
-      title: item.freelancerName ?? item.freelancerEmail ?? 'مستقل',
+      title: item.freelancerName ?? item.freelancerEmail ?? tr('مستقل'),
       subtitle: [
         if (item.planTitle != null) item.planTitle,
         if (item.freelancerEmail != null) item.freelancerEmail,
@@ -278,7 +279,7 @@ class _SubscriptionQueueCard extends StatelessWidget {
       ].whereType<String>().join('\n'),
       meta: item.priceJod != null && item.priceJod! > 0 ? formatSuperAdminJod(item.priceJod) : null,
       chip: SuperAdminStatusChip(
-        label: legacy ? 'مراجعة يدوية' : 'بانتظار تفعيل الاشتراك',
+        label: legacy ? tr('مراجعة يدوية') : tr('بانتظار تفعيل الاشتراك'),
         tone: legacy ? SuperAdminChipTone.neutral : SuperAdminChipTone.warning,
       ),
       onTap: legacy
@@ -317,7 +318,7 @@ class _SuperAdminClaimsQueueScreenState extends ConsumerState<SuperAdminClaimsQu
       if (!started) return;
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(superAdminActionSuccessAr)),
+        SnackBar(content: Text(superAdminActionSuccessAr)),
       );
     } catch (error) {
       if (!mounted) return;
@@ -332,7 +333,7 @@ class _SuperAdminClaimsQueueScreenState extends ConsumerState<SuperAdminClaimsQu
     final async = ref.watch(superAdminClaimsQueueProvider);
     final busyId = ref.watch(superAdminClaimsBusyIdProvider);
     return SuperAdminQueueScaffold(
-      title: 'المطالبات المالية',
+      title: tr('المطالبات المالية'),
       onRefresh: () => ref.read(superAdminClaimsQueueProvider.notifier).refresh(),
       body: async.when(
         loading: () => ListView(
@@ -346,9 +347,9 @@ class _SuperAdminClaimsQueueScreenState extends ConsumerState<SuperAdminClaimsQu
         ),
         data: (items) {
           if (items.isEmpty) {
-            return const SuperAdminQueueErrorOrEmpty(
+            return SuperAdminQueueErrorOrEmpty(
               isError: false,
-              message: 'لا توجد مطالبات تحتاج إجراء.',
+              message: tr('لا توجد مطالبات تحتاج إجراء.'),
             );
           }
           return ListView.separated(
@@ -361,10 +362,10 @@ class _SuperAdminClaimsQueueScreenState extends ConsumerState<SuperAdminClaimsQu
               final canUpdate = canUpdatePendingClaimStatus(item);
               final busy = busyId == item.id;
               return SuperAdminQueueCard(
-                title: item.requestTitle ?? 'مطالبة مالية',
+                title: item.requestTitle ?? tr('مطالبة مالية'),
                 subtitle: [
                   if (item.freelancerName != null) item.freelancerName,
-                  if (item.orderNumber != null) 'طلب ${item.orderNumber}',
+                  if (item.orderNumber != null) trf('طلب {0}', [item.orderNumber]),
                 ].whereType<String>().join(' · '),
                 meta: formatSuperAdminJod(item.totalPriceJod),
                 chip: SuperAdminStatusChip(
@@ -395,7 +396,7 @@ class SuperAdminPantryQueueScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(superAdminPantryQueueProvider);
     return SuperAdminQueueScaffold(
-      title: 'بيت المونة',
+      title: tr('بيت المونة'),
       onRefresh: () => ref.read(superAdminPantryQueueProvider.notifier).refresh(),
       body: async.when(
         loading: () => ListView(
@@ -409,9 +410,9 @@ class SuperAdminPantryQueueScreen extends ConsumerWidget {
         ),
         data: (items) {
           if (items.isEmpty) {
-            return const SuperAdminQueueErrorOrEmpty(
+            return SuperAdminQueueErrorOrEmpty(
               isError: false,
-              message: 'لا توجد طلبات بيت مونة تحتاج متابعة.',
+              message: tr('لا توجد طلبات بيت مونة تحتاج متابعة.'),
             );
           }
           return ListView.separated(
@@ -432,7 +433,7 @@ class SuperAdminPantryQueueScreen extends ConsumerWidget {
                 ].join('\n'),
                 meta: item.progressLabel,
                 chip: SuperAdminStatusChip(
-                  label: item.statusLabel ?? 'متابعة',
+                  label: item.statusLabel ?? tr('متابعة'),
                   tone: _pantryChipTone(item),
                 ),
                 onTap: () {
@@ -475,7 +476,7 @@ class SuperAdminArticlesQueueScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(superAdminArticlesQueueProvider);
     return SuperAdminQueueScaffold(
-      title: 'المقالات',
+      title: tr('المقالات'),
       onRefresh: () => ref.read(superAdminArticlesQueueProvider.notifier).refresh(),
       body: async.when(
         loading: () => ListView(
@@ -489,9 +490,9 @@ class SuperAdminArticlesQueueScreen extends ConsumerWidget {
         ),
         data: (items) {
           if (items.isEmpty) {
-            return const SuperAdminQueueErrorOrEmpty(
+            return SuperAdminQueueErrorOrEmpty(
               isError: false,
-              message: 'لا توجد مقالات تحتاج متابعة.',
+              message: tr('لا توجد مقالات تحتاج متابعة.'),
             );
           }
           return ListView.separated(
@@ -520,7 +521,7 @@ class SuperAdminArticlesQueueScreen extends ConsumerWidget {
                   if (item.valueJod != null) formatSuperAdminJod(item.valueJod),
                 ].join(' · '),
                 chip: SuperAdminStatusChip(
-                  label: item.statusLabel ?? 'متابعة',
+                  label: item.statusLabel ?? tr('متابعة'),
                   tone: _articleQueueChipTone(item),
                 ),
                 onTap: () => context.push(AppRoutes.superAdminArticlePath(item.id)),
@@ -565,31 +566,31 @@ class OhLikeLoading extends StatelessWidget {
 String _activationStatusAr(String? status) {
   switch ((status ?? '').trim().toLowerCase()) {
     case 'company_pending':
-      return 'بانتظار تفعيل الشركة';
+      return tr('بانتظار تفعيل الشركة');
     case 'company_approved':
-      return 'تم التفعيل';
+      return tr('تم التفعيل');
     case 'company_rejected':
-      return 'مرفوض';
+      return tr('مرفوض');
     default:
-      return status?.trim().isNotEmpty == true ? status!.trim() : 'بانتظار المراجعة';
+      return status?.trim().isNotEmpty == true ? status!.trim() : tr('بانتظار المراجعة');
   }
 }
 
 String _claimStatusAr(String? status) {
   switch ((status ?? '').trim().toLowerCase()) {
     case 'pending':
-      return 'قيد المراجعة';
+      return tr('قيد المراجعة');
     case 'accepted':
-      return 'مقبولة';
+      return tr('مقبولة');
     case 'rejected':
-      return 'مرفوضة';
+      return tr('مرفوضة');
     case 'frozen':
-      return 'مجمدة';
+      return tr('مجمدة');
     case 'requires_in_person_review':
-      return 'تحتاج مراجعة حضورية';
+      return tr('تحتاج مراجعة حضورية');
     case 'paid':
-      return 'مدفوعة';
+      return tr('مدفوعة');
     default:
-      return status?.trim().isNotEmpty == true ? status!.trim() : 'قيد المراجعة';
+      return status?.trim().isNotEmpty == true ? status!.trim() : tr('قيد المراجعة');
   }
 }

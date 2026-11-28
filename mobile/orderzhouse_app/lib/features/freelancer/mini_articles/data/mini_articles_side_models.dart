@@ -1,4 +1,5 @@
 import '../../../../core/network/json_helpers.dart';
+import '../../../../core/i18n/i18n.dart';
 
 class BildazoAuthorLinkStatus {
   const BildazoAuthorLinkStatus({
@@ -88,17 +89,17 @@ class EarnedBalanceEntry {
   String get statusLabelAr {
     switch (statusKey) {
       case 'pending_locked':
-        return 'معلّق · غير قابل للسحب';
+        return tr('معلّق · غير قابل للسحب');
       case 'pending':
-        return 'معلّق';
+        return tr('معلّق');
       case 'forfeited':
-        return 'مغلق';
+        return tr('مغلق');
       case 'awaiting_account_approval':
-        return 'مُفعّل · بانتظار اعتماد الحساب';
+        return tr('مُفعّل · بانتظار اعتماد الحساب');
       case 'settled_externally':
-        return 'قابل للسحب';
+        return tr('قابل للسحب');
       case 'voided':
-        return 'ملغى';
+        return tr('ملغى');
       default:
         return status?.trim().isNotEmpty == true ? status!.trim() : '—';
     }
@@ -384,17 +385,17 @@ class ActivationTrialSnapshot {
   String get statusLabelAr {
     switch ((status ?? '').trim()) {
       case 'not_started':
-        return 'التجربة غير مفعّلة';
+        return tr('التجربة غير مفعّلة');
       case 'eligible':
-        return 'مؤهل للتجربة';
+        return tr('مؤهل للتجربة');
       case 'trial_active':
-        return 'التجربة نشطة';
+        return tr('التجربة نشطة');
       case 'trial_expired_high_intent':
-        return 'انتهت التجربة';
+        return tr('انتهت التجربة');
       case 'paid_active':
-        return 'اشتراك مدفوع نشط';
+        return tr('اشتراك مدفوع نشط');
       default:
-        return status?.trim().isNotEmpty == true ? status!.trim() : 'حالة التجربة';
+        return status?.trim().isNotEmpty == true ? status!.trim() : tr('حالة التجربة');
     }
   }
 }

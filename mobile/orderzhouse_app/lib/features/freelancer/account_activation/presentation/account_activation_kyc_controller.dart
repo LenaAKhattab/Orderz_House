@@ -6,6 +6,7 @@ import '../../../../core/errors/api_error_message.dart';
 import '../../presentation/freelancer_eligibility_provider.dart';
 import '../data/account_activation_kyc_models.dart';
 import '../data/account_activation_kyc_repository.dart';
+import '../../../../core/i18n/i18n.dart';
 
 class AccountActivationKycUiState {
   const AccountActivationKycUiState({
@@ -62,7 +63,7 @@ class AccountActivationKycController extends StateNotifier<AccountActivationKycU
     } catch (e) {
       state = state.copyWith(
         loading: false,
-        error: apiErrorMessage(e, fallback: 'تعذر تحميل حالة تفعيل الحساب.'),
+        error: apiErrorMessage(e, fallback: tr('تعذر تحميل حالة تفعيل الحساب.')),
       );
     }
   }
@@ -97,7 +98,7 @@ class AccountActivationKycController extends StateNotifier<AccountActivationKycU
     } catch (e) {
       state = state.copyWith(
         submitting: false,
-        error: apiErrorMessage(e, fallback: 'تعذر إرسال طلب التفعيل.'),
+        error: apiErrorMessage(e, fallback: tr('تعذر إرسال طلب التفعيل.')),
       );
       return false;
     }

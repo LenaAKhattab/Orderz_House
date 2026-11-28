@@ -5,6 +5,7 @@ import '../../../core/widgets/oh_widgets.dart';
 import '../../orders/data/pool_order_models.dart';
 import '../../currency/presentation/jod_money_display.dart';
 import '../data/freelancer_pool_actions_models.dart';
+import '../../../core/i18n/i18n.dart';
 
 Future<SubmitPoolBidPayload?> showSubmitPoolBidSheet(
   BuildContext context, {
@@ -73,16 +74,16 @@ class _SubmitPoolBidSheetState extends State<_SubmitPoolBidSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text(
-            'تقديم عرض',
+          Text(
+            tr('تقديم عرض'),
             style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.textInk),
-            textAlign: TextAlign.right,
+            textAlign: TextAlign.start,
           ),
           const SizedBox(height: 6),
           Text(
             widget.order.title,
             style: const TextStyle(color: AppColors.textMuted, height: 1.4),
-            textAlign: TextAlign.right,
+            textAlign: TextAlign.start,
           ),
           if (widget.order.bidBudgetMin != null || widget.order.budget != null) ...[
             const SizedBox(height: 8),
@@ -96,8 +97,8 @@ class _SubmitPoolBidSheetState extends State<_SubmitPoolBidSheet> {
           const SizedBox(height: 16),
           OhTextField(
             controller: _amountController,
-            label: 'مبلغ العرض (JOD)',
-            hint: 'مثال: 150',
+            label: tr('مبلغ العرض (JOD)'),
+            hint: tr('مثال: 150'),
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             onChanged: (_) => setState(() {}),
             onFieldSubmitted: (_) => _submit(),
@@ -105,7 +106,7 @@ class _SubmitPoolBidSheetState extends State<_SubmitPoolBidSheet> {
           if (double.tryParse(_amountController.text.replaceAll(',', '.')) != null) ...[
             const SizedBox(height: 8),
             Align(
-              alignment: Alignment.centerRight,
+              alignment: AlignmentDirectional.centerStart,
               child: JodMoneyDisplay(
                 amount: double.tryParse(_amountController.text.replaceAll(',', '.')),
               ),
@@ -118,8 +119,8 @@ class _SubmitPoolBidSheetState extends State<_SubmitPoolBidSheet> {
           const SizedBox(height: 12),
           OhTextField(
             controller: _messageController,
-            label: 'رسالة اختيارية',
-            hint: 'أضف تفاصيلاً لعرضك...',
+            label: tr('رسالة اختيارية'),
+            hint: tr('أضف تفاصيلاً لعرضك...'),
             minLines: 3,
             maxLines: 6,
             keyboardType: TextInputType.multiline,
@@ -127,13 +128,13 @@ class _SubmitPoolBidSheetState extends State<_SubmitPoolBidSheet> {
           ),
           const SizedBox(height: 16),
           OhButton(
-            label: widget.isSubmitting ? 'جارٍ الإرسال...' : 'إرسال العرض',
+            label: widget.isSubmitting ? tr('جارٍ الإرسال...') : tr('إرسال العرض'),
             isLoading: widget.isSubmitting,
             onPressed: widget.isSubmitting ? null : _submit,
           ),
           const SizedBox(height: 8),
           OhButton(
-            label: 'إلغاء',
+            label: tr('إلغاء'),
             outlined: true,
             onPressed: widget.isSubmitting ? null : () => Navigator.of(context).pop(),
           ),

@@ -9,6 +9,7 @@ import '../../auth/presentation/auth_controller.dart';
 import '../../notifications/presentation/unread_notifications_controller.dart';
 import '../data/account_repository.dart';
 import '../domain/account_validators.dart';
+import '../../../core/i18n/i18n.dart';
 
 class DeleteAccountScreen extends ConsumerStatefulWidget {
   const DeleteAccountScreen({super.key});
@@ -35,7 +36,7 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
     if (!_formKey.currentState!.validate() || _submitting) return;
     if (!isDeleteAccountConfirmationValid(_confirmation.text)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('اكتب كلمة «حذف» للتأكيد.')),
+        SnackBar(content: Text(tr('اكتب كلمة «حذف» للتأكيد.'))),
       );
       return;
     }
@@ -43,16 +44,16 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
     final proceed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('تأكيد نهائي'),
-        content: const Text(
-          'سيتم تعطيل حسابك الآن ولن تستطيع الدخول بعده. هل تريد المتابعة؟',
+        title: Text(tr('تأكيد نهائي')),
+        content: Text(
+          tr('سيتم تعطيل حسابك الآن ولن تستطيع الدخول بعده. هل تريد المتابعة؟'),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('إلغاء')),
+          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: Text(tr('إلغاء'))),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: AppColors.error),
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('تعطيل الحساب'),
+            child: Text(tr('تعطيل الحساب')),
           ),
         ],
       ),
@@ -71,13 +72,13 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
       ref.invalidate(unreadNotificationsControllerProvider);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تم تعطيل الحساب بنجاح')),
+        SnackBar(content: Text(tr('تم تعطيل الحساب بنجاح'))),
       );
       context.go(AppRoutes.login);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(apiErrorMessage(e, fallback: 'تعذر تعطيل الحساب.'))),
+        SnackBar(content: Text(apiErrorMessage(e, fallback: tr('تعذر تعطيل الحساب.')))),
       );
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -88,7 +89,7 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.homeMobileBg,
-      appBar: AppBar(title: const Text('حذف الحساب')),
+      appBar: AppBar(title: Text(tr('حذف الحساب'))),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -101,11 +102,11 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: AppColors.error.withValues(alpha: 0.35)),
               ),
-              child: const Column(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
-                    'حذف الحساب إجراء لا يمكن التراجع عنه بسهولة.',
+                    tr('حذف الحساب إجراء لا يمكن التراجع عنه بسهولة.'),
                     style: TextStyle(
                       color: AppColors.error,
                       fontWeight: FontWeight.w800,
@@ -114,10 +115,10 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
                   ),
                   SizedBox(height: 10),
                   Text(
-                    'سيتم تعطيل حسابك ولن تستطيع الدخول.\n'
+                    tr('سيتم تعطيل حسابك ولن تستطيع الدخول.\n'
                     'سيتم حذف أو إخفاء بعض البيانات الشخصية غير الضرورية مثل رقم الهاتف والصورة الشخصية عندما يكون ذلك ممكنًا.\n'
                     'قد نحتفظ ببعض السجلات المرتبطة بالطلبات والمدفوعات والنزاعات والفواتير لأسباب تشغيلية وقانونية ومحاسبية.\n'
-                    'لا يتم حذف الطلبات أو المدفوعات بما يؤثر على حقوق العملاء أو المستقلين أو السجلات المالية.',
+                    'لا يتم حذف الطلبات أو المدفوعات بما يؤثر على حقوق العملاء أو المستقلين أو السجلات المالية.'),
                     style: TextStyle(color: AppColors.primaryDeep, height: 1.55),
                   ),
                 ],
@@ -140,7 +141,7 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
                     enableSuggestions: false,
                     validator: PasswordRules.validateCurrent,
                     decoration: InputDecoration(
-                      labelText: 'كلمة المرور الحالية',
+                      labelText: tr('كلمة المرور الحالية'),
                       suffixIcon: IconButton(
                         onPressed: () => setState(() => _obscure = !_obscure),
                         icon: Icon(
@@ -154,13 +155,13 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
                     controller: _confirmation,
                     validator: (v) {
                       if (!isDeleteAccountConfirmationValid(v)) {
-                        return 'اكتب كلمة «حذف» حرفياً للتأكيد.';
+                        return tr('اكتب كلمة «حذف» حرفياً للتأكيد.');
                       }
                       return null;
                     },
-                    decoration: const InputDecoration(
-                      labelText: 'اكتب «حذف» للتأكيد',
-                      helperText: 'يلزم كتابة كلمة حذف للمتابعة',
+                    decoration: InputDecoration(
+                      labelText: tr('اكتب «حذف» للتأكيد'),
+                      helperText: tr('يلزم كتابة كلمة حذف للمتابعة'),
                     ),
                   ),
                 ],
@@ -170,7 +171,7 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
             FilledButton(
               style: FilledButton.styleFrom(backgroundColor: AppColors.error),
               onPressed: _submitting ? null : _submit,
-              child: Text(_submitting ? 'جاري التعطيل...' : 'حذف الحساب'),
+              child: Text(_submitting ? tr('جاري التعطيل...') : tr('حذف الحساب')),
             ),
           ],
         ),

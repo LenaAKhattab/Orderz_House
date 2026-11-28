@@ -12,6 +12,7 @@ import '../../auth/presentation/auth_controller.dart';
 import '../data/course_access.dart';
 import '../data/course_models.dart';
 import 'courses_controllers.dart';
+import '../../../core/i18n/i18n.dart';
 
 /// Shell tab — freelancer courses list (clients see a role notice).
 class CoursesScreen extends ConsumerWidget {
@@ -24,7 +25,7 @@ class CoursesScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.homeMobileBg,
-      appBar: AppBar(title: const Text('الدورات')),
+      appBar: AppBar(title: Text(tr('الدورات'))),
       body: isFreelancer ? const _FreelancerCoursesBody() : const _ClientCoursesNotice(),
     );
   }
@@ -51,8 +52,8 @@ class _ClientCoursesNotice extends StatelessWidget {
               child: const Icon(Icons.school_rounded, color: AppColors.primary, size: 36),
             ),
             const SizedBox(height: 16),
-            const Text(
-              'الدورات للمستقلين',
+            Text(
+              tr('الدورات للمستقلين'),
               style: TextStyle(
                 color: AppColors.primaryDeep,
                 fontSize: 20,
@@ -61,15 +62,15 @@ class _ClientCoursesNotice extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
-            const Text(
-              'نظام الدورات التدريبية مخصّص لحسابات المستقلين. يمكنك تصفح الخدمات من حسابك أو الصفحة الرئيسية.',
+            Text(
+              tr('نظام الدورات التدريبية مخصّص لحسابات المستقلين. يمكنك تصفح الخدمات من حسابك أو الصفحة الرئيسية.'),
               style: TextStyle(color: AppColors.textMuted, height: 1.6),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 20),
             FilledButton(
               onPressed: () => context.push(AppRoutes.services),
-              child: const Text('تصفح الخدمات'),
+              child: Text(tr('تصفح الخدمات')),
             ),
           ],
         ),
@@ -86,16 +87,16 @@ class _FreelancerCoursesBody extends ConsumerWidget {
     final async = ref.watch(freelancerCoursesListProvider);
 
     return async.when(
-      loading: () => const OhLoadingBody(message: 'جاري تحميل الدورات...'),
+      loading: () => OhLoadingBody(message: tr('جاري تحميل الدورات...')),
       error: (e, _) => OhErrorBody(
         message: mapCourseAccessErrorMessage(e) ??
-            apiErrorMessage(e, fallback: 'تعذر تحميل الدورات.'),
+            apiErrorMessage(e, fallback: tr('تعذر تحميل الدورات.')),
         onRetry: () => ref.read(freelancerCoursesListProvider.notifier).refresh(),
       ),
       data: (courses) {
         if (courses.isEmpty) {
-          return const OhEmptyBody(
-            message: 'لا توجد دورات مخصّصة لك حالياً.',
+          return OhEmptyBody(
+            message: tr('لا توجد دورات مخصّصة لك حالياً.'),
             icon: Icons.school_outlined,
           );
         }
@@ -137,9 +138,9 @@ class _CoursesSummaryHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Text(
-      'المتاح لك: $accessible من $total',
+      trf('المتاح لك: {0} من {1}', [accessible, total]),
       key: const ValueKey('courses-accessible-summary'),
-      textAlign: TextAlign.right,
+      textAlign: TextAlign.start,
       style: const TextStyle(
         color: AppColors.textMuted,
         fontWeight: FontWeight.w700,
@@ -166,14 +167,14 @@ class FreelancerCourseCard extends StatelessWidget {
     if (uri == null) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(courseLockOpenPlansFailedAr)),
+        SnackBar(content: Text(courseLockOpenPlansFailedAr)),
       );
       return;
     }
     final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!ok && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(courseLockOpenPlansFailedAr)),
+        SnackBar(content: Text(courseLockOpenPlansFailedAr)),
       );
     }
   }
@@ -269,7 +270,7 @@ class FreelancerCourseCard extends StatelessWidget {
                     ),
                   ),
                   if (!locked)
-                    Icon(Icons.chevron_left_rounded, color: AppColors.textMuted.withValues(alpha: 0.7)),
+                    Icon(AppI18n.isEnglish ? Icons.chevron_right_rounded : Icons.chevron_left_rounded, color: AppColors.textMuted.withValues(alpha: 0.7)),
                 ],
               ),
               const SizedBox(height: 14),
@@ -299,8 +300,8 @@ class FreelancerCourseCard extends StatelessWidget {
                         color: AppColors.secondary.withValues(alpha: 0.25),
                         borderRadius: BorderRadius.circular(999),
                       ),
-                      child: const Text(
-                        'اختبار نهائي',
+                      child: Text(
+                        tr('اختبار نهائي'),
                         style: TextStyle(
                           color: AppColors.primaryDeep,
                           fontWeight: FontWeight.w800,
@@ -327,7 +328,7 @@ class FreelancerCourseCard extends StatelessWidget {
                 Text(
                   course.lockCopyAr.messageOrDefault,
                   key: const ValueKey('course-lock-message'),
-                  textAlign: TextAlign.right,
+                  textAlign: TextAlign.start,
                   style: const TextStyle(
                     color: AppColors.textMuted,
                     fontWeight: FontWeight.w600,
@@ -354,9 +355,9 @@ class FreelancerCourseCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  '${course.progress.completedLessons} من ${course.progress.totalLessons} دروس',
+                  trf('{0} من {1} دروس', [course.progress.completedLessons, course.progress.totalLessons]),
                   style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
-                  textAlign: TextAlign.left,
+                  textAlign: TextAlign.end,
                 ),
               ],
             ],

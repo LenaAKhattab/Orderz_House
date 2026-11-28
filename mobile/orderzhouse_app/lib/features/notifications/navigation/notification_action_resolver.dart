@@ -1,5 +1,6 @@
 import '../../../core/router/routes.dart';
 import '../data/notification_models.dart';
+import '../../../core/i18n/i18n.dart';
 
 /// Safe in-app navigation target resolved from a notification (no web URLs).
 class NotificationActionTarget {
@@ -95,36 +96,36 @@ NotificationActionTarget? _resolveFromDashboardLink(
     if (requestId != null) {
       return NotificationActionTarget(
         route: AppRoutes.freelancerPantryDetail(requestId),
-        buttonLabel: 'فتح الطلب',
+        buttonLabel: tr('فتح الطلب'),
       );
     }
-    return const NotificationActionTarget(
+    return NotificationActionTarget(
       route: AppRoutes.marketplace,
-      buttonLabel: 'فتح الطلبات المتاحة',
+      buttonLabel: tr('فتح الطلبات المتاحة'),
     );
   }
 
   if (path == '/dashboard/freelancer/financial-claims') {
     if (role != 'freelancer') return null;
-    return const NotificationActionTarget(
+    return NotificationActionTarget(
       route: AppRoutes.freelancerFinancialClaims,
-      buttonLabel: 'فتح المطالبات المالية',
+      buttonLabel: tr('فتح المطالبات المالية'),
     );
   }
 
   if (path == '/dashboard/freelancer/articles') {
     if (role != 'freelancer') return null;
-    return const NotificationActionTarget(
+    return NotificationActionTarget(
       route: AppRoutes.freelancerMiniArticles,
-      buttonLabel: 'فتح المقالات المصغّرة',
+      buttonLabel: tr('فتح المقالات المصغّرة'),
     );
   }
 
   if (path == '/dashboard/freelancer/my-articles') {
     if (role != 'freelancer') return null;
-    return const NotificationActionTarget(
+    return NotificationActionTarget(
       route: AppRoutes.freelancerMyArticles,
-      buttonLabel: 'فتح مقالاتي',
+      buttonLabel: tr('فتح مقالاتي'),
     );
   }
 
@@ -134,33 +135,33 @@ NotificationActionTarget? _resolveFromDashboardLink(
     final id = articleMatch.group(1)!;
     return NotificationActionTarget(
       route: AppRoutes.freelancerMiniArticlePath(id),
-      buttonLabel: 'فتح المقال',
+      buttonLabel: tr('فتح المقال'),
     );
   }
 
   if (path == '/dashboard/freelancer/activate-account' ||
       path == '/dashboard/freelancer/account-activation') {
     if (role != 'freelancer') return null;
-    return const NotificationActionTarget(
+    return NotificationActionTarget(
       route: AppRoutes.freelancerAccountActivation,
-      buttonLabel: 'فتح تفعيل الحساب',
+      buttonLabel: tr('فتح تفعيل الحساب'),
     );
   }
 
   if (path == '/dashboard/freelancer/plans') {
     // Phase 5K: no in-app plans screen — open profile instead of subscription UI.
     if (role != 'freelancer') return null;
-    return const NotificationActionTarget(
+    return NotificationActionTarget(
       route: AppRoutes.profile,
-      buttonLabel: 'فتح حسابي',
+      buttonLabel: tr('فتح حسابي'),
     );
   }
 
   if (path == '/dashboard/freelancer/courses') {
     if (role != 'freelancer') return null;
-    return const NotificationActionTarget(
+    return NotificationActionTarget(
       route: AppRoutes.courses,
-      buttonLabel: 'فتح الدورات',
+      buttonLabel: tr('فتح الدورات'),
     );
   }
 
@@ -170,16 +171,16 @@ NotificationActionTarget? _resolveFromDashboardLink(
     final id = courseMatch.group(1)!;
     return NotificationActionTarget(
       route: AppRoutes.courseDetailsPath(id),
-      buttonLabel: 'فتح الدورة',
+      buttonLabel: tr('فتح الدورة'),
     );
   }
 
   // Smart Orders S3/S4: assignment offers + compensation change requests.
   if (path == '/dashboard/freelancer/assignment-offers') {
     if (role != 'freelancer') return null;
-    return const NotificationActionTarget(
+    return NotificationActionTarget(
       route: AppRoutes.freelancerAssignmentOffers,
-      buttonLabel: 'فتح عروض التكليف',
+      buttonLabel: tr('فتح عروض التكليف'),
     );
   }
 
@@ -189,16 +190,16 @@ NotificationActionTarget? _resolveFromDashboardLink(
     final id = assignedMatch.group(1)!;
     return NotificationActionTarget(
       route: AppRoutes.freelancerOrderPath(id),
-      buttonLabel: 'فتح طلبي',
+      buttonLabel: tr('فتح طلبي'),
     );
   }
 
   // Training-round summary (order.pool.summary): the available-orders list, not one order.
   if (path == '/dashboard/freelancer/orders') {
     if (role != 'freelancer') return null;
-    return const NotificationActionTarget(
+    return NotificationActionTarget(
       route: AppRoutes.marketplace,
-      buttonLabel: 'فتح الطلبات المتاحة',
+      buttonLabel: tr('فتح الطلبات المتاحة'),
     );
   }
 
@@ -208,7 +209,7 @@ NotificationActionTarget? _resolveFromDashboardLink(
     final id = poolMatch.group(1)!;
     return NotificationActionTarget(
       route: AppRoutes.poolOrderPath(id),
-      buttonLabel: 'فتح في السوق',
+      buttonLabel: tr('فتح في السوق'),
     );
   }
 
@@ -218,7 +219,7 @@ NotificationActionTarget? _resolveFromDashboardLink(
     if (orderId == null) return null;
     return NotificationActionTarget(
       route: AppRoutes.clientOrderPath(orderId),
-      buttonLabel: 'فتح الطلب',
+      buttonLabel: tr('فتح الطلب'),
     );
   }
 
@@ -231,9 +232,9 @@ NotificationActionTarget? _resolveFromEntity(AppNotification notification, Strin
 
   if (role == 'super_admin') {
     if (entityType == 'financial_claim' || type.startsWith('financial_claim')) {
-      return const NotificationActionTarget(
+      return NotificationActionTarget(
         route: AppRoutes.superAdminClaims,
-        buttonLabel: 'فتح المطالبات',
+        buttonLabel: tr('فتح المطالبات'),
       );
     }
     if (entityType == 'pantry_delivery' || type.contains('pantry_delivery') || type.contains('pantry_revision')) {
@@ -241,12 +242,12 @@ NotificationActionTarget? _resolveFromEntity(AppNotification notification, Strin
       if (id != null) {
         return NotificationActionTarget(
           route: AppRoutes.superAdminPantryDeliveryPath(id),
-          buttonLabel: 'فتح التسليم',
+          buttonLabel: tr('فتح التسليم'),
         );
       }
-      return const NotificationActionTarget(
+      return NotificationActionTarget(
         route: AppRoutes.superAdminPantry,
-        buttonLabel: 'فتح بيت المونة',
+        buttonLabel: tr('فتح بيت المونة'),
       );
     }
     if (entityType == 'pantry_request' || type.contains('pantry')) {
@@ -254,12 +255,12 @@ NotificationActionTarget? _resolveFromEntity(AppNotification notification, Strin
       if (id != null) {
         return NotificationActionTarget(
           route: AppRoutes.superAdminPantryRequestPath(id),
-          buttonLabel: 'فتح طلب بيت المونة',
+          buttonLabel: tr('فتح طلب بيت المونة'),
         );
       }
-      return const NotificationActionTarget(
+      return NotificationActionTarget(
         route: AppRoutes.superAdminPantry,
-        buttonLabel: 'فتح بيت المونة',
+        buttonLabel: tr('فتح بيت المونة'),
       );
     }
     if (entityType == 'freelancer_activation_request' ||
@@ -270,12 +271,12 @@ NotificationActionTarget? _resolveFromEntity(AppNotification notification, Strin
       if (id != null) {
         return NotificationActionTarget(
           route: AppRoutes.superAdminActivationKycPath(id),
-          buttonLabel: 'فتح طلب التفعيل',
+          buttonLabel: tr('فتح طلب التفعيل'),
         );
       }
-      return const NotificationActionTarget(
+      return NotificationActionTarget(
         route: AppRoutes.superAdminActivation,
-        buttonLabel: 'فتح طلبات التفعيل',
+        buttonLabel: tr('فتح طلبات التفعيل'),
       );
     }
     if (entityType == 'subscription' ||
@@ -285,12 +286,12 @@ NotificationActionTarget? _resolveFromEntity(AppNotification notification, Strin
       if (id != null) {
         return NotificationActionTarget(
           route: AppRoutes.superAdminActivationSubscriptionPath(id),
-          buttonLabel: 'فتح طلب التفعيل',
+          buttonLabel: tr('فتح طلب التفعيل'),
         );
       }
-      return const NotificationActionTarget(
+      return NotificationActionTarget(
         route: AppRoutes.superAdminActivation,
-        buttonLabel: 'فتح طلبات التفعيل',
+        buttonLabel: tr('فتح طلبات التفعيل'),
       );
     }
     if (entityType == 'marketplace_article' ||
@@ -301,13 +302,13 @@ NotificationActionTarget? _resolveFromEntity(AppNotification notification, Strin
         if (id != null) {
           return NotificationActionTarget(
             route: AppRoutes.superAdminArticlePath(id),
-            buttonLabel: 'فتح المقال',
+            buttonLabel: tr('فتح المقال'),
           );
         }
       }
-      return const NotificationActionTarget(
+      return NotificationActionTarget(
         route: AppRoutes.superAdminArticles,
-        buttonLabel: 'فتح المقالات',
+        buttonLabel: tr('فتح المقالات'),
       );
     }
     if (entityType == 'feedback' ||
@@ -318,17 +319,17 @@ NotificationActionTarget? _resolveFromEntity(AppNotification notification, Strin
       if (id != null) {
         return NotificationActionTarget(
           route: AppRoutes.superAdminFeedbackDetailPath(id),
-          buttonLabel: 'فتح الملاحظة',
+          buttonLabel: tr('فتح الملاحظة'),
         );
       }
-      return const NotificationActionTarget(
+      return NotificationActionTarget(
         route: AppRoutes.superAdminFeedback,
-        buttonLabel: 'فتح المشاكل والاقتراحات',
+        buttonLabel: tr('فتح المشاكل والاقتراحات'),
       );
     }
-    return const NotificationActionTarget(
+    return NotificationActionTarget(
       route: AppRoutes.home,
-      buttonLabel: 'فتح مركز المهام',
+      buttonLabel: tr('فتح مركز المهام'),
       showComingSoonMessage: true,
     );
   }
@@ -342,30 +343,30 @@ NotificationActionTarget? _resolveFromEntity(AppNotification notification, Strin
       if (id != null) {
         return NotificationActionTarget(
           route: AppRoutes.freelancerPantryDetail(id),
-          buttonLabel: 'فتح الطلب',
+          buttonLabel: tr('فتح الطلب'),
         );
       }
     }
-    return const NotificationActionTarget(
+    return NotificationActionTarget(
       route: AppRoutes.marketplace,
-      buttonLabel: 'فتح الطلبات المتاحة',
+      buttonLabel: tr('فتح الطلبات المتاحة'),
     );
   }
 
   if (entityType == 'financial_claim') {
     if (role != 'freelancer') return null;
-    return const NotificationActionTarget(
+    return NotificationActionTarget(
       route: AppRoutes.freelancerFinancialClaims,
-      buttonLabel: 'فتح المطالبات المالية',
+      buttonLabel: tr('فتح المطالبات المالية'),
     );
   }
 
   if (entityType == 'subscription' || entityType == 'plan') {
     // Phase 5K: do not deep-link into removed plans UI.
     if (role != 'freelancer') return null;
-    return const NotificationActionTarget(
+    return NotificationActionTarget(
       route: AppRoutes.profile,
-      buttonLabel: 'فتح حسابي',
+      buttonLabel: tr('فتح حسابي'),
     );
   }
 
@@ -378,7 +379,7 @@ NotificationActionTarget? _resolveFromEntity(AppNotification notification, Strin
       if (role != 'client') return null;
       return NotificationActionTarget(
         route: AppRoutes.clientOrderPath(orderId),
-        buttonLabel: 'فتح الطلب',
+        buttonLabel: tr('فتح الطلب'),
       );
     }
 
@@ -390,7 +391,7 @@ NotificationActionTarget? _resolveFromEntity(AppNotification notification, Strin
     if (role == 'client') {
       return NotificationActionTarget(
         route: AppRoutes.clientOrderPath(orderId),
-        buttonLabel: 'فتح الطلب',
+        buttonLabel: tr('فتح الطلب'),
       );
     }
   }
@@ -473,22 +474,22 @@ NotificationActionTarget? _resolveSuperAdminDashboardLink(String path) {
       normalized == '/dashboard/super-admin/notifications') {
     return NotificationActionTarget(
       route: normalized.endsWith('/notifications') ? AppRoutes.notifications : AppRoutes.home,
-      buttonLabel: normalized.endsWith('/notifications') ? 'فتح الإشعارات' : 'فتح مركز المهام',
+      buttonLabel: normalized.endsWith('/notifications') ? tr('فتح الإشعارات') : tr('فتح مركز المهام'),
     );
   }
 
   if (normalized == '/dashboard/super-admin/subscriptions/activation' ||
       normalized.startsWith('/dashboard/super-admin/subscriptions/activation/')) {
-    return const NotificationActionTarget(
+    return NotificationActionTarget(
       route: AppRoutes.superAdminActivation,
-      buttonLabel: 'فتح طلبات التفعيل',
+      buttonLabel: tr('فتح طلبات التفعيل'),
     );
   }
 
   if (normalized == '/dashboard/super-admin/freelancer-activation-requests') {
-    return const NotificationActionTarget(
+    return NotificationActionTarget(
       route: AppRoutes.superAdminActivation,
-      buttonLabel: 'فتح طلبات التفعيل',
+      buttonLabel: tr('فتح طلبات التفعيل'),
     );
   }
 
@@ -498,27 +499,27 @@ NotificationActionTarget? _resolveSuperAdminDashboardLink(String path) {
     if (idMatch != null) {
       return NotificationActionTarget(
         route: AppRoutes.superAdminActivationKycPath(idMatch.group(1)!),
-        buttonLabel: 'فتح طلب التفعيل',
+        buttonLabel: tr('فتح طلب التفعيل'),
       );
     }
-    return const NotificationActionTarget(
+    return NotificationActionTarget(
       route: AppRoutes.superAdminActivation,
-      buttonLabel: 'فتح طلبات التفعيل',
+      buttonLabel: tr('فتح طلبات التفعيل'),
     );
   }
 
   if (normalized == '/dashboard/super-admin/financial-claims' ||
       normalized.startsWith('/dashboard/super-admin/financial-claims/')) {
-    return const NotificationActionTarget(
+    return NotificationActionTarget(
       route: AppRoutes.superAdminClaims,
-      buttonLabel: 'فتح المطالبات',
+      buttonLabel: tr('فتح المطالبات'),
     );
   }
 
   if (normalized == '/dashboard/super-admin/pantry') {
-    return const NotificationActionTarget(
+    return NotificationActionTarget(
       route: AppRoutes.superAdminPantry,
-      buttonLabel: 'فتح بيت المونة',
+      buttonLabel: tr('فتح بيت المونة'),
     );
   }
 
@@ -528,27 +529,27 @@ NotificationActionTarget? _resolveSuperAdminDashboardLink(String path) {
     if (deliveryMatch != null) {
       return NotificationActionTarget(
         route: AppRoutes.superAdminPantryDeliveryPath(deliveryMatch.group(1)!),
-        buttonLabel: 'فتح التسليم',
+        buttonLabel: tr('فتح التسليم'),
       );
     }
     final requestMatch = RegExp(r'^(?:requests/)?(\d+)$').firstMatch(rest);
     if (requestMatch != null) {
       return NotificationActionTarget(
         route: AppRoutes.superAdminPantryRequestPath(requestMatch.group(1)!),
-        buttonLabel: 'فتح طلب بيت المونة',
+        buttonLabel: tr('فتح طلب بيت المونة'),
       );
     }
-    return const NotificationActionTarget(
+    return NotificationActionTarget(
       route: AppRoutes.home,
-      buttonLabel: 'فتح مركز المهام',
+      buttonLabel: tr('فتح مركز المهام'),
       showComingSoonMessage: true,
     );
   }
 
   if (normalized == '/dashboard/super-admin/marketplace-articles') {
-    return const NotificationActionTarget(
+    return NotificationActionTarget(
       route: AppRoutes.superAdminArticles,
-      buttonLabel: 'فتح المقالات',
+      buttonLabel: tr('فتح المقالات'),
     );
   }
 
@@ -558,12 +559,12 @@ NotificationActionTarget? _resolveSuperAdminDashboardLink(String path) {
     if (idMatch != null) {
       return NotificationActionTarget(
         route: AppRoutes.superAdminArticlePath(idMatch.group(1)!),
-        buttonLabel: 'فتح المقال',
+        buttonLabel: tr('فتح المقال'),
       );
     }
-    return const NotificationActionTarget(
+    return NotificationActionTarget(
       route: AppRoutes.home,
-      buttonLabel: 'فتح مركز المهام',
+      buttonLabel: tr('فتح مركز المهام'),
       showComingSoonMessage: true,
     );
   }
@@ -577,33 +578,33 @@ NotificationActionTarget? _resolveSuperAdminDashboardLink(String path) {
     if (idMatch != null) {
       return NotificationActionTarget(
         route: AppRoutes.superAdminFeedbackDetailPath(idMatch.group(1)!),
-        buttonLabel: 'فتح الملاحظة',
+        buttonLabel: tr('فتح الملاحظة'),
       );
     }
-    return const NotificationActionTarget(
+    return NotificationActionTarget(
       route: AppRoutes.superAdminFeedback,
-      buttonLabel: 'فتح المشاكل والاقتراحات',
+      buttonLabel: tr('فتح المشاكل والاقتراحات'),
     );
   }
 
   if (normalized == '/dashboard/super-admin/settings') {
-    return const NotificationActionTarget(
+    return NotificationActionTarget(
       route: AppRoutes.accountSettings,
-      buttonLabel: 'فتح إعدادات الحساب',
+      buttonLabel: tr('فتح إعدادات الحساب'),
     );
   }
 
   if (normalized.startsWith('/dashboard/super-admin')) {
-    return const NotificationActionTarget(
+    return NotificationActionTarget(
       route: AppRoutes.home,
-      buttonLabel: 'فتح مركز المهام',
+      buttonLabel: tr('فتح مركز المهام'),
       showComingSoonMessage: true,
     );
   }
 
-  return const NotificationActionTarget(
+  return NotificationActionTarget(
     route: AppRoutes.home,
-    buttonLabel: 'فتح مركز المهام',
+    buttonLabel: tr('فتح مركز المهام'),
     showComingSoonMessage: true,
   );
 }

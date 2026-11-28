@@ -6,6 +6,7 @@ import '../../../core/files/file_download_service.dart';
 import '../../../core/files/order_file_download_paths.dart';
 import '../../../core/theme/app_colors.dart';
 import '../data/order_file_models.dart';
+import '../../../core/i18n/i18n.dart';
 
 class OrderFileDownloadTile extends ConsumerStatefulWidget {
   const OrderFileDownloadTile({
@@ -38,13 +39,13 @@ class _OrderFileDownloadTileState extends ConsumerState<OrderFileDownloadTile> {
           );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('تم فتح الملف: ${widget.file.displayName}')),
+        SnackBar(content: Text(trf('تم فتح الملف: {0}', [widget.file.displayName]))),
       );
     } catch (e) {
       if (!mounted) return;
       final message = e is DioException
           ? orderFileDownloadErrorMessage(e)
-          : (e is StateError ? e.message : 'تعذر فتح الملف.');
+          : (e is StateError ? e.message : tr('تعذر فتح الملف.'));
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(message), backgroundColor: AppColors.error),
       );
@@ -65,7 +66,7 @@ class _OrderFileDownloadTileState extends ConsumerState<OrderFileDownloadTile> {
             child: Text(
               widget.file.displayName,
               style: const TextStyle(color: AppColors.textInk, fontSize: 13, height: 1.35),
-              textAlign: TextAlign.right,
+              textAlign: TextAlign.start,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
@@ -79,7 +80,7 @@ class _OrderFileDownloadTileState extends ConsumerState<OrderFileDownloadTile> {
                     height: 18,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Text('فتح'),
+                : Text(tr('فتح')),
           ),
         ],
       ),

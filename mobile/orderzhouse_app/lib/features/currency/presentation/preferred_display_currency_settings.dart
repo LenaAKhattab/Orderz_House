@@ -19,7 +19,7 @@ class PreferredDisplayCurrencySettings extends ConsumerWidget {
         DropdownButtonFormField<String>(
           key: ValueKey(current),
           initialValue: current,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             labelText: kPreferenceLabel,
             border: OutlineInputBorder(),
           ),
@@ -36,16 +36,16 @@ class PreferredDisplayCurrencySettings extends ConsumerWidget {
           },
         ),
         const SizedBox(height: 10),
-        const Text(
+        Text(
           kPreferenceHint,
           style: TextStyle(color: AppColors.textMuted, height: 1.45, fontSize: 13),
-          textAlign: TextAlign.right,
+          textAlign: TextAlign.start,
         ),
         const SizedBox(height: 6),
-        const Text(
+        Text(
           '$kOfficialCurrencyCopy $kIndicativeCopy',
           style: TextStyle(color: AppColors.textMuted, height: 1.45, fontSize: 12.5),
-          textAlign: TextAlign.right,
+          textAlign: TextAlign.start,
         ),
       ],
     );

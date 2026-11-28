@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 import 'app.dart';
+import 'core/i18n/language_controller.dart';
 import 'features/push/data/push_notification_service.dart';
 
 Future<void> main() async {
@@ -28,5 +29,7 @@ Future<void> main() async {
     // No google-services.json / Firebase — app continues with in-app notifications only.
   }
   await initializeDateFormatting('ar');
+  await initializeDateFormatting('en');
+  await loadSavedLanguage();
   runApp(const ProviderScope(child: OrderzHouseApp()));
 }

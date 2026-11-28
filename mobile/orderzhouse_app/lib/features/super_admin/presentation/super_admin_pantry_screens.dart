@@ -13,6 +13,7 @@ import '../data/super_admin_pantry_models.dart';
 import 'super_admin_action_dialogs.dart';
 import 'super_admin_queue_screens.dart';
 import 'super_admin_ui.dart';
+import '../../../core/i18n/i18n.dart';
 
 class SuperAdminPantryRequestScreen extends ConsumerStatefulWidget {
   const SuperAdminPantryRequestScreen({super.key, required this.requestId});
@@ -65,7 +66,7 @@ class _SuperAdminPantryRequestScreenState extends ConsumerState<SuperAdminPantry
           );
       if (!started || !mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(superAdminActionSuccessAr)),
+        SnackBar(content: Text(superAdminActionSuccessAr)),
       );
     } catch (error) {
       if (!mounted) return;
@@ -92,7 +93,7 @@ class _SuperAdminPantryRequestScreenState extends ConsumerState<SuperAdminPantry
           await ref.read(superAdminPantryRequestDetailProvider(widget.requestId).notifier).rejectBid(bid.id);
       if (!started || !mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(superAdminActionSuccessAr)),
+        SnackBar(content: Text(superAdminActionSuccessAr)),
       );
     } catch (error) {
       if (!mounted) return;
@@ -107,7 +108,7 @@ class _SuperAdminPantryRequestScreenState extends ConsumerState<SuperAdminPantry
     final async = ref.watch(superAdminPantryRequestDetailProvider(widget.requestId));
     final busyId = ref.watch(superAdminPantryBusyIdProvider);
     return SuperAdminQueueScaffold(
-      title: 'مراجعة عروض بيت المونة',
+      title: tr('مراجعة عروض بيت المونة'),
       onRefresh: () => ref.read(superAdminPantryRequestDetailProvider(widget.requestId).notifier).refreshQuietly(),
       body: async.when(
         loading: () => ListView(
@@ -141,18 +142,18 @@ class _SuperAdminPantryRequestScreenState extends ConsumerState<SuperAdminPantry
                 ),
               ),
               const SizedBox(height: 16),
-              const Text(
-                'العروض',
+              Text(
+                tr('العروض'),
                 style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: AppColors.primaryDeep),
               ),
               const SizedBox(height: 10),
               if (detail.bids.isEmpty)
-                const SuperAdminQueueCard(title: 'لا توجد عروض بعد.'),
+                SuperAdminQueueCard(title: tr('لا توجد عروض بعد.')),
               for (final bid in detail.bids) ...[
                 SuperAdminQueueCard(
-                  title: bid.freelancerName ?? 'مستقل',
+                  title: bid.freelancerName ?? tr('مستقل'),
                   subtitle: [
-                    if (bid.durationDays != null) 'مدة التسليم: ${bid.durationDays} يوم',
+                    if (bid.durationDays != null) trf('مدة التسليم: {0} يوم', [bid.durationDays]),
                     if (bid.createdAt != null) formatSuperAdminDate(bid.createdAt),
                     pantryBidStatusLabelAr(bid.status),
                   ].where((e) => e.trim().isNotEmpty).join(' · '),
@@ -171,14 +172,14 @@ class _SuperAdminPantryRequestScreenState extends ConsumerState<SuperAdminPantry
               ],
               if (detail.deliveries.any((d) => (d.status ?? '') == 'submitted')) ...[
                 const SizedBox(height: 8),
-                const Text(
-                  'تسليمات',
+                Text(
+                  tr('تسليمات'),
                   style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: AppColors.primaryDeep),
                 ),
                 const SizedBox(height: 10),
                 for (final delivery in detail.deliveries.where((d) => (d.status ?? '') == 'submitted'))
                   SuperAdminQueueCard(
-                    title: delivery.requestTitle ?? 'تسليم بيت المونة',
+                    title: delivery.requestTitle ?? tr('تسليم بيت المونة'),
                     subtitle: pantryDeliveryStatusLabelAr(delivery.status),
                     onTap: () => context.push(AppRoutes.superAdminPantryDeliveryPath(delivery.id)),
                   ),
@@ -254,7 +255,7 @@ class _SuperAdminPantryDeliveryScreenState extends ConsumerState<SuperAdminPantr
           await ref.read(superAdminPantryDeliveryDetailProvider(widget.deliveryId).notifier).approve();
       if (!started || !mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(superAdminActionSuccessAr)),
+        SnackBar(content: Text(superAdminActionSuccessAr)),
       );
     } catch (error) {
       if (!mounted) return;
@@ -271,7 +272,7 @@ class _SuperAdminPantryDeliveryScreenState extends ConsumerState<SuperAdminPantr
       context: context,
       title: superAdminRequestRevisionLabelAr,
       label: superAdminRevisionNoteLabelAr,
-      helper: 'أدخل سبب طلب التعديل (3 أحرف على الأقل).',
+      helper: tr('أدخل سبب طلب التعديل (3 أحرف على الأقل).'),
       confirmLabel: superAdminConfirmActionLabelAr,
       minChars: 3,
       fieldKey: const Key(superAdminPantryRevisionFieldKey),
@@ -285,7 +286,7 @@ class _SuperAdminPantryDeliveryScreenState extends ConsumerState<SuperAdminPantr
           .requestRevision(note);
       if (!started || !mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(superAdminActionSuccessAr)),
+        SnackBar(content: Text(superAdminActionSuccessAr)),
       );
     } catch (error) {
       if (!mounted) return;
@@ -300,7 +301,7 @@ class _SuperAdminPantryDeliveryScreenState extends ConsumerState<SuperAdminPantr
     final async = ref.watch(superAdminPantryDeliveryDetailProvider(widget.deliveryId));
     final busyId = ref.watch(superAdminPantryBusyIdProvider);
     return SuperAdminQueueScaffold(
-      title: 'مراجعة تسليم بيت المونة',
+      title: tr('مراجعة تسليم بيت المونة'),
       onRefresh: () =>
           ref.read(superAdminPantryDeliveryDetailProvider(widget.deliveryId).notifier).refreshQuietly(),
       body: async.when(
@@ -323,7 +324,7 @@ class _SuperAdminPantryDeliveryScreenState extends ConsumerState<SuperAdminPantr
             padding: const EdgeInsets.all(16),
             children: [
               SuperAdminQueueCard(
-                title: delivery.requestTitle ?? 'تسليم بيت المونة',
+                title: delivery.requestTitle ?? tr('تسليم بيت المونة'),
                 subtitle: [
                   if (delivery.freelancerName != null) delivery.freelancerName,
                   if (delivery.createdAt != null) formatSuperAdminDate(delivery.createdAt),
@@ -357,8 +358,8 @@ class _SuperAdminPantryDeliveryScreenState extends ConsumerState<SuperAdminPantr
               ),
               if (delivery.files.isNotEmpty) ...[
                 const SizedBox(height: 16),
-                const Text(
-                  'الملفات',
+                Text(
+                  tr('الملفات'),
                   style: TextStyle(fontWeight: FontWeight.w800, color: AppColors.primaryDeep),
                 ),
                 const SizedBox(height: 8),
@@ -366,7 +367,7 @@ class _SuperAdminPantryDeliveryScreenState extends ConsumerState<SuperAdminPantr
                   Padding(
                     padding: const EdgeInsets.only(bottom: 6),
                     child: Text(
-                      file.name ?? 'ملف',
+                      file.name ?? tr('ملف'),
                       style: const TextStyle(color: AppColors.textMuted),
                     ),
                   ),
@@ -382,12 +383,12 @@ class _SuperAdminPantryDeliveryScreenState extends ConsumerState<SuperAdminPantr
 String pantryBidStatusLabelAr(String? status) {
   switch ((status ?? '').trim().toLowerCase()) {
     case 'pending':
-      return 'معلّق';
+      return tr('معلّق');
     case 'accepted':
-      return 'مقبول';
+      return tr('مقبول');
     case 'rejected':
-      return 'مرفوض';
+      return tr('مرفوض');
     default:
-      return status?.trim().isNotEmpty == true ? status!.trim() : 'عرض';
+      return status?.trim().isNotEmpty == true ? status!.trim() : tr('عرض');
   }
 }

@@ -11,6 +11,7 @@ import '../data/super_admin_feedback_models.dart';
 import '../data/super_admin_pantry_models.dart';
 import 'super_admin_queue_screens.dart';
 import 'super_admin_ui.dart';
+import '../../../core/i18n/i18n.dart';
 
 class SuperAdminFeedbackQueueScreen extends ConsumerWidget {
   const SuperAdminFeedbackQueueScreen({super.key});
@@ -33,7 +34,7 @@ class SuperAdminFeedbackQueueScreen extends ConsumerWidget {
         ),
         data: (items) {
           if (items.isEmpty) {
-            return const SuperAdminQueueErrorOrEmpty(
+            return SuperAdminQueueErrorOrEmpty(
               isError: false,
               message: superAdminFeedbackEmptyAr,
             );
@@ -47,7 +48,7 @@ class SuperAdminFeedbackQueueScreen extends ConsumerWidget {
               final item = items[index];
               return SuperAdminQueueCard(
                 key: Key('sa-feedback-${item.id}'),
-                title: item.userName ?? item.userEmail ?? 'مستخدم',
+                title: item.userName ?? item.userEmail ?? tr('مستخدم'),
                 subtitle: [
                   if (item.userEmail != null) item.userEmail,
                   feedbackTypeLabelAr(item),
@@ -56,7 +57,7 @@ class SuperAdminFeedbackQueueScreen extends ConsumerWidget {
                   if (item.createdAt != null) formatSuperAdminDate(item.createdAt),
                 ].whereType<String>().where((e) => e.trim().isNotEmpty).join('\n'),
                 chip: SuperAdminStatusChip(
-                  label: item.isNew ? 'جديد' : feedbackStatusLabelAr(item.status),
+                  label: item.isNew ? tr('جديد') : feedbackStatusLabelAr(item.status),
                   tone: item.isNew ? SuperAdminChipTone.urgent : SuperAdminChipTone.neutral,
                 ),
                 onTap: () => context.push(AppRoutes.superAdminFeedbackDetailPath(item.id)),
@@ -90,7 +91,7 @@ class _SuperAdminFeedbackDetailScreenState extends ConsumerState<SuperAdminFeedb
           .updateStatus(status);
       if (!ok || !mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(superAdminFeedbackUpdateSuccessAr)),
+        SnackBar(content: Text(superAdminFeedbackUpdateSuccessAr)),
       );
     } catch (error) {
       if (!mounted) return;
@@ -130,27 +131,27 @@ class _SuperAdminFeedbackDetailScreenState extends ConsumerState<SuperAdminFeedb
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      item.userName ?? 'مستخدم',
+                      item.userName ?? tr('مستخدم'),
                       style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
-                      textAlign: TextAlign.right,
+                      textAlign: TextAlign.start,
                     ),
                     const SizedBox(height: 10),
-                    _FeedbackRow(label: 'البريد', value: item.userEmail ?? '—'),
-                    _FeedbackRow(label: 'النوع', value: feedbackTypeLabelAr(item)),
-                    _FeedbackRow(label: 'الحالة', value: feedbackStatusLabelAr(item.status)),
-                    if (item.subject != null) _FeedbackRow(label: 'الموضوع', value: item.subject!),
+                    _FeedbackRow(label: tr('البريد'), value: item.userEmail ?? '—'),
+                    _FeedbackRow(label: tr('النوع'), value: feedbackTypeLabelAr(item)),
+                    _FeedbackRow(label: tr('الحالة'), value: feedbackStatusLabelAr(item.status)),
+                    if (item.subject != null) _FeedbackRow(label: tr('الموضوع'), value: item.subject!),
                     if (item.createdAt != null)
-                      _FeedbackRow(label: 'التاريخ', value: formatSuperAdminDate(item.createdAt)),
-                    if (item.userRole != null) _FeedbackRow(label: 'الدور', value: item.userRole!),
+                      _FeedbackRow(label: tr('التاريخ'), value: formatSuperAdminDate(item.createdAt)),
+                    if (item.userRole != null) _FeedbackRow(label: tr('الدور'), value: item.userRole!),
                     const SizedBox(height: 12),
                     Text(
                       item.description ?? '—',
-                      textAlign: TextAlign.right,
+                      textAlign: TextAlign.start,
                       style: const TextStyle(height: 1.6),
                     ),
                     if (item.adminNote != null) ...[
                       const SizedBox(height: 12),
-                      _FeedbackRow(label: 'ملاحظة إدارية', value: item.adminNote!),
+                      _FeedbackRow(label: tr('ملاحظة إدارية'), value: item.adminNote!),
                     ],
                   ],
                 ),
@@ -209,7 +210,7 @@ class _FeedbackRow extends StatelessWidget {
           ),
           Expanded(
             flex: 3,
-            child: Text(value, textAlign: TextAlign.right, style: const TextStyle(fontWeight: FontWeight.w600)),
+            child: Text(value, textAlign: TextAlign.start, style: const TextStyle(fontWeight: FontWeight.w600)),
           ),
         ],
       ),

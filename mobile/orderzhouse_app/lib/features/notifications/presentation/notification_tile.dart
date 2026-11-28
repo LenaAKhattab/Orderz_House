@@ -9,6 +9,7 @@ import '../../../core/widgets/oh_widgets.dart';
 import '../data/notification_models.dart';
 
 import 'notification_open_action.dart';
+import '../../../core/i18n/i18n.dart';
 
 
 
@@ -56,7 +57,7 @@ class NotificationTile extends StatelessWidget {
 
   Widget build(BuildContext context) {
 
-    final preview = _previewMessage(notification.message);
+    final preview = _previewMessage(notification.displayMessage);
 
     final displayTitle = notificationDisplayTitle(
 
@@ -206,9 +207,9 @@ class NotificationTile extends StatelessWidget {
 
                           ),
 
-                          child: const Text(
+                          child: Text(
 
-                            'غير مقروء',
+                            tr('غير مقروء'),
 
                             style: TextStyle(
 
@@ -266,17 +267,17 @@ class NotificationTile extends StatelessWidget {
 
                   if (!selectionMode &&
 
-                      notification.message.length > _previewMaxLength) ...[
+                      notification.displayMessage.length > _previewMaxLength) ...[
 
                     const SizedBox(height: 6),
 
-                    const Align(
+                    Align(
 
-                      alignment: Alignment.centerLeft,
+                      alignment: AlignmentDirectional.centerEnd,
 
                       child: Text(
 
-                        'عرض التفاصيل',
+                        tr('عرض التفاصيل'),
 
                         style: TextStyle(
 
@@ -400,7 +401,7 @@ void showNotificationDetailSheet(
 
       return Directionality(
 
-        textDirection: TextDirection.rtl,
+        textDirection: Directionality.of(context),
 
         child: Padding(
 
@@ -444,7 +445,7 @@ void showNotificationDetailSheet(
 
               Text(
 
-                notification.message,
+                notification.displayMessage,
 
                 style: const TextStyle(height: 1.6),
 
@@ -466,7 +467,7 @@ void showNotificationDetailSheet(
 
                 Text(
 
-                  'من: ${notification.actorDisplayName}',
+                  trf('من: {0}', [notification.actorDisplayName]),
 
                   style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
 
@@ -482,9 +483,9 @@ void showNotificationDetailSheet(
 
                 const SizedBox(height: 12),
 
-                const Text(
+                Text(
 
-                  'رابط الإجراء (تشخيصي):',
+                  tr('رابط الإجراء (تشخيصي):'),
 
                   style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
 
@@ -522,7 +523,7 @@ void showNotificationDetailSheet(
 
               OhButton(
 
-                label: 'إغلاق',
+                label: tr('إغلاق'),
 
                 outlined: true,
 
