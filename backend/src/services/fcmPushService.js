@@ -185,8 +185,11 @@ function buildMessage(token, payload) {
     android: {
       priority: "high",
       notification: {
+        // No clickAction. A custom action requires a matching activity intent-filter;
+        // 8114 has only MAIN/LAUNCHER, so FLUTTER_NOTIFICATION_CLICK was cancelled (-91)
+        // and the notification disappeared without opening the app. The default FCM
+        // launcher intent delivers the data payload to onMessageOpenedApp / getInitialMessage.
         channelId: "orderzhouse_default",
-        clickAction: "FLUTTER_NOTIFICATION_CLICK",
       },
     },
   };
@@ -327,6 +330,7 @@ function getPushStats() {
 module.exports = {
   isPushConfigured,
   buildPushPayload,
+  buildMessage,
   sendPushBatch,
   sendPushForNotification,
   queuePushForNotification,
