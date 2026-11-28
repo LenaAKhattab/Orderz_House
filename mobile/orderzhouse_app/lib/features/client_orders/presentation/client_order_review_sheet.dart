@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/oh_widgets.dart';
 import '../data/client_order_review_models.dart';
+import '../../../core/i18n/i18n.dart';
 
 Future<SubmitClientOrderReviewPayload?> showClientOrderReviewSheet(
   BuildContext context, {
@@ -86,30 +87,30 @@ class _ClientOrderReviewSheetState extends State<_ClientOrderReviewSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text(
-            'تقييم المستقل',
+          Text(
+            tr('تقييم المستقل'),
             style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.textInk),
-            textAlign: TextAlign.right,
+            textAlign: TextAlign.start,
           ),
           const SizedBox(height: 6),
           Text(
             widget.orderTitle,
             style: const TextStyle(color: AppColors.textMuted, height: 1.4),
-            textAlign: TextAlign.right,
+            textAlign: TextAlign.start,
           ),
           if (freelancer != null && freelancer.isNotEmpty) ...[
             const SizedBox(height: 4),
             Text(
-              'المستقل: $freelancer',
+              trf('المستقل: {0}', [freelancer]),
               style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
-              textAlign: TextAlign.right,
+              textAlign: TextAlign.start,
             ),
           ],
           const SizedBox(height: 16),
-          const Text(
-            'التقييم العام',
+          Text(
+            tr('التقييم العام'),
             style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.textInk),
-            textAlign: TextAlign.right,
+            textAlign: TextAlign.start,
           ),
           const SizedBox(height: 8),
           _ReviewStarRow(
@@ -124,33 +125,33 @@ class _ClientOrderReviewSheetState extends State<_ClientOrderReviewSheet> {
           const SizedBox(height: 16),
           OhTextField(
             controller: _commentController,
-            label: 'ملاحظاتك (اختياري)',
-            hint: 'شارك تجربتك باختصار...',
+            label: tr('ملاحظاتك (اختياري)'),
+            hint: tr('شارك تجربتك باختصار...'),
             keyboardType: TextInputType.multiline,
           ),
           const SizedBox(height: 6),
-          const Text(
-            'إذا أضفت ملاحظة، يجب ألا تقل عن 10 أحرف.',
+          Text(
+            tr('إذا أضفت ملاحظة، يجب ألا تقل عن 10 أحرف.'),
             style: TextStyle(color: AppColors.textMuted, fontSize: 12),
-            textAlign: TextAlign.right,
+            textAlign: TextAlign.start,
           ),
           if (_error != null) ...[
             const SizedBox(height: 8),
             Text(
               _error!,
               style: const TextStyle(color: AppColors.error, fontWeight: FontWeight.w600),
-              textAlign: TextAlign.right,
+              textAlign: TextAlign.start,
             ),
           ],
           const SizedBox(height: 16),
           OhButton(
-            label: widget.isSubmitting ? 'جارٍ الإرسال...' : 'إرسال التقييم',
+            label: widget.isSubmitting ? tr('جارٍ الإرسال...') : tr('إرسال التقييم'),
             isLoading: widget.isSubmitting,
             onPressed: widget.isSubmitting || _rating < 1 ? null : _submit,
           ),
           const SizedBox(height: 8),
           OhButton(
-            label: 'إلغاء',
+            label: tr('إلغاء'),
             outlined: true,
             onPressed: widget.isSubmitting ? null : () => Navigator.of(context).pop(),
           ),
@@ -198,7 +199,7 @@ class _ReviewStarRow extends StatelessWidget {
         final star = index + 1;
         final filled = value >= star;
         return IconButton(
-          tooltip: '$star من 5',
+          tooltip: trf('{0} من 5', [star]),
           onPressed: onChanged == null ? null : () => onChanged!(star),
           icon: Icon(
             filled ? Icons.star_rounded : Icons.star_outline_rounded,

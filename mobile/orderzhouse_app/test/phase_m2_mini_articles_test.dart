@@ -251,7 +251,7 @@ void main() {
               children: [
                 Text(formatArticleValueJodLabel(article.displayValueJod)),
                 MiniArticleFinancialBreakdown(article: article),
-                const Text(earnedBalanceTitleAr),
+                Text(earnedBalanceTitleAr),
                 Text('صافي المستقل: 0.700 JOD'),
               ],
             ),
@@ -272,7 +272,7 @@ void main() {
 
     testWidgets('Bildazo required message renders', (tester) async {
       await tester.pumpWidget(
-        const MaterialApp(
+        MaterialApp(
           home: Scaffold(
             body: Text(bildazoRequiredAr),
           ),

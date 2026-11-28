@@ -2,6 +2,9 @@
  * Unit + source-contract tests: external (WhatsApp) order intake.
  * Real-Postgres lifecycle lives in externalOrderIntake.integration.test.js.
  */
+// db.js requires DATABASE_URL at import; no connection is made by these unit/source tests.
+process.env.DATABASE_URL =
+  process.env.DATABASE_URL || "postgresql://127.0.0.1:5432/unit_test_placeholder_no_connect";
 const { test } = require("node:test");
 const assert = require("node:assert");
 const fs = require("node:fs");

@@ -49,6 +49,9 @@ function clientStatusMeta(order, t) {
   if (s === "pending_payment") {
     return { label: getOrderStatusLabel(s, t), className: "oh-badge oh-badge--warning" };
   }
+  // Smart Orders (managed): payment and assignment states must not be masked by the assignment badge.
+  if (s === "awaiting_quote_payment") return { label: t("orders.status.awaiting_quote_payment"), className: "oh-badge oh-badge--warning" };
+  if (s === "awaiting_assignment") return { label: t("orders.status.awaiting_assignment"), className: "oh-badge oh-badge--info" };
   if (s === "awaiting_payment_after_bid_selection") {
     return { label: t("orders.status.awaiting_payment_after_bid_selection"), className: "oh-badge oh-badge--info" };
   }
@@ -325,6 +328,9 @@ export default function ClientOrderCardCompact({
         </div>
         <span className={`coc__badge ${badge.className}`}>{badge.label}</span>
         {order?.managedByAdmin ? <ManagedOrderBadge /> : null}
+        {order?.managedByAdmin && order?.paymentStatus === "pending" && order?.orderStatus === "in_progress" ? (
+          <span className="oh-badge oh-badge--warning">{t("orders.status.pending_payment")}</span>
+        ) : null}
       </header>
 
       <div className={`coc__next coc__next--${step.tone}`}>

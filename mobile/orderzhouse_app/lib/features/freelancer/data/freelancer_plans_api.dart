@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import 'freelancer_plans_models.dart';
+import '../../../core/i18n/i18n.dart';
 
 class FreelancerPlansApi {
   FreelancerPlansApi(this._dio);
@@ -23,7 +24,7 @@ class FreelancerPlansApi {
     }
     throw DioException(
       requestOptions: response.requestOptions,
-      message: 'استجابة غير متوقعة من اشتراك المستقل.',
+      message: tr('استجابة غير متوقعة من اشتراك المستقل.'),
     );
   }
 }

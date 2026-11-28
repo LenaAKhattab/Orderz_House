@@ -9,6 +9,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/oh_widgets.dart';
 import 'auth_controller.dart';
 import 'auth_form_widgets.dart';
+import '../../../core/i18n/i18n.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key, this.redirectLocation});
@@ -49,7 +50,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       final redirect = sanitizeLoginRedirect(widget.redirectLocation);
       context.go(redirect ?? AppRoutes.home);
     } catch (e) {
-      setState(() => _error = apiErrorMessage(e, fallback: 'تعذر تسجيل الدخول.'));
+      setState(() => _error = apiErrorMessage(e, fallback: tr('تعذر تسجيل الدخول.')));
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -70,9 +71,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const AuthHeroHeader(
-                        title: 'تسجيل الدخول',
-                        subtitle: 'أدخل بريدك وكلمة المرور للمتابعة إلى حسابك.',
+                      AuthHeroHeader(
+                        title: tr('تسجيل الدخول'),
+                        subtitle: tr('أدخل بريدك وكلمة المرور للمتابعة إلى حسابك.'),
                       ),
                       const SizedBox(height: 32),
                       if (_error != null) ...[
@@ -81,21 +82,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ],
                       AuthPillField(
                         controller: _emailController,
-                        hint: 'البريد الإلكتروني',
+                        hint: tr('البريد الإلكتروني'),
                         prefixIcon: Icons.mail_outline_rounded,
                         keyboardType: TextInputType.emailAddress,
                         textInputAction: TextInputAction.next,
                         textDirection: TextDirection.ltr,
                         validator: (v) {
-                          if (v == null || v.trim().isEmpty) return 'البريد الإلكتروني مطلوب.';
-                          if (!v.contains('@')) return 'صيغة البريد غير صالحة.';
+                          if (v == null || v.trim().isEmpty) return tr('البريد الإلكتروني مطلوب.');
+                          if (!v.contains('@')) return tr('صيغة البريد غير صالحة.');
                           return null;
                         },
                       ),
                       const SizedBox(height: 14),
                       AuthPillField(
                         controller: _passwordController,
-                        hint: 'كلمة المرور',
+                        hint: tr('كلمة المرور'),
                         prefixIcon: Icons.lock_outline_rounded,
                         obscureText: _obscurePassword,
                         textInputAction: TextInputAction.done,
@@ -109,7 +110,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                         ),
                         validator: (v) {
-                          if (v == null || v.isEmpty) return 'كلمة المرور مطلوبة.';
+                          if (v == null || v.isEmpty) return tr('كلمة المرور مطلوبة.');
                           return null;
                         },
                       ),
@@ -118,19 +119,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         alignment: AlignmentDirectional.centerStart,
                         child: TextButton(
                           onPressed: () => context.push(AppRoutes.forgotPassword),
-                          child: const Text('هل نسيت كلمة المرور؟'),
+                          child: Text(tr('هل نسيت كلمة المرور؟')),
                         ),
                       ),
                       const SizedBox(height: 16),
                       AuthPrimaryButton(
-                        label: 'تسجيل الدخول',
+                        label: tr('تسجيل الدخول'),
                         isLoading: _submitting,
                         onPressed: _submit,
                       ),
                       const SizedBox(height: 28),
                       AuthFooterLink(
-                        prompt: 'ليس لديك حساب؟',
-                        actionLabel: 'إنشاء حساب',
+                        prompt: tr('ليس لديك حساب؟'),
+                        actionLabel: tr('إنشاء حساب'),
                         onTap: () => context.push(AppRoutes.register),
                       ),
                     ],

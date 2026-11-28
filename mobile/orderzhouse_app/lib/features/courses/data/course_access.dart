@@ -1,15 +1,16 @@
 import 'package:dio/dio.dart';
+import '../../../core/i18n/i18n.dart';
 
 /// Course plan-lock copy — aligned with web freelancer dashboard.
-const coursePlanLockBadgeAr = 'مقفلة';
-const coursePlanLockMessageAr = 'هذه الدورة متاحة لباقات أعلى';
-const coursePlanLockCtaAr = 'ترقية الباقة';
+String get coursePlanLockBadgeAr => tr('مقفلة');
+String get coursePlanLockMessageAr => tr('هذه الدورة متاحة لباقات أعلى');
+String get coursePlanLockCtaAr => tr('ترقية الباقة');
 
 /// Legacy paid-membership gate (backward compatible).
-const courseLockBadgeAr = 'يتطلب اشتراك';
-const courseLockMessageAr = 'يجب الاشتراك بإحدى الخطط للوصول إلى هذه الدورة.';
-const courseLockCtaAr = 'اشترك بإحدى الخطط';
-const courseLockOpenPlansFailedAr = 'تعذر فتح صفحة الخطط.';
+String get courseLockBadgeAr => tr('يتطلب اشتراك');
+String get courseLockMessageAr => tr('يجب الاشتراك بإحدى الخطط للوصول إلى هذه الدورة.');
+String get courseLockCtaAr => tr('اشترك بإحدى الخطط');
+String get courseLockOpenPlansFailedAr => tr('تعذر فتح صفحة الخطط.');
 
 const courseSubscriptionRequiredCode = 'COURSE_SUBSCRIPTION_REQUIRED';
 const coursePlanUpgradeRequiredCode = 'COURSE_PLAN_UPGRADE_REQUIRED';
@@ -77,7 +78,7 @@ String? mapCourseAccessErrorMessage(Object error) {
     return courseLockMessageAr;
   }
   if (code == 'COURSE_ACCESS_DENIED') {
-    return 'لا يمكنك الوصول إلى هذه الدورة.';
+    return tr('لا يمكنك الوصول إلى هذه الدورة.');
   }
   return null;
 }

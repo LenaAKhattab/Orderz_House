@@ -10,6 +10,7 @@ import '../../currency/presentation/jod_money_display.dart';
 import '../data/client_order_bid_models.dart';
 import '../data/client_orders_repository.dart';
 import 'client_orders_controller.dart';
+import '../../../core/i18n/i18n.dart';
 
 class ClientOrderBidsSection extends ConsumerStatefulWidget {
   const ClientOrderBidsSection({
@@ -35,16 +36,16 @@ class _ClientOrderBidsSectionState extends ConsumerState<ClientOrderBidsSection>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('قبول العرض'),
-        content: const Text('هل تريد قبول هذا العرض؟'),
+        title: Text(tr('قبول العرض')),
+        content: Text(tr('هل تريد قبول هذا العرض؟')),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('إلغاء'),
+            child: Text(tr('إلغاء')),
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('قبول'),
+            child: Text(tr('قبول')),
           ),
         ],
       ),
@@ -92,11 +93,11 @@ class _ClientOrderBidsSectionState extends ConsumerState<ClientOrderBidsSection>
 
         if (launch.launched) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('تم قبول العرض. أكمل الدفع في المتصفح.')),
+            SnackBar(content: Text(tr('تم قبول العرض. أكمل الدفع في المتصفح.'))),
           );
         } else {
           setState(() {
-            _actionError = 'تم قبول العرض، لكن تعذر فتح صفحة الدفع.';
+            _actionError = tr('تم قبول العرض، لكن تعذر فتح صفحة الدفع.');
           });
         }
         return;
@@ -104,13 +105,13 @@ class _ClientOrderBidsSectionState extends ConsumerState<ClientOrderBidsSection>
 
       setState(() => _actionBusy = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تم قبول العرض بنجاح.')),
+        SnackBar(content: Text(tr('تم قبول العرض بنجاح.'))),
       );
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _actionBusy = false;
-        _actionError = apiErrorMessage(e, fallback: 'تعذر قبول العرض.');
+        _actionError = apiErrorMessage(e, fallback: tr('تعذر قبول العرض.'));
       });
     }
   }
@@ -121,16 +122,16 @@ class _ClientOrderBidsSectionState extends ConsumerState<ClientOrderBidsSection>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('رفض العرض'),
-        content: const Text('هل تريد رفض هذا العرض؟'),
+        title: Text(tr('رفض العرض')),
+        content: Text(tr('هل تريد رفض هذا العرض؟')),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('إلغاء'),
+            child: Text(tr('إلغاء')),
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('رفض'),
+            child: Text(tr('رفض')),
           ),
         ],
       ),
@@ -155,13 +156,13 @@ class _ClientOrderBidsSectionState extends ConsumerState<ClientOrderBidsSection>
       if (!mounted) return;
       setState(() => _actionBusy = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تم رفض العرض.')),
+        SnackBar(content: Text(tr('تم رفض العرض.'))),
       );
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _actionBusy = false;
-        _actionError = apiErrorMessage(e, fallback: 'تعذر رفض العرض.');
+        _actionError = apiErrorMessage(e, fallback: tr('تعذر رفض العرض.'));
       });
     }
   }
@@ -171,7 +172,7 @@ class _ClientOrderBidsSectionState extends ConsumerState<ClientOrderBidsSection>
     final asyncBids = ref.watch(clientOrderBidsProvider(widget.orderId));
 
     return OrderSectionCard(
-      title: 'عروض المستقلين',
+      title: tr('عروض المستقلين'),
       icon: Icons.handshake_outlined,
       children: [
         if (_actionError != null) ...[
@@ -187,13 +188,13 @@ class _ClientOrderBidsSectionState extends ConsumerState<ClientOrderBidsSection>
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                apiErrorMessage(error, fallback: 'تعذر تحميل العروض.'),
+                apiErrorMessage(error, fallback: tr('تعذر تحميل العروض.')),
                 style: const TextStyle(color: AppColors.error, height: 1.5),
-                textAlign: TextAlign.right,
+                textAlign: TextAlign.start,
               ),
               const SizedBox(height: 8),
               OhButton(
-                label: 'إعادة المحاولة',
+                label: tr('إعادة المحاولة'),
                 outlined: true,
                 onPressed: _actionBusy
                     ? null
@@ -203,14 +204,14 @@ class _ClientOrderBidsSectionState extends ConsumerState<ClientOrderBidsSection>
           ),
           data: (result) {
             if (!result.hasOpenPool && result.bids.isEmpty) {
-              return const OrderEmptyHint(
-                message: 'لا يمكن عرض العروض حاليًا (الطلب ليس مفتوحًا للمزايدة، أو تم إسناده).',
+              return OrderEmptyHint(
+                message: tr('لا يمكن عرض العروض حاليًا (الطلب ليس مفتوحًا للمزايدة، أو تم إسناده).'),
                 icon: Icons.lock_outline_rounded,
               );
             }
             if (result.bids.isEmpty) {
-              return const OrderEmptyHint(
-                message: 'لم تصل عروض بعد',
+              return OrderEmptyHint(
+                message: tr('لم تصل عروض بعد'),
                 icon: Icons.inbox_outlined,
               );
             }
@@ -279,7 +280,7 @@ class _BidCard extends StatelessWidget {
                     fontSize: 15,
                     color: AppColors.primaryDeep,
                   ),
-                  textAlign: TextAlign.right,
+                  textAlign: TextAlign.start,
                 ),
               ),
               const SizedBox(width: 8),
@@ -300,23 +301,23 @@ class _BidCard extends StatelessWidget {
                 Expanded(
                   child: bid.amount != null
                       ? JodMoneyDisplay(amount: bid.amount)
-                      : const Text('—', textAlign: TextAlign.right),
+                      : const Text('—', textAlign: TextAlign.start),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            'تاريخ العرض: ${formatOrderDateLabel(bid.createdAt)}',
+            trf('تاريخ العرض: {0}', [formatOrderDateLabel(bid.createdAt)]),
             style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
-            textAlign: TextAlign.right,
+            textAlign: TextAlign.start,
           ),
           if (bid.message != null && bid.message!.trim().isNotEmpty) ...[
             const SizedBox(height: 10),
             Text(
               bid.message!.trim(),
               style: const TextStyle(color: AppColors.textInk, height: 1.55, fontSize: 13),
-              textAlign: TextAlign.right,
+              textAlign: TextAlign.start,
             ),
           ],
           if (bid.canAccept || bid.canReject) ...[
@@ -326,7 +327,7 @@ class _BidCard extends StatelessWidget {
                 if (bid.canReject)
                   Expanded(
                     child: OhButton(
-                      label: 'رفض العرض',
+                      label: tr('رفض العرض'),
                       outlined: true,
                       isLoading: busy,
                       onPressed: busy ? null : onReject,
@@ -336,7 +337,7 @@ class _BidCard extends StatelessWidget {
                 if (bid.canAccept)
                   Expanded(
                     child: OhButton(
-                      label: 'قبول العرض',
+                      label: tr('قبول العرض'),
                       isLoading: busy,
                       onPressed: busy ? null : onAccept,
                     ),

@@ -6,6 +6,7 @@ import '../../../core/widgets/oh_widgets.dart';
 import '../../client_orders/data/order_attachment_limits.dart';
 import '../../client_orders/data/order_attachment_models.dart';
 import '../data/freelancer_my_order_models.dart';
+import '../../../core/i18n/i18n.dart';
 
 Future<List<SelectedOrderAttachment>?> showSubmitFreelancerDeliverySheet(
   BuildContext context, {
@@ -66,7 +67,7 @@ class _SubmitFreelancerDeliverySheetState extends State<_SubmitFreelancerDeliver
     }
 
     if (added.isEmpty) {
-      setState(() => _error = 'تعذر قراءة الملفات المختارة.');
+      setState(() => _error = tr('تعذر قراءة الملفات المختارة.'));
       return;
     }
 
@@ -111,36 +112,36 @@ class _SubmitFreelancerDeliverySheetState extends State<_SubmitFreelancerDeliver
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text(
-            'تسليم العمل',
+          Text(
+            tr('تسليم العمل'),
             style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.textInk),
-            textAlign: TextAlign.right,
+            textAlign: TextAlign.start,
           ),
           const SizedBox(height: 6),
           Text(
             widget.order.title,
             style: const TextStyle(color: AppColors.textMuted, height: 1.4),
-            textAlign: TextAlign.right,
+            textAlign: TextAlign.start,
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             deliveryAttachmentHelperAr,
             style: TextStyle(color: AppColors.textMuted, fontSize: 13, height: 1.45),
-            textAlign: TextAlign.right,
+            textAlign: TextAlign.start,
           ),
           const SizedBox(height: 12),
           Row(
             children: [
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'ملفات التسليم',
+                  tr('ملفات التسليم'),
                   style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.textInk),
                 ),
               ),
               // expand: false — a full-width OhButton inside a Row fails layout and the
               // whole sheet renders empty (8112 QA regression).
               OhButton(
-                label: 'إضافة ملفات',
+                label: tr('إضافة ملفات'),
                 outlined: true,
                 expand: false,
                 onPressed: widget.isSubmitting ? null : _pickFiles,
@@ -152,7 +153,7 @@ class _SubmitFreelancerDeliverySheetState extends State<_SubmitFreelancerDeliver
             Text(
               _error!,
               style: const TextStyle(color: AppColors.error, fontWeight: FontWeight.w600),
-              textAlign: TextAlign.right,
+              textAlign: TextAlign.start,
             ),
           ],
           if (_attachments.isNotEmpty) ...[
@@ -169,13 +170,13 @@ class _SubmitFreelancerDeliverySheetState extends State<_SubmitFreelancerDeliver
           ],
           const SizedBox(height: 16),
           OhButton(
-            label: widget.isSubmitting ? 'جارٍ الإرسال...' : 'إرسال التسليم',
+            label: widget.isSubmitting ? tr('جارٍ الإرسال...') : tr('إرسال التسليم'),
             isLoading: widget.isSubmitting,
             onPressed: widget.isSubmitting || _attachments.isEmpty ? null : _submit,
           ),
           const SizedBox(height: 8),
           OhButton(
-            label: 'إلغاء',
+            label: tr('إلغاء'),
             outlined: true,
             onPressed: widget.isSubmitting ? null : () => Navigator.of(context).pop(),
           ),
@@ -216,19 +217,19 @@ class _DeliveryAttachmentTile extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.textInk),
-                  textAlign: TextAlign.right,
+                  textAlign: TextAlign.start,
                 ),
                 const SizedBox(height: 2),
                 Text(
                   formatAttachmentSize(file.size),
                   style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
-                  textAlign: TextAlign.right,
+                  textAlign: TextAlign.start,
                 ),
               ],
             ),
           ),
           IconButton(
-            tooltip: 'إزالة',
+            tooltip: tr('إزالة'),
             onPressed: onRemove,
             icon: const Icon(Icons.close, color: AppColors.textMuted),
           ),

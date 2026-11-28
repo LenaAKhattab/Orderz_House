@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../../core/i18n/language_controller.dart';
 
 import '../../../core/branding/app_brand_mark.dart';
 import '../../../core/theme/app_colors.dart';
@@ -32,6 +33,14 @@ class AuthScaffold extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
+            // Language choice is available before login (Arabic default, persisted).
+            const Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: Padding(
+                padding: EdgeInsetsDirectional.only(end: 8, top: 4),
+                child: LanguageSwitchButton(),
+              ),
+            ),
             if (showBack)
               Align(
                 alignment: AlignmentDirectional.centerStart,

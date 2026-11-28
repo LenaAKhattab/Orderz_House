@@ -1,4 +1,5 @@
 import 'client_order_models.dart';
+import '../../../core/i18n/i18n.dart';
 
 const int minDeliveryRevisionNoteLength = 10;
 
@@ -41,22 +42,22 @@ ClientOrderSubmissionSummary? clientCurrentDeliverySubmission(ClientOrder order)
 String clientDeliveryReviewHeadlineAr(ClientOrder order) {
   switch (order.orderStatus) {
     case 'pending_client_review':
-      return 'تم إرسال التسليم وينتظر مراجعتك.';
+      return tr('تم إرسال التسليم وينتظر مراجعتك.');
     case 'completed':
-      return 'تم إكمال الطلب بنجاح.';
+      return tr('تم إكمال الطلب بنجاح.');
     case 'revision_required':
-      return 'تم طلب تعديلات من المستقل.';
+      return tr('تم طلب تعديلات من المستقل.');
     case 'in_progress':
     case 'assigned':
     case 'ready_for_work':
       if (order.clientRevisionNote != null && order.clientRevisionNote!.trim().isNotEmpty) {
-        return 'تم طلب تعديلات من المستقل.';
+        return tr('تم طلب تعديلات من المستقل.');
       }
-      return 'بانتظار تسليم المستقل.';
+      return tr('بانتظار تسليم المستقل.');
     case 'cancelled':
-      return 'الطلب ملغي.';
+      return tr('الطلب ملغي.');
     default:
-      return 'لا توجد مراجعة تسليم متاحة حالياً.';
+      return tr('لا توجد مراجعة تسليم متاحة حالياً.');
   }
 }
 
@@ -70,9 +71,9 @@ class RequestDeliveryRevisionPayload {
 
 String? validateDeliveryRevisionNote(String raw) {
   final trimmed = raw.trim();
-  if (trimmed.isEmpty) return 'ملاحظات التعديل مطلوبة.';
+  if (trimmed.isEmpty) return tr('ملاحظات التعديل مطلوبة.');
   if (trimmed.length < minDeliveryRevisionNoteLength) {
-    return 'اكتب ملاحظة أوضح (10 أحرف على الأقل).';
+    return tr('اكتب ملاحظة أوضح (10 أحرف على الأقل).');
   }
   return null;
 }

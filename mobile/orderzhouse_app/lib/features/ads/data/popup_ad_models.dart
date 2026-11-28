@@ -1,4 +1,5 @@
 import '../../../core/network/json_helpers.dart';
+import '../../../core/i18n/content_text.dart';
 
 /// Public popup ad from GET /public/popup-ads.
 class PopupAd {
@@ -30,11 +31,13 @@ class PopupAd {
   final String audience;
   final String pageScope;
 
-  String get titleArPreferred =>
-      (titleAr?.trim().isNotEmpty == true) ? titleAr!.trim() : (titleEn?.trim() ?? '');
+  /// Title in the current language; English shows only English copy (empty when none).
+  String get titleArPreferred => localizedOptionalContent(titleAr, titleEn) ?? '';
 
-  String get bodyArPreferred =>
-      (bodyAr?.trim().isNotEmpty == true) ? bodyAr!.trim() : (bodyEn?.trim() ?? '');
+  String get bodyArPreferred => localizedOptionalContent(bodyAr, bodyEn) ?? '';
+
+  /// False in English when the popup has no English copy — it is then not shown at all.
+  bool get hasContentForLanguage => titleArPreferred.isNotEmpty || bodyArPreferred.isNotEmpty;
 
   factory PopupAd.fromJson(Map<String, dynamic> json) {
     final imageRaw = _nullableTrim(readString(json, 'imageUrl', 'image_url'));

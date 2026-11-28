@@ -1,6 +1,8 @@
 import '../../../core/network/json_helpers.dart';
+import '../../../core/i18n/content_text.dart';
 
 import 'order_display_helpers.dart' as display;
+import '../../../core/i18n/i18n.dart';
 
 class PoolMyParticipation {
   const PoolMyParticipation({this.id, this.status, this.amount});
@@ -63,17 +65,22 @@ class PoolPlanEligibility {
 }
 
 class PoolOrderCategory {
-  const PoolOrderCategory({this.id, this.name, this.slug});
+  const PoolOrderCategory({this.id, String? name, this.nameEn, this.slug}) : nameAr = name;
 
   final String? id;
-  final String? name;
+  final String? nameAr;
+  final String? nameEn;
   final String? slug;
+
+  /// Category name in the current language (`name_en` in English).
+  String? get name => nameAr == null && nameEn == null ? null : localizedContent(nameAr ?? '', nameEn);
 
   factory PoolOrderCategory.fromJson(Map<String, dynamic>? json) {
     if (json == null) return const PoolOrderCategory();
     return PoolOrderCategory(
       id: readMapField<String>(json, 'id', 'id'),
       name: readMapField<String>(json, 'name', 'name'),
+      nameEn: readMapField<String>(json, 'nameEn', 'name_en'),
       slug: readMapField<String>(json, 'slug', 'slug'),
     );
   }
@@ -230,7 +237,7 @@ class PoolOrder {
         return PoolOrder.fromJson(Map<String, dynamic>.from(order));
       }
     }
-    throw FormatException('استجابة تفاصيل الطلب غير متوقعة.');
+    throw FormatException(tr('استجابة تفاصيل الطلب غير متوقعة.'));
   }
 
   static List<PoolOrder> parseList(dynamic data) {

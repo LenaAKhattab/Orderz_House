@@ -16,6 +16,7 @@ import '../data/available_opportunity.dart';
 import '../data/order_display_helpers.dart';
 import '../data/pool_order_models.dart';
 import 'pool_orders_controller.dart';
+import '../../../core/i18n/i18n.dart';
 
 enum MarketplaceProjectFilter { all, bidding, fixed }
 
@@ -27,19 +28,19 @@ enum MarketplaceBudgetFilter {
   over1000;
 
   String get labelAr => switch (this) {
-        MarketplaceBudgetFilter.all => 'كل الأسعار',
-        MarketplaceBudgetFilter.upTo100 => 'من 0 إلى 100 د.أ',
-        MarketplaceBudgetFilter.from100To500 => 'من 100 إلى 500 د.أ',
-        MarketplaceBudgetFilter.from500To1000 => 'من 500 إلى 1000 د.أ',
-        MarketplaceBudgetFilter.over1000 => 'أكثر من 1000 د.أ',
+        MarketplaceBudgetFilter.all => tr('كل الأسعار'),
+        MarketplaceBudgetFilter.upTo100 => tr('من 0 إلى 100 د.أ'),
+        MarketplaceBudgetFilter.from100To500 => tr('من 100 إلى 500 د.أ'),
+        MarketplaceBudgetFilter.from500To1000 => tr('من 500 إلى 1000 د.أ'),
+        MarketplaceBudgetFilter.over1000 => tr('أكثر من 1000 د.أ'),
       };
 
   String get chipLabelAr => switch (this) {
         MarketplaceBudgetFilter.all => '',
-        MarketplaceBudgetFilter.upTo100 => '0–100 د.أ',
-        MarketplaceBudgetFilter.from100To500 => '100–500 د.أ',
-        MarketplaceBudgetFilter.from500To1000 => '500–1000 د.أ',
-        MarketplaceBudgetFilter.over1000 => '+1000 د.أ',
+        MarketplaceBudgetFilter.upTo100 => tr('0–100 د.أ'),
+        MarketplaceBudgetFilter.from100To500 => tr('100–500 د.أ'),
+        MarketplaceBudgetFilter.from500To1000 => tr('500–1000 د.أ'),
+        MarketplaceBudgetFilter.over1000 => tr('+1000 د.أ'),
       };
 
   bool containsValue(double value) => switch (this) {
@@ -165,9 +166,9 @@ class _OrdersMarketplaceScreenState extends ConsumerState<OrdersMarketplaceScree
                         ),
                       ),
                       const SizedBox(height: 16),
-                      const Text(
-                        'تصفية الطلبات',
-                        textAlign: TextAlign.right,
+                      Text(
+                        tr('تصفية الطلبات'),
+                        textAlign: TextAlign.start,
                         style: TextStyle(
                           color: AppColors.primaryDeep,
                           fontWeight: FontWeight.w800,
@@ -175,9 +176,9 @@ class _OrdersMarketplaceScreenState extends ConsumerState<OrdersMarketplaceScree
                         ),
                       ),
                       const SizedBox(height: 16),
-                      const Text(
-                        'نوع الطلب',
-                        textAlign: TextAlign.right,
+                      Text(
+                        tr('نوع الطلب'),
+                        textAlign: TextAlign.start,
                         style: TextStyle(
                           color: AppColors.textMuted,
                           fontWeight: FontWeight.w700,
@@ -186,24 +187,24 @@ class _OrdersMarketplaceScreenState extends ConsumerState<OrdersMarketplaceScree
                       ),
                       const SizedBox(height: 4),
                       _FilterOption(
-                        label: 'كل الأنواع',
+                        label: tr('كل الأنواع'),
                         selected: draftProject == MarketplaceProjectFilter.all,
                         onTap: () => setSheetState(() => draftProject = MarketplaceProjectFilter.all),
                       ),
                       _FilterOption(
-                        label: 'مناقصة',
+                        label: tr('مناقصة'),
                         selected: draftProject == MarketplaceProjectFilter.bidding,
                         onTap: () => setSheetState(() => draftProject = MarketplaceProjectFilter.bidding),
                       ),
                       _FilterOption(
-                        label: 'سعر ثابت',
+                        label: tr('سعر ثابت'),
                         selected: draftProject == MarketplaceProjectFilter.fixed,
                         onTap: () => setSheetState(() => draftProject = MarketplaceProjectFilter.fixed),
                       ),
                       const SizedBox(height: 12),
-                      const Text(
-                        'نطاق السعر',
-                        textAlign: TextAlign.right,
+                      Text(
+                        tr('نطاق السعر'),
+                        textAlign: TextAlign.start,
                         style: TextStyle(
                           color: AppColors.textMuted,
                           fontWeight: FontWeight.w700,
@@ -228,7 +229,7 @@ class _OrdersMarketplaceScreenState extends ConsumerState<OrdersMarketplaceScree
                                   budget: MarketplaceBudgetFilter.all,
                                 ),
                               ),
-                              child: const Text('إعادة ضبط'),
+                              child: Text(tr('إعادة ضبط')),
                             ),
                           ),
                           const SizedBox(width: 10),
@@ -241,7 +242,7 @@ class _OrdersMarketplaceScreenState extends ConsumerState<OrdersMarketplaceScree
                                 backgroundColor: AppColors.primary,
                                 foregroundColor: Colors.white,
                               ),
-                              child: const Text('تطبيق'),
+                              child: Text(tr('تطبيق')),
                             ),
                           ),
                         ],
@@ -287,9 +288,9 @@ class _OrdersMarketplaceScreenState extends ConsumerState<OrdersMarketplaceScree
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text(
-                    'سوق الطلبات',
-                    textAlign: TextAlign.right,
+                  Text(
+                    tr('سوق الطلبات'),
+                    textAlign: TextAlign.start,
                     style: TextStyle(
                       color: AppColors.primaryDeep,
                       fontSize: 28,
@@ -300,9 +301,9 @@ class _OrdersMarketplaceScreenState extends ConsumerState<OrdersMarketplaceScree
                   const SizedBox(height: 4),
                   Text(
                     hasActiveFilter
-                        ? '${filtered.length} نتيجة مطابقة'
-                        : 'استكشف الفرص وقدّم عروضك',
-                    textAlign: TextAlign.right,
+                        ? trf('{0} نتيجة مطابقة', [filtered.length])
+                        : tr('استكشف الفرص وقدّم عروضك'),
+                    textAlign: TextAlign.start,
                     style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
                   ),
                   const SizedBox(height: 14),
@@ -336,7 +337,7 @@ class _OrdersMarketplaceScreenState extends ConsumerState<OrdersMarketplaceScree
                           if (hasProjectFilter)
                             InputChip(
                               label: Text(
-                                _filter == MarketplaceProjectFilter.bidding ? 'مناقصة' : 'سعر ثابت',
+                                _filter == MarketplaceProjectFilter.bidding ? tr('مناقصة') : tr('سعر ثابت'),
                               ),
                               onDeleted: () => setState(() => _filter = MarketplaceProjectFilter.all),
                               deleteIconColor: AppColors.primary,
@@ -383,12 +384,12 @@ class _OrdersMarketplaceScreenState extends ConsumerState<OrdersMarketplaceScree
     List<PantryRequest> pantry,
   ) {
     if (state.isLoading && state.orders.isEmpty && pantry.isEmpty) {
-      return const OhLoadingBody(message: 'جاري تحميل الطلبات...');
+      return OhLoadingBody(message: tr('جاري تحميل الطلبات...'));
     }
 
     if (state.error != null && state.orders.isEmpty && pantry.isEmpty) {
       return OhErrorBody(
-        message: apiErrorMessage(state.error!, fallback: 'تعذر تحميل سوق الطلبات.'),
+        message: apiErrorMessage(state.error!, fallback: tr('تعذر تحميل سوق الطلبات.')),
         onRetry: () {
           ref.invalidate(pantryOpenRequestsProvider);
           notifier.load(refresh: true);
@@ -397,15 +398,15 @@ class _OrdersMarketplaceScreenState extends ConsumerState<OrdersMarketplaceScree
     }
 
     if (state.orders.isEmpty && pantry.isEmpty) {
-      return const OhEmptyBody(
-        message: 'لا توجد طلبات في السوق حالياً.',
+      return OhEmptyBody(
+        message: tr('لا توجد طلبات في السوق حالياً.'),
         icon: Icons.storefront_outlined,
       );
     }
 
     if (filtered.isEmpty) {
-      return const OhEmptyBody(
-        message: 'لا توجد نتائج مطابقة للبحث أو التصفية.',
+      return OhEmptyBody(
+        message: tr('لا توجد نتائج مطابقة للبحث أو التصفية.'),
         icon: Icons.search_off_rounded,
       );
     }
@@ -435,7 +436,7 @@ class _OrdersMarketplaceScreenState extends ConsumerState<OrdersMarketplaceScree
               );
             }
             return OhButton(
-              label: 'تحميل المزيد',
+              label: tr('تحميل المزيد'),
               outlined: true,
               onPressed: () => notifier.load(),
             );
@@ -478,10 +479,10 @@ class _SearchField extends StatelessWidget {
       child: TextField(
         controller: controller,
         onChanged: onChanged,
-        textAlign: TextAlign.right,
+        textAlign: TextAlign.start,
         style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
         decoration: InputDecoration(
-          hintText: 'ابحث عن طلب أو تصنيف...',
+          hintText: tr('ابحث عن طلب أو تصنيف...'),
           hintStyle: const TextStyle(color: AppColors.textMuted, fontWeight: FontWeight.w500),
           border: InputBorder.none,
           enabledBorder: InputBorder.none,
@@ -556,7 +557,7 @@ class _FilterOption extends StatelessWidget {
       contentPadding: EdgeInsets.zero,
       title: Text(
         label,
-        textAlign: TextAlign.right,
+        textAlign: TextAlign.start,
         style: TextStyle(
           fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
           color: selected ? AppColors.primary : AppColors.textInk,
@@ -610,7 +611,7 @@ class _PoolOrderCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       opportunity.title,
-                      textAlign: TextAlign.right,
+                      textAlign: TextAlign.start,
                       style: const TextStyle(
                         fontWeight: FontWeight.w800,
                         fontSize: 14,
@@ -627,7 +628,7 @@ class _PoolOrderCard extends StatelessWidget {
                 const SizedBox(height: 5),
                 Text(
                   opportunity.categoryName!,
-                  textAlign: TextAlign.right,
+                  textAlign: TextAlign.start,
                   style: const TextStyle(
                     color: AppColors.primaryMid,
                     fontWeight: FontWeight.w700,
@@ -681,7 +682,7 @@ class _PoolOrderCard extends StatelessWidget {
                       label: opportunity.pantryRequest != null &&
                               pantryPublicBidProgressLabel(opportunity.pantryRequest!) != null
                           ? pantryPublicBidProgressLabel(opportunity.pantryRequest!)!
-                          : '${opportunity.applicantsCount} متقدم',
+                          : trf('{0} متقدم', [opportunity.applicantsCount]),
                       color: const Color(0xFFB54708),
                       background: const Color(0xFFFFF4E5),
                     ),

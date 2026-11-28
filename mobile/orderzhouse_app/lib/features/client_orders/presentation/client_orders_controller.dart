@@ -4,6 +4,7 @@ import '../../../core/errors/api_error_message.dart';
 import '../data/client_order_bid_models.dart';
 import '../data/client_order_models.dart';
 import '../data/client_orders_repository.dart';
+import '../../../core/i18n/i18n.dart';
 
 class ClientOrdersState {
   const ClientOrdersState({
@@ -45,7 +46,7 @@ class ClientOrdersController extends Notifier<ClientOrdersState> {
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        error: apiErrorMessage(e, fallback: 'تعذر تحميل طلباتك.'),
+        error: apiErrorMessage(e, fallback: tr('تعذر تحميل طلباتك.')),
       );
     }
   }

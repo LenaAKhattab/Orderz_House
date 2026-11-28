@@ -13,6 +13,7 @@ import '../data/mini_articles_copy.dart';
 import '../data/mini_articles_models.dart';
 import 'mini_articles_controllers.dart';
 import 'mini_articles_widgets.dart';
+import '../../../../core/i18n/i18n.dart';
 
 class MiniArticleDetailScreen extends ConsumerStatefulWidget {
   const MiniArticleDetailScreen({super.key, required this.articleId});
@@ -39,7 +40,7 @@ class _MiniArticleDetailScreenState extends ConsumerState<MiniArticleDetailScree
     if (!mounted) return;
     if (ok) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تم إرسال التقديم بنجاح.')),
+        SnackBar(content: Text(tr('تم إرسال التقديم بنجاح.'))),
       );
     }
   }
@@ -58,7 +59,7 @@ class _MiniArticleDetailScreenState extends ConsumerState<MiniArticleDetailScree
     if (!auth.isAuthenticated) {
       return Scaffold(
         backgroundColor: AppColors.homeMobileBg,
-        appBar: AppBar(title: const Text('تفاصيل المقال')),
+        appBar: AppBar(title: Text(tr('تفاصيل المقال'))),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -67,14 +68,14 @@ class _MiniArticleDetailScreenState extends ConsumerState<MiniArticleDetailScree
               children: [
                 const Icon(Icons.lock_outline, size: 48, color: AppColors.textMuted),
                 const SizedBox(height: 12),
-                const Text(
-                  'سجّل الدخول لعرض المقال والتقديم.',
+                Text(
+                  tr('سجّل الدخول لعرض المقال والتقديم.'),
                   textAlign: TextAlign.center,
                   style: TextStyle(color: AppColors.textMuted, height: 1.6),
                 ),
                 const SizedBox(height: 16),
                 OhButton(
-                  label: 'تسجيل الدخول',
+                  label: tr('تسجيل الدخول'),
                   onPressed: () => context.push(AppRoutes.login),
                 ),
               ],
@@ -94,7 +95,7 @@ class _MiniArticleDetailScreenState extends ConsumerState<MiniArticleDetailScree
 
     return Scaffold(
       backgroundColor: AppColors.homeMobileBg,
-      appBar: AppBar(title: Text(article?.title.isNotEmpty == true ? article!.title : 'تفاصيل المقال')),
+      appBar: AppBar(title: Text(article?.title.isNotEmpty == true ? article!.title : tr('تفاصيل المقال'))),
       body: RefreshIndicator(
         onRefresh: () =>
             ref.read(miniArticleDetailControllerProvider(widget.articleId).notifier).refresh(),
@@ -112,7 +113,7 @@ class _MiniArticleDetailScreenState extends ConsumerState<MiniArticleDetailScree
             else if (article != null) ...[
               Text(
                 article.title,
-                textAlign: TextAlign.right,
+                textAlign: TextAlign.start,
                 style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, height: 1.35),
               ),
               const SizedBox(height: 8),
@@ -128,7 +129,7 @@ class _MiniArticleDetailScreenState extends ConsumerState<MiniArticleDetailScree
               const SizedBox(height: 12),
               Text(
                 formatArticleValueJodLabel(article.displayValueJod),
-                textAlign: TextAlign.right,
+                textAlign: TextAlign.start,
                 key: const Key('detail-article-value'),
                 style: const TextStyle(
                   fontWeight: FontWeight.w900,
@@ -140,29 +141,29 @@ class _MiniArticleDetailScreenState extends ConsumerState<MiniArticleDetailScree
                 const SizedBox(height: 6),
                 Text(
                   article.bidCollection!.progressLabel!,
-                  textAlign: TextAlign.right,
+                  textAlign: TextAlign.start,
                   style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
                 ),
               ],
               if (article.description?.trim().isNotEmpty == true) ...[
                 const SizedBox(height: 14),
-                const Text(
-                  'المتطلبات / الوصف',
-                  textAlign: TextAlign.right,
+                Text(
+                  tr('المتطلبات / الوصف'),
+                  textAlign: TextAlign.start,
                   style: TextStyle(fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 6),
                 Text(
                   article.description!.trim(),
-                  textAlign: TextAlign.right,
+                  textAlign: TextAlign.start,
                   style: const TextStyle(height: 1.55, color: AppColors.textInk),
                 ),
               ],
               if (article.requiredWordCount != null) ...[
                 const SizedBox(height: 8),
                 Text(
-                  'عدد الكلمات المطلوب: ${article.requiredWordCount}',
-                  textAlign: TextAlign.right,
+                  trf('عدد الكلمات المطلوب: {0}', [article.requiredWordCount]),
+                  textAlign: TextAlign.start,
                   style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
                 ),
               ],
@@ -175,15 +176,15 @@ class _MiniArticleDetailScreenState extends ConsumerState<MiniArticleDetailScree
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Text(
-                        'حالة تقديمك: ${application.statusLabelAr}',
-                        textAlign: TextAlign.right,
+                        trf('حالة تقديمك: {0}', [application.statusLabelAr]),
+                        textAlign: TextAlign.start,
                         key: Key('application-status-${application.statusKey}'),
                         style: const TextStyle(fontWeight: FontWeight.w800),
                       ),
                       const SizedBox(height: 6),
-                      const Text(
-                        'لا يمكن إرسال تقديم آخر على نفس المقال.',
-                        textAlign: TextAlign.right,
+                      Text(
+                        tr('لا يمكن إرسال تقديم آخر على نفس المقال.'),
+                        textAlign: TextAlign.start,
                         style: TextStyle(color: AppColors.textMuted, fontSize: 12),
                       ),
                     ],
@@ -194,8 +195,8 @@ class _MiniArticleDetailScreenState extends ConsumerState<MiniArticleDetailScree
                 if (eligibility?.availableBids != null) ...[
                   const SizedBox(height: 8),
                   Text(
-                    'رصيد Bids المتاح (من الخادم): ${eligibility!.availableBids}',
-                    textAlign: TextAlign.right,
+                    trf('رصيد Bids المتاح (من الخادم): {0}', [eligibility!.availableBids]),
+                    textAlign: TextAlign.start,
                     style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
                   ),
                 ],
@@ -223,15 +224,15 @@ class _MiniArticleDetailScreenState extends ConsumerState<MiniArticleDetailScree
                   TextField(
                     controller: _proposalCtrl,
                     maxLines: 3,
-                    textAlign: TextAlign.right,
-                    decoration: const InputDecoration(
-                      labelText: 'رسالة التقديم (اختياري)',
+                    textAlign: TextAlign.start,
+                    decoration: InputDecoration(
+                      labelText: tr('رسالة التقديم (اختياري)'),
                       alignLabelWithHint: true,
                     ),
                   ),
                   const SizedBox(height: 12),
                   OhButton(
-                    label: 'التقديم باستخدام Bid',
+                    label: tr('التقديم باستخدام Bid'),
                     isLoading: ui.applying,
                     onPressed: ui.applying ? null : _apply,
                   ),

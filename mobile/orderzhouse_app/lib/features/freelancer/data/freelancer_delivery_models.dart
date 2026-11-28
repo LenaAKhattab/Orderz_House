@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import '../../client_orders/data/order_attachment_limits.dart';
 import '../../client_orders/data/order_attachment_models.dart';
 import 'freelancer_my_order_models.dart';
+import '../../../core/i18n/i18n.dart';
 
 /// Matches web `DELIVERY_UPLOAD_ALLOWED_STATUSES` and backend `FREELANCER_DELIVERY_ALLOWED_STATUSES`.
 const freelancerDeliveryAllowedStatuses = <String>{
@@ -21,22 +22,22 @@ String? freelancerDeliveryBlockedMessageAr(FreelancerMyOrder order) {
   if (freelancerCanDeliverOrder(order)) {
     final note = order.clientRevisionNote?.trim();
     if (note != null && note.isNotEmpty) {
-      return 'العميل طلب تعديلات، يمكنك إرسال تسليم جديد.';
+      return tr('العميل طلب تعديلات، يمكنك إرسال تسليم جديد.');
     }
     return null;
   }
 
   switch (order.orderStatus) {
     case 'pending_client_review':
-      return 'تم إرسال التسليم وينتظر مراجعة العميل.';
+      return tr('تم إرسال التسليم وينتظر مراجعة العميل.');
     case 'completed':
-      return 'تم إكمال الطلب.';
+      return tr('تم إكمال الطلب.');
     case 'cancelled':
-      return 'الطلب ملغي.';
+      return tr('الطلب ملغي.');
     case 'revision_required':
-      return 'العميل طلب تعديلات، يمكنك إرسال تسليم جديد.';
+      return tr('العميل طلب تعديلات، يمكنك إرسال تسليم جديد.');
     default:
-      return 'لا يمكن التسليم في الحالة الحالية للطلب.';
+      return tr('لا يمكن التسليم في الحالة الحالية للطلب.');
   }
 }
 

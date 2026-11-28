@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 
 import 'order_attachment_limits.dart';
+import '../../../core/i18n/i18n.dart';
 
 /// User-selected file kept in memory until create-order submit.
 class SelectedOrderAttachment {
@@ -30,7 +31,7 @@ class SelectedOrderAttachment {
     if (path != null) {
       return MultipartFile.fromFile(path!, filename: name);
     }
-    throw StateError('لا توجد بيانات للملف.');
+    throw StateError(tr('لا توجد بيانات للملف.'));
   }
 
   static SelectedOrderAttachment? fromPlatformFile(PlatformFile file, {required String id}) {

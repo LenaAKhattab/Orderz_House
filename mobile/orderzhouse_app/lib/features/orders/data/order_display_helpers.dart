@@ -1,26 +1,27 @@
 import 'package:intl/intl.dart';
+import '../../../core/i18n/i18n.dart';
 
 String formatOrderDate(String? raw) {
   if (raw == null || raw.isEmpty) return '—';
   final parsed = DateTime.tryParse(raw);
   if (parsed == null) return raw;
-  return DateFormat('d MMM y', 'ar').format(parsed.toLocal());
+  return DateFormat('d MMM y', AppI18n.language.code).format(parsed.toLocal());
 }
 
 String projectTypeLabel(String? projectType) {
-  if (projectType == 'bidding') return 'مناقصة';
-  if (projectType == 'fixed') return 'ثابت';
+  if (projectType == 'bidding') return tr('مناقصة');
+  if (projectType == 'fixed') return tr('ثابت');
   return projectType ?? '—';
 }
 
 String poolOrderStatusLabel(String? status) {
   switch (status) {
     case 'published':
-      return 'منشور';
+      return tr('منشور');
     case 'open_for_freelancers':
-      return 'مفتوح للمستقلين';
+      return tr('مفتوح للمستقلين');
     case 'open_for_bids':
-      return 'مفتوح للعروض';
+      return tr('مفتوح للعروض');
     default:
       return status ?? '—';
   }
@@ -29,30 +30,35 @@ String poolOrderStatusLabel(String? status) {
 String clientOrderStatusLabel(String? status) {
   switch (status) {
     case 'pending_payment':
-      return 'بانتظار الدفع';
+      return tr('بانتظار الدفع');
     // Smart Orders: managed order still being prepared / assigned by the team.
     case 'draft':
-      return 'قيد الإعداد';
+      return tr('قيد الإعداد');
     case 'pending_admin_review':
-      return 'بانتظار مراجعة الإدارة';
+      return tr('بانتظار مراجعة الإدارة');
+    // Smart Orders (managed): execution state; payment is shown separately.
+    case 'awaiting_quote_payment':
+      return tr('بانتظار دفع عرض السعر');
+    case 'awaiting_assignment':
+      return tr('بانتظار تعيين المستقل');
     case 'awaiting_payment_after_bid_selection':
-      return 'بانتظار الدفع';
+      return tr('بانتظار الدفع');
     case 'published':
-      return 'منشور';
+      return tr('منشور');
     case 'open_for_freelancers':
-      return 'مفتوح للمستقلين';
+      return tr('مفتوح للمستقلين');
     case 'open_for_bids':
-      return 'مفتوح للعروض';
+      return tr('مفتوح للعروض');
     case 'in_progress':
-      return 'قيد التنفيذ';
+      return tr('قيد التنفيذ');
     case 'submitted':
-      return 'تم التسليم';
+      return tr('تم التسليم');
     case 'revision_requested':
-      return 'طلب تعديل';
+      return tr('طلب تعديل');
     case 'completed':
-      return 'مكتمل';
+      return tr('مكتمل');
     case 'cancelled':
-      return 'ملغى';
+      return tr('ملغى');
     default:
       return status ?? '—';
   }
@@ -61,21 +67,21 @@ String clientOrderStatusLabel(String? status) {
 String freelancerOrderStatusLabel(String? status) {
   switch (status) {
     case 'assigned':
-      return 'مسند';
+      return tr('مسند');
     case 'ready_for_work':
-      return 'جاهز للعمل';
+      return tr('جاهز للعمل');
     case 'in_progress':
-      return 'قيد التنفيذ';
+      return tr('قيد التنفيذ');
     case 'revision_required':
-      return 'طلب تعديل';
+      return tr('طلب تعديل');
     case 'pending_client_review':
-      return 'بانتظار مراجعة العميل';
+      return tr('بانتظار مراجعة العميل');
     case 'completed':
-      return 'مكتمل';
+      return tr('مكتمل');
     case 'cancelled':
-      return 'ملغى';
+      return tr('ملغى');
     case 'published':
-      return 'منشور';
+      return tr('منشور');
     default:
       return clientOrderStatusLabel(status);
   }
@@ -84,15 +90,15 @@ String freelancerOrderStatusLabel(String? status) {
 String paymentStatusLabel(String? status) {
   switch (status) {
     case 'paid':
-      return 'مدفوع';
+      return tr('مدفوع');
     case 'pending':
-      return 'بانتظار الدفع';
+      return tr('بانتظار الدفع');
     case 'failed':
-      return 'فشل الدفع';
+      return tr('فشل الدفع');
     case 'skipped_by_admin':
-      return 'تم التخطي (إداري)';
+      return tr('تم التخطي (إداري)');
     case 'not_required':
-      return 'غير مطلوب';
+      return tr('غير مطلوب');
     default:
       return status ?? '—';
   }
@@ -111,8 +117,8 @@ String? budgetLabel({
     if (bidBudgetMin != null && bidBudgetMax != null) {
       return '${bidBudgetMin.toStringAsFixed(0)} - ${bidBudgetMax.toStringAsFixed(0)} $currency';
     }
-    if (bidBudgetMin != null) return 'من ${bidBudgetMin.toStringAsFixed(0)} $currency';
-    if (bidBudgetMax != null) return 'حتى ${bidBudgetMax.toStringAsFixed(0)} $currency';
+    if (bidBudgetMin != null) return trf('من {0} {1}', [bidBudgetMin.toStringAsFixed(0), currency]);
+    if (bidBudgetMax != null) return trf('حتى {0} {1}', [bidBudgetMax.toStringAsFixed(0), currency]);
     return null;
   }
   if (budget != null) return '${budget.toStringAsFixed(0)} $currency';
@@ -122,9 +128,9 @@ String? budgetLabel({
 String? durationLabel(int? value, String? unit) {
   if (value == null || unit == null || unit.isEmpty) return null;
   final unitAr = switch (unit) {
-    'days' => 'يوم',
-    'hours' => 'ساعة',
-    'weeks' => 'أسبوع',
+    'days' => tr('يوم'),
+    'hours' => tr('ساعة'),
+    'weeks' => tr('أسبوع'),
     _ => unit,
   };
   return '$value $unitAr';

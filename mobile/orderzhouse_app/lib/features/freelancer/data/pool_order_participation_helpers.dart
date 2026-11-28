@@ -1,15 +1,16 @@
 import '../../orders/data/pool_order_models.dart';
 import 'plan_upgrade_cta.dart';
+import '../../../core/i18n/i18n.dart';
 
-const poolPlanLockMessageAr = 'هذا الطلب غير متاح لحسابك حاليًا.';
+String get poolPlanLockMessageAr => tr('هذا الطلب غير متاح لحسابك حاليًا.');
 
 const poolPlanEligibilityReasonPlanTooLow = 'PLAN_TOO_LOW';
 const poolPlanEligibilityReasonNoActivePlan = 'NO_ACTIVE_PLAN';
 const poolPlanEligibilityReasonInternal = 'INTERNAL_PLAN_CONFIGURATION';
 
-const poolPlanEligibilityMessagePlanTooLowAr = planTooLowHeadlineAr;
-const poolPlanEligibilityMessageNoActivePlanAr = noActivePlanHeadlineAr;
-const poolPlanEligibilityMessageInternalAr = internalPlanConfigHeadlineAr;
+final poolPlanEligibilityMessagePlanTooLowAr = planTooLowHeadlineAr;
+final poolPlanEligibilityMessageNoActivePlanAr = noActivePlanHeadlineAr;
+final poolPlanEligibilityMessageInternalAr = internalPlanConfigHeadlineAr;
 
 final _legacyPlanCorrectionRe = RegExp(r'الخطة بحاجة إلى تصحيح');
 
@@ -95,14 +96,14 @@ bool isPoolOrderTakenAsAssignment(PoolOrder order) {
 
 String? poolParticipationStatusLabelAr(PoolOrder order) {
   if (order.projectType == 'bidding') {
-    if (order.myBid?.isPending == true) return 'تم إرسال عرضك — بانتظار المراجعة';
-    if (order.myBid?.isAccepted == true) return 'تم قبول عرضك';
+    if (order.myBid?.isPending == true) return tr('تم إرسال عرضك — بانتظار المراجعة');
+    if (order.myBid?.isAccepted == true) return tr('تم قبول عرضك');
     return null;
   }
   if (poolFixedParticipationPending(order)) {
-    return 'تم تسجيل مشاركتك — بانتظار المراجعة';
+    return tr('تم تسجيل مشاركتك — بانتظار المراجعة');
   }
-  if (order.myClaim?.isAccepted == true) return 'تم استلام الطلب';
+  if (order.myClaim?.isAccepted == true) return tr('تم استلام الطلب');
   return null;
 }
 

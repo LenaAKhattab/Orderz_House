@@ -1,5 +1,6 @@
 import '../../../core/network/json_helpers.dart';
 import 'course_access.dart';
+import '../../../core/i18n/i18n.dart';
 
 class CourseProgress {
   const CourseProgress({
@@ -73,9 +74,9 @@ class FreelancerCourseSummary {
 
   String get statusLabelAr {
     if (isLockedByPlanGate) return lockCopyAr.badgeOrDefault;
-    if (isCompleted) return 'مكتملة';
-    if (progress.completedLessons > 0) return 'قيد التقدّم';
-    return 'لم تبدأ';
+    if (isCompleted) return tr('مكتملة');
+    if (progress.completedLessons > 0) return tr('قيد التقدّم');
+    return tr('لم تبدأ');
   }
 
   factory FreelancerCourseSummary.fromJson(Map<String, dynamic> json) {

@@ -12,6 +12,7 @@ import '../data/super_admin_package_models.dart';
 import 'super_admin_action_dialogs.dart';
 import 'super_admin_queue_screens.dart';
 import 'super_admin_ui.dart';
+import '../../../core/i18n/i18n.dart';
 
 class SuperAdminPackageAssignmentScreen extends ConsumerStatefulWidget {
   const SuperAdminPackageAssignmentScreen({super.key});
@@ -54,16 +55,16 @@ class _SuperAdminPackageAssignmentScreenState extends ConsumerState<SuperAdminPa
                 Expanded(
                   child: TextField(
                     controller: _searchController,
-                    textAlign: TextAlign.right,
-                    decoration: const InputDecoration(
-                      hintText: 'بحث بالاسم أو البريد',
+                    textAlign: TextAlign.start,
+                    decoration: InputDecoration(
+                      hintText: tr('بحث بالاسم أو البريد'),
                       prefixIcon: Icon(Icons.search),
                     ),
                     onSubmitted: (_) => _search(),
                   ),
                 ),
                 const SizedBox(width: 8),
-                OhButton(label: 'بحث', expand: false, onPressed: _search),
+                OhButton(label: tr('بحث'), expand: false, onPressed: _search),
               ],
             ),
           ),
@@ -93,12 +94,12 @@ class _SuperAdminPackageAssignmentScreenState extends ConsumerState<SuperAdminPa
                                 child: DropdownButtonFormField<String?>(
                                   key: const Key('sa-package-filter-plan'),
                                   initialValue: _filters.packageLabel,
-                                  decoration: const InputDecoration(
+                                  decoration: InputDecoration(
                                     labelText: superAdminPackageFilterPackageAr,
                                     isDense: true,
                                   ),
                                   items: [
-                                    const DropdownMenuItem<String?>(
+                                    DropdownMenuItem<String?>(
                                       value: null,
                                       child: Text(superAdminPackageFilterAllAr),
                                     ),
@@ -119,11 +120,11 @@ class _SuperAdminPackageAssignmentScreenState extends ConsumerState<SuperAdminPa
                                 child: DropdownButtonFormField<PackageIdentityFilter>(
                                   key: const Key('sa-package-filter-identity'),
                                   initialValue: _filters.identity,
-                                  decoration: const InputDecoration(
+                                  decoration: InputDecoration(
                                     labelText: superAdminPackageFilterIdentityAr,
                                     isDense: true,
                                   ),
-                                  items: const [
+                                  items: [
                                     DropdownMenuItem(
                                       value: PackageIdentityFilter.all,
                                       child: Text(superAdminPackageFilterAllAr),
@@ -156,11 +157,11 @@ class _SuperAdminPackageAssignmentScreenState extends ConsumerState<SuperAdminPa
                                 child: DropdownButtonFormField<PackageTrainingFilter>(
                                   key: const Key('sa-package-filter-training'),
                                   initialValue: _filters.training,
-                                  decoration: const InputDecoration(
+                                  decoration: InputDecoration(
                                     labelText: superAdminPackageFilterTrainingAr,
                                     isDense: true,
                                   ),
-                                  items: const [
+                                  items: [
                                     DropdownMenuItem(
                                       value: PackageTrainingFilter.all,
                                       child: Text(superAdminPackageFilterAllAr),
@@ -184,7 +185,7 @@ class _SuperAdminPackageAssignmentScreenState extends ConsumerState<SuperAdminPa
                               TextButton(
                                 key: const Key('sa-package-filter-reset'),
                                 onPressed: _filters.isDefault ? null : _resetFilters,
-                                child: const Text('إعادة تعيين'),
+                                child: Text(tr('إعادة تعيين')),
                               ),
                             ],
                           ),
@@ -193,9 +194,9 @@ class _SuperAdminPackageAssignmentScreenState extends ConsumerState<SuperAdminPa
                     ),
                     Expanded(
                       child: filtered.isEmpty
-                          ? const SuperAdminQueueErrorOrEmpty(
+                          ? SuperAdminQueueErrorOrEmpty(
                               isError: false,
-                              message: 'لا يوجد مستقلون مطابقون.',
+                              message: tr('لا يوجد مستقلون مطابقون.'),
                             )
                           : ListView.separated(
                               physics: const AlwaysScrollableScrollPhysics(),
@@ -205,15 +206,15 @@ class _SuperAdminPackageAssignmentScreenState extends ConsumerState<SuperAdminPa
                               itemBuilder: (context, index) {
                                 final item = filtered[index];
                                 return SuperAdminQueueCard(
-                                  title: item.displayName ?? item.email ?? 'مستقل',
+                                  title: item.displayName ?? item.email ?? tr('مستقل'),
                                   subtitle: [
                                     if (item.email != null) item.email,
-                                    'الباقة: ${item.planLabel}',
-                                    'التوثيق: ${item.identityStatusLabel}',
-                                    'التدريب: ${item.trainingStatusLabel}',
+                                    trf('الباقة: {0}', [item.planLabel]),
+                                    trf('التوثيق: {0}', [item.identityStatusLabel]),
+                                    trf('التدريب: {0}', [item.trainingStatusLabel]),
                                   ].whereType<String>().join('\n'),
                                   chip: SuperAdminStatusChip(
-                                    label: item.accountStatus == 'active' ? 'نشط' : 'غير نشط',
+                                    label: item.accountStatus == 'active' ? tr('نشط') : tr('غير نشط'),
                                     tone: item.accountStatus == 'active'
                                         ? SuperAdminChipTone.success
                                         : SuperAdminChipTone.neutral,
@@ -257,17 +258,17 @@ class _SuperAdminPackageUserDetailScreenState extends ConsumerState<SuperAdminPa
       showDragHandle: true,
       builder: (context) {
         return Directionality(
-          textDirection: TextDirection.rtl,
+          textDirection: Directionality.of(context),
           child: ListView(
             shrinkWrap: true,
             padding: const EdgeInsets.all(16),
             children: [
-              const Text('تغيير الباقة', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+              Text(tr('تغيير الباقة'), style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
               const SizedBox(height: 12),
               ...canonical.map(
                 (p) => ListTile(
                   title: Text('${p.marketplaceTier} — ${p.displayTitle}'),
-                  subtitle: p.priceJod != null ? Text('${p.priceJod} د.أ') : null,
+                  subtitle: p.priceJod != null ? Text(trf('{0} د.أ', [p.priceJod])) : null,
                   onTap: () => Navigator.pop(context, p),
                 ),
               ),
@@ -291,7 +292,7 @@ class _SuperAdminPackageUserDetailScreenState extends ConsumerState<SuperAdminPa
     if (selected == null || !mounted) return;
     final ok = await showSuperAdminConfirmDialog(
       context: context,
-      title: 'تأكيد',
+      title: tr('تأكيد'),
       body: superAdminPackageChangeConfirmAr,
       confirmLabel: superAdminConfirmActionLabelAr,
     );
@@ -302,7 +303,7 @@ class _SuperAdminPackageUserDetailScreenState extends ConsumerState<SuperAdminPa
           );
       if (!started || !mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(superAdminPackageAssignSuccessAr)),
+        SnackBar(content: Text(superAdminPackageAssignSuccessAr)),
       );
     } catch (error) {
       if (!mounted) return;
@@ -316,7 +317,7 @@ class _SuperAdminPackageUserDetailScreenState extends ConsumerState<SuperAdminPa
   Widget build(BuildContext context) {
     final async = ref.watch(superAdminPackageUserDetailProvider(widget.userId));
     return SuperAdminQueueScaffold(
-      title: 'تفاصيل المستخدم',
+      title: tr('تفاصيل المستخدم'),
       onRefresh: () => ref.read(superAdminPackageUserDetailProvider(widget.userId).notifier).refreshQuietly(),
       body: async.when(
         loading: () => ListView(
@@ -338,33 +339,33 @@ class _SuperAdminPackageUserDetailScreenState extends ConsumerState<SuperAdminPa
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      detail.displayName ?? detail.email ?? 'مستقل',
+                      detail.displayName ?? detail.email ?? tr('مستقل'),
                       style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
-                      textAlign: TextAlign.right,
+                      textAlign: TextAlign.start,
                     ),
                     if (detail.email != null && detail.displayName != null) ...[
                       const SizedBox(height: 4),
                       Text(
                         detail.email!,
                         style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
-                        textAlign: TextAlign.right,
+                        textAlign: TextAlign.start,
                       ),
                     ],
                     const SizedBox(height: 12),
-                    _PackageDetailRow(label: 'البريد', value: detail.email ?? '—'),
-                    _PackageDetailRow(label: 'الباقة', value: detail.planLabel),
-                    _PackageDetailRow(label: 'التوثيق', value: detail.identityStatusLabel),
-                    _PackageDetailRow(label: 'التدريب', value: detail.trainingStatusLabel),
+                    _PackageDetailRow(label: tr('البريد'), value: detail.email ?? '—'),
+                    _PackageDetailRow(label: tr('الباقة'), value: detail.planLabel),
+                    _PackageDetailRow(label: tr('التوثيق'), value: detail.identityStatusLabel),
+                    _PackageDetailRow(label: tr('التدريب'), value: detail.trainingStatusLabel),
                     if (detail.subscriptionStatus != null)
                       _PackageDetailRow(
-                        label: 'حالة الاشتراك',
+                        label: tr('حالة الاشتراك'),
                         value: subscriptionStatusLabelAr(detail.subscriptionStatus),
                       ),
                     if (detail.expiresAt != null)
-                      _PackageDetailRow(label: 'انتهاء', value: detail.expiresAt!),
+                      _PackageDetailRow(label: tr('انتهاء'), value: detail.expiresAt!),
                     const SizedBox(height: 4),
                     Align(
-                      alignment: Alignment.centerRight,
+                      alignment: AlignmentDirectional.centerStart,
                       child: SuperAdminStatusChip(
                         label: detail.accountStatusLabel,
                         tone: detail.accountStatus == 'active'
@@ -377,26 +378,26 @@ class _SuperAdminPackageUserDetailScreenState extends ConsumerState<SuperAdminPa
               ),
               const SizedBox(height: 16),
               OhButton(
-                label: 'تغيير الباقة',
+                label: tr('تغيير الباقة'),
                 onPressed: detail.assignablePlans.isEmpty ? null : () => _changePlan(detail),
               ),
               const SizedBox(height: 10),
               OhButton(
-                label: 'توثيق الحساب',
+                label: tr('توثيق الحساب'),
                 outlined: true,
                 onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text(superAdminPackageVerifyUnavailableAr)),
+                    SnackBar(content: Text(superAdminPackageVerifyUnavailableAr)),
                   );
                 },
               ),
               const SizedBox(height: 10),
               OhButton(
-                label: 'إكمال التدريب',
+                label: tr('إكمال التدريب'),
                 outlined: true,
                 onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text(superAdminPackageTrainingUnavailableAr)),
+                    SnackBar(content: Text(superAdminPackageTrainingUnavailableAr)),
                   );
                 },
               ),
@@ -427,7 +428,7 @@ class _PackageDetailRow extends StatelessWidget {
           ),
           Expanded(
             flex: 3,
-            child: Text(value, textAlign: TextAlign.right, style: const TextStyle(fontWeight: FontWeight.w600)),
+            child: Text(value, textAlign: TextAlign.start, style: const TextStyle(fontWeight: FontWeight.w600)),
           ),
         ],
       ),

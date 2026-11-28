@@ -22,6 +22,7 @@ import 'client_orders_controller.dart';
 import 'order_payment_actions.dart';
 import 'request_delivery_revision_sheet.dart';
 import 'service_form_snapshot_view.dart';
+import '../../../core/i18n/i18n.dart';
 
 class ClientOrderDetailsScreen extends ConsumerWidget {
   const ClientOrderDetailsScreen({super.key, required this.orderId});
@@ -35,11 +36,11 @@ class ClientOrderDetailsScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.homeMobileBg,
-      appBar: AppBar(title: const Text('تفاصيل طلبي')),
+      appBar: AppBar(title: Text(tr('تفاصيل طلبي'))),
       body: asyncOrder.when(
-        loading: () => const OhLoadingBody(message: 'جاري تحميل التفاصيل...'),
+        loading: () => OhLoadingBody(message: tr('جاري تحميل التفاصيل...')),
         error: (error, _) => OhErrorBody(
-          message: apiErrorMessage(error, fallback: 'تعذر تحميل تفاصيل الطلب.'),
+          message: apiErrorMessage(error, fallback: tr('تعذر تحميل تفاصيل الطلب.')),
           onRetry: () => ref.invalidate(clientOrderDetailProvider(orderId)),
         ),
         data: (order) => _ClientOrderDetailBody(
@@ -99,7 +100,7 @@ class _ClientOrderDetailBody extends ConsumerWidget {
           onDark: true,
         ),
         dateLabel: formatOrderDateLabel(order.createdAt),
-        dateCaption: 'تاريخ الإنشاء',
+        dateCaption: tr('تاريخ الإنشاء'),
       ),
       const SizedBox(height: 12),
       if (isClient && order.quote != null) ...[
@@ -111,56 +112,57 @@ class _ClientOrderDetailBody extends ConsumerWidget {
         const SizedBox(height: 12),
       ],
       OrderSectionCard(
-        title: 'معلومات الطلب',
+        title: tr('معلومات الطلب'),
         icon: Icons.info_outline_rounded,
         children: [
           OrderInfoGrid(
             items: [
               if (order.category?.name != null)
                 OrderMetaItem(
-                  label: 'التصنيف',
+                  label: tr('التصنيف'),
                   value: order.category!.name!,
                   icon: Icons.category_outlined,
                 ),
               OrderMetaItem(
-                label: 'نوع الطلب',
+                label: tr('نوع الطلب'),
                 value: order.projectTypeLabel,
                 icon: Icons.layers_outlined,
               ),
               if (order.durationText != null)
                 OrderMetaItem(
-                  label: 'المدة',
+                  label: tr('المدة'),
                   value: order.durationText!,
                   icon: Icons.schedule_outlined,
                 ),
               if (order.dueAt != null)
                 OrderMetaItem(
-                  label: 'موعد التسليم',
+                  label: tr('موعد التسليم'),
                   value: formatOrderDateLabel(order.dueAt),
                   icon: Icons.event_outlined,
                 ),
-              // Managed orders: the quote card carries the payment state (no fixed-order payment).
-              if (order.paymentStatus != null && !managed)
+              // Managed orders: payment is reported separately from execution (quote paid / pending);
+              // never shown as paid unless the quote is paid.
+              if (order.paymentStatus != null && (!managed || order.paymentStatus != 'not_required'))
                 OrderMetaItem(
-                  label: 'حالة الدفع',
+                  label: tr('حالة الدفع'),
                   value: order.paymentStatusLabel,
                   icon: Icons.credit_card_outlined,
                   accent: AppColors.success,
                 ),
               OrderMetaItem(
-                label: 'التنفيذ',
-                value: order.hasAssignedFreelancer ? 'معيّن' : 'بانتظار التعيين',
+                label: tr('التنفيذ'),
+                value: order.hasAssignedFreelancer ? tr('معيّن') : tr('بانتظار التعيين'),
                 icon: Icons.engineering_outlined,
               ),
               if (order.assignedFreelancerLabel != null)
                 OrderMetaItem(
-                  label: 'المستقل',
+                  label: tr('المستقل'),
                   value: order.assignedFreelancerLabel!,
                   icon: Icons.person_outline,
                 ),
               if (order.paymentAmount != null)
                 OrderMetaItem(
-                  label: 'مبلغ الدفع',
+                  label: tr('مبلغ الدفع'),
                   valueWidget: JodMoneyDisplay(amount: order.paymentAmount),
                   icon: Icons.paid_outlined,
                   accent: AppColors.success,
@@ -172,13 +174,13 @@ class _ClientOrderDetailBody extends ConsumerWidget {
       if (order.description != null && order.description!.trim().isNotEmpty) ...[
         const SizedBox(height: 12),
         OrderSectionCard(
-          title: 'الوصف',
+          title: tr('الوصف'),
           icon: Icons.notes_rounded,
           children: [
             Text(
               order.description!.trim(),
               style: const TextStyle(color: AppColors.textInk, height: 1.75, fontSize: 14),
-              textAlign: TextAlign.right,
+              textAlign: TextAlign.start,
             ),
           ],
         ),
@@ -186,7 +188,7 @@ class _ClientOrderDetailBody extends ConsumerWidget {
       if (order.serviceForm != null) ...[
         const SizedBox(height: 12),
         OrderSectionCard(
-          title: 'تفاصيل الخدمة',
+          title: tr('تفاصيل الخدمة'),
           icon: Icons.assignment_outlined,
           children: [ServiceFormSnapshotView(snapshot: order.serviceForm!)],
         ),
@@ -194,7 +196,7 @@ class _ClientOrderDetailBody extends ConsumerWidget {
       for (final item in order.serviceItems) ...[
         const SizedBox(height: 12),
         OrderSectionCard(
-          title: 'خدمة إضافية',
+          title: tr('خدمة إضافية'),
           icon: Icons.add_task_outlined,
           children: [ServiceFormSnapshotView(snapshot: item)],
         ),
@@ -202,7 +204,7 @@ class _ClientOrderDetailBody extends ConsumerWidget {
       if (isClient && managed) ...[
         const SizedBox(height: 12),
         OrderSectionCard(
-          title: 'الملفات',
+          title: tr('الملفات'),
           icon: Icons.folder_open_outlined,
           children: [_ManagedOrderFiles(orderId: orderId, order: order)],
         ),
@@ -217,7 +219,7 @@ class _ClientOrderDetailBody extends ConsumerWidget {
       if (showDeliveryReview) ...[
         const SizedBox(height: 12),
         OrderSectionCard(
-          title: 'مراجعة التسليم',
+          title: tr('مراجعة التسليم'),
           icon: Icons.inventory_2_outlined,
           children: [
             _ClientDeliveryReviewSection(orderId: orderId, order: order),
@@ -227,7 +229,7 @@ class _ClientOrderDetailBody extends ConsumerWidget {
       if (showFreelancerReview) ...[
         const SizedBox(height: 12),
         OrderSectionCard(
-          title: 'تقييم المستقل',
+          title: tr('تقييم المستقل'),
           icon: Icons.star_outline_rounded,
           children: [
             _ClientFreelancerReviewSection(orderId: orderId, order: order),
@@ -285,7 +287,7 @@ class _ClientFreelancerReviewSection extends ConsumerWidget {
       return Text(
         clientFreelancerReviewHeadlineAr(orderStatus: order.orderStatus, status: null),
         style: const TextStyle(color: AppColors.textMuted, height: 1.5),
-        textAlign: TextAlign.right,
+        textAlign: TextAlign.start,
       );
     }
 
@@ -300,13 +302,13 @@ class _ClientFreelancerReviewSection extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            apiErrorMessage(error, fallback: 'تعذر تحميل حالة التقييم.'),
+            apiErrorMessage(error, fallback: tr('تعذر تحميل حالة التقييم.')),
             style: const TextStyle(color: AppColors.error, height: 1.5),
-            textAlign: TextAlign.right,
+            textAlign: TextAlign.start,
           ),
           const SizedBox(height: 8),
           OhButton(
-            label: 'إعادة المحاولة',
+            label: tr('إعادة المحاولة'),
             outlined: true,
             onPressed: () => ref.invalidate(clientOrderReviewStatusProvider(orderId)),
           ),
@@ -361,13 +363,13 @@ class _ClientFreelancerReviewContentState extends ConsumerState<_ClientFreelance
       if (!mounted) return;
       ref.invalidate(clientOrderReviewStatusProvider(widget.orderId));
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(update ? 'تم تحديث تقييمك.' : 'شكراً — تم إرسال تقييمك.')),
+        SnackBar(content: Text(update ? tr('تم تحديث تقييمك.') : tr('شكراً — تم إرسال تقييمك.'))),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(apiErrorMessage(e, fallback: 'تعذر إرسال التقييم.')),
+          content: Text(apiErrorMessage(e, fallback: tr('تعذر إرسال التقييم.'))),
           backgroundColor: AppColors.error,
         ),
       );
@@ -393,7 +395,7 @@ class _ClientFreelancerReviewContentState extends ConsumerState<_ClientFreelance
             fontWeight: FontWeight.w600,
             height: 1.5,
           ),
-          textAlign: TextAlign.right,
+          textAlign: TextAlign.start,
         ),
         if (review != null) ...[
           const SizedBox(height: 12),
@@ -402,28 +404,28 @@ class _ClientFreelancerReviewContentState extends ConsumerState<_ClientFreelance
           Text(
             reviewStarsLabelAr(review.rating),
             style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
-            textAlign: TextAlign.right,
+            textAlign: TextAlign.start,
           ),
           if (review.reviewText != null && review.reviewText!.trim().isNotEmpty) ...[
             const SizedBox(height: 8),
             Text(
               review.reviewText!.trim(),
               style: const TextStyle(color: AppColors.textInk, height: 1.5),
-              textAlign: TextAlign.right,
+              textAlign: TextAlign.start,
             ),
           ],
         ],
         if (status.canSubmit) ...[
           const SizedBox(height: 12),
           OhButton(
-            label: reviewState.isSubmitting ? 'جارٍ الإرسال...' : 'قيّم المستقل',
+            label: reviewState.isSubmitting ? tr('جارٍ الإرسال...') : tr('قيّم المستقل'),
             isLoading: reviewState.isSubmitting,
             onPressed: reviewState.isSubmitting ? null : () => _openReviewSheet(),
           ),
         ] else if (review?.canEdit == true) ...[
           const SizedBox(height: 12),
           OhButton(
-            label: reviewState.isSubmitting ? 'جارٍ الحفظ...' : 'تعديل التقييم',
+            label: reviewState.isSubmitting ? tr('جارٍ الحفظ...') : tr('تعديل التقييم'),
             outlined: true,
             isLoading: reviewState.isSubmitting,
             onPressed: reviewState.isSubmitting ? null : () => _openReviewSheet(update: true),
@@ -449,11 +451,11 @@ class _ClientDeliveryReviewSectionState extends ConsumerState<_ClientDeliveryRev
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('قبول التسليم'),
-        content: const Text('هل أنت متأكد من قبول التسليم وإنهاء الطلب؟'),
+        title: Text(tr('قبول التسليم')),
+        content: Text(tr('هل أنت متأكد من قبول التسليم وإنهاء الطلب؟')),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('إلغاء')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('تأكيد')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(tr('إلغاء'))),
+          FilledButton(onPressed: () => Navigator.pop(context, true), child: Text(tr('تأكيد'))),
         ],
       ),
     );
@@ -466,13 +468,13 @@ class _ClientDeliveryReviewSectionState extends ConsumerState<_ClientDeliveryRev
       ref.invalidate(clientOrderReviewStatusProvider(widget.orderId));
       ref.read(clientOrdersControllerProvider.notifier).load(refresh: true);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تم قبول التسليم وإكمال الطلب بنجاح.')),
+        SnackBar(content: Text(tr('تم قبول التسليم وإكمال الطلب بنجاح.'))),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(apiErrorMessage(e, fallback: 'تعذر قبول التسليم.')),
+          content: Text(apiErrorMessage(e, fallback: tr('تعذر قبول التسليم.'))),
           backgroundColor: AppColors.error,
         ),
       );
@@ -495,13 +497,13 @@ class _ClientDeliveryReviewSectionState extends ConsumerState<_ClientDeliveryRev
       ref.invalidate(clientOrderDetailProvider(widget.orderId));
       ref.read(clientOrdersControllerProvider.notifier).load(refresh: true);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تم إرسال طلب التعديل بنجاح.')),
+        SnackBar(content: Text(tr('تم إرسال طلب التعديل بنجاح.'))),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(apiErrorMessage(e, fallback: 'تعذر إرسال طلب التعديل.')),
+          content: Text(apiErrorMessage(e, fallback: tr('تعذر إرسال طلب التعديل.'))),
           backgroundColor: AppColors.error,
         ),
       );
@@ -526,7 +528,7 @@ class _ClientDeliveryReviewSectionState extends ConsumerState<_ClientDeliveryRev
             fontWeight: FontWeight.w700,
             height: 1.5,
           ),
-          textAlign: TextAlign.right,
+          textAlign: TextAlign.start,
         ),
         if (submission != null) ...[
           const SizedBox(height: 12),
@@ -536,14 +538,14 @@ class _ClientDeliveryReviewSectionState extends ConsumerState<_ClientDeliveryRev
           const SizedBox(height: 16),
           if (canApprove)
             OhButton(
-              label: reviewState.isApproving ? 'جارٍ القبول...' : 'قبول التسليم',
+              label: reviewState.isApproving ? tr('جارٍ القبول...') : tr('قبول التسليم'),
               isLoading: reviewState.isApproving,
               onPressed: reviewState.isBusy ? null : _confirmApprove,
             ),
           if (canApprove && canRevise) const SizedBox(height: 8),
           if (canRevise)
             OhButton(
-              label: reviewState.isRequestingRevision ? 'جارٍ الإرسال...' : 'طلب تعديل',
+              label: reviewState.isRequestingRevision ? tr('جارٍ الإرسال...') : tr('طلب تعديل'),
               outlined: true,
               isLoading: reviewState.isRequestingRevision,
               onPressed: reviewState.isBusy ? null : _openRevisionSheet,
@@ -580,9 +582,9 @@ class _DeliverySummaryCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  'حالة التسليم',
+                  tr('حالة التسليم'),
                   style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.textMuted, fontSize: 12),
-                  textAlign: TextAlign.right,
+                  textAlign: TextAlign.start,
                 ),
               ),
               OrderStatusBadge(label: submission.displayStatus, compact: true),
@@ -591,23 +593,23 @@ class _DeliverySummaryCard extends StatelessWidget {
           if (submission.displayDate != null) ...[
             const SizedBox(height: 8),
             Text(
-              'تاريخ التسليم: ${formatOrderDateLabel(submission.displayDate)}',
+              trf('تاريخ التسليم: {0}', [formatOrderDateLabel(submission.displayDate)]),
               style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
-              textAlign: TextAlign.right,
+              textAlign: TextAlign.start,
             ),
           ],
           const SizedBox(height: 4),
           Text(
-            'عدد الملفات: ${submission.filesCount}',
+            trf('عدد الملفات: {0}', [submission.filesCount]),
             style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
-            textAlign: TextAlign.right,
+            textAlign: TextAlign.start,
           ),
           if (submission.files.isNotEmpty) ...[
             const SizedBox(height: 10),
-            const Text(
-              'ملفات التسليم',
+            Text(
+              tr('ملفات التسليم'),
               style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.primaryDeep, fontSize: 13),
-              textAlign: TextAlign.right,
+              textAlign: TextAlign.start,
             ),
             const SizedBox(height: 6),
             ...submission.files.map(
@@ -625,7 +627,7 @@ class _DeliverySummaryCard extends StatelessWidget {
                 child: Text(
                   '• $name',
                   style: const TextStyle(color: AppColors.textInk, fontSize: 13, height: 1.4),
-                  textAlign: TextAlign.right,
+                  textAlign: TextAlign.start,
                 ),
               ),
             ),
@@ -653,24 +655,24 @@ class _ManagedOrderFiles extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (brief.isEmpty && delivery.isEmpty)
-          const Text('لا توجد ملفات بعد.', style: TextStyle(color: AppColors.textMuted), textAlign: TextAlign.right),
+          Text(tr('لا توجد ملفات بعد.'), style: TextStyle(color: AppColors.textMuted), textAlign: TextAlign.start),
         for (final f in brief) OrderFileDownloadTile(orderId: orderId, role: OrderFileDownloadRole.client, file: f),
         if (delivery.isNotEmpty) ...[
           const SizedBox(height: 10),
-          const Text(
-            'التسليم النهائي',
+          Text(
+            tr('التسليم النهائي'),
             key: ValueKey('managed-final-delivery'),
             style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.primaryDeep, fontSize: 13),
-            textAlign: TextAlign.right,
+            textAlign: TextAlign.start,
           ),
           const SizedBox(height: 6),
           for (final f in delivery) OrderFileDownloadTile(orderId: orderId, role: OrderFileDownloadRole.client, file: f),
         ] else if (!completed) ...[
           const SizedBox(height: 8),
-          const Text(
-            'ستظهر ملفات التسليم النهائي هنا بعد اكتمال الطلب.',
+          Text(
+            tr('ستظهر ملفات التسليم النهائي هنا بعد اكتمال الطلب.'),
             style: TextStyle(color: AppColors.textMuted, height: 1.5),
-            textAlign: TextAlign.right,
+            textAlign: TextAlign.start,
           ),
         ],
       ],

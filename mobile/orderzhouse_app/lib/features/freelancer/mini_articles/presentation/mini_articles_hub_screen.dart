@@ -10,6 +10,7 @@ import '../../../../core/widgets/oh_widgets.dart';
 import '../../../auth/presentation/auth_controller.dart';
 import 'mini_articles_controllers.dart';
 import 'mini_articles_widgets.dart';
+import '../../../../core/i18n/i18n.dart';
 
 class MiniArticlesHubScreen extends ConsumerWidget {
   const MiniArticlesHubScreen({super.key});
@@ -22,7 +23,7 @@ class MiniArticlesHubScreen extends ConsumerWidget {
     if (!auth.isAuthenticated) {
       return Scaffold(
         backgroundColor: AppColors.homeMobileBg,
-        appBar: AppBar(title: const Text('المقالات المصغّرة')),
+        appBar: AppBar(title: Text(tr('المقالات المصغّرة'))),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -31,14 +32,14 @@ class MiniArticlesHubScreen extends ConsumerWidget {
               children: [
                 const Icon(Icons.lock_outline, size: 48, color: AppColors.textMuted),
                 const SizedBox(height: 12),
-                const Text(
-                  'سجّل الدخول كمستقل لعرض مقالات Mini Article.',
+                Text(
+                  tr('سجّل الدخول كمستقل لعرض مقالات Mini Article.'),
                   textAlign: TextAlign.center,
                   style: TextStyle(color: AppColors.textMuted, height: 1.6),
                 ),
                 const SizedBox(height: 16),
                 OhButton(
-                  label: 'تسجيل الدخول',
+                  label: tr('تسجيل الدخول'),
                   onPressed: () => context.push(AppRoutes.login),
                 ),
               ],
@@ -51,9 +52,9 @@ class MiniArticlesHubScreen extends ConsumerWidget {
     if (auth.user?.isFreelancerAccount != true) {
       return Scaffold(
         backgroundColor: AppColors.homeMobileBg,
-        appBar: AppBar(title: const Text('المقالات المصغّرة')),
-        body: const OhEmptyBody(
-          message: 'هذه الصفحة متاحة للمستقلين فقط.',
+        appBar: AppBar(title: Text(tr('المقالات المصغّرة'))),
+        body: OhEmptyBody(
+          message: tr('هذه الصفحة متاحة للمستقلين فقط.'),
           icon: Icons.person_off_outlined,
         ),
       );
@@ -61,22 +62,22 @@ class MiniArticlesHubScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.homeMobileBg,
-      appBar: AppBar(title: const Text('المقالات المصغّرة')),
+      appBar: AppBar(title: Text(tr('المقالات المصغّرة'))),
       body: RefreshIndicator(
         onRefresh: () => ref.read(miniArticlesHubControllerProvider.notifier).refresh(),
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
           children: [
-            const Text(
-              'قدّم على مقالات Mini Article المتاحة. التقديم يستخدم Bid حسب سياسة الفرصة.',
-              textAlign: TextAlign.right,
+            Text(
+              tr('قدّم على مقالات Mini Article المتاحة. التقديم يستخدم Bid حسب سياسة الفرصة.'),
+              textAlign: TextAlign.start,
               style: TextStyle(color: AppColors.textMuted, height: 1.5),
             ),
             const SizedBox(height: 12),
             OhButton(
               key: const ValueKey('mini-articles-hub-my-articles'),
-              label: 'مقالاتي',
+              label: tr('مقالاتي'),
               outlined: true,
               onPressed: () => context.push(AppRoutes.freelancerMyArticles),
             ),
@@ -117,9 +118,9 @@ class MiniArticlesHubScreen extends ConsumerWidget {
               },
             ),
             const SizedBox(height: 16),
-            const Text(
-              'المقالات المتاحة',
-              textAlign: TextAlign.right,
+            Text(
+              tr('المقالات المتاحة'),
+              textAlign: TextAlign.start,
               style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
             ),
             const SizedBox(height: 10),
@@ -131,8 +132,8 @@ class MiniArticlesHubScreen extends ConsumerWidget {
             else if (ui.error != null)
               OhErrorBanner(message: ui.error!)
             else if (ui.articles.isEmpty)
-              const OhEmptyBody(
-                message: 'لا توجد مقالات متاحة حالياً.',
+              OhEmptyBody(
+                message: tr('لا توجد مقالات متاحة حالياً.'),
                 icon: Icons.article_outlined,
               )
             else

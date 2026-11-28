@@ -1,19 +1,20 @@
+import '../../../core/i18n/i18n.dart';
 String pantryStatusLabelAr(String? status) {
   switch ((status ?? '').trim().toLowerCase()) {
     case 'open_for_bids':
-      return 'مفتوح للعروض';
+      return tr('مفتوح للعروض');
     case 'assigned':
-      return 'قيد التنفيذ';
+      return tr('قيد التنفيذ');
     case 'in_progress':
-      return 'قيد التنفيذ';
+      return tr('قيد التنفيذ');
     case 'submitted':
-      return 'بانتظار المراجعة';
+      return tr('بانتظار المراجعة');
     case 'revision_requested':
-      return 'طلب تعديل';
+      return tr('طلب تعديل');
     case 'approved':
-      return 'مكتمل';
+      return tr('مكتمل');
     case 'archived':
-      return 'مؤرشف';
+      return tr('مؤرشف');
     default:
       return (status ?? '').trim().isEmpty ? '—' : status!;
   }
@@ -22,9 +23,9 @@ String pantryStatusLabelAr(String? status) {
 String pantryPricingTypeLabelAr(String? pricingType) {
   switch ((pricingType ?? '').trim().toLowerCase()) {
     case 'bidding':
-      return 'مناقصة';
+      return tr('مناقصة');
     case 'fixed':
-      return 'سعر ثابت';
+      return tr('سعر ثابت');
     default:
       return (pricingType ?? '').trim().isEmpty ? '—' : pricingType!;
   }

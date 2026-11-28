@@ -1,4 +1,6 @@
 import '../../../core/network/json_helpers.dart';
+import '../../../core/i18n/i18n.dart';
+import '../../../core/i18n/server_text.dart';
 
 class AppNotification {
   const AppNotification({
@@ -32,6 +34,10 @@ class AppNotification {
   final String? recipientRole;
 
   bool get isUnread => !isRead;
+
+  /// Server-authored body in the current language (generic localized text when unknown in English).
+  String get displayMessage =>
+      localizeServerText(message, fallback: tr('لديك تحديث جديد. افتح التفاصيل لمعرفة المزيد.'));
 
   AppNotification copyWith({
     String? id,
@@ -219,28 +225,28 @@ String notificationDisplayTitle({
 }) {
   final raw = '${type ?? ''} ${entityType ?? ''}'.trim().toLowerCase();
   if (raw.contains('feedback') || raw.contains('problem') || raw.contains('suggestion')) {
-    return 'مشاكل واقتراحات';
+    return tr('مشاكل واقتراحات');
   }
   if (raw.contains('kyc') ||
       raw.contains('identity') ||
       raw.contains('account_activation') ||
       raw.contains('freelancer_activation')) {
-    return 'طلب توثيق هوية';
+    return tr('طلب توثيق هوية');
   }
   if (raw.contains('subscription') && raw.contains('activ')) {
-    return 'طلب تفعيل اشتراك';
+    return tr('طلب تفعيل اشتراك');
   }
   if (raw.contains('subscription') || raw.contains('plan') || raw.contains('membership')) {
-    return 'طلب تفعيل اشتراك';
+    return tr('طلب تفعيل اشتراك');
   }
-  if (raw.contains('claim') || raw.contains('financial')) return 'مطالبة مالية';
-  if (raw.contains('pantry')) return 'بيت المونة';
-  if (raw.contains('article') || raw.contains('manuscript')) return 'مقال';
-  if (raw.contains('order')) return 'طلب';
-  if (raw.contains('system')) return 'إشعار نظام';
+  if (raw.contains('claim') || raw.contains('financial')) return tr('مطالبة مالية');
+  if (raw.contains('pantry')) return tr('بيت المونة');
+  if (raw.contains('article') || raw.contains('manuscript')) return tr('مقال');
+  if (raw.contains('order')) return tr('طلب');
+  if (raw.contains('system')) return tr('إشعار نظام');
   final title = (fallbackTitle ?? '').trim();
-  if (title.isNotEmpty && title != 'ملاحظة جديدة') return title;
-  return 'إشعار جديد';
+  if (title.isNotEmpty && title != 'ملاحظة جديدة') return localizeServerText(title, fallback: tr('إشعار جديد'));
+  return tr('إشعار جديد');
 }
 
 List<AppNotification> sortNotificationsUnreadFirst(List<AppNotification> items) {
@@ -261,9 +267,9 @@ String formatNotificationDateTime(String? raw) {
   final local = parsed.toLocal();
   final now = DateTime.now();
   final diff = now.difference(local);
-  if (diff.inMinutes < 1) return 'الآن';
-  if (diff.inMinutes < 60) return 'منذ ${diff.inMinutes} دقيقة';
-  if (diff.inHours < 24) return 'منذ ${diff.inHours} ساعة';
-  if (diff.inDays < 7) return 'منذ ${diff.inDays} يوم';
+  if (diff.inMinutes < 1) return tr('الآن');
+  if (diff.inMinutes < 60) return trf('منذ {0} دقيقة', [diff.inMinutes]);
+  if (diff.inHours < 24) return trf('منذ {0} ساعة', [diff.inHours]);
+  if (diff.inDays < 7) return trf('منذ {0} يوم', [diff.inDays]);
   return '${local.day}/${local.month}/${local.year} ${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
 }

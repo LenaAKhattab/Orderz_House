@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/i18n/i18n.dart';
 import '../../../core/network/dio_provider.dart';
 
 class DeviceTokenApi {
@@ -21,6 +22,8 @@ class DeviceTokenApi {
         'platform': platform,
         if (deviceId != null && deviceId.isNotEmpty) 'deviceId': deviceId,
         if (appVersion != null && appVersion.isNotEmpty) 'appVersion': appVersion,
+        // Push lock-screen language for this install.
+        'locale': AppI18n.language.code,
       },
     );
   }

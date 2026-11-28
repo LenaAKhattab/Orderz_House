@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import 'public_page_models.dart';
+import '../../../core/i18n/i18n.dart';
 
 class PublicPagesApi {
   PublicPagesApi(this._dio);
@@ -20,7 +21,7 @@ class PublicPagesApi {
     }
     throw DioException(
       requestOptions: response.requestOptions,
-      message: 'استجابة غير متوقعة.',
+      message: tr('استجابة غير متوقعة.'),
     );
   }
 }

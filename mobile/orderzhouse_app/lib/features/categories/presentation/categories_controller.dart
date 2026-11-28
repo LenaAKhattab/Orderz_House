@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/errors/api_error_message.dart';
 import '../data/categories_repository.dart';
 import '../data/category_models.dart';
+import '../../../core/i18n/i18n.dart';
 
 class CategoriesState {
   const CategoriesState({
@@ -49,7 +50,7 @@ class CategoriesController extends Notifier<CategoriesState> {
     } catch (e) {
       state = CategoriesState(
         items: const [],
-        error: apiErrorMessage(e, fallback: 'تعذر تحميل التصنيفات.'),
+        error: apiErrorMessage(e, fallback: tr('تعذر تحميل التصنيفات.')),
       );
     }
   }

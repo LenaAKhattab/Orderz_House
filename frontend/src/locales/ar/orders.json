@@ -40,6 +40,8 @@
     "open_for_freelancers": "متاح للمستقلين",
     "open_for_bids": "مفتوح للعروض",
     "awaiting_payment_after_bid_selection": "بانتظار الدفع بعد اختيار العرض",
+    "awaiting_quote_payment": "بانتظار دفع عرض السعر",
+    "awaiting_assignment": "بانتظار تعيين المستقل",
     "pending_freelancer_acceptance": "بانتظار قبول مستقل",
     "ready_for_work": "جاهز للعمل",
     "archived": "مؤرشف",

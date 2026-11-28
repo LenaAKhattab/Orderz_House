@@ -530,12 +530,16 @@ describe("cron wrapper contract (scripts/orderzhouse-notifications-retention-cro
   it("temporary 250k cap through 2026-12-15 UTC, then 100k (real bash, deterministic dates)", (t) => {
     const { spawnSync } = require("node:child_process");
     const script = path.join(__dirname, "..", "..", "scripts", "orderzhouse-notifications-retention-cron.sh");
-    const probe = spawnSync("bash", ["--version"], { encoding: "utf8" });
-    if (probe.error) {
+    // On Windows `bash` on PATH is often the WSL stub (fails without a distro): prefer Git Bash.
+    const fs = require("node:fs");
+    const gitBash = "C:\\Program Files\\Git\\bin\\bash.exe";
+    const bash = process.platform === "win32" && fs.existsSync(gitBash) ? gitBash : "bash";
+    const probe = spawnSync(bash, ["--version"], { encoding: "utf8" });
+    if (probe.error || probe.status !== 0) {
       t.skip("bash not available");
       return;
     }
-    const resolve = (day) => spawnSync("bash", [script, "--resolve-max-rows", day], { encoding: "utf8" });
+    const resolve = (day) => spawnSync(bash, [script, "--resolve-max-rows", day], { encoding: "utf8" });
     const cases = {
       "2026-11-02": "250000",
       "2026-11-28": "250000",
@@ -556,7 +560,7 @@ describe("cron wrapper contract (scripts/orderzhouse-notifications-retention-cro
       assert.equal(r.status, 3, `rejects ${JSON.stringify(bad)}`);
       assert.equal(r.stdout.trim(), "");
     }
-    const today = spawnSync("bash", [script, "--resolve-max-rows"], { encoding: "utf8" });
+    const today = spawnSync(bash, [script, "--resolve-max-rows"], { encoding: "utf8" });
     assert.ok(["250000", "100000"].includes(today.stdout.trim()));
   });
 

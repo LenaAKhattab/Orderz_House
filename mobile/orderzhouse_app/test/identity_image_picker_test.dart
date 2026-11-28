@@ -22,7 +22,7 @@ void main() {
     });
 
     test('failure carries Arabic message', () {
-      const r = IdentityImagePickResult.failure(identityImagePickFailedAr);
+      final r = IdentityImagePickResult.failure(identityImagePickFailedAr);
       expect(r.isSuccess, isFalse);
       expect(r.cancelled, isFalse);
       expect(r.errorMessageAr, identityImagePickFailedAr);

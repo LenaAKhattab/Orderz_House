@@ -5,6 +5,7 @@ import '../../../../core/widgets/oh_widgets.dart';
 import '../../../orders/data/order_display_helpers.dart';
 import '../data/financial_claim_models.dart';
 import '../../../currency/presentation/jod_money_display.dart';
+import '../../../../core/i18n/i18n.dart';
 
 class FinancialClaimCard extends StatelessWidget {
   const FinancialClaimCard({super.key, required this.claim});
@@ -21,14 +22,14 @@ class FinancialClaimCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            claim.requestTitle.trim().isNotEmpty ? claim.requestTitle : 'مطالبة مالية',
+            claim.requestTitle.trim().isNotEmpty ? claim.requestTitle : tr('مطالبة مالية'),
             style: const TextStyle(
               fontWeight: FontWeight.w800,
               fontSize: 16,
               color: AppColors.textInk,
               height: 1.35,
             ),
-            textAlign: TextAlign.right,
+            textAlign: TextAlign.start,
           ),
           const SizedBox(height: 8),
           Wrap(
@@ -41,29 +42,29 @@ class FinancialClaimCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          _InfoRow(label: 'رقم الطلب', value: claim.orderNumber.trim().isNotEmpty ? claim.orderNumber : '—'),
-          _InfoRow(label: 'تاريخ الإنجاز', value: formatOrderDate(claim.actualCompletionDate)),
-          _InfoRow(label: 'تاريخ الإرسال', value: formatOrderDate(claim.submittedAt)),
+          _InfoRow(label: tr('رقم الطلب'), value: claim.orderNumber.trim().isNotEmpty ? claim.orderNumber : '—'),
+          _InfoRow(label: tr('تاريخ الإنجاز'), value: formatOrderDate(claim.actualCompletionDate)),
+          _InfoRow(label: tr('تاريخ الإرسال'), value: formatOrderDate(claim.submittedAt)),
           _InfoRow(
-            label: 'نافذة الدفع',
+            label: tr('نافذة الدفع'),
             value: formatPayoutWindowLabel(claim.payoutWindowStart, claim.payoutWindowEnd),
           ),
           const SizedBox(height: 8),
           if (claim.hasAdminPricing) ...[
             _InfoRow(
-              label: 'المبلغ الإجمالي',
+              label: tr('المبلغ الإجمالي'),
               valueWidget: JodMoneyDisplay(amount: claim.totalPriceSnapshot),
               emphasized: true,
             ),
             _InfoRow(
-              label: 'مبلغ المستقل',
+              label: tr('مبلغ المستقل'),
               valueWidget: JodMoneyDisplay(amount: claim.userAmountSnapshot),
               emphasized: true,
             ),
             if (claim.paidAmount != null && claim.paidAmount! > 0)
-              _InfoRow(label: 'المدفوع', valueWidget: JodMoneyDisplay(amount: claim.paidAmount)),
+              _InfoRow(label: tr('المدفوع'), valueWidget: JodMoneyDisplay(amount: claim.paidAmount)),
             if (claim.remainingAmount != null)
-              _InfoRow(label: 'المتبقي', valueWidget: JodMoneyDisplay(amount: claim.remainingAmount)),
+              _InfoRow(label: tr('المتبقي'), valueWidget: JodMoneyDisplay(amount: claim.remainingAmount)),
           ] else
             Container(
               width: double.infinity,
@@ -73,7 +74,7 @@ class FinancialClaimCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: AppColors.primary.withValues(alpha: 0.15)),
               ),
-              child: const Text(
+              child: Text(
                 financialClaimUnpricedMessageAr,
                 style: TextStyle(
                   color: AppColors.textInk,
@@ -81,13 +82,13 @@ class FinancialClaimCard extends StatelessWidget {
                   fontSize: 13,
                   height: 1.45,
                 ),
-                textAlign: TextAlign.right,
+                textAlign: TextAlign.start,
               ),
             ),
           if (claim.adminNote != null && claim.adminNote!.trim().isNotEmpty) ...[
             const SizedBox(height: 10),
             _NoteBox(
-              title: 'ملاحظة الإدارة',
+              title: tr('ملاحظة الإدارة'),
               text: claim.adminNote!.trim(),
               tone: NoteTone.admin,
             ),
@@ -95,7 +96,7 @@ class FinancialClaimCard extends StatelessWidget {
           if (claim.freelancerNote != null && claim.freelancerNote!.trim().isNotEmpty) ...[
             const SizedBox(height: 8),
             _NoteBox(
-              title: 'ملاحظتك',
+              title: tr('ملاحظتك'),
               text: claim.freelancerNote!.trim(),
               tone: NoteTone.freelancer,
             ),
@@ -195,7 +196,7 @@ class _InfoRow extends StatelessWidget {
             child: valueWidget ??
                 Text(
                   value ?? '—',
-                  textAlign: TextAlign.right,
+                  textAlign: TextAlign.start,
                   style: TextStyle(
                     color: AppColors.textInk,
                     fontWeight: emphasized ? FontWeight.w800 : FontWeight.w600,
@@ -253,13 +254,13 @@ class _NoteBox extends StatelessWidget {
               fontWeight: FontWeight.w700,
               fontSize: 12,
             ),
-            textAlign: TextAlign.right,
+            textAlign: TextAlign.start,
           ),
           const SizedBox(height: 4),
           Text(
             text,
             style: const TextStyle(color: AppColors.textInk, height: 1.45, fontSize: 13),
-            textAlign: TextAlign.right,
+            textAlign: TextAlign.start,
           ),
         ],
       ),

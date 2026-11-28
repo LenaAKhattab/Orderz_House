@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/oh_widgets.dart';
 import '../data/special_offer_models.dart';
+import '../../../core/i18n/i18n.dart';
 
 class SpecialOfferCard extends StatelessWidget {
   const SpecialOfferCard({
@@ -47,7 +48,7 @@ class SpecialOfferCard extends StatelessWidget {
         children: [
           if (offer.ribbonText != null)
             Align(
-              alignment: Alignment.centerRight,
+              alignment: AlignmentDirectional.centerStart,
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
@@ -73,7 +74,7 @@ class SpecialOfferCard extends StatelessWidget {
               fontSize: 18,
               height: 1.3,
             ),
-            textAlign: TextAlign.right,
+            textAlign: TextAlign.start,
           ),
           if (offer.subtitle != null) ...[
             const SizedBox(height: 6),
@@ -84,7 +85,7 @@ class SpecialOfferCard extends StatelessWidget {
                 fontSize: 13,
                 height: 1.45,
               ),
-              textAlign: TextAlign.right,
+              textAlign: TextAlign.start,
             ),
           ],
           const SizedBox(height: 12),
@@ -93,14 +94,14 @@ class SpecialOfferCard extends StatelessWidget {
             runSpacing: 8,
             alignment: WrapAlignment.end,
             children: [
-              _FeatureChip(label: '${formatSpecialOfferAmount(offer.totalOffers)} عرض'),
-              _FeatureChip(label: '${formatSpecialOfferAmount(offer.dailyLimit)} يومياً'),
+              _FeatureChip(label: trf('{0} عرض', [formatSpecialOfferAmount(offer.totalOffers)])),
+              _FeatureChip(label: trf('{0} يومياً', [formatSpecialOfferAmount(offer.dailyLimit)])),
               _FeatureChip(
                 label: offer.maxProjectValueJod != null
-                    ? 'حتى ${formatSpecialOfferAmount(offer.maxProjectValueJod)} د.أ'
-                    : 'بلا سقف',
+                    ? trf('حتى {0} د.أ', [formatSpecialOfferAmount(offer.maxProjectValueJod)])
+                    : tr('بلا سقف'),
               ),
-              _FeatureChip(label: '${formatSpecialOfferAmount(offer.durationDays)} يوم'),
+              _FeatureChip(label: trf('{0} يوم', [formatSpecialOfferAmount(offer.durationDays)])),
             ],
           ),
           const SizedBox(height: 14),
@@ -109,7 +110,7 @@ class SpecialOfferCard extends StatelessWidget {
             children: [
               if (showOriginal) ...[
                 Text(
-                  '${formatSpecialOfferAmount(offer.originalPriceJod)} د.أ',
+                  trf('{0} د.أ', [formatSpecialOfferAmount(offer.originalPriceJod)]),
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.65),
                     decoration: TextDecoration.lineThrough,
@@ -119,7 +120,7 @@ class SpecialOfferCard extends StatelessWidget {
                 const SizedBox(width: 8),
               ],
               Text(
-                '${formatSpecialOfferAmount(offer.priceJod)} د.أ',
+                trf('{0} د.أ', [formatSpecialOfferAmount(offer.priceJod)]),
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w900,
@@ -131,7 +132,7 @@ class SpecialOfferCard extends StatelessWidget {
           const SizedBox(height: 12),
           OhButton(
             key: const ValueKey('special-offer-cta'),
-            label: offer.ctaLabel?.trim().isNotEmpty == true ? offer.ctaLabel! : 'احصل على العرض الآن',
+            label: offer.ctaLabel?.trim().isNotEmpty == true ? offer.ctaLabel! : tr('احصل على العرض الآن'),
             onPressed: onOpenPlans,
           ),
           if (offer.hasRefundExplanation) ...[
@@ -171,7 +172,7 @@ class SpecialOfferCard extends StatelessWidget {
                 fontSize: 11,
                 height: 1.4,
               ),
-              textAlign: TextAlign.right,
+              textAlign: TextAlign.start,
             ),
           ],
         ],

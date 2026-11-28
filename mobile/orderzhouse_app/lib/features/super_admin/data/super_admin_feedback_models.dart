@@ -1,12 +1,13 @@
 import '../../../core/network/json_helpers.dart';
 import 'super_admin_models.dart';
+import '../../../core/i18n/i18n.dart';
 
-const superAdminFeedbackQueueTitleAr = 'المشاكل والاقتراحات';
-const superAdminFeedbackEmptyAr = 'لا توجد ملاحظات حالياً.';
-const superAdminFeedbackMarkReviewLabelAr = 'تعليمقيد المراجعة';
-const superAdminFeedbackCloseLabelAr = 'إغلاق';
-const superAdminFeedbackResolveLabelAr = 'تم الحل';
-const superAdminFeedbackUpdateSuccessAr = 'تم تحديث حالة الملاحظة.';
+String get superAdminFeedbackQueueTitleAr => tr('المشاكل والاقتراحات');
+String get superAdminFeedbackEmptyAr => tr('لا توجد ملاحظات حالياً.');
+String get superAdminFeedbackMarkReviewLabelAr => tr('تعليمقيد المراجعة');
+String get superAdminFeedbackCloseLabelAr => tr('إغلاق');
+String get superAdminFeedbackResolveLabelAr => tr('تم الحل');
+String get superAdminFeedbackUpdateSuccessAr => tr('تم تحديث حالة الملاحظة.');
 
 class SuperAdminFeedbackItem {
   const SuperAdminFeedbackItem({
@@ -74,13 +75,13 @@ class SuperAdminFeedbackItem {
 String feedbackStatusLabelAr(String? status) {
   switch ((status ?? '').trim().toLowerCase()) {
     case 'new':
-      return 'جديد';
+      return tr('جديد');
     case 'in_review':
-      return 'قيد المراجعة';
+      return tr('قيد المراجعة');
     case 'resolved':
-      return 'تم الحل';
+      return tr('تم الحل');
     case 'closed':
-      return 'مغلق';
+      return tr('مغلق');
     default:
       return status?.trim().isNotEmpty == true ? status!.trim() : '—';
   }
@@ -91,11 +92,11 @@ String feedbackTypeLabelAr(SuperAdminFeedbackItem item) {
   if (label.isNotEmpty) return label;
   switch ((item.type ?? '').trim().toLowerCase()) {
     case 'problem':
-      return 'مشكلة';
+      return tr('مشكلة');
     case 'suggestion':
-      return 'اقتراح';
+      return tr('اقتراح');
     case 'other':
-      return 'ملاحظة أخرى';
+      return tr('ملاحظة أخرى');
     default:
       return superAdminFeedbackTileTitleAr;
   }

@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import 'pool_order_models.dart';
+import '../../../core/i18n/i18n.dart';
 
 class OrdersApi {
   OrdersApi(this._dio);
@@ -21,7 +22,7 @@ class OrdersApi {
     }
     throw DioException(
       requestOptions: response.requestOptions,
-      message: 'استجابة غير متوقعة من سوق الطلبات.',
+      message: tr('استجابة غير متوقعة من سوق الطلبات.'),
     );
   }
 
@@ -36,7 +37,7 @@ class OrdersApi {
     }
     throw DioException(
       requestOptions: response.requestOptions,
-      message: 'استجابة غير متوقعة من تفاصيل الطلب.',
+      message: tr('استجابة غير متوقعة من تفاصيل الطلب.'),
     );
   }
 }

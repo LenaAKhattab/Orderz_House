@@ -8,6 +8,7 @@ import '../../../core/widgets/oh_widgets.dart';
 import '../account_activation/data/account_activation_kyc_models.dart';
 import '../data/freelancer_eligibility_models.dart';
 import 'freelancer_eligibility_provider.dart';
+import '../../../core/i18n/i18n.dart';
 
 /// Shows an ineligible warning only. Eligible accounts see nothing.
 /// Dismissible with the corner X (session-only).
@@ -103,13 +104,13 @@ class _IneligibleCard extends StatelessWidget {
                       height: 1.5,
                       fontSize: compact ? 13 : 14,
                     ),
-                    textAlign: TextAlign.right,
+                    textAlign: TextAlign.start,
                   ),
                 ),
               ),
               IconButton(
                 onPressed: onDismiss,
-                tooltip: 'إخفاء',
+                tooltip: tr('إخفاء'),
                 visualDensity: VisualDensity.compact,
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(minWidth: 36, minHeight: 36),

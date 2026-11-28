@@ -233,6 +233,8 @@
     "next": {
       "pay": "Finalizați plata pentru a publica comanda în piață.",
       "payAfterBid": "Finalizați plata pentru oferta aleasă, astfel încât freelancerul să poată începe.",
+      "payQuote": "Plătiți oferta pentru ca echipa să înceapă lucrul la comanda dvs.",
+      "awaitingAssignment": "Echipa alocă un freelancer comenzii dvs.",
       "adminReview": "Plătită — echipa verifică comanda dumneavoastră înainte de publicare.",
       "reviewDelivery": "Freelancerul a livrat — examinați fișierele, apoi aprobați livrarea sau solicitați o revizie.",
       "revisionSent": "Revizie solicitată — se așteaptă o versiune actualizată de la freelancer.",

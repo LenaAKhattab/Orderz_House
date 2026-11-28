@@ -1,7 +1,9 @@
 import '../../../core/network/json_helpers.dart';
+import '../../../core/i18n/server_text.dart';
 import '../../orders/data/order_display_helpers.dart' as display;
 import '../../orders/data/order_file_models.dart';
 import '../../orders/data/pool_order_models.dart';
+import '../../../core/i18n/i18n.dart';
 
 class FreelancerOrderSubmission {
   const FreelancerOrderSubmission({
@@ -22,7 +24,8 @@ class FreelancerOrderSubmission {
   final int filesCount;
   final List<OrderFileDescriptor> files;
 
-  String get statusLabel => statusBadgeAr ?? status ?? '—';
+  String get statusLabel =>
+      statusBadgeAr == null ? (status ?? '—') : localizeServerText(statusBadgeAr!, fallback: status ?? '—');
 
   factory FreelancerOrderSubmission.fromJson(Map<String, dynamic> json) {
     final files = parseOrderFilesFromSubmissionJson(json);
@@ -157,7 +160,7 @@ class FreelancerMyOrder {
         return FreelancerMyOrder.fromJson(Map<String, dynamic>.from(order));
       }
     }
-    throw FormatException('استجابة تفاصيل طلب المستقل غير متوقعة.');
+    throw FormatException(tr('استجابة تفاصيل طلب المستقل غير متوقعة.'));
   }
 
   static List<FreelancerMyOrder> parseList(dynamic response) {

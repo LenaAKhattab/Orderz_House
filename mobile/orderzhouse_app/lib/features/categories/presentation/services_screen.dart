@@ -6,6 +6,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/oh_widgets.dart';
 import 'categories_controller.dart';
 import '../data/category_models.dart';
+import '../../../core/i18n/i18n.dart';
 
 class ServicesScreen extends ConsumerWidget {
   const ServicesScreen({super.key});
@@ -17,7 +18,7 @@ class ServicesScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.homeMobileBg,
-      appBar: AppBar(title: const Text('الخدمات')),
+      appBar: AppBar(title: Text(tr('الخدمات'))),
       body: _buildBody(context, state, notifier),
     );
   }
@@ -28,19 +29,19 @@ class ServicesScreen extends ConsumerWidget {
     CategoriesController notifier,
   ) {
     if (state.isLoading && state.items.isEmpty) {
-      return const OhLoadingBody(message: 'جاري تحميل التصنيفات...');
+      return OhLoadingBody(message: tr('جاري تحميل التصنيفات...'));
     }
 
     if (state.error != null && state.items.isEmpty) {
       return OhErrorBody(
-        message: apiErrorMessage(state.error!, fallback: 'تعذر تحميل التصنيفات. حاول لاحقاً.'),
+        message: apiErrorMessage(state.error!, fallback: tr('تعذر تحميل التصنيفات. حاول لاحقاً.')),
         onRetry: notifier.load,
       );
     }
 
     if (state.items.isEmpty) {
-      return const OhEmptyBody(
-        message: 'لا توجد تصنيفات متاحة حالياً.',
+      return OhEmptyBody(
+        message: tr('لا توجد تصنيفات متاحة حالياً.'),
         icon: Icons.category_outlined,
       );
     }
@@ -117,8 +118,8 @@ class _CategoryCard extends StatelessWidget {
             else if (item.subcategoriesError != null)
               OhErrorBanner(message: apiErrorMessage(item.subcategoriesError!))
             else if (item.subcategories.isEmpty)
-              const Text(
-                'لا توجد تصنيفات فرعية.',
+              Text(
+                tr('لا توجد تصنيفات فرعية.'),
                 style: TextStyle(color: AppColors.textMuted),
               )
             else

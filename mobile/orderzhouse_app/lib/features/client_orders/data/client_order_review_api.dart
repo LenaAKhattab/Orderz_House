@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import 'client_order_review_models.dart';
+import '../../../core/i18n/i18n.dart';
 
 class ClientOrderReviewApi {
   ClientOrderReviewApi(this._dio);
@@ -44,7 +45,7 @@ class ClientOrderReviewApi {
     }
     throw DioException(
       requestOptions: response.requestOptions,
-      message: 'استجابة غير متوقعة من حالة التقييم.',
+      message: tr('استجابة غير متوقعة من حالة التقييم.'),
     );
   }
 
@@ -67,7 +68,7 @@ class ClientOrderReviewApi {
     }
     throw DioException(
       requestOptions: response.requestOptions,
-      message: 'استجابة غير متوقعة من التقييم.',
+      message: tr('استجابة غير متوقعة من التقييم.'),
     );
   }
 }

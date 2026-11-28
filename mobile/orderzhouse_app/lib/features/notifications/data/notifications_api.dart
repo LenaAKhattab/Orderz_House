@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 
 import '../../../core/network/json_helpers.dart';
 import 'notification_models.dart';
+import '../../../core/i18n/i18n.dart';
 
 /// Notifications API — list, unread count, and mark-as-read (Phase 4E-1/4E-2).
 class NotificationsApi {
@@ -66,4 +67,4 @@ class NotificationsApi {
   }
 }
 
-const notificationsMarkReadErrorMessageAr = 'تعذر تحديث حالة الإشعار';
+String get notificationsMarkReadErrorMessageAr => tr('تعذر تحديث حالة الإشعار');

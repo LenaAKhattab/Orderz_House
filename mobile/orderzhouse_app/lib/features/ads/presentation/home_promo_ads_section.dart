@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../core/theme/app_colors.dart';
 import '../data/public_ad_models.dart';
 import 'home_promo_ads_controller.dart';
+import '../../../core/i18n/i18n.dart';
 
 /// Mobile home promo slot — compact card carousel matching Orderz House chrome.
 class HomePromoAdsSection extends ConsumerWidget {
@@ -93,8 +94,8 @@ class _PromoAdsCarouselState extends ConsumerState<_PromoAdsCarousel> {
                 color: AppColors.secondary.withValues(alpha: 0.22),
                 borderRadius: BorderRadius.circular(999),
               ),
-              child: const Text(
-                'عروض مميزة',
+              child: Text(
+                tr('عروض مميزة'),
                 style: TextStyle(
                   color: AppColors.primaryDeep,
                   fontWeight: FontWeight.w800,
@@ -300,7 +301,7 @@ class _HomePromoAdCard extends StatelessWidget {
                                     ),
                                   ),
                                   const SizedBox(width: 4),
-                                  const Icon(Icons.arrow_back_rounded, size: 14, color: AppColors.secondary),
+                                  Icon(AppI18n.isEnglish ? Icons.arrow_forward_rounded : Icons.arrow_back_rounded, size: 14, color: AppColors.secondary),
                                 ],
                               ),
                             ],

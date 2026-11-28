@@ -1,25 +1,23 @@
+import '../../../core/i18n/i18n.dart';
 // Mirrors backend `orderUploadLimits.js` and `ordersUploadMiddleware.js`.
 
 const int maxOrderAttachmentCount = 5;
 const int maxOrderAttachmentTotalBytes = 5 * 1024 * 1024;
 const int maxOrderAttachmentTotalMb = 5;
 
-const String orderAttachmentTotalSizeMessageAr =
-    'حجم الملفات يجب ألا يتجاوز 5 ميجابايت إجمالاً';
+String get orderAttachmentTotalSizeMessageAr => tr('حجم الملفات يجب ألا يتجاوز 5 ميجابايت إجمالاً');
 
-const String orderAttachmentCountMessageAr = 'عدد الملفات أكثر من المسموح (٥ كحد أقصى).';
+String get orderAttachmentCountMessageAr => tr('عدد الملفات أكثر من المسموح (٥ كحد أقصى).');
 
-const String orderAttachmentTypeMessageAr = 'نوع الملف غير مدعوم.';
+String get orderAttachmentTypeMessageAr => tr('نوع الملف غير مدعوم.');
 
-const String orderAttachmentHelperAr = 'الحد الأقصى لإجمالي الملفات: 5 ميجابايت';
+String get orderAttachmentHelperAr => tr('الحد الأقصى لإجمالي الملفات: 5 ميجابايت');
 
-const String deliveryAttachmentRequiredMessageAr = 'يجب إرفاق ملف واحد على الأقل.';
+String get deliveryAttachmentRequiredMessageAr => tr('يجب إرفاق ملف واحد على الأقل.');
 
-const String deliveryAttachmentHelperAr =
-    'ملف واحد على الأقل — الحد الأقصى لإجمالي الملفات: 5 ميجابايت';
+String get deliveryAttachmentHelperAr => tr('ملف واحد على الأقل — الحد الأقصى لإجمالي الملفات: 5 ميجابايت');
 
-const String orderAttachmentOptionalNoteAr =
-    'المرفقات اختيارية وتساعد المستقل على فهم الطلب.';
+String get orderAttachmentOptionalNoteAr => tr('المرفقات اختيارية وتساعد المستقل على فهم الطلب.');
 
 /// Field name for multipart uploads — matches web `fd.append("files", f)`.
 const String orderAttachmentFormFieldName = 'files';
@@ -47,14 +45,14 @@ final RegExp _dangerousExtensionPattern = RegExp(
 );
 
 String formatAttachmentSize(int bytes) {
-  if (bytes < 0) return '0 بايت';
-  if (bytes < 1024) return '$bytes بايت';
+  if (bytes < 0) return tr('0 بايت');
+  if (bytes < 1024) return trf('{0} بايت', [bytes]);
   if (bytes < 1024 * 1024) {
     final kb = bytes / 1024;
-    return '${kb.toStringAsFixed(kb < 10 ? 2 : 1)} كيلوبايت';
+    return trf('{0} كيلوبايت', [kb.toStringAsFixed(kb < 10 ? 2 : 1)]);
   }
   final mb = bytes / (1024 * 1024);
-  return '${mb.toStringAsFixed(mb < 10 ? 2 : 1)} ميجابايت';
+  return trf('{0} ميجابايت', [mb.toStringAsFixed(mb < 10 ? 2 : 1)]);
 }
 
 int totalAttachmentBytes(Iterable<int> sizes) => sizes.fold(0, (sum, n) => sum + n);
@@ -90,18 +88,18 @@ OrderAttachmentValidation validateOrderAttachments(List<OrderAttachmentDraft> fi
   if (files.isEmpty) return const OrderAttachmentValidation();
 
   if (files.length > maxOrderAttachmentCount) {
-    return const OrderAttachmentValidation(message: orderAttachmentCountMessageAr);
+    return OrderAttachmentValidation(message: orderAttachmentCountMessageAr);
   }
 
   for (final file in files) {
     if (!isAllowedAttachmentName(file.name)) {
-      return const OrderAttachmentValidation(message: orderAttachmentTypeMessageAr);
+      return OrderAttachmentValidation(message: orderAttachmentTypeMessageAr);
     }
   }
 
   final total = totalAttachmentBytes(files.map((f) => f.size));
   if (total > maxOrderAttachmentTotalBytes) {
-    return const OrderAttachmentValidation(message: orderAttachmentTotalSizeMessageAr);
+    return OrderAttachmentValidation(message: orderAttachmentTotalSizeMessageAr);
   }
 
   return const OrderAttachmentValidation();
@@ -109,7 +107,7 @@ OrderAttachmentValidation validateOrderAttachments(List<OrderAttachmentDraft> fi
 
 OrderAttachmentValidation validateDeliveryAttachments(List<OrderAttachmentDraft> files) {
   if (files.isEmpty) {
-    return const OrderAttachmentValidation(message: deliveryAttachmentRequiredMessageAr);
+    return OrderAttachmentValidation(message: deliveryAttachmentRequiredMessageAr);
   }
   return validateOrderAttachments(files);
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/i18n/server_text.dart';
 
 import '../../../core/router/routes.dart';
 import '../../../core/theme/app_colors.dart';
@@ -10,6 +11,7 @@ import '../data/client_order_models.dart';
 import '../../orders/data/order_display_helpers.dart' as display;
 import '../../currency/presentation/jod_money_display.dart';
 import 'client_orders_controller.dart';
+import '../../../core/i18n/i18n.dart';
 
 bool _isClientRole(AuthState auth) => auth.user?.usesClientExperience == true;
 
@@ -43,11 +45,11 @@ class _ClientMyOrdersScreenState extends ConsumerState<ClientMyOrdersScreen> {
     return Scaffold(
       backgroundColor: AppColors.homeMobileBg,
       appBar: AppBar(
-        title: const Text('طلباتي'),
+        title: Text(tr('طلباتي')),
         actions: [
           if (isClient)
             IconButton(
-              tooltip: 'إنشاء طلب',
+              tooltip: tr('إنشاء طلب'),
               icon: const Icon(Icons.add_circle_outline),
               onPressed: () => context.push(AppRoutes.clientCreateOrder),
             ),
@@ -57,7 +59,7 @@ class _ClientMyOrdersScreenState extends ConsumerState<ClientMyOrdersScreen> {
           ? FloatingActionButton.extended(
               onPressed: () => context.push(AppRoutes.clientCreateOrder),
               icon: const Icon(Icons.add),
-              label: const Text('إنشاء طلب'),
+              label: Text(tr('إنشاء طلب')),
             )
           : null,
       body: _buildBody(context, auth),
@@ -74,14 +76,14 @@ class _ClientMyOrdersScreenState extends ConsumerState<ClientMyOrdersScreen> {
             children: [
               const Icon(Icons.lock_outline, size: 48, color: AppColors.textMuted),
               const SizedBox(height: 12),
-              const Text(
-                'سجّل الدخول لعرض طلباتك.',
+              Text(
+                tr('سجّل الدخول لعرض طلباتك.'),
                 textAlign: TextAlign.center,
                 style: TextStyle(color: AppColors.textMuted, height: 1.6),
               ),
               const SizedBox(height: 16),
               OhButton(
-                label: 'تسجيل الدخول',
+                label: tr('تسجيل الدخول'),
                 onPressed: () => context.push(AppRoutes.login),
               ),
             ],
@@ -91,8 +93,8 @@ class _ClientMyOrdersScreenState extends ConsumerState<ClientMyOrdersScreen> {
     }
 
     if (!_isClientRole(auth)) {
-      return const OhEmptyBody(
-        message: 'هذه الصفحة مخصصة لحسابات العملاء فقط.',
+      return OhEmptyBody(
+        message: tr('هذه الصفحة مخصصة لحسابات العملاء فقط.'),
         icon: Icons.person_off_outlined,
       );
     }
@@ -101,7 +103,7 @@ class _ClientMyOrdersScreenState extends ConsumerState<ClientMyOrdersScreen> {
     final notifier = ref.read(clientOrdersControllerProvider.notifier);
 
     if (state.isLoading && state.orders.isEmpty) {
-      return const OhLoadingBody(message: 'جاري تحميل طلباتك...');
+      return OhLoadingBody(message: tr('جاري تحميل طلباتك...'));
     }
 
     if (state.error != null && state.orders.isEmpty) {
@@ -119,13 +121,13 @@ class _ClientMyOrdersScreenState extends ConsumerState<ClientMyOrdersScreen> {
           padding: const EdgeInsets.all(24),
           children: [
             const SizedBox(height: 80),
-            const OhEmptyBody(
-              message: 'لا توجد طلبات بعد.',
+            OhEmptyBody(
+              message: tr('لا توجد طلبات بعد.'),
               icon: Icons.receipt_long_outlined,
             ),
             const SizedBox(height: 20),
             OhButton(
-              label: 'إنشاء طلب جديد',
+              label: tr('إنشاء طلب جديد'),
               onPressed: () => context.push(AppRoutes.clientCreateOrder),
             ),
           ],
@@ -184,10 +186,23 @@ class _ClientOrderCard extends StatelessWidget {
               _StatusChip(label: order.statusLabel, background: _chipBg, foreground: _chipFg),
             ],
           ),
-          if (order.statusHintAr != null) ...[
+          if (order.managedPaymentPending && order.orderStatus == 'in_progress') ...[
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                const Icon(Icons.payments_outlined, size: 16, color: Color(0xFFB54708)),
+                const SizedBox(width: 6),
+                Text(
+                  tr('الدفع: بانتظار الدفع'),
+                  style: const TextStyle(color: Color(0xFFB54708), fontWeight: FontWeight.w700, fontSize: 13),
+                ),
+              ],
+            ),
+          ],
+          if (order.statusHintAr != null && tryLocalizeServerText(order.statusHintAr!) != null) ...[
             const SizedBox(height: 8),
             Text(
-              order.statusHintAr!,
+              tryLocalizeServerText(order.statusHintAr!)!,
               style: const TextStyle(color: AppColors.textMuted, height: 1.45, fontSize: 13),
             ),
           ],
@@ -218,18 +233,18 @@ class _ClientOrderCard extends StatelessWidget {
           const SizedBox(height: 14),
           if (order.canPayNow) ...[
             OhButton(
-              label: 'ادفع الآن',
+              label: tr('ادفع الآن'),
               onPressed: () => context.push(AppRoutes.clientOrderPath(order.id)),
             ),
             const SizedBox(height: 8),
             OhButton(
-              label: 'التفاصيل',
+              label: tr('التفاصيل'),
               outlined: true,
               onPressed: () => context.push(AppRoutes.clientOrderPath(order.id)),
             ),
           ] else
             OhButton(
-              label: 'التفاصيل',
+              label: tr('التفاصيل'),
               outlined: true,
               onPressed: () => context.push(AppRoutes.clientOrderPath(order.id)),
             ),

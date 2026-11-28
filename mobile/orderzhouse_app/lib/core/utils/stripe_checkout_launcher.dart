@@ -3,6 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../config/environment_config.dart';
 import 'checkout_funnel_telemetry.dart';
+import '../i18n/i18n.dart';
 
 /// Result of attempting to open a Stripe Checkout URL externally.
 class StripeCheckoutLaunchResult {
@@ -16,8 +17,7 @@ class StripeCheckoutLaunchResult {
   final bool blockedLiveCheckout;
   final String? message;
 
-  static const liveBlockedAr =
-      'تم إنشاء رابط دفع، لكن بيئة Stripe الحالية Live ولا يجب اختبار الدفع محليًا.';
+  static String get liveBlockedAr => tr('تم إنشاء رابط دفع، لكن بيئة Stripe الحالية Live ولا يجب اختبار الدفع محليًا.');
 }
 
 /// True when [url] contains a Stripe live Checkout Session id (`cs_live_`).
@@ -42,7 +42,7 @@ Future<StripeCheckoutLaunchResult> launchStripeCheckoutUrl(
   }
 
   if (!kReleaseMode && isStripeLiveCheckoutUrl(trimmed)) {
-    return const StripeCheckoutLaunchResult(
+    return StripeCheckoutLaunchResult(
       launched: false,
       blockedLiveCheckout: true,
       message: StripeCheckoutLaunchResult.liveBlockedAr,

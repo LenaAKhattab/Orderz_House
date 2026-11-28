@@ -1,4 +1,5 @@
 import '../../../core/network/json_helpers.dart';
+import '../../../core/i18n/i18n.dart';
 
 /// Full profile payload from GET /profile/me (safe fields only).
 class AccountProfile {
@@ -59,13 +60,13 @@ class AccountProfile {
   String get roleLabelAr {
     switch (effectiveRole) {
       case 'freelancer':
-        return 'مستقل';
+        return tr('مستقل');
       case 'client':
-        return 'عميل';
+        return tr('عميل');
       case 'admin':
-        return 'مسؤول';
+        return tr('مسؤول');
       case 'super_admin':
-        return 'مشرف أعلى';
+        return tr('مشرف أعلى');
       default:
         return effectiveRole;
     }

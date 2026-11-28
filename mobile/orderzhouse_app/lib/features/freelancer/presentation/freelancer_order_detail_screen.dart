@@ -15,6 +15,7 @@ import '../data/freelancer_my_orders_repository.dart';
 import 'freelancer_delivery_controller.dart';
 import 'freelancer_my_orders_controller.dart';
 import 'submit_freelancer_delivery_sheet.dart';
+import '../../../core/i18n/i18n.dart';
 
 final freelancerOrderDetailProvider =
     FutureProvider.autoDispose.family<FreelancerMyOrder, String>((ref, orderId) {
@@ -32,11 +33,11 @@ class FreelancerOrderDetailScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.homeMobileBg,
-      appBar: AppBar(title: const Text('تفاصيل الطلب')),
+      appBar: AppBar(title: Text(tr('تفاصيل الطلب'))),
       body: asyncOrder.when(
-        loading: () => const OhLoadingBody(message: 'جاري تحميل التفاصيل...'),
+        loading: () => OhLoadingBody(message: tr('جاري تحميل التفاصيل...')),
         error: (error, _) => OhErrorBody(
-          message: apiErrorMessage(error, fallback: 'تعذر تحميل تفاصيل الطلب.'),
+          message: apiErrorMessage(error, fallback: tr('تعذر تحميل تفاصيل الطلب.')),
           onRetry: () => ref.invalidate(freelancerOrderDetailProvider(orderId)),
         ),
         data: (order) => _FreelancerOrderDetailBody(orderId: orderId, order: order),
@@ -70,41 +71,41 @@ class _FreelancerOrderDetailBody extends ConsumerWidget {
             onDark: true,
           ),
           dateLabel: formatOrderDateLabel(order.updatedAt ?? order.createdAt),
-          dateCaption: 'آخر تحديث',
+          dateCaption: tr('آخر تحديث'),
         ),
         const SizedBox(height: 12),
         OrderSectionCard(
-          title: 'معلومات الطلب',
+          title: tr('معلومات الطلب'),
           icon: Icons.info_outline_rounded,
           children: [
             OrderInfoGrid(
               items: [
                 if (order.category?.name != null)
                   OrderMetaItem(
-                    label: 'التصنيف',
+                    label: tr('التصنيف'),
                     value: order.category!.name!,
                     icon: Icons.category_outlined,
                   ),
                 OrderMetaItem(
-                  label: 'نوع الطلب',
+                  label: tr('نوع الطلب'),
                   value: order.projectTypeLabel,
                   icon: Icons.layers_outlined,
                 ),
                 if (order.durationText != null)
                   OrderMetaItem(
-                    label: 'المدة',
+                    label: tr('المدة'),
                     value: order.durationText!,
                     icon: Icons.schedule_outlined,
                   ),
                 if (order.dueAt != null)
                   OrderMetaItem(
-                    label: 'موعد التسليم',
+                    label: tr('موعد التسليم'),
                     value: formatOrderDateLabel(order.dueAt),
                     icon: Icons.event_outlined,
                   ),
                 if (order.createdAt != null)
                   OrderMetaItem(
-                    label: 'تاريخ الإنشاء',
+                    label: tr('تاريخ الإنشاء'),
                     value: formatOrderDateLabel(order.createdAt),
                     icon: Icons.calendar_today_outlined,
                   ),
@@ -115,13 +116,13 @@ class _FreelancerOrderDetailBody extends ConsumerWidget {
         if (order.description != null && order.description!.trim().isNotEmpty) ...[
           const SizedBox(height: 12),
           OrderSectionCard(
-            title: 'الوصف',
+            title: tr('الوصف'),
             icon: Icons.notes_rounded,
             children: [
               Text(
                 order.description!.trim(),
                 style: const TextStyle(color: AppColors.textInk, height: 1.75, fontSize: 14),
-                textAlign: TextAlign.right,
+                textAlign: TextAlign.start,
               ),
             ],
           ),
@@ -129,7 +130,7 @@ class _FreelancerOrderDetailBody extends ConsumerWidget {
         if (order.briefFiles.isNotEmpty) ...[
           const SizedBox(height: 12),
           OrderSectionCard(
-            title: 'مرفقات الطلب',
+            title: tr('مرفقات الطلب'),
             icon: Icons.attach_file_rounded,
             children: order.briefFiles
                 .map(
@@ -145,7 +146,7 @@ class _FreelancerOrderDetailBody extends ConsumerWidget {
         if (order.submissionHistory != null && order.submissionHistory!.submissions.isNotEmpty) ...[
           const SizedBox(height: 12),
           OrderSectionCard(
-            title: 'سجل التسليم',
+            title: tr('سجل التسليم'),
             icon: Icons.history_rounded,
             children: order.submissionHistory!.submissions
                 .map((s) => _SubmissionHistoryRow(orderId: orderId, submission: s))
@@ -154,7 +155,7 @@ class _FreelancerOrderDetailBody extends ConsumerWidget {
         ],
         const SizedBox(height: 12),
         OrderSectionCard(
-          title: 'التسليم',
+          title: tr('التسليم'),
           icon: Icons.upload_file_outlined,
           children: [
             _FreelancerDeliverySection(orderId: orderId, order: order),
@@ -193,9 +194,9 @@ class _SubmissionHistoryRow extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    'التسليم',
+                    tr('التسليم'),
                     style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.textMuted, fontSize: 12),
-                    textAlign: TextAlign.right,
+                    textAlign: TextAlign.start,
                   ),
                 ),
                 OrderStatusBadge(label: submission.statusLabel, compact: true),
@@ -204,16 +205,16 @@ class _SubmissionHistoryRow extends StatelessWidget {
             if (submission.submittedAt != null) ...[
               const SizedBox(height: 8),
               Text(
-                'تاريخ التسليم: ${formatOrderDateLabel(submission.submittedAt)}',
+                trf('تاريخ التسليم: {0}', [formatOrderDateLabel(submission.submittedAt)]),
                 style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
-                textAlign: TextAlign.right,
+                textAlign: TextAlign.start,
               ),
             ],
             const SizedBox(height: 4),
             Text(
-              'عدد الملفات: ${submission.filesCount}',
+              trf('عدد الملفات: {0}', [submission.filesCount]),
               style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
-              textAlign: TextAlign.right,
+              textAlign: TextAlign.start,
             ),
             if (submission.files.isNotEmpty) ...[
               const SizedBox(height: 8),
@@ -258,13 +259,13 @@ class _FreelancerDeliverySectionState extends ConsumerState<_FreelancerDeliveryS
       ref.invalidate(freelancerOrderDetailProvider(widget.orderId));
       ref.read(freelancerMyOrdersControllerProvider.notifier).load(refresh: true);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تم إرسال التسليم بنجاح — بانتظار مراجعة العميل.')),
+        SnackBar(content: Text(tr('تم إرسال التسليم بنجاح — بانتظار مراجعة العميل.'))),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(apiErrorMessage(e, fallback: 'تعذر إرسال التسليم.')),
+          content: Text(apiErrorMessage(e, fallback: tr('تعذر إرسال التسليم.'))),
           backgroundColor: AppColors.error,
         ),
       );
@@ -284,9 +285,9 @@ class _FreelancerDeliverySectionState extends ConsumerState<_FreelancerDeliveryS
         children: [
           if (revisionNote != null && revisionNote.isNotEmpty) ...[
             Text(
-              'العميل طلب تعديلات، يمكنك إرسال تسليم جديد.',
+              tr('العميل طلب تعديلات، يمكنك إرسال تسليم جديد.'),
               style: const TextStyle(color: AppColors.textInk, height: 1.5, fontWeight: FontWeight.w600),
-              textAlign: TextAlign.right,
+              textAlign: TextAlign.start,
             ),
             const SizedBox(height: 6),
             // Web parity: the freelancer must see what to change, not only that changes were requested.
@@ -302,19 +303,19 @@ class _FreelancerDeliverySectionState extends ConsumerState<_FreelancerDeliveryS
               child: Text(
                 revisionNote,
                 style: const TextStyle(color: AppColors.textInk, height: 1.5),
-                textAlign: TextAlign.right,
+                textAlign: TextAlign.start,
               ),
             ),
             const SizedBox(height: 10),
           ],
-          const Text(
+          Text(
             deliveryAttachmentHelperAr,
             style: TextStyle(color: AppColors.textMuted, height: 1.45),
-            textAlign: TextAlign.right,
+            textAlign: TextAlign.start,
           ),
           const SizedBox(height: 12),
           OhButton(
-            label: deliveryState.isSubmitting ? 'جارٍ الإرسال...' : 'تسليم العمل',
+            label: deliveryState.isSubmitting ? tr('جارٍ الإرسال...') : tr('تسليم العمل'),
             isLoading: deliveryState.isSubmitting,
             onPressed: deliveryState.isSubmitting ? null : _openDeliverySheet,
           ),
@@ -323,6 +324,6 @@ class _FreelancerDeliverySectionState extends ConsumerState<_FreelancerDeliveryS
     }
 
     final message = freelancerDeliveryBlockedMessageAr(order);
-    return OrderDisabledAction(label: message ?? 'لا يمكن التسليم حالياً.');
+    return OrderDisabledAction(label: message ?? tr('لا يمكن التسليم حالياً.'));
   }
 }

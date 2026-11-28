@@ -20,6 +20,7 @@ import '../data/pool_order_models.dart';
 import '../../currency/presentation/jod_money_display.dart';
 import 'order_detail_widgets.dart';
 import 'pool_order_detail_provider.dart';
+import '../../../core/i18n/i18n.dart';
 
 class PoolOrderDetailScreen extends ConsumerWidget {
   const PoolOrderDetailScreen({super.key, required this.orderId});
@@ -33,11 +34,11 @@ class PoolOrderDetailScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.homeMobileBg,
-      appBar: AppBar(title: const Text('تفاصيل الطلب')),
+      appBar: AppBar(title: Text(tr('تفاصيل الطلب'))),
       body: asyncOrder.when(
-        loading: () => const OhLoadingBody(message: 'جاري تحميل التفاصيل...'),
+        loading: () => OhLoadingBody(message: tr('جاري تحميل التفاصيل...')),
         error: (error, _) => OhErrorBody(
-          message: apiErrorMessage(error, fallback: 'تعذر تحميل تفاصيل الطلب.'),
+          message: apiErrorMessage(error, fallback: tr('تعذر تحميل تفاصيل الطلب.')),
           onRetry: () => ref.invalidate(poolOrderDetailProvider(orderId)),
         ),
         data: (order) => _PoolOrderDetailBody(
@@ -85,55 +86,55 @@ class _PoolOrderDetailBody extends ConsumerWidget {
                   onDark: true,
                 ),
                 dateLabel: formatOrderDateLabel(order.publishedAtLabel),
-                dateCaption: 'تاريخ النشر',
+                dateCaption: tr('تاريخ النشر'),
               ),
               const SizedBox(height: 12),
               OrderSectionCard(
-                title: 'معلومات الطلب',
+                title: tr('معلومات الطلب'),
                 icon: Icons.info_outline_rounded,
                 children: [
                   OrderInfoGrid(
                     items: [
                       if (order.category?.name != null)
                         OrderMetaItem(
-                          label: 'التصنيف',
+                          label: tr('التصنيف'),
                           value: order.category!.name!,
                           icon: Icons.category_outlined,
                         ),
                       OrderMetaItem(
-                        label: 'نوع الطلب',
+                        label: tr('نوع الطلب'),
                         value: order.projectTypeLabel,
                         icon: Icons.layers_outlined,
                       ),
                       if (order.durationText != null)
                         OrderMetaItem(
-                          label: 'المدة',
+                          label: tr('المدة'),
                           value: order.durationText!,
                           icon: Icons.schedule_outlined,
                         ),
                       if (order.dueAt != null)
                         OrderMetaItem(
-                          label: 'موعد التسليم',
+                          label: tr('موعد التسليم'),
                           value: formatOrderDateLabel(order.dueAt),
                           icon: Icons.event_outlined,
                         ),
                       if (order.applicantsCount > 0)
                         OrderMetaItem(
-                          label: 'المتقدمون',
+                          label: tr('المتقدمون'),
                           value: '${order.applicantsCount}',
                           icon: Icons.people_outline,
                           accent: const Color(0xFFB54708),
                         ),
                       if (order.filesCount > 0)
                         OrderMetaItem(
-                          label: 'المرفقات',
-                          value: '${order.filesCount} ملف',
+                          label: tr('المرفقات'),
+                          value: trf('{0} ملف', [order.filesCount]),
                           icon: Icons.attach_file,
                         ),
                       if (order.hasAssignedFreelancer)
-                        const OrderMetaItem(
-                          label: 'التنفيذ',
-                          value: 'تم تعيين مستقل',
+                        OrderMetaItem(
+                          label: tr('التنفيذ'),
+                          value: tr('تم تعيين مستقل'),
                           icon: Icons.person_outline,
                         ),
                     ],
@@ -143,13 +144,13 @@ class _PoolOrderDetailBody extends ConsumerWidget {
               if (order.description != null && order.description!.trim().isNotEmpty) ...[
                 const SizedBox(height: 12),
                 OrderSectionCard(
-                  title: 'الوصف',
+                  title: tr('الوصف'),
                   icon: Icons.notes_rounded,
                   children: [
                     Text(
                       order.description!.trim(),
                       style: const TextStyle(color: AppColors.textInk, height: 1.75, fontSize: 14),
-                      textAlign: TextAlign.right,
+                      textAlign: TextAlign.start,
                     ),
                   ],
                 ),
@@ -171,7 +172,7 @@ class _PoolOrderDetailBody extends ConsumerWidget {
                         child: Text(
                           participationLabel,
                           style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.textInk, height: 1.4),
-                          textAlign: TextAlign.right,
+                          textAlign: TextAlign.start,
                         ),
                       ),
                     ],
@@ -229,11 +230,11 @@ class _PoolOrderActionsState extends ConsumerState<_PoolOrderActions> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('استلام الطلب'),
-        content: const Text('هل تريد استلام هذا الطلب؟'),
+        title: Text(tr('استلام الطلب')),
+        content: Text(tr('هل تريد استلام هذا الطلب؟')),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('إلغاء')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('تأكيد')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(tr('إلغاء'))),
+          FilledButton(onPressed: () => Navigator.pop(context, true), child: Text(tr('تأكيد'))),
         ],
       ),
     );
@@ -249,14 +250,14 @@ class _PoolOrderActionsState extends ConsumerState<_PoolOrderActions> {
 
       final outcome = controller.classifyTakeOutcome(updated);
       if (outcome == TakeOrderOutcome.assigned) {
-        _showSnack('تم استلام الطلب بنجاح.');
+        _showSnack(tr('تم استلام الطلب بنجاح.'));
         context.go(AppRoutes.myOrders);
         return;
       }
-      _showSnack('تم تسجيل مشاركتك في الطلب.');
+      _showSnack(tr('تم تسجيل مشاركتك في الطلب.'));
     } catch (e) {
       if (!mounted) return;
-      _showSnack(apiErrorMessage(e, fallback: 'تعذر استلام الطلب.'), isError: true);
+      _showSnack(apiErrorMessage(e, fallback: tr('تعذر استلام الطلب.')), isError: true);
     }
   }
 
@@ -284,10 +285,10 @@ class _PoolOrderActionsState extends ConsumerState<_PoolOrderActions> {
       await ref.read(freelancerPoolActionsControllerProvider(widget.orderId).notifier).submitBid(payload);
       if (!mounted) return;
       ref.invalidate(poolOrderDetailProvider(widget.orderId));
-      _showSnack('تم إرسال عرضك بنجاح.');
+      _showSnack(tr('تم إرسال عرضك بنجاح.'));
     } catch (e) {
       if (!mounted) return;
-      _showSnack(apiErrorMessage(e, fallback: 'تعذر إرسال العرض.'), isError: true);
+      _showSnack(apiErrorMessage(e, fallback: tr('تعذر إرسال العرض.')), isError: true);
     }
   }
 
@@ -307,17 +308,17 @@ class _PoolOrderActionsState extends ConsumerState<_PoolOrderActions> {
 
     if (!auth.isAuthenticated) {
       return OrderPlaceholderAction(
-        label: 'سجّل الدخول للمتابعة',
+        label: tr('سجّل الدخول للمتابعة'),
         onPressed: () => context.push(AppRoutes.login),
       );
     }
 
     if (auth.user?.usesClientExperience == true) {
-      return const OrderDisabledAction(label: 'يمكنك استعراض الطلب فقط');
+      return OrderDisabledAction(label: tr('يمكنك استعراض الطلب فقط'));
     }
 
     if (auth.user?.usesFreelancerExperience != true) {
-      return const OrderDisabledAction(label: 'هذه الميزة للمستقلين فقط');
+      return OrderDisabledAction(label: tr('هذه الميزة للمستقلين فقط'));
     }
 
     final eligibilityAsync = ref.watch(freelancerEligibilityProvider);
@@ -409,14 +410,14 @@ class _PoolOrderActionsState extends ConsumerState<_PoolOrderActions> {
     final isBidding = order.projectType == 'bidding';
     if (isBidding) {
       return OhButton(
-        label: actionsState.isSubmittingBid ? 'جارٍ الإرسال...' : 'تقديم عرض',
+        label: actionsState.isSubmittingBid ? tr('جارٍ الإرسال...') : tr('تقديم عرض'),
         isLoading: actionsState.isSubmittingBid,
         onPressed: !canAct || actionsState.isBusy ? null : _openBidSheet,
       );
     }
 
     return OhButton(
-      label: actionsState.isTaking ? 'جارٍ الاستلام...' : 'استلام الطلب',
+      label: actionsState.isTaking ? tr('جارٍ الاستلام...') : tr('استلام الطلب'),
       isLoading: actionsState.isTaking,
       onPressed: !canAct || actionsState.isBusy ? null : _confirmAndTake,
     );

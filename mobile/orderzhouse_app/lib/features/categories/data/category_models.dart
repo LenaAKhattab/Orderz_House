@@ -1,22 +1,30 @@
+import '../../../core/i18n/content_text.dart';
 import '../../../core/network/json_helpers.dart';
 
 class ServiceCategory {
   const ServiceCategory({
     required this.id,
     required this.slug,
-    required this.name,
+    required String name,
     this.nameEn,
-    this.description,
+    String? description,
     this.imageUrl,
     this.sortOrder = 0,
     this.isServiceCategory = true,
-  });
+  })  : nameAr = name,
+        descriptionAr = description;
 
   final String id;
   final String slug;
-  final String name;
+  final String nameAr;
   final String? nameEn;
-  final String? description;
+  final String? descriptionAr;
+
+  /// Display name in the current language (English from `name_en` when available).
+  String get name => localizedContent(nameAr, nameEn);
+
+  /// Arabic-only system description is hidden in English (no mixed-language UI).
+  String? get description => localizedOptionalContent(descriptionAr, null);
   final String? imageUrl;
   final int sortOrder;
   final bool isServiceCategory;
@@ -48,27 +56,36 @@ class ServiceCategory {
 
   static bool isBrowsable(ServiceCategory c) {
     if (!c.isServiceCategory) return false;
-    return c.name.isNotEmpty;
+    return c.nameAr.isNotEmpty;
   }
 }
 
 class ServiceSubcategory {
   const ServiceSubcategory({
     required this.id,
-    required this.name,
+    required String name,
+    this.nameEn,
     this.slug,
-    this.description,
-  });
+    String? description,
+  })  : nameAr = name,
+        descriptionAr = description;
 
   final String id;
-  final String name;
+  final String nameAr;
+  final String? nameEn;
   final String? slug;
-  final String? description;
+  final String? descriptionAr;
+
+  /// Display name in the current language (English from `name_en` when available).
+  String get name => localizedContent(nameAr, nameEn);
+
+  String? get description => localizedOptionalContent(descriptionAr, null);
 
   factory ServiceSubcategory.fromJson(Map<String, dynamic> json) {
     return ServiceSubcategory(
       id: readString(json, 'id', 'id'),
       name: readString(json, 'name', 'name'),
+      nameEn: readMapField<String>(json, 'nameEn', 'name_en'),
       slug: readMapField<String>(json, 'slug', 'slug'),
       description: readMapField<String>(json, 'description', 'description'),
     );
@@ -86,13 +103,18 @@ class ServiceSubcategory {
 class ServiceSubSubcategory {
   const ServiceSubSubcategory({
     required this.id,
-    required this.name,
+    required String name,
+    this.nameEn,
     this.slug,
     this.subcategoryId,
-  });
+  }) : nameAr = name;
 
   final String id;
-  final String name;
+  final String nameAr;
+  final String? nameEn;
+
+  /// Display name in the current language (English from `name_en` when available).
+  String get name => localizedContent(nameAr, nameEn);
   final String? slug;
   final String? subcategoryId;
 
@@ -100,6 +122,7 @@ class ServiceSubSubcategory {
     return ServiceSubSubcategory(
       id: readString(json, 'id', 'id'),
       name: readString(json, 'name', 'name'),
+      nameEn: readMapField<String>(json, 'nameEn', 'name_en'),
       slug: readMapField<String>(json, 'slug', 'slug'),
       subcategoryId: readMapField<String>(json, 'subcategoryId', 'subcategory_id'),
     );

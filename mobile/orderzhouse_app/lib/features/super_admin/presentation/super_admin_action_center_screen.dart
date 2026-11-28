@@ -15,6 +15,7 @@ import '../data/super_admin_feedback_models.dart';
 import '../data/super_admin_models.dart';
 import '../data/super_admin_web_handoff.dart';
 import 'super_admin_ui.dart';
+import '../../../core/i18n/i18n.dart';
 
 class SuperAdminActionCenterScreen extends ConsumerWidget {
   const SuperAdminActionCenterScreen({super.key});
@@ -33,8 +34,8 @@ class SuperAdminActionCenterScreen extends ConsumerWidget {
     final unreadAsync = ref.watch(unreadNotificationsControllerProvider);
     final unread = unreadAsync.maybeWhen(data: (v) => v, orElse: () => 0);
     final name = user?.displayName.trim();
-    final greeting = (name != null && name.isNotEmpty) ? name : 'المشرف الأعلى';
-    final initials = user != null ? profileInitials(user) : 'م';
+    final greeting = (name != null && name.isNotEmpty) ? name : tr('المشرف الأعلى');
+    final initials = user != null ? profileInitials(user) : tr('م');
 
     return Scaffold(
       backgroundColor: AppColors.homeMobileBg,
@@ -141,23 +142,23 @@ class SuperAdminActionCenterView extends StatelessWidget {
                         fontWeight: FontWeight.w800,
                         height: 1.2,
                       ),
-                      textAlign: TextAlign.right,
+                      textAlign: TextAlign.start,
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'أهلاً، $greetingName',
+                      trf('أهلاً، {0}', [greetingName]),
                       style: const TextStyle(color: AppColors.textMuted, fontSize: 14),
-                      textAlign: TextAlign.right,
+                      textAlign: TextAlign.start,
                     ),
                     const SizedBox(height: 2),
-                    const Text(
-                      'مركز المهام',
+                    Text(
+                      tr('مركز المهام'),
                       style: TextStyle(
                         color: AppColors.primary,
                         fontWeight: FontWeight.w800,
                         fontSize: 13,
                       ),
-                      textAlign: TextAlign.right,
+                      textAlign: TextAlign.start,
                     ),
                   ],
                 ),
@@ -171,9 +172,9 @@ class SuperAdminActionCenterView extends StatelessWidget {
           const SizedBox(height: 22),
           if (isLoading) ...[
             const SizedBox(height: 80),
-            const SizedBox(
+            SizedBox(
               height: 220,
-              child: OhLoadingBody(message: 'جاري تحميل المهام العاجلة...'),
+              child: OhLoadingBody(message: tr('جاري تحميل المهام العاجلة...')),
             ),
           ] else if (errorMessage != null) ...[
             const SizedBox(height: 40),
@@ -183,8 +184,8 @@ class SuperAdminActionCenterView extends StatelessWidget {
             ),
           ] else if (snapshot != null) ...[
             if (!_hasInAppUrgent) ...[
-              const OhEmptyBody(
-                message: 'لا توجد مهام عاجلة حالياً.',
+              OhEmptyBody(
+                message: tr('لا توجد مهام عاجلة حالياً.'),
                 icon: Icons.verified_outlined,
               ),
               const SizedBox(height: 16),
@@ -199,10 +200,10 @@ class SuperAdminActionCenterView extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             SuperAdminCountTile(
-              title: 'مطالبات مالية تحتاج إجراء',
+              title: tr('مطالبات مالية تحتاج إجراء'),
               card: snapshot!.claims,
               icon: Icons.payments_outlined,
-              hint: snapshot!.claims.available ? 'اضغط للعرض' : null,
+              hint: snapshot!.claims.available ? tr('اضغط للعرض') : null,
               onTap: () => context.push(AppRoutes.superAdminClaims),
             ),
             const SizedBox(height: 10),
@@ -228,31 +229,31 @@ class SuperAdminActionCenterView extends StatelessWidget {
               title: superAdminPackageAssignmentTitleAr,
               card: snapshot!.packageAssignment ?? SuperAdminCountCard.ok(0),
               icon: Icons.group_outlined,
-              hint: 'إدارة الباقات والمستخدمين',
+              hint: tr('إدارة الباقات والمستخدمين'),
               onTap: () => context.push(AppRoutes.superAdminPackageAssignment),
             ),
             const SizedBox(height: 10),
             SuperAdminCountTile(
-              title: 'إشعارات غير مقروءة',
+              title: tr('إشعارات غير مقروءة'),
               card: _unreadCard,
               icon: Icons.notifications_outlined,
-              hint: 'نفس عداد أيقونة الإشعارات',
+              hint: tr('نفس عداد أيقونة الإشعارات'),
               onTap: () => context.push(AppRoutes.notifications),
             ),
             const SizedBox(height: 10),
             SuperAdminCountTile(
-              title: 'بيت المونة يحتاج متابعة',
+              title: tr('بيت المونة يحتاج متابعة'),
               card: snapshot!.pantry,
               icon: Icons.inventory_2_outlined,
-              hint: snapshot!.pantry.available ? 'اضغط للعرض' : null,
+              hint: snapshot!.pantry.available ? tr('اضغط للعرض') : null,
               onTap: () => context.push(AppRoutes.superAdminPantry),
             ),
             const SizedBox(height: 10),
             SuperAdminCountTile(
-              title: 'المقالات تحتاج متابعة',
+              title: tr('المقالات تحتاج متابعة'),
               card: snapshot!.articles,
               icon: Icons.article_outlined,
-              hint: snapshot!.articles.available ? 'اضغط للعرض' : null,
+              hint: snapshot!.articles.available ? tr('اضغط للعرض') : null,
               onTap: () => context.push(AppRoutes.superAdminArticles),
             ),
             const SizedBox(height: 10),
@@ -261,7 +262,7 @@ class SuperAdminActionCenterView extends StatelessWidget {
               title: superAdminFeedbackQueueTitleAr,
               card: snapshot!.feedback ?? SuperAdminCountCard.ok(0),
               icon: Icons.feedback_outlined,
-              hint: 'اضغط للعرض',
+              hint: tr('اضغط للعرض'),
               onTap: () => context.push(AppRoutes.superAdminFeedback),
             ),
             const SizedBox(height: 22),
@@ -274,9 +275,9 @@ class SuperAdminActionCenterView extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               superAdminInternalOrdersAuditNoteAr,
-              textAlign: TextAlign.right,
+              textAlign: TextAlign.start,
               style: TextStyle(color: AppColors.textMuted, fontSize: 12, height: 1.4),
             ),
             const SizedBox(height: 12),
@@ -302,8 +303,8 @@ class SuperAdminActionCenterView extends StatelessWidget {
             ],
             if (snapshot!.platformOrdersAvailable) ...[
               const SizedBox(height: 22),
-              const Text(
-                'ملخص المنصة',
+              Text(
+                tr('ملخص المنصة'),
                 style: TextStyle(
                   fontWeight: FontWeight.w800,
                   fontSize: 16,
@@ -313,11 +314,11 @@ class SuperAdminActionCenterView extends StatelessWidget {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  _MiniStat(label: 'مفتوحة', value: snapshot!.openProjects ?? 0),
+                  _MiniStat(label: tr('مفتوحة'), value: snapshot!.openProjects ?? 0),
                   const SizedBox(width: 8),
-                  _MiniStat(label: 'قيد التنفيذ', value: snapshot!.inProgressProjects ?? 0),
+                  _MiniStat(label: tr('قيد التنفيذ'), value: snapshot!.inProgressProjects ?? 0),
                   const SizedBox(width: 8),
-                  _MiniStat(label: 'مكتملة', value: snapshot!.completedProjects ?? 0),
+                  _MiniStat(label: tr('مكتملة'), value: snapshot!.completedProjects ?? 0),
                 ],
               ),
             ],

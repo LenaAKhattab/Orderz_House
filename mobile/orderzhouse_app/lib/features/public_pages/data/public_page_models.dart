@@ -1,21 +1,35 @@
+import '../../../core/i18n/content_text.dart';
 import '../../../core/network/json_helpers.dart';
 
 class PublicSitePage {
   const PublicSitePage({
     required this.slug,
-    required this.title,
-    this.menuLabel,
-    this.content = '',
+    required String title,
+    String? menuLabel,
+    String content = '',
     this.metaTitle,
     this.metaDescription,
-  });
+    this.titleEn,
+    this.menuLabelEn,
+    this.contentEn,
+  })  : titleAr = title,
+        menuLabelAr = menuLabel,
+        contentAr = content;
 
   final String slug;
-  final String title;
-  final String? menuLabel;
-  final String content;
+  final String titleAr;
+  final String? menuLabelAr;
+  final String contentAr;
   final String? metaTitle;
   final String? metaDescription;
+  // English CMS copy (same columns the web uses for its English UI).
+  final String? titleEn;
+  final String? menuLabelEn;
+  final String? contentEn;
+
+  String get title => localizedContent(titleAr, titleEn);
+  String? get menuLabel => localizedOptionalContent(menuLabelAr, menuLabelEn);
+  String get content => localizedOptionalContent(contentAr, contentEn) ?? '';
 
   List<String> get paragraphs {
     final text = content.trim();
@@ -31,6 +45,9 @@ class PublicSitePage {
       content: readString(json, 'content', 'content'),
       metaTitle: readMapField<String>(json, 'metaTitle', 'meta_title'),
       metaDescription: readMapField<String>(json, 'metaDescription', 'meta_description'),
+      titleEn: readMapField<String>(json, 'titleEn', 'title_en'),
+      menuLabelEn: readMapField<String>(json, 'menuLabelEn', 'menu_label_en'),
+      contentEn: readMapField<String>(json, 'contentEn', 'content_en'),
     );
   }
 

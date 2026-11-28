@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/oh_widgets.dart';
 import '../data/client_delivery_review_models.dart';
+import '../../../core/i18n/i18n.dart';
 
 Future<RequestDeliveryRevisionPayload?> showRequestDeliveryRevisionSheet(
   BuildContext context, {
@@ -54,22 +55,22 @@ class _RequestDeliveryRevisionSheetState extends State<_RequestDeliveryRevisionS
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text(
-            'طلب تعديل',
+          Text(
+            tr('طلب تعديل'),
             style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.textInk),
-            textAlign: TextAlign.right,
+            textAlign: TextAlign.start,
           ),
           const SizedBox(height: 8),
-          const Text(
-            'اشرح التعديلات المطلوبة من المستقل بوضوح.',
+          Text(
+            tr('اشرح التعديلات المطلوبة من المستقل بوضوح.'),
             style: TextStyle(color: AppColors.textMuted, height: 1.45),
-            textAlign: TextAlign.right,
+            textAlign: TextAlign.start,
           ),
           const SizedBox(height: 16),
           OhTextField(
             controller: _noteController,
-            label: 'ملاحظات التعديل',
-            hint: 'مثال: عدّل الألوان ووسّع الهوامش...',
+            label: tr('ملاحظات التعديل'),
+            hint: tr('مثال: عدّل الألوان ووسّع الهوامش...'),
             keyboardType: TextInputType.multiline,
           ),
           if (_error != null) ...[
@@ -77,18 +78,18 @@ class _RequestDeliveryRevisionSheetState extends State<_RequestDeliveryRevisionS
             Text(
               _error!,
               style: const TextStyle(color: AppColors.error, fontWeight: FontWeight.w600),
-              textAlign: TextAlign.right,
+              textAlign: TextAlign.start,
             ),
           ],
           const SizedBox(height: 16),
           OhButton(
-            label: widget.isSubmitting ? 'جارٍ الإرسال...' : 'إرسال طلب التعديل',
+            label: widget.isSubmitting ? tr('جارٍ الإرسال...') : tr('إرسال طلب التعديل'),
             isLoading: widget.isSubmitting,
             onPressed: widget.isSubmitting ? null : _submit,
           ),
           const SizedBox(height: 8),
           OhButton(
-            label: 'إلغاء',
+            label: tr('إلغاء'),
             outlined: true,
             onPressed: widget.isSubmitting ? null : () => Navigator.of(context).pop(),
           ),

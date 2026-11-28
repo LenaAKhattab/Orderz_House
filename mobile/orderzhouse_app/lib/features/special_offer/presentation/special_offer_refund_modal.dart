@@ -5,20 +5,21 @@ import '../../../core/constants/web_constants.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/oh_widgets.dart';
 import '../data/special_offer_models.dart';
+import '../../../core/i18n/i18n.dart';
 
 Future<void> openSpecialOfferWebHandoff(BuildContext context) async {
   final uri = Uri.tryParse(WebConstants.freelancerPlansUrl);
   if (uri == null) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('تعذر فتح صفحة الباقات.')),
+      SnackBar(content: Text(tr('تعذر فتح صفحة الباقات.'))),
     );
     return;
   }
   final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
   if (!ok && context.mounted) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('تعذر فتح صفحة الباقات.')),
+      SnackBar(content: Text(tr('تعذر فتح صفحة الباقات.'))),
     );
   }
 }
@@ -42,11 +43,11 @@ class SpecialOfferRefundModal extends StatelessWidget {
   Widget build(BuildContext context) {
     final sections = splitSpecialOfferRefundSections(offer.refundExplanationAr);
     final maxProject = offer.maxProjectValueJod != null
-        ? 'حتى ${formatSpecialOfferAmount(offer.maxProjectValueJod)} د.أ'
-        : 'بلا سقف للمشاريع';
+        ? trf('حتى {0} د.أ', [formatSpecialOfferAmount(offer.maxProjectValueJod)])
+        : tr('بلا سقف للمشاريع');
 
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: Directionality.of(context),
       child: Container(
         key: const ValueKey('special-offer-refund-modal'),
         margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
@@ -80,7 +81,7 @@ class SpecialOfferRefundModal extends StatelessWidget {
                           fontSize: 18,
                           height: 1.35,
                         ),
-                        textAlign: TextAlign.right,
+                        textAlign: TextAlign.start,
                       ),
                     ),
                     IconButton(
@@ -94,20 +95,20 @@ class SpecialOfferRefundModal extends StatelessWidget {
                 _SummaryGrid(
                   items: [
                     _SummaryItem(
-                      label: 'عدد العروض',
-                      value: '${formatSpecialOfferAmount(offer.totalOffers)} متاح',
+                      label: tr('عدد العروض'),
+                      value: trf('{0} متاح', [formatSpecialOfferAmount(offer.totalOffers)]),
                     ),
                     _SummaryItem(
-                      label: 'حد يومي',
-                      value: '${formatSpecialOfferAmount(offer.dailyLimit)} عرض يومياً',
+                      label: tr('حد يومي'),
+                      value: trf('{0} عرض يومياً', [formatSpecialOfferAmount(offer.dailyLimit)]),
                     ),
                     _SummaryItem(
-                      label: 'الحد الأقصى للمشروع',
+                      label: tr('الحد الأقصى للمشروع'),
                       value: maxProject,
                     ),
                     _SummaryItem(
-                      label: 'المدة',
-                      value: '${formatSpecialOfferAmount(offer.durationDays)} يوم',
+                      label: tr('المدة'),
+                      value: trf('{0} يوم', [formatSpecialOfferAmount(offer.durationDays)]),
                     ),
                   ],
                 ),
@@ -116,20 +117,20 @@ class SpecialOfferRefundModal extends StatelessWidget {
                   Text(
                     specialOfferRefundSectionTitlesAr.length > i
                         ? specialOfferRefundSectionTitlesAr[i]
-                        : 'تفاصيل ${i + 1}',
+                        : trf('تفاصيل {0}', [i + 1]),
                     style: const TextStyle(
                       color: AppColors.primaryDeep,
                       fontWeight: FontWeight.w800,
                       fontSize: 14,
                     ),
-                    textAlign: TextAlign.right,
+                    textAlign: TextAlign.start,
                   ),
                   const SizedBox(height: 6),
                   Text(
                     sections[i],
                     key: i == 0 ? const ValueKey('special-offer-refund-section') : null,
                     style: const TextStyle(color: AppColors.textMuted, height: 1.55, fontSize: 13),
-                    textAlign: TextAlign.right,
+                    textAlign: TextAlign.start,
                   ),
                   const SizedBox(height: 12),
                 ],
@@ -194,7 +195,7 @@ class _SummaryGrid extends StatelessWidget {
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                     ),
-                    textAlign: TextAlign.right,
+                    textAlign: TextAlign.start,
                   ),
                   const SizedBox(height: 2),
                   Text(
@@ -205,7 +206,7 @@ class _SummaryGrid extends StatelessWidget {
                       fontSize: 12,
                       fontWeight: FontWeight.w800,
                     ),
-                    textAlign: TextAlign.right,
+                    textAlign: TextAlign.start,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),

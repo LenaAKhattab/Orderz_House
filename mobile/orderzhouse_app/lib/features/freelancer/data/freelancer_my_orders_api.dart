@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import 'freelancer_my_order_models.dart';
+import '../../../core/i18n/i18n.dart';
 
 class FreelancerMyOrdersApi {
   FreelancerMyOrdersApi(this._dio);
@@ -18,7 +19,7 @@ class FreelancerMyOrdersApi {
     }
     throw DioException(
       requestOptions: response.requestOptions,
-      message: 'استجابة غير متوقعة من طلبات المستقل.',
+      message: tr('استجابة غير متوقعة من طلبات المستقل.'),
     );
   }
 
@@ -33,7 +34,7 @@ class FreelancerMyOrdersApi {
     }
     throw DioException(
       requestOptions: response.requestOptions,
-      message: 'استجابة غير متوقعة من تفاصيل طلب المستقل.',
+      message: tr('استجابة غير متوقعة من تفاصيل طلب المستقل.'),
     );
   }
 }

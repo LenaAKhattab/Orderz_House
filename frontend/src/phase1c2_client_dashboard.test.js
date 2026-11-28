@@ -110,8 +110,10 @@ describe("Phase 1C.2 client routes", () => {
     assert.equal(resolveSafeInternalNavPath("javascript:alert(1)"), "/dashboard");
     const page = read("pages/dashboard/NotificationsPage.jsx");
     const bell = read("components/notifications/NotificationsBell.jsx");
-    assert.match(page, /resolveSafeInternalNavPath/);
-    assert.match(bell, /resolveSafeInternalNavPath/);
+    // Both surfaces go through resolveNotificationNavPath, which must delegate to the safe resolver.
+    assert.match(page, /resolveNotificationNavPath|resolveSafeInternalNavPath/);
+    assert.match(bell, /resolveNotificationNavPath|resolveSafeInternalNavPath/);
+    assert.match(read("utils/resolveNotificationNavPath.js"), /resolveSafeInternalNavPath\(/);
   });
 
   it("feedback form has a duplicate-submit guard", () => {

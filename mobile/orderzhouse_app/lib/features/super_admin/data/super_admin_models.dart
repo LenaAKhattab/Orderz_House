@@ -1,65 +1,62 @@
 import '../../../core/network/json_helpers.dart';
 import 'super_admin_kyc_models.dart';
+import '../../../core/i18n/i18n.dart';
 
-const superAdminComingSoonMessageAr = 'هذه المهمة ستتوفر قريبًا على التطبيق.';
-const superAdminUnavailableCardAr = 'غير متاح حاليًا';
-const superAdminAccessDeniedAr = 'ليس لديك صلاحية للوصول إلى هذا المورد.';
-const superAdminJodSuffixAr = 'د.أ';
-const superAdminApproveActivationLabelAr = 'اعتماد التفعيل';
-const superAdminOpenWebPanelAr = 'فتح لوحة الويب';
-const superAdminActivationTileTitleAr = 'طلبات تفعيل تحتاج إجراء';
-const superAdminIdentityQueueTitleAr = 'طلبات توثيق الهوية';
-const superAdminSubscriptionActivationQueueTitleAr = 'طلبات تفعيل الاشتراك';
-const superAdminLegacyFreeActivationSectionAr = 'طلبات مجانية قديمة تحتاج مراجعة';
-const superAdminPackageAssignmentTitleAr = 'إسناد الباقات';
-const superAdminFeedbackTileTitleAr = 'مشاكل واقتراحات';
-const superAdminActivationListHintAr = 'اضغط للعرض والإجراء';
-const superAdminActivationQueueTitleAr = 'طلبات التفعيل';
-const superAdminActivationEmptyAr = 'لا توجد طلبات تفعيل بانتظار المراجعة.';
-const superAdminPaidSubscriptionActivationEmptyAr =
-    'لا توجد طلبات تفعيل اشتراك مدفوع حالياً.';
-const superAdminInternalOrdersAuditNoteAr =
-    'إدارة الطلبات الداخلية الكاملة ستتوفر في مرحلة A3 — استخدم لوحة الويب مؤقتاً.';
-const superAdminInternalOrdersTileTitleAr = 'طلبات داخلية (لوحة الويب)';
-const superAdminInternalOrdersHintAr = 'هذه الطلبات متاحة حالياً من لوحة الويب.';
-const superAdminInAppActionsSectionAr = 'يحتاج إجراء في التطبيق';
-const superAdminWebFollowUpSectionAr = 'متابعة من الويب';
-const superAdminWebHandoffFailedAr = 'تعذر فتح لوحة الويب. حاول مرة أخرى.';
+String get superAdminComingSoonMessageAr => tr('هذه المهمة ستتوفر قريبًا على التطبيق.');
+String get superAdminUnavailableCardAr => tr('غير متاح حاليًا');
+String get superAdminAccessDeniedAr => tr('ليس لديك صلاحية للوصول إلى هذا المورد.');
+String get superAdminJodSuffixAr => tr('د.أ');
+String get superAdminApproveActivationLabelAr => tr('اعتماد التفعيل');
+String get superAdminOpenWebPanelAr => tr('فتح لوحة الويب');
+String get superAdminActivationTileTitleAr => tr('طلبات تفعيل تحتاج إجراء');
+String get superAdminIdentityQueueTitleAr => tr('طلبات توثيق الهوية');
+String get superAdminSubscriptionActivationQueueTitleAr => tr('طلبات تفعيل الاشتراك');
+String get superAdminLegacyFreeActivationSectionAr => tr('طلبات مجانية قديمة تحتاج مراجعة');
+String get superAdminPackageAssignmentTitleAr => tr('إسناد الباقات');
+String get superAdminFeedbackTileTitleAr => tr('مشاكل واقتراحات');
+String get superAdminActivationListHintAr => tr('اضغط للعرض والإجراء');
+String get superAdminActivationQueueTitleAr => tr('طلبات التفعيل');
+String get superAdminActivationEmptyAr => tr('لا توجد طلبات تفعيل بانتظار المراجعة.');
+String get superAdminPaidSubscriptionActivationEmptyAr => tr('لا توجد طلبات تفعيل اشتراك مدفوع حالياً.');
+String get superAdminInternalOrdersAuditNoteAr => tr('إدارة الطلبات الداخلية الكاملة ستتوفر في مرحلة A3 — استخدم لوحة الويب مؤقتاً.');
+String get superAdminInternalOrdersTileTitleAr => tr('طلبات داخلية (لوحة الويب)');
+String get superAdminInternalOrdersHintAr => tr('هذه الطلبات متاحة حالياً من لوحة الويب.');
+String get superAdminInAppActionsSectionAr => tr('يحتاج إجراء في التطبيق');
+String get superAdminWebFollowUpSectionAr => tr('متابعة من الويب');
+String get superAdminWebHandoffFailedAr => tr('تعذر فتح لوحة الويب. حاول مرة أخرى.');
 
-const superAdminConfirmApprovalTitleAr = 'تأكيد الاعتماد';
-const superAdminConfirmApprovalBodyAr = 'هل تريد اعتماد هذا الحساب؟';
-const superAdminUpdateClaimStatusLabelAr = 'تحديث حالة المطالبة';
-const superAdminActionReasonLabelAr = 'سبب الإجراء';
-const superAdminActionSuccessAr = 'تم تنفيذ الإجراء بنجاح';
-const superAdminActionFailedAr = 'تعذر تنفيذ الإجراء. حاول مرة أخرى.';
-const superAdminActionNoteTooShortAr = 'أدخل سبب الإجراء (3 أحرف على الأقل).';
-const superAdminConfirmActionLabelAr = 'تأكيد';
-const superAdminCancelActionLabelAr = 'إلغاء';
-const superAdminPantryRelistLabelAr = 'فرصة معاد طرحها';
-const superAdminAcceptBidLabelAr = 'قبول العرض';
-const superAdminRejectBidLabelAr = 'رفض العرض';
-const superAdminApproveDeliveryLabelAr = 'اعتماد التسليم';
-const superAdminRequestRevisionLabelAr = 'طلب تعديل';
-const superAdminOverrideReasonLabelAr = 'سبب تجاوز المرشح الأول';
-const superAdminOverrideReasonHelperAr =
-    'هذا العرض ليس المرشح الأول حسب ترتيب التوزيع العادل. يرجى توضيح سبب الاختيار قبل المتابعة.';
-const superAdminOverrideReasonTooShortAr = 'سبب التجاوز يجب أن يكون 10 أحرف على الأقل.';
-const superAdminOverrideReasonTooLongAr = 'سبب التجاوز يجب ألا يتجاوز 500 حرف.';
-const superAdminRecommendedBidLabelAr = 'المرشح الأول';
-const superAdminConfirmAcceptBidBodyAr = 'هل تريد قبول هذا العرض؟';
-const superAdminConfirmRejectBidBodyAr = 'هل تريد رفض هذا العرض؟';
-const superAdminConfirmApproveDeliveryBodyAr = 'هل تريد اعتماد هذا التسليم؟';
-const superAdminRevisionNoteLabelAr = 'ملاحظات التعديل';
+String get superAdminConfirmApprovalTitleAr => tr('تأكيد الاعتماد');
+String get superAdminConfirmApprovalBodyAr => tr('هل تريد اعتماد هذا الحساب؟');
+String get superAdminUpdateClaimStatusLabelAr => tr('تحديث حالة المطالبة');
+String get superAdminActionReasonLabelAr => tr('سبب الإجراء');
+String get superAdminActionSuccessAr => tr('تم تنفيذ الإجراء بنجاح');
+String get superAdminActionFailedAr => tr('تعذر تنفيذ الإجراء. حاول مرة أخرى.');
+String get superAdminActionNoteTooShortAr => tr('أدخل سبب الإجراء (3 أحرف على الأقل).');
+String get superAdminConfirmActionLabelAr => tr('تأكيد');
+String get superAdminCancelActionLabelAr => tr('إلغاء');
+String get superAdminPantryRelistLabelAr => tr('فرصة معاد طرحها');
+String get superAdminAcceptBidLabelAr => tr('قبول العرض');
+String get superAdminRejectBidLabelAr => tr('رفض العرض');
+String get superAdminApproveDeliveryLabelAr => tr('اعتماد التسليم');
+String get superAdminRequestRevisionLabelAr => tr('طلب تعديل');
+String get superAdminOverrideReasonLabelAr => tr('سبب تجاوز المرشح الأول');
+String get superAdminOverrideReasonHelperAr => tr('هذا العرض ليس المرشح الأول حسب ترتيب التوزيع العادل. يرجى توضيح سبب الاختيار قبل المتابعة.');
+String get superAdminOverrideReasonTooShortAr => tr('سبب التجاوز يجب أن يكون 10 أحرف على الأقل.');
+String get superAdminOverrideReasonTooLongAr => tr('سبب التجاوز يجب ألا يتجاوز 500 حرف.');
+String get superAdminRecommendedBidLabelAr => tr('المرشح الأول');
+String get superAdminConfirmAcceptBidBodyAr => tr('هل تريد قبول هذا العرض؟');
+String get superAdminConfirmRejectBidBodyAr => tr('هل تريد رفض هذا العرض؟');
+String get superAdminConfirmApproveDeliveryBodyAr => tr('هل تريد اعتماد هذا التسليم؟');
+String get superAdminRevisionNoteLabelAr => tr('ملاحظات التعديل');
 const superAdminFairOverrideMinChars = 10;
 const superAdminFairOverrideMaxChars = 500;
-const superAdminSelectApplicantLabelAr = 'اختيار المتقدم';
-const superAdminConfirmSelectTitleAr = 'تأكيد الاختيار';
-const superAdminConfirmSelectBodyAr = 'هل تريد اختيار هذا المتقدم؟';
-const superAdminArticleOverrideHelperAr = 'يجب توضيح سبب اختيار متقدم غير المرشح الأول';
-const superAdminRelistArticleLabelAr = 'إعادة طرح المناقصة';
-const superAdminConfirmRelistBodyAr =
-    'سيتم فتح جولة جديدة بنفس بيانات المقال، ولن يتم احتساب المتقدمين السابقين ضمن الجولة الجديدة.';
-const superAdminAssignedApplicantLabelAr = 'تم الاختيار';
+String get superAdminSelectApplicantLabelAr => tr('اختيار المتقدم');
+String get superAdminConfirmSelectTitleAr => tr('تأكيد الاختيار');
+String get superAdminConfirmSelectBodyAr => tr('هل تريد اختيار هذا المتقدم؟');
+String get superAdminArticleOverrideHelperAr => tr('يجب توضيح سبب اختيار متقدم غير المرشح الأول');
+String get superAdminRelistArticleLabelAr => tr('إعادة طرح المناقصة');
+String get superAdminConfirmRelistBodyAr => tr('سيتم فتح جولة جديدة بنفس بيانات المقال، ولن يتم احتساب المتقدمين السابقين ضمن الجولة الجديدة.');
+String get superAdminAssignedApplicantLabelAr => tr('تم الاختيار');
 
 String formatSuperAdminJod(num? value) {
   if (value == null) return '—';
@@ -228,14 +225,14 @@ class SuperAdminBidCollection {
   String get attentionLabelAr {
     final s = (status ?? '').trim().toLowerCase();
     final o = (outcome ?? '').trim().toLowerCase();
-    if (s == 'collecting') return 'جمع العروض';
+    if (s == 'collecting') return tr('جمع العروض');
     if (s == 'minimum_not_met' || o == 'minimum_not_met') {
-      return 'لم يكتمل الحد الأدنى';
+      return tr('لم يكتمل الحد الأدنى');
     }
-    if (s == 'eligible_for_assignment') return 'جاهز للإسناد';
+    if (s == 'eligible_for_assignment') return tr('جاهز للإسناد');
     if (s == 'assigned') return superAdminAssignedApplicantLabelAr;
     if (s == 'threshold_reached' || o == 'threshold_reached' || thresholdReached) {
-      return 'اكتمل العدد المطلوب';
+      return tr('اكتمل العدد المطلوب');
     }
     if (label != null && label!.trim().isNotEmpty) return label!.trim();
     return s.isEmpty ? '—' : s;
@@ -589,10 +586,10 @@ List<SuperAdminPantryAttentionItem> parsePantryAttention({
     items.add(
       SuperAdminPantryAttentionItem(
         id: readString(row, 'id', 'id'),
-        title: _nullIfEmpty(readString(row, 'title', 'title')) ?? 'طلب بيت المونة',
+        title: _nullIfEmpty(readString(row, 'title', 'title')) ?? tr('طلب بيت المونة'),
         kind: status == 'revision_requested' || status == 'submitted'
-            ? 'تسليم بانتظار المراجعة'
-            : 'جمع عروض',
+            ? tr('تسليم بانتظار المراجعة')
+            : tr('جمع عروض'),
         statusLabel: statusLabel,
         progressLabel: (current != null && required != null) ? '$current / $required' : null,
         itemKind: SuperAdminPantryItemKind.request,
@@ -614,8 +611,8 @@ List<SuperAdminPantryAttentionItem> parsePantryAttention({
       SuperAdminPantryAttentionItem(
         id: readString(row, 'id', 'id'),
         title: _nullIfEmpty(readString(row, 'requestTitle', 'request_title')) ??
-            'تسليم بيت المونة',
-        kind: 'تسليم بانتظار المراجعة',
+            tr('تسليم بيت المونة'),
+        kind: tr('تسليم بانتظار المراجعة'),
         statusLabel: pantryDeliveryStatusLabelAr(status),
         itemKind: SuperAdminPantryItemKind.delivery,
         requestId: _nullIfEmpty(readString(row, 'pantryRequestId', 'pantry_request_id')),
@@ -646,43 +643,43 @@ dynamic mergePantryDeliveriesBodies(dynamic submittedBody, dynamic revisionBody)
 String pantryRequestStatusLabelAr(String? status) {
   switch ((status ?? '').trim().toLowerCase()) {
     case 'open_for_bids':
-      return 'مفتوح للعروض';
+      return tr('مفتوح للعروض');
     case 'assigned':
-      return 'معيّن';
+      return tr('معيّن');
     case 'revision_requested':
-      return 'طلب تعديل';
+      return tr('طلب تعديل');
     case 'approved':
-      return 'معتمد';
+      return tr('معتمد');
     case 'submitted':
-      return 'تسليم مقدّم';
+      return tr('تسليم مقدّم');
     default:
-      return status?.trim().isNotEmpty == true ? status!.trim() : 'متابعة';
+      return status?.trim().isNotEmpty == true ? status!.trim() : tr('متابعة');
   }
 }
 
 String pantryDeliveryStatusLabelAr(String? status) {
   switch ((status ?? '').trim().toLowerCase()) {
     case 'submitted':
-      return 'تسليم مقدّم';
+      return tr('تسليم مقدّم');
     case 'revision_requested':
-      return 'طلب تعديل';
+      return tr('طلب تعديل');
     case 'approved':
-      return 'معتمد';
+      return tr('معتمد');
     default:
-      return status?.trim().isNotEmpty == true ? status!.trim() : 'تسليم';
+      return status?.trim().isNotEmpty == true ? status!.trim() : tr('تسليم');
   }
 }
 
 String pantryCollectionStatusLabelAr(String? status) {
   switch ((status ?? '').trim().toLowerCase()) {
     case 'collecting':
-      return 'جمع العروض';
+      return tr('جمع العروض');
     case 'threshold_reached':
-      return 'اكتمل العدد المطلوب';
+      return tr('اكتمل العدد المطلوب');
     case 'eligible_for_assignment':
-      return 'جاهز للإسناد';
+      return tr('جاهز للإسناد');
     case 'minimum_not_met':
-      return 'لم يكتمل الحد الأدنى';
+      return tr('لم يكتمل الحد الأدنى');
     default:
       return status?.trim().isNotEmpty == true ? status!.trim() : '—';
   }
@@ -707,7 +704,7 @@ List<SuperAdminArticleAttentionItem> parseArticleAttention(dynamic body) {
     items.add(
       SuperAdminArticleAttentionItem(
         id: readString(row, 'id', 'id'),
-        title: _nullIfEmpty(readString(row, 'title', 'title')) ?? 'مقال',
+        title: _nullIfEmpty(readString(row, 'title', 'title')) ?? tr('مقال'),
         statusLabel: collection.attentionLabelAr,
         progressLabel: (current != null && required != null) ? '$current / $required' : null,
         valueJod: readDouble(row, 'articleValueJod', 'article_value_jod'),

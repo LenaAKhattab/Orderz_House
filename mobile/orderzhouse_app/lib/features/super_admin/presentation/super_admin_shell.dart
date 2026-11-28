@@ -4,6 +4,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../notifications/presentation/notifications_screen.dart';
 import '../../profile/presentation/profile_screen.dart';
 import 'super_admin_action_center_screen.dart';
+import '../../../core/i18n/i18n.dart';
 
 class SuperAdminShell extends StatefulWidget {
   const SuperAdminShell({super.key});
@@ -16,10 +17,10 @@ class _SuperAdminShellState extends State<SuperAdminShell> {
   int _index = 0;
   final Set<int> _openedTabs = {0};
 
-  static const _tabs = [
-    _SaTab('الرئيسية', Icons.home_outlined, Icons.home_rounded),
-    _SaTab('الإشعارات', Icons.notifications_outlined, Icons.notifications_rounded),
-    _SaTab('الحساب', Icons.person_outline_rounded, Icons.person_rounded),
+  static List<_SaTab> get _tabs => [
+    _SaTab(tr('الرئيسية'), Icons.home_outlined, Icons.home_rounded),
+    _SaTab(tr('الإشعارات'), Icons.notifications_outlined, Icons.notifications_rounded),
+    _SaTab(tr('الحساب'), Icons.person_outline_rounded, Icons.person_rounded),
   ];
 
   @override

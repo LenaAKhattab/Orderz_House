@@ -1,6 +1,7 @@
 import 'super_admin_article_models.dart';
 import 'super_admin_models.dart';
 import 'super_admin_pantry_actions.dart';
+import '../../../core/i18n/i18n.dart';
 
 const superAdminSelectApplicantConfirmKey = 'sa-confirm-select-applicant';
 const superAdminRelistArticleConfirmKey = 'sa-confirm-relist-article';
@@ -10,15 +11,15 @@ const superAdminRejectArticleConfirmKey = 'sa-confirm-reject-article';
 const superAdminArticleRevisionNoteFieldKey = 'sa-article-revision-note';
 const superAdminArticleRejectReasonFieldKey = 'sa-article-reject-reason';
 
-const superAdminApproveArticleLabelAr = 'اعتماد المقال';
-const superAdminRequestArticleRevisionLabelAr = 'طلب تعديل';
-const superAdminRejectArticleLabelAr = 'رفض المقال';
-const superAdminArticleApproveConfirmAr = 'هل أنت متأكد من اعتماد هذا المقال؟';
-const superAdminArticleApproveSuccessAr = 'تم اعتماد المقال بنجاح.';
-const superAdminArticleRevisionSuccessAr = 'تم إرسال طلب التعديل بنجاح.';
-const superAdminArticleRejectSuccessAr = 'تم رفض المقال بنجاح.';
-const superAdminArticleRevisionNoteRequiredAr = 'يرجى كتابة ملاحظات التعديل.';
-const superAdminArticleRejectReasonRequiredAr = 'يرجى كتابة سبب الرفض.';
+String get superAdminApproveArticleLabelAr => tr('اعتماد المقال');
+String get superAdminRequestArticleRevisionLabelAr => tr('طلب تعديل');
+String get superAdminRejectArticleLabelAr => tr('رفض المقال');
+String get superAdminArticleApproveConfirmAr => tr('هل أنت متأكد من اعتماد هذا المقال؟');
+String get superAdminArticleApproveSuccessAr => tr('تم اعتماد المقال بنجاح.');
+String get superAdminArticleRevisionSuccessAr => tr('تم إرسال طلب التعديل بنجاح.');
+String get superAdminArticleRejectSuccessAr => tr('تم رفض المقال بنجاح.');
+String get superAdminArticleRevisionNoteRequiredAr => tr('يرجى كتابة ملاحظات التعديل.');
+String get superAdminArticleRejectReasonRequiredAr => tr('يرجى كتابة سبب الرفض.');
 
 bool isArticleFairRankingEligible(SuperAdminArticleFairRanking? ranking) {
   return ranking?.eligibleForAssignment == true;

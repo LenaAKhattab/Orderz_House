@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 
 import '../../orders/data/pool_order_models.dart';
 import 'freelancer_pool_actions_models.dart';
+import '../../../core/i18n/i18n.dart';
 
 class FreelancerPoolActionsApi {
   FreelancerPoolActionsApi(this._dio);
@@ -31,7 +32,7 @@ class FreelancerPoolActionsApi {
     }
     throw DioException(
       requestOptions: response.requestOptions,
-      message: 'استجابة غير متوقعة من السوق.',
+      message: tr('استجابة غير متوقعة من السوق.'),
     );
   }
 }

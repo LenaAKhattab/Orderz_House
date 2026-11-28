@@ -1,4 +1,5 @@
 import 'dart:io';
+import '../../../../core/i18n/server_text.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +9,7 @@ import '../../../../core/widgets/oh_widgets.dart';
 import '../data/account_activation_kyc_models.dart';
 import '../data/identity_image_picker.dart';
 import 'account_activation_kyc_controller.dart';
+import '../../../../core/i18n/i18n.dart';
 
 class AccountActivationKycScreen extends ConsumerStatefulWidget {
   const AccountActivationKycScreen({super.key});
@@ -70,7 +72,7 @@ class _AccountActivationKycScreenState extends ConsumerState<AccountActivationKy
         _pickError = null;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(accountActivationKycSubmitSuccessAr)),
+        SnackBar(content: Text(accountActivationKycSubmitSuccessAr)),
       );
     }
   }
@@ -83,7 +85,7 @@ class _AccountActivationKycScreenState extends ConsumerState<AccountActivationKy
 
     return Scaffold(
       backgroundColor: AppColors.homeMobileBg,
-      appBar: AppBar(title: const Text(accountActivationKycPageTitleAr)),
+      appBar: AppBar(title: Text(accountActivationKycPageTitleAr)),
       body: RefreshIndicator(
         onRefresh: () => ref.read(accountActivationKycControllerProvider.notifier).refresh(),
         child: ListView(
@@ -92,7 +94,7 @@ class _AccountActivationKycScreenState extends ConsumerState<AccountActivationKy
           children: [
             Text(
               accountActivationKycPageSubtitleAr,
-              textAlign: TextAlign.right,
+              textAlign: TextAlign.start,
               style: const TextStyle(color: AppColors.textMuted, height: 1.5),
             ),
             const SizedBox(height: 14),
@@ -111,19 +113,23 @@ class _AccountActivationKycScreenState extends ConsumerState<AccountActivationKy
               ) else if (status.isPending) _StatusCard(
                 tone: _Tone.warning,
                 title: accountActivationKycPendingAr,
-                body: status.messageAr ?? 'طلبك قيد المراجعة من قبل الإدارة.',
+                body: status.messageAr == null
+                    ? tr('طلبك قيد المراجعة من قبل الإدارة.')
+                    : localizeServerText(status.messageAr!, fallback: tr('طلبك قيد المراجعة من قبل الإدارة.')),
               ) else if (status.isRejected) _StatusCard(
                 tone: _Tone.error,
                 title: accountActivationKycRejectedHeadlineAr,
                 body: status.request?.rejectionReason?.trim().isNotEmpty == true
                     ? status.request!.rejectionReason
-                    : status.messageAr,
+                    : (status.messageAr == null ? null : localizeServerText(status.messageAr!, fallback: accountActivationKycRejectedHeadlineAr)),
               ) else
                 _StatusCard(
                   tone: _Tone.neutral,
-                  title: 'تفعيل الحساب مطلوب',
-                  body: status.messageAr ??
-                      'ارفع صورة الهوية من الأمام والخلف لإرسال طلب التفعيل.',
+                  title: tr('تفعيل الحساب مطلوب'),
+                  body: status.messageAr == null
+                      ? tr('ارفع صورة الهوية من الأمام والخلف لإرسال طلب التفعيل.')
+                      : localizeServerText(status.messageAr!,
+                          fallback: tr('ارفع صورة الهوية من الأمام والخلف لإرسال طلب التفعيل.')),
                 ),
               if (ui.error != null) ...[
                 const SizedBox(height: 12),
@@ -136,20 +142,20 @@ class _AccountActivationKycScreenState extends ConsumerState<AccountActivationKy
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       _FilePickerRow(
-                        label: 'صورة الهوية — الأمام',
+                        label: tr('صورة الهوية — الأمام'),
                         fileName: _frontName,
                         onPick: pickBusy ? null : () => _pick(true),
                       ),
                       const SizedBox(height: 12),
                       _FilePickerRow(
-                        label: 'صورة الهوية — الخلف',
+                        label: tr('صورة الهوية — الخلف'),
                         fileName: _backName,
                         onPick: pickBusy ? null : () => _pick(false),
                       ),
                       const SizedBox(height: 14),
                       Text(
                         accountActivationKycTermsSnapshotAr,
-                        textAlign: TextAlign.right,
+                        textAlign: TextAlign.start,
                         style: const TextStyle(
                           color: AppColors.textInk,
                           height: 1.55,
@@ -164,9 +170,9 @@ class _AccountActivationKycScreenState extends ConsumerState<AccountActivationKy
                             : (v) => setState(() => _termsAccepted = v ?? false),
                         contentPadding: EdgeInsets.zero,
                         controlAffinity: ListTileControlAffinity.leading,
-                        title: const Text(
-                          'أوافق على الشروط أعلاه',
-                          textAlign: TextAlign.right,
+                        title: Text(
+                          tr('أوافق على الشروط أعلاه'),
+                          textAlign: TextAlign.start,
                           style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
                         ),
                       ),
@@ -182,7 +188,7 @@ class _AccountActivationKycScreenState extends ConsumerState<AccountActivationKy
                       OhButton(
                         label: status.isRejected
                             ? accountActivationKycResubmitCtaAr
-                            : 'إرسال طلب التفعيل',
+                            : tr('إرسال طلب التفعيل'),
                         isLoading: ui.submitting,
                         onPressed: pickBusy ? null : _submit,
                       ),
@@ -227,7 +233,7 @@ class _StatusCard extends StatelessWidget {
         children: [
           Text(
             title,
-            textAlign: TextAlign.right,
+            textAlign: TextAlign.start,
             style: TextStyle(
               color: colors.$2,
               fontWeight: FontWeight.w800,
@@ -238,7 +244,7 @@ class _StatusCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               body!,
-              textAlign: TextAlign.right,
+              textAlign: TextAlign.start,
               style: const TextStyle(color: AppColors.textInk, height: 1.5),
             ),
           ],
@@ -266,7 +272,7 @@ class _FilePickerRow extends StatelessWidget {
       children: [
         Text(
           label,
-          textAlign: TextAlign.right,
+          textAlign: TextAlign.start,
           style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.textInk),
         ),
         const SizedBox(height: 6),
@@ -274,7 +280,7 @@ class _FilePickerRow extends StatelessWidget {
           onPressed: onPick,
           icon: const Icon(Icons.image_outlined),
           label: Text(
-            fileName?.trim().isNotEmpty == true ? fileName! : 'اختيار صورة',
+            fileName?.trim().isNotEmpty == true ? fileName! : tr('اختيار صورة'),
             overflow: TextOverflow.ellipsis,
           ),
         ),

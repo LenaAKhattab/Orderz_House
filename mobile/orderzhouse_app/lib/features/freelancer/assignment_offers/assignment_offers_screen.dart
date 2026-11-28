@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/errors/api_error_message.dart';
 import '../../../core/theme/app_colors.dart';
 import 'assignment_offers.dart';
+import '../../../core/i18n/i18n.dart';
 
 /// Freelancer: assignment offers — review pay/deadline, accept or reject, see agreed terms, answer pay changes.
 class AssignmentOffersScreen extends ConsumerWidget {
@@ -14,14 +15,14 @@ class AssignmentOffersScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final offers = ref.watch(assignmentOffersProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('عروض الإسناد')),
+      appBar: AppBar(title: Text(tr('عروض الإسناد'))),
       body: RefreshIndicator(
         onRefresh: () async => ref.invalidate(assignmentOffersProvider),
         child: offers.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => ListView(children: [Padding(padding: const EdgeInsets.all(24), child: Text(apiErrorMessage(e, fallback: 'تعذر تحميل العروض.')))]),
+          error: (e, _) => ListView(children: [Padding(padding: const EdgeInsets.all(24), child: Text(apiErrorMessage(e, fallback: tr('تعذر تحميل العروض.'))))]),
           data: (list) => list.isEmpty
-              ? ListView(children: const [Padding(padding: EdgeInsets.all(24), child: Text('لا توجد عروض إسناد.'))])
+              ? ListView(children: [Padding(padding: EdgeInsets.all(24), child: Text(tr('لا توجد عروض إسناد.')))])
               : ListView.separated(
                   padding: const EdgeInsets.all(16),
                   itemCount: list.length,
@@ -53,7 +54,7 @@ class _AssignmentOfferCardState extends ConsumerState<AssignmentOfferCard> {
       await fn();
       messenger.showSnackBar(SnackBar(content: Text(okText)));
     } on DioException catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text(apiErrorMessage(e, fallback: 'تعذر تنفيذ العملية.'))));
+      messenger.showSnackBar(SnackBar(content: Text(apiErrorMessage(e, fallback: tr('تعذر تنفيذ العملية.')))));
     } finally {
       if (mounted) setState(() => _busy = false);
       ref.invalidate(assignmentOffersProvider);
@@ -75,24 +76,24 @@ class _AssignmentOfferCardState extends ConsumerState<AssignmentOfferCard> {
             Row(
               children: [
                 Expanded(child: Text(o.title, style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.textInk))),
-                Chip(label: Text(o.status == 'pending' && !actionable ? 'منتهي' : (kOfferStatusLabelsAr[o.status] ?? o.status))),
+                Chip(label: Text(o.status == 'pending' && !actionable ? tr('منتهي') : (kOfferStatusLabelsAr[o.status] ?? o.status))),
               ],
             ),
             Text(o.orderCode, textDirection: TextDirection.ltr, style: const TextStyle(color: AppColors.textMuted)),
             const SizedBox(height: 8),
             Text(o.description),
             const SizedBox(height: 8),
-            Text('الأجر: ${o.termsAmount ?? o.compensationAmount} ${o.currency}', style: const TextStyle(fontWeight: FontWeight.w700)),
-            if (o.durationValue != null) Text('مدة التنفيذ: ${o.durationValue} ${o.durationUnit == 'hours' ? 'ساعة' : o.durationUnit == 'minutes' ? 'دقيقة' : 'يوم'}'),
+            Text(trf('الأجر: {0} {1}', [o.termsAmount ?? o.compensationAmount, o.currency]), style: const TextStyle(fontWeight: FontWeight.w700)),
+            if (o.durationValue != null) Text(trf('مدة التنفيذ: {0} {1}', [o.durationValue, o.durationUnit == 'hours' ? tr('ساعة') : o.durationUnit == 'minutes' ? tr('دقيقة') : tr('يوم')])),
             if (actionable && o.expiresAt != null)
-              Text('الرد قبل: ${o.expiresAt!.toLocal().toString().substring(0, 16)}', style: const TextStyle(color: AppColors.textMuted)),
+              Text(trf('الرد قبل: {0}', [o.expiresAt!.toLocal().toString().substring(0, 16)]), style: const TextStyle(color: AppColors.textMuted)),
             if (o.status == 'accepted' && o.termsVersion != null)
-              Text('الشروط المتفق عليها — نسخة ${o.termsVersion}', key: const ValueKey('offer-terms')),
+              Text(trf('الشروط المتفق عليها — نسخة {0}', [o.termsVersion]), key: const ValueKey('offer-terms')),
             if (actionable) ...[
               const SizedBox(height: 10),
               DropdownButtonFormField<String>(
                 initialValue: _reason,
-                decoration: const InputDecoration(labelText: 'سبب الرفض'),
+                decoration: InputDecoration(labelText: tr('سبب الرفض')),
                 items: kOfferRejectReasons.map((r) => DropdownMenuItem(value: r, child: Text(kOfferRejectReasonLabelsAr[r] ?? r))).toList(),
                 onChanged: (v) => setState(() => _reason = v ?? _reason),
               ),
@@ -102,16 +103,16 @@ class _AssignmentOfferCardState extends ConsumerState<AssignmentOfferCard> {
                   Expanded(
                     child: FilledButton(
                       key: const ValueKey('offer-accept'),
-                      onPressed: _busy ? null : () => _run(() => api.accept(o.id), 'تم القبول'),
-                      child: const Text('قبول'),
+                      onPressed: _busy ? null : () => _run(() => api.accept(o.id), tr('تم القبول')),
+                      child: Text(tr('قبول')),
                     ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: OutlinedButton(
                       key: const ValueKey('offer-reject'),
-                      onPressed: _busy ? null : () => _run(() => api.reject(o.id, _reason), 'تم الرفض'),
-                      child: const Text('رفض'),
+                      onPressed: _busy ? null : () => _run(() => api.reject(o.id, _reason), tr('تم الرفض')),
+                      child: Text(tr('رفض')),
                     ),
                   ),
                 ],
@@ -119,21 +120,21 @@ class _AssignmentOfferCardState extends ConsumerState<AssignmentOfferCard> {
             ],
             if (o.pendingChangeId != null) ...[
               const Divider(),
-              const Text('تعديل مقترح على الشروط', style: TextStyle(fontWeight: FontWeight.w700)),
+              Text(tr('تعديل مقترح على الشروط'), style: TextStyle(fontWeight: FontWeight.w700)),
               Text('${o.pendingChangeOld} → ${o.pendingChangeNew} JOD — ${o.pendingChangeReason ?? ''}'),
               Row(
                 children: [
                   Expanded(
                     child: FilledButton(
-                      onPressed: _busy ? null : () => _run(() => api.respondToChange(o.pendingChangeId!, approve: true), 'تمت الموافقة'),
-                      child: const Text('موافق'),
+                      onPressed: _busy ? null : () => _run(() => api.respondToChange(o.pendingChangeId!, approve: true), tr('تمت الموافقة')),
+                      child: Text(tr('موافق')),
                     ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: _busy ? null : () => _run(() => api.respondToChange(o.pendingChangeId!, approve: false), 'تم الرفض'),
-                      child: const Text('لا أوافق'),
+                      onPressed: _busy ? null : () => _run(() => api.respondToChange(o.pendingChangeId!, approve: false), tr('تم الرفض')),
+                      child: Text(tr('لا أوافق')),
                     ),
                   ),
                 ],

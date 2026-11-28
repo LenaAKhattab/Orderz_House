@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import 'freelancer_my_order_models.dart';
+import '../../../core/i18n/i18n.dart';
 
 class FreelancerDeliveryApi {
   FreelancerDeliveryApi(this._dio);
@@ -32,7 +33,7 @@ class FreelancerDeliveryApi {
     }
     throw DioException(
       requestOptions: response.requestOptions,
-      message: 'استجابة غير متوقعة من تسليم الطلب.',
+      message: tr('استجابة غير متوقعة من تسليم الطلب.'),
     );
   }
 }

@@ -4,6 +4,7 @@ import '../../../core/errors/api_error_message.dart';
 import '../data/client_delivery_review_models.dart';
 import '../data/client_delivery_review_repository.dart';
 import '../data/client_order_models.dart';
+import '../../../core/i18n/i18n.dart';
 
 class ClientDeliveryReviewState {
   const ClientDeliveryReviewState({
@@ -46,7 +47,7 @@ class ClientDeliveryReviewController extends AutoDisposeFamilyNotifier<ClientDel
     } catch (e) {
       state = state.copyWith(
         isApproving: false,
-        error: apiErrorMessage(e, fallback: 'تعذر قبول التسليم.'),
+        error: apiErrorMessage(e, fallback: tr('تعذر قبول التسليم.')),
       );
       rethrow;
     }
@@ -69,7 +70,7 @@ class ClientDeliveryReviewController extends AutoDisposeFamilyNotifier<ClientDel
     } catch (e) {
       state = state.copyWith(
         isRequestingRevision: false,
-        error: apiErrorMessage(e, fallback: 'تعذر إرسال طلب التعديل.'),
+        error: apiErrorMessage(e, fallback: tr('تعذر إرسال طلب التعديل.')),
       );
       rethrow;
     }

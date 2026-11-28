@@ -22,6 +22,16 @@ describe("UI/UX Phase 3 — client next step", () => {
       "revisionSent",
     );
     assert.equal(getClientOrderNextStep({ orderStatus: "completed", hasAssignedFreelancer: true }).key, "completed");
+    // Smart Orders managed projection: an assigned-but-unpaid order is NOT "in progress".
+    assert.equal(
+      getClientOrderNextStep({ orderStatus: "awaiting_quote_payment", hasAssignedFreelancer: true, managedByAdmin: true }).key,
+      "payQuote",
+    );
+    assert.equal(getClientOrderNextStep({ orderStatus: "awaiting_quote_payment", hasAssignedFreelancer: true }).attention, true);
+    assert.equal(
+      getClientOrderNextStep({ orderStatus: "awaiting_assignment", hasAssignedFreelancer: true, managedByAdmin: true }).key,
+      "awaitingAssignment",
+    );
     assert.equal(getClientOrderNextStep({ orderStatus: "cancelled" }).key, "cancelled");
   });
 

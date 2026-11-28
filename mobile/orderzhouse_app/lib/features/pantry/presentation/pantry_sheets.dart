@@ -7,6 +7,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/oh_widgets.dart';
 import '../../currency/presentation/jod_money_display.dart';
 import '../data/pantry_repository.dart';
+import '../../../core/i18n/i18n.dart';
 
 String pantryBidErrorMessage(Object error) {
   if (error is DioException) {
@@ -17,13 +18,13 @@ String pantryBidErrorMessage(Object error) {
       code = data['code']?.toString();
     }
     if (status == 409 && code == 'INVALID_STATUS') {
-      return 'الطلب لم يعد مفتوحًا للعروض';
+      return tr('الطلب لم يعد مفتوحًا للعروض');
     }
     if (status == 409) {
-      return apiErrorMessage(error, fallback: 'لا يمكن تقديم العرض');
+      return apiErrorMessage(error, fallback: tr('لا يمكن تقديم العرض'));
     }
   }
-  return apiErrorMessage(error, fallback: 'حدث خطأ، حاول مجددًا');
+  return apiErrorMessage(error, fallback: tr('حدث خطأ، حاول مجددًا'));
 }
 
 Future<bool> showPantryBidSheet(BuildContext context, WidgetRef ref, {required String requestId}) async {
@@ -51,15 +52,15 @@ Future<bool> showPantryBidSheet(BuildContext context, WidgetRef ref, {required S
               final days = int.tryParse(daysController.text.trim());
               final message = messageController.text.trim();
               if (amount == null || amount < 0) {
-                setSheetState(() => error = 'أدخل مبلغاً صالحاً.');
+                setSheetState(() => error = tr('أدخل مبلغاً صالحاً.'));
                 return;
               }
               if (days == null || days <= 0) {
-                setSheetState(() => error = 'أدخل مدة التنفيذ بالأيام.');
+                setSheetState(() => error = tr('أدخل مدة التنفيذ بالأيام.'));
                 return;
               }
               if (message.isEmpty) {
-                setSheetState(() => error = 'أدخل رسالة للفريق.');
+                setSheetState(() => error = tr('أدخل رسالة للفريق.'));
                 return;
               }
               setSheetState(() {
@@ -88,9 +89,9 @@ Future<bool> showPantryBidSheet(BuildContext context, WidgetRef ref, {required S
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text(
-                    'تقديم عرض',
-                    textAlign: TextAlign.right,
+                  Text(
+                    tr('تقديم عرض'),
+                    textAlign: TextAlign.start,
                     style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.primaryDeep),
                   ),
                   const SizedBox(height: 14),
@@ -102,13 +103,13 @@ Future<bool> showPantryBidSheet(BuildContext context, WidgetRef ref, {required S
                     controller: amountController,
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     textDirection: TextDirection.ltr,
-                    decoration: const InputDecoration(labelText: 'المبلغ (د.أ)'),
+                    decoration: InputDecoration(labelText: tr('المبلغ (د.أ)')),
                     onChanged: (_) => setSheetState(() {}),
                   ),
                   if (double.tryParse(amountController.text.replaceAll(',', '.')) != null) ...[
                     const SizedBox(height: 8),
                     Align(
-                      alignment: Alignment.centerRight,
+                      alignment: AlignmentDirectional.centerStart,
                       child: JodMoneyDisplay(
                         amount: double.tryParse(amountController.text.replaceAll(',', '.')),
                       ),
@@ -119,17 +120,17 @@ Future<bool> showPantryBidSheet(BuildContext context, WidgetRef ref, {required S
                     controller: daysController,
                     keyboardType: TextInputType.number,
                     textDirection: TextDirection.ltr,
-                    decoration: const InputDecoration(labelText: 'مدة التنفيذ بالأيام'),
+                    decoration: InputDecoration(labelText: tr('مدة التنفيذ بالأيام')),
                   ),
                   const SizedBox(height: 10),
                   TextField(
                     controller: messageController,
                     maxLines: 4,
-                    decoration: const InputDecoration(labelText: 'رسالة'),
+                    decoration: InputDecoration(labelText: tr('رسالة')),
                   ),
                   const SizedBox(height: 16),
                   OhButton(
-                    label: 'إرسال العرض',
+                    label: tr('إرسال العرض'),
                     isLoading: submitting,
                     onPressed: submitting ? null : submit,
                   ),
@@ -171,7 +172,7 @@ Future<bool> showPantryDeliverySheet(BuildContext context, WidgetRef ref, {requi
             Future<void> submit() async {
               final message = messageController.text.trim();
               if (message.isEmpty) {
-                setSheetState(() => error = 'أدخل رسالة التسليم.');
+                setSheetState(() => error = tr('أدخل رسالة التسليم.'));
                 return;
               }
               setSheetState(() {
@@ -190,7 +191,7 @@ Future<bool> showPantryDeliverySheet(BuildContext context, WidgetRef ref, {requi
               } catch (e) {
                 setSheetState(() {
                   submitting = false;
-                  error = apiErrorMessage(e, fallback: 'حدث خطأ، حاول مجددًا');
+                  error = apiErrorMessage(e, fallback: tr('حدث خطأ، حاول مجددًا'));
                 });
               }
             }
@@ -200,9 +201,9 @@ Future<bool> showPantryDeliverySheet(BuildContext context, WidgetRef ref, {requi
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text(
-                    'تسليم العمل',
-                    textAlign: TextAlign.right,
+                  Text(
+                    tr('تسليم العمل'),
+                    textAlign: TextAlign.start,
                     style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.primaryDeep),
                   ),
                   const SizedBox(height: 14),
@@ -213,22 +214,22 @@ Future<bool> showPantryDeliverySheet(BuildContext context, WidgetRef ref, {requi
                   TextField(
                     controller: messageController,
                     maxLines: 4,
-                    decoration: const InputDecoration(labelText: 'رسالة التسليم'),
+                    decoration: InputDecoration(labelText: tr('رسالة التسليم')),
                   ),
                   const SizedBox(height: 10),
                   TextField(
                     controller: urlController,
                     textDirection: TextDirection.ltr,
-                    decoration: const InputDecoration(labelText: 'رابط ملف (اختياري)'),
+                    decoration: InputDecoration(labelText: tr('رابط ملف (اختياري)')),
                   ),
                   const SizedBox(height: 10),
                   TextField(
                     controller: nameController,
-                    decoration: const InputDecoration(labelText: 'اسم المرفق (اختياري)'),
+                    decoration: InputDecoration(labelText: tr('اسم المرفق (اختياري)')),
                   ),
                   const SizedBox(height: 16),
                   OhButton(
-                    label: 'إرسال التسليم',
+                    label: tr('إرسال التسليم'),
                     isLoading: submitting,
                     onPressed: submitting ? null : submit,
                   ),

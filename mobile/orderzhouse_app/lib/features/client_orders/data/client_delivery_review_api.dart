@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 
 import 'client_delivery_review_models.dart';
 import 'client_order_models.dart';
+import '../../../core/i18n/i18n.dart';
 
 class ClientDeliveryReviewApi {
   ClientDeliveryReviewApi(this._dio);
@@ -31,7 +32,7 @@ class ClientDeliveryReviewApi {
     }
     throw DioException(
       requestOptions: response.requestOptions,
-      message: 'استجابة غير متوقعة من مراجعة التسليم.',
+      message: tr('استجابة غير متوقعة من مراجعة التسليم.'),
     );
   }
 }

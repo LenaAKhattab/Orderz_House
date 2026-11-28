@@ -4,6 +4,7 @@ import '../../../core/errors/api_error_message.dart';
 import 'super_admin_api.dart';
 import 'super_admin_kyc_models.dart';
 import 'super_admin_models.dart';
+import '../../../core/i18n/i18n.dart';
 
 /// Phase 1B claim status values already supported by
 /// `PATCH /api/super-admin/financial-claims/:id/status`.
@@ -28,13 +29,13 @@ class SuperAdminClaimStatusOption {
   final String labelAr;
 }
 
-const superAdminClaimStatusOptions = <SuperAdminClaimStatusOption>[
-  SuperAdminClaimStatusOption(status: 'accepted', labelAr: 'قبول'),
-  SuperAdminClaimStatusOption(status: 'rejected', labelAr: 'رفض'),
-  SuperAdminClaimStatusOption(status: 'frozen', labelAr: 'تجميد'),
+List<SuperAdminClaimStatusOption> get superAdminClaimStatusOptions => <SuperAdminClaimStatusOption>[
+  SuperAdminClaimStatusOption(status: 'accepted', labelAr: tr('قبول')),
+  SuperAdminClaimStatusOption(status: 'rejected', labelAr: tr('رفض')),
+  SuperAdminClaimStatusOption(status: 'frozen', labelAr: tr('تجميد')),
   SuperAdminClaimStatusOption(
     status: 'requires_in_person_review',
-    labelAr: 'مراجعة حضورية',
+    labelAr: tr('مراجعة حضورية'),
   ),
 ];
 

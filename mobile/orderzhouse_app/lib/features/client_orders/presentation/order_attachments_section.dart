@@ -7,6 +7,7 @@ import '../../../core/widgets/oh_widgets.dart';
 import '../data/order_attachment_limits.dart';
 import '../data/order_attachment_models.dart';
 import 'create_order_controller.dart';
+import '../../../core/i18n/i18n.dart';
 
 class OrderAttachmentsSection extends ConsumerWidget {
   const OrderAttachmentsSection({super.key});
@@ -21,23 +22,23 @@ class OrderAttachmentsSection extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text(
-          'المرفقات',
+        Text(
+          tr('المرفقات'),
           style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: AppColors.textInk),
         ),
         const SizedBox(height: 6),
-        const Text(
+        Text(
           orderAttachmentOptionalNoteAr,
           style: TextStyle(color: AppColors.textMuted, height: 1.45),
         ),
         const SizedBox(height: 4),
-        const Text(
+        Text(
           orderAttachmentHelperAr,
           style: TextStyle(color: AppColors.textMuted, fontSize: 12, height: 1.4),
         ),
         const SizedBox(height: 12),
         OhButton(
-          label: 'إضافة ملفات',
+          label: tr('إضافة ملفات'),
           outlined: true,
           expand: false,
           onPressed: state.isSubmitting ? null : () => _pickFiles(context, ref),
@@ -95,7 +96,7 @@ class OrderAttachmentsSection extends ConsumerWidget {
     }
 
     if (added.isEmpty) {
-      notifier.setAttachmentsError('تعذر قراءة الملفات المختارة.');
+      notifier.setAttachmentsError(tr('تعذر قراءة الملفات المختارة.'));
       return;
     }
 
@@ -144,7 +145,7 @@ class _AttachmentTile extends StatelessWidget {
             ),
           ),
           IconButton(
-            tooltip: 'إزالة',
+            tooltip: tr('إزالة'),
             onPressed: onRemove,
             icon: const Icon(Icons.close, color: AppColors.textMuted),
           ),

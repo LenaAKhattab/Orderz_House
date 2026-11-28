@@ -2,43 +2,43 @@
 library;
 
 import 'mini_articles_side_models.dart';
+import '../../../../core/i18n/server_text.dart';
+import '../../../../core/i18n/i18n.dart';
 
-const earnedBalanceTitleAr = 'الرصيد المكتسب من المقالات';
-const earnedBalanceHelperAr =
-    'يعرض هذا الرصيد صافي أجر الكاتب من المقالات المقبولة فقط. الأرباح المعلّقة غير قابلة للسحب حتى تفعيل Silver.';
-const earnedBalanceLockedHeadlineFallbackAr = 'رصيدك مسجّل لكنه غير قابل للسحب حالياً.';
-const earnedBalanceLockedDetailFallbackAr = 'اشترك بإحدى الخطط لتفعيل الرصيد.';
-const earnedBalancePlansCtaAr = 'اشترك بإحدى الخطط';
-const earnedBalanceGraceFallbackAr = 'متبقي {days} يوم لتفعيل الرصيد قبل إغلاقه.';
-const earnedBalanceClosedHeadlineAr = 'انتهت مهلة تفعيل هذا الرصيد.';
-const earnedBalanceClosedDetailAr = 'هذا الرصيد لم يعد قابلاً للسحب.';
-const earnedBalanceClosedAmountLabelAr = 'رصيد سابق مُغلق';
-const earnedBalanceLockedPendingLabelAr = 'معلّق غير قابل للسحب';
-const earnedBalanceWithdrawableLabelAr = 'الرصيد القابل للسحب';
-const earnedBalanceClaimsCtaAr = 'يمكنك الآن تقديم مطالبة مالية.';
-const earnedBalanceClaimsNavAr = 'المطالبات المالية';
-const earnedBalanceKycCtaAr = 'تفعيل الحساب';
-const earnedBalanceKycPendingAr = 'طلب اعتماد الحساب قيد المراجعة.';
-const earnedBalanceKycMessageFallbackAr =
-    'الرصيد متاح بعد الاشتراك، لكن السحب يتطلب اعتماد الحساب.';
-const earnedBalanceEmptyAr = 'لا توجد مقالات مقبولة بعد.';
-const earnedBalanceOpenPlansFailedAr = 'تعذر فتح صفحة الخطط.';
+String get earnedBalanceTitleAr => tr('الرصيد المكتسب من المقالات');
+String get earnedBalanceHelperAr => tr('يعرض هذا الرصيد صافي أجر الكاتب من المقالات المقبولة فقط. الأرباح المعلّقة غير قابلة للسحب حتى تفعيل Silver.');
+String get earnedBalanceLockedHeadlineFallbackAr => tr('رصيدك مسجّل لكنه غير قابل للسحب حالياً.');
+String get earnedBalanceLockedDetailFallbackAr => tr('اشترك بإحدى الخطط لتفعيل الرصيد.');
+String get earnedBalancePlansCtaAr => tr('اشترك بإحدى الخطط');
+String get earnedBalanceGraceFallbackAr => tr('متبقي {days} يوم لتفعيل الرصيد قبل إغلاقه.');
+String get earnedBalanceClosedHeadlineAr => tr('انتهت مهلة تفعيل هذا الرصيد.');
+String get earnedBalanceClosedDetailAr => tr('هذا الرصيد لم يعد قابلاً للسحب.');
+String get earnedBalanceClosedAmountLabelAr => tr('رصيد سابق مُغلق');
+String get earnedBalanceLockedPendingLabelAr => tr('معلّق غير قابل للسحب');
+String get earnedBalanceWithdrawableLabelAr => tr('الرصيد القابل للسحب');
+String get earnedBalanceClaimsCtaAr => tr('يمكنك الآن تقديم مطالبة مالية.');
+String get earnedBalanceClaimsNavAr => tr('المطالبات المالية');
+String get earnedBalanceKycCtaAr => tr('تفعيل الحساب');
+String get earnedBalanceKycPendingAr => tr('طلب اعتماد الحساب قيد المراجعة.');
+String get earnedBalanceKycMessageFallbackAr => tr('الرصيد متاح بعد الاشتراك، لكن السحب يتطلب اعتماد الحساب.');
+String get earnedBalanceEmptyAr => tr('لا توجد مقالات مقبولة بعد.');
+String get earnedBalanceOpenPlansFailedAr => tr('تعذر فتح صفحة الخطط.');
 
 /// Calm status labels — never show "مصادرة" / forfeited / company retained.
 String earnedBalanceStatusLabelAr(String? status) {
   switch ((status ?? '').trim().toLowerCase()) {
     case 'pending_locked':
-      return 'معلّق · غير قابل للسحب';
+      return tr('معلّق · غير قابل للسحب');
     case 'pending':
-      return 'معلّق';
+      return tr('معلّق');
     case 'forfeited':
-      return 'مغلق';
+      return tr('مغلق');
     case 'awaiting_account_approval':
-      return 'مُفعّل · بانتظار اعتماد الحساب';
+      return tr('مُفعّل · بانتظار اعتماد الحساب');
     case 'settled_externally':
-      return 'قابل للسحب';
+      return tr('قابل للسحب');
     case 'voided':
-      return 'ملغى';
+      return tr('ملغى');
     default:
       return status?.trim().isNotEmpty == true ? status!.trim() : '—';
   }
@@ -158,7 +158,9 @@ EarnedBalanceUiState resolveEarnedBalanceUiState(EarnedBalanceSnapshot snap) {
   if (kycBlocked) {
     return EarnedBalanceUiState(
       kind: EarnedBalanceUiKind.silverBeforeKyc,
-      headline: withdrawal?.messageAr ?? earnedBalanceKycMessageFallbackAr,
+      headline: withdrawal?.messageAr == null
+        ? earnedBalanceKycMessageFallbackAr
+        : localizeServerText(withdrawal!.messageAr!, fallback: earnedBalanceKycMessageFallbackAr),
       detail: hasAwaitingKyc ? earnedBalanceKycPendingAr : null,
       showKycCta: !hasAwaitingKyc,
       showKycPending: hasAwaitingKyc,
@@ -207,23 +209,23 @@ String earnedBalanceDashboardSummaryAr(EarnedBalanceSnapshot snap) {
   final ui = resolveEarnedBalanceUiState(snap);
   switch (ui.kind) {
     case EarnedBalanceUiKind.empty:
-      return 'لا رصيد مكتسب بعد';
+      return tr('لا رصيد مكتسب بعد');
     case EarnedBalanceUiKind.closed:
-      return 'رصيد سابق مُغلق · غير قابل للسحب';
+      return tr('رصيد سابق مُغلق · غير قابل للسحب');
     case EarnedBalanceUiKind.grace:
     case EarnedBalanceUiKind.lockedPending:
-      return 'معلّق: ${snap.displayLockedPendingJod} JOD · غير قابل للسحب';
+      return trf('معلّق: {0} JOD · غير قابل للسحب', [snap.displayLockedPendingJod]);
     case EarnedBalanceUiKind.silverBeforeKyc:
-      return 'بانتظار اعتماد الحساب';
+      return tr('بانتظار اعتماد الحساب');
     case EarnedBalanceUiKind.withdrawable:
-      return 'قابل للسحب: ${snap.totalAvailableJod} JOD';
+      return trf('قابل للسحب: {0} JOD', [snap.totalAvailableJod]);
     case EarnedBalanceUiKind.recordedOnly:
       if (earnedJodPositive(snap.totalAvailableJod) && snap.withdrawalPolicy?.allowed == true) {
-        return 'قابل للسحب: ${snap.totalAvailableJod} JOD';
+        return trf('قابل للسحب: {0} JOD', [snap.totalAvailableJod]);
       }
       if (earnedJodPositive(snap.displayLockedPendingJod)) {
-        return 'معلّق: ${snap.displayLockedPendingJod} JOD · غير قابل للسحب';
+        return trf('معلّق: {0} JOD · غير قابل للسحب', [snap.displayLockedPendingJod]);
       }
-      return 'رصيد مسجّل';
+      return tr('رصيد مسجّل');
   }
 }

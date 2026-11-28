@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import 'freelancer_eligibility_models.dart';
+import '../../../core/i18n/i18n.dart';
 
 class FreelancerEligibilityApi {
   FreelancerEligibilityApi(this._dio);
@@ -18,7 +19,7 @@ class FreelancerEligibilityApi {
     }
     throw DioException(
       requestOptions: response.requestOptions,
-      message: 'استجابة غير متوقعة من أهلية المستقل.',
+      message: tr('استجابة غير متوقعة من أهلية المستقل.'),
     );
   }
 }

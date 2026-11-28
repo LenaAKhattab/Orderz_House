@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '';
+import '';
+import '../../../core/i18n/i18n.dart';
 
 import '../../../core/router/routes.dart';
 import '../../../core/theme/app_colors.dart';
@@ -184,7 +187,7 @@ class HomeSearchField extends StatelessWidget {
                   child: Text(
                     hint,
                     style: const TextStyle(color: AppColors.textMuted, fontSize: 14),
-                    textAlign: TextAlign.right,
+                    textAlign: TextAlign.start,
                   ),
                 ),
               ],
@@ -229,7 +232,7 @@ class HomePrimaryCta extends StatelessWidget {
               color: Colors.white.withValues(alpha: 0.16),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.arrow_back_rounded, size: 18, color: Colors.white),
+            child: Icon(AppI18n.isEnglish ? Icons.arrow_forward_rounded : Icons.arrow_back_rounded, size: 18, color: Colors.white),
           ),
           const SizedBox(width: 12),
           Text(
@@ -286,7 +289,7 @@ class HomeActionTile extends StatelessWidget {
             children: [
               Text(
                 title,
-                textAlign: TextAlign.right,
+                textAlign: TextAlign.start,
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w800,
@@ -381,7 +384,7 @@ class HomeWideActionTile extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      textAlign: TextAlign.right,
+                      textAlign: TextAlign.start,
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w800,
@@ -391,7 +394,7 @@ class HomeWideActionTile extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       subtitle,
-                      textAlign: TextAlign.right,
+                      textAlign: TextAlign.start,
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.85),
                         fontSize: 12,
@@ -401,7 +404,7 @@ class HomeWideActionTile extends StatelessWidget {
                   ],
                 ),
               ),
-              Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white.withValues(alpha: 0.7), size: 16),
+              Icon(AppI18n.isEnglish ? Icons.arrow_forward_ios_rounded : Icons.arrow_back_ios_new_rounded, color: Colors.white.withValues(alpha: 0.7), size: 16),
             ],
           ),
         ),
@@ -444,7 +447,7 @@ class HomeInfoChipCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Align(
-                alignment: Alignment.centerRight,
+                alignment: AlignmentDirectional.centerStart,
                 child: Container(
                   width: 40,
                   height: 40,
@@ -458,7 +461,7 @@ class HomeInfoChipCard extends StatelessWidget {
               const SizedBox(height: 12),
               Text(
                 title,
-                textAlign: TextAlign.right,
+                textAlign: TextAlign.start,
                 style: TextStyle(
                   color: accent,
                   fontWeight: FontWeight.w800,
@@ -468,7 +471,7 @@ class HomeInfoChipCard extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 subtitle,
-                textAlign: TextAlign.right,
+                textAlign: TextAlign.start,
                 style: const TextStyle(
                   color: AppColors.textMuted,
                   fontSize: 12,

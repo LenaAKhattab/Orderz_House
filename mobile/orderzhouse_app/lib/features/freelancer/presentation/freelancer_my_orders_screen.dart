@@ -14,6 +14,7 @@ import '../../pantry/presentation/pantry_display.dart';
 import 'freelancer_eligibility_banner.dart';
 import 'freelancer_my_orders_controller.dart';
 import '../../currency/presentation/jod_money_display.dart';
+import '../../../core/i18n/i18n.dart';
 
 class FreelancerMyOrdersScreen extends ConsumerStatefulWidget {
   const FreelancerMyOrdersScreen({super.key});
@@ -42,7 +43,7 @@ class _FreelancerMyOrdersScreenState extends ConsumerState<FreelancerMyOrdersScr
 
     if (!auth.isAuthenticated) {
       return Scaffold(
-        appBar: AppBar(title: const Text('طلباتي')),
+        appBar: AppBar(title: Text(tr('طلباتي'))),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -51,13 +52,13 @@ class _FreelancerMyOrdersScreenState extends ConsumerState<FreelancerMyOrdersScr
               children: [
                 const Icon(Icons.lock_outline, size: 48, color: AppColors.textMuted),
                 const SizedBox(height: 12),
-                const Text(
-                  'سجّل الدخول لعرض طلباتك كمستقل.',
+                Text(
+                  tr('سجّل الدخول لعرض طلباتك كمستقل.'),
                   textAlign: TextAlign.center,
                   style: TextStyle(color: AppColors.textMuted, height: 1.6),
                 ),
                 const SizedBox(height: 16),
-                OhButton(label: 'تسجيل الدخول', onPressed: () => context.push(AppRoutes.login)),
+                OhButton(label: tr('تسجيل الدخول'), onPressed: () => context.push(AppRoutes.login)),
               ],
             ),
           ),
@@ -67,9 +68,9 @@ class _FreelancerMyOrdersScreenState extends ConsumerState<FreelancerMyOrdersScr
 
     if (auth.user?.usesFreelancerExperience != true) {
       return Scaffold(
-        appBar: AppBar(title: const Text('طلباتي')),
-        body: const OhEmptyBody(
-          message: 'هذه الصفحة مخصصة لحسابات المستقلين.',
+        appBar: AppBar(title: Text(tr('طلباتي'))),
+        body: OhEmptyBody(
+          message: tr('هذه الصفحة مخصصة لحسابات المستقلين.'),
           icon: Icons.person_off_outlined,
         ),
       );
@@ -87,10 +88,10 @@ class _FreelancerMyOrdersScreenState extends ConsumerState<FreelancerMyOrdersScr
     return Scaffold(
       backgroundColor: AppColors.homeMobileBg,
       appBar: AppBar(
-        title: const Text('طلباتي'),
+        title: Text(tr('طلباتي')),
         actions: [
           IconButton(
-            tooltip: 'تحديث',
+            tooltip: tr('تحديث'),
             onPressed: state.isLoading
                 ? null
                 : () {
@@ -121,8 +122,8 @@ class _FreelancerMyOrdersScreenState extends ConsumerState<FreelancerMyOrdersScr
             else if (state.error != null && state.orders.isEmpty && pantryWork.isEmpty)
               OhErrorBanner(message: state.error!)
             else if (!hasAny)
-              const OhEmptyBody(
-                message: 'لا توجد طلبات مسندة إليك حالياً.\nتصفح السوق لاستكشاف الطلبات المتاحة.',
+              OhEmptyBody(
+                message: tr('لا توجد طلبات مسندة إليك حالياً.\nتصفح السوق لاستكشاف الطلبات المتاحة.'),
                 icon: Icons.inbox_outlined,
               )
             else ...[
@@ -130,7 +131,7 @@ class _FreelancerMyOrdersScreenState extends ConsumerState<FreelancerMyOrdersScr
                 (request) => Padding(
                   padding: const EdgeInsets.only(bottom: 10),
                   child: _ListedWorkCard(
-                    title: request.title.trim().isEmpty ? 'طلب' : request.title,
+                    title: request.title.trim().isEmpty ? tr('طلب') : request.title,
                     statusLabel: pantryStatusLabelAr(request.status),
                     typeLabel: pantryPricingLabel(request),
                     budgetWidget: JodOrderBudgetDisplay(
@@ -205,25 +206,25 @@ class _ListedWorkCard extends StatelessWidget {
             style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: AppColors.textInk),
           ),
           const SizedBox(height: 8),
-          _MetaRow('الحالة', statusLabel),
-          _MetaRow('النوع', typeLabel),
+          _MetaRow(tr('الحالة'), statusLabel),
+          _MetaRow(tr('النوع'), typeLabel),
           if (budgetWidget != null)
             Padding(
               padding: const EdgeInsets.only(bottom: 4),
               child: Row(
                 children: [
-                  const Text('الميزانية', style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
+                  Text(tr('الميزانية'), style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
                   const SizedBox(width: 12),
-                  Expanded(child: Align(alignment: Alignment.centerLeft, child: budgetWidget)),
+                  Expanded(child: Align(alignment: AlignmentDirectional.centerEnd, child: budgetWidget)),
                 ],
               ),
             ),
-          if (durationLabel != null && durationLabel != '—') _MetaRow('المدة', durationLabel!),
-          if (dueLabel != null) _MetaRow('موعد التسليم', dueLabel!),
-          if (dateLabel != null) _MetaRow('تاريخ الإنشاء', dateLabel!),
+          if (durationLabel != null && durationLabel != '—') _MetaRow(tr('المدة'), durationLabel!),
+          if (dueLabel != null) _MetaRow(tr('موعد التسليم'), dueLabel!),
+          if (dateLabel != null) _MetaRow(tr('تاريخ الإنشاء'), dateLabel!),
           const SizedBox(height: 12),
           OhButton(
-            label: 'التفاصيل',
+            label: tr('التفاصيل'),
             outlined: true,
             onPressed: onDetails,
           ),

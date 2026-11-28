@@ -1,19 +1,18 @@
+import '../../../core/i18n/i18n.dart';
 // Phase A10 / M1 / Android-Parity-01 — Plan upgrade CTA helpers for pool/order/course locks.
 
-const planUpgradeDefaultHeadlineAr = 'هذا الطلب متاح لباقات أعلى. قم بترقية خطتك لاستلامه.';
-const planUpgradeDefaultActionAr = 'ترقية الخطة';
-const planUpgradeButtonLabelAr = 'ترقية الباقة';
-const planUpgradeViewPlansButtonAr = 'عرض الباقات';
-const planUpgradeOpenFailedAr =
-    'تعذر فتح صفحة الخطط. يمكنك فتح الموقع من الملف الشخصي أو المحاولة لاحقاً.';
+String get planUpgradeDefaultHeadlineAr => tr('هذا الطلب متاح لباقات أعلى. قم بترقية خطتك لاستلامه.');
+String get planUpgradeDefaultActionAr => tr('ترقية الخطة');
+String get planUpgradeButtonLabelAr => tr('ترقية الباقة');
+String get planUpgradeViewPlansButtonAr => tr('عرض الباقات');
+String get planUpgradeOpenFailedAr => tr('تعذر فتح صفحة الخطط. يمكنك فتح الموقع من الملف الشخصي أو المحاولة لاحقاً.');
 
-const planTooLowHeadlineAr = 'قيمة هذا الطلب أعلى من حد باقتك الحالية';
-const noActivePlanHeadlineAr = 'فعّل باقتك لاستلام الطلبات';
-const internalPlanConfigHeadlineAr =
-    'تعذر التحقق من أهلية خطتك حالياً. يرجى التواصل مع الدعم.';
+String get planTooLowHeadlineAr => tr('قيمة هذا الطلب أعلى من حد باقتك الحالية');
+String get noActivePlanHeadlineAr => tr('فعّل باقتك لاستلام الطلبات');
+String get internalPlanConfigHeadlineAr => tr('تعذر التحقق من أهلية خطتك حالياً. يرجى التواصل مع الدعم.');
 
-const coursePlanUpgradeHeadlineAr = 'هذه الدورة متاحة لباقات أعلى';
-const coursePlanUpgradeButtonAr = 'ترقية الباقة';
+String get coursePlanUpgradeHeadlineAr => tr('هذه الدورة متاحة لباقات أعلى');
+String get coursePlanUpgradeButtonAr => tr('ترقية الباقة');
 
 const _planLockReasons = {
   'ARTICLE_ACCESS_LEVEL_INSUFFICIENT',
@@ -108,7 +107,7 @@ PlanUpgradeCtaCopy buildPlanUpgradeCopy({
           : null);
 
   if (code == 'INTERNAL_PLAN_CONFIGURATION') {
-    return const PlanUpgradeCtaCopy(
+    return PlanUpgradeCtaCopy(
       headline: internalPlanConfigHeadlineAr,
       button: '',
       mode: PlanUpgradeCtaMode.support,
@@ -116,7 +115,7 @@ PlanUpgradeCtaCopy buildPlanUpgradeCopy({
   }
 
   if (code == 'NO_ACTIVE_PLAN') {
-    return const PlanUpgradeCtaCopy(
+    return PlanUpgradeCtaCopy(
       headline: noActivePlanHeadlineAr,
       button: planUpgradeViewPlansButtonAr,
     );
@@ -127,7 +126,7 @@ PlanUpgradeCtaCopy buildPlanUpgradeCopy({
       headline: coursePlanUpgradeHeadlineAr,
       button: coursePlanUpgradeButtonAr,
       requiredTierCode: tier,
-      tierHint: tierLabel != null ? 'متاحة بعد ترقية الباقة' : null,
+      tierHint: tierLabel != null ? tr('متاحة بعد ترقية الباقة') : null,
     );
   }
 
@@ -140,9 +139,9 @@ PlanUpgradeCtaCopy buildPlanUpgradeCopy({
   }
 
   final headline = tierLabel != null
-      ? 'هذا الطلب متاح لباقات أعلى (ابتداءً من $tierLabel). قم بترقية خطتك لاستلامه.'
+      ? trf('هذا الطلب متاح لباقات أعلى (ابتداءً من {0}). قم بترقية خطتك لاستلامه.', [tierLabel])
       : planUpgradeDefaultHeadlineAr;
-  final tierHint = tierLabel != null ? 'متاح ابتداءً من خطة $tierLabel.' : null;
+  final tierHint = tierLabel != null ? trf('متاح ابتداءً من خطة {0}.', [tierLabel]) : null;
 
   return PlanUpgradeCtaCopy(
     headline: headline,

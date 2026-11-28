@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/errors/api_error_message.dart';
 import '../data/freelancer_my_order_models.dart';
 import '../data/freelancer_my_orders_repository.dart';
+import '../../../core/i18n/i18n.dart';
 
 class FreelancerMyOrdersState {
   const FreelancerMyOrdersState({
@@ -42,7 +43,7 @@ class FreelancerMyOrdersController extends Notifier<FreelancerMyOrdersState> {
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        error: apiErrorMessage(e, fallback: 'تعذر تحميل طلباتك.'),
+        error: apiErrorMessage(e, fallback: tr('تعذر تحميل طلباتك.')),
       );
     }
   }

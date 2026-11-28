@@ -15,6 +15,7 @@ import '../data/payment_return_flow.dart';
 import '../data/payment_return_parser.dart';
 import 'client_orders_controller.dart';
 import 'order_payment_actions.dart';
+import '../../../core/i18n/i18n.dart';
 
 class PaymentReturnScreen extends ConsumerStatefulWidget {
   const PaymentReturnScreen({super.key, required this.params});
@@ -138,7 +139,7 @@ class _PaymentReturnScreenState extends ConsumerState<PaymentReturnScreen> {
       if (!mounted) return;
       setState(() {
         _state = PaymentReturnUiState.error;
-        _errorMessage = apiErrorMessage(e, fallback: 'تعذر تأكيد حالة الدفع.');
+        _errorMessage = apiErrorMessage(e, fallback: tr('تعذر تأكيد حالة الدفع.'));
       });
     } finally {
       _confirmInFlight = false;
@@ -159,7 +160,7 @@ class _PaymentReturnScreenState extends ConsumerState<PaymentReturnScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.homeMobileBg,
-      appBar: AppBar(title: const Text('العودة من الدفع')),
+      appBar: AppBar(title: Text(tr('العودة من الدفع'))),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
@@ -172,19 +173,19 @@ class _PaymentReturnScreenState extends ConsumerState<PaymentReturnScreen> {
   Widget _buildBody(BuildContext context) {
     switch (_state) {
       case PaymentReturnUiState.confirming:
-        return const Column(
+        return Column(
           children: [
             SizedBox(height: 24),
             CircularProgressIndicator(),
             SizedBox(height: 16),
             Text(
-              'جارٍ تأكيد الدفع...',
+              tr('جارٍ تأكيد الدفع...'),
               textAlign: TextAlign.center,
               style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
             ),
             SizedBox(height: 8),
             Text(
-              'يرجى الانتظار بينما نتحقق من حالة الدفع مع الخادم.',
+              tr('يرجى الانتظار بينما نتحقق من حالة الدفع مع الخادم.'),
               textAlign: TextAlign.center,
               style: TextStyle(color: AppColors.textMuted, height: 1.6),
             ),
@@ -196,25 +197,25 @@ class _PaymentReturnScreenState extends ConsumerState<PaymentReturnScreen> {
           children: [
             const Icon(Icons.login_rounded, color: AppColors.primary, size: 56),
             const SizedBox(height: 12),
-            const Text(
-              'تأكيد حالة الدفع',
+            Text(
+              tr('تأكيد حالة الدفع'),
               textAlign: TextAlign.center,
               style: TextStyle(fontWeight: FontWeight.w800, fontSize: 20),
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               paymentReturnGuestMessageAr,
               textAlign: TextAlign.center,
               style: TextStyle(color: AppColors.textMuted, height: 1.6),
             ),
             const SizedBox(height: 20),
             OhButton(
-              label: 'تسجيل الدخول لتأكيد الدفع',
+              label: tr('تسجيل الدخول لتأكيد الدفع'),
               onPressed: _goToLoginForConfirm,
             ),
             const SizedBox(height: 10),
             OhButton(
-              label: 'تسجيل الدخول',
+              label: tr('تسجيل الدخول'),
               outlined: true,
               onPressed: () => context.go(AppRoutes.login),
             ),
@@ -232,36 +233,36 @@ class _PaymentReturnScreenState extends ConsumerState<PaymentReturnScreen> {
             ),
             const SizedBox(height: 12),
             Text(
-              adminReview ? 'تم استلام الدفع' : 'تم تأكيد الدفع',
+              adminReview ? tr('تم استلام الدفع') : tr('تم تأكيد الدفع'),
               textAlign: TextAlign.center,
               style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 20),
             ),
             const SizedBox(height: 8),
             Text(
               widget.params.isQuote
-                  ? 'تم تأكيد دفع عرض السعر. سيتابع فريقنا تنفيذ طلبك.'
+                  ? tr('تم تأكيد دفع عرض السعر. سيتابع فريقنا تنفيذ طلبك.')
                   : adminReview
-                      ? 'تم استلام الدفع، وسيتم نشر الطلب بعد مراجعته من الإدارة.'
-                      : 'تم استلام الدفع وفتح الطلب للمستقلين.',
+                      ? tr('تم استلام الدفع، وسيتم نشر الطلب بعد مراجعته من الإدارة.')
+                      : tr('تم استلام الدفع وفتح الطلب للمستقلين.'),
               textAlign: TextAlign.center,
               style: const TextStyle(color: AppColors.textMuted, height: 1.6),
             ),
             if (adminReview) ...[
               const SizedBox(height: 8),
               Text(
-                _order?.statusLabel ?? 'بانتظار مراجعة الإدارة',
+                _order?.statusLabel ?? tr('بانتظار مراجعة الإدارة'),
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.primary),
               ),
             ],
             const SizedBox(height: 20),
             OhButton(
-              label: 'عرض تفاصيل الطلب',
+              label: tr('عرض تفاصيل الطلب'),
               onPressed: () => context.go(AppRoutes.clientOrderPath(widget.params.orderId)),
             ),
             const SizedBox(height: 10),
             OhButton(
-              label: 'عرض طلباتي',
+              label: tr('عرض طلباتي'),
               outlined: true,
               onPressed: () => context.go(AppRoutes.myOrders),
             ),
@@ -273,13 +274,13 @@ class _PaymentReturnScreenState extends ConsumerState<PaymentReturnScreen> {
           children: [
             const Icon(Icons.hourglass_top_outlined, color: AppColors.primary, size: 56),
             const SizedBox(height: 12),
-            const Text(
-              'بانتظار تأكيد الدفع',
+            Text(
+              tr('بانتظار تأكيد الدفع'),
               textAlign: TextAlign.center,
               style: TextStyle(fontWeight: FontWeight.w800, fontSize: 20),
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               paymentReturnPendingMessageAr,
               textAlign: TextAlign.center,
               style: TextStyle(color: AppColors.textMuted, height: 1.6),
@@ -289,19 +290,19 @@ class _PaymentReturnScreenState extends ConsumerState<PaymentReturnScreen> {
             if (_order?.paymentStatusLabel != null) ...[
               const SizedBox(height: 8),
               Text(
-                'الحالة الحالية: ${_order!.paymentStatusLabel}',
+                trf('الحالة الحالية: {0}', [_order!.paymentStatusLabel]),
                 textAlign: TextAlign.center,
                 style: const TextStyle(color: AppColors.textMuted),
               ),
             ],
             const SizedBox(height: 20),
             OhButton(
-              label: 'تحديث حالة الطلب',
+              label: tr('تحديث حالة الطلب'),
               onPressed: () => _confirmAndRefresh(poll: true),
             ),
             const SizedBox(height: 10),
             OhButton(
-              label: 'عرض تفاصيل الطلب',
+              label: tr('عرض تفاصيل الطلب'),
               outlined: true,
               onPressed: () => context.go(AppRoutes.clientOrderPath(widget.params.orderId)),
             ),
@@ -313,31 +314,31 @@ class _PaymentReturnScreenState extends ConsumerState<PaymentReturnScreen> {
           children: [
             const Icon(Icons.info_outline, color: AppColors.textMuted, size: 56),
             const SizedBox(height: 12),
-            const Text(
+            Text(
               paymentReturnCancelTitleAr,
               textAlign: TextAlign.center,
               style: TextStyle(fontWeight: FontWeight.w800, fontSize: 20),
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               paymentReturnCancelBodyAr,
               textAlign: TextAlign.center,
               style: TextStyle(color: AppColors.textMuted, height: 1.6),
             ),
             const SizedBox(height: 20),
             OhButton(
-              label: 'المحاولة مرة أخرى',
+              label: tr('المحاولة مرة أخرى'),
               onPressed: () => context.go(AppRoutes.clientOrderPath(widget.params.orderId)),
             ),
             const SizedBox(height: 10),
             OhButton(
-              label: 'العودة إلى الطلب',
+              label: tr('العودة إلى الطلب'),
               outlined: true,
               onPressed: () => context.go(AppRoutes.clientOrderPath(widget.params.orderId)),
             ),
             const SizedBox(height: 10),
             OhButton(
-              label: 'عرض طلباتي',
+              label: tr('عرض طلباتي'),
               outlined: true,
               onPressed: () => context.go(AppRoutes.myOrders),
             ),
@@ -347,15 +348,15 @@ class _PaymentReturnScreenState extends ConsumerState<PaymentReturnScreen> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            OhErrorBanner(message: _errorMessage ?? 'حدث خطأ.'),
+            OhErrorBanner(message: _errorMessage ?? tr('حدث خطأ.')),
             const SizedBox(height: 16),
             OhButton(
-              label: 'إعادة المحاولة',
+              label: tr('إعادة المحاولة'),
               onPressed: () => _confirmAndRefresh(poll: true),
             ),
             const SizedBox(height: 10),
             OhButton(
-              label: 'عرض تفاصيل الطلب',
+              label: tr('عرض تفاصيل الطلب'),
               outlined: true,
               onPressed: () => context.go(AppRoutes.clientOrderPath(widget.params.orderId)),
             ),

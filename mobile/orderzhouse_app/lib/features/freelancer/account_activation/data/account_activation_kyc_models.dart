@@ -1,28 +1,26 @@
 import '../../../../core/network/json_helpers.dart';
+import '../../../../core/i18n/server_text.dart';
+import '../../../../core/i18n/i18n.dart';
 
 /// Short terms snapshot aligned with backend A11 constant (display only).
-const accountActivationKycTermsSnapshotAr =
-    'أوافق على شروط تفعيل حساب المستقل واستخدام منصة OrderzHouse.\n'
+String get accountActivationKycTermsSnapshotAr => tr('أوافق على شروط تفعيل حساب المستقل واستخدام منصة OrderzHouse.\n'
     'أتعهد بأن صور الهوية المرفقة صحيحة وتعود لي شخصيًا.\n'
-    'أفهم أن إرسال الطلب لا يعني التفعيل الفوري، وأن الإدارة تراجع الطلب قبل الموافقة.';
+    'أفهم أن إرسال الطلب لا يعني التفعيل الفوري، وأن الإدارة تراجع الطلب قبل الموافقة.');
 
-const accountActivationKycFilesRequiredAr = 'يرجى اختيار صورة الهوية من الأمام والخلف.';
-const accountActivationKycTermsRequiredAr = 'يجب الموافقة على شروط تفعيل الحساب.';
-const accountActivationKycSubmitSuccessAr = 'تم إرسال طلب توثيق الهوية بنجاح.';
-const accountActivationKycPendingAr = 'طلب توثيق الهوية قيد المراجعة';
-const accountActivationKycApprovedAr = 'تم توثيق هويتك.';
-const accountActivationKycApprovedManualAr = 'تم التحقق من الهوية إدارياً.';
-const accountActivationKycNotVerifiedAr = 'لم يتم توثيق الهوية بعد';
-const accountActivationKycRejectedHeadlineAr = 'تم رفض طلب توثيق الهوية';
-const accountActivationKycCompleteCtaAr = 'إكمال توثيق الهوية';
-const accountActivationKycResubmitCtaAr = 'إعادة إرسال طلب توثيق الهوية';
-const accountActivationKycPageTitleAr = 'توثيق الهوية';
-const accountActivationKycPageSubtitleAr =
-    'ارفع صور الهوية لإكمال تفعيل الحساب.';
-const accountActivationKycMembershipWaitingAr =
-    'تم اعتماد حسابك، وتبدأ مدة الاشتراك عند استلام أول طلب حقيقي.';
-const accountActivationKycMembershipActiveAr =
-    'اشتراكك نشط ومدة الاشتراك جارية.';
+String get accountActivationKycFilesRequiredAr => tr('يرجى اختيار صورة الهوية من الأمام والخلف.');
+String get accountActivationKycTermsRequiredAr => tr('يجب الموافقة على شروط تفعيل الحساب.');
+String get accountActivationKycSubmitSuccessAr => tr('تم إرسال طلب توثيق الهوية بنجاح.');
+String get accountActivationKycPendingAr => tr('طلب توثيق الهوية قيد المراجعة');
+String get accountActivationKycApprovedAr => tr('تم توثيق هويتك.');
+String get accountActivationKycApprovedManualAr => tr('تم التحقق من الهوية إدارياً.');
+String get accountActivationKycNotVerifiedAr => tr('لم يتم توثيق الهوية بعد');
+String get accountActivationKycRejectedHeadlineAr => tr('تم رفض طلب توثيق الهوية');
+String get accountActivationKycCompleteCtaAr => tr('إكمال توثيق الهوية');
+String get accountActivationKycResubmitCtaAr => tr('إعادة إرسال طلب توثيق الهوية');
+String get accountActivationKycPageTitleAr => tr('توثيق الهوية');
+String get accountActivationKycPageSubtitleAr => tr('ارفع صور الهوية لإكمال تفعيل الحساب.');
+String get accountActivationKycMembershipWaitingAr => tr('تم اعتماد حسابك، وتبدأ مدة الاشتراك عند استلام أول طلب حقيقي.');
+String get accountActivationKycMembershipActiveAr => tr('اشتراكك نشط ومدة الاشتراك جارية.');
 
 class AccountActivationKycRequest {
   const AccountActivationKycRequest({
@@ -143,7 +141,9 @@ class AccountActivationKycStatus {
   String get membershipBodyAr {
     if (membershipCountdownStarted) return accountActivationKycMembershipActiveAr;
     if (accountApproved) return accountActivationKycMembershipWaitingAr;
-    return messageAr ?? accountActivationKycNotVerifiedAr;
+    return messageAr == null
+        ? accountActivationKycNotVerifiedAr
+        : localizeServerText(messageAr!, fallback: accountActivationKycNotVerifiedAr);
   }
 
   factory AccountActivationKycStatus.fromJson(Map<String, dynamic> json) {
@@ -223,7 +223,7 @@ class AccountActivationKycStatus {
 
   factory AccountActivationKycStatus.fromResponse(dynamic body) {
     if (body is! Map) {
-      throw FormatException('استجابة تفعيل الحساب غير متوقعة.');
+      throw FormatException(tr('استجابة تفعيل الحساب غير متوقعة.'));
     }
     final data = body['data'];
     if (data is Map) {

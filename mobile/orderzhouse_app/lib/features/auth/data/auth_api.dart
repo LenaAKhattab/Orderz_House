@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import '../domain/auth_user.dart';
+import '../../../core/i18n/i18n.dart';
 
 class AuthApi {
   AuthApi(this._dio);
@@ -59,7 +60,7 @@ class AuthApi {
     if (token == null || token.isEmpty) {
       throw DioException(
         requestOptions: response.requestOptions,
-        message: 'الرمز غير صحيح',
+        message: tr('الرمز غير صحيح'),
       );
     }
     return token;
@@ -88,7 +89,7 @@ class AuthApi {
     }
     throw DioException(
       requestOptions: response.requestOptions,
-      message: 'استجابة غير متوقعة من الخادم.',
+      message: tr('استجابة غير متوقعة من الخادم.'),
     );
   }
 
@@ -105,14 +106,14 @@ class AuthApi {
     if (data is! Map) {
       throw DioException(
         requestOptions: RequestOptions(path: '/auth'),
-        message: json?['message']?.toString() ?? 'فشل تسجيل الدخول.',
+        message: json?['message']?.toString() ?? tr('فشل تسجيل الدخول.'),
       );
     }
     final userJson = data['user'];
     if (userJson is! Map) {
       throw DioException(
         requestOptions: RequestOptions(path: '/auth'),
-        message: 'بيانات المستخدم غير متوفرة.',
+        message: tr('بيانات المستخدم غير متوفرة.'),
       );
     }
     return AuthSession(

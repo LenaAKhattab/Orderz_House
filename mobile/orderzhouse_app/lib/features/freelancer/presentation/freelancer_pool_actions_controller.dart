@@ -5,6 +5,7 @@ import '../../orders/data/pool_order_models.dart';
 import '../data/freelancer_pool_actions_models.dart';
 import '../data/freelancer_pool_actions_repository.dart';
 import '../data/pool_order_participation_helpers.dart';
+import '../../../core/i18n/i18n.dart';
 
 class FreelancerPoolActionsState {
   const FreelancerPoolActionsState({
@@ -52,7 +53,7 @@ class FreelancerPoolActionsController extends AutoDisposeFamilyNotifier<Freelanc
     } catch (e) {
       state = state.copyWith(
         isTaking: false,
-        error: apiErrorMessage(e, fallback: 'تعذر استلام الطلب.'),
+        error: apiErrorMessage(e, fallback: tr('تعذر استلام الطلب.')),
       );
       rethrow;
     }
@@ -68,7 +69,7 @@ class FreelancerPoolActionsController extends AutoDisposeFamilyNotifier<Freelanc
     } catch (e) {
       state = state.copyWith(
         isSubmittingBid: false,
-        error: apiErrorMessage(e, fallback: 'تعذر إرسال العرض.'),
+        error: apiErrorMessage(e, fallback: tr('تعذر إرسال العرض.')),
       );
       rethrow;
     }

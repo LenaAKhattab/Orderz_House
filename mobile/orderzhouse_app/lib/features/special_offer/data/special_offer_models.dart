@@ -1,14 +1,15 @@
 import '../../../core/network/json_helpers.dart';
+import '../../../core/i18n/i18n.dart';
 
-const specialOfferRefundLinkAr = 'تفاصيل استرداد مبلغ الباقة';
-const specialOfferRefundModalTitleAr = 'تفاصيل استرداد مبلغ باقة العرض';
-const specialOfferRefundModalGotItAr = 'فهمت';
+String get specialOfferRefundLinkAr => tr('تفاصيل استرداد مبلغ الباقة');
+String get specialOfferRefundModalTitleAr => tr('تفاصيل استرداد مبلغ باقة العرض');
+String get specialOfferRefundModalGotItAr => tr('فهمت');
 
-const specialOfferRefundSectionTitlesAr = [
-  'الاسترداد الشهري',
-  'الأشهر غير النشطة',
-  'الدخل من الطلبات',
-  'تنبيه مهم',
+List<String> get specialOfferRefundSectionTitlesAr => [
+  tr('الاسترداد الشهري'),
+  tr('الأشهر غير النشطة'),
+  tr('الدخل من الطلبات'),
+  tr('تنبيه مهم'),
 ];
 
 class SpecialOfferPackage {

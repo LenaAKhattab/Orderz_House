@@ -1,21 +1,20 @@
 import '../../../core/network/json_helpers.dart';
+import '../../../core/i18n/i18n.dart';
 
-const superAdminPackageLegacySectionAr = 'باقات قديمة / مؤرشفة';
-const superAdminPackageChangeConfirmAr = 'هل أنت متأكد من تغيير الباقة؟';
-const superAdminPackageAssignSuccessAr = 'تم تغيير الباقة بنجاح.';
-const superAdminPackageTrainingUnavailableAr =
-    'إكمال التدريب يتم عبر مسار المتدرب — لا يتوفر تعديل يدوي من التطبيق.';
-const superAdminPackageVerifyUnavailableAr =
-    'توثيق الحساب يتم من صفحة طلبات توثيق الهوية عند وجود طلب معلّق.';
-const superAdminPackageFilterAllAr = 'الكل';
-const superAdminPackageFilterPackageAr = 'الباقة';
-const superAdminPackageFilterIdentityAr = 'حالة التوثيق';
-const superAdminPackageFilterTrainingAr = 'حالة التدريب';
-const superAdminPackageIdentityVerifiedAr = 'موثق';
-const superAdminPackageIdentityUnverifiedAr = 'غير موثق';
-const superAdminPackageIdentityPendingAr = 'قيد المراجعة';
-const superAdminPackageTrainingDoneAr = 'مكتمل';
-const superAdminPackageTrainingIncompleteAr = 'غير مكتمل';
+String get superAdminPackageLegacySectionAr => tr('باقات قديمة / مؤرشفة');
+String get superAdminPackageChangeConfirmAr => tr('هل أنت متأكد من تغيير الباقة؟');
+String get superAdminPackageAssignSuccessAr => tr('تم تغيير الباقة بنجاح.');
+String get superAdminPackageTrainingUnavailableAr => tr('إكمال التدريب يتم عبر مسار المتدرب — لا يتوفر تعديل يدوي من التطبيق.');
+String get superAdminPackageVerifyUnavailableAr => tr('توثيق الحساب يتم من صفحة طلبات توثيق الهوية عند وجود طلب معلّق.');
+String get superAdminPackageFilterAllAr => tr('الكل');
+String get superAdminPackageFilterPackageAr => tr('الباقة');
+String get superAdminPackageFilterIdentityAr => tr('حالة التوثيق');
+String get superAdminPackageFilterTrainingAr => tr('حالة التدريب');
+String get superAdminPackageIdentityVerifiedAr => tr('موثق');
+String get superAdminPackageIdentityUnverifiedAr => tr('غير موثق');
+String get superAdminPackageIdentityPendingAr => tr('قيد المراجعة');
+String get superAdminPackageTrainingDoneAr => tr('مكتمل');
+String get superAdminPackageTrainingIncompleteAr => tr('غير مكتمل');
 
 enum PackageIdentityFilter { all, verified, unverified, pending }
 
@@ -226,14 +225,14 @@ class SuperAdminFreelancerPackageDetail {
       );
 
   String get accountStatusLabel =>
-      accountStatus == 'active' ? 'نشط' : 'غير نشط';
+      accountStatus == 'active' ? tr('نشط') : tr('غير نشط');
 }
 
 String packagePlanLabel({String? activationStatus, String? subscriptionStatus}) {
   final activation = (activationStatus ?? '').trim().toLowerCase();
   if (activation.isEmpty && subscriptionStatus == null) return '—';
-  if (activation == 'company_approved') return 'اشتراك مفعّل';
-  if (activation == 'company_pending') return 'بانتظار تفعيل';
+  if (activation == 'company_approved') return tr('اشتراك مفعّل');
+  if (activation == 'company_pending') return tr('بانتظار تفعيل');
   return subscriptionStatusLabelAr(subscriptionStatus);
 }
 
@@ -273,15 +272,15 @@ String identityStatusLabelFromActivation(String? activationStatus) {
 String subscriptionStatusLabelAr(String? status) {
   switch ((status ?? '').trim().toLowerCase()) {
     case 'active':
-      return 'نشط';
+      return tr('نشط');
     case 'assigned_not_started':
-      return 'معيّن — لم يبدأ';
+      return tr('معيّن — لم يبدأ');
     case 'inactive':
-      return 'غير نشط';
+      return tr('غير نشط');
     case 'cancelled':
-      return 'ملغى';
+      return tr('ملغى');
     case 'expired':
-      return 'منتهٍ';
+      return tr('منتهٍ');
     default:
       return status?.trim().isNotEmpty == true ? status!.trim() : '—';
   }

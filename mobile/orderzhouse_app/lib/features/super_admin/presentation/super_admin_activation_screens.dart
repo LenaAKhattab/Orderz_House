@@ -15,6 +15,7 @@ import '../data/super_admin_pantry_models.dart';
 import 'super_admin_action_dialogs.dart';
 import 'super_admin_queue_screens.dart';
 import 'super_admin_ui.dart';
+import '../../../core/i18n/i18n.dart';
 
 class SuperAdminActivationKycDetailScreen extends ConsumerStatefulWidget {
   const SuperAdminActivationKycDetailScreen({super.key, required this.requestId});
@@ -40,7 +41,7 @@ class _SuperAdminActivationKycDetailScreenState extends ConsumerState<SuperAdmin
           await ref.read(superAdminKycActivationDetailProvider(widget.requestId).notifier).approve();
       if (!started || !mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(superAdminActivationApproveSuccessAr)),
+        SnackBar(content: Text(superAdminActivationApproveSuccessAr)),
       );
     } catch (error) {
       if (!mounted) return;
@@ -65,7 +66,7 @@ class _SuperAdminActivationKycDetailScreenState extends ConsumerState<SuperAdmin
           );
       if (!started || !mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(superAdminActivationRejectSuccessAr)),
+        SnackBar(content: Text(superAdminActivationRejectSuccessAr)),
       );
     } catch (error) {
       if (!mounted) return;
@@ -103,24 +104,24 @@ class _SuperAdminActivationKycDetailScreenState extends ConsumerState<SuperAdmin
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.all(16),
             children: [
-              _DetailRow(label: 'المستقل', value: freelancer?.name ?? '—'),
-              _DetailRow(label: 'البريد', value: freelancer?.email ?? '—'),
-              if (freelancer?.phone != null) _DetailRow(label: 'الهاتف', value: freelancer!.phone!),
-              _DetailRow(label: 'الحالة', value: kycStatusLabelAr(request.status)),
-              _DetailRow(label: 'تاريخ الإرسال', value: formatSuperAdminDate(request.submittedAt)),
+              _DetailRow(label: tr('المستقل'), value: freelancer?.name ?? '—'),
+              _DetailRow(label: tr('البريد'), value: freelancer?.email ?? '—'),
+              if (freelancer?.phone != null) _DetailRow(label: tr('الهاتف'), value: freelancer!.phone!),
+              _DetailRow(label: tr('الحالة'), value: kycStatusLabelAr(request.status)),
+              _DetailRow(label: tr('تاريخ الإرسال'), value: formatSuperAdminDate(request.submittedAt)),
               if (request.reviewedAt != null)
-                _DetailRow(label: 'تاريخ المراجعة', value: formatSuperAdminDate(request.reviewedAt)),
+                _DetailRow(label: tr('تاريخ المراجعة'), value: formatSuperAdminDate(request.reviewedAt)),
               if (request.termsAcceptedAt != null)
                 _DetailRow(
-                  label: 'الموافقة على الشروط',
+                  label: tr('الموافقة على الشروط'),
                   value: formatSuperAdminDate(request.termsAcceptedAt),
                 ),
               if (request.termsVersion != null)
-                _DetailRow(label: 'إصدار الشروط', value: request.termsVersion!),
+                _DetailRow(label: tr('إصدار الشروط'), value: request.termsVersion!),
               if (request.rejectionReason != null)
-                _DetailRow(label: 'سبب الرفض السابق', value: request.rejectionReason!),
+                _DetailRow(label: tr('سبب الرفض السابق'), value: request.rejectionReason!),
               if (request.adminNotes != null)
-                _DetailRow(label: 'ملاحظات داخلية', value: request.adminNotes!),
+                _DetailRow(label: tr('ملاحظات داخلية'), value: request.adminNotes!),
               const SizedBox(height: 16),
               if (detail.hasFrontFile || request.hasFrontImage)
                 SuperAdminKycSecureImage(
@@ -138,9 +139,9 @@ class _SuperAdminActivationKycDetailScreenState extends ConsumerState<SuperAdmin
                   !detail.hasBackFile &&
                   !request.hasFrontImage &&
                   !request.hasBackImage)
-                const Text(
+                Text(
                   superAdminActivationNoDocumentsAr,
-                  textAlign: TextAlign.right,
+                  textAlign: TextAlign.start,
                   style: TextStyle(color: AppColors.textMuted),
                 ),
               if (pending) ...[
@@ -211,7 +212,7 @@ class _SuperAdminActivationSubscriptionDetailScreenState
           );
       if (!started || !mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(superAdminActivationApproveSuccessAr)),
+        SnackBar(content: Text(superAdminActivationApproveSuccessAr)),
       );
       if (mounted) context.pop();
     } catch (error) {
@@ -245,7 +246,7 @@ class _SuperAdminActivationSubscriptionDetailScreenState
           if (item == null) {
             return SuperAdminQueueErrorOrEmpty(
               isError: false,
-              message: 'الاشتراك غير موجود في قائمة التفعيل.',
+              message: tr('الاشتراك غير موجود في قائمة التفعيل.'),
               onRetry: () => ref.read(superAdminActivationQueueProvider.notifier).refresh(),
             );
           }
@@ -254,17 +255,17 @@ class _SuperAdminActivationSubscriptionDetailScreenState
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.all(16),
             children: [
-              _DetailRow(label: 'المستقل', value: item.freelancerName ?? '—'),
-              _DetailRow(label: 'البريد', value: item.freelancerEmail ?? '—'),
-              _DetailRow(label: 'الخطة', value: item.planTitle ?? '—'),
-              _DetailRow(label: 'المبلغ', value: formatSuperAdminJod(item.priceJod)),
-              _DetailRow(label: 'حالة الدفع', value: item.paymentStatus ?? '—'),
-              _DetailRow(label: 'حالة التفعيل', value: _activationStatusAr(item.activationStatus)),
-              if (item.queueKind != null) _DetailRow(label: 'نوع الطلب', value: item.queueKind!),
+              _DetailRow(label: tr('المستقل'), value: item.freelancerName ?? '—'),
+              _DetailRow(label: tr('البريد'), value: item.freelancerEmail ?? '—'),
+              _DetailRow(label: tr('الخطة'), value: item.planTitle ?? '—'),
+              _DetailRow(label: tr('المبلغ'), value: formatSuperAdminJod(item.priceJod)),
+              _DetailRow(label: tr('حالة الدفع'), value: item.paymentStatus ?? '—'),
+              _DetailRow(label: tr('حالة التفعيل'), value: _activationStatusAr(item.activationStatus)),
+              if (item.queueKind != null) _DetailRow(label: tr('نوع الطلب'), value: item.queueKind!),
               const SizedBox(height: 8),
-              const Text(
+              Text(
                 superAdminActivationOverrideHelperAr,
-                textAlign: TextAlign.right,
+                textAlign: TextAlign.start,
                 style: TextStyle(color: AppColors.textMuted, fontSize: 13, height: 1.4),
               ),
               if (canApprove) ...[
@@ -360,7 +361,7 @@ class _SuperAdminKycSecureImageState extends ConsumerState<SuperAdminKycSecureIm
         children: [
           Text(
             widget.label,
-            textAlign: TextAlign.right,
+            textAlign: TextAlign.start,
             style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
           ),
           const SizedBox(height: 8),
@@ -373,7 +374,7 @@ class _SuperAdminKycSecureImageState extends ConsumerState<SuperAdminKycSecureIm
             Text(
               _error!,
               key: Key('sa-kyc-image-error-${widget.side}-${widget.requestId}'),
-              textAlign: TextAlign.right,
+              textAlign: TextAlign.start,
               style: const TextStyle(color: AppColors.error),
             )
           else if (_bytes != null)
@@ -405,7 +406,7 @@ class _DetailRow extends StatelessWidget {
       child: Text(
         '$label: $value',
         key: Key('sa-detail-$label'),
-        textAlign: TextAlign.right,
+        textAlign: TextAlign.start,
         style: const TextStyle(color: AppColors.textInk, height: 1.45, fontSize: 14),
       ),
     );
@@ -415,12 +416,12 @@ class _DetailRow extends StatelessWidget {
 String _activationStatusAr(String? status) {
   switch ((status ?? '').trim().toLowerCase()) {
     case 'company_pending':
-      return 'بانتظار تفعيل الشركة';
+      return tr('بانتظار تفعيل الشركة');
     case 'company_approved':
-      return 'تم التفعيل';
+      return tr('تم التفعيل');
     case 'company_rejected':
-      return 'مرفوض';
+      return tr('مرفوض');
     default:
-      return status?.trim().isNotEmpty == true ? status!.trim() : 'بانتظار المراجعة';
+      return status?.trim().isNotEmpty == true ? status!.trim() : tr('بانتظار المراجعة');
   }
 }
